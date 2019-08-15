@@ -16,7 +16,7 @@ process.on('rejectionHandled', error => {
     console.error('Caught rejectionHandled:', error)
 })
 
-describe('regression test suite', function(this: any): void {
+describe('regression test suite', () => {
     let driver: Driver
 
     async function init(): Promise<void> {
@@ -148,7 +148,7 @@ describe('regression test suite', function(this: any): void {
                     if (!resultsElem) {
                         throw new Error('No .e2e-search-results element found')
                     }
-                    if ((resultsElem as HTMLElement).innerText.indexOf('No results') === -1) {
+                    if (!(resultsElem as HTMLElement).innerText.includes('No results')) {
                         throw new Error('Expected "No results" message, but didn\'t find it')
                     }
                 })
@@ -183,6 +183,14 @@ describe('regression test suite', function(this: any): void {
             'Perform global text search for "error count:>1000", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=error+count:1000')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+            },
+            5 * 1000
+        )
+        test(
+            'Perform global text search for "repohasfile:copying", expect many results.',
+            async () => {
+                await driver.page.goto(baseURL + '/search?q=repohasfile:copying')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000

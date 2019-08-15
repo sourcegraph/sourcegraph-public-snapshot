@@ -2,7 +2,7 @@
     &__cards {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
-        grid-auto-rows: minmax(7rem, auto);
+        grid-auto-rows: minmax(4rem, auto);
         gap: $spacer * 0.75;
     }
 }

@@ -1,13 +1,23 @@
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
+import * as jsonc from '@sqs/jsonc-parser'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { LaunchOptions } from 'puppeteer'
+import puppeteer, { LaunchOptions, PageEventObj, Page, Serializable } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
+import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
 import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
+
+/**
+ * Returns a Promise for the next emission of the given event on the given Puppeteer page.
+ */
+export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
+    new Promise(resolve => page.once(eventName, resolve))
 
 export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
     ? realPercySnapshot
-    : async () => undefined
+    : () => Promise.resolve()
 
 /**
  * Used in the external service configuration.
@@ -42,7 +52,7 @@ export class Driver {
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
             localStorage.setItem('has-dismissed-survey-toast', 'true')
         })
-        const url = new URL(await this.page.url())
+        const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
             await this.page.type('input[name=email]', 'test@test.com')
             await this.page.type('input[name=username]', 'test')
@@ -61,21 +71,29 @@ export class Driver {
         await this.browser.close()
     }
 
+    public async newPage(): Promise<void> {
+        this.page = await this.browser.newPage()
+    }
+
     public async selectAll(method: SelectTextMethod = 'selectall'): Promise<void> {
         switch (method) {
-            case 'selectall':
+            case 'selectall': {
                 await this.page.evaluate(() => document.execCommand('selectall', false))
                 break
-            case 'keyboard':
+            }
+            case 'keyboard': {
                 const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
                 await this.page.keyboard.down(modifier)
                 await this.page.keyboard.press('a')
                 await this.page.keyboard.up(modifier)
                 break
+            }
         }
     }
 
     public async enterText(method: EnterTextMethod = 'type', text: string): Promise<void> {
+        // Pasting does not work on macOS. See:  https://github.com/GoogleChrome/puppeteer/issues/1313
+        method = os.platform() === 'darwin' ? 'type' : method
         switch (method) {
             case 'type':
                 await this.page.keyboard.type(text)
@@ -108,6 +126,11 @@ export class Driver {
         await this.enterText(enterTextMethod, newText)
     }
 
+    public async acceptNextDialog(): Promise<void> {
+        const dialog = await oncePageEvent(this.page, 'dialog')
+        await dialog.accept()
+    }
+
     public async ensureHasExternalService({
         kind,
         displayName,
@@ -126,12 +149,7 @@ export class Driver {
         // Matches buttons for deleting external services named ${displayName}.
         const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
         if (await this.page.$(deleteButtonSelector)) {
-            const accept = async (dialog: puppeteer.Dialog) => {
-                await dialog.accept()
-                this.page.off('dialog', accept)
-            }
-            this.page.on('dialog', accept)
-            await this.page.click(deleteButtonSelector)
+            await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
         }
 
         await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
@@ -143,7 +161,6 @@ export class Driver {
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
-            enterTextMethod: 'paste',
         })
 
         // Type in a new external service configuration.
@@ -151,7 +168,6 @@ export class Driver {
             selector: '.view-line',
             newText: config,
             selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
         })
         await this.page.click('.e2e-add-external-service-button')
         await this.page.waitForNavigation()
@@ -160,7 +176,7 @@ export class Driver {
             // Clone the repositories
             for (const slug of ensureRepos) {
                 await this.page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='github.com/${slug}']`, {
+                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
                     visible: true,
                 })
             }
@@ -229,6 +245,80 @@ export class Driver {
         // verify there are some references
         await this.page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', { visible: true })
     }
+
+    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
+        const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
+        return handle.jsonValue()
+    }
+
+    private async makeGraphQLRequest<T extends IQuery | IMutation>({
+        request,
+        variables,
+    }: {
+        request: string
+        variables: {}
+    }): Promise<GraphQLResult<T>> {
+        const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+        const xhrHeaders = await this.page.evaluate(() => (window as any).context.xhrHeaders)
+        const response = await this.makeRequest<GraphQLResult<T>>({
+            url: `${baseURL}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+            init: {
+                method: 'POST',
+                body: JSON.stringify({ query: request, variables }),
+                headers: {
+                    ...xhrHeaders,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            },
+        })
+        return response
+    }
+
+    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+        const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
+            request: gql`
+                query Site {
+                    site {
+                        id
+                        configuration {
+                            id
+                            effectiveContents
+                            validationMessages
+                        }
+                    }
+                }
+            `,
+            variables: {},
+        })
+        const { site } = dataOrThrowErrors(currentConfigResponse)
+        const currentConfig = site.configuration.effectiveContents
+        const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
+            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
+        })
+        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+            request: gql`
+                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                    updateSiteConfiguration(lastID: $lastID, input: $input)
+                }
+            `,
+            variables: { lastID: site.configuration.id, input: newConfig },
+        })
+        dataOrThrowErrors(updateConfigResponse)
+    }
+}
+
+function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
+    const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
+    return jsonc.applyEdits(
+        text,
+        jsoncEdit.setProperty(text, path, f(old), {
+            eol: '\n',
+            insertSpaces: true,
+            tabSize: 2,
+        })
+    )
 }
 
 export async function createDriverForTest(): Promise<Driver> {
@@ -238,14 +328,19 @@ export async function createDriverForTest(): Promise<Driver> {
         console.warn('Running as root, disabling sandbox')
         args = ['--no-sandbox', '--disable-setuid-sandbox']
     }
+
     const launchOpt: LaunchOptions = {
         args: [...args, '--window-size=1280,1024'],
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
+        defaultViewport: null,
     }
     const browser = await puppeteer.launch(launchOpt)
     const page = await browser.newPage()
     page.on('console', message => {
-        if (message.text().indexOf('Download the React DevTools') !== -1) {
+        if (message.text().includes('Download the React DevTools')) {
+            return
+        }
+        if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
             return
         }
         console.log(

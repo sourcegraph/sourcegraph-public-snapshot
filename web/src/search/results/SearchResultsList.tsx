@@ -22,10 +22,10 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
+import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
-import { SavedSearchModal } from '../saved-searches/SavedSearchModal'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
@@ -292,7 +292,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
-            <React.Fragment>
+            <>
                 {this.state.didScrollToItem && (
                     <div className="search-results-list__jump-to-top">
                         Scrolled to result {this.getCheckpoint()} based on URL.&nbsp;
@@ -345,6 +345,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onShowMoreResultsClick={this.props.onShowMoreResultsClick}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
                                         displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                        // This isn't always correct, but the penalty for a false-positive is
+                                        // low.
+                                        hasRepoishField={
+                                            parsedQuery
+                                                ? parsedQuery.includes('repo:') || parsedQuery.includes('repogroup:')
+                                                : false
+                                        }
                                     />
 
                                     {/* Results */}
@@ -374,6 +381,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     */}
                                     {results.limitHit && this.state.resultsShown >= results.results.length && (
                                         <button
+                                            type="button"
                                             className="btn btn-secondary btn-block"
                                             data-testid="search-show-more-button"
                                             onClick={this.props.onShowMoreResultsClick}
@@ -463,7 +471,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         </Link>
                     )}
                 </div>
-            </React.Fragment>
+            </>
         )
     }
 

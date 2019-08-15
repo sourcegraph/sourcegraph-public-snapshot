@@ -16,6 +16,7 @@ class TelligentWrapper {
         }
 
         if (window && window.telligent) {
+            // eslint-disable-next-line @typescript-eslint/unbound-method
             this.telligent = window.telligent
         } else {
             return
@@ -46,7 +47,8 @@ class TelligentWrapper {
 
     /**
      * Function to extract the Telligent user ID from the first-party cookie set by the Telligent JavaScript Tracker
-     * @return string or boolean The ID string if the cookie exists or null if the cookie has not been set yet
+     *
+     * @returns string or boolean The ID string if the cookie exists or null if the cookie has not been set yet
      */
     public getTelligentDuid(): string | null {
         const cookieProps = this.inspectTelligentCookie()
@@ -55,7 +57,8 @@ class TelligentWrapper {
 
     /**
      * Function to extract the Telligent session ID from the first-party cookie set by the Telligent JavaScript Tracker
-     * @return string or boolean The session ID string if the cookie exists or null if the cookie has not been set yet
+     *
+     * @returns string or boolean The session ID string if the cookie exists or null if the cookie has not been set yet
      */
     public getTelligentSessionId(): string | null {
         const cookieProps = this.inspectTelligentCookie()
@@ -66,28 +69,8 @@ class TelligentWrapper {
         if (!this.telligent) {
             return
         }
-        const telligentUrl = 'sourcegraph-logging.telligentdata.com'
-        this.telligent('newTracker', 'sg', telligentUrl, {
-            appId: siteID,
-            platform: 'Web',
-            encodeBase64: false,
-            env,
-            configUseCookies: true,
-            useCookies: true,
-            trackUrls: true,
-            /**
-             * NOTE: do not use window.location.hostname (which includes subdomains) as the cookieDomain
-             * on sourcegraph.com subdomains (such as about.sourcegraph.com). Subdomains should be removed
-             * from the cookieDomain property to ensure analytics user profiles sync across all Sourcegraph sites.
-             */
-            cookieDomain: window.location.hostname,
-            metadata: {
-                gaCookies: true,
-                performanceTiming: true,
-                augurIdentityLite: true,
-                webPage: true,
-            },
-        })
+        // Logger initialization removed due to our event logging ETL pipeline sunsetting schedule.
+        // TODO(Dan): update with new logging URL.
     }
 
     private inspectTelligentCookie(): string[] | null {

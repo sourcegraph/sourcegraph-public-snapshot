@@ -67,6 +67,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         )
 
         this.subscriptions.add(
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             fetchingSite.subscribe(async res => {
                 let url = ''
 

@@ -1,7 +1,7 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { DOMFunctions } from '../code_intelligence/code_views'
 
-const getLineNumberCellFromCodeElement = (codeElement: HTMLElement) => {
+const getLineNumberCellFromCodeElement = (codeElement: HTMLElement): HTMLElement | null => {
     let elem: HTMLElement | null = codeElement
     while ((elem && elem.tagName !== 'TH') || (elem && !elem.textContent)) {
         elem = elem.previousElementSibling as HTMLElement | null

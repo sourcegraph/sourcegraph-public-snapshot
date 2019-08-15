@@ -83,15 +83,47 @@
     {
       "label": "tslint",
       "command": "yarn",
-      "args": ["--prefix", "web", "run", "tslint"],
+      "args": ["--prefix", "web", "tslint"],
       "problemMatcher": "$tslint5",
+    },
+
+    {
+      "label": "eslint web",
+      "command": "yarn",
+      "options": {
+        "cwd": "${workspaceFolder}/web",
+      },
+      "args": ["run", "eslint", "--quiet"],
+      "problemMatcher": "$eslint-stylish",
+      "presentation": {
+        "reveal": "never",
+      },
     },
     {
-      "label": "graphql",
+      "label": "eslint shared",
       "command": "yarn",
-      "args": ["--prefix", "web", "run", "graphql"],
-      "problemMatcher": "$tslint5",
+      "options": {
+        "cwd": "${workspaceFolder}/shared",
+      },
+      "args": ["run", "eslint", "--quiet"],
+      "problemMatcher": "$eslint-stylish",
+      "presentation": {
+        "reveal": "never",
+      },
     },
+    {
+      "label": "eslint browser",
+      "command": "yarn",
+      "options": {
+        "cwd": "${workspaceFolder}/browser",
+      },
+      "args": ["run", "eslint", "--quiet"],
+      "problemMatcher": "$eslint-stylish",
+      "presentation": {
+        "reveal": "never",
+      },
+    },
+
     {
       "label": "stylelint",
       "command": "npm",

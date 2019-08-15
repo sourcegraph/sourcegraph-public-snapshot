@@ -11,7 +11,7 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
         // the client endpoints.
         const frame: HTMLIFrameElement = document.createElement('iframe')
         frame.setAttribute('src', `${sourcegraphURL}/.assets/extension/extensionHostFrame.html`)
-        frame.setAttribute('style', `display: none;`)
+        frame.setAttribute('style', 'display: none;')
         document.body.append(frame)
         const clientAPIChannel = new MessageChannel()
         const extensionHostAPIChannel = new MessageChannel()
@@ -103,7 +103,7 @@ function endpointFromPort(port: browser.runtime.Port): MessagePort {
             if (event !== 'message') {
                 return
             }
-            const portListener = (data: unknown) => {
+            const portListener = (data: unknown): void => {
                 // This callback is called *very* often (e.g., ~900 times per keystroke in a
                 // monitored textarea). Avoid creating unneeded objects here because GC
                 // significantly hurts perf. See
@@ -114,7 +114,7 @@ function endpointFromPort(port: browser.runtime.Port): MessagePort {
                 // to reduce the amount of garbage created. There are no callers that depend on
                 // other MessageEvent properties; they would be set to their default values anyway,
                 // so losing the properties is not a big problem.
-                messageListener.call(this, { data } as any)
+                messageListener.call(this, { data } as MessageEvent)
             }
             messageListeners.set(messageListener, portListener)
             port.onMessage.addListener(portListener)

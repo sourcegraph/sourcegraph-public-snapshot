@@ -37,6 +37,12 @@ const SiteSchemaJSON = `{
       "group": "Search",
       "examples": [["go.sum", "package-lock.json", "*.thrift"]]
     },
+    "debug.search.symbolsParallelism": {
+      "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["20"]]
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -62,6 +68,16 @@ const SiteSchemaJSON = `{
       "description": "Only required when using the Phabricator integration or Bitbucket Server plugin. This value is the space-separated list of allowed origins for cross-origin HTTP requests to Sourcegraph. Usually it contains the base URL for your Phabricator or Bitbucket Server instance.\n\nPreviously, this value was also used for the GitHub, GitLab, etc., integrations using the browser extension. It is no longer necessary for those. You may remove this setting if you are not using the Phabricator integration or Bitbucket Server plugin. eg \"https://my-phabricator.example.com https://my-bitbucket.example.com\"",
       "type": "string",
       "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com"],
+      "group": "Security"
+    },
+    "lsifVerificationGithubToken": {
+      "description": "The GitHub token that is used to verify that a user owns a repository.",
+      "type": "string",
+      "group": "Security"
+    },
+    "lsifUploadSecret": {
+      "description": "Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.",
+      "type": "string",
       "group": "Security"
     },
     "disableAutoGitUpdates": {
@@ -182,6 +198,11 @@ const SiteSchemaJSON = `{
           "description": "Prevents the icon in the top-left corner of the screen from spinning on hover.",
           "type": "boolean",
           "default": false
+        },
+        "brandName": {
+          "description": "String to display everywhere the brand name should be displayed. Defaults to \"Sourcegraph\"",
+          "type": "string",
+          "default": "Sourcegraph"
         }
       },
       "examples": [

@@ -4,7 +4,7 @@ import * as sourcegraph from 'sourcegraph'
 import { getCompletionItems, ProvideCompletionItemSignature } from './completion'
 import { FIXTURE } from './registry.test'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_COMPLETION_LIST: sourcegraph.CompletionList = {
     items: [{ label: 'x' }],

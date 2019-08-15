@@ -189,7 +189,7 @@ Buildkite to run on the Sourcegraph build farm. Some things that are tested
 include:
 
 - all of the Go source files that have tests
-- dev/check/all.sh (gofmt, lint, go generator, no Security TODO's, Bash syntax, others)
+- dev/check/all.sh (gofmt, lint, go generator, no Security TODOs, Bash syntax, others)
 - JS formatting/linting (prettier, tslint, stylelint, graphql-lint)
 - Dockerfile linter (hadolint)
 - Check whether the Go module folders are "tidy" (go mod tidy)

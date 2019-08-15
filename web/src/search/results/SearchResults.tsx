@@ -24,8 +24,6 @@ import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 
-const UI_PAGE_SIZE = 75
-
 export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
@@ -46,12 +44,10 @@ interface SearchResultsState {
     resultsOrError?: GQL.ISearchResults
     allExpanded: boolean
 
-    // TODO: Remove when newSearchResultsList is removed
-    uiLimit: number
-
     // Saved Queries
     showSavedQueryModal: boolean
     didSaveQuery: boolean
+
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
 }
@@ -61,7 +57,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
-        uiLimit: UI_PAGE_SIZE,
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -134,7 +129,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             .subscribe(contributions => this.setState({ contributions }))
     }
 
-    public componentDidUpdate(prevProps: SearchResultsProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 

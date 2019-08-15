@@ -305,7 +305,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			Kind:        req.ExternalService.Kind,
 			DisplayName: req.ExternalService.DisplayName,
 			Config:      req.ExternalService.Config,
-		}, nil)
+		}, repos.NewHTTPClientFactory())
 		if err != nil {
 			errch <- err
 			return
@@ -480,10 +480,10 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	}
 
 	for _, c := range cloned {
-		if _, ok := clonedRepos[c]; ok {
-			clonedRepos[c] = true
+		lower := strings.ToLower(c)
+		if _, ok := clonedRepos[lower]; ok {
+			clonedRepos[lower] = true
 		}
-
 	}
 
 	var notCloned uint64

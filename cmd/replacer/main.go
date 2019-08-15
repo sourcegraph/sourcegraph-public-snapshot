@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/store"
 
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
@@ -51,7 +50,7 @@ func main() {
 
 	store := store.Store{
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
-			return git.Archive(ctx, repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
+			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
 		Path:              filepath.Join(cacheDir, "replacer-archives"),
 		MaxCacheSizeBytes: cacheSizeBytes,

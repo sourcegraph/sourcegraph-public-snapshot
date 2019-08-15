@@ -8,7 +8,7 @@ import { Notice, Settings } from '../schema/settings.schema'
 const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string }> = ({ notice, className = '' }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
     const baseClassName = notice.location === 'top' ? 'alert-info' : 'bg-transparent border'
-    return !!notice.dismissible ? (
+    return notice.dismissible ? (
         <DismissibleAlert className={`${baseClassName} ${className}`} partialStorageKey={`notice.${notice.message}`}>
             {content}
         </DismissibleAlert>

@@ -179,6 +179,7 @@ interface WithActivationState {
  * Modifies the input component to return a component that includes the activation status in the
  * `activation` field of its props.
  */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const withActivation = <P extends ActivationProps>(Component: React.ComponentType<P>) =>
     class WithActivation extends React.Component<
         WithActivationProps & Subtract<P, ActivationProps>,
@@ -202,10 +203,10 @@ export const withActivation = <P extends ActivationProps>(Component: React.Compo
                 map(props => props.authenticatedUser),
                 distinctUntilChanged()
             )
-            const serverCompletionStatus: Observable<ActivationCompletionStatus> = combineLatest(
+            const serverCompletionStatus: Observable<ActivationCompletionStatus> = combineLatest([
                 authenticatedUser,
-                this.refetches.pipe(startWith(undefined))
-            ).pipe(
+                this.refetches.pipe(startWith(undefined)),
+            ]).pipe(
                 switchMap(([authenticatedUser]) =>
                     authenticatedUser ? fetchActivationStatus(authenticatedUser.siteAdmin) : []
                 )
@@ -221,7 +222,7 @@ export const withActivation = <P extends ActivationProps>(Component: React.Compo
                 )
             )
             this.subscriptions.add(
-                combineLatest(serverCompletionStatus, localCompletionStatus)
+                combineLatest([serverCompletionStatus, localCompletionStatus])
                     .pipe(
                         map(([serverCompletionStatus, localCompletionStatus]) => ({
                             ...serverCompletionStatus,

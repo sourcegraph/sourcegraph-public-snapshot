@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -150,6 +150,19 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 	}()
 
 	return db.Repos.List(ctx, opt)
+}
+
+// ListDefault calls db.DefaultRepos.List, with tracing.
+func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error) {
+	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
+	defer func() {
+		if err == nil {
+			span := opentracing.SpanFromContext(ctx)
+			span.LogFields(otlog.Int("result.len", len(repos)))
+		}
+		done()
+	}()
+	return db.DefaultRepos.List(ctx)
 }
 
 var inventoryCache = rcache.New("inv")

@@ -37,7 +37,7 @@ Their purpose is to reexport symbols from a number of other files to make import
 - Only use descendent/child selectors where unavoidable. Prefer BEM-style class names that are nested in SCSS through the `&` operator
 - Create utility classes for styles that should be shared horizontally between components
 - Always use `rem` units (when converting designs, `1rem` = `16px`). This allows us to scale the whole UI by modifying the root font size.
-- Avoid hardcoding colors, use SCSS variables if they are available / the color makese sense to share.
+- Avoid hardcoding colors, use SCSS variables if they are available / the color makes sense to share.
 - Try to _minimize_ the usage of advanced SCSS features. They can lead to bugs and complicate styles.
   - Encouraged features are nesting and imports (which is the intersection of Less', SCSS' and PostCSS' feature set)
 - Think about mobile at least so much that no feature breaks when the browser window is resized

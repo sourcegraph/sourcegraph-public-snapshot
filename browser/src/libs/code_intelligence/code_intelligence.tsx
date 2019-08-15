@@ -33,6 +33,7 @@ import {
     switchMap,
     take,
     withLatestFrom,
+    tap,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -452,14 +453,14 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext) =>
+    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
         resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])
         )
 
-    const openOptionsMenu = () => browser.runtime.sendMessage({ type: 'openOptionsPage' })
+    const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -542,9 +543,17 @@ export function handleCodeHost({
         )
     }
 
+    let codeViewCount = 0
+
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
+        // Limit number of code views for perf reasons.
+        filter(() => codeViewCount < 50),
+        tap(codeViewEvent => {
+            codeViewCount++
+            codeViewEvent.subscriptions.add(() => codeViewCount--)
+        }),
         mergeMap(codeViewEvent =>
             codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
                 mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
@@ -592,7 +601,7 @@ export function handleCodeHost({
      * Will only cause `workspace.roots` to emit if the root
      * with the given `uri` has no more references.
      */
-    const deleteRootRef = (uri: string) => {
+    const deleteRootRef = (uri: string): void => {
         const currentRefCount = rootRefCounts.get(uri)
         if (!currentRefCount) {
             throw new Error(`No preexisting root refs for uri ${uri}`)
@@ -759,6 +768,7 @@ export function handleCodeHost({
             const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
+                // tslint:disable-next-line: rxjs-no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                     hoverSubscription.unsubscribe()
                     if (!useNativeTooltips) {
@@ -826,7 +836,7 @@ export function handleCodeHost({
     return subscriptions
 }
 
-const SHOW_DEBUG = () => localStorage.getItem('debug') !== null
+const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
 const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())

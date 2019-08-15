@@ -124,19 +124,19 @@ type ChangeType = 'MOVE' | 'RENAME' | 'MODIFY' | 'DELETE' | 'COPY' | 'ADD'
 /**
  * Returns true if the active page is a compare view.
  */
-export const isCompareView = () => !!document.querySelector('#branch-compare')
+export const isCompareView = (): boolean => !!document.querySelector('#branch-compare')
 
 /**
  * Returns true if the active page is a commit view.
  */
 export const isCommitsView = ({ pathname }: Pick<Location, 'pathname'>): boolean =>
-    /\/projects\/[^\/]+\/repos\/[^\/]+\/commits\/\w+$/.test(pathname)
+    /\/projects\/[^/]+\/repos\/[^/]+\/commits\/\w+$/.test(pathname)
 
 /**
  * Returns true if the active page is a pull request view.
  */
 export const isPullRequestView = ({ pathname }: Pick<Location, 'pathname'>): boolean =>
-    /\/projects\/[^\/]+\/repos\/[^\/]+\/pull-requests\/\d+/.test(pathname)
+    /\/projects\/[^/]+\/repos\/[^/]+\/pull-requests\/\d+/.test(pathname)
 
 /**
  * Returns true if the given code view is a single file source or "diff to previous" view.
@@ -270,7 +270,7 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     // Get project and repo from the URL
     const pathMatch = location.pathname.match(/\/projects\/(.*?)\/repos\/(.*?)\//)
     if (!pathMatch) {
-        throw new Error(`Location did not match regexp`)
+        throw new Error('Location did not match regexp')
     }
     const [, project, repoSlug] = pathMatch
     const rawRepoName = bitbucketToSourcegraphRepoName({ project, repoSlug })

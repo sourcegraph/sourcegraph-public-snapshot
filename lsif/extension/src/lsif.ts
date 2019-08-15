@@ -1,7 +1,3 @@
-// lsp-client currently doesn't export the conversion functions from the
-// top-level.
-//
-// tslint:disable-next-line: no-submodule-imports
 import { convertHover, convertLocations } from '@sourcegraph/lsp-client/dist/lsp-conversion'
 import * as sourcegraph from 'sourcegraph'
 import * as LSP from 'vscode-languageserver-types'
@@ -64,7 +60,7 @@ const lsifDocs = new Map<string, Promise<boolean>>()
 
 async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
     if (lsifDocs.has(doc.uri)) {
-        return lsifDocs.get(doc.uri)!
+        return await lsifDocs.get(doc.uri)!
     }
 
     const url = new URL('.api/lsif/exists', sourcegraph.internal.sourcegraphURL)
@@ -85,7 +81,7 @@ async function hasLSIF(doc: sourcegraph.TextDocument): Promise<boolean> {
 
     lsifDocs.set(doc.uri, hasLSIFPromise)
 
-    return hasLSIFPromise
+    return await hasLSIFPromise
 }
 
 export function activate(ctx: sourcegraph.ExtensionContext): void {

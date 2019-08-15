@@ -39,5 +39,5 @@ export function getExtensionVersion(): string {
 }
 
 function isFirefoxExtension(): boolean {
-    return window.navigator.userAgent.indexOf('Firefox') !== -1
+    return window.navigator.userAgent.includes('Firefox')
 }

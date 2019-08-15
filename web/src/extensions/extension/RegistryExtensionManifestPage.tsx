@@ -101,8 +101,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             history={this.props.history}
                         />
                     ) : (
-                        // tslint:disable-next-line:jsx-ban-props
-                        <pre className="form-control" style={{ minHeight: '30rem' }}>
+                        <pre className="form-control registry-extension-manifest-page__plain-viewer">
                             <code>{this.props.extension.rawManifest}</code>
                         </pre>
                     )}

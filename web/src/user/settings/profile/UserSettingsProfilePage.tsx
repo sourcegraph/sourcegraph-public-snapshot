@@ -94,7 +94,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
 
         // Fetch the user with all of the fields we need (Props.user might not have them all).
         this.subscriptions.add(
-            combineLatest(userChanges, this.refreshRequests.pipe(startWith<void>(void 0)))
+            combineLatest([userChanges, this.refreshRequests.pipe(startWith<void>(undefined))])
                 .pipe(
                     switchMap(([user]) =>
                         queryUser(user.id).pipe(
@@ -144,8 +144,8 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -200,9 +200,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                 }
                                 aria-describedby="user-settings-profile-page__form-username-help"
                             />
-                            <small id="user-settings-profile-page__form-username-help" className="form-text text-muted">
-                                A username consists of letters, numbers, hyphens (-) and may not begin or end with a
-                                hyphen
+                            <small className="form-text text-muted">
+                                A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
+                                with a hyphen nor a dot.
                             </small>
                         </div>
                         <div className="form-group">

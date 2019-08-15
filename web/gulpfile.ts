@@ -13,7 +13,9 @@ const WEBPACK_STATS_OPTIONS: Stats.ToStringOptions & { colors?: boolean } = {
     warnings: true,
     colors: true,
 }
-const logWebpackStats = (stats: Stats) => log(stats.toString(WEBPACK_STATS_OPTIONS))
+const logWebpackStats = (stats: Stats): void => {
+    log(stats.toString(WEBPACK_STATS_OPTIONS))
+}
 
 export async function webpack(): Promise<void> {
     const compiler = createWebpackCompiler(webpackConfig)
@@ -50,14 +52,8 @@ export async function webpackDevServer(): Promise<void> {
     }
     addDevServerEntrypoints(webpackConfig, options)
     const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
-    return new Promise<void>((resolve, reject) => {
-        server.listen(3080, '0.0.0.0', (err?: Error) => {
-            if (err) {
-                reject(err)
-            } else {
-                resolve()
-            }
-        })
+    await new Promise<void>((resolve, reject) => {
+        server.listen(3080, '0.0.0.0', (err?: Error) => (err ? reject(err) : resolve()))
     })
 }
 

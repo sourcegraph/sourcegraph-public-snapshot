@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -68,7 +68,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	// }
 
 	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*",
-		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,Tcl,typescript,Verilog,Vim",
+		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,Tcl,typescript,tsx,Verilog,Vim",
 		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass",
 	)
 	in, err := cmd.StdinPipe()
@@ -97,6 +97,11 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	if err := proc.read(&init); err != nil {
 		proc.Close()
 		return nil, err
+	}
+
+	if init.Typ == "error" {
+		proc.Close()
+		return nil, errors.Errorf("starting %s failed with: %s", ctagsCommand, init.Message)
 	}
 
 	return &proc, nil

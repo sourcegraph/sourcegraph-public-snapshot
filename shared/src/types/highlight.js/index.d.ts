@@ -1,4 +1,4 @@
 declare module 'highlight.js/lib/highlight' {
-    import highlightjs = require('highlight.js')
+    import highlightjs from 'highlight.js'
     export = highlightjs
 }

@@ -2,6 +2,7 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
@@ -24,7 +27,7 @@ import (
 var (
 	reposDir          = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
-	wantFreeG         = env.Get("SRC_REPOS_DESIRED_FREE_GB", "10", "How many gigabytes of space to keep free on the disk with the repos")
+	wantPctFree       = env.Get("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
 	janitorInterval   = env.Get("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
 )
 
@@ -40,14 +43,14 @@ func main() {
 		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
-	wantFreeG2, err := strconv.Atoi(wantFreeG)
+	wantPctFree2, err := parsePercent(wantPctFree)
 	if err != nil {
-		log.Fatalf("parsing $SRC_REPOS_DESIRED_FREE_GB: %v", err)
+		log.Fatalf("parsing $SRC_REPOS_DESIRED_PERCENT_FREE: %v", err)
 	}
 	gitserver := server.Server{
 		ReposDir:                reposDir,
 		DeleteStaleRepositories: runRepoCleanup,
-		DesiredFreeDiskSpace:    uint64(wantFreeG2 * 1024 * 1024 * 1024),
+		DesiredPercentFree:      wantPctFree2,
 	}
 	gitserver.RegisterMetrics()
 
@@ -107,4 +110,18 @@ func main() {
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
+}
+
+func parsePercent(s string) (int, error) {
+	p, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, errors.Wrap(err, "converting string to int")
+	}
+	if p < 0 {
+		return 0, fmt.Errorf("negative value given for percentage: %d", p)
+	}
+	if p > 100 {
+		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
+	}
+	return p, nil
 }

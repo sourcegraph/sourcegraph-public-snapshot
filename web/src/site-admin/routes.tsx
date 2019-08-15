@@ -9,7 +9,7 @@ const SiteAdminAddExternalServicesPage = lazyComponent(
     'SiteAdminAddExternalServicesPage'
 )
 
-export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
+export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         // Render empty page if no page selected
         path: '',

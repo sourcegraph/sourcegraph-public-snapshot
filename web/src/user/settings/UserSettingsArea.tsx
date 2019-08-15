@@ -14,14 +14,14 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 
 export interface UserSettingsAreaProps extends UserAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser
     sideBarItems: UserSettingsSidebarItems
-    routes: ReadonlyArray<UserSettingsAreaRoute>
+    routes: readonly UserSettingsAreaRoute[]
 }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
@@ -107,13 +107,13 @@ export const UserSettingsArea = withAuthenticatedUser(
                                         ({ path, exact, render, condition = () => true }) =>
                                             condition(context) && (
                                                 <Route
-                                                    path={this.props.match.url + path}
-                                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                    exact={exact}
-                                                    // tslint:disable-next-line:jsx-no-lambda
+                                                    // eslint-disable-next-line react/jsx-no-bind
                                                     render={routeComponentProps =>
                                                         render({ ...context, ...routeComponentProps })
                                                     }
+                                                    path={this.props.match.url + path}
+                                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                    exact={exact}
                                                 />
                                             )
                                     )}

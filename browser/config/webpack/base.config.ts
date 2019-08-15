@@ -3,7 +3,7 @@ import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 import * as webpack from 'webpack'
 
-const buildEntry = (...files: string[]) => files.map(file => path.join(__dirname, file))
+const buildEntry = (...files: string[]): string[] => files.map(file => path.join(__dirname, file))
 
 const contentEntry = '../../src/config/content.entry.js'
 const backgroundEntry = '../../src/config/background.entry.js'
@@ -27,6 +27,7 @@ const config: webpack.Configuration = {
         filename: '[name].bundle.js',
         chunkFilename: '[id].chunk.js',
     },
+    devtool: 'inline-cheap-module-source-map',
 
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),

@@ -1,0 +1,18 @@
+---
+- labels:
+    job: node
+  targets:
+    # frontend
+    - host.docker.internal:6063
+    # gitserver
+    - host.docker.internal:6068
+    # searcher
+    - host.docker.internal:6069
+    # symbols
+    - host.docker.internal:6071
+    # repo-updater
+    - host.docker.internal:6074
+    # query-runner
+    - host.docker.internal:6067
+    # zoekt-indexserver
+    # - host.docker.internal:6072

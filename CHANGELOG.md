@@ -9,7 +9,7 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.7.0 (unreleased)
+## 3.8.0 (unreleased)
 
 ### Added
 
@@ -19,6 +19,43 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.7.0
+
+### Added
+
+- Multi-line search now works for non-indexed search.
+- When using `SITE_CONFIG_FILE` and `EXTSVC_CONFIG_FILE`, you [may now also specify e.g. `SITE_CONFIG_ALLOW_EDITS=true`](https://docs.sourcegraph.com/admin/config/advanced_config_file) to allow edits to be made to the config in the application which will be overwritten on the next process restart. [#4912](https://github.com/sourcegraph/sourcegraph/issues/4912)
+- Indexed search now supports symbol queries.
+
+### Changed
+
+- In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) it's now possible to specify `orgs` without specifying `repositoryQuery` or `repos` too.
+- Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
+- Sourcegraph uses Git protocol version 2 for increased efficiency and performance when fetching data from compatible code hosts.
+- Searches with `repohasfile:` are faster at finding repository matches. [#4833](https://github.com/sourcegraph/sourcegraph/issues/4833).
+- Zoekt now runs with GOGC=50 by default, helping to reduce the memory consumption of Sourcegraph. [#3792](https://github.com/sourcegraph/sourcegraph/issues/3792)
+- Upgraded the version of Go in use, which improves security for publicly accessible Sourcegraph instances.
+
+### Fixed
+
+- Disk cleanup in gitserver is now done in terms of percentages to fix [#5059](https://github.com/sourcegraph/sourcegraph/issues/5059).
+- Search results now correctly show highlighting of matches with runes like 'İ' that lowercase to runes with a different number of bytes in UTF-8 [#4791](https://github.com/sourcegraph/sourcegraph/issues/5059).
+
+### Removed
+
+## 3.6.2
+
+### Fixed
+
+- Fixed Phabricator external services so they won't stop the syncing process for repositories when Phabricator doesn't return clone URLs. [#5101](https://github.com/sourcegraph/sourcegraph/pull/5101)
+
+## 3.6.1
+
+## Added
+
+- New site config option `branding.brandName` configures the brand name to display in the Sourcegraph \<title\> element.
+- `repositoryPathPattern` option added to the "Other" external service type for repository name customization.
+
 ## 3.6.0
 
 ### Added
@@ -26,16 +63,16 @@ All notable changes to Sourcegraph are documented in this file.
 - The `github.exclude` setting in [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) additionally allows you to specify regular expressions with `{"pattern": "regex"}`.
 - A new [`quicklinks` setting](https://docs.sourcegraph.com/user/quick_links) allows adding links to be displayed on the homepage and search page for all users (or users in an organization).
 - Compatibility with the [Sourcegraph for Bitbucket Server](https://github.com/sourcegraph/bitbucket-server-plugin) plugin.
-- Support for [Bitbucket Cloud](https://bitbucket.org) as a codehost. Configure via the `bitbucketCloud` site config field.
+- Support for [Bitbucket Cloud](https://bitbucket.org) as an external service.
 
 ### Changed
 
 - Updating or creating an external service will no longer block until the service is synced.
 - The GraphQL fields `Repository.createdAt` and `Repository.updatedAt` are deprecated and will be removed in 3.8. Now `createdAt` is always the current time and updatedAt is always null.
 - In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) and [Bitbucket Server external service config](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#permissions) `repositoryQuery` is now only required if `repos` is not set.
-- Usernames can now contain the `.` character (#4690).
 - Log messages from query-runner when saved searches fail now include the raw query as part of the message.
 - The status indicator in the navigation bar is now enabled by default
+- Usernames and org names can now contain the `.` character. [#4674](https://github.com/sourcegraph/sourcegraph/issues/4674)
 
 ### Fixed
 
@@ -43,7 +80,17 @@ All notable changes to Sourcegraph are documented in this file.
 - Symbol searches now show the number of symbol matches rather than the number of file matches found. [#4578](https://github.com/sourcegraph/sourcegraph/issues/4578)
 - Symbol searches with truncated results now show a `+` on the results page to signal that some results have been omitted. [#4579](https://github.com/sourcegraph/sourcegraph/issues/4579)
 
+## 3.5.4
+
+### Fixed
+
+- Fixed Phabricator external services so they won't stop the syncing process for repositories when Phabricator doesn't return clone URLs. [#5101](https://github.com/sourcegraph/sourcegraph/pull/5101)
+
 ## 3.5.2
+
+### Changed
+
+- Usernames and org names can now contain the `.` character. [#4674](https://github.com/sourcegraph/sourcegraph/issues/4674)
 
 ### Added
 
@@ -88,8 +135,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed repository search patterns which contain `.*`. Previously our optimizer would ignore `.*`, which in some cases would lead to our repository search excluding some repositories from the results.
 - Fixed an issue where the Phabricator native integration would be broken on recent Phabricator versions. This fix depends on v1.2 of the [Phabricator extension](https://github.com/sourcegraph/phabricator-extension).
 - Fixed an issue where the "Empty repository" banner would be shown on a repository page when starting to clone a repository.
-- Prevent data inconsistency on cached archives due to restarts. (#4366)
-- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. (#4446)
+- Prevent data inconsistency on cached archives due to restarts. [#4366](https://github.com/sourcegraph/sourcegraph/pull/4366)
+- On the /extensions page, the UI is now less ambiguous when an extension has not been activated. [#4446](https://github.com/sourcegraph/sourcegraph/issues/4446)
 
 ## 3.4.5
 
@@ -103,7 +150,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed an out of bounds error in the GraphQL repository query. (#4426)
+- Fixed an out of bounds error in the GraphQL repository query. [#4426](https://github.com/sourcegraph/sourcegraph/issues/4426)
 
 ## 3.4.3
 

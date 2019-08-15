@@ -31,7 +31,7 @@ const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea
 const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
 
-export const repoContainerRoutes: ReadonlyArray<RepoContainerRoute> = [
+export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
@@ -85,7 +85,7 @@ export const repoContainerRoutes: ReadonlyArray<RepoContainerRoute> = [
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
 
-export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
+export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
     ...['', '/-/:objectType(blob|tree)/:filePath+'].map(routePath => ({
         path: routePath,
         exact: routePath === '',

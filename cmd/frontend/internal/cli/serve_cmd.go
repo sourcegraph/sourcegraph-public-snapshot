@@ -151,6 +151,8 @@ func Main() error {
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
 	goroutine.Go(func() { bg.LogSearchQueries(context.Background()) })
+	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
+	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.AfterDBInit != nil {

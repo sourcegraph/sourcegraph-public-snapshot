@@ -111,7 +111,12 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                         ) : (
                             <p>The user must authenticate using a configured authentication provider.</p>
                         )}
-                        <button className="btn btn-primary mt-2" onClick={this.dismissAlert} autoFocus={true}>
+                        <button
+                            type="button"
+                            className="btn btn-primary mt-2"
+                            onClick={this.dismissAlert}
+                            autoFocus={true}
+                        >
                             Create another user
                         </button>
                     </div>
@@ -127,6 +132,10 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                                 disabled={this.state.loading}
                                 autoFocus={true}
                             />
+                            <small className="form-text text-muted">
+                                A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
+                                with a hyphen nor a dot.
+                            </small>
                         </div>
                         <div className="form-group site-admin-create-user-page__form-group">
                             <label htmlFor="site-admin-create-user-page__form-email">Email</label>

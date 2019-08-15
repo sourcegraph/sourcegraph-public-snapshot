@@ -23,7 +23,10 @@ import (
 )
 
 func TestReplace(t *testing.T) {
-	t.Skip("external tooling is not integrated yet.")
+	// If we are not on CI skip the test if comby is not installed.
+	if _, err := exec.LookPath("comby"); os.Getenv("CI") == "" && err != nil {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
 
 	files := map[string]string{
 
@@ -45,10 +48,12 @@ func main() {
 		want string
 	}{
 		{protocol.RewriteSpecification{
-			MatchTemplate:   "foo",
-			RewriteTemplate: "bar",
+			MatchTemplate:   "func",
+			RewriteTemplate: "derp",
 			FileExtension:   ".go",
-		}, "bar"},
+		}, `
+{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
+`},
 	}
 
 	store, cleanup, err := newStore(files)

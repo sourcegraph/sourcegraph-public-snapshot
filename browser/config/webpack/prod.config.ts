@@ -8,7 +8,6 @@ const { plugins, ...base } = baseConfig
 const config: webpack.Configuration = {
     ...base,
     mode: 'production',
-    devtool: 'inline-source-map',
     optimization: {
         minimize: true,
         minimizer: [
@@ -35,9 +34,7 @@ const config: webpack.Configuration = {
                 },
             }),
             new webpack.ProvidePlugin({
-                // tslint:disable-next-line object-literal-key-quotes
                 $: 'jquery',
-                // tslint:disable-next-line object-literal-key-quotes
                 jQuery: 'jquery',
                 '$.fn.pjax': 'jquery-pjax',
             }),

@@ -10,28 +10,24 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type InjectedHTML struct {
@@ -107,7 +103,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 		Metadata: &Metadata{
-			Title:       "Sourcegraph",
+			Title:       conf.BrandName(),
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
@@ -119,7 +115,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && git.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && gitserver.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
@@ -141,7 +137,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if git.IsRevisionNotFound(errors.Cause(err)) {
+			if gitserver.IsRevisionNotFound(errors.Cause(err)) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
@@ -196,6 +192,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 type handlerFunc func(w http.ResponseWriter, r *http.Request) error
 
+func serveBrandedPageString(titles ...string) handlerFunc {
+	return serveBasicPage(func(c *Common, r *http.Request) string {
+		return brandNameSubtitle(titles...)
+	})
+}
+
 func serveBasicPageString(title string) handlerFunc {
 	return serveBasicPage(func(c *Common, r *http.Request) string {
 		return title
@@ -217,7 +219,7 @@ func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "Sourcegraph", serveError)
+	common, err := newCommon(w, r, conf.BrandName(), serveError)
 	if err != nil {
 		return err
 	}
@@ -245,7 +247,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 	if common == nil {
 		return nil // request was handled
 	}
-	common.Title = "Sign in - Sourcegraph"
+	common.Title = brandNameSubtitle("Sign in")
 
 	// If we are being redirected to another page after sign in, it means the
 	// user attempted to access something without authorization. Reflect this

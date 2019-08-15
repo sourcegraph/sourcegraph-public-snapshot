@@ -2,10 +2,9 @@ package httpapi
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -190,27 +190,35 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var opt db.ReposListOptions
-	err := json.NewDecoder(r.Body).Decode(&opt)
-	if err != nil {
-		return err
+	var err error
+	var res []*types.Repo
+	if envvar.SourcegraphDotComMode() {
+		res, err = backend.Repos.ListDefault(r.Context())
+	} else {
+		var opt db.ReposListOptions
+		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+			return err
+		}
+		res, err = backend.Repos.List(r.Context(), opt)
 	}
-	res, err := backend.Repos.List(r.Context(), opt)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "listing repos")
 	}
 
-	// BACKCOMPAT: Add a "URI" field because zoekt-sourcegraph-indexserver expects one to exist
-	// (with the repository name). This is a legacy of the rename from "repo URI" to "repo name".
+	// BACKCOMPAT: Add a Name field that serializes to `URI` because
+	// zoekt-sourcegraph-indexserver expects one to exist (with the
+	// repository name). This is a legacy of the rename from "repo URI" to
+	// "repo name".
 	type repoWithBackcompatURIField struct {
-		URI string
-		*types.Repo
+		Name string `json:"URI"`
+		// The Repo field has been removed because the only caller of
+		// this handler (zoekt-sourcegraph-indexserver) wasn't using
+		// it.
 	}
-	res2 := make([]*repoWithBackcompatURIField, len(res))
+	res2 := make([]repoWithBackcompatURIField, len(res))
 	for i, repo := range res {
-		res2[i] = &repoWithBackcompatURIField{
-			URI:  string(repo.Name),
-			Repo: repo,
+		res2[i] = repoWithBackcompatURIField{
+			Name: string(repo.Name),
 		}
 	}
 
@@ -447,16 +455,17 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	src, err := git.Archive(r.Context(), repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
-	if err != nil {
-		return err
+	opts := gitserver.ArchiveOptions{
+		Treeish: string(commit),
+		Format:  "tar",
 	}
-	defer src.Close()
 
-	w.Header().Set("Content-Type", "application/x-tar")
-	w.WriteHeader(http.StatusOK)
-	_, err = io.Copy(w, src)
-	return err
+	location := gitserver.DefaultClient.ArchiveURL(r.Context(), repo, opts)
+
+	w.Header().Set("Location", location.String())
+	w.WriteHeader(http.StatusFound)
+
+	return nil
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

@@ -60,6 +60,7 @@ function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
 /**
  * Replaces the revision in the given URL, or adds one if there is not already
  * one.
+ *
  * @param href The URL whose revision should be replaced.
  */
 export function replaceRevisionInURL(href: string, newRev: string): string {

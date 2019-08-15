@@ -5,7 +5,7 @@ RUN apk --no-cache add --virtual build-deps curl jansson-dev \
     libseccomp-dev linux-headers autoconf pkgconfig make automake \
     gcc g++ binutils
 
-ENV CTAGS_VERSION=5b4865cc2d4831db9d638a647ff2f5a0dced2133
+ENV CTAGS_VERSION=1a94658c2cb47304d0e9811d49e0a5f48bdb3a0a
 
 # hadolint ignore=DL3003
 RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" && \
@@ -42,16 +42,30 @@ RUN apk update && apk add --no-cache \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
-    'bash=4.4.19-r1' 'postgresql-contrib=11.4-r0' 'postgresql=11.4-r0' \
+    'bash=4.4.19-r1' 'postgresql-contrib=11.5-r0' 'postgresql=11.5-r0' \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
-    mailcap nginx openssh-client su-exec tini nodejs=10.14.2-r0
+    mailcap nginx openssh-client pcre su-exec tini nodejs=10.14.2-r0
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
+COPY --from=comby/comby:0.7.0 /usr/local/bin/comby /usr/local/bin/comby
+# hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:5e1efbb@sha256:6ec136246b302a6c8fc113f087a66d5f9a89a9f5b851e9abb917c8b5e1d8c4b1 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
+
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:v1.4.1@sha256:1a02878ac9a0f532a68673bda93d406b21786706446c42a40cb3ed3e867278c0 /bin/prometheus /usr/local/bin
+
+# hadolint ignore=DL3018
+RUN set -ex && \
+ addgroup -S grafana && \
+ adduser -S -G grafana grafana && \
+ apk add --no-cache libc6-compat=1.1.23-r3 ca-certificates su-exec
+
+# hadolint ignore=DL3022
+COPY --from=grafana/grafana:6.1.1@sha256:e7a513bf7f33ef9681b2d35a799136e1ce9330f9055f75dfa2101d812946184b /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so

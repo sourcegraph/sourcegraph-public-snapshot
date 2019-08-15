@@ -1,0 +1,6 @@
+# Rules for monitoring Sourcegraph service themselves (not their metrics).
+
+# Measure uptime of services's docker containers
+instance:up:sum   = sum by (instance)(up)
+instance:up:count = count by (instance)(up)
+instance:up:ratio = instance:up:sum / on (instance) instance:up:count

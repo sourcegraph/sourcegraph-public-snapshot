@@ -9,7 +9,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
-import { ServerBanner } from '../../marketing/ServerBanner'
+import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 
 interface SearchResultsInfoBarProps {
@@ -31,6 +31,9 @@ interface SearchResultsInfoBarProps {
     didSave: boolean
 
     displayPerformanceWarning: boolean
+
+    // Whether the search query contains a repo: field.
+    hasRepoishField: boolean
 }
 
 /**
@@ -58,7 +61,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             </span>
                             {/* Instantly accessible "show more button" */}
                             {props.results.limitHit && (
-                                <button className="btn btn-link btn-sm p-0" onClick={props.onShowMoreResultsClick}>
+                                <button
+                                    type="button"
+                                    className="btn btn-link btn-sm p-0"
+                                    onClick={props.onShowMoreResultsClick}
+                                >
                                     (show more)
                                 </button>
                             )}
@@ -107,6 +114,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     {/* Expand all feature */}
                     {props.results.results.length > 0 && (
                         <button
+                            type="button"
                             onClick={props.onExpandAllResultsToggle}
                             className="btn btn-link"
                             data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
@@ -124,7 +132,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     )}
                     {/* Saved Queries */}
                     {props.authenticatedUser && (
-                        <button onClick={props.onSaveQueryClick} className="btn btn-link" disabled={props.didSave}>
+                        <button
+                            type="button"
+                            onClick={props.onSaveQueryClick}
+                            className="btn btn-link"
+                            disabled={props.didSave}
+                        >
                             {props.didSave ? (
                                 <>
                                     <CheckIcon className="icon-inline" /> Query saved
@@ -139,7 +152,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 </div>
             </small>
         )}
-        {!props.results.alert && props.showDotComMarketing && <ServerBanner />}
+        {!props.results.alert &&
+            props.showDotComMarketing &&
+            (props.hasRepoishField ? <ServerBanner /> : <ServerBannerNoRepo />)}
         {!props.results.alert && props.displayPerformanceWarning && <PerformanceWarningAlert />}
     </div>
 )

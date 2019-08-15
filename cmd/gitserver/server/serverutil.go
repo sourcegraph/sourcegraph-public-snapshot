@@ -16,25 +16,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
+// cause it to be interpreted as a git command line argument.
+func checkSpecArgSafety(spec string) error {
+	if strings.HasPrefix(spec, "-") {
+		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
+	}
+	return nil
+}
+
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
-func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
-
-	// Suppress asking to add SSH host key to known_hosts (which will hang because
-	// the command is non-interactive).
-	//
-	// And set a timeout to avoid indefinite hangs if the server is unreachable.
-	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
-
-	extraArgs := []string{
-		// Unset credential helper because the command is non-interactive.
-		"-c", "credential.helper=",
-	}
-	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
+	configureGitCommand(cmd)
 
 	var b interface {
 		Bytes() []byte
@@ -62,6 +60,33 @@ func (s *Server) runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress 
 
 	_, err := runCommand(ctx, cmd)
 	return b.Bytes(), err
+}
+
+func configureGitCommand(cmd *exec.Cmd) {
+	if cmd.Args[0] != "git" {
+		panic("Only git commands are supported")
+	}
+
+	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
+
+	// Suppress asking to add SSH host key to known_hosts (which will hang because
+	// the command is non-interactive).
+	//
+	// And set a timeout to avoid indefinite hangs if the server is unreachable.
+	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
+
+	extraArgs := []string{
+		// Unset credential helper because the command is non-interactive.
+		"-c", "credential.helper=",
+	}
+
+	if len(cmd.Args) > 1 && cmd.Args[1] != "ls-remote" {
+		// Use Git protocol version 2 for all commands except for ls-remote because it actually decreases the performance of ls-remote.
+		// https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html
+		extraArgs = append(extraArgs, "-c", "protocol.version=2")
+	}
+
+	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
 }
 
 // repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.

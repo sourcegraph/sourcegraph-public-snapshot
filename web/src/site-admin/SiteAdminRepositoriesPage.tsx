@@ -25,14 +25,11 @@ interface RepositoryNodeProps extends ActivationProps {
 }
 
 interface RepositoryNodeState {
-    loading: boolean
     errorDescription?: string
 }
 
 class RepositoryNode extends React.PureComponent<RepositoryNodeProps, RepositoryNodeState> {
-    public state: RepositoryNodeState = {
-        loading: false,
-    }
+    public state: RepositoryNodeState = {}
 
     public render(): JSX.Element | null {
         return (

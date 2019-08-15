@@ -2,6 +2,10 @@
 This template is used for our monthly major/minor releases of Sourcegraph.
 It is not used for patch releases. See [patch_release_issue_template.md](patch_release_issue_template.md)
 for the patch release checklist.
+
+Run a find replace on:
+- MAJOR.MINOR
+- YYYY-MM
 -->
 
 # MAJOR.MINOR Release (YYYY-MM-20)
@@ -34,7 +38,7 @@ for the patch release checklist.
 - [ ] Run Sourcegraph Docker image with no previous data.
     - [ ] Run the new version of Sourcegraph.
         ```
-        CLEAN=true IMAGE=sourcegraph/server:vMAJOR.minor.0-rc.1 ./dev/run-server-image.sh
+        CLEAN=true IMAGE=sourcegraph/server:MAJOR.MINOR.0-rc.1 ./dev/run-server-image.sh
         ```
     - [ ] Initialize the site by creating an admin account.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
@@ -51,7 +55,7 @@ for the patch release checklist.
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Stop the previous version of Sourcegraph and run the new version of Sourcegraph with the same data.
         ```
-        CLEAN=true IMAGE=sourcegraph/server:vMAJOR.minor.0-rc.1 ./dev/run-server-image.sh
+        CLEAN=false IMAGE=sourcegraph/server:MAJOR.MINOR.0-rc.1 ./dev/run-server-image.sh
         ```
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
@@ -92,7 +96,7 @@ for the patch release checklist.
     VERSION='vMAJOR.MINOR.0' bash -c 'git tag -a "$VERSION" -m "$VERSION" && git push origin "$VERSION"'
     ```
 - [ ] Send a message to #dev-announce to announce the final release.
-- [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the approriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
+- [ ] Verify that all changes that have been cherry picked onto the release branch have been moved to the appropriate section of the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md) on `master`.
 - [ ] Wait for the final Docker images to be available at https://hub.docker.com/r/sourcegraph/server/tags.
 - [ ] In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
     - [ ] Wait for Renovate to open a PR to update the image tags and merge that PR ([example](https://github.com/sourcegraph/deploy-sourcegraph/pull/199)).
@@ -104,7 +108,9 @@ for the patch release checklist.
 - [ ] Open (but do not merge) PRs that do the following:
     - [ ] Update the documented version of Sourcegraph ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/701780fefa5809abb16669c9fb29738ec3bb2039)).
     ```
-    find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEWVERSION/g' {} +
+    find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:MAJOR.MINOR.0/g' {} +
+    # Or use ruplacer
+    ruplacer --go -t md 'sourcegraph/server:[0-9\.]+' 'sourcegraph/server:MAJOR.MINOR.0'
     ```
     - [ ] Update `latestReleaseKubernetesBuild` and `latestReleaseDockerServerImageBuild` ([example](https://github.com/sourcegraph/sourcegraph/pull/2370/commits/15925f2769564225e37013acb52d9d0b30e1336c)).
     - [ ] [Update deploy-aws version](https://github.com/sourcegraph/deploy-sourcegraph-aws/edit/master/ec2/resources/user-data.sh#L3)

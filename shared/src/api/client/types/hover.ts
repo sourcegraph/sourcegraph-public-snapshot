@@ -24,7 +24,7 @@ export function fromHoverMerged(values: (Hover | PlainHover | null | undefined)[
                     kind: result.contents.kind || MarkupKind.PlainText,
                 })
             }
-            const __backcompatContents = result.__backcompatContents // tslint:disable-line deprecation
+            const __backcompatContents = result.__backcompatContents
             if (__backcompatContents) {
                 for (const content of Array.isArray(__backcompatContents)
                     ? __backcompatContents

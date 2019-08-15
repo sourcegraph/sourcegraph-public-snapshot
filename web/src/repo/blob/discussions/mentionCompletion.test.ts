@@ -1,10 +1,10 @@
-import { of } from 'rxjs'
+import { of, Observable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { provideMentionCompletions } from './mentionCompletion'
 
 describe('provideMentionCompletions', () => {
-    const mockQueryUsernamesFunction = (query: string) =>
+    const mockQueryUsernamesFunction = (query: string): Observable<string[]> =>
         of<string[]>(['alice', query.replace('@', '') || undefined].filter(isDefined))
     test('gets completion items at cursor with @', async () =>
         expect(

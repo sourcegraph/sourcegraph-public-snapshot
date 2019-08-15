@@ -1,3 +1,4 @@
+import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
 import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +12,7 @@ interface Props extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: GQL.IUser
     showDotComMarketing: boolean
     showDiscussions: boolean
+    switchThemeKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
 }
 
 interface State {
@@ -22,13 +24,16 @@ interface State {
  * authenticated viewers.
  */
 export class UserNavItem extends React.PureComponent<Props, State> {
-    private supportsSystemTheme =
-        !!window.matchMedia && window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
+    private supportsSystemTheme = Boolean(
+        window.matchMedia && window.matchMedia('not all and (prefers-color-scheme), (prefers-color-scheme)').matches
+    )
+
     public state: State = { isOpen: false }
 
     public componentDidUpdate(prevProps: Props): void {
         // Close dropdown after clicking on a dropdown item.
         if (this.state.isOpen && this.props.location !== prevProps.location) {
+            /* eslint react/no-did-update-set-state: warn */
             this.setState({ isOpen: false })
         }
     }
@@ -70,7 +75,8 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <div className="px-2 py-1">
                         <div className="d-flex align-items-center">
                             <div className="mr-2">Theme</div>
-                            {/* tslint:disable-next-line: jsx-ban-elements <Select> doesn't support small version */}
+                            {/* <Select> doesn't support small version */}
+                            {/* eslint-disable-next-line react/forbid-elements */}
                             <select
                                 className="custom-select custom-select-sm e2e-theme-toggle"
                                 onChange={this.onThemeChange}
@@ -88,13 +94,17 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                         href="https://caniuse.com/#feat=prefers-color-scheme"
                                         className="text-warning"
                                         target="_blank"
-                                        rel="noopener"
+                                        rel="noopener noreferrer"
                                     >
                                         Your browser does not support the system theme.
                                     </a>
                                 </small>
                             </div>
                         )}
+                        {this.props.switchThemeKeybinding &&
+                            this.props.switchThemeKeybinding.map((keybinding, i) => (
+                                <Shortcut key={i} {...keybinding} onMatch={this.onThemeCycle} />
+                            ))}
                     </div>
                     {this.props.authenticatedUser.organizations.nodes.length > 0 && (
                         <>
@@ -114,6 +124,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         </Link>
                     )}
                     {this.props.showDotComMarketing ? (
+                        // eslint-disable-next-line react/jsx-no-target-blank
                         <a href="https://docs.sourcegraph.com" target="_blank" className="dropdown-item">
                             Help
                         </a>
@@ -130,6 +141,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     {this.props.showDotComMarketing && (
                         <>
                             <DropdownItem divider={true} />
+                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
                             <a href="https://about.sourcegraph.com" target="_blank" className="dropdown-item">
                                 About Sourcegraph
                             </a>
@@ -144,5 +156,11 @@ export class UserNavItem extends React.PureComponent<Props, State> {
 
     private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
         this.props.onThemePreferenceChange(event.target.value as ThemePreference)
+    }
+
+    private onThemeCycle = () => {
+        this.props.onThemePreferenceChange(
+            this.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
+        )
     }
 }

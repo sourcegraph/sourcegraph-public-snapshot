@@ -71,4 +71,4 @@ export function refreshSiteFlags(): Observable<never> {
 
 refreshSiteFlags()
     .toPromise()
-    .then(() => void 0, err => console.error(err))
+    .then(() => undefined, err => console.error(err))

@@ -25,7 +25,7 @@ export const ProductSubscriptionHistory: React.FunctionComponent<{
                             </span>
                         </td>
                         <td className="w-100">
-                            <LinkOrSpan to={event.url} target="_blank">
+                            <LinkOrSpan to={event.url} target="_blank" rel="noopener noreferrer">
                                 {event.title}
                                 {event.url && <ExternalLinkIcon className="icon-inline ml-1" />}
                             </LinkOrSpan>

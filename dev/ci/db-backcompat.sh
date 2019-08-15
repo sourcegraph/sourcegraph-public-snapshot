@@ -27,6 +27,7 @@ if [ -z "$OLD" ]; then
 fi
 
 if [ ! -z "$(git status --porcelain)" ]; then
+    git status
     echo 'Work tree is dirty, aborting.'
     exit 1
 fi

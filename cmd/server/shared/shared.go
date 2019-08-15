@@ -144,19 +144,32 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`lsif-server: node /lsif-server.js`,
+		`lsif-server: node /lsif-server.js | grep -v 'Listening for HTTP requests'`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
-		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
+		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
+		`prometheus: prometheus -config.file=/etc/prometheus/prometheus_local.yml  -storage.local.path=/var/opt/sourcegraph/prometheus -web.console.libraries=/etc/prometheus/console_libraries  -web.console.templates=/etc/prometheus/consoles`,
+		`grafana: env GF_AUTH_ANONYMOUS_ENABLED=true GF_AUTH_ANONYMOUS_ORG_NAME=Sourcegraph GF_AUTH_ANONYMOUS_ORG_ROLE=Editor GF_USERS_ALLOW_SIGN_UP=false GF_USERS_AUTO_ASSIGN_ORG=true GF_USERS_AUTO_ASSIGN_ORG_ROLE=Editor /usr/share/grafana/bin/grafana-server -config /etc/grafana/grafana-single-container.ini -homepath /usr/share/grafana`,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
-	if line, err := maybeRedisProcFile(); err != nil {
+
+	redisStoreLine, err := maybeRedisStoreProcFile()
+	if err != nil {
 		log.Fatal(err)
-	} else if line != "" {
-		procfile = append(procfile, line)
 	}
+	if redisStoreLine != "" {
+		procfile = append(procfile, redisStoreLine)
+	}
+	redisCacheLine, err := maybeRedisCacheProcFile()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if redisCacheLine != "" {
+		procfile = append(procfile, redisCacheLine)
+	}
+
 	if line, err := maybePostgresProcFile(); err != nil {
 		log.Fatal(err)
 	} else if line != "" {

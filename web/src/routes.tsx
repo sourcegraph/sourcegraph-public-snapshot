@@ -36,7 +36,7 @@ export const repoRevRoute: LayoutRouteProps = {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: ReadonlyArray<LayoutRouteProps> = [
+export const routes: readonly LayoutRouteProps[] = [
     {
         path: '/',
         render: (props: any) =>
@@ -60,7 +60,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/search/searches',
         render: lazyComponent(
-            () => import('./search/saved-searches/RedirectToUserSavedSearches'),
+            () => import('./savedSearches/RedirectToUserSavedSearches'),
             'RedirectToUserSavedSearches'
         ),
         exact: true,

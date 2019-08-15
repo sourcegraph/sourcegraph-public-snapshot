@@ -1,6 +1,13 @@
 export const EXTENSION_MARKER_ID = 'sourcegraph-app-background'
 
 /**
+ * A custom native integration <-> browser extension event used to free
+ * browser extension subscriptions when the native integration gets activated
+ * on the page, so as to avoid conflicts such as duplicate UI elements.
+ */
+export const NATIVE_INTEGRATION_ACTIVATED = 'sourcegraph:native-integration-activated'
+
+/**
  * Injects a `#sourcegraph-app-background` hidden element.
  *
  * This element is checked for in the webapp to know if the browser extension
@@ -17,14 +24,10 @@ export function injectExtensionMarker(): void {
 }
 
 /**
- * Injects the extension marker and dispatches a custom event
- * to signal to Sourcegraph web app that the browser extension is installed.
- *
- *  Not idempotent.
+ * Dispatches a custom event to signal to Sourcegraph web app
+ * that the browser extension is installed.
  */
 export function signalBrowserExtensionInstalled(): void {
-    injectExtensionMarker()
-
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         dispatchSourcegraphEvents()
     } else {

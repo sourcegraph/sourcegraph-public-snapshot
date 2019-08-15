@@ -276,9 +276,37 @@ func IsBuiltinSignupAllowed() bool {
 }
 
 func Branding() *schema.Branding {
-	return Get().Branding
+	branding := Get().Branding
+	if branding != nil && branding.BrandName == "" {
+		bcopy := *branding
+		bcopy.BrandName = "Sourcegraph"
+		branding = &bcopy
+	}
+	return branding
+}
+
+func BrandName() string {
+	branding := Branding()
+	if branding == nil || branding.BrandName == "" {
+		return "Sourcegraph"
+	}
+	return branding.BrandName
 }
 
 func ShowStatusIndicator() bool {
-	return Get().ExperimentalFeatures.StatusIndicator == "enabled"
+	val := Get().ExperimentalFeatures.StatusIndicator
+	if val == "" {
+		return true
+	}
+	return val == "enabled"
+}
+
+// SearchSymbolsParallelism returns 20, or the site config
+// "debug.search.symbolsParallelism" value if configured.
+func SearchSymbolsParallelism() int {
+	val := Get().DebugSearchSymbolsParallelism
+	if val == 0 {
+		return 20
+	}
+	return val
 }

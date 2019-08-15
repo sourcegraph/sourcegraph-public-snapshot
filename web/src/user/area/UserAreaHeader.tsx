@@ -7,7 +7,7 @@ import { UserAvatar } from '../UserAvatar'
 import { UserAreaRouteContext } from './UserArea'
 
 interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
-    navItems: ReadonlyArray<UserAreaHeaderNavItem>
+    navItems: readonly UserAreaHeaderNavItem[]
     className?: string
 }
 

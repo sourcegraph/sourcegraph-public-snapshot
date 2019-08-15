@@ -13,12 +13,12 @@ import React, { Attributes, PropsWithChildren, PropsWithRef } from 'react'
 export const lazyComponent = <P extends {}, K extends string>(
     componentFactory: () => Promise<{ [k in K]: React.ComponentType<P> }>,
     name: K
-) => {
+): React.FunctionComponent<PropsWithRef<PropsWithChildren<P>> & Attributes> => {
     // Force returning a React.FunctionComponent-like so our result is callable (because it's used
     // in <Route render={...} /> elements where it is expected to be callable).
     const LazyComponent = React.lazy(async () => {
         const component: React.ComponentType<P> = (await componentFactory())[name]
         return { default: component }
     })
-    return (props: PropsWithRef<PropsWithChildren<P>> & Attributes) => <LazyComponent {...props} />
+    return props => <LazyComponent {...props} />
 }
