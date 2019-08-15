@@ -103,7 +103,7 @@ func (s *store) LoadPermissions(
 		}
 	}
 
-	if !(*p).Expired(s.ttl, now) { // Did these permissions expire?
+	if !(*p).Expired(s.ttl, now) { // Are these permissions still valid?
 		return nil
 	}
 
