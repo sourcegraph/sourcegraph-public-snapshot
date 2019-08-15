@@ -57,6 +57,11 @@ export class Cache {
 
         let hit = true
         let entry = this.lru.get(key)
+        if (entry) {
+            // TODO - temporary
+            entry.dispose()
+            entry = undefined
+        }
 
         if (!entry) {
             const promise = backend.createRunner(repository, commit)

@@ -30,20 +30,16 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         await this.createStorageRoot()
         const filename = path.join(STORAGE_ROOT, 'correlation.db')
 
-        let exists = true
         try {
             await fs.stat(filename)
         } catch (e) {
             if ('code' in e && e['code'] === 'ENOENT') {
-                exists = false
+            } else {
+                throw e
             }
         }
 
         this.correlationDb = new CorrelationDatabase(filename)
-
-        if (!exists) {
-            this.correlationDb.create()
-        }
     }
 
     /**
@@ -68,7 +64,7 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         })
 
         for (const exportedPackage of exportedPackages) {
-            this.correlationDb.insertRepositoryCommitPackage(
+            this.correlationDb.addPackage(
                 exportedPackage.scheme,
                 exportedPackage.name,
                 exportedPackage.version,
@@ -96,7 +92,7 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
         }
 
         for (const { importedSymbol, ids } of identifiers.values()) {
-            this.correlationDb.insertRepositoryCommitReference(
+            this.correlationDb.addReference(
                 importedSymbol.scheme,
                 importedSymbol.name,
                 importedSymbol.version,
@@ -163,7 +159,6 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
      * Free any resources used by this object.
      */
     public close(): Promise<void> {
-        this.correlationDb.close()
         return Promise.resolve()
     }
 
@@ -235,11 +230,11 @@ export class SQLiteQueryRunner implements QueryRunner {
         const { result, elapsed } = await timeit(async () => {
             switch (method) {
                 case 'hover':
-                    return Promise.resolve(this.db.hover(uri, position))
+                    return this.db.hover(uri, position)
                 case 'definitions':
-                    return Promise.resolve(this.db.definitions(uri, position))
+                    return this.db.definitions(uri, position)
                 case 'references':
-                    return Promise.resolve(this.db.references(uri, position))
+                    return this.db.references(uri, position)
                 default:
                     throw new Error(`Unimplemented method ${method}`)
             }
@@ -257,7 +252,6 @@ export class SQLiteQueryRunner implements QueryRunner {
      * Free any resources used by this object.
      */
     public close(): Promise<void> {
-        this.db.close()
         return Promise.resolve()
     }
 }
