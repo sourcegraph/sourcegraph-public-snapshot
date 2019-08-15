@@ -76,6 +76,9 @@ func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
 // to asycnhronously fetch updated permissions when they expire. When there are no
 // valid permissions available (i.e. the first time a user needs them), an error is
 // returned.
+//
+// Callers must NOT mutate the resulting Permissions pointer. It's shared across go-routines
+// and it's meant to be read-only. Any write to it is not thread-safe.
 func (s *store) LoadPermissions(
 	ctx context.Context,
 	p **Permissions,
