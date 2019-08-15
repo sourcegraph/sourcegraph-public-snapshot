@@ -19,6 +19,7 @@ import {
     checkMethod,
     MAX_FILE_SIZE,
 } from './http-server.validation'
+import { identity } from 'lodash'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -181,7 +182,7 @@ async function main(): Promise<void> {
         '/request',
         bodyParser.json({ limit: '1mb' }),
         wrap(async (req, res) => {
-            const { repository, commit } = req.query
+            const { repository, commit, stats } = req.query
             const { path, position, method } = req.body
             checkRepository(repository)
             checkCommit(commit)
@@ -201,13 +202,15 @@ async function main(): Promise<void> {
                 emit(prometheusReporters, cacheStats)
                 emit(prometheusReporters, queryStats)
 
-                res.json({
-                    data: result || null,
-                    stats: {
+                const withStats = (data: any) => ({
+                    data,
+                    status: {
                         cacheStats: cacheStats,
                         queryStats: queryStats,
                     },
                 })
+
+                res.json((stats !== undefined ? withStats : identity)(result || null))
             } catch (e) {
                 if ('code' in e && e.code === ERRNOLSIFDATA) {
                     throw Object.assign(e, { status: 404 })
