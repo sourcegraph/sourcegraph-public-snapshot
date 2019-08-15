@@ -1,5 +1,5 @@
 import { Connection } from 'typeorm'
-import { testFilter, createFilter } from './filter'
+import { testFilter, createFilter } from './encoding'
 import * as entities from './entities'
 import { connectionCache } from './cache'
 
@@ -34,7 +34,9 @@ export class CorrelationDatabase {
                         version,
                     },
                 })
-                .then((results: entities.Reference[]) => results.filter(result => testFilter(result.filter, uri)))
+                .then((results: entities.Reference[]) =>
+                    results.filter(async result => await testFilter(result.filter, uri))
+                )
         )
     }
 
@@ -61,7 +63,7 @@ export class CorrelationDatabase {
         return await this.withConnection(async connection => {
             await connection
                 .getRepository(entities.Reference)
-                .save({ scheme, name, version, repository, commit, filter: createFilter(uris) })
+                .save({ scheme, name, version, repository, commit, filter: await createFilter(uris) })
         })
     }
 

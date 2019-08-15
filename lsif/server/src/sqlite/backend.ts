@@ -141,14 +141,12 @@ export class SQLiteBackend implements Backend<SQLiteQueryRunner> {
             throw e
         }
 
-        const db = new Database(this.correlationDb)
-
-        const { elapsed } = await timeit(async () => {
-            return await db.load(file)
+        const { result, elapsed } = await timeit(() => {
+            return Promise.resolve(new Database(this.correlationDb, file))
         })
 
         return {
-            queryRunner: new SQLiteQueryRunner(db),
+            queryRunner: new SQLiteQueryRunner(result),
             createRunnerStats: {
                 elapsedMs: elapsed,
             },

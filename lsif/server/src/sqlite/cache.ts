@@ -95,7 +95,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
                 database: database,
                 entities: entities,
                 synchronize: true,
-                logging: 'all',
+                // logging: 'all',
             })
 
         return this.withValue(database, factory, callback)

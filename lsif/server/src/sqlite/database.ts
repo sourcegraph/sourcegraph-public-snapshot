@@ -1,5 +1,4 @@
-import { URI } from 'vscode-uri'
-import { Range, Id, MetaData, RangeBasedDocumentSymbol, Moniker, PackageInformation } from 'lsif-protocol'
+import { Range, Id, RangeBasedDocumentSymbol, Moniker, PackageInformation } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 import { CorrelationDatabase } from './xrepo'
 import { makeFilename } from './backend'
@@ -45,7 +44,7 @@ export interface ReferenceResultData {
     references?: Id[]
 }
 
-export type MonikerData = Pick<Moniker, 'scheme' | 'identifier' | 'kind'> & {
+export type MonikerData = Pick<Moniker, 'id' | 'scheme' | 'identifier' | 'kind'> & {
     packageInformation?: Id
 }
 
@@ -59,60 +58,21 @@ export interface LiteralMap<T> {
 const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
 const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
 
-export interface UriTransformer {
-    toDatabase(uri: string): string
-    fromDatabase(uri: string): string
-}
-
 export class Database {
-    private uriTransformer!: UriTransformer
-    private database!: string
-
-    private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await connectionCache.withConnection(
-            this.database,
-            [entities.Blob, entities.Def, entities.Document, entities.Hover, entities.Meta, entities.Ref],
-            callback
-        )
-    }
-
-    public constructor(private correlationDb: CorrelationDatabase) {}
-
-    public async load(database: string): Promise<void> {
-        this.database = database
-        const root = await this.getProjectRoot()
-
-        // TODO - flatten this, no need for an interface
-        this.uriTransformer = {
-            toDatabase: path => `${root}/${path}`,
-            fromDatabase: uri => (uri.startsWith(root) ? uri.slice(`${root}/`.length) : uri),
-        }
-    }
-
-    private async getProjectRoot(): Promise<string> {
-        const metaData: MetaData = await this.withConnection(async connection =>
-            JSON.parse((await connection.getRepository(entities.Meta).findOneOrFail()).value)
-        )
-
-        if (metaData.projectRoot) {
-            return URI.parse(metaData.projectRoot).toString(true)
-        }
-
-        throw new Error('Failed to get project root from meta.')
-    }
+    public constructor(private correlationDb: CorrelationDatabase, private database: string) {}
 
     //
     // Exists
 
     public exists(uri: string): boolean {
-        return Boolean(this.findFile(this.uriTransformer.toDatabase(uri)))
+        return Boolean(this.findFile(uri))
     }
 
     //
     // Definitions
 
     public async definitions(uri: string, position: lsp.Position): Promise<lsp.Location | lsp.Location[] | undefined> {
-        const { range, blob } = await this.findRangeFromPosition(this.uriTransformer.toDatabase(uri), position)
+        const { range, blob } = await this.findRangeFromPosition(uri, position)
         if (!range || !blob || !blob.definitionResults) {
             return undefined
         }
@@ -144,7 +104,7 @@ export class Database {
             if (defsResult && defsResult.length > 0) {
                 return defsResult.map(item =>
                     lsp.Location.create(
-                        this.uriTransformer.fromDatabase(item.document.uri),
+                        item.document.uri,
                         lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
                     )
                 )
@@ -178,10 +138,7 @@ export class Database {
         parts[1] = '' // WTF
         moniker.identifier = parts.join(':')
 
-        // TODO - need to cache db handles instead of backends
-        // if we end up going with SQLite databases
-        const subDb = new Database(this.correlationDb)
-        await subDb.load(makeFilename(packageEntity.repository, packageEntity.commit))
+        const subDb = new Database(this.correlationDb, makeFilename(packageEntity.repository, packageEntity.commit))
 
         const defsResult = await subDb.withConnection(connection =>
             connection.getRepository(entities.Def).find({
@@ -194,10 +151,8 @@ export class Database {
         )
 
         for (const defxResult of defsResult) {
-            const subUri = subDb.uriTransformer.fromDatabase(defxResult.document.uri)
-
             return lsp.Location.create(
-                `git://${packageEntity.repository}?${packageEntity.commit}#${subUri}`,
+                `git://${packageEntity.repository}?${packageEntity.commit}#${defxResult.document.uri}`,
                 lsp.Range.create(
                     defxResult.startLine,
                     defxResult.startCharacter,
@@ -214,7 +169,7 @@ export class Database {
     // References
 
     public async references(uri: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
-        const { range, blob } = await this.findRangeFromPosition(this.uriTransformer.toDatabase(uri), position)
+        const { range, blob } = await this.findRangeFromPosition(uri, position)
         if (!range || !blob || !blob.referenceResults) {
             return undefined
         }
@@ -264,7 +219,7 @@ export class Database {
             if (refsResult && refsResult.length > 0) {
                 return refsResult.map(item =>
                     lsp.Location.create(
-                        this.uriTransformer.fromDatabase(item.document.uri),
+                        item.document.uri,
                         lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
                     )
                 )
@@ -294,10 +249,7 @@ export class Database {
             parts[1] = '' // WTF
             moniker.identifier = parts.join(':')
 
-            // TODO - need to cache db handles instead of backends
-            // if we end up going with SQLite databases
-            const subDb = new Database(this.correlationDb)
-            await subDb.load(makeFilename(reference.repository, reference.commit))
+            const subDb = new Database(this.correlationDb, makeFilename(reference.repository, reference.commit))
 
             const refsResult = await subDb.withConnection(connection =>
                 connection.getRepository(entities.Ref).find({
@@ -311,11 +263,9 @@ export class Database {
 
             if (refsResult && refsResult.length > 0) {
                 for (const refxResult of refsResult) {
-                    const subUri = subDb.uriTransformer.fromDatabase(refxResult.document.uri)
-
                     allReferences.push(
                         lsp.Location.create(
-                            `git://${reference.repository}?${reference.commit}#${subUri}`,
+                            `git://${reference.repository}?${reference.commit}#${refxResult.document.uri}`,
                             lsp.Range.create(
                                 refxResult.startLine,
                                 refxResult.startCharacter,
@@ -335,7 +285,7 @@ export class Database {
     // Hover
 
     public async hover(uri: string, position: lsp.Position): Promise<lsp.Hover | undefined> {
-        const { range, blob } = await this.findRangeFromPosition(this.uriTransformer.toDatabase(uri), position)
+        const { range, blob } = await this.findRangeFromPosition(uri, position)
         if (!range || !blob || !blob.hovers) {
             return undefined
         }
@@ -357,7 +307,7 @@ export class Database {
             )
 
             for (const hoverResult of hoverResults) {
-                const result: lsp.Hover = JSON.parse(await decodeJSON(hoverResult.blob.value))
+                const result: lsp.Hover = await decodeJSON(hoverResult.blob.value)
                 if (!result.range) {
                     result.range = lsp.Range.create(
                         range.start.line,
@@ -424,18 +374,7 @@ export class Database {
             current = resultSets[current.next]
         }
 
-        const resultMonikers = ids.map(id => monikers[id])
-
-        resultMonikers.sort((a, b) => {
-            const ord = MONIKER_KIND_PREFERENCES.indexOf(a.kind!) - MONIKER_KIND_PREFERENCES.indexOf(b.kind!)
-            if (ord !== 0) {
-                return ord
-            }
-
-            return MONIKER_SCHEME_PREFERENCES.indexOf(a.scheme!) - MONIKER_SCHEME_PREFERENCES.indexOf(b.scheme!)
-        })
-
-        return resultMonikers
+        return sortMonikers(ids.map(id => monikers[id]))
     }
 
     private async findRangeFromPosition(
@@ -450,23 +389,19 @@ export class Database {
         const blob = await blobCache.withBlob(
             documentId,
             async () =>
-                JSON.parse(
-                    await decodeJSON(
-                        (await this.withConnection(connection =>
-                            connection.getRepository(entities.Blob).findOneOrFail(documentId)
-                        )).value
-                    )
-                ) as DocumentBlob,
+                await decodeJSON<DocumentBlob>(
+                    (await this.withConnection(connection =>
+                        connection.getRepository(entities.Blob).findOneOrFail(documentId)
+                    )).value
+                ),
             async blob => blob
         )
 
         let candidate: RangeData | undefined
         for (const key of Object.keys(blob.ranges)) {
             const range = blob.ranges[key]
-            if (containsPosition(range, position)) {
-                if (!candidate || containsRange(candidate, range)) {
-                    candidate = range
-                }
+            if (containsPosition(range, position) && (!candidate || containsRange(candidate, range))) {
+                candidate = range
             }
         }
 
@@ -478,6 +413,14 @@ export class Database {
             connection.getRepository(entities.Document).findOne({ uri: uri })
         )
         return result && result.hash
+    }
+
+    private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
+        return await connectionCache.withConnection(
+            this.database,
+            [entities.Blob, entities.Def, entities.Document, entities.Hover, entities.Meta, entities.Ref],
+            callback
+        )
     }
 }
 
@@ -499,30 +442,47 @@ function containsPosition(range: lsp.Range, position: lsp.Position): boolean {
     if (position.line < range.start.line || position.line > range.end.line) {
         return false
     }
+
     if (position.line === range.start.line && position.character < range.start.character) {
         return false
     }
+
     if (position.line === range.end.line && position.character > range.end.character) {
         return false
     }
+
     return true
 }
 
-/**
- * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
- */
 function containsRange(range: lsp.Range, otherRange: lsp.Range): boolean {
     if (otherRange.start.line < range.start.line || otherRange.end.line < range.start.line) {
         return false
     }
+
     if (otherRange.start.line > range.end.line || otherRange.end.line > range.end.line) {
         return false
     }
+
     if (otherRange.start.line === range.start.line && otherRange.start.character < range.start.character) {
         return false
     }
+
     if (otherRange.end.line === range.end.line && otherRange.end.character > range.end.character) {
         return false
     }
+
     return true
+}
+
+function sortMonikers(monikers: MonikerData[]): MonikerData[] {
+    monikers.sort((a, b) => {
+        const ord = MONIKER_KIND_PREFERENCES.indexOf(a.kind!) - MONIKER_KIND_PREFERENCES.indexOf(b.kind!)
+        if (ord !== 0) {
+            return ord
+        }
+
+        return MONIKER_SCHEME_PREFERENCES.indexOf(a.scheme!) - MONIKER_SCHEME_PREFERENCES.indexOf(b.scheme!)
+    })
+
+    return monikers
 }

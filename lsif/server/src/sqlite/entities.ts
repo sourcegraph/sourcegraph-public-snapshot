@@ -6,7 +6,8 @@ import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index, JoinColum
 @Entity({ name: 'meta' })
 export class Meta {
     @PrimaryGeneratedColumn() id!: number
-    @Column() value!: string
+    @Column() lsifVersion!: string
+    @Column() sourcegraphVersion!: string
 }
 
 @Entity({ name: 'blobs' })
@@ -41,7 +42,6 @@ export class Ref {
     @PrimaryColumn() id!: number
     @Column() scheme!: string
     @Column() identifier!: string
-    @Column() kind!: number // TODO - necessary?
     @Column() startLine!: number
     @Column() endLine!: number
     @Column() startCharacter!: number

@@ -1,14 +1,15 @@
-import * as crypto from 'crypto'
 import { fs } from 'mz'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as readline from 'readline'
 import * as uuid from 'uuid'
 import * as db from './database'
 import * as entities from './entities'
-import { encodeJSON } from './encoding'
+import { hashAndEncodeJSON, hashJSON } from './encoding'
 import * as protocol from 'lsif-protocol'
 import { Connection } from 'typeorm'
 import { connectionCache } from './cache'
+
+const INTERNAL_LSIF_VERSION = '0.1.0'
 
 export interface ExportedPackage {
     scheme: string
@@ -33,38 +34,48 @@ export async function convertToBlob(
         // TODO
     }
 
-    return await connectionCache.withConnection(outFile, [
-        entities.Blob,
-        entities.Def,
-        entities.Document,
-        entities.Hover,
-        entities.Meta,
-        entities.Ref,
-    ], async (connection) => {
-        const db = new BlobStore(connection)
-        const lines = readline.createInterface({ input: fs.createReadStream(inFile, { encoding: 'utf8' }) })
+    return await connectionCache.withConnection(
+        outFile,
+        [entities.Blob, entities.Def, entities.Document, entities.Hover, entities.Meta, entities.Ref],
+        async connection => {
+            const blobStore = new BlobStore(connection)
+            const lines = readline.createInterface({ input: fs.createReadStream(inFile, { encoding: 'utf8' }) })
 
-        for await (const line of lines) {
-            let element: protocol.Vertex | protocol.Edge
-            try {
-                element = JSON.parse(line)
-            } catch (err) {
-                throw new Error(`Parsing failed for line:\n${line}`)
+            for await (const line of lines) {
+                let element: protocol.Vertex | protocol.Edge
+                try {
+                    element = JSON.parse(line)
+                } catch (err) {
+                    throw new Error(`Parsing failed for line:\n${line}`)
+                }
+
+                await blobStore.insert(element)
             }
 
-            await db.insert(element)
+            return {
+                exportedPackages: blobStore.exportedPackages,
+                importedSymbols: blobStore.importedSymbols,
+            }
         }
-
-        return {
-            exportedPackages: db.exportedPackages,
-            importedSymbols: db.importedSymbols,
-        }
-    })
+    )
 }
 
 class BlobStore {
     private vertexHandlerMap: { [K: string]: (element: any) => Promise<void> } = {}
     private edgeHandlerMap: { [K: string]: (element: any) => Promise<void> } = {}
+
+    private definitionDatas: Map<protocol.Id, Map<protocol.Id, db.DefinitionResultData>> = new Map()
+    private documents: Map<protocol.Id, protocol.Document> = new Map()
+    private documentSymbols: Map<protocol.Id, lsp.DocumentSymbol[] | protocol.RangeBasedDocumentSymbol[]> = new Map()
+    public hoverDatas: Map<protocol.Id, lsp.Hover> = new Map() // TODO - visibility
+    public monikerDatas: Map<protocol.Id, db.MonikerData> = new Map() // TODO - visibility
+    private packageInformationDatas: Map<protocol.Id, protocol.PackageInformation> = new Map()
+    private rangeDatas: Map<protocol.Id, protocol.Range> = new Map()
+    private referenceDatas: Map<protocol.Id, Map<protocol.Id, db.ReferenceResultData>> = new Map()
+    public resultSetDatas: Map<protocol.Id, db.ResultSetData> = new Map() // TODO - visibility
+
+    // TODO
+    private projectRoot: string | undefined
 
     public exportedPackages: Set<ExportedPackage> = new Set()
     public importedSymbols: Set<ImportedSymbol> = new Set()
@@ -72,46 +83,39 @@ class BlobStore {
     private knownHashes: Set<string> = new Set()
     private insertedBlobs: Set<string> = new Set()
     private insertedHovers: Set<string> = new Set()
-    private documents: Map<protocol.Id, protocol.Document> = new Map()
     private documentDatas: Map<protocol.Id, DocumentData | null> = new Map()
-    private foldingRanges: Map<protocol.Id, lsp.FoldingRange[]> = new Map()
-    private documentSymbols: Map<protocol.Id, lsp.DocumentSymbol[] | protocol.RangeBasedDocumentSymbol[]> = new Map()
-    private rangeDatas: Map<protocol.Id, db.RangeData> = new Map()
-    private resultSetDatas: Map<protocol.Id, db.ResultSetData> = new Map()
-    private monikerDatas: Map<protocol.Id, db.MonikerData> = new Map()
     private monikerSets: Map<protocol.Id, Set<protocol.Id>> = new Map()
     private monikerAttachments: Map<protocol.Id, protocol.Id> = new Map()
-    private packageInformationDatas: Map<protocol.Id, db.PackageInformationData> = new Map()
-    private hoverDatas: Map<protocol.Id, lsp.Hover> = new Map()
-    private definitionDatas: Map<protocol.Id, Map<protocol.Id, db.DefinitionResultData>> = new Map()
-    private referenceDatas: Map<protocol.Id, Map<protocol.Id, db.ReferenceResultData>> = new Map()
     private containsDatas: Map<protocol.Id, protocol.Id[]> = new Map()
 
     constructor(private connection: Connection) {
-        this.vertexHandlerMap[protocol.VertexLabels.definitionResult] = this.handleDefinitionResult
-        this.vertexHandlerMap[protocol.VertexLabels.document] = this.handleDocument
-        this.vertexHandlerMap[protocol.VertexLabels.documentSymbolResult] = this.handleDocumentSymbols
-        this.vertexHandlerMap[protocol.VertexLabels.event] = this.handleEvent
-        this.vertexHandlerMap[protocol.VertexLabels.foldingRangeResult] = this.handleFoldingRange
-        this.vertexHandlerMap[protocol.VertexLabels.hoverResult] = this.handleHover
-        this.vertexHandlerMap[protocol.VertexLabels.metaData] = this.handleMetaData
-        this.vertexHandlerMap[protocol.VertexLabels.moniker] = this.handleMoniker
-        this.vertexHandlerMap[protocol.VertexLabels.packageInformation] = this.handlePackageInformation
-        this.vertexHandlerMap[protocol.VertexLabels.range] = this.handleRange
-        this.vertexHandlerMap[protocol.VertexLabels.referenceResult] = this.handleReferenceResult
-        this.vertexHandlerMap[protocol.VertexLabels.resultSet] = this.handleResultSet
+        const wrap = (f: (element: any) => void) => (element: any) => {
+            f.bind(this)(element)
+            return Promise.resolve()
+        }
 
-        this.edgeHandlerMap[protocol.EdgeLabels.contains] = this.handleContains
-        this.edgeHandlerMap[protocol.EdgeLabels.item] = this.handleItemEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.moniker] = this.handleMonikerEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.next] = this.handleNextEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.nextMoniker] = this.handleNextMonikerEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.packageInformation] = this.handlePackageInformationEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_definition] = this.handleDefinitionEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_documentSymbol] = this.handleDocumentSymbolEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_foldingRange] = this.handleFoldingRangeEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_hover] = this.handleHoverEdge
-        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_references] = this.handleReferenceEdge
+        this.vertexHandlerMap[protocol.VertexLabels.definitionResult] = wrap(this.handleDefinitionResult)
+        this.vertexHandlerMap[protocol.VertexLabels.document] = wrap(this.handleDocument)
+        this.vertexHandlerMap[protocol.VertexLabels.documentSymbolResult] = wrap(this.handleDocumentSymbols)
+        this.vertexHandlerMap[protocol.VertexLabels.event] = this.handleEvent.bind(this)
+        this.vertexHandlerMap[protocol.VertexLabels.hoverResult] = wrap(this.handleHover)
+        this.vertexHandlerMap[protocol.VertexLabels.metaData] = this.handleMetaData.bind(this)
+        this.vertexHandlerMap[protocol.VertexLabels.moniker] = wrap(this.handleMoniker)
+        this.vertexHandlerMap[protocol.VertexLabels.packageInformation] = wrap(this.handlePackageInformation)
+        this.vertexHandlerMap[protocol.VertexLabels.range] = wrap(this.handleRange)
+        this.vertexHandlerMap[protocol.VertexLabels.referenceResult] = wrap(this.handleReferenceResult)
+        this.vertexHandlerMap[protocol.VertexLabels.resultSet] = wrap(this.handleResultSet)
+
+        this.edgeHandlerMap[protocol.EdgeLabels.contains] = wrap(this.handleContains)
+        this.edgeHandlerMap[protocol.EdgeLabels.item] = wrap(this.handleItemEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.moniker] = wrap(this.handleMonikerEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.next] = wrap(this.handleNextEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.nextMoniker] = wrap(this.handleNextMonikerEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.packageInformation] = wrap(this.handlePackageInformationEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_definition] = wrap(this.handleDefinitionEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_documentSymbol] = wrap(this.handleDocumentSymbolEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_hover] = wrap(this.handleHoverEdge)
+        this.edgeHandlerMap[protocol.EdgeLabels.textDocument_references] = wrap(this.handleReferenceEdge)
     }
 
     public async insert(element: protocol.Vertex | protocol.Edge): Promise<void> {
@@ -121,95 +125,55 @@ class BlobStore {
                 : this.edgeHandlerMap[element.label]
 
         if (handler) {
-            await handler.bind(this)(element)
+            await handler(element)
         }
     }
 
     //
     // Vertex Handlers
 
-    private handleDefinitionResult(result: protocol.DefinitionResult): Promise<void> {
-        this.definitionDatas.set(result.id, new Map())
-        return Promise.resolve()
-    }
+    private async handleMetaData(vertex: protocol.MetaData): Promise<void> {
+        this.projectRoot = vertex.projectRoot
 
-    private handleDocument(element: protocol.Document): Promise<void> {
-        this.documents.set(element.id, element)
-        return Promise.resolve()
-    }
-
-    private handleDocumentSymbols(symbols: protocol.DocumentSymbolResult): Promise<void> {
-        this.documentSymbols.set(symbols.id, symbols.result)
-        return Promise.resolve()
-    }
-
-    private handleFoldingRange(folding: protocol.FoldingRangeResult): Promise<void> {
-        this.foldingRanges.set(folding.id, folding.result)
-        return Promise.resolve()
+        await this.connection.getRepository(entities.Meta).save({
+            lsifVersion: vertex.version,
+            sourcegraphVersion: INTERNAL_LSIF_VERSION,
+        })
     }
 
     private async handleEvent(event: protocol.Event): Promise<void> {
-        if (event.scope === protocol.EventScope.document) {
-            if (event.kind === protocol.EventKind.begin) {
-                await this.handleDocumentBegin(event as protocol.DocumentEvent)
-            }
+        if (event.scope === protocol.EventScope.document && event.kind === protocol.EventKind.begin) {
+            this.handleDocumentBegin(event as protocol.DocumentEvent)
+        }
 
-            if (event.kind === protocol.EventKind.end) {
-                await this.handleDocumentEnd(event as protocol.DocumentEvent)
-            }
+        if (event.scope === protocol.EventScope.document && event.kind === protocol.EventKind.end) {
+            await this.handleDocumentEnd(event as protocol.DocumentEvent)
         }
     }
 
-    private handleHover(hover: protocol.HoverResult): Promise<void> {
-        this.hoverDatas.set(hover.id, hover.result)
-        return Promise.resolve()
-    }
+    private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
+    private handleDocument = this.setById(this.documents, (e: protocol.Document) => e)
+    private handleDocumentSymbols = this.setById(this.documentSymbols, (e: protocol.DocumentSymbolResult) => e.result)
+    private handleHover = this.setById(this.hoverDatas, (e: protocol.HoverResult) => e.result)
+    private handleMoniker = this.setById(this.monikerDatas, e => e)
+    private handlePackageInformation = this.setById(this.packageInformationDatas, e => e)
+    private handleRange = this.setById(this.rangeDatas, e => e)
+    private handleReferenceResult = this.setById(this.referenceDatas, e => new Map())
+    private handleResultSet = this.setById(this.resultSetDatas, _ => ({}))
 
-    private async handleMetaData(vertex: protocol.MetaData): Promise<void> {
-        await this.connection.getRepository(entities.Meta).save({
-            value: JSON.stringify(vertex, undefined, 0),
-        })
-    }
-
-    private handleMoniker(moniker: protocol.Moniker): Promise<void> {
-        this.monikerDatas.set(moniker.id, {
-            scheme: moniker.scheme,
-            identifier: moniker.identifier,
-            kind: moniker.kind,
-        })
-        return Promise.resolve()
-    }
-
-    private handlePackageInformation(packageInformation: protocol.PackageInformation): Promise<void> {
-        this.packageInformationDatas.set(packageInformation.id, {
-            name: packageInformation.name,
-            manager: packageInformation.manager,
-            uri: packageInformation.uri,
-            version: packageInformation.version,
-            repository: packageInformation.repository,
-        })
-        return Promise.resolve()
-    }
-
-    private handleRange(range: protocol.Range): Promise<void> {
-        this.rangeDatas.set(range.id, { start: range.start, end: range.end, tag: range.tag })
-        return Promise.resolve()
-    }
-
-    private handleReferenceResult(result: protocol.ReferenceResult): Promise<void> {
-        this.referenceDatas.set(result.id, new Map())
-        return Promise.resolve()
-    }
-
-    private handleResultSet(set: protocol.ResultSet): Promise<void> {
-        this.resultSetDatas.set(set.id, {})
-        return Promise.resolve()
+    private setById<K extends { id: protocol.Id }, V>(
+        map: Map<protocol.Id, V>,
+        factory: (element: K) => V
+    ): (element: K) => void {
+        return (element: K) => {
+            map.set(element.id, factory(element))
+        }
     }
 
     //
     // Edge Handlers
 
-    private handleContains(contains: protocol.contains): Promise<void> {
+    private handleContains(contains: protocol.contains): void {
         let values = this.containsDatas.get(contains.outV)
         if (values === undefined) {
             values = []
@@ -217,13 +181,12 @@ class BlobStore {
         }
 
         values.push(...contains.inVs)
-        return Promise.resolve()
     }
 
-    private handleItemEdge(edge: protocol.item): Promise<void> {
+    private handleItemEdge(edge: protocol.item): void {
         let property: protocol.ItemEdgeProperties | undefined = edge.property
         if (property === undefined) {
-            const map: Map<protocol.Id, db.DefinitionResultData> = assertDefined(this.definitionDatas.get(edge.outV))
+            const map: Map<protocol.Id, db.DefinitionResultData> = assertDefined(edge.outV, this.definitionDatas)
             let data: db.DefinitionResultData | undefined = map.get(edge.document)
             if (data === undefined) {
                 data = { values: edge.inVs.slice() }
@@ -232,7 +195,7 @@ class BlobStore {
                 data.values.push(...edge.inVs)
             }
         } else {
-            const map: Map<protocol.Id, db.ReferenceResultData> = assertDefined(this.referenceDatas.get(edge.outV))
+            const map: Map<protocol.Id, db.ReferenceResultData> = assertDefined(edge.outV, this.referenceDatas)
             let data: db.ReferenceResultData | undefined = map.get(edge.document)
             if (data === undefined) {
                 data = {}
@@ -255,108 +218,75 @@ class BlobStore {
                 }
             }
         }
-
-        return Promise.resolve()
     }
 
-    private handleMonikerEdge(moniker: protocol.moniker): Promise<void> {
-        assertDefined(this.rangeDatas.get(moniker.outV) || this.resultSetDatas.get(moniker.outV))
-        assertDefined(this.monikerDatas.get(moniker.inV))
+    private handleMonikerEdge(moniker: protocol.moniker): void {
+        assertDefined<db.RangeData | db.ResultSetData>(moniker.outV, this.rangeDatas, this.resultSetDatas)
+        assertDefined(moniker.inV, this.monikerDatas)
         this.monikerAttachments.set(moniker.outV, moniker.inV)
         this.updateMonikerSets([moniker.inV])
-        return Promise.resolve()
     }
 
-    private handleNextEdge(edge: protocol.next): Promise<void> {
-        const outV: db.RangeData | db.ResultSetData = assertDefined(
-            this.rangeDatas.get(edge.outV) || this.resultSetDatas.get(edge.outV)
-        )
-        assertDefined(this.resultSetDatas.get(edge.inV))
+    private handleNextEdge(edge: protocol.next): void {
+        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
+        assertDefined(edge.inV, this.resultSetDatas)
         outV.next = edge.inV
-        return Promise.resolve()
     }
 
-    private handleNextMonikerEdge(nextMoniker: protocol.nextMoniker): Promise<void> {
-        assertDefined(this.monikerDatas.get(nextMoniker.inV))
-        assertDefined(this.monikerDatas.get(nextMoniker.outV))
+    private handleNextMonikerEdge(nextMoniker: protocol.nextMoniker): void {
+        assertDefined(nextMoniker.inV, this.monikerDatas)
+        assertDefined(nextMoniker.outV, this.monikerDatas)
         this.updateMonikerSets([nextMoniker.inV, nextMoniker.outV])
-        return Promise.resolve()
     }
 
-    private handlePackageInformationEdge(packageInformation: protocol.packageInformation): Promise<void> {
-        const source: db.MonikerData = assertDefined(this.monikerDatas.get(packageInformation.outV))
-        const packageInfo = assertDefined(this.packageInformationDatas.get(packageInformation.inV))
+    private handlePackageInformationEdge(packageInformation: protocol.packageInformation): void {
+        const source: db.MonikerData = assertDefined(packageInformation.outV, this.monikerDatas)
+        const packageInfo = assertDefined(packageInformation.inV, this.packageInformationDatas)
         source.packageInformation = packageInformation.inV
 
         if (source.kind === 'export') {
             this.exportedPackages.add({ scheme: source.scheme, name: packageInfo.name, version: packageInfo.version! })
         }
-
-        return Promise.resolve()
     }
 
-    private handleDefinitionEdge(edge: protocol.textDocument_definition): Promise<void> {
-        const outV: db.RangeData | db.ResultSetData = assertDefined(
-            this.rangeDatas.get(edge.outV) || this.resultSetDatas.get(edge.outV)
-        )
+    private handleDefinitionEdge(edge: protocol.textDocument_definition): void {
+        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
         this.ensureMoniker(outV)
-        assertDefined(this.definitionDatas.get(edge.inV))
+        assertDefined(edge.inV, this.definitionDatas)
         outV.definitionResult = edge.inV
-        return Promise.resolve()
     }
 
-    private handleDocumentSymbolEdge(edge: protocol.textDocument_documentSymbol): Promise<void> {
-        const source = assertDefined(this.getDocumentData(edge.outV))
-        source.addDocumentSymbolResult(assertDefined(this.documentSymbols.get(edge.inV)))
-        return Promise.resolve()
+    private handleDocumentSymbolEdge(edge: protocol.textDocument_documentSymbol): void {
+        const source = assertDefined(edge.outV, this.documentDatas)
+        source.addDocumentSymbolResult(assertDefined(edge.inV, this.documentSymbols))
     }
 
-    private handleFoldingRangeEdge(edge: protocol.textDocument_foldingRange): Promise<void> {
-        const source = assertDefined(this.getDocumentData(edge.outV))
-        source.addFoldingRangeResult(assertDefined(this.foldingRanges.get(edge.inV)))
-        return Promise.resolve()
-    }
-
-    private handleHoverEdge(edge: protocol.textDocument_hover): Promise<void> {
-        const outV: db.RangeData | db.ResultSetData = assertDefined(
-            this.rangeDatas.get(edge.outV) || this.resultSetDatas.get(edge.outV)
-        )
-
+    private handleHoverEdge(edge: protocol.textDocument_hover): void {
+        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
         this.ensureMoniker(outV)
-        assertDefined(this.hoverDatas.get(edge.inV))
+        assertDefined(edge.inV, this.hoverDatas)
         outV.hoverResult = edge.inV
-        return Promise.resolve()
     }
 
-    private handleReferenceEdge(edge: protocol.textDocument_references): Promise<void> {
-        const outV: db.RangeData | db.ResultSetData = assertDefined(
-            this.rangeDatas.get(edge.outV) || this.resultSetDatas.get(edge.outV)
-        )
-
+    private handleReferenceEdge(edge: protocol.textDocument_references): void {
+        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
         this.ensureMoniker(outV)
-        assertDefined(this.referenceDatas.get(edge.inV))
+        assertDefined(edge.inV, this.referenceDatas)
         outV.referenceResult = edge.inV
-        return Promise.resolve()
     }
 
     //
     // Event Handlers
 
-    private handleDocumentBegin(event: protocol.DocumentEvent): Promise<void> {
-        const document = this.documents.get(event.data)
-        if (document === undefined) {
-            throw new Error(`Document with id ${event.data} not known`)
-        }
-
-        this.getOrCreateDocumentData(document)
+    private handleDocumentBegin(event: protocol.DocumentEvent): void {
+        this.getOrCreateDocumentData(assertDefined(event.data, this.documents))
         this.documents.delete(event.data)
-        return Promise.resolve()
     }
 
     private async handleDocumentEnd(event: protocol.DocumentEvent): Promise<void> {
         for (const data of this.monikerDatas.values()) {
             if (data.kind === 'import' && data.packageInformation) {
-                const packageInformation = assertDefined(this.packageInformationDatas.get(data.packageInformation!))
+                const packageInformation = assertDefined(data.packageInformation!, this.packageInformationDatas)
 
                 this.importedSymbols.add({
                     scheme: data.scheme,
@@ -373,11 +303,8 @@ class BlobStore {
                 throw new Error('moniker set is empty')
             }
 
-            const source: db.RangeData | db.ResultSetData = assertDefined(
-                this.rangeDatas.get(key) || this.resultSetDatas.get(key)
-            )
-
-            ids.forEach(id => assertDefined(this.monikerDatas.get(id)))
+            const source = assertDefined<db.RangeData | db.ResultSetData>(key, this.rangeDatas, this.resultSetDatas)
+            ids.forEach(id => assertDefined(id, this.monikerDatas))
             source.monikers = Array.from(ids)
         }
 
@@ -385,7 +312,7 @@ class BlobStore {
         const contains = this.containsDatas.get(event.data)
         if (contains !== undefined) {
             for (let id of contains) {
-                const range = assertDefined(this.rangeDatas.get(id))
+                const range = assertDefined(id, this.rangeDatas)
                 await documentData.addRangeData(id, range)
             }
         }
@@ -394,14 +321,14 @@ class BlobStore {
             documentData.addPackageInformation(key, value)
         }
 
-        let data = documentData.finalize()
+        let data = await documentData.finalize()
         if (this.knownHashes.has(data.hash)) {
-            // TODO - see how this can happen
+            // TODO - see how this can happen (empty files?)
             console.log('woah, duplicate?')
             this.documentDatas.set(event.id, null)
         }
 
-        await this.connection.getRepository(entities.Blob).save({ hash: data.hash, value: await encodeJSON(data.blob) })
+        await this.connection.getRepository(entities.Blob).save({ hash: data.hash, value: data.encoded })
 
         await this.connection.getRepository(entities.Document).save({
             hash: data.hash,
@@ -425,30 +352,18 @@ class BlobStore {
 
         const refs = []
         for (let reference of data.references || []) {
-            for (let range of reference.definitions || []) {
-                refs.push({
-                    scheme: reference.scheme,
-                    identifier: reference.indentifier,
-                    kind: 1,
-                    startLine: range[0],
-                    startCharacter: range[1],
-                    endLine: range[2],
-                    endCharacter: range[3],
-                    documentHash: data.hash,
-                })
-            }
-
-            for (let range of reference.references || []) {
-                refs.push({
-                    scheme: reference.scheme,
-                    identifier: reference.indentifier,
-                    kind: 2,
-                    startLine: range[0],
-                    startCharacter: range[1],
-                    endLine: range[2],
-                    endCharacter: range[3],
-                    documentHash: data.hash,
-                })
+            for (const arr of [reference.definitions, reference.references]) {
+                for (const range of arr || []) {
+                    refs.push({
+                        scheme: reference.scheme,
+                        identifier: reference.indentifier,
+                        startLine: range[0],
+                        startCharacter: range[1],
+                        endLine: range[2],
+                        endCharacter: range[3],
+                        documentHash: data.hash,
+                    })
+                }
             }
         }
 
@@ -471,24 +386,17 @@ class BlobStore {
     // TODO - categorize
 
     private getEnsureDocumentData(id: protocol.Id): DocumentData {
-        let result: DocumentData | undefined | null = this.documentDatas.get(id)
-        if (result === undefined) {
-            throw new Error(`No document data found for id ${id}`)
-        }
+        return assertDefined(id, this.documentDatas)
+        // let result: DocumentData | undefined | null = .get(id)
+        // if (result === undefined) {
+        //     throw new Error(`No document data found for id ${id}`)
+        // }
 
-        if (result === null) {
-            throw new Error(`The document with Id ${id} has already been processed.`)
-        }
+        // if (result === null) {
+        //     throw new Error(`The document with Id ${id} has already been processed.`)
+        // }
 
-        return result
-    }
-
-    public getMonikerData(id: protocol.Id): db.MonikerData | undefined {
-        return this.monikerDatas.get(id)
-    }
-
-    public getResultData(id: protocol.Id): db.ResultSetData | undefined {
-        return this.resultSetDatas.get(id)
+        // return result
     }
 
     private getOrCreateDocumentData(document: protocol.Document): DocumentData {
@@ -497,7 +405,11 @@ class BlobStore {
             throw new Error(`The document ${document.uri} has already been processed`)
         }
 
-        result = new DocumentData(document, this)
+        if (!this.projectRoot) {
+            throw new Error(`No project root`)
+        }
+
+        result = new DocumentData(this.projectRoot!, document, this)
         this.documentDatas.set(document.id, result)
         return result
     }
@@ -506,7 +418,7 @@ class BlobStore {
         definitionResult: protocol.Id,
         documentId: protocol.Id
     ): db.DefinitionResultData | undefined {
-        const map = assertDefined(this.definitionDatas.get(definitionResult))
+        const map = assertDefined(definitionResult, this.definitionDatas)
         const result = map.get(documentId)
         map.delete(documentId)
         return result
@@ -516,28 +428,9 @@ class BlobStore {
         referenceResult: protocol.Id,
         documentId: protocol.Id
     ): db.ReferenceResultData | undefined {
-        const map = assertDefined(this.referenceDatas.get(referenceResult))
+        const map = assertDefined(referenceResult, this.referenceDatas)
         const result = map.get(documentId)
         map.delete(documentId)
-        return result
-    }
-
-    public getAndDeleteHoverData(id: protocol.Id): lsp.Hover | undefined {
-        let result = this.hoverDatas.get(id)
-        if (result !== undefined) {
-            // We don't delete the hover right now.
-            // See https://github.com/microsoft/lsif-node/issues/57
-            // this.hoverDatas.delete(id);
-        }
-        return result
-    }
-
-    private getDocumentData(id: protocol.Id): DocumentData | undefined {
-        let result: DocumentData | undefined | null = this.documentDatas.get(id)
-        if (result === null) {
-            throw new Error(`The document with Id ${id} has already been processed.`)
-        }
-
         return result
     }
 
@@ -557,54 +450,38 @@ class BlobStore {
         }
     }
 
-    public removeResultSetData(id: protocol.Id): void {
-        this.resultSetDatas.delete(id)
-    }
-
-    public removeMonikerData(id: protocol.Id): void {
-        this.monikerDatas.delete(id)
-    }
-
     private ensureMoniker(data: db.RangeData | db.ResultSetData): void {
         if (data.monikers !== undefined) {
             return
         }
 
-        const monikerData: db.MonikerData = { scheme: '$synthetic', identifier: uuid.v4() }
+        const id = uuid.v4()
+        const monikerData: db.MonikerData = { id: id, scheme: '$synthetic', identifier: id }
         data.monikers = [monikerData.identifier]
         this.monikerDatas.set(monikerData.identifier, monikerData)
     }
 
     public async storeHover(moniker: db.MonikerData, id: protocol.Id): Promise<void> {
-        let hover = this.getAndDeleteHoverData(id)
+        let hover = this.hoverDatas.get(id)
         if (hover === undefined) {
             // We have already processed the hover
             return
         }
 
-        const blob = JSON.stringify(hover, undefined, 0)
-        const blobHash = crypto
-            .createHash('md5')
-            .update(blob)
-            .digest('base64')
+        const { hash, encoded } = await hashAndEncodeJSON(hover)
 
-        if (!this.knownHashes.has(blobHash)) {
-            if (!this.insertedBlobs.has(blobHash)) {
-                await this.connection
-                    .getRepository(entities.Blob)
-                    .save({ hash: blobHash, value: await encodeJSON(blob) })
-                this.insertedBlobs.add(blobHash)
+        if (!this.knownHashes.has(hash)) {
+            if (!this.insertedBlobs.has(hash)) {
+                await this.connection.getRepository(entities.Blob).save({ hash, value: encoded })
+                this.insertedBlobs.add(hash)
             }
 
-            const hoverHash = crypto
-                .createHash('md5')
-                .update(JSON.stringify({ s: moniker.scheme, i: moniker.identifier, b: blobHash }, undefined, 0))
-                .digest('base64')
+            const hoverHash = hashJSON({ s: moniker.scheme, i: moniker.identifier, b: hash })
 
             if (!this.insertedHovers.has(hoverHash)) {
                 await this.connection
                     .getRepository(entities.Hover)
-                    .save({ scheme: moniker.scheme, identifier: moniker.identifier, blobHash: blobHash })
+                    .save({ scheme: moniker.scheme, identifier: moniker.identifier, blobHash: hash })
                 this.insertedHovers.add(hoverHash)
             }
         }
@@ -620,10 +497,10 @@ class DocumentData {
     private definitions: MonikerScopedResultData<db.DefinitionResultData>[] = []
     private references: MonikerScopedResultData<db.ReferenceResultData>[] = []
 
-    constructor(document: protocol.Document, provider: BlobStore) {
+    constructor(projectRoot: string, document: protocol.Document, provider: BlobStore) {
         this.provider = provider
         this.id = document.id
-        this.uri = document.uri
+        this.uri = document.uri.slice(projectRoot.length + 1)
     }
 
     public getUri(): string {
@@ -655,14 +532,14 @@ class DocumentData {
 
         if (item.monikers !== undefined) {
             for (const itemMoniker of item.monikers) {
-                const moniker = assertDefined(this.provider.getMonikerData(itemMoniker))
+                const moniker = assertDefined(itemMoniker, this.provider.monikerDatas)
                 this.addMoniker(itemMoniker, moniker)
                 monikers.push(moniker)
             }
         }
 
         if (item.next !== undefined) {
-            await this.addResultSetData(item.next, assertDefined(this.provider.getResultData(item.next)))
+            await this.addResultSetData(item.next, assertDefined(item.next, this.provider.resultSetDatas))
         }
 
         if (item.hoverResult !== undefined) {
@@ -680,9 +557,7 @@ class DocumentData {
                 }
 
                 if (this.blob.hovers[item.hoverResult] === undefined) {
-                    this.blob.hovers[item.hoverResult] = assertDefined(
-                        this.provider.getAndDeleteHoverData(item.hoverResult)
-                    )
+                    this.blob.hovers[item.hoverResult] = assertDefined(item.hoverResult, this.provider.hoverDatas)
                 }
             }
         }
@@ -731,10 +606,6 @@ class DocumentData {
         }
     }
 
-    public addFoldingRangeResult(value: lsp.FoldingRange[]): void {
-        this.blob.foldingRanges = value
-    }
-
     public addDocumentSymbolResult(value: lsp.DocumentSymbol[] | protocol.RangeBasedDocumentSymbol[]): void {
         this.blob.documentSymbols = value
     }
@@ -753,7 +624,7 @@ class DocumentData {
         this.blob.packageInformation![id] = packageInformation
     }
 
-    public finalize(): DocumentDatabaseData {
+    public async finalize(): Promise<DocumentDatabaseData> {
         const id2InlineRange = (id: protocol.Id): [number, number, number, number] => {
             const range = this.blob.ranges[id]
             return [range.start.line, range.start.character, range.end.line, range.end.character]
@@ -779,72 +650,39 @@ class DocumentData {
             })
         }
 
+        const { hash, encoded } = await hashAndEncodeJSON(this.blob)
+
         return {
-            hash: this.computeHash(),
-            blob: JSON.stringify(this.blob, undefined, 0), // TODO - make this part of encode as well
+            hash: hash,
+            encoded: encoded,
             definitions: externalDefinitions.length > 0 ? externalDefinitions : undefined,
             references: externalReferences.length > 0 ? externalReferences : undefined,
         }
     }
-
-    private computeHash(): string {
-        const hash = crypto.createHash('md5')
-        hash.update(JSON.stringify(this.blob))
-        return hash.digest('base64')
-    }
 }
 
-function assertDefined<T>(value: T | undefined | null): T {
-    if (value === undefined || value === null) {
-        throw new Error(`Element must be defined`)
+function assertDefined<T>(id: protocol.Id, ...maps: Map<protocol.Id, T | null>[]): T {
+    for (const map of maps) {
+        const value = map.get(id)
+        if (value === null) {
+            throw new Error(`Element ${id} has already been processed.`)
+        }
+
+        if (value !== undefined) {
+            return value
+        }
     }
-    return value
+
+    throw new Error(`Element '${id}' is referenced before its definition.`)
 }
 
 namespace LiteralMap {
     export function create<T = any>(): db.LiteralMap<T> {
         return Object.create(null)
     }
-
-    export function values<T>(map: db.LiteralMap<T>): T[] {
-        let result: T[] = []
-        for (let key of Object.keys(map)) {
-            result.push(map[key])
-        }
-        return result
-    }
-}
-
-namespace Strings {
-    export function compare(s1: string, s2: string): number {
-        return s1 == s2 ? 0 : s1 > s2 ? 1 : -1
-    }
 }
 
 namespace Monikers {
-    export function compare(m1: db.MonikerData, m2: db.MonikerData): number {
-        let result = Strings.compare(m1.identifier, m2.identifier)
-        if (result !== 0) {
-            return result
-        }
-        result = Strings.compare(m1.scheme, m2.scheme)
-        if (result !== 0) {
-            return result
-        }
-        if (m1.kind === m2.kind) {
-            return 0
-        }
-        const k1 = m1.kind !== undefined ? m1.kind : protocol.MonikerKind.import
-        const k2 = m2.kind !== undefined ? m2.kind : protocol.MonikerKind.import
-        if (k1 === protocol.MonikerKind.import && k2 === protocol.MonikerKind.export) {
-            return -1
-        }
-        if (k1 === protocol.MonikerKind.export && k2 === protocol.MonikerKind.import) {
-            return 1
-        }
-        return 0
-    }
-
     export function isLocal(moniker: db.MonikerData): boolean {
         return moniker.kind === protocol.MonikerKind.local
     }
@@ -867,7 +705,7 @@ interface ExternalReference {
 
 interface DocumentDatabaseData {
     hash: string
-    blob: string
+    encoded: string
     definitions?: ExternalDefinition[]
     references?: ExternalReference[]
 }
