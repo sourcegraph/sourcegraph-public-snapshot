@@ -164,6 +164,10 @@ func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 	ctx, save := s.observe(ctx, "lock", "")
 	defer save(p, &err)
 
+	if _, ok := s.db.(*sql.Tx); !ok {
+		return errors.Errorf("store.lock must be called inside a transaction")
+	}
+
 	q := lockQuery(p)
 
 	var rows *sql.Rows
