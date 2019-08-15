@@ -196,7 +196,7 @@ func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 	return nil
 }
 
-var lockNamespace = fnv1.HashString32("perms")
+var lockNamespace = cast(fnv1.HashString32("perms"))
 
 func lockQuery(p *Permissions) *sqlf.Query {
 	// Postgres advisory lock ids are a global namespace within one database.
@@ -206,11 +206,11 @@ func lockQuery(p *Permissions) *sqlf.Query {
 	// guarantees would be violated, since those two different users would simply
 	// have to wait on the other's update to finish, using stale permissions until
 	// it would.
-	lockID := fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type))
+	lockID := cast(fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type)))
 	return sqlf.Sprintf(
 		lockQueryFmtStr,
-		cast(lockNamespace),
-		cast(lockID),
+		lockNamespace,
+		lockID,
 	)
 }
 
