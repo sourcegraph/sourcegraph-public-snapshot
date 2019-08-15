@@ -1,7 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "emitDecoratorMetadata": true,
     "esModuleInterop": true,
+    "experimentalDecorators": true,
     "lib": ["esnext", "esnext.asynciterable"],
     "module": "commonjs",
     "moduleResolution": "node",
