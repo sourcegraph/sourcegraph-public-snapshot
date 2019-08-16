@@ -1,5 +1,5 @@
 import { from, Observable, zip } from 'rxjs'
-import { catchError, filter, map, switchMap, tap } from 'rxjs/operators'
+import { filter, map, switchMap, tap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileInfo } from '../code_intelligence'
 import { DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
@@ -52,10 +52,7 @@ export const resolveDiffFileInfo = (
                 map(({ commitID, stagingRepoName }) => ({
                     baseCommitID: commitID,
                     baseRawRepoName: stagingRepoName || state.baseRawRepoName,
-                })),
-                catchError(err => {
-                    throw err
-                })
+                }))
             )
             const resolveHeadCommitID = resolveDiffRev(
                 {
@@ -77,10 +74,7 @@ export const resolveDiffFileInfo = (
                 map(({ commitID, stagingRepoName }) => ({
                     commitID,
                     rawRepoName: stagingRepoName || state.headRawRepoName,
-                })),
-                catchError(err => {
-                    throw err
-                })
+                }))
             )
             return zip(resolveBaseCommitID, resolveHeadCommitID).pipe(
                 map(
