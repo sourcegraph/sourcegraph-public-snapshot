@@ -609,3 +609,68 @@ func Test_readerGrep_FindZip(t *testing.T) {
 		})
 	}
 }
+
+func Test_concurrentFind(t *testing.T) {
+	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	type args struct {
+		ctx                   context.Context
+		rg                    *readerGrep
+		zf                    *store.ZipFile
+		fileMatchLimit        int
+		patternMatchesContent bool
+		patternMatchesPaths   bool
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantFm       []protocol.FileMatch
+		wantLimitHit bool
+		wantErr      bool
+	}{
+		{
+			name: "nil re returns a FileMatch with no LineMatches",
+			args: args{
+				ctx: context.Background(),
+				rg: &readerGrep{
+					// Check this case specifically.
+					re:        nil,
+					matchPath: match,
+				},
+				zf: &store.ZipFile{
+					Data: []byte("the quick brown fox"),
+					Files: []store.SrcFile{
+						{
+							Name: "a.go",
+						},
+					},
+				},
+				patternMatchesPaths: false,
+				patternMatchesContent: true,
+			},
+			wantFm: []protocol.FileMatch{
+				{
+					Path: "a.go",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFm, gotLimitHit, err := concurrentFind(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("concurrentFind() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFm, tt.wantFm) {
+				t.Errorf("concurrentFind() gotFm = %v, want %v", gotFm, tt.wantFm)
+			}
+			if gotLimitHit != tt.wantLimitHit {
+				t.Errorf("concurrentFind() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+			}
+		})
+	}
+}
+
