@@ -39,7 +39,7 @@ func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Pr
 		client:   cli,
 		codeHost: extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
 		pageSize: 1000,
-		store:    newStore(db, ttl, clock, newCache(ttl, clock)),
+		store:    newStore(db, ttl, clock, newCache()),
 	}
 }
 
@@ -109,7 +109,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		}
 	}
 
-	update := func() ([]uint32, error) {
+	update := func(ctx context.Context) ([]uint32, error) {
 		visible, err := p.repos(ctx, userName)
 		if err != nil && err != errNoResults {
 			return nil, err
