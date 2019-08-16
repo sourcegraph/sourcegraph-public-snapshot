@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
@@ -196,7 +195,7 @@ func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 	return nil
 }
 
-var lockNamespace = cast(fnv1.HashString32("perms"))
+var lockNamespace = int32(fnv1.HashString32("perms"))
 
 func lockQuery(p *Permissions) *sqlf.Query {
 	// Postgres advisory lock ids are a global namespace within one database.
@@ -206,17 +205,12 @@ func lockQuery(p *Permissions) *sqlf.Query {
 	// guarantees would be violated, since those two different users would simply
 	// have to wait on the other's update to finish, using stale permissions until
 	// it would.
-	lockID := cast(fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type)))
+	lockID := int32(fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type)))
 	return sqlf.Sprintf(
 		lockQueryFmtStr,
 		lockNamespace,
 		lockID,
 	)
-}
-
-// cast returns the int32 represented by the same bits as the given uint32.
-func cast(n uint32) int32 {
-	return *(*int32)(unsafe.Pointer(&n))
 }
 
 const lockQueryFmtStr = `
@@ -286,11 +280,14 @@ func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUp
 		return err
 	}
 
+	expired := false
+
 	// Either rollback or commit this transaction, when we're done.
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
-		} else if err = tx.Commit(); err == nil && s.updates != nil {
+		} else if err = tx.Commit(); err == nil &&
+			s.updates != nil && expired {
 			s.updates <- p
 		}
 	}()
@@ -318,8 +315,8 @@ func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUp
 	}
 
 	now := s.clock()
-	if !p.Expired(s.ttl, now) { // Valid!
-		return nil // Updated by another process!
+	if expired = p.Expired(s.ttl, now); !expired { // Valid!
+		return nil // Permissions were updated by another process.
 	}
 
 	// Slow cache update operation, talks to the code host.

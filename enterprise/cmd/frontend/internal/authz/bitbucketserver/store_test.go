@@ -37,6 +37,8 @@ func BenchmarkStore(b *testing.B) {
 	b.Run("ttl=0", func(b *testing.B) {
 		ttl := time.Duration(0)
 		s := newStore(db, ttl, clock, newCache())
+		s.block = true
+
 		ps := &Permissions{
 			UserID: 99,
 			Perm:   authz.Read,
@@ -54,6 +56,8 @@ func BenchmarkStore(b *testing.B) {
 	b.Run("ttl=60s/no-in-memory-cache", func(b *testing.B) {
 		ttl := 60 * time.Second
 		s := newStore(db, ttl, clock, nil)
+		s.block = true
+
 		ps := &Permissions{
 			UserID: 99,
 			Perm:   authz.Read,
@@ -71,6 +75,8 @@ func BenchmarkStore(b *testing.B) {
 	b.Run("ttl=60s/in-memory-cache", func(b *testing.B) {
 		ttl := 60 * time.Second
 		s := newStore(db, ttl, clock, newCache())
+		s.block = true
+
 		ps := &Permissions{
 			UserID: 99,
 			Perm:   authz.Read,
