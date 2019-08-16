@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 )
@@ -303,6 +303,12 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 
 // FindZip is a convenience function to run Find on f.
 func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.FileMatch, error) {
+	if rg.re == nil {
+		return protocol.FileMatch{
+			Path:     f.Name,
+			LimitHit: false,
+		}, nil
+	}
 	lm, limitHit, err := rg.Find(zf, f)
 	return protocol.FileMatch{
 		Path:        f.Name,

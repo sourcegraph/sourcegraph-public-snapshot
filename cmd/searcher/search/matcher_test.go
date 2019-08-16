@@ -586,7 +586,9 @@ func Test_readerGrep_FindZip(t *testing.T) {
 				},
 				zf: &store.ZipFile{},
 			},
-			want: protocol.FileMatch{},
+			want: protocol.FileMatch{
+				Path: "foo.go",
+			},
 		},
 	}
 	for _, tt := range tests {
