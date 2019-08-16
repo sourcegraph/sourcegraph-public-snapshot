@@ -2,12 +2,20 @@ import { fs } from 'mz'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as readline from 'readline'
 import * as uuid from 'uuid'
-import * as db from './database'
 import * as entities from './entities'
 import { hashAndEncodeJSON, hashJSON } from './encoding'
 import * as protocol from 'lsif-protocol'
 import { Connection } from 'typeorm'
 import { connectionCache } from './cache'
+import {
+    MonikerData,
+    RangeData,
+    ResultSetData,
+    DefinitionResultData,
+    ReferenceResultData,
+    DocumentBlob,
+} from './models'
+import { Id } from 'lsif-protocol'
 
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
@@ -22,18 +30,6 @@ export interface ImportedSymbol {
     name: string
     version: string
     identifier: string
-}
-
-namespace LiteralMap {
-    export function create<T = any>(): db.LiteralMap<T> {
-        return Object.create(null)
-    }
-}
-
-namespace Monikers {
-    export function isLocal(moniker: db.MonikerData): boolean {
-        return moniker.kind === protocol.MonikerKind.local
-    }
 }
 
 type InlineRange = [number, number, number, number]
@@ -54,12 +50,19 @@ interface ExternalReference {
 interface DocumentDatabaseData {
     hash: string
     encoded: string
-    definitions?: ExternalDefinition[]
-    references?: ExternalReference[]
+    definitions: ExternalDefinition[]
+    references: ExternalReference[]
+}
+
+interface WrappedDocumentBlob extends DocumentBlob {
+    id: protocol.Id
+    uri: string
+    definitions: MonikerScopedResultData<DefinitionResultData>[] // TODO - get rid of this class definition as well
+    references: MonikerScopedResultData<ReferenceResultData>[] // TODO - get rid of this class definition as well
 }
 
 interface MonikerScopedResultData<T> {
-    moniker: db.MonikerData
+    moniker: MonikerData
     data: T
 }
 
@@ -103,25 +106,27 @@ class BlobStore {
     private vertexHandlerMap: { [K: string]: (element: any) => Promise<void> } = {}
     private edgeHandlerMap: { [K: string]: (element: any) => Promise<void> } = {}
 
-    private definitionDatas: Map<protocol.Id, Map<protocol.Id, db.DefinitionResultData>> = new Map()
+    // TODO - standardize
+    private definitionDatas: Map<protocol.Id, Map<protocol.Id, DefinitionResultData>> = new Map()
     private documents: Map<protocol.Id, protocol.Document> = new Map()
-    public hoverDatas: Map<protocol.Id, lsp.Hover> = new Map() // TODO - visibility
-    public monikerDatas: Map<protocol.Id, db.MonikerData> = new Map() // TODO - visibility
+    private hoverDatas: Map<protocol.Id, lsp.Hover> = new Map()
+    private monikerDatas: Map<protocol.Id, MonikerData> = new Map()
     private packageInformationDatas: Map<protocol.Id, protocol.PackageInformation> = new Map()
-    private rangeDatas: Map<protocol.Id, protocol.Range> = new Map()
-    private referenceDatas: Map<protocol.Id, Map<protocol.Id, db.ReferenceResultData>> = new Map()
-    public resultSetDatas: Map<protocol.Id, db.ResultSetData> = new Map() // TODO - visibility
+    private rangeDatas: Map<protocol.Id, RangeData> = new Map()
+    private referenceDatas: Map<protocol.Id, Map<protocol.Id, ReferenceResultData>> = new Map()
+    private resultSetDatas: Map<protocol.Id, ResultSetData> = new Map()
 
     // TODO
     private projectRoot: string | undefined
 
+    // TODO - expose via method?
     public exportedPackages: Set<ExportedPackage> = new Set()
     public importedSymbols: Set<ImportedSymbol> = new Set()
 
     private knownHashes: Set<string> = new Set()
     private insertedBlobs: Set<string> = new Set()
     private insertedHovers: Set<string> = new Set()
-    private documentDatas: Map<protocol.Id, DocumentData | null> = new Map()
+    private documentDatas: Map<protocol.Id, WrappedDocumentBlob | null> = new Map()
     private monikerSets: Map<protocol.Id, Set<protocol.Id>> = new Map()
     private monikerAttachments: Map<protocol.Id, protocol.Id> = new Map()
     private containsDatas: Map<protocol.Id, protocol.Id[]> = new Map()
@@ -187,13 +192,13 @@ class BlobStore {
         }
     }
 
-    private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
+    private handleDefinitionResult = this.setById(this.definitionDatas, _ => new Map())
     private handleDocument = this.setById(this.documents, (e: protocol.Document) => e)
     private handleHover = this.setById(this.hoverDatas, (e: protocol.HoverResult) => e.result)
     private handleMoniker = this.setById(this.monikerDatas, e => e)
     private handlePackageInformation = this.setById(this.packageInformationDatas, e => e)
-    private handleRange = this.setById(this.rangeDatas, e => e)
-    private handleReferenceResult = this.setById(this.referenceDatas, e => new Map())
+    private handleRange = this.setById(this.rangeDatas, (e: protocol.Range) => e)
+    private handleReferenceResult = this.setById(this.referenceDatas, _ => new Map())
     private handleResultSet = this.setById(this.resultSetDatas, _ => ({}))
 
     private setById<K extends { id: protocol.Id }, V>(
@@ -210,35 +215,36 @@ class BlobStore {
 
     private handleContains(contains: protocol.contains): void {
         let values = this.containsDatas.get(contains.outV)
-        if (values === undefined) {
-            values = []
-            this.containsDatas.set(contains.outV, values)
+        if (!values) {
+            this.containsDatas.set(contains.outV, contains.inVs.slice())
+        } else {
+            values.push(...contains.inVs)
         }
-
-        values.push(...contains.inVs)
     }
 
     private handleItemEdge(edge: protocol.item): void {
         let property: protocol.ItemEdgeProperties | undefined = edge.property
-        if (property === undefined) {
-            const map: Map<protocol.Id, db.DefinitionResultData> = assertDefined(edge.outV, this.definitionDatas)
-            let data: db.DefinitionResultData | undefined = map.get(edge.document)
-            if (data === undefined) {
+        if (!property) {
+            const map = assertDefined(edge.outV, this.definitionDatas)
+
+            let data = map.get(edge.document)
+            if (!data) {
                 data = { values: edge.inVs.slice() }
                 map.set(edge.document, data)
             } else {
                 data.values.push(...edge.inVs)
             }
         } else {
-            const map: Map<protocol.Id, db.ReferenceResultData> = assertDefined(edge.outV, this.referenceDatas)
-            let data: db.ReferenceResultData | undefined = map.get(edge.document)
-            if (data === undefined) {
+            const map = assertDefined(edge.outV, this.referenceDatas)
+
+            let data = map.get(edge.document)
+            if (!data) {
                 data = {}
                 map.set(edge.document, data)
             }
 
             if (property === protocol.ItemEdgeProperties.definitions) {
-                if (data.definitions === undefined) {
+                if (!data.definitions) {
                     data.definitions = edge.inVs.slice()
                 } else {
                     data.definitions.push(...edge.inVs)
@@ -246,7 +252,7 @@ class BlobStore {
             }
 
             if (property === protocol.ItemEdgeProperties.references) {
-                if (data.references === undefined) {
+                if (!data.references) {
                     data.references = edge.inVs.slice()
                 } else {
                     data.references.push(...edge.inVs)
@@ -256,14 +262,14 @@ class BlobStore {
     }
 
     private handleMonikerEdge(moniker: protocol.moniker): void {
-        assertDefined<db.RangeData | db.ResultSetData>(moniker.outV, this.rangeDatas, this.resultSetDatas)
+        assertDefined<RangeData | ResultSetData>(moniker.outV, this.rangeDatas, this.resultSetDatas)
         assertDefined(moniker.inV, this.monikerDatas)
         this.monikerAttachments.set(moniker.outV, moniker.inV)
         this.updateMonikerSets([moniker.inV])
     }
 
     private handleNextEdge(edge: protocol.next): void {
-        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
+        const outV = assertDefined<RangeData | ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
         assertDefined(edge.inV, this.resultSetDatas)
         outV.next = edge.inV
     }
@@ -275,7 +281,7 @@ class BlobStore {
     }
 
     private handlePackageInformationEdge(packageInformation: protocol.packageInformation): void {
-        const source: db.MonikerData = assertDefined(packageInformation.outV, this.monikerDatas)
+        const source: MonikerData = assertDefined(packageInformation.outV, this.monikerDatas)
         const packageInfo = assertDefined(packageInformation.inV, this.packageInformationDatas)
         source.packageInformation = packageInformation.inV
 
@@ -285,22 +291,21 @@ class BlobStore {
     }
 
     private handleDefinitionEdge(edge: protocol.textDocument_definition): void {
-        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
+        const outV = assertDefined<RangeData | ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
         this.ensureMoniker(outV)
         assertDefined(edge.inV, this.definitionDatas)
         outV.definitionResult = edge.inV
     }
 
-
     private handleHoverEdge(edge: protocol.textDocument_hover): void {
-        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
+        const outV = assertDefined<RangeData | ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
         this.ensureMoniker(outV)
         assertDefined(edge.inV, this.hoverDatas)
         outV.hoverResult = edge.inV
     }
 
     private handleReferenceEdge(edge: protocol.textDocument_references): void {
-        const outV = assertDefined<db.RangeData | db.ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
+        const outV = assertDefined<RangeData | ResultSetData>(edge.outV, this.rangeDatas, this.resultSetDatas)
         this.ensureMoniker(outV)
         assertDefined(edge.inV, this.referenceDatas)
         outV.referenceResult = edge.inV
@@ -316,44 +321,7 @@ class BlobStore {
 
     private async handleDocumentEnd(event: protocol.DocumentEvent): Promise<void> {
         const documentData = assertDefined(event.data, this.documentDatas)
-
-        for (const data of this.monikerDatas.values()) {
-            if (data.kind === 'import' && data.packageInformation) {
-                const packageInformation = assertDefined(data.packageInformation!, this.packageInformationDatas)
-
-                this.importedSymbols.add({
-                    scheme: data.scheme,
-                    name: packageInformation!.name!,
-                    version: packageInformation!.version!,
-                    identifier: data.identifier,
-                })
-            }
-        }
-
-        for (const [key, value] of this.monikerAttachments.entries()) {
-            const ids = this.monikerSets.get(value)
-            if (!ids) {
-                throw new Error('moniker set is empty')
-            }
-
-            const source = assertDefined<db.RangeData | db.ResultSetData>(key, this.rangeDatas, this.resultSetDatas)
-            ids.forEach(id => assertDefined(id, this.monikerDatas))
-            source.monikers = Array.from(ids)
-        }
-
-        const contains = this.containsDatas.get(event.data)
-        if (contains !== undefined) {
-            for (let id of contains) {
-                const range = assertDefined(id, this.rangeDatas)
-                await documentData.addRangeData(id, range)
-            }
-        }
-
-        for (const [key, value] of this.packageInformationDatas) {
-            documentData.addPackageInformation(key, value)
-        }
-
-        let data = await documentData.finalize()
+        let data = await this.finalizeBlob(documentData)
 
         try {
             if (this.knownHashes.has(data.hash)) {
@@ -369,11 +337,11 @@ class BlobStore {
 
         await this.connection.getRepository(entities.Document).save({
             hash: data.hash,
-            uri: documentData.getUri(),
+            uri: documentData.uri,
         })
 
         const defs = []
-        for (let definition of data.definitions || []) {
+        for (let definition of data.definitions) {
             for (let range of definition.ranges) {
                 defs.push({
                     scheme: definition.scheme,
@@ -388,7 +356,7 @@ class BlobStore {
         }
 
         const refs = []
-        for (let reference of data.references || []) {
+        for (let reference of data.references) {
             for (const arr of [reference.definitions, reference.references]) {
                 for (const range of arr || []) {
                     refs.push({
@@ -422,8 +390,8 @@ class BlobStore {
     //
     // TODO - categorize
 
-    private getOrCreateDocumentData(document: protocol.Document): DocumentData {
-        let result: DocumentData | undefined | null = this.documentDatas.get(document.id)
+    private getOrCreateDocumentData(document: protocol.Document): WrappedDocumentBlob {
+        let result: WrappedDocumentBlob | undefined | null = this.documentDatas.get(document.id)
         if (result === null) {
             throw new Error(`The document ${document.uri} has already been processed`)
         }
@@ -432,28 +400,21 @@ class BlobStore {
             throw new Error(`No project root`)
         }
 
-        result = new DocumentData(this.projectRoot!, document, this)
+        result = {
+            id: document.id,
+            uri: document.uri.slice(this.projectRoot.length + 1),
+            definitions: [],
+            references: [],
+            ranges: {},
+            resultSets: {},
+            definitionResults: {},
+            referenceResults: {},
+            hovers: {},
+            monikers: {},
+            packageInformation: {},
+        }
+
         this.documentDatas.set(document.id, result)
-        return result
-    }
-
-    public getAndDeleteDefinitions(
-        definitionResult: protocol.Id,
-        documentId: protocol.Id
-    ): db.DefinitionResultData | undefined {
-        const map = assertDefined(definitionResult, this.definitionDatas)
-        const result = map.get(documentId)
-        map.delete(documentId)
-        return result
-    }
-
-    public getAndDeleteReferences(
-        referenceResult: protocol.Id,
-        documentId: protocol.Id
-    ): db.ReferenceResultData | undefined {
-        const map = assertDefined(referenceResult, this.referenceDatas)
-        const result = map.get(documentId)
-        map.delete(documentId)
         return result
     }
 
@@ -473,210 +434,192 @@ class BlobStore {
         }
     }
 
-    private ensureMoniker(data: db.RangeData | db.ResultSetData): void {
-        if (data.monikers !== undefined) {
-            return
+    private ensureMoniker(data: RangeData | ResultSetData): void {
+        if (!data.monikers) {
+            const id = uuid.v4()
+            const monikerData: MonikerData = { id: id, scheme: '$synthetic', identifier: id }
+            data.monikers = [monikerData.identifier]
+            this.monikerDatas.set(monikerData.identifier, monikerData)
         }
-
-        const id = uuid.v4()
-        const monikerData: db.MonikerData = { id: id, scheme: '$synthetic', identifier: id }
-        data.monikers = [monikerData.identifier]
-        this.monikerDatas.set(monikerData.identifier, monikerData)
     }
 
-    public async storeHover(moniker: db.MonikerData, id: protocol.Id): Promise<void> {
+    private async storeHover(moniker: MonikerData, id: protocol.Id): Promise<void> {
         let hover = this.hoverDatas.get(id)
-        if (hover === undefined) {
-            // We have already processed the hover
-            return
-        }
+        // if (!hover) {
+        //     // Should never happen
+        //     return
+        // }
 
         const { hash, encoded } = await hashAndEncodeJSON(hover)
-
-        if (!this.knownHashes.has(hash)) {
-            if (!this.insertedBlobs.has(hash)) {
-                await this.connection.getRepository(entities.Blob).save({ hash, value: encoded })
-                this.insertedBlobs.add(hash)
-            }
-
-            const hoverHash = hashJSON({ s: moniker.scheme, i: moniker.identifier, b: hash })
-
-            if (!this.insertedHovers.has(hoverHash)) {
-                await this.connection
-                    .getRepository(entities.Hover)
-                    .save({ scheme: moniker.scheme, identifier: moniker.identifier, blobHash: hash })
-                this.insertedHovers.add(hoverHash)
-            }
-        }
-    }
-}
-
-class DocumentData {
-    private provider: BlobStore
-    private id: protocol.Id
-    private uri: string
-
-    private blob: db.DocumentBlob = { ranges: {} }
-    private definitions: MonikerScopedResultData<db.DefinitionResultData>[] = []
-    private references: MonikerScopedResultData<db.ReferenceResultData>[] = []
-
-    constructor(projectRoot: string, document: protocol.Document, provider: BlobStore) {
-        this.provider = provider
-        this.id = document.id
-        this.uri = document.uri.slice(projectRoot.length + 1)
-    }
-
-    public getUri(): string {
-        return this.uri
-    }
-
-    public async addRangeData(id: protocol.Id, data: db.RangeData): Promise<void> {
-        this.blob.ranges[id] = data
-        await this.addReferencedData(data)
-    }
-
-    private async addResultSetData(id: protocol.Id, resultSet: db.ResultSetData): Promise<void> {
-        if (this.blob.resultSets === undefined) {
-            this.blob.resultSets = LiteralMap.create()
-        }
-
-        // Many ranges can point to the same result set. Make sure
-        // we only travers once.
-        if (this.blob.resultSets[id] !== undefined) {
+        if (this.knownHashes.has(hash)) {
             return
         }
 
-        this.blob.resultSets[id] = resultSet
-        await this.addReferencedData(resultSet)
+        if (!this.insertedBlobs.has(hash)) {
+            await this.connection.getRepository(entities.Blob).save({ hash, value: encoded })
+            this.insertedBlobs.add(hash)
+        }
+
+        const hoverHash = hashJSON({ s: moniker.scheme, i: moniker.identifier, b: hash })
+        if (this.insertedHovers.has(hoverHash)) {
+            return
+        }
+
+        this.insertedHovers.add(hoverHash)
+
+        await this.connection
+            .getRepository(entities.Hover)
+            .save({ scheme: moniker.scheme, identifier: moniker.identifier, blobHash: hash })
     }
 
-    private async addReferencedData(item: db.RangeData | db.ResultSetData): Promise<void> {
+    //
+    // Blob things
+
+    private async addReferencedDataToBlob(blob: WrappedDocumentBlob, item: RangeData | ResultSetData): Promise<void> {
         const monikers = []
-
-        if (item.monikers !== undefined) {
-            for (const itemMoniker of item.monikers) {
-                const moniker = assertDefined(itemMoniker, this.provider.monikerDatas)
-                this.addMoniker(itemMoniker, moniker)
-                monikers.push(moniker)
-            }
+        for (const itemMoniker of item.monikers || []) {
+            const moniker = assertDefined(itemMoniker, this.monikerDatas)
+            blob.monikers![itemMoniker] = moniker
+            monikers.push(moniker)
         }
 
-        if (item.next !== undefined) {
-            await this.addResultSetData(item.next, assertDefined(item.next, this.provider.resultSetDatas))
+        // Many ranges can point to the same result set. Make sure we only travers once.
+        if (item.next && !blob.resultSets[item.next]) {
+            const resultSet = assertDefined(item.next, this.resultSetDatas)
+            blob.resultSets[item.next] = resultSet
+            await this.addReferencedDataToBlob(blob, resultSet)
         }
 
-        if (item.hoverResult !== undefined) {
-            let local = true
-            for (const moniker of monikers) {
-                if (!Monikers.isLocal(moniker)) {
-                    local = false
-                    await this.provider.storeHover(moniker, item.hoverResult)
-                }
-            }
+        if (item.hoverResult) this.addHoverResultsToBlob(blob, item.hoverResult, monikers)
+        if (item.definitionResult) this.addDefinitionResultsToBlob(blob, item.definitionResult, monikers)
+        if (item.referenceResult) this.addReferenceResultsToBlob(blob, item.referenceResult, monikers)
+    }
 
-            if (local) {
-                if (this.blob.hovers === undefined) {
-                    this.blob.hovers = LiteralMap.create()
-                }
-
-                if (this.blob.hovers[item.hoverResult] === undefined) {
-                    this.blob.hovers[item.hoverResult] = assertDefined(item.hoverResult, this.provider.hoverDatas)
-                }
-            }
+    private async addHoverResultsToBlob(
+        blob: WrappedDocumentBlob,
+        hoverResult: Id,
+        monikers: MonikerData[]
+    ): Promise<void> {
+        let local = true
+        for (const moniker of monikers.filter(m => m.kind !== protocol.MonikerKind.local)) {
+            local = false
+            await this.storeHover(moniker, hoverResult)
         }
 
-        if (item.definitionResult) {
-            const definitions = this.provider.getAndDeleteDefinitions(item.definitionResult, this.id)
-
-            if (definitions !== undefined) {
-                let local = true
-                for (const moniker of monikers) {
-                    if (!Monikers.isLocal(moniker)) {
-                        local = false
-                        this.definitions.push({ moniker, data: definitions })
-                    }
-
-                    if (local) {
-                        if (this.blob.definitionResults === undefined) {
-                            this.blob.definitionResults = LiteralMap.create()
-                        }
-
-                        this.blob.definitionResults[item.definitionResult] = definitions
-                    }
-                }
-            }
-        }
-
-        if (item.referenceResult) {
-            const references = this.provider.getAndDeleteReferences(item.referenceResult, this.id)
-
-            if (references !== undefined) {
-                let local = true
-                for (const moniker of monikers) {
-                    if (!Monikers.isLocal(moniker)) {
-                        local = false
-                        this.references.push({ moniker, data: references })
-                    }
-                }
-
-                if (local) {
-                    if (this.blob.referenceResults === undefined) {
-                        this.blob.referenceResults = LiteralMap.create()
-                    }
-                    this.blob.referenceResults[item.referenceResult] = references
-                }
-            }
+        if (local && !blob.hovers[hoverResult]) {
+            blob.hovers[hoverResult] = assertDefined(hoverResult, this.hoverDatas)
         }
     }
 
-    private addMoniker(id: protocol.Id, moniker: db.MonikerData): void {
-        if (this.blob.monikers === undefined) {
-            this.blob.monikers = LiteralMap.create()
+    private async addDefinitionResultsToBlob(
+        blob: WrappedDocumentBlob,
+        definitionResult: Id,
+        monikers: MonikerData[]
+    ): Promise<void> {
+        const map = assertDefined(definitionResult, this.definitionDatas)
+        const definitions = map.get(blob.id)
+        map.delete(blob.id) // TODO - can we be sure this is correct?
+        if (!definitions) {
+            return
         }
-        this.blob.monikers![id] = moniker
+
+        let local = true
+        for (const moniker of monikers.filter(m => m.kind !== protocol.MonikerKind.local)) {
+            local = false
+            blob.definitions.push({ moniker, data: definitions })
+        }
+
+        if (local) {
+            blob.definitionResults[definitionResult] = definitions
+        }
     }
 
-    public addPackageInformation(id: protocol.Id, packageInformation: db.PackageInformationData): void {
-        if (this.blob.packageInformation === undefined) {
-            this.blob.packageInformation = LiteralMap.create()
+    private async addReferenceResultsToBlob(
+        blob: WrappedDocumentBlob,
+        referenceResult: Id,
+        monikers: MonikerData[]
+    ): Promise<void> {
+        const map = assertDefined(referenceResult, this.referenceDatas)
+        const references = map.get(blob.id)
+        map.delete(blob.id) // TODO - can we be sure this is correct?
+        if (!references) {
+            return
         }
-        this.blob.packageInformation![id] = packageInformation
+
+        let local = true
+        for (const moniker of monikers.filter(m => m.kind !== protocol.MonikerKind.local)) {
+            local = false
+            blob.references.push({ moniker, data: references })
+        }
+
+        if (local) {
+            blob.referenceResults[referenceResult] = references
+        }
     }
 
-    public async finalize(): Promise<DocumentDatabaseData> {
-        const id2InlineRange = (id: protocol.Id): [number, number, number, number] => {
-            const range = this.blob.ranges[id]
+    private async finalizeBlob(blob: WrappedDocumentBlob): Promise<DocumentDatabaseData> {
+        const convertRange = (id: protocol.Id): [number, number, number, number] => {
+            const range = blob.ranges[id]
             return [range.start.line, range.start.character, range.end.line, range.end.character]
         }
 
-        let externalDefinitions: ExternalDefinition[] = []
-        let externalReferences: ExternalReference[] = []
+        for (const data of this.monikerDatas.values()) {
+            if (data.kind === 'import' && data.packageInformation) {
+                const packageInformation = assertDefined(data.packageInformation!, this.packageInformationDatas)
 
-        for (let definition of this.definitions) {
-            externalDefinitions.push({
+                this.importedSymbols.add({
+                    scheme: data.scheme,
+                    name: packageInformation!.name!,
+                    version: packageInformation!.version!,
+                    identifier: data.identifier,
+                })
+            }
+        }
+
+        for (const [key, value] of this.monikerAttachments.entries()) {
+            const ids = this.monikerSets.get(value)
+            if (!ids) {
+                throw new Error('moniker set is empty')
+            }
+
+            const source = assertDefined<RangeData | ResultSetData>(key, this.rangeDatas, this.resultSetDatas)
+            ids.forEach(id => assertDefined(id, this.monikerDatas))
+            source.monikers = Array.from(ids)
+        }
+
+        const contains = this.containsDatas.get(blob.id)
+        if (contains) {
+            for (let id of contains) {
+                const range = assertDefined(id, this.rangeDatas)
+                blob.ranges[id] = range
+                await this.addReferencedDataToBlob(blob, range)
+            }
+        }
+
+        for (const [key, value] of this.packageInformationDatas) {
+            blob.packageInformation![key] = value
+        }
+
+        const definitions = []
+        for (const definition of blob.definitions) {
+            definitions.push({
                 scheme: definition.moniker.scheme,
                 indentifier: definition.moniker.identifier,
-                ranges: definition.data.values.map(id2InlineRange),
+                ranges: definition.data.values.map(convertRange),
             })
         }
 
-        for (let reference of this.references) {
-            externalReferences.push({
+        const references = []
+        for (const reference of blob.references) {
+            references.push({
                 scheme: reference.moniker.scheme,
                 indentifier: reference.moniker.identifier,
-                definitions: reference.data.definitions ? reference.data.definitions.map(id2InlineRange) : undefined,
-                references: reference.data.references ? reference.data.references.map(id2InlineRange) : undefined,
+                definitions: reference.data.definitions ? reference.data.definitions.map(convertRange) : undefined,
+                references: reference.data.references ? reference.data.references.map(convertRange) : undefined,
             })
         }
 
-        const { hash, encoded } = await hashAndEncodeJSON(this.blob)
-
-        return {
-            hash: hash,
-            encoded: encoded,
-            definitions: externalDefinitions.length > 0 ? externalDefinitions : undefined,
-            references: externalReferences.length > 0 ? externalReferences : undefined,
-        }
+        return { ...(await hashAndEncodeJSON(blob)), definitions, references }
     }
 }
 
@@ -687,7 +630,7 @@ function assertDefined<T>(id: protocol.Id, ...maps: Map<protocol.Id, T | null>[]
             throw new Error(`Element ${id} has already been processed.`)
         }
 
-        if (value !== undefined) {
+        if (value) {
             return value
         }
     }

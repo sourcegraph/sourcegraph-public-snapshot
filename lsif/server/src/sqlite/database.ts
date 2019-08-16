@@ -1,4 +1,4 @@
-import { Range, Id,  Moniker, PackageInformation } from 'lsif-protocol'
+import { Id } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 import { CorrelationDatabase } from './xrepo'
 import { makeFilename } from './backend'
@@ -6,55 +6,7 @@ import { decodeJSON } from './encoding'
 import * as entities from './entities'
 import { Connection } from 'typeorm'
 import { connectionCache, blobCache } from './cache'
-
-export interface DocumentBlob {
-    ranges: LiteralMap<RangeData> // TODO - make searcahble via two-phase binary search
-    resultSets?: LiteralMap<ResultSetData>
-    definitionResults?: LiteralMap<DefinitionResultData>
-    referenceResults?: LiteralMap<ReferenceResultData>
-    hovers?: LiteralMap<lsp.Hover>
-    monikers?: LiteralMap<MonikerData>
-    packageInformation?: LiteralMap<PackageInformationData>
-}
-
-// TODO - defan these, move them into entities
-export interface RangeData extends Pick<Range, 'start' | 'end' | 'tag'> {
-    monikers?: Id[]
-    next?: Id
-    hoverResult?: Id
-    definitionResult?: Id
-    referenceResult?: Id
-}
-
-export interface ResultSetData {
-    monikers?: Id[]
-    next?: Id
-    hoverResult?: Id
-    definitionResult?: Id
-    referenceResult?: Id
-}
-
-export interface DefinitionResultData {
-    values: Id[]
-}
-
-export interface ReferenceResultData {
-    definitions?: Id[]
-    references?: Id[]
-}
-
-// TODO - defan these, move them into entities
-export type MonikerData = Pick<Moniker, 'id' | 'scheme' | 'identifier' | 'kind'> & {
-    packageInformation?: Id
-}
-
-// TODO - defan these, move them into entities
-export type PackageInformationData = Pick<PackageInformation, 'name' | 'manager' | 'uri' | 'version' | 'repository'>
-
-export interface LiteralMap<T> {
-    [key: string]: T
-    [key: number]: T
-}
+import { DocumentBlob, MonikerData, ReferenceResultData, ResultSetData, LiteralMap, RangeData } from './models'
 
 const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
 const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
@@ -401,6 +353,7 @@ export class Database {
         let candidate: RangeData | undefined
         for (const key of Object.keys(blob.ranges)) {
             const range = blob.ranges[key]
+            // TODO - this can be efficient for large files by using a binary search
             if (containsPosition(range, position) && (!candidate || containsRange(candidate, range))) {
                 candidate = range
             }

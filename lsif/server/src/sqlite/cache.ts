@@ -1,5 +1,5 @@
 import { Connection, createConnection } from 'typeorm'
-import { DocumentBlob } from './database'
+import { DocumentBlob } from './models'
 import { Id } from 'lsif-protocol'
 import Yallist from 'yallist'
 
