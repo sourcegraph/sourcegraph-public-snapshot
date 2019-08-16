@@ -2,6 +2,9 @@ import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
 import { retry } from '../util/e2e-test-utils'
 import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from './util'
+import got from 'got'
+import { gql } from '../../../shared/src/graphql/graphql'
+import { random } from 'lodash'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -87,6 +90,8 @@ describe('e2e test suite', () => {
         test('Check settings are saved and applied', async () => {
             await driver.page.goto(baseURL + '/users/test/settings')
             await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+
+            const message = 'A wild notice appears!'
             await driver.replaceText({
                 selector: '.e2e-settings-file .monaco-editor',
                 newText: JSON.stringify({
@@ -94,7 +99,7 @@ describe('e2e test suite', () => {
                         {
                             dismissable: false,
                             location: 'top',
-                            message: 'A wild notice appears!',
+                            message,
                         },
                     ],
                 }),
@@ -102,16 +107,69 @@ describe('e2e test suite', () => {
             })
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             await driver.page.waitForSelector('.e2e-global-alert .global-alerts__alert', { visible: true })
-            await driver.page.evaluate(() => {
+            await driver.page.evaluate(message => {
                 const elem = document.querySelector('.e2e-global-alert .global-alerts__alert')
                 if (!elem) {
                     throw new Error('No .e2e-global-alert .global-alerts__alert element found')
                 }
-                const notice = 'A wild notice appears!'
-                if (!(elem as HTMLElement).innerText.includes(notice)) {
-                    throw new Error('Expected "' + notice + '" message, but didn\'t find it')
+                if (!(elem as HTMLElement).innerText.includes(message)) {
+                    throw new Error('Expected "' + message + '" message, but didn\'t find it')
                 }
+            }, message)
+        })
+
+        test('Check access tokens work (create, use and delete)', async () => {
+            await driver.page.goto(baseURL + '/users/test/settings/tokens/new')
+            await driver.page.waitForSelector('.e2e-create-access-token-description')
+
+            const name = 'E2E Test ' + random(1, 1e7)
+
+            await driver.replaceText({
+                selector: '.e2e-create-access-token-description',
+                newText: name,
+                selectMethod: 'keyboard',
             })
+
+            await driver.page.click('.e2e-create-access-token-submit')
+            const token: string = await (await driver.page.waitForFunction(() => {
+                const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
+                return elem && elem.value
+            })).jsonValue()
+
+            const resp = await got.post('/.api/graphql', {
+                baseUrl: baseURL,
+                headers: {
+                    Authorization: 'token ' + token,
+                },
+                body: {
+                    query: gql`
+                        query {
+                            currentUser {
+                                username
+                            }
+                        }
+                    `,
+                    variables: {},
+                },
+                json: true,
+            })
+
+            const username = resp.body.data.currentUser.username
+            expect(username).toBe('test')
+
+            await Promise.all([
+                driver.acceptNextDialog(),
+                (await driver.page.waitForSelector(
+                    `[data-e2e-access-token-description="${name}"] .e2e-access-token-delete`,
+                    { visible: true }
+                )).click(),
+            ])
+
+            await driver.page.waitFor(
+                name => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
+                {},
+                name
+            )
         })
     })
 
