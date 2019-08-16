@@ -35,10 +35,10 @@ export const resolveDiffFileInfo = (
             const resolveBaseCommitID = resolveDiffRev(
                 {
                     repoName: state.baseRawRepoName,
-                    differentialID: state.differentialID,
-                    diffID: (state.leftDiffID || state.diffID)!,
-                    leftDiffID: state.leftDiffID,
-                    useDiffForBase: Boolean(state.leftDiffID), // if ?vs and base is not `on` i.e. the initial commit)
+                    revisionID: state.revisionID,
+                    diffID: state.baseDiffID || state.diffID,
+                    baseDiffID: state.baseDiffID,
+                    useDiffForBase: Boolean(state.baseDiffID), // if ?vs and base is not `on` i.e. the initial commit)
                     useBaseForDiff: false,
                     filePath: baseFilePath || filePath,
                     isBase: true,
@@ -57,9 +57,9 @@ export const resolveDiffFileInfo = (
             const resolveHeadCommitID = resolveDiffRev(
                 {
                     repoName: state.headRawRepoName,
-                    differentialID: state.differentialID,
-                    diffID: state.diffID!,
-                    leftDiffID: state.leftDiffID,
+                    revisionID: state.revisionID,
+                    diffID: state.diffID,
+                    baseDiffID: state.baseDiffID,
                     useDiffForBase: false,
                     useBaseForDiff: false,
                     filePath,

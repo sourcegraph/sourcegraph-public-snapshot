@@ -156,13 +156,13 @@ interface ConduitDifferentialQueryResponse {
     }
 }
 
-function getRepoPHIDForDifferentialID(differentialID: number): Observable<string> {
-    return queryConduit<ConduitDifferentialQueryResponse>('/api/differential.query', { ids: [differentialID] }).pipe(
+function getRepoPHIDForRevisionID(revisionID: number): Observable<string> {
+    return queryConduit<ConduitDifferentialQueryResponse>('/api/differential.query', { ids: [revisionID] }).pipe(
         map(result => {
             const phid = result['0'].repositoryPHID
             if (!phid) {
-                // This happens for diffs that were created without an associated repository
-                throw new Error(`no repositoryPHID for diff ${differentialID}`)
+                // This happens for revisions that were created without an associated repository
+                throw new Error(`no repositoryPHID for revision ${revisionID}`)
             }
             return phid
         })
@@ -279,11 +279,11 @@ function getRepoDetailsFromRepoPHID(
     )
 }
 
-export function getRepoDetailsFromDifferentialID(
-    differentialID: number,
+export function getRepoDetailsFromRevisionID(
+    revisionID: number,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<PhabricatorRepoDetails> {
-    return getRepoPHIDForDifferentialID(differentialID).pipe(
+    return getRepoPHIDForRevisionID(revisionID).pipe(
         switchMap(repositoryPHID => getRepoDetailsFromRepoPHID(repositoryPHID, requestGraphQL))
     )
 }
@@ -409,9 +409,9 @@ function hasThisFileChanged(filePath: string, changes: ConduitDiffChange[]): boo
 interface ResolveDiffOpt {
     repoName: string
     filePath: string
-    differentialID: number
+    revisionID: number
     diffID: number
-    leftDiffID?: number
+    baseDiffID?: number
     isBase: boolean
     useDiffForBase: boolean // indicates whether the base should use the diff commit
     useBaseForDiff: boolean // indicates whether the diff should use the base commit
@@ -422,21 +422,21 @@ interface PropsWithInfo extends ResolveDiffOpt {
 }
 
 function getPropsWithInfo(props: ResolveDiffOpt): Observable<PropsWithInfo> {
-    return getDiffDetailsFromConduit(props.diffID, props.differentialID).pipe(
+    return getDiffDetailsFromConduit(props.diffID, props.revisionID).pipe(
         switchMap(info => {
-            if (props.isBase || !props.leftDiffID || hasThisFileChanged(props.filePath, info.changes)) {
+            if (props.isBase || !props.baseDiffID || hasThisFileChanged(props.filePath, info.changes)) {
                 // no need to update props
                 return of({
                     ...props,
                     info,
                 })
             }
-            return getDiffDetailsFromConduit(props.leftDiffID, props.differentialID).pipe(
+            return getDiffDetailsFromConduit(props.baseDiffID, props.revisionID).pipe(
                 map(
                     (info: ConduitDiffDetails): PropsWithInfo => ({
                         ...props,
                         info,
-                        diffID: props.leftDiffID!,
+                        diffID: props.baseDiffID!,
                         useBaseForDiff: true,
                     })
                 )

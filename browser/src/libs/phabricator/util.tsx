@@ -1,6 +1,6 @@
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
-import { getRepoDetailsFromCallsign, getRepoDetailsFromDifferentialID } from './backend'
+import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID } from './backend'
 
 const TAG_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/
 function matchPageTag(): RegExpExecArray | null {
@@ -182,10 +182,10 @@ export async function getPhabricatorState(
             comparison: differentialMatch[7],
         }
 
-        const differentialID = parseInt(match.differentialID.split('D')[1], 10)
+        const revisionID = parseInt(match.differentialID.split('D')[1], 10)
         let diffID = match.diffID ? parseInt(match.diffID, 10) : undefined
 
-        const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, requestGraphQL).toPromise()
+        const { callsign } = await getRepoDetailsFromRevisionID(revisionID, requestGraphQL).toPromise()
         if (!callsign) {
             console.error('callsign not found')
             return null
@@ -204,7 +204,7 @@ export async function getPhabricatorState(
         let baseRev = `phabricator/base/${diffID}`
         let headRev = `phabricator/diff/${diffID}`
 
-        let leftDiffID: number | undefined
+        let baseDiffID: number | undefined
 
         const maxDiff = getMaxDiffFromTabView()
         const diffLanded = isDifferentialLanded()
@@ -220,8 +220,8 @@ export async function getPhabricatorState(
             const comparisonMatch = COMPARISON_REGEX.exec(match.comparison)!
             const leftID = comparisonMatch[1]
             if (leftID !== 'on') {
-                leftDiffID = parseInt(leftID, 10)
-                baseRev = `phabricator/diff/${leftDiffID}`
+                baseDiffID = parseInt(leftID, 10)
+                baseRev = `phabricator/diff/${baseDiffID}`
             } else {
                 baseRev = `phabricator/base/${comparisonMatch[2]}`
             }
@@ -243,9 +243,9 @@ export async function getPhabricatorState(
             baseRev,
             headRawRepoName: rawRepoName,
             headRev, // This will be blank on GitHub, but on a manually staged instance should exist
-            differentialID,
+            revisionID,
             diffID,
-            leftDiffID,
+            baseDiffID,
             mode: PhabricatorMode.Differential,
         }
     }
@@ -321,7 +321,7 @@ export async function getPhabricatorState(
         if (!differentialMatch) {
             throw new Error('failed parsing differentialID')
         }
-        const differentialID = parseInt(differentialMatch[1], 10)
+        const revisionID = parseInt(differentialMatch[1], 10)
 
         const diffMatch = diffHref.getAttribute('href')!.match(/\/differential\/diff\/(\d+)/)
         if (!diffMatch) {
@@ -329,7 +329,7 @@ export async function getPhabricatorState(
         }
         const diffID = parseInt(diffMatch[1], 10)
 
-        const { callsign } = await getRepoDetailsFromDifferentialID(differentialID, requestGraphQL).toPromise()
+        const { callsign } = await getRepoDetailsFromRevisionID(revisionID, requestGraphQL).toPromise()
         if (!callsign) {
             console.error('callsign not found')
             return null
@@ -360,7 +360,7 @@ export async function getPhabricatorState(
             baseRev,
             headRawRepoName: rawRepoName,
             headRev, // This will be blank on GitHub, but on a manually staged instance should exist
-            differentialID,
+            revisionID,
             diffID,
             mode: PhabricatorMode.Differential,
         }
