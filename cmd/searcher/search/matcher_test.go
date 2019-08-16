@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"os"
 	"reflect"
 	"regexp"
@@ -14,6 +13,8 @@ import (
 	"testing"
 	"testing/iotest"
 	"testing/quick"
+
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
