@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"os"
 	"reflect"
 	"regexp"
@@ -551,4 +552,60 @@ var githubStore = &store.Store{
 func init() {
 	// Clear out store so we pick up changes in our store writing code.
 	os.RemoveAll(githubStore.Path)
+}
+
+func Test_readerGrep_FindZip(t *testing.T) {
+	type fields struct {
+		re               *regexp.Regexp
+		ignoreCase       bool
+		transformBuf     []byte
+		matchPath        pathmatch.PathMatcher
+		literalSubstring []byte
+	}
+	type args struct {
+		zf *store.ZipFile
+		f  *store.SrcFile
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    protocol.FileMatch
+		wantErr bool
+	}{
+		{
+			name: "nil re returns a FileMatch with no LineMatches",
+			fields: fields{
+				// Just calling this out explicitly.
+				// This field can be nil.
+				re: nil,
+			},
+			args: args{
+				f: &store.SrcFile{
+					Name: "foo.go",
+				},
+				zf: &store.ZipFile{},
+			},
+			want: protocol.FileMatch{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rg := &readerGrep{
+				re:               tt.fields.re,
+				ignoreCase:       tt.fields.ignoreCase,
+				transformBuf:     tt.fields.transformBuf,
+				matchPath:        tt.fields.matchPath,
+				literalSubstring: tt.fields.literalSubstring,
+			}
+			got, err := rg.FindZip(tt.args.zf, tt.args.f)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FindZip() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FindZip() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
