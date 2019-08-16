@@ -596,16 +596,16 @@ describe('e2e test suite', () => {
                 },
             ]
 
-            for (const highlightSymbolTest of highlightSymbolTests) {
-                test(highlightSymbolTest.name, async () => {
-                    await driver.page.goto(baseURL + highlightSymbolTest.filePath)
+            for (const { name, filePath } of highlightSymbolTests) {
+                test(name, async () => {
+                    await driver.page.goto(baseURL + filePath)
 
                     await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
 
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
                     let evaluated = false
-                    for await (const selector of await driver.page.$$('.e2e-symbol-link')) {
+                    for (const selector of await driver.page.$$('.e2e-symbol-link')) {
                         const href = await (await selector.getProperty('href')).jsonValue()
                         const line = href.match(/#L(\d+):\d+-\d+:\d+$/)[1]
                         await selector.click()
