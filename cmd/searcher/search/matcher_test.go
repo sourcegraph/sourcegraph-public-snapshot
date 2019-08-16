@@ -14,9 +14,8 @@ import (
 	"testing/iotest"
 	"testing/quick"
 
-	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"github.com/sourcegraph/sourcegraph/pkg/testutil"
 )
