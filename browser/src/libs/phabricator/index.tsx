@@ -11,29 +11,34 @@ export interface DiffusionState extends RawRepoSpec, ResolvedRevSpec, FileSpec {
     mode: PhabricatorMode.Diffusion
 }
 
-export interface DifferentialState {
-    mode: PhabricatorMode.Differential
-
+export interface RevisionSpec {
     /**
-     * The ID of the revision in Differential (for example, 'D1'.).
+     * The ID of the revision in Differential.
      * A revision is a set of changes up for review in Differential.
      * See https://secure.phabricator.com/book/phabricator/article/differential/#how-review-works
      */
     revisionID: number
+}
 
+export interface DiffSpec {
     /**
      * The ID of the 'head' diff that is being viewed in the Differential UI.
      * A Differential revision is made up of one or more 'Diffs' (commits).
      */
     diffID: number
+}
 
+export interface BaseDiffSpec {
     /**
      * The ID of the 'base' diff. This is only defined when comparing
      * two states of a revision in the differential UI.
      *
      */
     baseDiffID?: number
+}
 
+export interface DifferentialState extends RevisionSpec, DiffSpec, BaseDiffSpec {
+    mode: PhabricatorMode.Differential
     baseRev: string
     baseRawRepoName: string
     headRev: string

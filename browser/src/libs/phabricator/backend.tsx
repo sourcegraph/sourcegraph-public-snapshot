@@ -10,6 +10,8 @@ import { resolveRepo } from '../../shared/repo/backend'
 import { normalizeRepoName } from './util'
 import { ajax } from 'rxjs/ajax'
 import { EREPONOTFOUND } from '../../../../shared/src/backend/errors'
+import { RepoSpec, FileSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
+import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -344,9 +346,7 @@ function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
     return { callsign: repo.fields.callsign, rawRepoName }
 }
 
-interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'> {
-    repoName: string
-    diffID: number
+interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'>, RepoSpec, DiffSpec {
     baseRev: string
     patch?: string
     date?: string
@@ -356,7 +356,7 @@ interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'> 
 }
 
 const resolveStagingRev = memoizeObservable(
-    ({ requestGraphQL, ...variables }: ResolveStagingOptions): Observable<string | null> =>
+    ({ requestGraphQL, ...variables }: ResolveStagingOptions): Observable<ResolvedRevSpec> =>
         requestGraphQL<GQL.IMutation>({
             request: gql`
                 mutation ResolveStagingRev(
@@ -387,11 +387,15 @@ const resolveStagingRev = memoizeObservable(
             mightContainPrivateInfo: true,
         }).pipe(
             map(dataOrThrowErrors),
-            map(result => {
-                if (!result.resolvePhabricatorDiff) {
+            map(({ resolvePhabricatorDiff }) => {
+                if (!resolvePhabricatorDiff) {
                     throw new Error('Empty resolvePhabricatorDiff')
                 }
-                return result.resolvePhabricatorDiff.oid
+                const { oid } = resolvePhabricatorDiff
+                if (!oid) {
+                    throw new Error('Could not resolve staging rev: empty oid')
+                }
+                return { commitID: oid }
             })
         ),
     ({ diffID }: ResolveStagingOptions) => diffID.toString()
@@ -406,36 +410,31 @@ function hasThisFileChanged(filePath: string, changes: ConduitDiffChange[]): boo
     return false
 }
 
-interface ResolveDiffOpt {
-    repoName: string
-    filePath: string
-    revisionID: number
-    diffID: number
-    baseDiffID?: number
+interface ResolveDiffOpt extends RepoSpec, FileSpec, RevisionSpec, DiffSpec, BaseDiffSpec {
     isBase: boolean
     useDiffForBase: boolean // indicates whether the base should use the diff commit
     useBaseForDiff: boolean // indicates whether the diff should use the base commit
 }
 
-interface PropsWithInfo extends ResolveDiffOpt {
-    info: ConduitDiffDetails
+interface PropsWithDiffDetails extends ResolveDiffOpt {
+    diffDetails: ConduitDiffDetails
 }
 
-function getPropsWithInfo(props: ResolveDiffOpt): Observable<PropsWithInfo> {
+function getPropsWithDiffDetails(props: ResolveDiffOpt): Observable<PropsWithDiffDetails> {
     return getDiffDetailsFromConduit(props.diffID, props.revisionID).pipe(
-        switchMap(info => {
-            if (props.isBase || !props.baseDiffID || hasThisFileChanged(props.filePath, info.changes)) {
+        switchMap(diffDetails => {
+            if (props.isBase || !props.baseDiffID || hasThisFileChanged(props.filePath, diffDetails.changes)) {
                 // no need to update props
                 return of({
                     ...props,
-                    info,
+                    diffDetails,
                 })
             }
             return getDiffDetailsFromConduit(props.baseDiffID, props.revisionID).pipe(
                 map(
-                    (info: ConduitDiffDetails): PropsWithInfo => ({
+                    (diffDetails): PropsWithDiffDetails => ({
                         ...props,
-                        info,
+                        diffDetails,
                         diffID: props.baseDiffID!,
                         useBaseForDiff: true,
                     })
@@ -446,9 +445,9 @@ function getPropsWithInfo(props: ResolveDiffOpt): Observable<PropsWithInfo> {
 }
 
 function getStagingDetails(
-    propsWithInfo: PropsWithInfo
+    propsWithInfo: PropsWithDiffDetails
 ): { repoName: string; ref: ConduitRef; unconfigured: boolean } | undefined {
-    const stagingInfo = propsWithInfo.info.properties['arc.staging']
+    const stagingInfo = propsWithInfo.diffDetails.properties['arc.staging']
     if (!stagingInfo) {
         return undefined
     }
@@ -460,7 +459,7 @@ function getStagingDetails(
         const type = propsWithInfo.useBaseForDiff ? 'base' : 'diff'
         key = `refs/tags/phabricator/${type}/${propsWithInfo.diffID}`
     }
-    for (const ref of propsWithInfo.info.properties['arc.staging'].refs) {
+    for (const ref of propsWithInfo.diffDetails.properties['arc.staging'].refs) {
         if (ref.ref === key) {
             const remote = ref.remote.uri
             if (remote) {
@@ -475,47 +474,37 @@ function getStagingDetails(
     return undefined
 }
 
-interface ResolvedDiff {
-    commitID: string
+interface ResolvedDiff extends ResolvedRevSpec {
     stagingRepoName?: string
 }
 
 export function resolveDiffRev(
     props: ResolveDiffOpt,
-    requestGraphQL: PlatformContext['requestGraphQL'],
-    part: 'base' | 'head'
+    requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<ResolvedDiff> {
-    console.log(`Resolving diff rev for ${part}`, props)
-    const ensureCommitID = (commitID: string | null): { commitID: string } => {
-        if (!commitID) {
-            throw new Error('commitID cannot be null')
-        }
-        return { commitID }
-    }
-    return getPropsWithInfo(props).pipe(
-        switchMap(propsWithInfo => {
-            const stagingDetails = getStagingDetails(propsWithInfo)
+    return getPropsWithDiffDetails(props).pipe(
+        switchMap(({ diffDetails, ...props }) => {
+            const stagingDetails = getStagingDetails({ diffDetails, ...props })
             const conduitProps = {
-                repoName: propsWithInfo.repoName,
-                diffID: propsWithInfo.diffID,
-                baseRev: propsWithInfo.info.sourceControlBaseRevision,
-                date: propsWithInfo.info.dateCreated,
-                authorName: propsWithInfo.info.authorName,
-                authorEmail: propsWithInfo.info.authorEmail,
-                description: propsWithInfo.info.description,
+                repoName: props.repoName,
+                diffID: props.diffID,
+                baseRev: diffDetails.sourceControlBaseRevision,
+                date: diffDetails.dateCreated,
+                authorName: diffDetails.authorName,
+                authorEmail: diffDetails.authorEmail,
+                description: diffDetails.description,
             }
 
-            // When resolving the base, the commit ID is found directly on the diff description.
-            if (propsWithInfo.isBase && !propsWithInfo.useDiffForBase) {
-                return of({ commitID: propsWithInfo.info.sourceControlBaseRevision })
+            // When resolving the base, use the commit ID from the diff details.
+            if (props.isBase && !props.useDiffForBase) {
+                return of({ commitID: diffDetails.sourceControlBaseRevision })
             }
             if (!stagingDetails || stagingDetails.unconfigured) {
                 // If there are no staging details, get the patch from the conduit API,
                 // create a one-off commit on the Sourcegraph instance from the patch,
                 // and resolve to the commit ID returned by the Sourcegraph instance.
-                return getRawDiffFromConduit(propsWithInfo.diffID).pipe(
-                    switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL })),
-                    map(ensureCommitID)
+                return getRawDiffFromConduit(props.diffID).pipe(
+                    switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL }))
                 )
             }
 
@@ -533,9 +522,8 @@ export function resolveDiffRev(
                     if (error.code !== EREPONOTFOUND) {
                         throw error
                     }
-                    return getRawDiffFromConduit(propsWithInfo.diffID).pipe(
-                        switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL })),
-                        map(ensureCommitID)
+                    return getRawDiffFromConduit(props.diffID).pipe(
+                        switchMap(patch => resolveStagingRev({ ...conduitProps, patch, requestGraphQL }))
                     )
                 })
             )

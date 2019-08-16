@@ -43,8 +43,7 @@ export const resolveDiffFileInfo = (
                     filePath: baseFilePath || filePath,
                     isBase: true,
                 },
-                requestGraphQL,
-                'base'
+                requestGraphQL
             ).pipe(
                 tap(info => {
                     console.log('resolveBaseCommitID', info)
@@ -65,8 +64,7 @@ export const resolveDiffFileInfo = (
                     filePath,
                     isBase: false,
                 },
-                requestGraphQL,
-                'head'
+                requestGraphQL
             ).pipe(
                 tap(info => {
                     console.log('resolveHeadCommitID', info)
