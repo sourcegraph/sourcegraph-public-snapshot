@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -139,7 +140,11 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 	if err != nil {
 		return nil, err
 	}
-	return append(issues, changesets...), nil
+	allThreads := append(issues, changesets...)
+	sort.Slice(allThreads, func(i, j int) bool {
+		return allThreads[i].Internal_RepositoryID() < allThreads[j].Internal_RepositoryID()
+	})
+	return allThreads, nil
 }
 
 func (x *rulesExecutor) syncThreads(ctx context.Context, campaignID int64, campaignName string) error {

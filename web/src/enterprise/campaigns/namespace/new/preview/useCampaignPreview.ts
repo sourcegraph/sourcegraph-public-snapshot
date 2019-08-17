@@ -213,7 +213,10 @@ export const useCampaignPreview = (
     useEffect(() => {
         // Refresh more slowly on changes to the name or description.
         const inputSubjectChanges = merge(
-            inputSubject.pipe(distinctUntilChanged((a, b) => a.namespace === b.namespace && isEqual(a.rules, b.rules))),
+            inputSubject.pipe(
+                debounceTime(250),
+                distinctUntilChanged((a, b) => a.namespace === b.namespace && isEqual(a.rules, b.rules))
+            ),
             inputSubject.pipe(
                 distinctUntilChanged((a, b) => a.name === b.name && a.body === b.body),
                 debounceTime(2000)

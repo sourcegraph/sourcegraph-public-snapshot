@@ -190,10 +190,10 @@ export const PackageJsonDependencyCampaignTemplate: CampaignTemplate = {
 }
 
 const SAMPLE_PACKAGE_NAMES: { packageName: string; count: number }[] = [
-    { packageName: 'typescript', count: 5 },
-    { packageName: 'react', count: 3 },
-    { packageName: 'lodash', count: 3 },
-    { packageName: 'mdi-react', count: 3 },
-    { packageName: 'glob', count: 2 },
-    { packageName: '@sourcegraph/codeintellify', count: 1 },
+    { packageName: 'typescript', count: 351 },
+    { packageName: 'react', count: 91 },
+    { packageName: 'lodash', count: 126 },
+    { packageName: 'mdi-react', count: 53 },
+    { packageName: 'glob', count: 29 },
+    { packageName: '@sourcegraph/codeintellify', count: 15 },
 ]

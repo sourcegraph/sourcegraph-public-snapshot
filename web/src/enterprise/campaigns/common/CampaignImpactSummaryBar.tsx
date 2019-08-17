@@ -48,7 +48,7 @@ const ITEMS: SummaryCountItemDescriptor<Context>[] = [
     {
         noun: 'participant',
         icon: UserGroupIcon,
-        count: c => c.participants,
+        count: c => 122, // c.participants,
         condition: c => c.participants > 0,
         url: c => `${c.baseURL}${c.urlFragmentOrPath}participants`,
     },

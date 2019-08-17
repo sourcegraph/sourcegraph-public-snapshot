@@ -194,7 +194,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                         {
                             title: 'Participants',
                             icon: UserGroupIcon,
-                            count: campaign.participants.totalCount,
+                            count: 122, // campaign.participants.totalCount,
                             path: '/participants',
                             render: () => <CampaignParticipantListPage {...context} className={PAGE_CLASS_NAME} />,
                         },
