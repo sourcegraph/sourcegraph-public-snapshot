@@ -590,7 +590,7 @@ func Test_concurrentFind(t *testing.T) {
 						},
 					},
 				},
-				patternMatchesPaths: false,
+				patternMatchesPaths:   false,
 				patternMatchesContent: true,
 			},
 			wantFm: []protocol.FileMatch{
@@ -616,4 +616,3 @@ func Test_concurrentFind(t *testing.T) {
 		})
 	}
 }
-
