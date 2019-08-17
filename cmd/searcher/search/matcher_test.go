@@ -584,7 +584,6 @@ func Test_concurrentFind(t *testing.T) {
 					matchPath: match,
 				},
 				zf: &store.ZipFile{
-					Data: []byte("the quick brown fox"),
 					Files: []store.SrcFile{
 						{
 							Name: "a.go",
