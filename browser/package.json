@@ -19,7 +19,7 @@
     "stylelint": "stylelint 'src/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "test": "jest --testPathIgnorePatterns e2e",
-    "test-e2e": "jest --coverage=false e2e"
+    "test-e2e": "jest --runInBand --coverage=false ./e2e/"
   },
   "browserslist": [
     "last 3 Chrome versions",

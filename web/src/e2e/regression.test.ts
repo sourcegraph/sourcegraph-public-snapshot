@@ -1,6 +1,6 @@
 import * as path from 'path'
-import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { baseURL, createDriverForTest, Driver, gitHubToken } from './util'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
+import { baseURL, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
