@@ -5,9 +5,9 @@ import * as os from 'os'
 import puppeteer, { LaunchOptions, PageEventObj, Page, Serializable } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
-import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
+import { IMutation, IQuery } from '../graphql/schema'
+import { readEnvBoolean, readEnvString, retry } from './e2e-test-utils'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -186,7 +186,6 @@ export class Driver {
     public async paste(value: string): Promise<void> {
         await this.page.evaluate(
             async d => {
-                // @ts-ignore
                 await navigator.clipboard.writeText(d.value)
             },
             { value }
