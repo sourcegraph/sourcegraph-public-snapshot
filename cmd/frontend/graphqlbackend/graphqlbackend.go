@@ -217,7 +217,7 @@ func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
-		return orgByID(ctx, id)
+		return OrgByID(ctx, id)
 	case "OrganizationInvitation":
 		return orgInvitationByID(ctx, id)
 	case "GitCommit":
