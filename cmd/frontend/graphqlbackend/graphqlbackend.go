@@ -109,8 +109,8 @@ func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToGitRef() (*gitRefResolver, bool) {
-	n, ok := r.Node.(*gitRefResolver)
+func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
+	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
 }
 

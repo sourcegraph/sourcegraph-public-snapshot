@@ -103,7 +103,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 
 	refs := make([]*repositoryTextSearchIndexedRef, len(refNames))
 	for i, refName := range refNames {
-		refs[i] = &repositoryTextSearchIndexedRef{ref: &gitRefResolver{name: refName, repo: r.repo}}
+		refs[i] = &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 	}
 	refByName := func(refName string) *repositoryTextSearchIndexedRef {
 		for _, ref := range refs {
@@ -113,7 +113,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 		}
 
 		// If Zoekt reports it has another indexed branch, include that.
-		newRef := &repositoryTextSearchIndexedRef{ref: &gitRefResolver{name: refName, repo: r.repo}}
+		newRef := &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 		refs = append(refs, newRef)
 		return newRef
 	}
@@ -136,11 +136,11 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 }
 
 type repositoryTextSearchIndexedRef struct {
-	ref           *gitRefResolver
+	ref           *GitRefResolver
 	indexedCommit gitObjectID
 }
 
-func (r *repositoryTextSearchIndexedRef) Ref() *gitRefResolver { return r.ref }
+func (r *repositoryTextSearchIndexedRef) Ref() *GitRefResolver { return r.ref }
 func (r *repositoryTextSearchIndexedRef) Indexed() bool        { return r.indexedCommit != "" }
 
 func (r *repositoryTextSearchIndexedRef) Current(ctx context.Context) (bool, error) {
