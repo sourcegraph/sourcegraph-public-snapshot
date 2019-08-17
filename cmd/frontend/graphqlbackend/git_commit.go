@@ -35,7 +35,7 @@ type gitCommitResolver struct {
 	inputRev *string
 
 	// oid MUST be specified and a 40-character Git SHA.
-	oid gitObjectID
+	oid GitObjectID
 
 	author    signatureResolver
 	committer *signatureResolver
@@ -48,7 +48,7 @@ func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *gitCommi
 	return &gitCommitResolver{
 		repo: repo,
 
-		oid: gitObjectID(commit.ID),
+		oid: GitObjectID(commit.ID),
 
 		author:    *authorResolver,
 		committer: toSignatureResolver(commit.Committer),
@@ -61,14 +61,14 @@ func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *gitCommi
 // GraphQL ID.
 type gitCommitGQLID struct {
 	Repository graphql.ID  `json:"r"`
-	CommitID   gitObjectID `json:"c"`
+	CommitID   GitObjectID `json:"c"`
 }
 
-func marshalGitCommitID(repo graphql.ID, commitID gitObjectID) graphql.ID {
+func marshalGitCommitID(repo graphql.ID, commitID GitObjectID) graphql.ID {
 	return relay.MarshalID("GitCommit", gitCommitGQLID{Repository: repo, CommitID: commitID})
 }
 
-func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID gitObjectID, err error) {
+func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID GitObjectID, err error) {
 	var spec gitCommitGQLID
 	err = relay.UnmarshalSpec(id, &spec)
 	return spec.Repository, spec.CommitID, err
@@ -80,7 +80,7 @@ func (r *gitCommitResolver) ID() graphql.ID {
 
 func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
-func (r *gitCommitResolver) OID() gitObjectID { return r.oid }
+func (r *gitCommitResolver) OID() GitObjectID { return r.oid }
 
 func (r *gitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
