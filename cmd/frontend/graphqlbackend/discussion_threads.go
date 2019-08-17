@@ -38,7 +38,7 @@ type discussionThreadTargetRepoSelectionInput struct {
 
 // discussionsResolveRepository resolves the repository given an ID, name, or
 // git clone URL. Only one must be specified, or else this function will panic.
-func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*repositoryResolver, error) {
+func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*RepositoryResolver, error) {
 	switch {
 	case id != nil:
 		return repositoryByID(ctx, *id)
@@ -145,7 +145,7 @@ func (d *discussionThreadTargetRepoInput) validate() error {
 // d.LinesAfter fields by pulling the information directly from the repository.
 //
 // Precondition: d.Selection != nil && d.validate() == nil
-func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *repositoryResolver) error {
+func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *RepositoryResolver) error {
 	if d.Selection == nil {
 		panic("precondition failed")
 	}
@@ -401,21 +401,21 @@ type discussionThreadTargetRepoResolver struct {
 	t *types.DiscussionThreadTargetRepo
 }
 
-func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
 	return repositoryByIDInt32(ctx, r.t.RepoID)
 }
 
 func (r *discussionThreadTargetRepoResolver) Path() *string { return r.t.Path }
 
-func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Branch)
 }
 
-func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Revision)
 }
 
-func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*GitRefResolver, error) {
 	if rev == nil {
 		return nil, nil
 	}
@@ -423,7 +423,7 @@ func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-	return &gitRefResolver{repo: repo, name: *rev}, nil
+	return &GitRefResolver{repo: repo, name: *rev}, nil
 }
 
 func (r *discussionThreadTargetRepoResolver) Selection() *discussionThreadTargetRepoSelectionResolver {
@@ -465,7 +465,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	} else if r.t.Branch != nil {
 		rev = *r.t.Branch
 	}
-	comparison, err := repo.Comparison(ctx, &repositoryComparisonInput{
+	comparison, err := repo.Comparison(ctx, &RepositoryComparisonInput{
 		Base: &rev,
 		Head: &args.Rev,
 	})

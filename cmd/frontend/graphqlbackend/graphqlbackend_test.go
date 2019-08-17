@@ -38,24 +38,24 @@ func TestNodeResolverTo(t *testing.T) {
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
 	// codecov coverage reports are noisy.
-	nodes := []node{
+	nodes := []Node{
 		&accessTokenResolver{},
 		&discussionCommentResolver{},
 		&discussionThreadResolver{},
 		&externalAccountResolver{},
 		&externalServiceResolver{},
-		&gitRefResolver{},
-		&repositoryResolver{},
+		&GitRefResolver{},
+		&RepositoryResolver{},
 		&UserResolver{},
 		&OrgResolver{},
 		&organizationInvitationResolver{},
-		&gitCommitResolver{},
+		&GitCommitResolver{},
 		&savedSearchResolver{},
 		&siteResolver{},
 	}
 
 	for _, n := range nodes {
-		r := &nodeResolver{n}
+		r := &NodeResolver{n}
 		if _, b := r.ToAccessToken(); b {
 			continue
 		}

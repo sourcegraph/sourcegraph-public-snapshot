@@ -10,7 +10,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 )
 
-func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
+func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
 	if !IndexedSearch().Enabled() {
 		return nil
 	}
@@ -21,7 +21,7 @@ func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolve
 }
 
 type repositoryTextSearchIndexResolver struct {
-	repo   *repositoryResolver
+	repo   *RepositoryResolver
 	client repoLister
 
 	once  sync.Once
@@ -51,7 +51,7 @@ func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt
 	return r.entry, r.err
 }
 
-func (r *repositoryTextSearchIndexResolver) Repository() *repositoryResolver { return r.repo }
+func (r *repositoryTextSearchIndexResolver) Repository() *RepositoryResolver { return r.repo }
 
 func (r *repositoryTextSearchIndexResolver) Status(ctx context.Context) (*repositoryTextSearchIndexStatus, error) {
 	entry, err := r.resolve(ctx)
@@ -103,7 +103,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 
 	refs := make([]*repositoryTextSearchIndexedRef, len(refNames))
 	for i, refName := range refNames {
-		refs[i] = &repositoryTextSearchIndexedRef{ref: &gitRefResolver{name: refName, repo: r.repo}}
+		refs[i] = &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 	}
 	refByName := func(refName string) *repositoryTextSearchIndexedRef {
 		for _, ref := range refs {
@@ -113,7 +113,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 		}
 
 		// If Zoekt reports it has another indexed branch, include that.
-		newRef := &repositoryTextSearchIndexedRef{ref: &gitRefResolver{name: refName, repo: r.repo}}
+		newRef := &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 		refs = append(refs, newRef)
 		return newRef
 	}
@@ -129,18 +129,18 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 				name = defaultBranchRef.name
 			}
 			ref := refByName(name)
-			ref.indexedCommit = gitObjectID(branch.Version)
+			ref.indexedCommit = GitObjectID(branch.Version)
 		}
 	}
 	return refs, nil
 }
 
 type repositoryTextSearchIndexedRef struct {
-	ref           *gitRefResolver
-	indexedCommit gitObjectID
+	ref           *GitRefResolver
+	indexedCommit GitObjectID
 }
 
-func (r *repositoryTextSearchIndexedRef) Ref() *gitRefResolver { return r.ref }
+func (r *repositoryTextSearchIndexedRef) Ref() *GitRefResolver { return r.ref }
 func (r *repositoryTextSearchIndexedRef) Indexed() bool        { return r.indexedCommit != "" }
 
 func (r *repositoryTextSearchIndexedRef) Current(ctx context.Context) (bool, error) {

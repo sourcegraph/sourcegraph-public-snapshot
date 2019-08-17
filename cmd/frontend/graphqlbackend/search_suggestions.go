@@ -76,7 +76,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			resolvers := make([]*searchSuggestionResolver, 0, len(repoRevs))
 			for _, rev := range repoRevs {
 				resolvers = append(resolvers, newSearchResultResolver(
-					&repositoryResolver{repo: rev.Repo},
+					&RepositoryResolver{repo: rev.Repo},
 					math.MaxInt32,
 				))
 			}
@@ -240,11 +240,11 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	for _, s := range allSuggestions {
 		var k key
 		switch s := s.result.(type) {
-		case *repositoryResolver:
+		case *RepositoryResolver:
 			k.repoName = s.repo.Name
 		case *gitTreeEntryResolver:
 			k.repoName = s.commit.repo.repo.Name
-			// We explicitely do not use gitCommitResolver.OID() to get the OID here
+			// We explicitely do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as
 			// it doesn't specify the commit the default branch is on. This result would in
 			// computing this commit for each suggestion, which could be heavy.

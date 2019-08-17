@@ -78,12 +78,12 @@ func (fm *fileMatchResolver) Key() string {
 
 func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
-	// (which would make it slow). This gitCommitResolver will return empty
+	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
 	return &gitTreeEntryResolver{
-		commit: &gitCommitResolver{
-			repo:     &repositoryResolver{repo: fm.repo},
-			oid:      gitObjectID(fm.commitID),
+		commit: &GitCommitResolver{
+			repo:     &RepositoryResolver{repo: fm.repo},
+			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
 		path: fm.JPath,
@@ -91,8 +91,8 @@ func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	}
 }
 
-func (fm *fileMatchResolver) Repository() *repositoryResolver {
-	return &repositoryResolver{repo: fm.repo}
+func (fm *fileMatchResolver) Repository() *RepositoryResolver {
+	return &RepositoryResolver{repo: fm.repo}
 }
 
 func (fm *fileMatchResolver) Resource() string {
@@ -115,7 +115,7 @@ func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
-func (fm *fileMatchResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (fm *fileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return fm, true }
 func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
@@ -630,9 +630,9 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
-						commit := &gitCommitResolver{
-							repo:     &repositoryResolver{repo: repoRev.Repo},
-							oid:      gitObjectID(repoRev.IndexedHEADCommit()),
+						commit := &GitCommitResolver{
+							repo:     &RepositoryResolver{repo: repoRev.Repo},
+							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
 							inputRev: &inputRev,
 						}
 

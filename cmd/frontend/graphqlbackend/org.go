@@ -30,10 +30,10 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*OrgResolver, error) {
-	return orgByID(ctx, args.ID)
+	return OrgByID(ctx, args.ID)
 }
 
-func orgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
+func OrgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
 	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err

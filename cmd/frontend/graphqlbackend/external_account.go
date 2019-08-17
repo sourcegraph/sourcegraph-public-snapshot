@@ -56,7 +56,7 @@ func (r *externalAccountResolver) RefreshURL() *string {
 	return nil
 }
 
-func (r *externalAccountResolver) AccountData(ctx context.Context) (*jsonValue, error) {
+func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, error) {
 	// 🚨 SECURITY: Only the site admins can view this information, because the auth provider might
 	// provide sensitive information that is not known to the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -64,7 +64,7 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*jsonValue, 
 	}
 
 	if r.account.AccountData != nil {
-		return &jsonValue{value: r.account.AccountData}, nil
+		return &JSONValue{value: r.account.AccountData}, nil
 	}
 	return nil, nil
 }
