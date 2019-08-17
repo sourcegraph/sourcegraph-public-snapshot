@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Added a check to prevent a nil panic. [#5246](https://github.com/sourcegraph/sourcegraph/issues/5246)
+- Fix some logic to prevent a nil panic. [#5246](https://github.com/sourcegraph/sourcegraph/issues/5246)
 
 ### Removed
 
