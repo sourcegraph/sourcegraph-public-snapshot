@@ -44,7 +44,7 @@ func TestNodeResolverTo(t *testing.T) {
 		&discussionThreadResolver{},
 		&externalAccountResolver{},
 		&externalServiceResolver{},
-		&gitRefResolver{},
+		&GitRefResolver{},
 		&repositoryResolver{},
 		&UserResolver{},
 		&OrgResolver{},
