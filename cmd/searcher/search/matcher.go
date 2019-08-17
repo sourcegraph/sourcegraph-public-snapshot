@@ -354,7 +354,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, file
 		matches   = []protocol.FileMatch{}
 	)
 
-	if patternMatchesPaths && (!patternMatchesContent || rg.re == nil) {
+	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {
