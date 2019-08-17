@@ -83,7 +83,7 @@ func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	return &gitTreeEntryResolver{
 		commit: &gitCommitResolver{
 			repo:     &repositoryResolver{repo: fm.repo},
-			oid:      gitObjectID(fm.commitID),
+			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
 		path: fm.JPath,
@@ -632,7 +632,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					if isSymbol && m.SymbolInfo != nil {
 						commit := &gitCommitResolver{
 							repo:     &repositoryResolver{repo: repoRev.Repo},
-							oid:      gitObjectID(repoRev.IndexedHEADCommit()),
+							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
 							inputRev: &inputRev,
 						}
 

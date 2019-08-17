@@ -78,7 +78,7 @@ type GitRefResolver struct {
 	repo *repositoryResolver
 	name string
 
-	target gitObjectID // the target's OID, if known (otherwise computed on demand)
+	target GitObjectID // the target's OID, if known (otherwise computed on demand)
 }
 
 // gitRefGQLID is a type used for marshaling and unmarshaling a Git ref's
@@ -105,7 +105,7 @@ func (r *GitRefResolver) DisplayName() string { return gitRefDisplayName(r.name)
 func (r *GitRefResolver) Prefix() string      { return gitRefPrefix(r.name) }
 func (r *GitRefResolver) Type() string        { return gitRefType(r.name) }
 func (r *GitRefResolver) Target() interface {
-	OID(context.Context) (gitObjectID, error)
+	OID(context.Context) (GitObjectID, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	AbbreviatedOID(context.Context) (string, error)
 	//lint:ignore U1000 is used by graphql via reflection
