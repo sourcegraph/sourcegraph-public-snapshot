@@ -132,7 +132,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 	return resolver, nil
 }
 
-func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
+func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 		return nil, err
 	}
 
-	return &gitRefResolver{repo: r, name: refName}, nil
+	return &GitRefResolver{repo: r, name: refName}, nil
 }
 
 func (r *repositoryResolver) Language(ctx context.Context) string {

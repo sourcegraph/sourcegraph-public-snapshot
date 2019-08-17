@@ -107,12 +107,12 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	}
 
 	// Combine branches and tags.
-	refs := make([]*gitRefResolver, len(branches)+len(tags))
+	refs := make([]*GitRefResolver, len(branches)+len(tags))
 	for i, b := range branches {
-		refs[i] = &gitRefResolver{name: "refs/heads/" + b.Name, repo: r, target: gitObjectID(b.Head)}
+		refs[i] = &GitRefResolver{name: "refs/heads/" + b.Name, repo: r, target: gitObjectID(b.Head)}
 	}
 	for i, t := range tags {
-		refs[i+len(branches)] = &gitRefResolver{name: "refs/tags/" + t.Name, repo: r, target: gitObjectID(t.CommitID)}
+		refs[i+len(branches)] = &GitRefResolver{name: "refs/tags/" + t.Name, repo: r, target: gitObjectID(t.CommitID)}
 	}
 
 	if args.Query != nil {
@@ -137,13 +137,13 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 
 type gitRefConnectionResolver struct {
 	first *int32
-	refs  []*gitRefResolver
+	refs  []*GitRefResolver
 
 	repo *repositoryResolver
 }
 
-func (r *gitRefConnectionResolver) Nodes() []*gitRefResolver {
-	var nodes []*gitRefResolver
+func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {
+	var nodes []*GitRefResolver
 
 	// Paginate.
 	if r.first != nil && len(r.refs) > int(*r.first) {
