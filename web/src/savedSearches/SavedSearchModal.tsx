@@ -2,7 +2,6 @@ import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../components/Form'
-import { Select } from '../components/Select'
 
 interface Props {
     location: H.Location
@@ -46,20 +45,23 @@ export class SavedSearchModal extends React.Component<Props, State> {
                 <Form onSubmit={this.onSubmit} className="saved-search-modal-form">
                     <h3>Save search query to: </h3>
                     <div className="form-group">
-                        <Select onChange={this.onLocationChange} className="saved-search-modal-form__select">
+                        <select
+                            onChange={this.onLocationChange}
+                            className="form-control saved-search-modal-form__select"
+                        >
                             <option value={UserOrOrg.User}>User</option>
                             {this.props.authenticatedUser.organizations &&
                                 this.props.authenticatedUser.organizations.nodes.length > 0 && (
                                     <option value={UserOrOrg.Org}>Organization</option>
                                 )}
-                        </Select>
+                        </select>
                         {this.props.authenticatedUser.organizations &&
                             this.props.authenticatedUser.organizations.nodes.length > 0 &&
                             this.state.saveLocation === UserOrOrg.Org && (
-                                <Select
+                                <select
                                     onChange={this.onOrganizationChange}
                                     placeholder="Select an organization"
-                                    className="saved-search-modal-form__select"
+                                    className="form-control saved-search-modal-form__select"
                                 >
                                     <option value="" disabled={true} selected={true}>
                                         Select an organization
@@ -69,7 +71,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                                             {org.displayName ? org.displayName : org.name}
                                         </option>
                                     ))}
-                                </Select>
+                                </select>
                             )}
                     </div>
                     <button

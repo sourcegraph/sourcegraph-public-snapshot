@@ -1,7 +1,6 @@
 import * as React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { Select } from '../../../components/Select'
 import {
     EXTENSION_NAME_MAX_LENGTH,
     EXTENSION_NAME_VALID_PATTERN,
@@ -26,8 +25,9 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
         {isErrorLike(publishersOrError) ? (
             <div className="alert alert-danger">{publishersOrError.message}</div>
         ) : (
-            <Select
+            <select
                 id="extension-registry-create-extension-page__publisher"
+                className="form-control"
                 onChange={onChange}
                 required={true}
                 disabled={disabled || publishersOrError === 'loading'}
@@ -42,7 +42,7 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
                         </option>
                     ))
                 )}
-            </Select>
+            </select>
         )}
         <small className="form-help text-muted">
             The owner of this extension. This can't be changed after creation.
