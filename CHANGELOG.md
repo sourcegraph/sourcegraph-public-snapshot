@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fix some logic to prevent a nil panic. [#5246](https://github.com/sourcegraph/sourcegraph/issues/5246)
+- Fixed an issue where search would sometimes crash with a panic due to a nil pointer. [#5246](https://github.com/sourcegraph/sourcegraph/issues/5246)
 
 ### Removed
 
