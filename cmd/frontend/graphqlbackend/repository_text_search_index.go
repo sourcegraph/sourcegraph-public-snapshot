@@ -129,7 +129,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 				name = defaultBranchRef.name
 			}
 			ref := refByName(name)
-			ref.indexedCommit = gitObjectID(branch.Version)
+			ref.indexedCommit = GitObjectID(branch.Version)
 		}
 	}
 	return refs, nil
@@ -137,7 +137,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 
 type repositoryTextSearchIndexedRef struct {
 	ref           *GitRefResolver
-	indexedCommit gitObjectID
+	indexedCommit GitObjectID
 }
 
 func (r *repositoryTextSearchIndexedRef) Ref() *GitRefResolver { return r.ref }

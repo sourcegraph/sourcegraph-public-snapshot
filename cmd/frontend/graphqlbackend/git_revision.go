@@ -26,7 +26,7 @@ func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
 		return nil, err
 	}
 	return &gitObject{
-		oid:  gitObjectID(oid),
+		oid:  GitObjectID(oid),
 		repo: r.repo,
 	}, nil
 }

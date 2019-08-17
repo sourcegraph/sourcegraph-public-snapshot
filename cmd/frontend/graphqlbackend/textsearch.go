@@ -83,7 +83,7 @@ func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	return &gitTreeEntryResolver{
 		commit: &gitCommitResolver{
 			repo:     &repositoryResolver{repo: fm.repo},
-			oid:      gitObjectID(fm.commitID),
+			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
 		path: fm.JPath,
