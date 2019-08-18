@@ -541,6 +541,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         } else {
             checkpoint = parseInt(at, 10)
         }
+        if (Number.isNaN(checkpoint)) {
+            checkpoint = 0
+        }
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {
