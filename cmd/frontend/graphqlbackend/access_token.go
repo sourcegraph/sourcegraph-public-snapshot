@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -60,14 +59,11 @@ func (r *accessTokenResolver) Creator(ctx context.Context) (*UserResolver, error
 	return UserByIDInt32(ctx, r.accessToken.CreatorUserID)
 }
 
-func (r *accessTokenResolver) CreatedAt() string {
-	return r.accessToken.CreatedAt.Format(time.RFC3339)
-}
+func (r *accessTokenResolver) CreatedAt() DateTime { return DateTime{r.accessToken.CreatedAt} }
 
-func (r *accessTokenResolver) LastUsedAt() *string {
+func (r *accessTokenResolver) LastUsedAt() *DateTime {
 	if r.accessToken.LastUsedAt == nil {
 		return nil
 	}
-	t := r.accessToken.LastUsedAt.Format(time.RFC3339)
-	return &t
+	return &DateTime{*r.accessToken.LastUsedAt}
 }
