@@ -3,6 +3,7 @@ import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from 'react-testing-library'
 import { noop } from 'rxjs'
+import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import {
     extensionsController,
@@ -34,6 +35,7 @@ describe('SearchResults', () => {
         settingsCascade: NOOP_SETTINGS_CASCADE,
         extensionsController,
         isSourcegraphDotCom: false,
+        platformContext: { forceUpdateTooltip: sinon.spy() },
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
     }
