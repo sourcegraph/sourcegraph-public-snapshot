@@ -1,3 +1,4 @@
+import H from 'history'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import CalculatorIcon from 'mdi-react/CalculatorIcon'
@@ -7,15 +8,23 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
+import { ContributableMenu } from '../../../../shared/src/api/protocol'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { pluralize } from '../../../../shared/src/util/strings'
+import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { Link } from 'react-router-dom'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 
-interface SearchResultsInfoBarProps {
+interface SearchResultsInfoBarProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        TelemetryProps {
     /** The currently authenticated user or null */
     authenticatedUser: GQL.IUser | null
 
@@ -37,6 +46,8 @@ interface SearchResultsInfoBarProps {
 
     // Whether the search query contains a repo: field.
     hasRepoishField: boolean
+
+    location: H.Location
 }
 
 /**
@@ -113,7 +124,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         </div>
                     )}
                 </div>
-                <div className="search-results-info-bar__row-right">
+                <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
+                    <ActionsNavItems
+                        {...props}
+                        menu={ContributableMenu.SearchResultsToolbar}
+                        wrapInList={false}
+                        showLoadingSpinnerDuringExecution={true}
+                    />
                     <Link to={`/stats?${buildSearchURLQuery(props.navbarSearchQuery)}`} className="nav-link px-2">
                         <ChartLineIcon className="icon-inline mr-2" /> Statistics
                     </Link>
@@ -155,7 +172,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             )}
                         </button>
                     )}
-                </div>
+                </ul>
             </small>
         )}
         {!props.results.alert &&
