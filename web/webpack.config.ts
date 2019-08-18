@@ -7,7 +7,6 @@ import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
 import * as path from 'path'
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
-import { isDefined } from '../shared/src/util/types'
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 console.error('Using mode', mode)
@@ -20,11 +19,6 @@ const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
 const enterpriseDir = path.resolve(__dirname, 'src', 'enterprise')
-
-const styleEntrypoints = [
-    path.join(__dirname, 'src', 'main.scss'),
-    isEnterpriseBuild ? path.join(__dirname, 'src', 'enterprise.scss') : null,
-].filter(isDefined)
 
 const config: webpack.Configuration = {
     context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -43,6 +37,7 @@ const config: webpack.Configuration = {
                 },
             }),
         ],
+        namedModules: false,
 
         ...(mode === 'development'
             ? {
@@ -53,18 +48,12 @@ const config: webpack.Configuration = {
             : {}),
     },
     entry: {
-        // Enterprise vs. OSS builds use different entrypoints. For app (TypeScript), a single entrypoint is used
-        // (enterprise or OSS). For style (SCSS), the OSS entrypoint is always used, and the enterprise entrypoint
-        // is appended for enterprise builds.
+        // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
+        // strict superset of the OSS entrypoint.
         app: [
             'react-hot-loader/patch',
             isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-
-            // In development, use style-loader for CSS and include the styles in the app
-            // entrypoint. The style.bundle.css file will be empty.
-            ...(mode === 'development' ? styleEntrypoints : []),
         ],
-        style: mode === 'production' ? styleEntrypoints : [path.join(__dirname, 'src', 'util', 'empty.css')],
 
         'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
         'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
@@ -147,10 +136,6 @@ const config: webpack.Configuration = {
                         },
                     },
                 ],
-            },
-            {
-                include: path.join(__dirname, 'src', 'util', 'empty.css'),
-                use: [MiniCssExtractPlugin.loader, 'css-loader'],
             },
             {
                 test: /\.(sass|scss)$/,

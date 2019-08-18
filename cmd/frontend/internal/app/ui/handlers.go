@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -60,11 +62,15 @@ type Common struct {
 
 	InjectSourcegraphTracker bool
 
+	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
+
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
 	Rev          string // unresolved / user-specified revision (e.x.: "@master")
 	api.CommitID        // resolved SHA1 revision
 }
+
+var webpackDevServer, _ = strconv.ParseBool(os.Getenv("WEBPACK_DEV_SERVER"))
 
 // repoShortName trims the first path element of the given repo name if it has
 // at least two path components.
@@ -109,6 +115,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		},
 
 		InjectSourcegraphTracker: envvar.SourcegraphDotComMode(),
+		WebpackDevServer:         webpackDevServer,
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {

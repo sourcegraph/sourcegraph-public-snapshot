@@ -23,7 +23,7 @@
   },
   "bundlesize": [
     {
-      "path": "../ui/assets/styles/style.bundle.css"
+      "path": "../ui/assets/styles/app.bundle.css"
     },
     {
       "path": "../ui/assets/scripts/app.bundle.js"
