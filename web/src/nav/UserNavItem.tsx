@@ -6,10 +6,14 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reac
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
+import './UserNavItem.scss'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
-    authenticatedUser: GQL.IUser
+    authenticatedUser: Pick<
+        GQL.IUser,
+        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
+    >
     showDotComMarketing: boolean
     showDiscussions: boolean
     switchThemeKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
