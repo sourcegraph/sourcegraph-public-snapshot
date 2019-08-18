@@ -117,7 +117,7 @@ func (r *settingsMutation) EditSettings(ctx context.Context, args *struct {
 	remove := args.Edit.Value == nil
 	var value interface{}
 	if args.Edit.Value != nil {
-		value = args.Edit.Value.value
+		value = args.Edit.Value.Value
 	}
 	if args.Edit.ValueIsJSONCEncodedString {
 		s, ok := value.(string)
