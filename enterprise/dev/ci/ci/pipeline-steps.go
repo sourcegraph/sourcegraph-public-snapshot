@@ -93,8 +93,9 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
-		bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
-		bk.Cmd("./cmd/replacer/build.sh installComby"),       // for replacer tests
+		bk.Cmd("go generate ./migrations ./cmd/frontend/graphqlbackend"), // for DB and GraphQL tests
+		bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"),             // for symbols tests
+		bk.Cmd("./cmd/replacer/build.sh installComby"),                   // for replacer tests
 		bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
 		bk.ArtifactPaths("coverage.txt"))
 }
@@ -102,6 +103,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
+		bk.Cmd("go generate ./migrations ./cmd/frontend/graphqlbackend"), // for DB and GraphQL tests
 		bk.Cmd("go generate ./..."),
 		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
 	)
