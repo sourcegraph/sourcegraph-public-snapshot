@@ -14077,6 +14077,13 @@ react-lifecycles-compat@^3.0.2, react-lifecycles-compat@^3.0.4:
   resolved "https://registry.npmjs.org/react-lifecycles-compat/-/react-lifecycles-compat-3.0.4.tgz#4f1a273afdfc8f3488a8c516bfda78f872352362"
   integrity sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==
 
+react-minimal-pie-chart@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/react-minimal-pie-chart/-/react-minimal-pie-chart-5.0.0.tgz#44c634a8431816a2ed7476f14525ed9d46866da8"
+  integrity sha512-ot5hBb8PBcJzViXohT90HLYZHYxNDXvFQSIvYPc0WS8b44KlJbx8Lcdg/6MkUSmmI+EZZwnydOlK1MqCr/+s1g==
+  dependencies:
+    prop-types "^15.5.7"
+
 react-popper-tooltip@^2.8.3:
   version "2.8.3"
   resolved "https://registry.npmjs.org/react-popper-tooltip/-/react-popper-tooltip-2.8.3.tgz#1c63e7473a96362bd93be6c94fa404470a265197"

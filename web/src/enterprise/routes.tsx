@@ -20,5 +20,9 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
         exact: true,
         render: () => <Redirect to="/subscriptions/new" />,
     },
+    {
+        path: '/stats',
+        render: lazyComponent(() => import('./stats/StatsPage'), 'StatsPage'),
+    },
     ...routes,
 ]

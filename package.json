@@ -227,6 +227,7 @@
     "react-circular-progressbar": "^1.0.0",
     "react-dom": "npm:@hot-loader/react-dom@^16.8.6",
     "react-dom-confetti": "^0.1.1",
+    "react-minimal-pie-chart": "^5.0.0",
     "react-router": "^5.0.1",
     "react-router-dom": "^5.0.1",
     "react-stripe-elements": "^3.0.0",

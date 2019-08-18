@@ -11,6 +11,9 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
+import { Link } from 'react-router-dom'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import ChartLineIcon from 'mdi-react/ChartLineIcon'
 
 interface SearchResultsInfoBarProps {
     /** The currently authenticated user or null */
@@ -111,6 +114,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     )}
                 </div>
                 <div className="search-results-info-bar__row-right">
+                    <Link to={`/stats?${buildSearchURLQuery(props.navbarSearchQuery)}`} className="nav-link px-2">
+                        <ChartLineIcon className="icon-inline mr-2" /> Statistics
+                    </Link>
                     {/* Expand all feature */}
                     {props.results.results.length > 0 && (
                         <button
