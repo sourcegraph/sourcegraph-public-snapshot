@@ -101,9 +101,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
-                {this.props.lowProfile ? (
-                    <div className="flex-1" />
-                ) : (
+                {!this.props.lowProfile && (
                     <>
                         {this.state.authRequired ? (
                             <div className={logoLinkClassName}>{logo}</div>
@@ -123,6 +121,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         )}
                     </>
                 )}
+                <div className="flex-1" />
                 {!this.state.authRequired && (
                     <NavLinks
                         {...this.props}

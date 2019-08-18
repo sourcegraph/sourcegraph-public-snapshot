@@ -1,0 +1,35 @@
+@import './variables';
+
+.tooltip {
+    position: absolute;
+    z-index: $zindex-tooltip;
+    display: block;
+    word-wrap: break-word;
+    margin: $spacer/2;
+
+    animation: 0.25s fade-in;
+    pointer-events: none;
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+
+    99.9999999% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.tooltip-inner {
+    max-width: 15rem;
+    padding: $spacer/2 $spacer;
+    color: #ffffff;
+    background-color: #000000;
+    text-align: center;
+    font-size: var(--font-size-sm);
+}

@@ -68,26 +68,3 @@
         flex: 1;
     }
 }
-
-.theme-light {
-    .tab-bar {
-        &__tab,
-        &:not(.tab-bar--empty) .tab-bar__spacer,
-        &:not(.tab-bar--empty) .tab-bar__end-fragment-other-element {
-            border-bottom-color: $color-light-border;
-        }
-        &__tab {
-            &--active {
-                border-bottom-color: $primary;
-            }
-            &--h5like {
-                color: $color-light-text-1 !important;
-            }
-        }
-        &__close-button {
-            &:hover {
-                color: $color-light-text-5;
-            }
-        }
-    }
-}

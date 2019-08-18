@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import { CompletionList } from 'sourcegraph'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
 
-import 'bootstrap/scss/bootstrap.scss'
+import '../../../../web/src/global-styles/index.scss'
 import './CompletionWidget.scss'
 
 const onSelectItem = action('onSelectItem')

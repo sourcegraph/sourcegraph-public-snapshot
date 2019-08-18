@@ -1,0 +1,226 @@
+@import './variables';
+
+.d-none {
+    display: none !important;
+}
+
+.d-inline {
+    display: inline !important;
+}
+
+.d-flex {
+    display: flex !important;
+}
+
+.d-inline-flex {
+    display: inline-flex !important;
+}
+
+.d-block {
+    display: block !important;
+}
+
+.d-inline-block {
+    display: inline-block !important;
+}
+
+@media only screen and (min-width: 700px) {
+    .d-sm-none {
+        display: none !important;
+    }
+    .d-sm-flex {
+        display: flex !important;
+    }
+}
+@media only screen and (min-width: 1000px) {
+    .d-lg-none {
+        display: none !important;
+    }
+    .d-lg-flex {
+        display: flex !important;
+    }
+    .d-lg-inline-block {
+        display: inline-block !important;
+    }
+}
+
+.flex-column {
+    flex-direction: column !important;
+}
+
+.flex-row-reverse {
+    flex-direction: row-reverse !important;
+}
+
+.flex-wrap {
+    flex-wrap: wrap !important;
+}
+
+.flex-wrap-reverse {
+    flex-wrap: wrap-reverse !important;
+}
+
+.flex-1 {
+    flex: 1 1 auto !important;
+}
+
+.flex-0 {
+    flex: 0 0 auto !important;
+}
+
+.align-items-center {
+    align-items: center !important;
+}
+
+.align-items-start {
+    align-items: flex-start !important;
+}
+
+.align-items-end {
+    align-items: flex-end !important;
+}
+
+.align-items-stretch {
+    align-items: stretch !important;
+}
+
+.justify-content-center {
+    justify-content: center !important;
+}
+
+.justify-content-between {
+    justify-content: space-between !important;
+}
+
+.justify-content-start {
+    justify-content: flex-start !important;
+}
+
+.justify-content-end {
+    justify-content: flex-end !important;
+}
+
+.sticky-top {
+    @supports (position: sticky) {
+        position: sticky;
+        top: 0;
+        z-index: $zindex-sticky;
+    }
+}
+
+.w-100 {
+    width: 100% !important;
+}
+
+.w-auto {
+    width: auto !important;
+}
+
+.h-100 {
+    height: 100% !important;
+}
+
+.overflow-hidden {
+    overflow: hidden !important;
+}
+
+.overflow-auto {
+    overflow: auto !important;
+}
+
+.position-relative {
+    position: relative !important;
+}
+
+.text-nowrap {
+    white-space: nowrap !important;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.list-unstyled,
+.list-inline {
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style-type: none;
+}
+.list-style-type-none {
+    list-style-type: none;
+}
+.list-inline-item {
+    display: inline-block;
+    &:not(:last-child) {
+        margin-right: $spacer;
+    }
+}
+
+.user-select-none {
+    user-select: none;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+@mixin generate-spacing-classes($class-name-prefix, $css-properties) {
+    @if type-of($css-properties) == 'string' {
+        $css-properties: append((), $css-properties);
+    }
+
+    @each $key, $value in $spacers {
+        .#{$class-name-prefix + '-' + $key} {
+            @each $css-property in $css-properties {
+                #{$css-property}: $value !important;
+            }
+        }
+    }
+}
+@include generate-spacing-classes(m, margin);
+@include generate-spacing-classes(my, (margin-top, margin-bottom));
+@include generate-spacing-classes(mx, (margin-left, margin-right));
+@include generate-spacing-classes(mt, margin-top);
+@include generate-spacing-classes(mr, margin-right);
+@include generate-spacing-classes(mb, margin-bottom);
+@include generate-spacing-classes(ml, margin-left);
+@include generate-spacing-classes(p, padding);
+@include generate-spacing-classes(py, (padding-top, padding-bottom));
+@include generate-spacing-classes(px, (padding-left, padding-right));
+@include generate-spacing-classes(pt, padding-top);
+@include generate-spacing-classes(pr, padding-right);
+@include generate-spacing-classes(pb, padding-bottom);
+@include generate-spacing-classes(pl, padding-left);
+
+.flex-gap-3 {
+    margin: -0.75rem;
+}
+.flex-gap-3 > * {
+    padding: 0.75rem;
+}
+
+.mx-auto {
+    margin-right: auto !important;
+    margin-left: auto !important;
+}
+
+@mixin generate-border-classes($direction-suffix) {
+    .border#{$direction-suffix} {
+        border#{$direction-suffix}: 1px solid var(--border-color);
+    }
+    .border#{$direction-suffix}-0 {
+        border#{$direction-suffix}: none;
+    }
+    @each $name, $color in $theme-colors {
+        .border#{$direction-suffix}-#{$name} {
+            border#{$direction-suffix}-color: $color;
+        }
+    }
+}
+@include generate-border-classes('');
+@include generate-border-classes(-top);
+@include generate-border-classes(-right);
+@include generate-border-classes(-bottom);
+@include generate-border-classes(-left);

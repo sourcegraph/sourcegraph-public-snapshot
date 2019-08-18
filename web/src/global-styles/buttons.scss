@@ -1,12 +1,85 @@
-@import 'bootstrap/scss/buttons';
-@import 'bootstrap/scss/button-group';
+$btn-padding-x: $spacer;
+$btn-padding-y: $spacer * 0.65;
+$btn-sm-factor: $sm-factor * 0.8;
+$btn-lg-factor: $lg-factor;
 
-// Light theme button variants
-.theme-light {
-    @each $color, $value in $theme-colors-light {
-        .btn-#{$color} {
-            @include button-variant($value, $value);
+.btn {
+    display: inline-flex;
+    text-align: center;
+    align-items: center;
+    user-select: none;
+    border: $btn-border-width solid transparent;
+    font-weight: normal;
+    line-height: $line-height-base;
+    vertical-align: middle;
+
+    // Make buttons equal height as inputs.
+    $input-extra-border-width: $input-border-width - $btn-border-width;
+    padding: calc(#{$btn-padding-y} + #{$input-extra-border-width})
+        calc(#{$btn-padding-x} + #{$input-extra-border-width});
+    font-size: var(--font-size-base);
+    &.btn-sm {
+        padding: calc(#{$btn-padding-y * $btn-sm-factor} + #{$input-extra-border-width})
+            calc(#{$btn-padding-x * $btn-sm-factor} + #{$input-extra-border-width});
+        font-size: var(--font-size-sm) !important;
+    }
+    &.btn-lg {
+        padding: calc(#{$btn-padding-y * $btn-lg-factor} + #{$input-extra-border-width})
+            calc(#{$btn-padding-x * $btn-lg-factor} + #{$input-extra-border-width});
+        font-size: var(--font-size-lg) !important;
+    }
+
+    &:not(:disabled, .disabled) {
+        cursor: pointer;
+        &:hover {
+            text-decoration: none;
         }
+        &.focus-visible {
+            @include focus-ring(-1px, 1px);
+        }
+    }
+    &:disabled,
+    &.disabled {
+        filter: grayscale(35%);
+        opacity: 0.5;
+    }
+}
+
+@mixin btn-variant($name) {
+    .btn-#{$name} {
+        background-color: var(--#{$name});
+        border-color: var(--#{$name});
+        &,
+        &:hover:not(:disabled, .disabled) {
+            color: var(--#{$name}-contrast);
+        }
+        &:hover,
+        &.focus-visible {
+            &:not(:disabled, .disabled) {
+                background-color: var(--#{$name}-hover);
+            }
+        }
+    }
+}
+@each $name, $color in $theme-colors {
+    @include btn-variant($name);
+}
+
+.btn-link {
+    color: var(--link-color);
+    text-decoration: var(--link-decoration);
+    background-color: transparent;
+
+    &:hover,
+    &.focus-visible {
+        color: var(--link-hover-color);
+        text-decoration: var(--link-hover-decoration);
+    }
+
+    &:disabled,
+    &.disabled {
+        opacity: 0.75;
+        pointer-events: none;
     }
 }
 
@@ -25,20 +98,8 @@
     .icon {
         @extend .icon-inline;
     }
-
-    &:focus:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($primary, 0.5);
-    }
-
-    &:hover:not(:disabled):not(.disabled) {
-        color: #ffffff;
-
-        .theme-light & {
-            color: $color-light-text-2;
-        }
-    }
 }
 
-.btn.btn-sm {
-    @extend small;
+.btn-group {
+    display: inline-flex;
 }

@@ -8,7 +8,7 @@
         display: flex;
         align-items: center;
 
-        border: 1px solid #2b3750;
+        border: 1px solid var(--border-color);
         border-radius: 0.125rem;
         margin: 0.5rem 0;
         padding: 0.5rem 0.75rem;
@@ -22,13 +22,5 @@
 
     &__stats {
         width: auto;
-    }
-}
-
-.theme-light {
-    .repo-settings-index-page {
-        &__ref {
-            border-color: $color-light-border;
-        }
     }
 }

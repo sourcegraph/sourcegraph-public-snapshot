@@ -7,10 +7,17 @@
     flex: none;
     padding-top: 0;
     padding-bottom: 0;
+    border-bottom: var(--border-color);
     border-style: solid;
     border-width: 0 0 1px;
 
     .navbar-nav {
+        &__action-items {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
         white-space: nowrap;
 
         // Less padding above, below, and between actions.
@@ -47,25 +54,5 @@
 
     &__spacer {
         flex: 1 1 0;
-    }
-}
-
-.theme-dark {
-    .repo-header {
-        border-color: #233043;
-    }
-    .action-item--pressed {
-        background-color: $color-bg-3;
-        color: $color-text-3;
-    }
-}
-
-.theme-light {
-    .repo-header {
-        border-color: $color-light-border;
-    }
-    .action-item--pressed {
-        background-color: $color-light-bg-3;
-        color: $color-light-text-1;
     }
 }

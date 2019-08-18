@@ -11,15 +11,6 @@
 
     .axis path,
     .axis .tick line {
-        stroke: $color-border;
-    }
-}
-
-.theme-light {
-    .d3-bar-chart {
-        .axis path,
-        .axis .tick line {
-            stroke: $color-light-border;
-        }
+        stroke: var(--border-color);
     }
 }

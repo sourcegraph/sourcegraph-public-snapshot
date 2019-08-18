@@ -5,19 +5,17 @@
     padding: 0.25rem 0;
     overflow-x: auto;
     overflow-y: hidden;
-    background-color: #070a0d;
 
     &-clickable {
         cursor: pointer;
     }
 
     &:hover {
-        background-color: #151d28;
         text-decoration: none;
     }
 
     &:not(:first-child) {
-        border-top: 1px solid #2a3a51;
+        border-top: 1px solid var(--border-color);
     }
 
     pre,
@@ -107,67 +105,5 @@
         top: 50%;
         transform: translateY(-50%);
         left: 50%;
-    }
-
-    .theme-light & {
-        background-color: $color-light-bg-1;
-        border-top: 1px solid $color-light-border;
-
-        &:hover {
-            background-color: $color-light-bg-4;
-            text-decoration: none;
-        }
-
-        pre,
-        code {
-            width: 100%;
-            padding: 0;
-            margin-bottom: 0;
-        }
-
-        &__markdown {
-            code,
-            pre {
-                background-color: transparent;
-                padding: 0;
-            }
-        }
-
-        table,
-        tr,
-        td {
-            display: flex;
-            flex-grow: 1;
-            padding: 0;
-            margin-bottom: 0;
-            .code {
-                padding: 0;
-            }
-            span:last-child {
-                width: 100%;
-            }
-        }
-
-        tbody {
-            display: flex;
-            flex-grow: 1;
-            flex-direction: column;
-        }
-
-        &__code-excerpt {
-            padding-top: 0;
-            padding-bottom: 1rem;
-
-            td.line {
-                display: none;
-            }
-            td.code > span:first-child {
-                padding-left: 1rem;
-            }
-
-            td.code > span:last-child {
-                padding-right: 1rem;
-            }
-        }
     }
 }

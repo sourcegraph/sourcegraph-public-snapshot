@@ -16,11 +16,8 @@
     position: relative; // for sidebar toggle
 
     &__sidebar {
-        background: #1c2736;
-
         &-toggle {
-            background: #1c2736;
-
+            background-color: var(--bg-muted);
             position: absolute;
             top: 0;
             left: 0;
@@ -44,26 +41,6 @@
         min-height: 0;
         min-width: 0;
 
-        background-color: #0e121b;
-    }
-}
-
-.theme-light {
-    .repo-rev-container {
-        &__sidebar {
-            background: $color-light-bg-2;
-
-            &-toggle {
-                background: $color-light-bg-2;
-
-                &:hover {
-                    color: $color-light-text-5;
-                }
-            }
-        }
-
-        &__content {
-            background-color: $color-light-bg-1;
-        }
+        background-color: var(--bg-muted);
     }
 }

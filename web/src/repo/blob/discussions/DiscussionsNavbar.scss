@@ -2,7 +2,6 @@
     display: flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    border-bottom: 1px solid #212c45;
     &__title {
         display: inline-block;
     }
@@ -11,11 +10,5 @@
         overflow: hidden;
         text-overflow: ellipsis;
         vertical-align: bottom;
-    }
-}
-
-.theme-light {
-    .discussions-navbar {
-        border-color: $color-light-border;
     }
 }
