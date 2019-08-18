@@ -687,19 +687,16 @@ func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, erro
 	return strptr(url.String()), nil
 }
 
-func (d *discussionThreadResolver) CreatedAt(ctx context.Context) string {
-	return d.t.CreatedAt.Format(time.RFC3339)
+func (d *discussionThreadResolver) CreatedAt() DateTime {
+	return DateTime{Time: d.t.CreatedAt}
 }
 
-func (d *discussionThreadResolver) UpdatedAt(ctx context.Context) string {
-	return d.t.UpdatedAt.Format(time.RFC3339)
+func (d *discussionThreadResolver) UpdatedAt() DateTime {
+	return DateTime{Time: d.t.UpdatedAt}
 }
 
-func (d *discussionThreadResolver) ArchivedAt(ctx context.Context) *string {
-	if d.t.ArchivedAt == nil {
-		return nil
-	}
-	return strptr(d.t.ArchivedAt.Format(time.RFC3339))
+func (d *discussionThreadResolver) ArchivedAt() *DateTime {
+	return DateTimeOrNil(d.t.ArchivedAt)
 }
 
 func (d *discussionThreadResolver) Comments(ctx context.Context, args *struct {

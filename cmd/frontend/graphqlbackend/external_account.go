@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -48,8 +47,8 @@ func (r *externalAccountResolver) ServiceType() string { return r.account.Servic
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
 func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }
 func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
-func (r *externalAccountResolver) CreatedAt() string   { return r.account.CreatedAt.Format(time.RFC3339) }
-func (r *externalAccountResolver) UpdatedAt() string   { return r.account.UpdatedAt.Format(time.RFC3339) }
+func (r *externalAccountResolver) CreatedAt() DateTime { return DateTime{Time: r.account.CreatedAt} }
+func (r *externalAccountResolver) UpdatedAt() DateTime { return DateTime{Time: r.account.UpdatedAt} }
 
 func (r *externalAccountResolver) RefreshURL() *string {
 	// TODO(sqs): Not supported.

@@ -186,11 +186,11 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
-func (r *RepositoryResolver) CreatedAt() string {
-	return time.Now().Format(time.RFC3339)
+func (r *RepositoryResolver) CreatedAt() DateTime {
+	return DateTime{Time: time.Now()}
 }
 
-func (r *RepositoryResolver) UpdatedAt() *string {
+func (r *RepositoryResolver) UpdatedAt() *DateTime {
 	return nil
 }
 

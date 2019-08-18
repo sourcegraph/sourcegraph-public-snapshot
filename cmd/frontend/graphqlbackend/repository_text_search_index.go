@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -68,8 +67,8 @@ type repositoryTextSearchIndexStatus struct {
 	entry zoekt.RepoListEntry
 }
 
-func (r *repositoryTextSearchIndexStatus) UpdatedAt() string {
-	return r.entry.IndexMetadata.IndexTime.Format(time.RFC3339)
+func (r *repositoryTextSearchIndexStatus) UpdatedAt() DateTime {
+	return DateTime{Time: r.entry.IndexMetadata.IndexTime}
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() int32 {

@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"net/url"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -49,16 +48,16 @@ func (r *registryExtensionRemoteResolver) Manifest(context.Context) (graphqlback
 	return NewExtensionManifest(r.v.Manifest), nil
 }
 
-func (r *registryExtensionRemoteResolver) CreatedAt() *string {
-	return strptr(r.v.CreatedAt.Format(time.RFC3339))
+func (r *registryExtensionRemoteResolver) CreatedAt() *graphqlbackend.DateTime {
+	return &graphqlbackend.DateTime{Time: r.v.CreatedAt}
 }
 
-func (r *registryExtensionRemoteResolver) UpdatedAt() *string {
-	return strptr(r.v.UpdatedAt.Format(time.RFC3339))
+func (r *registryExtensionRemoteResolver) UpdatedAt() *graphqlbackend.DateTime {
+	return &graphqlbackend.DateTime{Time: r.v.UpdatedAt}
 }
 
-func (r *registryExtensionRemoteResolver) PublishedAt(context.Context) (*string, error) {
-	return strptr(r.v.PublishedAt.Format(time.RFC3339)), nil
+func (r *registryExtensionRemoteResolver) PublishedAt(context.Context) (*graphqlbackend.DateTime, error) {
+	return &graphqlbackend.DateTime{Time: r.v.PublishedAt}, nil
 }
 
 func (r *registryExtensionRemoteResolver) URL() string {

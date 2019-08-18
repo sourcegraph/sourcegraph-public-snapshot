@@ -89,8 +89,8 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 
 func (r *productLicense) LicenseKey() string { return r.v.LicenseKey }
 
-func (r *productLicense) CreatedAt() string {
-	return r.v.CreatedAt.Format(time.RFC3339)
+func (r *productLicense) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.v.CreatedAt}
 }
 
 func generateProductLicenseForSubscription(ctx context.Context, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {

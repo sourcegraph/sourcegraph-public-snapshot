@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -104,12 +103,12 @@ func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, err
 	return strptr(url.String()), nil
 }
 
-func (r *discussionCommentResolver) CreatedAt(ctx context.Context) string {
-	return r.c.CreatedAt.Format(time.RFC3339)
+func (r *discussionCommentResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.c.CreatedAt}
 }
 
-func (r *discussionCommentResolver) UpdatedAt(ctx context.Context) string {
-	return r.c.UpdatedAt.Format(time.RFC3339)
+func (r *discussionCommentResolver) UpdatedAt() DateTime {
+	return DateTime{Time: r.c.UpdatedAt}
 }
 
 func (r *discussionCommentResolver) Reports(ctx context.Context) []string {
