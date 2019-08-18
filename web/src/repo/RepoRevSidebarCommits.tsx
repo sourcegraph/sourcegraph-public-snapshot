@@ -14,17 +14,15 @@ import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
 interface CommitNodeProps {
     node: GQL.IGitCommit
-    repoName: string
     location: H.Location
 }
 
-const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, repoName, location }) => (
+const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }) => (
     <li className="list-group-item p-0">
         <GitCommitNode
             compact={true}
             node={node}
             hideExpandCommitMessageBody={true}
-            repoName={repoName}
             afterElement={
                 <Link
                     to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid as string)}
@@ -40,7 +38,6 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, repoName, 
 
 interface Props {
     repoID: GQL.ID
-    repoName: string
     rev: string | undefined
     filePath: string
     history: H.History
@@ -50,19 +47,14 @@ interface Props {
 export class RepoRevSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'repoName' | 'location'>>
+            <FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'location'>>
                 className="list-group list-group-flush"
                 compact={true}
                 noun="commit"
                 pluralNoun="commits"
                 queryConnection={this.fetchCommits}
                 nodeComponent={CommitNode}
-                nodeComponentProps={
-                    { repoName: this.props.repoName, location: this.props.location } as Pick<
-                        CommitNodeProps,
-                        'repoName' | 'location'
-                    >
-                }
+                nodeComponentProps={{ location: this.props.location } as Pick<CommitNodeProps, 'location'>}
                 defaultFirst={100}
                 hideSearch={true}
                 shouldUpdateURLQuery={false}
