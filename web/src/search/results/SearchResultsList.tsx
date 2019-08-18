@@ -530,15 +530,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
      * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.
      */
     private getCheckpoint(): number {
-        const at = this.props.location.hash.replace(/^#/, '')
-
-        let checkpoint: number
-
-        if (!at) {
-            checkpoint = 0
-        } else {
-            checkpoint = parseInt(at, 10)
-        }
+        const checkpoint = parseInt(this.props.location.hash.substr(1), 10) || 0
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {
