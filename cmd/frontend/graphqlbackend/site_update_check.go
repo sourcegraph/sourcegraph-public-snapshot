@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -26,12 +25,11 @@ type updateCheckResolver struct {
 
 func (r *updateCheckResolver) Pending() bool { return r.pending }
 
-func (r *updateCheckResolver) CheckedAt() *string {
+func (r *updateCheckResolver) CheckedAt() *DateTime {
 	if r.last == nil {
 		return nil
 	}
-	s := r.last.Date.Format(time.RFC3339)
-	return &s
+	return &DateTime{Time: r.last.Date}
 }
 
 func (r *updateCheckResolver) ErrorMessage() *string {

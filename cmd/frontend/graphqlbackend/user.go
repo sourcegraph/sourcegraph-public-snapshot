@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -124,13 +123,12 @@ func (r *UserResolver) URL() string {
 
 func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
 
-func (r *UserResolver) CreatedAt() string {
-	return r.user.CreatedAt.Format(time.RFC3339)
+func (r *UserResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.user.CreatedAt}
 }
 
-func (r *UserResolver) UpdatedAt() *string {
-	t := r.user.UpdatedAt.Format(time.RFC3339) // ISO
-	return &t
+func (r *UserResolver) UpdatedAt() *DateTime {
+	return &DateTime{Time: r.user.UpdatedAt}
 }
 
 func (r *UserResolver) settingsSubject() api.SettingsSubject {

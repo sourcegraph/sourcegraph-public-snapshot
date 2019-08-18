@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -107,16 +106,12 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 	return strptr(info.CloneProgress), nil
 }
 
-func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, error) {
+func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
 	info, err := r.gitserverRepoInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if info.LastFetched == nil {
-		return nil, err
-	}
-	s := info.LastFetched.Format(time.RFC3339)
-	return &s, nil
+	return DateTimeOrNil(info.LastFetched), nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
@@ -138,8 +133,8 @@ func (r *updateScheduleResolver) IntervalSeconds() int32 {
 	return int32(r.schedule.IntervalSeconds)
 }
 
-func (r *updateScheduleResolver) Due() string {
-	return r.schedule.Due.Format(time.RFC3339)
+func (r *updateScheduleResolver) Due() DateTime {
+	return DateTime{Time: r.schedule.Due}
 }
 
 func (r *updateScheduleResolver) Index() int32 {

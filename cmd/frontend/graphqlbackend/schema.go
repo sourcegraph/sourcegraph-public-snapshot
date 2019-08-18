@@ -1138,9 +1138,9 @@ type ExternalService implements Node {
     # The JSON configuration of the external service.
     config: String!
     # When the external service was created.
-    createdAt: String!
+    createdAt: DateTime!
     # When the external service was last updated.
-    updatedAt: String!
+    updatedAt: DateTime!
     # This is an optional field that's populated when we ran into errors on the
     # backend side when trying to create/update an ExternalService, but the
     # create/update still succeeded.
@@ -1193,11 +1193,11 @@ type Repository implements Node & GenericSearchResultInterface {
     # DEPRECATED: This field is unused in known clients.
     #
     # The date when this repository was created on Sourcegraph.
-    createdAt: String!
+    createdAt: DateTime!
     # DEPRECATED: This field is unused in known clients.
     #
     # The date when this repository's metadata was last updated on Sourcegraph.
-    updatedAt: String
+    updatedAt: DateTime
     # Returns information about the given commit in the repository, or null if no commit exists with the given rev.
     commit(
         # The Git revision specifier (revspec) for the commit.
@@ -1320,7 +1320,7 @@ type MirrorRepositoryInfo {
     # Whether the repository has ever been successfully cloned.
     cloned: Boolean!
     # When the repository was last successfully updated from the remote source repository..
-    updatedAt: String
+    updatedAt: DateTime
     # The state of this repository in the update schedule.
     updateSchedule: UpdateSchedule
     # The state of this repository in the update queue.
@@ -1332,7 +1332,7 @@ type UpdateSchedule {
     # The interval that was used when scheduling the current due time.
     intervalSeconds: Int!
     # The next time that the repo will be inserted into the update queue.
-    due: String!
+    due: DateTime!
     # The index of the repo in the schedule.
     index: Int!
     # The total number of repos in the schedule.
@@ -1381,7 +1381,7 @@ type RepositoryTextSearchIndex {
 # The status of a repository's text search index.
 type RepositoryTextSearchIndexStatus {
     # The date that the index was last updated.
-    updatedAt: String!
+    updatedAt: DateTime!
     # The byte size of the original content.
     contentByteSize: Int!
     # The number of files in the original content.
@@ -2163,9 +2163,9 @@ type User implements Node & SettingsSubject & Namespace {
     # The URL to the user's settings.
     settingsURL: String
     # The date when the user account was created on Sourcegraph.
-    createdAt: String!
+    createdAt: DateTime!
     # The date when the user account was last updated on Sourcegraph.
-    updatedAt: String
+    updatedAt: DateTime
     # Whether the user is a site admin.
     #
     # Only the user and site admins can access this field.
@@ -2254,9 +2254,9 @@ type AccessToken implements Node {
     # was created by the same user) or a site admin (who can create access tokens for any user).
     creator: User!
     # The date when the access token was created.
-    createdAt: String!
+    createdAt: DateTime!
     # The date when the access token was last used to authenticate a request.
-    lastUsedAt: String
+    lastUsedAt: DateTime
 }
 
 # A list of access tokens.
@@ -2325,9 +2325,9 @@ type ExternalAccount implements Node {
     # An identifier for the external account (typically equal to or derived from the ID on the external service).
     accountID: String!
     # The creation date of this external account on Sourcegraph.
-    createdAt: String!
+    createdAt: DateTime!
     # The last-updated date of this external account on Sourcegraph.
-    updatedAt: String!
+    updatedAt: DateTime!
     # A URL that, when visited, re-initiates the authentication process.
     refreshURL: String
     # Provider-specific data about the external account.
@@ -2349,9 +2349,9 @@ type OrganizationMembership {
     # The user.
     user: User!
     # The time when this was created.
-    createdAt: String!
+    createdAt: DateTime!
     # The time when this was updated.
-    updatedAt: String!
+    updatedAt: DateTime!
 }
 
 # A list of organization memberships.
@@ -2398,8 +2398,8 @@ type Org implements Node & SettingsSubject & Namespace {
     name: String!
     # The organization's chosen display name.
     displayName: String
-    # The date when the organization was created, in RFC 3339 format.
-    createdAt: String!
+    # The date when the organization was created.
+    createdAt: DateTime!
     # A list of users who are members of this organization.
     members: UserConnection!
     # The latest settings for the organization.
@@ -2449,17 +2449,17 @@ type OrganizationInvitation implements Node {
     # The user who received the invitation.
     recipient: User!
     # The date when this invitation was created.
-    createdAt: String!
+    createdAt: DateTime!
     # The most recent date when a notification was sent to the recipient about this invitation.
-    notifiedAt: String
+    notifiedAt: DateTime
     # The date when this invitation was responded to by the recipient.
-    respondedAt: String
+    respondedAt: DateTime
     # The recipient's response to this invitation, or no response (null).
     responseType: OrganizationInvitationResponseType
     # The URL where the recipient can respond to the invitation when pending, or null if not pending.
     respondURL: String
     # The date when this invitation was revoked.
-    revokedAt: String
+    revokedAt: DateTime
 }
 
 # The recipient's possible responses to an invitation to join an organization as a member.
@@ -2601,13 +2601,13 @@ type DiscussionThread implements Node {
     inlineURL: String
 
     # The date when the discussion thread was created.
-    createdAt: String!
+    createdAt: DateTime!
 
     # The date when the discussion thread was last updated.
-    updatedAt: String!
+    updatedAt: DateTime!
 
     # The date when the discussion thread was archived (or null if it has not).
-    archivedAt: String
+    archivedAt: DateTime
 
     # The comments in the discussion thread.
     comments(
@@ -2651,10 +2651,10 @@ type DiscussionComment implements Node {
     inlineURL: String
 
     # The date when the discussion thread was created.
-    createdAt: String!
+    createdAt: DateTime!
 
     # The date when the discussion thread was last updated.
-    updatedAt: String!
+    updatedAt: DateTime!
 
     # Reports filed by users about this comment. Only admins will receive a non
     # empty list of reports.
@@ -2863,7 +2863,7 @@ type UpdateCheck {
     pending: Boolean!
     # When the last update check was completed, or null if no update check has
     # been completed (or performed) yet.
-    checkedAt: String
+    checkedAt: DateTime
     # If an error occurred during the last update check, this message describes
     # the error.
     errorMessage: String
@@ -2941,7 +2941,7 @@ type Settings {
     # The author, or null if there is no author or the authoring user was deleted.
     author: User
     # The time when this was created.
-    createdAt: String!
+    createdAt: DateTime!
     # The stringified JSON contents of the settings. The contents may include "//"-style comments and trailing
     # commas in the JSON.
     contents: String!
@@ -3112,7 +3112,7 @@ type SurveyResponse {
     # The answer to "What can Sourcegraph do to provide a better product"
     better: String
     # The time when this response was created.
-    createdAt: String!
+    createdAt: DateTime!
 }
 
 # Information about this site's product subscription (which enables access to and renewals of a product license).
@@ -3146,7 +3146,7 @@ type ProductLicenseInfo {
     # The number of users allowed by this license.
     userCount: Int!
     # The date when this license expires.
-    expiresAt: String!
+    expiresAt: DateTime!
 }
 
 # An extension registry.
@@ -3304,12 +3304,12 @@ type RegistryExtension implements Node {
     # The extension manifest, or null if none is set.
     manifest: ExtensionManifest
     # The date when this extension was created on the registry.
-    createdAt: String
+    createdAt: DateTime
     # The date when this extension was last updated on the registry (including updates to its metadata only, not
     # publishing new releases).
-    updatedAt: String
+    updatedAt: DateTime
     # The date when a release of this extension was most recently published, or null if there are no releases.
-    publishedAt: String
+    publishedAt: DateTime
     # The URL to the extension on this Sourcegraph site.
     url: String!
     # The URL to the extension on the extension registry where it lives (if this is a remote
@@ -3530,7 +3530,7 @@ type ProductSubscription implements Node {
         first: Int
     ): ProductLicenseConnection!
     # The date when this product subscription was created.
-    createdAt: String!
+    createdAt: DateTime!
     # Whether this product subscription was archived.
     isArchived: Boolean!
     # The URL to view this product subscription.
@@ -3605,7 +3605,7 @@ type ProductLicense implements Node {
     # The license key.
     licenseKey: String!
     # The date when this product license was created.
-    createdAt: String!
+    createdAt: DateTime!
 }
 
 # A list of product licenses.
@@ -3665,7 +3665,7 @@ type ProductSubscriptionInvoiceItem {
     # This subscription's user count.
     userCount: Int!
     # The date when the subscription expires.
-    expiresAt: String!
+    expiresAt: DateTime!
 }
 
 # An input type that describes a product subscription to be purchased. Corresponds to
@@ -3724,4 +3724,9 @@ type StatusMessage {
     # The type.
     type: StatusMessageType!
 }
+
+# An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
+# JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
+# Date#toISOString.
+scalar DateTime
 `
