@@ -127,7 +127,7 @@ const config: webpack.Configuration = {
                                     '@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper',
                                     {
                                         modulePattern: 'web/src/.*\\.tsx$',
-                                        componentNamePattern: 'Page$',
+                                        componentNamePattern: '(Page|Area)$',
                                     },
                                 ],
                             ],
