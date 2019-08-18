@@ -209,7 +209,7 @@ will be `/opt/bitnami/phabricator`.
     ```
 4. Verify that the phabricator assets are served:
     - `%NGROK_URL%/.assets/extension/scripts/phabricator.bundle.js`
-    - `%NGROK_URL%/.assets/extension/css/style.bundle.css`
+    - `%NGROK_URL%/.assets/extension/css/app.bundle.css`
 5. Set [`sourcegraph.url`](https://phabricator.sgdev.org/config/edit/sourcegraph.url/) to your tunnelled ngrok URL
 6. Verify the [`sourcegraph.callsignMappings`](https://phabricator.sgdev.org/config/edit/sourcegraph.callsignMappings/) are correctly set
 7. Verify [`sourcegraph.enabled`](https://phabricator.sgdev.org/config/edit/sourcegraph.enabled/) is set to `true`
