@@ -1,0 +1,86 @@
+html {
+    // Base for layout rem values
+    font-size: 16px;
+}
+
+// stylelint-disable-next-line selector-max-id
+// TODO!(sqs): is this needed?
+html,
+body,
+#root {
+    height: 100%;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    line-height: $line-height-base;
+    font-size: var(--font-size-base);
+}
+
+input,
+button,
+select,
+optgroup,
+textarea,
+fieldset {
+    margin: 0;
+}
+
+fieldset {
+    border: none;
+    padding: 0;
+}
+
+ul,
+ol,
+dl {
+    margin-top: 0;
+    margin-bottom: $spacer * 2;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin-bottom: $spacer;
+    margin-left: 0;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: $spacer * 2;
+}
+
+textarea {
+    font-family: var(--sans-serif);
+}
+
+pre {
+    margin: 0;
+}
+
+hr {
+    background-color: var(--border-color);
+    border: 0;
+    height: 1px;
+}
+
+.table {
+    border-collapse: collapse;
+}
+
+// Show a focus ring when performing keyboard navigation. Uses the polyfill at
+// https://github.com/WICG/focus-visible because few browsers support :focus-visible.
+.js-focus-visible :focus:not(.focus-visible) {
+    outline: none;
+}
+.js-focus-visible .focus-visible {
+    @include focus-ring;
+}

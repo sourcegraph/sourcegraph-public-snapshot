@@ -23,18 +23,3 @@
         justify-content: center;
     }
 }
-
-.theme-light {
-    .signin-signup-form {
-        &__mode {
-            &:hover {
-                color: $color-light-text-5;
-                text-decoration: underline;
-            }
-
-            &--active {
-                color: $color-light-text-2;
-            }
-        }
-    }
-}

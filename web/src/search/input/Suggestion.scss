@@ -10,14 +10,13 @@
     line-height: 2.5rem;
     white-space: nowrap;
 
-    background-color: #1c2736;
-    border-top: 1px solid #2a3a51;
+    border-top: 1px solid var(--border-color);
 
     cursor: pointer;
 
     &--selected,
     &:hover {
-        background-color: #2a3a51;
+        background-color: var(--border-color);
     }
 
     &__icon {
@@ -44,20 +43,5 @@
     &__action {
         flex: 0 0 auto;
         margin-right: 0.5rem;
-    }
-}
-
-.theme-light {
-    .suggestion {
-        background-color: $color-light-bg-1;
-
-        &:first-child {
-            border-top: none;
-        }
-
-        &--selected,
-        &:hover {
-            background-color: $color-light-bg-2;
-        }
     }
 }

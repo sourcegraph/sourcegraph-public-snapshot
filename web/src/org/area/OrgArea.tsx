@@ -180,14 +180,14 @@ export class OrgArea extends React.Component<Props> {
         }
 
         return (
-            <div className="org-area w-100">
+            <div className="org-area w-100 d-flex flex-column">
                 <OrgHeader
                     {...this.props}
                     {...context}
                     navItems={this.props.orgAreaHeaderNavItems}
-                    className="border-bottom mt-4"
+                    className="flex-0 border-bottom mt-4"
                 />
-                <div className="container mt-3">
+                <div className="container mt-3 flex-1 d-flex flex-column">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>

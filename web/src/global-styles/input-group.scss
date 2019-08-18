@@ -1,0 +1,28 @@
+@import './variables';
+
+.input-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+
+    > .form-control {
+        flex: 1 1 0;
+    }
+}
+
+.input-group-prepend,
+.input-group-append {
+    display: flex;
+}
+
+.input-group-text {
+    display: flex;
+    align-items: center;
+    padding: $input-padding-y $input-padding-x;
+    font-size: var(--font-size-base);
+    line-height: $line-height-base;
+    text-align: center;
+    white-space: nowrap;
+    border: $input-border-width solid var(--border-color);
+}

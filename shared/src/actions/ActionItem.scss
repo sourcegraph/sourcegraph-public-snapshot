@@ -25,3 +25,11 @@
         transform: translateX(-50%) translateY(-50%);
     }
 }
+
+// TODO!(sqs)
+a,
+button {
+    &.action-item {
+        cursor: pointer;
+    }
+}

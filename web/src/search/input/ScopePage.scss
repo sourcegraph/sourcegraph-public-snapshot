@@ -27,7 +27,7 @@
         justify-content: space-between;
         border-style: solid none;
         border-width: 0.5px;
-        border-color: $color-border;
+        border-color: var(--border-color);
         height: 2.5rem;
 
         &:first-child:not(:last-child),
@@ -64,8 +64,8 @@
         display: flex;
         align-items: center;
         padding: 0.25rem 0.5rem;
-        background: #1c2736;
-        border: 1px solid $color-border;
+        background: var(--bg-muted);
+        border: 1px solid var(--border-color);
         border-right: 0;
         border-radius: 0.25rem 0 0 0.25rem;
         max-width: 200px;
@@ -90,20 +90,5 @@
     .query-input2__input {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
-    }
-}
-
-.theme-light {
-    .scope-page {
-        &__row {
-            border-color: $color-light-border;
-        }
-        &__link {
-            color: #2b3750;
-        }
-        &__input-scope {
-            background: $color-light-bg-2;
-            border-color: $color-light-border;
-        }
     }
 }

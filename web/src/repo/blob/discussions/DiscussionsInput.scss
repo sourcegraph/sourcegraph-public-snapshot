@@ -1,6 +1,5 @@
 .discussions-input {
     padding: 1rem;
-    border-bottom: 1px solid #212c45;
 
     &__text-box {
         min-height: 7rem;
@@ -26,15 +25,5 @@
 
     &__error-icon {
         margin-right: 0.25rem;
-    }
-}
-
-.theme-light {
-    .discussions-input {
-        border-color: $color-light-border;
-
-        &__button {
-            color: $color-light-text-4;
-        }
     }
 }

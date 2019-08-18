@@ -11,7 +11,7 @@
     &__main {
         display: flex;
         flex-wrap: wrap-reverse;
-        align-items: flex-start;
+        align-items: flex-end;
         justify-content: space-between;
     }
 
@@ -35,7 +35,7 @@
         &-toggle {
             flex: none;
             font-size: 9px;
-            padding: 0 0.175rem;
+            padding: 0 0.175rem !important;
             margin-right: 0.5rem;
         }
         &-timestamp {
@@ -99,6 +99,7 @@
         justify-content: flex-start;
     }
     &--compact &__byline {
+        margin-top: map-get($spacers, 1);
         width: 25%;
         flex: none;
         padding-right: 1.5rem;
@@ -116,15 +117,5 @@
     }
     &--compact &__oid {
         flex: 0 0 auto;
-    }
-}
-
-.theme-light {
-    .git-commit-node {
-        &__message {
-            &-subject {
-                color: $color-light-text-1;
-            }
-        }
     }
 }

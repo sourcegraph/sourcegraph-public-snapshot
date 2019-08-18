@@ -1,8 +1,24 @@
-$breadcrumb-padding-y: 0;
-$breadcrumb-padding-x: 0;
-$breadcrumb-margin-bottom: 0;
-$breadcrumb-border-radius: 0;
-$breadcrumb-bg: transparent;
-$breadcrumb-divider: '/';
+$breadcrumb-divider: ' › ';
+$breadcrumb-item-padding-x: $spacer;
+$breadcrumb-divider-color: var(--text-muted);
 
-@import 'bootstrap/scss/breadcrumb';
+.breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    .breadcrumb-item {
+        + .breadcrumb-item {
+            padding-left: $breadcrumb-item-padding-x;
+
+            &::before {
+                display: inline-block; // Suppress underlining of the separator in modern browsers
+                padding-right: $breadcrumb-item-padding-x;
+                color: $breadcrumb-divider-color;
+                content: $breadcrumb-divider;
+            }
+        }
+    }
+}

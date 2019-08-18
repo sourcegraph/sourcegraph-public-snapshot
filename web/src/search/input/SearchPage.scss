@@ -35,19 +35,12 @@
     &__input-container {
         width: 100%;
         display: flex;
+        align-items: flex-start;
     }
 
     &__input-sub-container {
         width: 100%;
         display: block;
         margin: 0.5rem 0;
-    }
-}
-
-.theme-light {
-    .search-page {
-        &__sign-in {
-            color: $color-light-text-4;
-        }
     }
 }
