@@ -241,6 +241,7 @@ README.md @sqs
 /dev/fakehub @ijt
 /dev/repogen @ijt
 /.vscode @felixfbecker
+/.graphqlconfig @felixfbecker
 
 # Misc and special overrides
 /LICENSE* @sqs @beyang @slimsag
