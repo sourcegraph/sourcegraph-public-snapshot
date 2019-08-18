@@ -9,7 +9,10 @@ import { UserAvatar } from '../user/UserAvatar'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
-    authenticatedUser: GQL.IUser
+    authenticatedUser: Pick<
+        GQL.IUser,
+        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
+    >
     showDotComMarketing: boolean
     showDiscussions: boolean
     switchThemeKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
