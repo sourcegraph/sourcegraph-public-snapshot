@@ -189,6 +189,9 @@ func (r *accessTokenConnectionResolver) Nodes(ctx context.Context) ([]*accessTok
 	if err != nil {
 		return nil, err
 	}
+	if r.opt.LimitOffset != nil && len(accessTokens) > r.opt.LimitOffset.Limit {
+		accessTokens = accessTokens[:r.opt.LimitOffset.Limit]
+	}
 
 	var l []*accessTokenResolver
 	for _, accessToken := range accessTokens {
