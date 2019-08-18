@@ -4,7 +4,7 @@ import { switchMap } from 'rxjs/operators'
 import { ContributionScope } from '../api/client/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { ActionItem } from './ActionItem'
+import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsState } from './actions'
 import { ActionsProps } from './ActionsContainer'
 
@@ -27,7 +27,11 @@ export interface ActionNavItemsClassProps {
     listItemClass?: string
 }
 
-export interface ActionsNavItemsProps extends ActionsProps, ActionNavItemsClassProps, TelemetryProps {
+export interface ActionsNavItemsProps
+    extends ActionsProps,
+        ActionNavItemsClassProps,
+        TelemetryProps,
+        Pick<ActionItemProps, 'showLoadingSpinnerDuringExecution'> {
     /**
      * If true, it renders a `<ul className="nav">...</ul>` around the items. If there are no items, it renders `null`.
      *
