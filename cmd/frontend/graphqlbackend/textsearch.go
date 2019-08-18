@@ -861,10 +861,6 @@ func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []st
 	return zoektQueries, nil
 }
 
-type zoektBackend interface {
-	ListAll(context.Context) (*zoekt.RepoList, error)
-}
-
 // zoektIndexedRepos splits the input repo list into two parts: (1) the
 // repositories `indexed` by Zoekt and (2) the repositories that are
 // `unindexed`.
@@ -1187,23 +1183,4 @@ func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) 
 	})
 
 	return flattened
-}
-
-type semaphore chan struct{}
-
-// Acquire increments the semaphore. Up to cap(sem) can be acquired
-// concurrently. If the context is canceled before acquiring the context
-// error is returned.
-func (sem semaphore) Acquire(ctx context.Context) error {
-	select {
-	case sem <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-// Release decrements the semaphore.
-func (sem semaphore) Release() {
-	<-sem
 }

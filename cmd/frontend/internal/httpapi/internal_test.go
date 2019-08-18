@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 
@@ -98,11 +97,4 @@ func Test_serveReposList(t *testing.T) {
 			t.Errorf("got %v, want %v", URIs, wantURIs)
 		}
 	})
-}
-
-func withEnv(envVar, val string, f func()) {
-	oldVal := os.Getenv(envVar)
-	defer os.Setenv(envVar, oldVal)
-	os.Setenv(envVar, val)
-	f()
 }

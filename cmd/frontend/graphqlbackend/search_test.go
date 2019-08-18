@@ -103,15 +103,6 @@ func TestSearch(t *testing.T) {
 	}
 }
 
-type NopRecentSearches struct{}
-
-func (m *NopRecentSearches) Log(ctx context.Context, s string) error { return nil }
-func (m *NopRecentSearches) Top(ctx context.Context, n int32) ([]string, []int32, error) {
-	return nil, nil, nil
-}
-func (m *NopRecentSearches) List(ctx context.Context) ([]string, error)   { return nil, nil }
-func (m *NopRecentSearches) Cleanup(ctx context.Context, limit int) error { return nil }
-
 var testSearchGQLQuery = `
 		fragment FileMatchFields on FileMatch {
 			repository {

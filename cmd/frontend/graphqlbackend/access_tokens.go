@@ -97,7 +97,6 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 	}
 
 	var token *db.AccessToken
-	var err error
 	switch {
 	case args.ByID != nil:
 		accessTokenID, err := unmarshalAccessTokenID(*args.ByID)
@@ -123,9 +122,6 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err := db.AccessTokens.DeleteByToken(ctx, *args.ByToken); err != nil {
 			return nil, err
 		}
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
