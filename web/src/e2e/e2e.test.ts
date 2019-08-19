@@ -242,33 +242,29 @@ describe('e2e test suite', () => {
             await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
         })
 
-        test('AWS CodeCommit', async () => {
-            const requiredEnv = [
-                'AWS_SECRET_ACCESS_KEY',
-                'AWS_ACCESS_KEY_ID',
-                'AWS_CODE_COMMIT_GIT_USERNAME',
-                'AWS_CODE_COMMIT_GIT_PASSWORD',
-            ]
+        const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
+        const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
+        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
 
-            for (const variable of requiredEnv) {
-                if (process.env[variable] === undefined) {
-                    console.warn(`Environment variable ${variable} must be set to run this test. Skipping.`)
-                    return
-                }
-            }
+        const testIfAwsCredentialsSet =
+            awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
+                ? test
+                : test.skip.bind(test)
 
+        testIfAwsCredentialsSet('AWS CodeCommit', async () => {
             const displayName = 'e2e-aws-code-commit-' + random(1, 1e7)
             await driver.ensureHasExternalService({
                 kind: 'awscodecommit',
                 displayName,
                 config: JSON.stringify({
                     region: 'us-west-1',
-                    accessKeyID: process.env.AWS_ACCESS_KEY_ID,
-                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                    accessKeyID: awsAccessKeyID,
+                    secretAccessKey: awsSecretAccessKey,
                     repositoryPathPattern: 'aws/{name}',
                     gitCredentials: {
-                        username: process.env.AWS_CODE_COMMIT_GIT_USERNAME,
-                        password: process.env.AWS_CODE_COMMIT_GIT_PASSWORD,
+                        username: awsCodeCommitUsername,
+                        password: awsCodeCommitPassword,
                     },
                 }),
             })
