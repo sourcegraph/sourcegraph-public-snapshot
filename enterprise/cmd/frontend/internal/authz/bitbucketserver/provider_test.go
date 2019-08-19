@@ -81,7 +81,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 		}
 
 		ctx := context.Background()
-		err := repos.NewDBStore(nil, db, sql.TxOptions{}).UpsertRepos(ctx, stored...)
+		err := repos.NewDBStore(db, sql.TxOptions{}).UpsertRepos(ctx, stored...)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -81,7 +81,7 @@ func main() {
 		}
 
 		store = repos.NewObservedStore(
-			repos.NewDBStore(ctx, db, sql.TxOptions{Isolation: sql.LevelSerializable}),
+			repos.NewDBStore(db, sql.TxOptions{Isolation: sql.LevelSerializable}),
 			log15.Root(),
 			m,
 			trace.Tracer{Tracer: opentracing.GlobalTracer()},

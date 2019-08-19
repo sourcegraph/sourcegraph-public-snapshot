@@ -135,7 +135,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		ctx := context.Background()
-		err := repos.NewDBStore(nil, db, sql.TxOptions{}).UpsertRepos(ctx, rs...)
+		err := repos.NewDBStore(db, sql.TxOptions{}).UpsertRepos(ctx, rs...)
 		if err != nil {
 			t.Fatal(err)
 		}
