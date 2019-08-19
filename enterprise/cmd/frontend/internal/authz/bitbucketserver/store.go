@@ -127,20 +127,34 @@ func (s *store) LoadPermissions(
 		return nil
 	}
 
-	expired := **p
+	return s.UpdatePermissions(ctx, *p, update)
+}
+
+// UpdatePermissions updates the given Permissions, calling the update function
+// to fetch fresh data from the source of truth.
+func (s *store) UpdatePermissions(
+	ctx context.Context,
+	p *Permissions,
+	update PermissionsUpdateFunc,
+) (err error) {
+	ctx, save := s.observe(ctx, "UpdatePermissions", "")
+	defer func() { save(p, &err) }()
+
+	now := s.clock()
+	expired := *p
 	expired.IDs = nil
 
 	if !s.block { // Non blocking code path
 		go func(expired *Permissions) {
 			err := s.update(ctx, expired, update)
 			if err != nil && err != errLockNotAvailable {
-				log15.Error("bitbucketserver.authz.store.update", "error", err)
+				log15.Error("bitbucketserver.authz.store.UpdatePermissions", "error", err)
 			}
 		}(&expired)
 
 		// No valid permissions available yet or hard TTL expired.
-		if (*p).UpdatedAt.IsZero() || (*p).Expired(s.hardTTL, now) {
-			return &StalePermissionsError{Permissions: *p}
+		if p.UpdatedAt.IsZero() || p.Expired(s.hardTTL, now) {
+			return &StalePermissionsError{Permissions: p}
 		}
 
 		return nil
@@ -150,15 +164,14 @@ func (s *store) LoadPermissions(
 	switch err = s.update(ctx, &expired, update); {
 	case err == nil:
 	case err == errLockNotAvailable:
-		if (*p).Expired(s.hardTTL, now) {
-			return &StalePermissionsError{Permissions: *p}
+		if p.Expired(s.hardTTL, now) {
+			return &StalePermissionsError{Permissions: p}
 		}
 	default:
 		return err
 	}
 
-	*p = &expired
-
+	*p = expired
 	return nil
 }
 
