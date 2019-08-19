@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { fs } from 'mz'
 import { Database } from './database'
-import { readEnvInt, hasErrorCode, readEnv } from './util'
+import { hasErrorCode, readEnv } from './util'
 import { convertToBlob, SymbolReference } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
@@ -26,13 +26,6 @@ export class NoLSIFDataError extends Error {
 const STORAGE_ROOT = readEnv('LSIF_STORAGE_ROOT', 'lsif-storage')
 
 /**
- * Soft limit on the amount of storage used by LSIF files. Storage can exceed
- * this limit if a single LSIF file is larger than this, otherwise storage will
- * be kept under this limit. Defaults to 100GB.
- */
-const SOFT_MAX_STORAGE = readEnvInt('LSIF_SOFT_MAX_STORAGE', 100 * 1024 * 1024 * 1024)
-
-/**
  * Backend for LSIF dumps stored in SQLite.
  */
 export class SQLiteBackend {
@@ -44,10 +37,7 @@ export class SQLiteBackend {
      * can be subsequently read by the `createRunner` method.
      */
     public async insertDump(input: Readable, repository: string, commit: string): Promise<void> {
-        const outFile = makeFilename(repository, commit)
-
-        const { exported, imported } = await convertToBlob(input, outFile)
-        const contentLength = 0 // TODO
+        const { exported, imported } = await convertToBlob(input, makeFilename(repository, commit))
 
         for (const exportedPackage of exported) {
             await this.xrepoDatabase.addPackage(
@@ -88,9 +78,6 @@ export class SQLiteBackend {
                 Array.from(ids)
             )
         }
-
-        await this.cleanStorageRoot(Math.max(0, SOFT_MAX_STORAGE - contentLength))
-        await fs.stat(outFile)
     }
 
     /**
@@ -112,37 +99,6 @@ export class SQLiteBackend {
         }
 
         return new Database(this.xrepoDatabase, file)
-    }
-
-    /**
-     * Deletes old files (sorted by last modified time) to keep the disk usage below
-     * the given `max`.
-     */
-    private async cleanStorageRoot(max: number): Promise<void> {
-        // TODO(efritz) - early-out
-
-        const entries = await fs.readdir(STORAGE_ROOT)
-        const files = await Promise.all(
-            entries.map(async f => {
-                const realPath = path.join(STORAGE_ROOT, f)
-                return { path: realPath, stat: await fs.stat(realPath) }
-            })
-        )
-
-        let totalSize = files.reduce((subtotal, f) => subtotal + f.stat.size, 0)
-
-        // TODO - come up with a better fair-eviction policy so that one repo
-        // with a  lot of dumps do not starve out disk space for other repos.
-
-        for (const f of files.sort((a, b) => a.stat.atimeMs - b.stat.atimeMs)) {
-            if (totalSize <= max) {
-                return
-            }
-
-            console.log(`Deleting ${f.path} to help keep disk usage under ${SOFT_MAX_STORAGE}.`)
-            await fs.unlink(f.path)
-            totalSize = totalSize - f.stat.size
-        }
     }
 }
 
