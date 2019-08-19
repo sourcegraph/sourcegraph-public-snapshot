@@ -122,7 +122,8 @@ describe('e2e test suite', () => {
             await driver.page.goto(baseURL + '/users/test/settings/tokens/new')
             await driver.page.waitForSelector('.e2e-create-access-token-description')
 
-            const name = 'E2E Test ' + random(1, 1e7)
+            const now = await driver.page.evaluate(() => new Date().toISOString())
+            const name = 'E2E Test ' + now + ' ' + random(1, 1e7)
 
             await driver.replaceText({
                 selector: '.e2e-create-access-token-description',
