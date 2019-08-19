@@ -827,7 +827,6 @@ func IndexedSearch() *searchbackend.Zoekt {
 		}
 		conf.Watch(func() {
 			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
-			indexedSearch.SetSymbolEnabled(conf.SymbolIndexEnabled())
 		})
 	})
 	return indexedSearch

@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/zoekt"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -72,8 +73,11 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		zoektRepos    []*search.RepositoryRevisions
 	)
 
-	if args.Zoekt.SymbolEnabled() {
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, true)
+	if args.Zoekt.Enabled() {
+		filter := func(repo *zoekt.Repository) bool {
+			return repo.Symbols
+		}
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -96,12 +100,12 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		switch parseYesNoOnly(index) {
 		case Yes, True:
 			// default
-			if args.Zoekt.SymbolEnabled() {
+			if args.Zoekt.Enabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
 			}
 		case Only:
-			if !args.Zoekt.SymbolEnabled() {
-				return nil, common, fmt.Errorf("invalid index:%q (indexed symbol search is not enabled)", index)
+			if !args.Zoekt.Enabled() {
+				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
 			common.missing = make([]*types.Repo, len(searcherRepos))
 			for i, r := range searcherRepos {
