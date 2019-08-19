@@ -195,7 +195,6 @@ describe('regression test suite', () => {
             },
             5 * 1000
         )
-
         test(
             'Release test 5.1.2: Perform global text search for something with more than 1000 results and use count:1000',
             async () => {
@@ -204,7 +203,6 @@ describe('regression test suite', () => {
             },
             5 * 1000
         )
-
         test(
             'Release test 5.2.2: Perform global text search for a regular expression without indexing: "index:no ^func.*$", expect many results.',
             async () => {
@@ -216,11 +214,29 @@ describe('regression test suite', () => {
 
         // todo: 5.5 search with repo group
 
-        // todo: 5.8 search for a repo by name
+        test(
+            'Release test 5.8: Search for a repository by name.',
+            async () => {
+                await driver.page.goto(baseURL + '/search?q=repo:^auth0/go-jwt-middleware$')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length == 1)
+            },
+            5 * 1000
+        )
 
-        // todo: 5.10 case-sensitive search
+        test(
+            'Release tes.t 5.10: Perform a case-sensitive search.',
+            async () => {
+                await driver.page.goto(baseURL + '/search?repo:%5Egithub%5C.com/adjust/go-wrk%24+String+case:yes')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length == 2)
+            },
+            5 * 1000
+        )
 
         // todo: 5.11 filter by fork status and archived status
+            // Search for `fork:only repo:sourcegraph`
+            //     Expect results to be list of forked repositories, including `vscode`, `goreman`, `zoekt`
+            // Search for `fork:no repo:sourcegraph`
+            //     Expect results to be list of Sourcegraph repositories, including `sourcegraph`, `sourcegraph-classic`, `deploy-sourcegraph`
 
         // todo: 5.15 search for something on a non-master branch of a large repo
     })
