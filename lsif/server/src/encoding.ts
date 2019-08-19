@@ -1,5 +1,4 @@
 import { gzip, gunzip } from 'mz/zlib'
-import * as crypto from 'crypto'
 import { BloomFilter } from 'bloomfilter'
 import { readEnvInt } from './util'
 
@@ -51,40 +50,6 @@ export function createFilter(uris: string[]): Promise<string> {
 export async function testFilter(filter: string, uri: string): Promise<boolean> {
     const { numHashFunctions, buckets } = await decodeJSON(filter)
     return new BloomFilter(buckets, numHashFunctions).test(uri)
-}
-
-/**
- * Return the output of both `hashJSON` and `encodeJSON` on `value`.
- *
- * @param value The value to hash and encode.
- */
-export async function hashAndEncodeJSON<T>(value: T): Promise<{ hash: string; encoded: string }> {
-    const jsonified = dumpJSON(value)
-
-    return {
-        hash: hash(jsonified),
-        encoded: await encode(jsonified),
-    }
-}
-
-/**
- * Return the hash of the JSON representation of `value`.
- *
- * @param value The value to hash.
- */
-export function hashJSON<T>(value: T): string {
-    return hash(dumpJSON(value))
-}
-
-/**
- * Return the hash of `value.
- *
- * @param value The value to hash.
- */
-export function hash(value: string): string {
-    const hash = crypto.createHash('md5')
-    hash.update(value)
-    return hash.digest('base64')
 }
 
 /**

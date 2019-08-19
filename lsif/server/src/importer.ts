@@ -4,7 +4,7 @@ import { DocumentModel, DefModel, MetaModel, RefModel } from './models'
 import { Connection } from 'typeorm'
 import { connectionCache } from './cache'
 import { fs } from 'mz'
-import { hashAndEncodeJSON } from './encoding'
+import { encodeJSON } from './encoding'
 import {
     MonikerData,
     RangeData,
@@ -49,8 +49,8 @@ import { Readable } from 'stream'
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
 export interface XrepoSymbols {
-    exported: Set<Package>
-    imported: Set<SymbolReference>
+    exported: Package[]
+    imported: SymbolReference[]
 }
 
 export interface Package {
@@ -92,7 +92,6 @@ interface ExternalReference {
 }
 
 interface DocumentDatabaseData {
-    hash: string
     encoded: string
     definitions: ExternalDefinition[]
     references: ExternalReference[]
@@ -130,8 +129,8 @@ export async function convertToBlob(input: Readable, outFile: string): Promise<X
             }
 
             return {
-                exported: blobStore.exportedPackages,
-                imported: blobStore.importedSymbols,
+                exported: Array.from(blobStore.exportedPackages.values()),
+                imported: Array.from(blobStore.importedSymbols.values()),
             }
         }
     )
@@ -174,12 +173,8 @@ class BlobStore {
     // TODO
     private projectRoot: string | undefined
 
-    // TODO - expose via method?
-    public exportedPackages: Set<Package> = new Set()
-    public importedSymbols: Set<SymbolReference> = new Set()
-
-    private insertedBlobs: Set<string> = new Set()
-    // private insertedHovers: Set<string> = new Set()
+    public exportedPackages: Map<string, Package> = new Map()
+    public importedSymbols: Map<string, SymbolReference> = new Map()
 
     constructor(private connection: Connection) {
         const wrap = <T>(f: (element: T) => void) => (element: T) => Promise.resolve(f(element))
@@ -325,7 +320,11 @@ class BlobStore {
         source.packageInformation = edge.inV
 
         if (source.kind === 'export') {
-            this.exportedPackages.add({ scheme: source.scheme, name: packageInfo.name, version: packageInfo.version })
+            this.exportedPackages.set(`${source.scheme}::${packageInfo.name}::${packageInfo.version}`, {
+                scheme: source.scheme,
+                name: packageInfo.name,
+                version: packageInfo.version,
+            })
         }
     }
 
@@ -359,18 +358,9 @@ class BlobStore {
     }
 
     private async handleDocumentEnd(event: DocumentEvent): Promise<void> {
-        console.log('finalizing document...')
-
         const documentData = assertDefined(event.data, this.documentDatas)
-        const data = await this.finalizeBlob(documentData)
-        if (this.insertedBlobs.has(data.hash)) {
-            return
-        }
-
-        this.insertedBlobs.add(data.hash)
-        await this.connection
-            .getRepository(DocumentModel)
-            .save({ hash: data.hash, value: data.encoded, uri: documentData.uri })
+        const data = await this.finalizeDocument(documentData)
+        await this.connection.getRepository(DocumentModel).save({ uri: documentData.uri, value: data.encoded })
 
         const defs = []
         for (const definition of data.definitions) {
@@ -398,20 +388,21 @@ class BlobStore {
             }
         }
 
+        // TODO - 999 based on number of things being inserted
         const maxBatchSize = 124
 
         //
         // TODO - make chunk inserter a generic thing
         //
 
-        const chunk = async <T>(items: T[], callback: (batch: T[]) => Promise<any>): Promise<void> => {
+        const chunk = async <T>(items: T[], visitor: (batch: T[]) => Promise<void>): Promise<void> => {
             while (items.length > maxBatchSize) {
-                await callback(items.slice(0, maxBatchSize))
+                await visitor(items.slice(0, maxBatchSize))
                 items = items.slice(maxBatchSize)
             }
 
             if (items.length > 0) {
-                await callback(items)
+                await visitor(items)
             }
         }
 
@@ -422,6 +413,7 @@ class BlobStore {
                 .into(DefModel)
                 .values(batch)
                 .execute()
+                .then(() => {})
         )
 
         await chunk(refs, batch =>
@@ -431,6 +423,7 @@ class BlobStore {
                 .into(RefModel)
                 .values(batch)
                 .execute()
+                .then(() => {})
         )
     }
 
@@ -484,13 +477,17 @@ class BlobStore {
         }
     }
 
+    // TODO - why is this even necessary?
+    // TODO - see if these make it into the dump
     private ensureMoniker(data: RangeData | ResultSetData): void {
-        if (!data.monikers) {
-            const id = uuid.v4()
-            const monikerData: MonikerData = { id, kind: MonikerKind.local, scheme: '$synthetic', identifier: id }
-            data.monikers = [monikerData.identifier]
-            this.monikerDatas.set(monikerData.identifier, monikerData)
+        if (data.monikers) {
+            return
         }
+
+        const id = uuid.v4()
+        const monikerData: MonikerData = { id, kind: MonikerKind.local, scheme: '$synthetic', identifier: id }
+        data.monikers = [monikerData.identifier]
+        this.monikerDatas.set(monikerData.identifier, monikerData)
     }
 
     //
@@ -559,7 +556,7 @@ class BlobStore {
         }
     }
 
-    private async finalizeBlob(blob: WrappedDocumentBlob): Promise<DocumentDatabaseData> {
+    private async finalizeDocument(blob: WrappedDocumentBlob): Promise<DocumentDatabaseData> {
         for (const [key, value] of this.packageInformationDatas) {
             blob.packageInformation.set(key, value)
         }
@@ -568,12 +565,15 @@ class BlobStore {
             if (data.kind === 'import' && data.packageInformation) {
                 const packageInformation = assertDefined(data.packageInformation, this.packageInformationDatas)
 
-                this.importedSymbols.add({
-                    scheme: data.scheme,
-                    name: packageInformation.name,
-                    version: packageInformation.version,
-                    identifier: data.identifier,
-                })
+                this.importedSymbols.set(
+                    `${data.scheme}::${packageInformation.name}::${packageInformation.version}::${data.identifier}`,
+                    {
+                        scheme: data.scheme,
+                        name: packageInformation.name,
+                        version: packageInformation.version,
+                        identifier: data.identifier,
+                    }
+                )
             }
         }
 
@@ -612,7 +612,7 @@ class BlobStore {
             })
         }
 
-        return { ...(await hashAndEncodeJSON(blob)), definitions, references }
+        return { encoded: await encodeJSON(blob), definitions, references }
     }
 }
 
