@@ -513,6 +513,12 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "BITBUCKETSERVER",
+			desc:   "invalid authorization hardTTL",
+			config: `{"authorization": {"ttl": "3h", "hardTTL": "1h"}}`,
+			assert: includes(`authorization.hardTTL: must be larger than ttl`),
+		},
+		{
+			kind:   "BITBUCKETSERVER",
 			desc:   "valid authorization ttl 0",
 			config: `{"authorization": {"ttl": "0"}}`,
 			assert: excludes(`authorization.ttl: time: invalid duration 0`),

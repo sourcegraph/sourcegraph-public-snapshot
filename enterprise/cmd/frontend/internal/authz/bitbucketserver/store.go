@@ -28,20 +28,30 @@ import (
 // costs associated with talking to Postgres, further speeding up the steady state
 // operations.
 type store struct {
-	db      dbutil.DB
-	ttl     time.Duration
+	db dbutil.DB
+	// Duration after which a given user's cached permissions SHOULD be updated.
+	// Previously cached permissions can still be used.
+	ttl time.Duration
+	// Duration after which a given user's cached permissions MUST be updated.
+	// Previously cached permissions can no longer be used.
+	hardTTL time.Duration
 	cache   *cache
 	clock   func() time.Time
 	block   bool // Perform blocking updates if true.
 	updates chan *Permissions
 }
 
-func newStore(db dbutil.DB, ttl time.Duration, clock func() time.Time, cache *cache) *store {
+func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time, cache *cache) *store {
+	if hardTTL < ttl {
+		hardTTL = ttl
+	}
+
 	return &store{
-		db:    db,
-		ttl:   ttl,
-		cache: cache,
-		clock: clock,
+		db:      db,
+		ttl:     ttl,
+		hardTTL: hardTTL,
+		cache:   cache,
+		clock:   clock,
 	}
 }
 
@@ -71,6 +81,11 @@ func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
 	}
 	return perms
 }
+
+// DefaultHardTTL is the default hard TTL used in the permissions store, after which
+// cached permissions for a given user MUST be updated, and previously cached permissions
+// can no longer be used, resulting in a call to LoadPermissions returning a StalePermissionsError.
+const DefaultHardTTL = 3 * 24 * time.Hour
 
 // PermissionsUpdateFunc fetches updated permissions from a source of truth,
 // returning the correspondent Sourcegraph ids (e.g. repo table ids) of those objects
@@ -123,7 +138,8 @@ func (s *store) LoadPermissions(
 			}
 		}(&expired)
 
-		if (*p).UpdatedAt.IsZero() { // No valid permissions available yet.
+		// No valid permissions available yet or hard TTL expired.
+		if (*p).UpdatedAt.IsZero() || (*p).Expired(s.hardTTL, now) {
 			return &StalePermissionsError{Permissions: *p}
 		}
 
@@ -131,8 +147,13 @@ func (s *store) LoadPermissions(
 	}
 
 	// Blocking code path
-	err = s.update(ctx, &expired, update)
-	if err != nil && err != errLockNotAvailable {
+	switch err = s.update(ctx, &expired, update); {
+	case err == nil:
+	case err == errLockNotAvailable:
+		if (*p).Expired(s.hardTTL, now) {
+			return &StalePermissionsError{Permissions: *p}
+		}
+	default:
 		return err
 	}
 
