@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
-	"github.com/google/zoekt/build"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -75,16 +74,8 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	)
 
 	if args.Zoekt.Enabled() {
-		opt := build.Options{
-			CTags:            conf.CTags(),
-			CTagsMustSucceed: true,
-			DisableCTags:     false,
-			SizeMax:          1 << 20,
-			LargeFiles:       conf.Get().SearchLargeFiles,
-		}
-
 		filter := func(repo *zoekt.Repository) bool {
-			return repo.IndexOptions == opt.HashOptions()
+			return repo.HasSymbols
 		}
 		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
 		if err != nil {

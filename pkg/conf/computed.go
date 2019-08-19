@@ -256,17 +256,6 @@ func SearchIndexEnabled() bool {
 	return DeployType() != DeployDocker
 }
 
-func CTags() string {
-	switch DeployType() {
-	case DeployCluster, DeployDocker:
-		return "/usr/local/bin/universal-ctags"
-	case DeployDev:
-		return "cmd/symbols/universal-ctags-dev"
-	default:
-		return "/usr/local/bin/universal-ctags"
-	}
-}
-
 func SymbolIndexEnabled() bool {
 	enabled := SearchIndexEnabled()
 	if v := Get().SearchIndexSymbolsEnabled; v != nil {
