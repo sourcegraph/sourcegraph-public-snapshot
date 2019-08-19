@@ -52,7 +52,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 	// Filter args.Repos by matching their names against the query pattern.
 	common = &searchResultsCommon{}
-	repos := make([]*search.RepositoryRevisions, 0, len(args.Repos))
+	var repos []*search.RepositoryRevisions
 	for _, r := range args.Repos {
 		if pattern.MatchString(string(r.Repo.Name)) {
 			repos = append(repos, r)
