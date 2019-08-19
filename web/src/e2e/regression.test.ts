@@ -195,13 +195,25 @@ describe('regression test suite', () => {
             },
             5 * 1000
         );
+
         test(
-            'Perform global text search for regular expression without indexing: "index:no ^func.*$", expect many results.',
+            'Release test 5.2.2: Perform global text search for regular expression without indexing: "index:no ^func.*$", expect many results.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=index:no+^func.*$');
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
         )
+
+        // todo: 5.5 search with repo group
+
+        // todo: 5.8 search for a repo by name
+
+        // todo: 5.10 case-sensitive search
+
+        // todo: 5.11 filter by fork status and archived status
+
+        // todo: 5.15 search for something on a non-master branch of a large repo
+
     })
 });
