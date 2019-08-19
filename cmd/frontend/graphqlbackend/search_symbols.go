@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/zoekt"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -73,7 +74,10 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	)
 
 	if args.Zoekt.Enabled() {
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
+		filter := func(repo *zoekt.Repository) bool {
+			return repo.HasSymbols
+		}
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))

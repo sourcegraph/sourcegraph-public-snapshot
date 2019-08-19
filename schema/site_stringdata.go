@@ -28,6 +28,12 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Search"
     },
+    "search.index.symbols.enabled": {
+      "description": "Whether indexed symbol search is enabled. This is contingent on indexed search being enabled. Enabling this will require re-indexing every repository. This is a time consuming operation. It will also require more storage and ram to accommodate the additional symbols information. ",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Search"
+    },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
       "type": "array",
