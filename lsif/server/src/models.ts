@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index, JoinColumn, ManyToOne } from 'typeorm'
+import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index } from 'typeorm'
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -28,31 +28,23 @@ export class MetaModel {
 }
 
 /**
- * `BlobModel` is an entity within the database describing LSIF data for a single repository
- * and commit pair. This contains JSON-encoded objects (defined in ./entities.ts) keyed by
- * their non-cryptographic hash. This entity is a foreign key to `DefModel` and `RefModel`.
- */
-@Entity({ name: 'blobs' })
-export class BlobModel {
-    @PrimaryColumn()
-    public hash!: string
-
-    @Column()
-    public value!: string
-}
-
-/**
- * `DocumentModel` is an entity within the database describing LSIF data for a single repository
- * and commit pair. This maps a blob hash that describes a `DocumentBlob` to the URI to the
- * document.
+ * `DocumentModel` is an entity within the database describing LSIF data for a single
+ * repository and commit pair. This contains a JSON-encoded `DocumentData` object that
+ * describes relations within a single file. of the dump.
  */
 @Entity({ name: 'documents' })
 export class DocumentModel {
+    /**
+     * `uri` is the root-relative path of the document.
+     */
     @PrimaryColumn()
-    public hash!: string
-
-    @Column()
     public uri!: string
+
+    /**
+     * `value` is the JSON-encoded document data.
+     */
+    @Column()
+    public value!: string
 }
 
 /**
@@ -82,6 +74,12 @@ export class DefModel {
     public identifier!: string
 
     /**
+     * `documentUri` is the uri of the document to which this definition belongs.
+     */
+    @Column()
+    public documentUri!: string
+
+    /**
      * `startLine` is the zero-indexed line describing the start of this range.
      */
     @Column()
@@ -104,19 +102,6 @@ export class DefModel {
      */
     @Column()
     public endCharacter!: number
-
-    /**
-     * `documentHash` is the foreign key to the `BlobModel` entity.
-     */
-    @Column()
-    public documentHash!: string
-
-    /**
-     * `document` is the joined foreign `BlobModel`.
-     */
-    @JoinColumn()
-    @ManyToOne(type => DocumentModel)
-    public document!: DocumentModel
 }
 
 /**
@@ -146,6 +131,12 @@ export class RefModel {
     public identifier!: string
 
     /**
+     * `documentUri` is the uri of the document to which this reference belongs.
+     */
+    @Column()
+    public documentUri!: string
+
+    /**
      * `startLine` is the zero-indexed line describing the start of this range.
      */
     @Column()
@@ -168,19 +159,6 @@ export class RefModel {
      */
     @Column()
     public endCharacter!: number
-
-    /**
-     * `documentHash` is the foreign key to the `BlobModel` entity.
-     */
-    @Column()
-    public documentHash!: string
-
-    @JoinColumn()
-    /**
-     * `document` is the joined foreign `BlobModel`.
-     */
-    @ManyToOne(type => DocumentModel)
-    public document!: DocumentModel
 }
 
 /**

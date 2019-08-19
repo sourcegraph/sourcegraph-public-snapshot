@@ -1,6 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { blobCache, connectionCache } from './cache'
-import { BlobModel, DefModel, DocumentModel, MetaModel, RefModel } from './models'
+import { connectionCache, blobCache } from './cache'
+import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
 import { DocumentBlob, MonikerData, RangeData, ReferenceResultData, ResultSetData } from './entities'
@@ -11,6 +11,9 @@ import { XrepoDatabase } from './xrepo'
 const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
 const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
 
+/**
+ * `Database` wraps operations around a single repository/commit pair.
+ */
 export class Database {
     /**
      * Create a new `Database` with the given cross-repo database instance and the
@@ -27,12 +30,15 @@ export class Database {
      * @param uri The URI of the document.
      */
     public async exists(uri: string): Promise<boolean> {
-        return (await this.findFile(uri)) !== undefined
+        return (await this.findBlob(uri)) !== undefined
     }
 
-    //
-    // Definitions
-
+    /**
+     * Return the location for the definition of the reference at the given position.
+     *
+     * @param uri The document to which the position belongs.
+     * @param position The current hover position.
+     */
     public async definitions(uri: string, position: lsp.Position): Promise<lsp.Location | lsp.Location[] | undefined> {
         const blob = await this.findBlob(uri)
         if (!blob) {
@@ -51,33 +57,90 @@ export class Database {
 
         for (const moniker of findMonikers(blob.resultSets, blob.monikers, range)) {
             if (moniker.kind === 'import') {
-                return await this.getRemoteDefinition(blob, moniker)
+                return await this.remoteDefinition(blob, moniker)
             }
 
-            const defsResult = await this.withConnection(connection =>
-                connection.getRepository(DefModel).find({
-                    where: {
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                    },
-                    relations: ['document'],
-                })
-            )
-
-            if (defsResult && defsResult.length > 0) {
-                return defsResult.map(item =>
-                    lsp.Location.create(
-                        item.document.uri,
-                        lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
-                    )
-                )
+            const defs = await this.localDefinition(moniker)
+            if (defs) {
+                return defs
             }
         }
 
         return undefined
     }
 
-    private async getRemoteDefinition(
+    /**
+     * Return a list of locations which reference the definition at the given position.
+     *
+     * @param uri The document to which the position belongs.
+     * @param position The current hover position.
+     */
+    public async references(uri: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
+        const blob = await this.findBlob(uri)
+        if (!blob) {
+            return undefined
+        }
+
+        const range = findRange(blob, position)
+        if (!range) {
+            return undefined
+        }
+
+        const resultData = findResult(blob.resultSets, blob.referenceResults, range, 'referenceResult')
+        const monikers = findMonikers(blob.resultSets, blob.monikers, range)
+        const result = await this.localReferences(uri, blob, resultData, monikers)
+
+        for (const moniker of monikers) {
+            if (moniker.kind === 'export') {
+                const moreResult = await this.remoteReferences(blob, moniker)
+                result.push(...moreResult)
+                break
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Return the hover content for the definition or reference at the given position.
+     *
+     * @param uri The document to which the position belongs.
+     * @param position The current hover position.
+     */
+    public async hover(uri: string, position: lsp.Position): Promise<lsp.Hover | undefined> {
+        const blob = await this.findBlob(uri)
+        if (!blob) {
+            return undefined
+        }
+
+        const range = findRange(blob, position)
+        if (!range) {
+            return undefined
+        }
+
+        return findResult(blob.resultSets, blob.hovers, range, 'hoverResult')
+    }
+
+    // TODO - document
+    private async localDefinition(moniker: MonikerData): Promise<lsp.Location | lsp.Location[] | undefined> {
+        const defsResult = await this.withConnection(connection =>
+            connection.getRepository(DefModel).find({
+                where: {
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                },
+            })
+        )
+
+        if (!defsResult || defsResult.length === 0) {
+            return undefined
+        }
+
+        return defsResult.map(item => lsp.Location.create(item.documentUri, makeRange(item)))
+    }
+
+    // TODO - document
+    private async remoteDefinition(
         blob: DocumentBlob,
         moniker: MonikerData
     ): Promise<lsp.Location | lsp.Location[] | undefined> {
@@ -113,54 +176,17 @@ export class Database {
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
                 },
-                relations: ['document'],
             })
         )
 
-        for (const defxResult of defsResult) {
-            return lsp.Location.create(
-                `git://${packageEntity.repository}?${packageEntity.commit}#${defxResult.document.uri}`,
-                lsp.Range.create(
-                    defxResult.startLine,
-                    defxResult.startCharacter,
-                    defxResult.endLine,
-                    defxResult.endCharacter
-                )
-            )
+        for (const result of defsResult) {
+            return lsp.Location.create(makeRemoteUri(packageEntity, result), makeRange(result))
         }
 
         return undefined
     }
 
-    //
-    // References
-
-    public async references(uri: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
-        const blob = await this.findBlob(uri)
-        if (!blob) {
-            return undefined
-        }
-
-        const range = findRange(blob, position)
-        if (!range) {
-            return undefined
-        }
-
-        const resultData = findResult(blob.resultSets, blob.referenceResults, range, 'referenceResult')
-        const monikers = findMonikers(blob.resultSets, blob.monikers, range)
-        const result = await this.localReferences(uri, blob, resultData, monikers)
-
-        for (const moniker of monikers) {
-            if (moniker.kind === 'export') {
-                const moreResult = await this.remoteReferences(blob, moniker)
-                result.push(...moreResult)
-                break
-            }
-        }
-
-        return result
-    }
-
+    // TODO - document
     private async localReferences(
         uri: string,
         blob: DocumentBlob,
@@ -181,23 +207,20 @@ export class Database {
                         scheme: moniker.scheme,
                         identifier: moniker.identifier,
                     },
-                    relations: ['document'],
                 })
             )
 
-            if (refsResult && refsResult.length > 0) {
-                return refsResult.map(item =>
-                    lsp.Location.create(
-                        item.document.uri,
-                        lsp.Range.create(item.startLine, item.startCharacter, item.endLine, item.endCharacter)
-                    )
-                )
+            if (!refsResult || refsResult.length === 0) {
+                continue
             }
+
+            return refsResult.map(item => lsp.Location.create(item.documentUri, makeRange(item)))
         }
 
         return []
     }
 
+    // TODO - document
     private async remoteReferences(blob: DocumentBlob, moniker: MonikerData): Promise<lsp.Location[]> {
         if (!moniker.packageInformation) {
             return []
@@ -230,23 +253,12 @@ export class Database {
                         scheme: moniker.scheme,
                         identifier: moniker.identifier,
                     },
-                    relations: ['document'],
                 })
             )
 
             if (refsResult && refsResult.length > 0) {
-                for (const refxResult of refsResult) {
-                    allReferences.push(
-                        lsp.Location.create(
-                            `git://${reference.repository}?${reference.commit}#${refxResult.document.uri}`,
-                            lsp.Range.create(
-                                refxResult.startLine,
-                                refxResult.startCharacter,
-                                refxResult.endLine,
-                                refxResult.endCharacter
-                            )
-                        )
-                    )
+                for (const result of refsResult) {
+                    allReferences.push(lsp.Location.create(makeRemoteUri(reference, result), makeRange(result)))
                 }
             }
         }
@@ -254,56 +266,40 @@ export class Database {
         return allReferences
     }
 
-    //
-    // Hover
-
-    public async hover(uri: string, position: lsp.Position): Promise<lsp.Hover | undefined> {
-        const blob = await this.findBlob(uri)
-        if (!blob) {
-            return undefined
-        }
-
-        const range = findRange(blob, position)
-        if (!range) {
-            return undefined
-        }
-
-        return findResult(blob.resultSets, blob.hovers, range, 'hoverResult')
-    }
-
-    //
-    // TODO - categorize
-
-    private async findFile(uri: string): Promise<Id | undefined> {
-        // TODO - why not join?
-        const result = await this.withConnection(connection => connection.getRepository(DocumentModel).findOne({ uri }))
-        return result && result.hash
-    }
-
+    /**
+     * Return a parsed document blob with the given URI. The result of this
+     * method is cached across all database instances.
+     *
+     * @param uri The uri of the document.
+     */
     private async findBlob(uri: string): Promise<DocumentBlob | undefined> {
-        const documentId = await this.findFile(uri)
-        if (!documentId) {
-            return undefined
-        }
-
-        const blobFactory = async (): Promise<DocumentBlob> =>
-            await decodeJSON<DocumentBlob>(
-                (await this.withConnection(connection => connection.getRepository(BlobModel).findOneOrFail(documentId)))
-                    .value
+        const blobFactory = async (): Promise<DocumentBlob> => {
+            const document = await this.withConnection(connection =>
+                connection.getRepository(DocumentModel).findOneOrFail(uri)
             )
 
-        return await blobCache.withBlob(documentId, blobFactory, blob => Promise.resolve(blob))
+            return await decodeJSON<DocumentBlob>(document.value)
+        }
+
+        return await blobCache.withBlob(`${this.database}::${uri}`, blobFactory, blob => Promise.resolve(blob))
     }
 
+    /**
+     * Invoke `callback` with a SQLite connection object obtained from the
+     * cache or created on cache miss.
+     *
+     * @param callback The function invoke with the SQLite connection.
+     */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return await connectionCache.withConnection(
             this.database,
-            [BlobModel, DefModel, DocumentModel, MetaModel, RefModel],
+            [DefModel, DocumentModel, MetaModel, RefModel],
             callback
         )
     }
 }
 
+// TODO - document
 // TODO - order ranges so we can search this efficiently
 function findRange(blob: DocumentBlob, position: lsp.Position): RangeData | undefined {
     for (const range of blob.ranges.values()) {
@@ -315,17 +311,56 @@ function findRange(blob: DocumentBlob, position: lsp.Position): RangeData | unde
     return undefined
 }
 
+// TODO - document
 function findResult<T>(
     resultSets: Map<Id, ResultSetData> | undefined,
     map: Map<Id, T>,
     data: RangeData | ResultSetData,
     property: 'definitionResult' | 'referenceResult' | 'hoverResult'
 ): T | undefined {
-    let current: RangeData | ResultSetData | undefined = data
-    while (current) {
+    return withChain(resultSets, data, current => {
         const value = current[property]
         if (value) {
             return map.get(value)
+        }
+
+        return undefined
+    })
+}
+
+// TODO - document
+function findMonikers(
+    resultSets: Map<Id, ResultSetData>,
+    monikers: Map<Id, MonikerData>,
+    data: RangeData | ResultSetData
+): MonikerData[] {
+    const monikerSet: MonikerData[] = []
+
+    withChain(resultSets, data, current => {
+        for (const id of current.monikers) {
+            const moniker = monikers.get(id)
+            if (moniker) {
+                monikerSet.push(moniker)
+            }
+        }
+
+        return undefined
+    })
+
+    return sortMonikers(monikerSet)
+}
+
+// TODO - document
+function withChain<T>(
+    resultSets: Map<Id, ResultSetData> | undefined,
+    data: RangeData | ResultSetData,
+    visitor: (current: RangeData | ResultSetData) => T | undefined
+): T | undefined {
+    let current: RangeData | ResultSetData | undefined = data
+    while (current) {
+        const value = visitor(current)
+        if (value) {
+            return value
         }
 
         if (!current.next || !resultSets) {
@@ -338,32 +373,7 @@ function findResult<T>(
     return undefined
 }
 
-function findMonikers(
-    resultSets: Map<Id, ResultSetData>,
-    monikers: Map<Id, MonikerData>,
-    data: RangeData | ResultSetData
-): MonikerData[] {
-    const monikerSet = []
-
-    let current: RangeData | ResultSetData | undefined = data
-    while (current) {
-        for (const id of current.monikers) {
-            const moniker = monikers.get(id)
-            if (moniker) {
-                monikerSet.push(moniker)
-            }
-        }
-
-        if (!current.next || !resultSets) {
-            break
-        }
-
-        current = resultSets.get(current.next)
-    }
-
-    return sortMonikers(monikerSet)
-}
-
+// TODO - document
 function sortMonikers(monikers: MonikerData[]): MonikerData[] {
     monikers.sort((a, b) => {
         const ord = MONIKER_KIND_PREFERENCES.indexOf(a.kind) - MONIKER_KIND_PREFERENCES.indexOf(b.kind)
@@ -377,16 +387,17 @@ function sortMonikers(monikers: MonikerData[]): MonikerData[] {
     return monikers
 }
 
+// TODO - document
 function asLocations(ranges: Map<Id, RangeData>, uri: string, ids: Id[]): lsp.Location[] {
     const locations = []
     for (const id of ids) {
         const range = ranges.get(id)
         if (range) {
             locations.push(
-                lsp.Location.create(
-                    uri,
-                    lsp.Range.create(range.start.line, range.start.character, range.end.line, range.end.character)
-                )
+                lsp.Location.create(uri, {
+                    start: range.start,
+                    end: range.end,
+                })
             )
         }
     }
@@ -394,6 +405,22 @@ function asLocations(ranges: Map<Id, RangeData>, uri: string, ids: Id[]): lsp.Lo
     return locations
 }
 
+// TODO - document
+function makeRemoteUri(pkg: PackageModel, result: DefModel | RefModel): string {
+    return `git://${pkg.repository}?${pkg.commit}#${result.documentUri}`
+}
+
+// TODO - document
+function makeRange(result: {
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
+}): lsp.Range {
+    return lsp.Range.create(result.startLine, result.startCharacter, result.endLine, result.endCharacter)
+}
+
+// TODO - document
 function containsPosition(range: lsp.Range, position: lsp.Position): boolean {
     if (position.line < range.start.line || range.end.line < position.line) {
         return false

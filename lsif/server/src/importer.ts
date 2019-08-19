@@ -1,6 +1,6 @@
 import * as readline from 'readline'
 import * as uuid from 'uuid'
-import { BlobModel, DefModel, DocumentModel, MetaModel, RefModel } from './models'
+import { DocumentModel, DefModel, MetaModel, RefModel } from './models'
 import { Connection } from 'typeorm'
 import { connectionCache } from './cache'
 import { fs } from 'mz'
@@ -120,7 +120,7 @@ export async function convertToBlob(input: Readable, outFile: string): Promise<X
 
     return await connectionCache.withConnection(
         outFile,
-        [BlobModel, DefModel, DocumentModel, MetaModel, RefModel],
+        [DefModel, DocumentModel, MetaModel, RefModel],
         async connection => {
             const blobStore = new BlobStore(connection)
             const lines = readline.createInterface({ input })
@@ -359,6 +359,8 @@ class BlobStore {
     }
 
     private async handleDocumentEnd(event: DocumentEvent): Promise<void> {
+        console.log('finalizing document...')
+
         const documentData = assertDefined(event.data, this.documentDatas)
         const data = await this.finalizeBlob(documentData)
         if (this.insertedBlobs.has(data.hash)) {
@@ -366,20 +368,18 @@ class BlobStore {
         }
 
         this.insertedBlobs.add(data.hash)
-        await this.connection.getRepository(BlobModel).save({ hash: data.hash, value: data.encoded })
-        await this.connection.getRepository(DocumentModel).save({
-            hash: data.hash,
-            uri: documentData.uri,
-        })
+        await this.connection
+            .getRepository(DocumentModel)
+            .save({ hash: data.hash, value: data.encoded, uri: documentData.uri })
 
         const defs = []
         for (const definition of data.definitions) {
             for (const range of definition.ranges) {
                 defs.push({
-                    ...range,
                     scheme: definition.scheme,
                     identifier: definition.indentifier,
-                    documentHash: data.hash,
+                    documentUri: documentData.uri,
+                    ...range,
                 })
             }
         }
@@ -389,28 +389,49 @@ class BlobStore {
             for (const arr of [reference.definitions, reference.references]) {
                 for (const range of arr || []) {
                     refs.push({
-                        ...range,
                         scheme: reference.scheme,
                         identifier: reference.indentifier,
-                        documentHash: data.hash,
+                        documentUri: documentData.uri,
+                        ...range,
                     })
                 }
             }
         }
 
-        await this.connection
-            .createQueryBuilder()
-            .insert()
-            .into(DefModel)
-            .values(defs)
-            .execute()
+        const maxBatchSize = 124
 
-        await this.connection
-            .createQueryBuilder()
-            .insert()
-            .into(RefModel)
-            .values(refs)
-            .execute()
+        //
+        // TODO - make chunk inserter a generic thing
+        //
+
+        const chunk = async <T>(items: T[], callback: (batch: T[]) => Promise<any>): Promise<void> => {
+            while (items.length > maxBatchSize) {
+                await callback(items.slice(0, maxBatchSize))
+                items = items.slice(maxBatchSize)
+            }
+
+            if (items.length > 0) {
+                await callback(items)
+            }
+        }
+
+        await chunk(defs, batch =>
+            this.connection
+                .createQueryBuilder()
+                .insert()
+                .into(DefModel)
+                .values(batch)
+                .execute()
+        )
+
+        await chunk(refs, batch =>
+            this.connection
+                .createQueryBuilder()
+                .insert()
+                .into(RefModel)
+                .values(batch)
+                .execute()
+        )
     }
 
     //
