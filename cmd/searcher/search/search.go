@@ -14,14 +14,11 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
-	"golang.org/x/net/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
@@ -29,9 +26,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/schema"
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -117,41 +111,17 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
-	tr := trace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
-	tr.LazyPrintf("%s", p.Pattern)
-
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Search")
-	ext.Component.Set(span, "service")
-	span.SetTag("repo", p.Repo)
-	span.SetTag("url", p.URL)
-	span.SetTag("commit", p.Commit)
-	span.SetTag("pattern", p.Pattern)
-	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
-	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
-	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
-	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
-	span.SetTag("pathPatternsAreCaseSensitive", strconv.FormatBool(p.PathPatternsAreCaseSensitive))
-	span.SetTag("fileMatchLimit", p.FileMatchLimit)
-	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
-	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
-	span.SetTag("deadline", p.Deadline)
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
 		// record them as errors to avoid noise
 		if ctx.Err() == context.Canceled {
 			code = "canceled"
-			span.SetTag("err", err)
 		} else if ctx.Err() == context.DeadlineExceeded {
 			code = "timedout"
-			span.SetTag("err", err)
 			deadlineHit = true
 			err = nil // error is fully described by deadlineHit=true return value
 		} else if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
 			if isBadRequest(err) {
 				code = "400"
 			} else if isTemporary(err) {
@@ -160,13 +130,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v deadlineHit=%v", code, len(matches), limitHit, deadlineHit)
-		tr.Finish()
 		requestTotal.WithLabelValues(code).Inc()
-		span.LogFields(otlog.Int("matches.len", len(matches)))
-		span.SetTag("limitHit", limitHit)
-		span.SetTag("deadlineHit", deadlineHit)
-		span.Finish()
 		if s.Log != nil {
 			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
 		}
@@ -204,10 +168,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 
 	nFiles := uint64(len(zf.Files))
 	bytes := int64(len(zf.Data))
-	tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
-	span.LogFields(
-		otlog.Uint64("archive.files", nFiles),
-		otlog.Int64("archive.size", bytes))
 	archiveFiles.Observe(float64(nFiles))
 	archiveSize.Observe(float64(bytes))
 

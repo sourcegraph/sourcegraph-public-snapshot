@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/search/matchtree"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
-	"golang.org/x/net/trace"
 )
 
 // This file adapts zoekt's matchtree to work on content without any indexes.
@@ -68,22 +67,12 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 	repo := api.Repository{Name: opts.Repositories[0]}
 	status := api.RepositoryStatusSearched
 
-	tr := trace.New("search", repo.String())
-	tr.LazyPrintf("query: %s", q)
-	tr.LazyPrintf("opts:  %+v", opts)
 	defer func() {
-		if sr != nil {
-			tr.LazyPrintf("num files: %d", len(sr.Files))
-		}
 		if err != nil {
 			if status == api.RepositoryStatusSearched {
 				status = api.RepositoryStatusError
 			}
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
 		}
-		tr.LazyPrintf("status: %s", status)
-		tr.Finish()
 		if err != nil {
 			err = errors.Wrapf(err, "failed to search %s for %s", repo, q)
 		}
@@ -117,7 +106,6 @@ func (s *StoreSearcher) Search(ctx context.Context, q query.Q, opts *api.Options
 	if err != nil {
 		return nil, err
 	}
-	tr.LazyPrintf("matchtree: %s", mt)
 
 	// Fetch/Open the zip file
 	prepareCtx := ctx
