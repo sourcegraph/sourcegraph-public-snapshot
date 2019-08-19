@@ -35,8 +35,7 @@ func BenchmarkStore(b *testing.B) {
 	ctx := context.Background()
 
 	b.Run("ttl=0", func(b *testing.B) {
-		ttl := time.Duration(0)
-		s := newStore(db, ttl, clock, newCache())
+		s := newStore(db, 0, DefaultHardTTL, clock, newCache())
 		s.block = true
 
 		ps := &Permissions{
@@ -54,8 +53,7 @@ func BenchmarkStore(b *testing.B) {
 	})
 
 	b.Run("ttl=60s/no-in-memory-cache", func(b *testing.B) {
-		ttl := 60 * time.Second
-		s := newStore(db, ttl, clock, nil)
+		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, nil)
 		s.block = true
 
 		ps := &Permissions{
@@ -73,8 +71,7 @@ func BenchmarkStore(b *testing.B) {
 	})
 
 	b.Run("ttl=60s/in-memory-cache", func(b *testing.B) {
-		ttl := 60 * time.Second
-		s := newStore(db, ttl, clock, newCache())
+		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, newCache())
 		s.block = true
 
 		ps := &Permissions{
@@ -103,12 +100,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := time.Now().UTC().UnixNano()
 		ttl := time.Second
+		hardTTL := 10 * time.Second
 
 		clock := func() time.Time {
 			return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
 		}
 
-		s := newStore(db, ttl, clock, newCache())
+		s := newStore(db, ttl, hardTTL, clock, newCache())
 		s.updates = make(chan *Permissions)
 
 		ids := []uint32{1, 2, 3}
@@ -140,7 +138,17 @@ func testStore(db *sql.DB) func(*testing.T) {
 			equal(t, "ids", array(ps.IDs), []uint32(nil))
 		}
 
-		// Wait for background update.
+		<-s.updates
+
+		{
+			// Hard TTL elapsed
+			atomic.AddInt64(&now, int64(hardTTL))
+
+			ps, err := load(s)
+			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
+			equal(t, "ids", array(ps.IDs), ids)
+		}
+
 		<-s.updates
 
 		{
@@ -209,7 +217,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			for i := 0; i < cap(ch); i++ {
 				go func(i int) {
-					s := newStore(db, ttl, clock, newCache())
+					s := newStore(db, ttl, hardTTL, clock, newCache())
 					s.updates = updates
 					ps, err := load(s)
 					ch <- op{i, ps, err}

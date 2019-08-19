@@ -34,12 +34,12 @@ var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond
 // the given bitbucketserver.Client to talk to a Bitbucket Server API that is
 // the source of truth for permissions. It assumes usernames of Sourcegraph accounts
 // match 1-1 with usernames of Bitbucket Server API users.
-func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Provider {
+func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl, hardTTL time.Duration) *Provider {
 	return &Provider{
 		client:   cli,
 		codeHost: extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
 		pageSize: 1000,
-		store:    newStore(db, ttl, clock, newCache()),
+		store:    newStore(db, ttl, hardTTL, clock, newCache()),
 	}
 }
 

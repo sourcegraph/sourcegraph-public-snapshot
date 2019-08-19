@@ -103,6 +103,7 @@ type BitbucketCloudConnection struct {
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
+	HardTTL          string                          `json:"hardTTL,omitempty"`
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
 	Oauth            BitbucketServerOAuth            `json:"oauth"`
 	Ttl              string                          `json:"ttl,omitempty"`
