@@ -28,6 +28,7 @@ type Zoekt struct {
 	set      map[string]*zoekt.Repository
 	err      error
 	disabled bool
+	symbols  bool
 }
 
 // Close will tear down the background goroutines.
@@ -64,11 +65,24 @@ func (c *Zoekt) ListAll(ctx context.Context) (map[string]*zoekt.Repository, erro
 	return set, err
 }
 
+func (c *Zoekt) SetSymbolEnabled(b bool) {
+	c.mu.Lock()
+	c.symbols = b
+	c.mu.Unlock()
+}
+
 // SetEnabled will disable zoekt if b is false.
 func (c *Zoekt) SetEnabled(b bool) {
 	c.mu.Lock()
 	c.disabled = !b
 	c.mu.Unlock()
+}
+
+func (c *Zoekt) SymbolEnabled() bool {
+	c.mu.Lock()
+	b := !c.disabled && c.symbols
+	c.mu.Unlock()
+	return c.Client != nil && b
 }
 
 // Enabled returns true if Zoekt is enabled. It is enabled if Client is

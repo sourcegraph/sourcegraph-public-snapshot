@@ -177,10 +177,13 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 // from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	largeFiles := conf.Get().SearchLargeFiles
+	symbols := conf.SymbolIndexEnabled()
 	opts := struct {
 		LargeFiles []string
+		Symbols    bool
 	}{
 		LargeFiles: largeFiles,
+		Symbols:    symbols,
 	}
 	err := json.NewEncoder(w).Encode(opts)
 	if err != nil {

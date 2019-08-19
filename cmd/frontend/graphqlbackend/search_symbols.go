@@ -72,8 +72,8 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		zoektRepos    []*search.RepositoryRevisions
 	)
 
-	if args.Zoekt.Enabled() {
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
+	if args.Zoekt.SymbolEnabled() {
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, true)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -96,12 +96,12 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		switch parseYesNoOnly(index) {
 		case Yes, True:
 			// default
-			if args.Zoekt.Enabled() {
+			if args.Zoekt.SymbolEnabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
 			}
 		case Only:
-			if !args.Zoekt.Enabled() {
-				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
+			if !args.Zoekt.SymbolEnabled() {
+				return nil, common, fmt.Errorf("invalid index:%q (indexed symbol search is not enabled)", index)
 			}
 			common.missing = make([]*types.Repo, len(searcherRepos))
 			for i, r := range searcherRepos {

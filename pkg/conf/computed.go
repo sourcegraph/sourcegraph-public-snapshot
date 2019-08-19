@@ -256,6 +256,14 @@ func SearchIndexEnabled() bool {
 	return DeployType() != DeployDocker
 }
 
+func SymbolIndexEnabled() bool {
+	enabled := SearchIndexEnabled()
+	if v := Get().SearchIndexSymbolsEnabled; v != nil {
+		enabled = enabled && *v
+	}
+	return enabled
+}
+
 func UsingExternalURL() bool {
 	url := Get().Critical.ExternalURL
 	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK
