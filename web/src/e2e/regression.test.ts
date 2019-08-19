@@ -6,18 +6,18 @@ import { baseURL, createDriverForTest, Driver, gitHubToken } from '../../../shar
 // command timeout of 30s in order to get the stack trace to point to the
 // Puppeteer command that failed instead of a cryptic Jest test timeout
 // location.
-jest.setTimeout(1 * 60 * 1000);
+jest.setTimeout(1 * 60 * 1000)
 
 process.on('unhandledRejection', error => {
     console.error('Caught unhandledRejection:', error)
-});
+})
 
 process.on('rejectionHandled', error => {
     console.error('Caught rejectionHandled:', error)
-});
+})
 
 describe('regression test suite', () => {
-    let driver: Driver;
+    let driver: Driver
 
     async function init(): Promise<void> {
         await driver.ensureLoggedIn()
@@ -26,28 +26,28 @@ describe('regression test suite', () => {
     // Start browser.
     beforeAll(
         async () => {
-            driver = await createDriverForTest();
+            driver = await createDriverForTest()
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2
         // minutes instead of 1 (which would be inherited from
         // `jest.setTimeout(1 * 60 * 1000)` above).
         2 * 60 * 1000
-    );
+    )
 
     // Close browser.
     afterAll(async () => {
         if (driver) {
             await driver.close()
         }
-    });
+    })
 
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
         path.resolve(__dirname, '..', '..', '..'),
         path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
         () => driver.page
-    );
+    )
 
     describe('Search', () => {
         beforeAll(async () => {
@@ -123,7 +123,7 @@ describe('regression test suite', () => {
                 'mohanson/daze',
                 'google/ko',
                 'freedomofdevelopers/fod',
-            ];
+            ]
             await driver.ensureHasExternalService({
                 kind: 'github',
                 displayName: 'GitHub (search regression test)',
@@ -135,16 +135,16 @@ describe('regression test suite', () => {
                 }),
                 ensureRepos: [repoSlugs[repoSlugs.length - 1]],
             })
-        });
+        })
 
         test(
             'Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=alksdjflaksjdflkasjdf');
-                await driver.page.waitForSelector('.e2e-search-results');
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-results').length >= 1);
+                await driver.page.goto(baseURL + '/search?q=alksdjflaksjdflkasjdf')
+                await driver.page.waitForSelector('.e2e-search-results')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-results').length >= 1)
                 await driver.page.evaluate(() => {
-                    const resultsElem = document.querySelector('.e2e-search-results');
+                    const resultsElem = document.querySelector('.e2e-search-results')
                     if (!resultsElem) {
                         throw new Error('No .e2e-search-results element found')
                     }
@@ -154,53 +154,52 @@ describe('regression test suite', () => {
                 })
             },
             5 * 1000
-        );
+        )
         test(
             'Perform global text search for "error type:", expect a few results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=%22error+type:%22');
+                await driver.page.goto(baseURL + '/search?q=%22error+type:%22')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
             },
             5 * 1000
-        );
+        )
         test(
             'Perform global text search for "error", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error');
+                await driver.page.goto(baseURL + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
-        );
+        )
         test(
             'Perform global text search for "error", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error');
+                await driver.page.goto(baseURL + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
-        );
+        )
         test(
             'Perform global text search for "error count:>1000", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error+count:1000');
+                await driver.page.goto(baseURL + '/search?q=error+count:1000')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
-        );
+        )
         test(
             'Perform global text search for "repohasfile:copying", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=repohasfile:copying');
+                await driver.page.goto(baseURL + '/search?q=repohasfile:copying')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
-        );
-
+        )
 
         test(
             'Release test 5.1.2: Perform global text search for something with more than 1000 results and use count:1000',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=.+count:1000');
+                await driver.page.goto(baseURL + '/search?q=.+count:1000')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -209,7 +208,7 @@ describe('regression test suite', () => {
         test(
             'Release test 5.2.2: Perform global text search for a regular expression without indexing: "index:no ^func.*$", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=index:no+^func.*$');
+                await driver.page.goto(baseURL + '/search?q=index:no+^func.*$')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -224,6 +223,5 @@ describe('regression test suite', () => {
         // todo: 5.11 filter by fork status and archived status
 
         // todo: 5.15 search for something on a non-master branch of a large repo
-
     })
-});
+})
