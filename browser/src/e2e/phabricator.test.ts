@@ -1,6 +1,9 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { sourcegraphBaseUrl, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { PhabricatorMapping } from '../browser/types'
+import { isEqual } from 'lodash'
 
 // By default, these tests run against a local Phabricator instance and a local Sourcegraph instance.
 // To run them against phabricator.sgdev.org and umami.sgdev.org, set the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -98,16 +101,21 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
 
     // Configure the repository mappings
     await driver.page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.callsignMappings/')
-    await driver.replaceText({
-        selector: 'textarea[name=value]',
-        newText: JSON.stringify([
-            {
-                path: 'github.com/sourcegraph/jsonrpc2',
-                callsign: 'JRPC',
-            },
-        ]),
-    })
-    await Promise.all([driver.page.waitForNavigation(), driver.page.click('button[type="submit"]')])
+    const callSignConfigStr = await driver.page.evaluate(() =>
+        document.querySelector<HTMLTextAreaElement>('textarea[name="value"]')!.value.trim()
+    )
+    const callSignConfig: PhabricatorMapping[] = callSignConfigStr && JSON.parse(callSignConfigStr)
+    const jsonRpc2Mapping: PhabricatorMapping = {
+        path: 'github.com/sourcegraph/jsonrpc2',
+        callsign: 'JRPC',
+    }
+    if (!callSignConfig.some(mapping => isEqual(jsonRpc2Mapping, mapping))) {
+        await driver.replaceText({
+            selector: 'textarea[name=value]',
+            newText: JSON.stringify([...callSignConfig, jsonRpc2Mapping]),
+        })
+        await Promise.all([driver.page.waitForNavigation(), driver.page.click('button[type="submit"]')])
+    }
 
     // Enable Sourcegraph native integration
     await driver.page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.enabled/')
@@ -122,7 +130,7 @@ async function init(driver: Driver): Promise<void> {
     await driver.ensureLoggedIn()
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({
-        kind: 'GITHUB',
+        kind: ExternalServiceKind.GITHUB,
         displayName: 'Github (phabricator)',
         config: JSON.stringify({
             url: 'https://github.com',
