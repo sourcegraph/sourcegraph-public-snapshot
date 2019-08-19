@@ -24,7 +24,10 @@ export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue
  */
 export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
 
-export const baseURL = readEnvString({ variable: 'SOURCEGRAPH_BASE_URL', defaultValue: 'http://localhost:3080' })
+export const sourcegraphBaseUrl = readEnvString({
+    variable: 'SOURCEGRAPH_BASE_URL',
+    defaultValue: 'http://localhost:3080',
+})
 
 /**
  * Specifies how to select the content of the element. No
@@ -46,7 +49,7 @@ export class Driver {
     constructor(public browser: puppeteer.Browser, public page: puppeteer.Page) {}
 
     public async ensureLoggedIn(): Promise<void> {
-        await this.page.goto(baseURL)
+        await this.page.goto(sourcegraphBaseUrl)
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
@@ -142,7 +145,7 @@ export class Driver {
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
-        await this.page.goto(baseURL + '/site-admin/external-services')
+        await this.page.goto(sourcegraphBaseUrl + '/site-admin/external-services')
         await this.page.waitFor('.e2e-filtered-connection')
         await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
@@ -175,7 +178,7 @@ export class Driver {
         if (ensureRepos) {
             // Clone the repositories
             for (const slug of ensureRepos) {
-                await this.page.goto(baseURL + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
+                await this.page.goto(sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
                 await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
                     visible: true,
                 })
@@ -197,14 +200,14 @@ export class Driver {
     }
 
     public async assertWindowLocation(location: string, isAbsolute = false): Promise<any> {
-        const url = isAbsolute ? location : baseURL + location
+        const url = isAbsolute ? location : sourcegraphBaseUrl + location
         await retry(async () => {
             expect(await this.page.evaluate(() => window.location.href)).toEqual(url)
         })
     }
 
     public async assertWindowLocationPrefix(locationPrefix: string, isAbsolute = false): Promise<any> {
-        const prefix = isAbsolute ? locationPrefix : baseURL + locationPrefix
+        const prefix = isAbsolute ? locationPrefix : sourcegraphBaseUrl + locationPrefix
         await retry(async () => {
             const loc: string = await this.page.evaluate(() => window.location.href)
             expect(loc.startsWith(prefix)).toBeTruthy()
@@ -260,7 +263,7 @@ export class Driver {
         const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
         const xhrHeaders = await this.page.evaluate(() => (window as any).context.xhrHeaders)
         const response = await this.makeRequest<GraphQLResult<T>>({
-            url: `${baseURL}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+            url: `${sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
             init: {
                 method: 'POST',
                 body: JSON.stringify({ query: request, variables }),

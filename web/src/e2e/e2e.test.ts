@@ -1,8 +1,13 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from '../../../shared/src/e2e/driver'
-
+import {
+    sourcegraphBaseUrl,
+    createDriverForTest,
+    Driver,
+    gitHubToken,
+    percySnapshot,
+} from '../../../shared/src/e2e/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
@@ -97,7 +102,7 @@ describe('e2e test suite', () => {
 
     describe('Core functionality', () => {
         test('Check settings are saved and applied', async () => {
-            await driver.page.goto(baseURL + '/users/test/settings')
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
             await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
 
             const message = 'A wild notice appears!'
@@ -128,7 +133,7 @@ describe('e2e test suite', () => {
         })
 
         test('Check access tokens work (create, use and delete)', async () => {
-            await driver.page.goto(baseURL + '/users/test/settings/tokens/new')
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/tokens/new')
             await driver.page.waitForSelector('.e2e-create-access-token-description')
 
             const name = 'E2E Test ' + new Date().toISOString() + ' ' + random(1, 1e7)
@@ -146,7 +151,7 @@ describe('e2e test suite', () => {
             })).jsonValue()
 
             const resp = await got.post('/.api/graphql', {
-                baseUrl: baseURL,
+                baseUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
                 },
@@ -191,7 +196,7 @@ describe('e2e test suite', () => {
                 config:
                     '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}',
             })
-            await driver.page.goto(baseURL + '/site-admin/external-services')
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin/external-services')
             await (await driver.page.waitForSelector(
                 `[data-e2e-external-service-name="${displayName}"] .e2e-edit-external-service-button`
             )).click()
@@ -245,7 +250,7 @@ describe('e2e test suite', () => {
             await driver.ensureHasExternalService(config)
 
             // Make sure repository slug without path pattern redirects to path pattern
-            await driver.page.goto(baseURL + '/' + slug)
+            await driver.page.goto(sourcegraphBaseUrl + '/' + slug)
             await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
         })
 
@@ -274,7 +279,7 @@ describe('e2e test suite', () => {
                     },
                 }),
             })
-            await driver.page.goto(baseURL + '/aws/test/-/blob/README')
+            await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
             const blob: string = await (await driver.page.waitFor(() => {
                 const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
                 return elem && elem.textContent
@@ -286,27 +291,29 @@ describe('e2e test suite', () => {
 
     describe('Visual tests', () => {
         test('Repositories list', async () => {
-            await driver.page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             await percySnapshot(driver.page, 'Repositories list')
         })
 
         test('Search results repo', async () => {
-            await driver.page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results repo')
         })
 
         test('Search results file', async () => {
-            await driver.page.goto(baseURL + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results file')
         })
 
         test('Search results code', async () => {
-            await driver.page.goto(baseURL + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"')
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"'
+            )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results code')
@@ -315,7 +322,7 @@ describe('e2e test suite', () => {
 
     describe('Theme switcher', () => {
         test('changes the theme', async () => {
-            await driver.page.goto(baseURL + '/github.com/gorilla/mux/-/blob/mux.go')
+            await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
             await driver.page.waitForSelector('.theme', { visible: true })
             const currentThemes = await driver.page.evaluate(() =>
                 Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
@@ -377,7 +384,7 @@ describe('e2e test suite', () => {
         describe('file tree', () => {
             test('does navigation on file click', async () => {
                 await driver.page.goto(
-                    baseURL + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
+                    sourcegraphBaseUrl + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
                 await (await driver.page.waitForSelector('[data-tree-path="godockerize.go"]', {
                     visible: true,
@@ -389,7 +396,7 @@ describe('e2e test suite', () => {
 
             test('expands directory on row click (no navigation)', async () => {
                 await driver.page.goto(
-                    baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
+                    sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
                 )
                 await driver.page.waitForSelector('.tree__row-icon', { visible: true })
                 await driver.page.click('.tree__row-icon')
@@ -406,7 +413,7 @@ describe('e2e test suite', () => {
 
             test('does navigation on directory row click', async () => {
                 await driver.page.goto(
-                    baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
+                    sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
                 )
                 await driver.page.waitForSelector('.tree__row-label', { visible: true })
                 await driver.page.click('.tree__row-label')
@@ -423,7 +430,7 @@ describe('e2e test suite', () => {
 
             test('selects the current file', async () => {
                 await driver.page.goto(
-                    baseURL +
+                    sourcegraphBaseUrl +
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
                 await driver.page.waitForSelector('.tree__row--active [data-tree-path="godockerize.go"]', {
@@ -433,7 +440,7 @@ describe('e2e test suite', () => {
 
             test('shows partial tree when opening directory', async () => {
                 await driver.page.goto(
-                    baseURL +
+                    sourcegraphBaseUrl +
                         '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
                 await driver.page.waitForSelector('.tree__row', { visible: true })
@@ -448,7 +455,7 @@ describe('e2e test suite', () => {
                 }
 
                 await driver.page.goto(
-                    baseURL +
+                    sourcegraphBaseUrl +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/.travis.yml'
                 )
                 await driver.page.waitForSelector('.tree__row', { visible: true }) // waitForSelector for tree to render
@@ -619,7 +626,7 @@ describe('e2e test suite', () => {
 
             for (const symbolTest of listSymbolsTests) {
                 test(symbolTest.name, async () => {
-                    await driver.page.goto(baseURL + symbolTest.filePath)
+                    await driver.page.goto(sourcegraphBaseUrl + symbolTest.filePath)
 
                     await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
 
@@ -668,7 +675,7 @@ describe('e2e test suite', () => {
 
             for (const navigationTest of navigateToSymbolTests) {
                 test(navigationTest.name, async () => {
-                    const repoBaseURL = baseURL + navigationTest.repoPath + '/-'
+                    const repoBaseURL = sourcegraphBaseUrl + navigationTest.repoPath + '/-'
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
 
@@ -702,7 +709,7 @@ describe('e2e test suite', () => {
 
             for (const { name, filePath, index, line } of highlightSymbolTests) {
                 test(name, async () => {
-                    await driver.page.goto(baseURL + filePath)
+                    await driver.page.goto(sourcegraphBaseUrl + filePath)
                     await driver.page.waitForSelector('[data-e2e-tab="symbols"]')
                     await driver.page.click('[data-e2e-tab="symbols"]')
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
@@ -723,7 +730,7 @@ describe('e2e test suite', () => {
             // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes this component.
             /*
             it('shows a row for each file in the directory', async () => {
-                await driver.page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
+                await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
                 await enableOrAddRepositoryIfNeeded()
                 await driver.page.waitForSelector('.tree-page__entries-directories', { visible: true })
                 await retry(async () =>
@@ -747,7 +754,7 @@ describe('e2e test suite', () => {
 
             test('shows commit information on a row', async () => {
                 await driver.page.goto(
-                    baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983',
+                    sourcegraphBaseUrl + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983',
                     {
                         waitUntil: 'domcontentloaded',
                     }
@@ -779,7 +786,7 @@ describe('e2e test suite', () => {
             // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes this component.
             /*
             it('navigates when clicking on a row', async () => {
-                await driver.page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
+                await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
                 await enableOrAddRepositoryIfNeeded()
                 // click on directory
                 await driver.page.waitForSelector('.tree-entry', { visible: true })
@@ -793,7 +800,7 @@ describe('e2e test suite', () => {
 
         describe('rev resolution', () => {
             test('shows clone in progress interstitial page', async () => {
-                await driver.page.goto(baseURL + '/github.com/sourcegraphtest/AlwaysCloningTest')
+                await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraphtest/AlwaysCloningTest')
                 await driver.page.waitForSelector('.hero-page__subtitle', { visible: true })
                 await retry(async () =>
                     expect(
@@ -803,7 +810,7 @@ describe('e2e test suite', () => {
             })
 
             test('resolves default branch when unspecified', async () => {
-                await driver.page.goto(baseURL + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
+                await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff/-/blob/diff/diff.go')
                 await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
                 await retry(async () => {
                     expect(
@@ -815,7 +822,7 @@ describe('e2e test suite', () => {
             })
 
             test('updates rev with switcher', async () => {
-                await driver.page.goto(baseURL + '/github.com/sourcegraph/checkup/-/blob/s3.go')
+                await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/checkup/-/blob/s3.go')
                 // Open rev switcher
                 await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
                 await driver.page.click('#repo-rev-popover')
@@ -831,7 +838,8 @@ describe('e2e test suite', () => {
             describe('Blob', () => {
                 test('gets displayed and updates URL when clicking on a token', async () => {
                     await driver.page.goto(
-                        baseURL + '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
+                        sourcegraphBaseUrl +
+                            '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
                     )
                     await driver.page.waitForSelector(blobTableSelector)
                     await clickToken(24, 5)
@@ -844,7 +852,7 @@ describe('e2e test suite', () => {
 
                 test('gets displayed when navigating to a URL with a token position', async () => {
                     await driver.page.goto(
-                        baseURL +
+                        sourcegraphBaseUrl +
                             '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
                     )
                     await assertHoverContentContains(
@@ -855,7 +863,7 @@ describe('e2e test suite', () => {
                 describe('jump to definition', () => {
                     test('noops when on the definition', async () => {
                         await driver.page.goto(
-                            baseURL +
+                            sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
                         await clickHoverJ2D()
@@ -866,7 +874,7 @@ describe('e2e test suite', () => {
 
                     test('does navigation (same repo, same file)', async () => {
                         await driver.page.goto(
-                            baseURL +
+                            sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
                         )
                         await clickHoverJ2D()
@@ -877,7 +885,7 @@ describe('e2e test suite', () => {
 
                     test('does navigation (same repo, different file)', async () => {
                         await driver.page.goto(
-                            baseURL +
+                            sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
                         )
                         await clickHoverJ2D()
@@ -896,7 +904,7 @@ describe('e2e test suite', () => {
                     // basic code intel doesn't support cross-repo jump-to-definition yet.
                     test.skip('does navigation (external repo)', async () => {
                         await driver.page.goto(
-                            baseURL +
+                            sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
                         )
                         await clickHoverJ2D()
@@ -911,7 +919,7 @@ describe('e2e test suite', () => {
                         jest.setTimeout(120000)
 
                         await driver.page.goto(
-                            baseURL +
+                            sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
                         await clickHoverFindRefs()
@@ -946,7 +954,7 @@ describe('e2e test suite', () => {
                     // references even when local references are found.
                     test.skip('opens widget and fetches external references', async () => {
                         await driver.page.goto(
-                            baseURL +
+                            sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
                         )
 
@@ -964,7 +972,7 @@ describe('e2e test suite', () => {
         describe.skip('godoc.org "Uses" links', () => {
             test('resolves standard library function', async () => {
                 // https://godoc.org/bytes#Compare
-                await driver.page.goto(baseURL + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
+                await driver.page.goto(sourcegraphBaseUrl + '/-/godoc/refs?def=Compare&pkg=bytes&repo=')
                 await driver.assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
                 await driver.assertStickyHighlightedToken('Compare')
                 await driver.assertNonemptyLocalRefs()
@@ -974,7 +982,7 @@ describe('e2e test suite', () => {
             test('resolves standard library function (from stdlib repo)', async () => {
                 // https://godoc.org/github.com/golang/go/src/bytes#Compare
                 await driver.page.goto(
-                    baseURL +
+                    sourcegraphBaseUrl +
                         '/-/godoc/refs?def=Compare&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fbytes&repo=github.com%2Fgolang%2Fgo'
                 )
                 await driver.assertWindowLocationPrefix('/github.com/golang/go/-/blob/src/bytes/bytes_decl.go')
@@ -986,7 +994,8 @@ describe('e2e test suite', () => {
             test('resolves external package function (from gorilla/mux)', async () => {
                 // https://godoc.org/github.com/gorilla/mux#Router
                 await driver.page.goto(
-                    baseURL + '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
+                    sourcegraphBaseUrl +
+                        '/-/godoc/refs?def=Router&pkg=github.com%2Fgorilla%2Fmux&repo=github.com%2Fgorilla%2Fmux'
                 )
                 await driver.assertWindowLocationPrefix('/github.com/gorilla/mux/-/blob/mux.go')
                 await driver.assertStickyHighlightedToken('Router')
@@ -998,7 +1007,7 @@ describe('e2e test suite', () => {
         describe('external code host links', () => {
             test('on repo navbar ("View on GitHub")', async () => {
                 await driver.page.goto(
-                    baseURL +
+                    sourcegraphBaseUrl +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19',
                     { waitUntil: 'domcontentloaded' }
                 )
@@ -1019,7 +1028,7 @@ describe('e2e test suite', () => {
 
     describe('Search component', () => {
         test('can execute search with search operators', async () => {
-            await driver.page.goto(baseURL + '/github.com/sourcegraph/go-diff')
+            await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff')
 
             const operators: { [key: string]: string } = {
                 repo: '^github.com/sourcegraph/go-diff$',
@@ -1033,7 +1042,7 @@ describe('e2e test suite', () => {
                 .map(op => `${op}:${operators[op]}`)
                 .join('+')
 
-            await driver.page.goto(`${baseURL}/search?q=diff+${operatorsQuery}`)
+            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=diff+${operatorsQuery}`)
             await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
                 const label = await driver.page.evaluate(
@@ -1045,9 +1054,10 @@ describe('e2e test suite', () => {
         })
 
         test('renders results for sourcegraph/go-diff (no search group)', async () => {
-            await driver.page.goto(baseURL + '/github.com/sourcegraph/go-diff')
+            await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff')
             await driver.page.goto(
-                baseURL + '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
+                sourcegraphBaseUrl +
+                    '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
             )
             await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
@@ -1071,7 +1081,7 @@ describe('e2e test suite', () => {
         })
 
         test('accepts query for sourcegraph/jsonrpc2', async () => {
-            await driver.page.goto(baseURL + '/search')
+            await driver.page.goto(sourcegraphBaseUrl + '/search')
 
             // Update the input value
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })

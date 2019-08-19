@@ -116,14 +116,14 @@ Then you can select the button with `[data-e2e-item-name="foo"] .e2e-item-delete
 
 Tip: it's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
 
-```
+```ts
 const elem = page.selector(".selector")
 elem.click()
 ```
 
 Do this:
 
-```
+```ts
 page.click(".selector")
 ```
 

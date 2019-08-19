@@ -96,7 +96,7 @@ kubectl apply -f ./phabricator
 
 ##### Docker (local)
 
-You can run locally via docker. We have 
+You can run locally via docker. We have
 [<https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator>](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator)
 for this using
 [Bitnami.](https://docs.bitnami.com/installer/apps/phabricator/)
@@ -136,6 +136,8 @@ dev/phabricator/stop.sh
     the repository.
 
 #### Install the Sourcegraph Phabricator extension.
+
+You can use `dev/phabricator/install-sourcegraph.sh`. To install it manually:
 
 SSH into your Phabricator instance and follow [the installation steps in the README.](https://github.com/sourcegraph/phabricator-extension/blob/master/README.md#installation)
 If you used the helper scripts, the root Phabricator directory
