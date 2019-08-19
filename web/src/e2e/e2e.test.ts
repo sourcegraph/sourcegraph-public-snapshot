@@ -117,6 +117,14 @@ describe('e2e test suite', () => {
                     throw new Error('Expected "' + message + '" message, but didn\'t find it')
                 }
             }, message)
+
+            await driver.replaceText({
+                selector: '.e2e-settings-file .monaco-editor',
+                newText: '{}',
+                selectMethod: 'keyboard',
+            })
+            await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
+            await driver.page.waitFor(() => !document.querySelector('.e2e-global-alert .global-alerts__alert'))
         })
 
         test('Check access tokens work (create, use and delete)', async () => {
