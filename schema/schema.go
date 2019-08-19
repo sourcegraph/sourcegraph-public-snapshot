@@ -523,6 +523,7 @@ type SiteConfiguration struct {
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
+	SearchIndexSymbolsEnabled         *bool                       `json:"search.index.symbols.enabled,omitempty"`
 	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
 }
 type UsernameIdentity struct {
