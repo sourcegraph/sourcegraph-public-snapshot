@@ -644,8 +644,8 @@ github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614 h1:MrlKMpoGse4bC
 github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
-github.com/sourcegraph/zoekt v0.0.0-20190814145959-bbe063c545196b0927f5db11f369387db1421132 h1:g6ndknPTIiDGZR195AbE3jLviX+ZP7g9VxBx37Y8dIw=
-github.com/sourcegraph/zoekt v0.0.0-20190814145959-bbe063c545196b0927f5db11f369387db1421132/go.mod h1:ktJjC94Qpag2sLp96e8uSc6KZ3hRoxz1pyN1yRKsOy4=
+github.com/sourcegraph/zoekt v0.0.0-20190814145959-3e5e7c1d7dd4d1e7f3a2ae1772a6b19bbcad5a58 h1:XsAPzHuOf5RcP0Hu+Cab8HP3mNXJjTxN8FXLPr9b0dk=
+github.com/sourcegraph/zoekt v0.0.0-20190814145959-3e5e7c1d7dd4d1e7f3a2ae1772a6b19bbcad5a58/go.mod h1:ktJjC94Qpag2sLp96e8uSc6KZ3hRoxz1pyN1yRKsOy4=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.1.0/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
