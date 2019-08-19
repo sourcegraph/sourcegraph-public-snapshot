@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -956,33 +957,35 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	// Support index:yes (default), index:only, and index:no in search query.
 	indexVals, _ := args.Query.StringValues(query.FieldIndex)
-	if len(indexVals) == 0 {
-		// Default to only.
+	if len(indexVals) == 0 && conf.SearchIndexEnabled() {
+		// Default to index:only.
 		indexVals = []string{"only"}
 	}
-	index := indexVals[len(indexVals)-1]
-	switch parseYesNoOnly(index) {
-	case Only:
-		// default
-		if !args.Zoekt.Enabled() {
-			return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
+	if len(indexVals) > 0 {
+		index := indexVals[len(indexVals)-1]
+		switch parseYesNoOnly(index) {
+		case Only:
+			// default
+			if !args.Zoekt.Enabled() {
+				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
+			}
+			common.missing = make([]*types.Repo, len(searcherRepos))
+			for i, r := range searcherRepos {
+				common.missing[i] = r.Repo
+			}
+			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
+			searcherRepos = nil
+		case Yes, True:
+			if args.Zoekt.Enabled() {
+				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+			}
+		case No, False:
+			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
+			searcherRepos = append(searcherRepos, zoektRepos...)
+			zoektRepos = nil
+		default:
+			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
 		}
-		common.missing = make([]*types.Repo, len(searcherRepos))
-		for i, r := range searcherRepos {
-			common.missing[i] = r.Repo
-		}
-		tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
-		searcherRepos = nil
-	case Yes, True:
-		if args.Zoekt.Enabled() {
-			tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
-		}
-	case No, False:
-		tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
-		searcherRepos = append(searcherRepos, zoektRepos...)
-		zoektRepos = nil
-	default:
-		return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
 	}
 
 	var (
