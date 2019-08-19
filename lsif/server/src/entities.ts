@@ -1,22 +1,16 @@
 import { Id, MonikerKind } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 
-// TODO - remove these, convert to small int ids where possible
-export interface LiteralMap<T> {
-    [key: string]: T
-    [key: number]: T
-}
-
 export interface DocumentBlob {
     // TODO - make searchable via two-phase binary search
     // TODO - prune things that can't be reached (see if there is redundancy here)
-    ranges: LiteralMap<RangeData>
-    resultSets: LiteralMap<ResultSetData>
-    definitionResults: LiteralMap<DefinitionResultData>
-    referenceResults: LiteralMap<ReferenceResultData>
-    hovers: LiteralMap<HoverData>
-    monikers: LiteralMap<MonikerData>
-    packageInformation: LiteralMap<PackageInformationData>
+    ranges: Map<Id, RangeData>
+    resultSets: Map<Id, ResultSetData>
+    definitionResults: Map<Id, DefinitionResultData>
+    referenceResults: Map<Id, ReferenceResultData>
+    hovers: Map<Id, HoverData>
+    monikers: Map<Id, MonikerData>
+    packageInformation: Map<Id, PackageInformationData>
 }
 
 export interface RangeData {

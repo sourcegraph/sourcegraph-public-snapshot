@@ -432,13 +432,13 @@ class BlobStore {
             contains: [],
             definitions: [],
             references: [],
-            ranges: {},
-            resultSets: {},
-            definitionResults: {},
-            referenceResults: {},
-            hovers: {},
-            monikers: {},
-            packageInformation: {},
+            ranges: new Map(),
+            resultSets: new Map(),
+            definitionResults: new Map(),
+            referenceResults: new Map(),
+            hovers: new Map(),
+            monikers: new Map(),
+            packageInformation: new Map(),
         }
 
         this.documentDatas.set(document.id, result)
@@ -479,20 +479,20 @@ class BlobStore {
         const monikers = []
         for (const itemMoniker of item.monikers || []) {
             const moniker = assertDefined(itemMoniker, this.monikerDatas)
-            blob.monikers[itemMoniker] = moniker
+            blob.monikers.set(itemMoniker, moniker)
             monikers.push(moniker)
         }
 
         // Many ranges can point to the same result set. Make sure we only travers once.
-        if (item.next && !blob.resultSets[item.next]) {
+        if (item.next && !blob.resultSets.has(item.next)) {
             const resultSet = assertDefined(item.next, this.resultSetDatas)
-            blob.resultSets[item.next] = resultSet
+            blob.resultSets.set(item.next, resultSet)
             await this.addReferencedDataToBlob(blob, resultSet)
         }
 
-        if (item.hoverResult) {
+        if (item.hoverResult && !blob.hovers.has(item.hoverResult)) {
             const hoverResult = assertDefined(item.hoverResult, this.hoverDatas)
-            blob.hovers[item.hoverResult] = hoverResult
+            blob.hovers.set(item.hoverResult, hoverResult)
         }
 
         if (item.definitionResult) {
@@ -517,7 +517,7 @@ class BlobStore {
         }
 
         if (nonlocalMonikers.length === 0) {
-            blob.definitionResults[definitionResult] = definitions
+            blob.definitionResults.set(definitionResult, definitions)
         }
     }
 
@@ -534,13 +534,13 @@ class BlobStore {
         }
 
         if (nonlocalMonikers.length === 0) {
-            blob.referenceResults[referenceResult] = references
+            blob.referenceResults.set(referenceResult, references)
         }
     }
 
     private async finalizeBlob(blob: WrappedDocumentBlob): Promise<DocumentDatabaseData> {
         for (const [key, value] of this.packageInformationDatas) {
-            blob.packageInformation[key] = value
+            blob.packageInformation.set(key, value)
         }
 
         for (const data of this.monikerDatas.values()) {
@@ -568,7 +568,7 @@ class BlobStore {
 
         for (const id of blob.contains) {
             const range = assertDefined(id, this.rangeDatas)
-            blob.ranges[id] = range
+            blob.ranges.set(id, range)
             await this.addReferencedDataToBlob(blob, range)
         }
 
@@ -577,7 +577,7 @@ class BlobStore {
             definitions.push({
                 scheme: definition.moniker.scheme,
                 indentifier: definition.moniker.identifier,
-                ranges: definition.data.values.map(r => flattenRange(blob, r)),
+                ranges: flattenRanges(blob, definition.data.values),
             })
         }
 
@@ -586,8 +586,8 @@ class BlobStore {
             references.push({
                 scheme: reference.moniker.scheme,
                 indentifier: reference.moniker.identifier,
-                definitions: reference.data.definitions.map(r => flattenRange(blob, r)),
-                references: reference.data.references.map(r => flattenRange(blob, r)),
+                definitions: flattenRanges(blob, reference.data.definitions),
+                references: flattenRanges(blob, reference.data.references),
             })
         }
 
@@ -615,13 +615,19 @@ function convertPackageInformation(e: PackageInformation): PackageInformationDat
     return e.version ? { name: e.name, version: e.version } : { name: e.name, version: '$missing' }
 }
 
-function flattenRange(blob: WrappedDocumentBlob, id: Id): FlattenedRange {
-    const range = blob.ranges[id]
-
-    return {
-        startLine: range.start.line,
-        startCharacter: range.start.character,
-        endLine: range.end.line,
-        endCharacter: range.end.character,
+function flattenRanges(blob: WrappedDocumentBlob, ids: Id[]): FlattenedRange[] {
+    const ranges = []
+    for (const id of ids) {
+        const range = blob.ranges.get(id)
+        if (range) {
+            ranges.push({
+                startLine: range.start.line,
+                startCharacter: range.start.character,
+                endLine: range.end.line,
+                endCharacter: range.end.character,
+            })
+        }
     }
+
+    return ranges
 }

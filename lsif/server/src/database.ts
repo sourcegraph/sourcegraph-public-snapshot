@@ -3,7 +3,7 @@ import { blobCache, connectionCache } from './cache'
 import { BlobModel, DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { DocumentBlob, LiteralMap, MonikerData, RangeData, ReferenceResultData, ResultSetData } from './entities'
+import { DocumentBlob, MonikerData, RangeData, ReferenceResultData, ResultSetData } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
@@ -85,7 +85,11 @@ export class Database {
             return undefined
         }
 
-        const packageInformation = blob.packageInformation[moniker.packageInformation]
+        const packageInformation = blob.packageInformation.get(moniker.packageInformation)
+        if (!packageInformation) {
+            return undefined
+        }
+
         const packageEntity = await this.xrepoDatabase.getPackage(
             moniker.scheme,
             packageInformation.name,
@@ -199,7 +203,11 @@ export class Database {
             return []
         }
 
-        const packageInformation = blob.packageInformation[moniker.packageInformation]
+        const packageInformation = blob.packageInformation.get(moniker.packageInformation)
+        if (!packageInformation) {
+            return []
+        }
+
         const references = await this.xrepoDatabase.getReferences(
             moniker.scheme,
             packageInformation.name,
@@ -298,8 +306,7 @@ export class Database {
 
 // TODO - order ranges so we can search this efficiently
 function findRange(blob: DocumentBlob, position: lsp.Position): RangeData | undefined {
-    for (const key of Object.keys(blob.ranges)) {
-        const range = blob.ranges[key]
+    for (const range of blob.ranges.values()) {
         if (containsPosition(range, position)) {
             return range
         }
@@ -309,8 +316,8 @@ function findRange(blob: DocumentBlob, position: lsp.Position): RangeData | unde
 }
 
 function findResult<T>(
-    resultSets: LiteralMap<ResultSetData> | undefined,
-    map: LiteralMap<T>,
+    resultSets: Map<Id, ResultSetData> | undefined,
+    map: Map<Id, T>,
     data: RangeData | ResultSetData,
     property: 'definitionResult' | 'referenceResult' | 'hoverResult'
 ): T | undefined {
@@ -318,40 +325,43 @@ function findResult<T>(
     while (current) {
         const value = current[property]
         if (value) {
-            return map[value]
+            return map.get(value)
         }
 
         if (!current.next || !resultSets) {
             break
         }
 
-        current = resultSets[current.next]
+        current = resultSets.get(current.next)
     }
 
     return undefined
 }
 
 function findMonikers(
-    resultSets: LiteralMap<ResultSetData>,
-    monikers: LiteralMap<MonikerData>,
+    resultSets: Map<Id, ResultSetData>,
+    monikers: Map<Id, MonikerData>,
     data: RangeData | ResultSetData
 ): MonikerData[] {
-    const ids = []
+    const monikerSet = []
 
     let current: RangeData | ResultSetData | undefined = data
     while (current) {
-        if (current.monikers) {
-            ids.push(...current.monikers)
+        for (const id of current.monikers) {
+            const moniker = monikers.get(id)
+            if (moniker) {
+                monikerSet.push(moniker)
+            }
         }
 
         if (!current.next || !resultSets) {
             break
         }
 
-        current = resultSets[current.next]
+        current = resultSets.get(current.next)
     }
 
-    return sortMonikers(ids.map(id => monikers[id]))
+    return sortMonikers(monikerSet)
 }
 
 function sortMonikers(monikers: MonikerData[]): MonikerData[] {
@@ -367,18 +377,21 @@ function sortMonikers(monikers: MonikerData[]): MonikerData[] {
     return monikers
 }
 
-function asLocations(ranges: LiteralMap<RangeData>, uri: string, ids: Id[]): lsp.Location[] {
-    return ids.map(id =>
-        lsp.Location.create(
-            uri,
-            lsp.Range.create(
-                ranges[id].start.line,
-                ranges[id].start.character,
-                ranges[id].end.line,
-                ranges[id].end.character
+function asLocations(ranges: Map<Id, RangeData>, uri: string, ids: Id[]): lsp.Location[] {
+    const locations = []
+    for (const id of ids) {
+        const range = ranges.get(id)
+        if (range) {
+            locations.push(
+                lsp.Location.create(
+                    uri,
+                    lsp.Range.create(range.start.line, range.start.character, range.end.line, range.end.character)
+                )
             )
-        )
-    )
+        }
+    }
+
+    return locations
 }
 
 function containsPosition(range: lsp.Range, position: lsp.Position): boolean {

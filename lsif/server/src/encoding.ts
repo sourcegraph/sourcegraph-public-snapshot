@@ -59,7 +59,7 @@ export async function testFilter(filter: string, uri: string): Promise<boolean> 
  * @param value The value to hash and encode.
  */
 export async function hashAndEncodeJSON<T>(value: T): Promise<{ hash: string; encoded: string }> {
-    const jsonified = jsonify(value)
+    const jsonified = dumpJSON(value)
 
     return {
         hash: hash(jsonified),
@@ -73,7 +73,7 @@ export async function hashAndEncodeJSON<T>(value: T): Promise<{ hash: string; en
  * @param value The value to hash.
  */
 export function hashJSON<T>(value: T): string {
-    return hash(jsonify(value))
+    return hash(dumpJSON(value))
 }
 
 /**
@@ -93,7 +93,7 @@ export function hash(value: string): string {
  * @param value The value to encode.
  */
 export function encodeJSON<T>(value: T): Promise<string> {
-    return encode(jsonify(value))
+    return encode(dumpJSON(value))
 }
 
 /**
@@ -111,7 +111,7 @@ export async function encode(value: string): Promise<string> {
  * @param value The value to decode.
  */
 export async function decodeJSON<T>(value: string): Promise<T> {
-    return JSON.parse(await decode(value))
+    return parseJSON(await decode(value))
 }
 
 /**
@@ -124,10 +124,42 @@ export async function decode(value: string): Promise<string> {
 }
 
 /**
- * Return the JSON representation of `value`.
+ * Return the JSON representation of `value`. This has special logic to
+ * convert an ES6 map structure into a JSON-representable value. This
+ * method, along with `parseJSON` should be used over the raw methods if
+ * the payload may contain maps.
  *
  * @param value The value to jsonify.
  */
-function jsonify<T>(value: T): string {
-    return JSON.stringify(value, undefined, 0)
+function dumpJSON<T>(value: T): string {
+    return JSON.stringify(
+        value,
+        function(key, value) {
+            if (this[key] instanceof Map) {
+                return {
+                    type: 'map',
+                    value: [...this[key]],
+                }
+            }
+
+            return value
+        },
+        0
+    )
+}
+
+/**
+ * Parse the JSON representation of `value`. This has special logic to
+ * unmarshal map objects as encoded by `dumpJSON`.
+ *
+ * @param value The value to unmarshal.
+ */
+function parseJSON<T>(value: string): T {
+    return JSON.parse(value, (key, value) => {
+        if (typeof value === 'object' && value !== null && value.type === 'map') {
+            return new Map(value.value)
+        }
+
+        return value
+    })
 }
