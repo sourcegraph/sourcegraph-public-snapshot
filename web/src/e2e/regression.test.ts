@@ -211,9 +211,6 @@ describe('regression test suite', () => {
             },
             5 * 1000
         )
-
-        // todo: 5.5 search with repo group
-
         test(
             'Release test 5.8: Search for a repository by name.',
             async () => {
@@ -222,9 +219,8 @@ describe('regression test suite', () => {
             },
             5 * 1000
         )
-
         test(
-            'Release tes.t 5.10: Perform a case-sensitive search.',
+            'Release test 5.10: Perform global, case-sensitive search.',
             async () => {
                 await driver.page.goto(baseURL + '/search?repo:%5Egithub%5C.com/adjust/go-wrk%24+String+case:yes')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length == 2)
@@ -232,6 +228,7 @@ describe('regression test suite', () => {
             5 * 1000
         )
 
+        // todo: 5.5 search with repo group
         // todo: 5.11 filter by fork status and archived status
             // Search for `fork:only repo:sourcegraph`
             //     Expect results to be list of forked repositories, including `vscode`, `goreman`, `zoekt`
