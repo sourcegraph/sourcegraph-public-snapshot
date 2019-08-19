@@ -1,4 +1,4 @@
-import { Id, RangeTag, MonikerKind, Uri } from 'lsif-protocol'
+import { Id, MonikerKind } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 
 // TODO - remove these, convert to small int ids where possible
@@ -14,28 +14,27 @@ export interface DocumentBlob {
     resultSets: LiteralMap<ResultSetData>
     definitionResults: LiteralMap<DefinitionResultData>
     referenceResults: LiteralMap<ReferenceResultData>
-    hovers: LiteralMap<lsp.Hover>
+    hovers: LiteralMap<HoverData>
     monikers: LiteralMap<MonikerData>
     packageInformation: LiteralMap<PackageInformationData>
 }
 
 export interface RangeData {
-    start: lsp.Position
-    end: lsp.Position
-    tag?: RangeTag
-    monikers?: Id[]
-    next?: Id
+    start: lsp.Position // TODO - flatten these
+    end: lsp.Position // TODO - flatten these
+    monikers: Id[]
     hoverResult?: Id
     definitionResult?: Id
     referenceResult?: Id
+    next?: Id
 }
 
 export interface ResultSetData {
-    monikers?: Id[]
-    next?: Id
+    monikers: Id[]
     hoverResult?: Id
     definitionResult?: Id
     referenceResult?: Id
+    next?: Id
 }
 
 export interface DefinitionResultData {
@@ -43,26 +42,24 @@ export interface DefinitionResultData {
 }
 
 export interface ReferenceResultData {
-    definitions?: Id[]
-    references?: Id[]
+    definitions: Id[]
+    references: Id[]
+}
+
+export interface HoverData {
+    // TODO - normalize content
+    contents: lsp.MarkupContent | lsp.MarkedString | lsp.MarkedString[]
 }
 
 export interface MonikerData {
     id: Id
+    kind: MonikerKind
     scheme: string
     identifier: string
-    kind?: MonikerKind
     packageInformation?: Id
 }
 
 export interface PackageInformationData {
     name: string
-    manager: string
-    uri?: Uri
-    version?: string
-    repository?: {
-        type: string
-        url: string
-        commitId?: string
-    }
+    version: string
 }

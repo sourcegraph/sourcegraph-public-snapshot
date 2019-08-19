@@ -1,121 +1,235 @@
-import LRU from 'lru-cache'
-import { Backend, QueryRunner } from './backend'
-import { CacheStats, CreateRunnerStats, timeit } from './stats'
-import { readEnvInt } from './env'
+import { Connection, createConnection } from 'typeorm'
+import { DocumentBlob } from './entities'
+import { Id } from 'lsif-protocol'
+import Yallist from 'yallist'
 
 /**
- * Soft limit on the total amount of storage occupied by LSIF data loaded in
- * memory. The actual amount can exceed this if a single LSIF file is larger
- * than this limit, otherwise memory will be kept under this limit. Defaults to
- * 100MB.
- *
- * Empirically based on github.com/sourcegraph/codeintellify, each byte of
- * storage (uncompressed newline-delimited JSON) expands to 3 bytes in memory.
+ * `CacheEntry` is a wrapper around a cache value promise.
  */
-const SOFT_MAX_STORAGE_IN_MEMORY = readEnvInt({
-    key: 'LSIF_SOFT_MAX_STORAGE_IN_MEMORY',
-    defaultValue: 100 * 1024 * 1024,
-})
+interface CacheEntry<K, V> {
+    /**
+     * `key` is the key that can retrieve this cache entry.
+     */
+    key: K
 
-/**
- * The cache holds a promise that resolves to a query runner, some hint about
- * how many resources keeping this runner 'hot' costs, and a callback invoked
- * when the entry is evicted from memory.
- */
-interface LRUDBEntry {
-    promise: Promise<{ queryRunner: QueryRunner; createRunnerStats: CreateRunnerStats }>
-    length: number
-    dispose: () => void
+    /**
+     * `promise` is the promise that will resolve the cache value.
+     */
+    promise: Promise<V>
+
+    /**
+     * `size` is the size of the promise value, once resolved. This
+     * value is initially zero and is updated once an appropriate can
+     * be determined from the result of `promise`.
+     */
+    size: number
+
+    /**
+     * `reader` is the number of active withValue calls referencing
+     * this entry. If this value is non-zero, it should not be evictable
+     * from the cache.
+     */
+    readers: number
 }
 
 /**
- * A wrapper around an LRU cache for Database values.
+ * `GenericCache` is a generic LRU cache.
  */
-export class Cache {
-    private lru: LRU<string, LRUDBEntry>
+class GenericCache<K, V> {
+    /**
+     * `cache` is a map from from keys to nodes in `lruList`.
+     */
+    private cache = new Map<K, Yallist.Node<CacheEntry<K, V>>>()
 
-    constructor() {
-        this.lru = new LRU<string, LRUDBEntry>({
-            max: SOFT_MAX_STORAGE_IN_MEMORY,
-            length: (entry, _) => entry.length,
-            dispose: (_, entry) => entry.dispose(),
-        })
+    /**
+     * `lruList` is a linked list of cache entires ordered by last-touch.
+     */
+    private lruList = new Yallist<CacheEntry<K, V>>()
+
+    /**
+     * `size` is the additive size of the items currently in the cache.
+     */
+    private size = 0
+
+    /**
+     * Create a new `GenericCache` with the given maximum (soft) size for
+     * all items in the cache, a function that determine the size of a
+     * cache item from its resolved value, and a function that is called
+     * when an item falls out of the cache.
+     */
+    constructor(
+        private max: number,
+        private sizeFunction: (value: V) => number,
+        private disposeFunction: (value: V) => void
+    ) {}
+
+    /**
+     * Check if `key` exists in the cache. If it does not, create a value
+     * from `factory`. Once the cache value resolves, invoke `callback` and
+     * return its value. This method acts as a lock around the cache entry
+     * so that it may not be removed while the factory or callback functions
+     * are running.
+     *
+     * @param key The cache key.
+     * @param factory The function used to create a new value.
+     * @param callback The function to invoke with the resolved cache value.
+     */
+    protected async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
+        const entry = this.getEntry(key, factory)
+        entry.readers++
+
+        try {
+            return await callback(await entry.promise)
+        } finally {
+            entry.readers--
+        }
     }
 
     /**
-     * Runs the given `action` with the `Database` associated with the given
-     * repository@commit. Internally, it either gets a handle to the database
-     * from the LRU cache or loads it from a secondary storage.
+     * Check if `key` exists in the cache. If it does not, create a value
+     * from `factory` and add it to the cache. In either case, update the
+     * cache entry's place in `lruCache` and return the entry. If a new
+     * value was created, then it may trigger a cache eviction once its
+     * value resolves.
+     *
+     * @param key The cache key.
+     * @param factory The function used to create a new value.
      */
-    public async withDB<T, R extends QueryRunner>(
-        backend: Backend<R>,
-        repository: string,
-        commit: string,
-        action: (db: QueryRunner) => Promise<T>
-    ): Promise<{ result: T; cacheStats: CacheStats; createRunnerStats?: CreateRunnerStats }> {
-        const key = makeKey(repository, commit)
-
-        let hit = true
-        let entry = this.lru.get(key)
-        if (entry) {
-            // TODO - temporary
-            entry.dispose()
-            entry = undefined
+    private getEntry(key: K, factory: () => Promise<V>): CacheEntry<K, V> {
+        const node = this.cache.get(key)
+        if (node) {
+            this.lruList.unshiftNode(node)
+            return node.value
         }
 
-        if (!entry) {
-            const promise = backend.createRunner(repository, commit)
+        const promise = factory()
+        const newEntry = { key, promise, size: 0, readers: 0 }
+        promise.then(value => this.resolved(newEntry, value), () => {})
+        this.lruList.unshift(newEntry)
+        const head = this.lruList.head
+        if (head) {
+            this.cache.set(key, head)
+        }
 
-            entry = {
-                promise,
-                length: 1, // TODO(efritz) - get length from backend
-                dispose: () => promise.then(({ queryRunner }) => queryRunner.close()),
+        return newEntry
+    }
+
+    /**
+     * Determine the size of the resolved value and update the size of the
+     * entry as well as `size`. While the total cache size exceeds `max`,
+     * try to evict the least recently used cache entries that do not have
+     * a non-zero `readers` count.
+     *
+     * @param entry The cache entry.
+     * @param value The cache entry's resolved value.
+     */
+    private resolved(entry: CacheEntry<K, V>, value: V): void {
+        const size = this.sizeFunction(value)
+        this.size += size
+        entry.size = size
+
+        let node = this.lruList.tail
+        while (this.size > this.max && node) {
+            const {
+                prev,
+                value: { promise, size, readers },
+            } = node
+
+            if (readers === 0) {
+                this.size -= size
+                this.lruList.removeNode(node)
+                this.cache.delete(node.value.key)
+                promise.then(value => this.disposeFunction(value), () => {})
             }
 
-            hit = false
-            this.lru.set(key, entry)
+            node = prev
         }
-
-        const {
-            result: { queryRunner, createRunnerStats },
-            elapsed,
-        } = await timeit(async () => {
-            return await (<LRUDBEntry>entry).promise
-        })
-
-        // Wait for entry promise to resolve - will already
-        // be resolved if this lookup was a cache hit.
-        const result = await action(queryRunner)
-
-        return {
-            result,
-            cacheStats: {
-                cacheHit: hit,
-                elapsedMs: elapsed,
-            },
-            // Only return createRunnerStats if it wasn't a cache hit
-            createRunnerStats: (!hit || undefined) && createRunnerStats,
-        }
-    }
-
-    /**
-     * Remove the entry associated with the given key from the cache.
-     */
-    public delete(repository: string, commit: string): void {
-        this.lru.del(makeKey(repository, commit))
-    }
-
-    /**
-     * Remove all entries from the cache.
-     */
-    public reset(): void {
-        this.lru.reset()
     }
 }
 
 /**
- * Computes a cache key from the given repository and commit hash.
+ * `ConnectionCache` is a cache of SQLite database connections indexed
+ * by database filenames.
  */
-function makeKey(repository: string, commit: string): string {
-    return `${repository}@${commit}`
+export class ConnectionCache extends GenericCache<string, Connection> {
+    /**
+     * Create a new `ConnectionCache` with the given maximum (soft) size for
+     * all items in the cache.
+     */
+    constructor(max: number) {
+        super(max, ConnectionCache.sizeFunction, ConnectionCache.connectionFunction)
+    }
+
+    /**
+     * Invoke `callback` with a SQLite connection object obtained from the
+     * cache or created on cache miss. This connection is guranteed not to
+     * be disposed by cache eviction while the callback is active.
+     *
+     * @param database The database filename.
+     * @param entities The set of expected entities present in this schema.
+     * @param callback The function invoke with the SQLite connection.
+     */
+    public withConnection<T>(
+        database: string,
+        entities: Function[],
+        callback: (connection: Connection) => Promise<T>
+    ): Promise<T> {
+        const factory = (): Promise<Connection> =>
+            createConnection({
+                database,
+                entities,
+                type: 'sqlite',
+                name: database,
+                synchronize: true,
+                // logging: 'all',
+            })
+
+        return this.withValue(database, factory, callback)
+    }
+
+    // Each handle is roughly the same size.
+    private static sizeFunction = () => 1
+
+    // Close the underlying file handle on cache eviction.
+    private static connectionFunction = (connection: Connection) => connection.close()
 }
+
+/**
+ * `BlobCache` is a cache of deserialized `DocumentBlob` values indexed
+ * by their Identifer.
+ */
+export class BlobCache extends GenericCache<Id, DocumentBlob> {
+    /**
+     * Create a new `BlobCache` with the given maximum (soft) size for
+     * all items in the cache.
+     */
+    constructor(max: number) {
+        super(max, BlobCache.sizeFunction, BlobCache.disposeFunction)
+    }
+
+    /**
+     * Invoke `callback` with document value obtained from the cache
+     * cache or created on cache miss.
+     *
+     * @param documentId The identifier of the document.
+     * @param factory The function used to create a document.
+     * @param callback The function invoked with the document.
+     */
+    public withBlob<T>(
+        documentId: Id,
+        factory: () => Promise<DocumentBlob>,
+        callback: (blob: DocumentBlob) => Promise<T>
+    ): Promise<T> {
+        return this.withValue(documentId, factory, callback)
+    }
+
+    // TODO - determine memory size
+    private static sizeFunction = () => 1
+
+    // Let GC handle the cleanup of the object on cache eviction.
+    private static disposeFunction = (): void => {}
+}
+
+// TODO - make non-globals
+export const connectionCache = new ConnectionCache(5) // TODO - configure
+export const blobCache = new BlobCache(25) // TODO - configure

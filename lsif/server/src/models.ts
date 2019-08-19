@@ -1,0 +1,281 @@
+import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index, JoinColumn, ManyToOne } from 'typeorm'
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
+/**
+ * `MetaModel` is an entity within the database describing LSIF data for a single repository
+ * and commit pair. There should be only one metadata entity per database.
+ */
+@Entity({ name: 'meta' })
+export class MetaModel {
+    /**
+     * `id` is a unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn()
+    public id!: number
+
+    /**
+     * `lsifVersion` is the version string of the input LSIF that created this database.
+     */
+    @Column()
+    public lsifVersion!: string
+
+    /**
+     * `sourcegraphVersion` is the internal version of the LSIF server that created this database.
+     */
+    @Column()
+    public sourcegraphVersion!: string
+}
+
+/**
+ * `BlobModel` is an entity within the database describing LSIF data for a single repository
+ * and commit pair. This contains JSON-encoded objects (defined in ./entities.ts) keyed by
+ * their non-cryptographic hash. This entity is a foreign key to `DefModel` and `RefModel`.
+ */
+@Entity({ name: 'blobs' })
+export class BlobModel {
+    @PrimaryColumn()
+    public hash!: string
+
+    @Column()
+    public value!: string
+}
+
+/**
+ * `DocumentModel` is an entity within the database describing LSIF data for a single repository
+ * and commit pair. This maps a blob hash that describes a `DocumentBlob` to the URI to the
+ * document.
+ */
+@Entity({ name: 'documents' })
+export class DocumentModel {
+    @PrimaryColumn()
+    public hash!: string
+
+    @Column()
+    public uri!: string
+}
+
+/**
+ * `DefModel` is an entity within the database describing LSIF data for a single repository
+ * and commit pair. This maps external monikers to their range and the document that contains
+ * the definition of the moniker.
+ */
+@Entity({ name: 'defs' })
+@Index(['scheme', 'identifier'])
+export class DefModel {
+    /**
+     * `id` is a unique ID required by typeorm entities.
+     */
+    @PrimaryColumn()
+    public id!: number
+
+    /**
+     * `scheme` describes the package manager type (e.g. npm, pip).
+     */
+    @Column()
+    public scheme!: string
+
+    /**
+     * `identifier` describes the moniker.
+     */
+    @Column()
+    public identifier!: string
+
+    /**
+     * `startLine` is the zero-indexed line describing the start of this range.
+     */
+    @Column()
+    public startLine!: number
+
+    /**
+     * `endLine` is the zero-indexed line describing the end of this range.
+     */
+    @Column()
+    public endLine!: number
+
+    /**
+     * `startCharacter` is the zero-indexed line describing the start of this range.
+     */
+    @Column()
+    public startCharacter!: number
+
+    /**
+     * `endCharacter` is the zero-indexed line describing the end of this range.
+     */
+    @Column()
+    public endCharacter!: number
+
+    /**
+     * `documentHash` is the foreign key to the `BlobModel` entity.
+     */
+    @Column()
+    public documentHash!: string
+
+    /**
+     * `document` is the joined foreign `BlobModel`.
+     */
+    @JoinColumn()
+    @ManyToOne(type => DocumentModel)
+    public document!: DocumentModel
+}
+
+/**
+ * `RefModel` is an entity within the database describing LSIF data for a single repository
+ * and commit pair. This maps imported monikers to their range and the document that contains
+ * a reference to the moniker.
+ */
+@Entity({ name: 'refs' })
+@Index(['scheme', 'identifier'])
+export class RefModel {
+    /**
+     * `id` is a unique ID required by typeorm entities.
+     */
+    @PrimaryColumn()
+    public id!: number
+
+    /**
+     * `scheme` describes the package manager type (e.g. npm, pip).
+     */
+    @Column()
+    public scheme!: string
+
+    /**
+     * `identifier` describes the moniker.
+     */
+    @Column()
+    public identifier!: string
+
+    /**
+     * `startLine` is the zero-indexed line describing the start of this range.
+     */
+    @Column()
+    public startLine!: number
+
+    /**
+     * `endLine` is the zero-indexed line describing the end of this range.
+     */
+    @Column()
+    public endLine!: number
+
+    /**
+     * `startCharacter` is the zero-indexed line describing the start of this range.
+     */
+    @Column()
+    public startCharacter!: number
+
+    /**
+     * `endCharacter` is the zero-indexed line describing the end of this range.
+     */
+    @Column()
+    public endCharacter!: number
+
+    /**
+     * `documentHash` is the foreign key to the `BlobModel` entity.
+     */
+    @Column()
+    public documentHash!: string
+
+    @JoinColumn()
+    /**
+     * `document` is the joined foreign `BlobModel`.
+     */
+    @ManyToOne(type => DocumentModel)
+    public document!: DocumentModel
+}
+
+/**
+ * `PackageModel` is an entity within the xrepo database. This maps a given repository and
+ * commit pair to the package that it provides to other projects.
+ */
+@Entity({ name: 'packages' })
+@Index(['scheme', 'name', 'version'])
+export class PackageModel {
+    /**
+     * `id` is a unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn()
+    public id!: number
+
+    /**
+     * `scheme` describes the package manager type (e.g. npm, pip).
+     */
+    @Column()
+    public scheme!: string
+
+    /**
+     * `name` is the name of the package this repository and commit provides.
+     */
+    @Column()
+    public name!: string
+
+    /**
+     * `version` is the version of the package this repository and commit provides.
+     */
+    @Column()
+    public version!: string
+
+    /**
+     * `repository` is the source repository.
+     */
+    @Column()
+    public repository!: string
+
+    /**
+     * `commit` is the source commit.
+     */
+    @Column()
+    public commit!: string
+}
+
+/**
+ * `ReferenceModel` is an entity within the xrepo database. This lists the dependencies
+ * of a given repository and commit pair to support find global reference operations.
+ */
+@Entity({ name: 'references' })
+@Index(['scheme', 'name', 'version'])
+export class ReferenceModel {
+    /**
+     * `id` is a unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn()
+    public id!: number
+
+    /**
+     * `scheme` describes the package manager type (e.g. npm, pip).
+     */
+    @Column()
+    public scheme!: string
+
+    /**
+     * `name` is the name of the package this repository and commit depends on.
+     */
+    @Column()
+    public name!: string
+
+    /**
+     * `version` is the version of the package this repository and commit depends on.
+     */
+    @Column()
+    public version!: string
+
+    /**
+     * `repository` is the source repository.
+     */
+    @Column()
+    public repository!: string
+
+    /**
+     * `commit` is the source commit.
+     */
+    @Column()
+    public commit!: string
+
+    /**
+     * `filter` is an serialized bloom filter that encodes the set of symbols that
+     * this repository and commcit imports from the given package. Testing this
+     * filter will prevent the backend from opening databases that will yield no
+     * results for a particular symbol.
+     */
+    @Column()
+    public filter!: string
+}

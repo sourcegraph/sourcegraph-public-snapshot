@@ -1,3 +1,4 @@
 .cache/
 out/
 node_modules/
+lsif-storage

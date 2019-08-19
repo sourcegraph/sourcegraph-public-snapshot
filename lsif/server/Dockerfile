@@ -12,7 +12,7 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 # hadolint ignore=DL3018
 RUN apk add --no-cache nodejs=10.14.2-r0 tini
 
-COPY http-server.bundle.js /lsif-server.js
+COPY server.bundle.js /lsif-server.js
 
 EXPOSE 3186
 ENTRYPOINT ["/sbin/tini", "--", "node", "/lsif-server.js"]
