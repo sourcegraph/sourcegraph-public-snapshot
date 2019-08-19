@@ -76,9 +76,10 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 
 	if args.Zoekt.Enabled() {
 		opt := build.Options{
-			CTags:            "universal-ctags",
+			CTags:            conf.CTags(),
 			CTagsMustSucceed: true,
 			DisableCTags:     false,
+			SizeMax:          1 << 20,
 			LargeFiles:       conf.Get().SearchLargeFiles,
 		}
 
