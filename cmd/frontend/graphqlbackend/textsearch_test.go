@@ -713,7 +713,7 @@ func Test_zoektIndexedRepos(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, tc.repos)
+			indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, tc.repos, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -756,7 +756,7 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_, _, _ = zoektIndexedRepos(ctx, z, repos)
+		_, _, _ = zoektIndexedRepos(ctx, z, repos, nil)
 	}
 }
 

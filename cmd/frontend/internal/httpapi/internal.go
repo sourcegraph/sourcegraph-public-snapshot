@@ -176,11 +176,12 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 // search specific endpoint is used rather than serving the entire site settings
 // from /.internal/configuration.
 func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	largeFiles := conf.Get().SearchLargeFiles
 	opts := struct {
 		LargeFiles []string
+		Symbols    bool
 	}{
-		LargeFiles: largeFiles,
+		LargeFiles: conf.Get().SearchLargeFiles,
+		Symbols:    conf.SymbolIndexEnabled(),
 	}
 	err := json.NewEncoder(w).Encode(opts)
 	if err != nil {
