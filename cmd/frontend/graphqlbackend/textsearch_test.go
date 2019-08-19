@@ -760,10 +760,6 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	}
 }
 
-func sortRepoRevsByName(repoRevs []*search.RepositoryRevisions) func(int, int) bool {
-	return func(i, j int) bool { return repoRevs[i].Repo.Name < repoRevs[j].Repo.Name }
-}
-
 func init() {
 	// Set both URLs to something that will fail in tests. We shouldn't be
 	// contacting them in tests.

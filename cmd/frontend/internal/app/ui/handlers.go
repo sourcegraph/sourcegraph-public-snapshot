@@ -205,12 +205,6 @@ func serveBrandedPageString(titles ...string) handlerFunc {
 	})
 }
 
-func serveBasicPageString(title string) handlerFunc {
-	return serveBasicPage(func(c *Common, r *http.Request) string {
-		return title
-	})
-}
-
 func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, "", serveError)
