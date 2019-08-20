@@ -652,6 +652,18 @@ describe('e2e test suite', () => {
                     filePath: '/tree/src/main/java/com/gitblit/models',
                     symbolPath: '/blob/src/main/java/com/gitblit/models/Activity.java#L140:13-140:27',
                 },
+                {
+                    name: 'displays valid symbols at different file depths for Go (./router.go)',
+                    repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
+                    filePath: '/tree/traceapp',
+                    symbolPath: '/blob/traceapp/router.go#L31:6-31:15',
+                },
+                {
+                    name: 'displays valid symbols at different file depths for Go (./tmpl/data.go)',
+                    repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
+                    filePath: '/tree/traceapp',
+                    symbolPath: '/blob/traceapp/tmpl/data.go#L11:6-11:21',
+                },
             ]
 
             for (const navigationTest of navigateToSymbolTests) {
@@ -668,6 +680,41 @@ describe('e2e test suite', () => {
                         visible: true,
                     })).click()
                     await driver.assertWindowLocation(repoBaseURL + navigationTest.symbolPath, true)
+                })
+            }
+
+            const highlightSymbolTests = [
+                {
+                    name: 'highlights correct line for Go',
+                    filePath:
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
+                    index: 5,
+                    line: 65,
+                },
+                {
+                    name: 'highlights correct line for Typescript',
+                    filePath:
+                        '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
+                    index: 3,
+                    line: 17,
+                },
+            ]
+
+            for (const { name, filePath, index, line } of highlightSymbolTests) {
+                test(name, async () => {
+                    await driver.page.goto(baseURL + filePath)
+                    await driver.page.waitForSelector('[data-e2e-tab="symbols"]')
+                    await driver.page.click('[data-e2e-tab="symbols"]')
+                    await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+                    await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
+
+                    await driver.page.waitForSelector('.e2e-blob .selected .line')
+                    const selectedLineNumber = await driver.page.evaluate(() => {
+                        const elem = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
+                        return elem && elem.dataset.line && parseInt(elem.dataset.line, 10)
+                    })
+
+                    expect(selectedLineNumber).toEqual(line)
                 })
             }
         })
