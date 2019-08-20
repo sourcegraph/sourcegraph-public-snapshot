@@ -45,6 +45,7 @@ import {
     ElementTypes,
 } from 'lsif-protocol'
 import { Readable } from 'stream'
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
@@ -128,10 +129,7 @@ export async function convertToBlob(input: Readable, outFile: string): Promise<X
                 await blobStore.insert(parseLine(line))
             }
 
-            return {
-                exported: Array.from(blobStore.exportedPackages.values()),
-                imported: Array.from(blobStore.importedSymbols.values()),
-            }
+            return await blobStore.finalize()
         }
     )
 }
@@ -141,6 +139,40 @@ function parseLine(line: string): Vertex | Edge {
         return JSON.parse(line)
     } catch (err) {
         throw new Error(`Parsing failed for line:\n${line}`)
+    }
+}
+
+class Inserter<T> {
+    private batch: QueryDeepPartialEntity<T>[] = []
+
+    constructor(private connection: Connection, private model: Function, private maxBatchSize: number) {}
+
+    public async insert(model: QueryDeepPartialEntity<T>): Promise<void> {
+        this.batch.push(model)
+
+        if (this.batch.length >= this.maxBatchSize) {
+            await this.executeBatch()
+        }
+    }
+
+    public finalize(): Promise<void> {
+        return this.executeBatch()
+    }
+
+    private async executeBatch(): Promise<void> {
+        if (this.batch.length === 0) {
+            return
+        }
+
+        await this.connection
+            .createQueryBuilder()
+            .insert()
+            .into(this.model)
+            .values(this.batch)
+            .execute()
+            .then(() => {})
+
+        this.batch = []
     }
 }
 
@@ -173,8 +205,13 @@ class BlobStore {
     // TODO
     private projectRoot: string | undefined
 
-    public exportedPackages: Map<string, Package> = new Map()
-    public importedSymbols: Map<string, SymbolReference> = new Map()
+    private exportedPackages: Map<string, Package> = new Map()
+    private importedSymbols: Map<string, SymbolReference> = new Map()
+
+    private metaInserter: Inserter<MetaModel>
+    private documentInserter: Inserter<DocumentModel>
+    private defInserter: Inserter<DefModel>
+    private refInserter: Inserter<RefModel>
 
     constructor(private connection: Connection) {
         const wrap = <T>(f: (element: T) => void) => (element: T) => Promise.resolve(f(element))
@@ -199,6 +236,11 @@ class BlobStore {
         this.edgeHandlerMap[EdgeLabels.textDocument_definition] = wrap(e => this.handleDefinitionEdge(e))
         this.edgeHandlerMap[EdgeLabels.textDocument_hover] = wrap(e => this.handleHoverEdge(e))
         this.edgeHandlerMap[EdgeLabels.textDocument_references] = wrap(e => this.handleReferenceEdge(e))
+
+        this.metaInserter = new Inserter(this.connection, MetaModel, Math.floor(999 / 3))
+        this.documentInserter = new Inserter(this.connection, DocumentModel, Math.floor(999 / 2))
+        this.defInserter = new Inserter(this.connection, DefModel, Math.floor(999 / 8))
+        this.refInserter = new Inserter(this.connection, RefModel, Math.floor(999 / 8))
     }
 
     public async insert(element: Vertex | Edge): Promise<void> {
@@ -212,13 +254,25 @@ class BlobStore {
         }
     }
 
+    public async finalize(): Promise<XrepoSymbols> {
+        await this.metaInserter.finalize()
+        await this.documentInserter.finalize()
+        await this.defInserter.finalize()
+        await this.refInserter.finalize()
+
+        return {
+            exported: Array.from(this.exportedPackages.values()),
+            imported: Array.from(this.importedSymbols.values()),
+        }
+    }
+
     //
     // Vertex Handlers
 
     private async handleMetaData(vertex: MetaData): Promise<void> {
         this.projectRoot = vertex.projectRoot
 
-        await this.connection.getRepository(MetaModel).save({
+        await this.metaInserter.insert({
             lsifVersion: vertex.version,
             sourcegraphVersion: INTERNAL_LSIF_VERSION,
         })
@@ -360,12 +414,11 @@ class BlobStore {
     private async handleDocumentEnd(event: DocumentEvent): Promise<void> {
         const documentData = assertDefined(event.data, this.documentDatas)
         const data = await this.finalizeDocument(documentData)
-        await this.connection.getRepository(DocumentModel).save({ uri: documentData.uri, value: data.encoded })
+        await this.documentInserter.insert({ uri: documentData.uri, value: data.encoded })
 
-        const defs = []
         for (const definition of data.definitions) {
             for (const range of definition.ranges) {
-                defs.push({
+                await this.defInserter.insert({
                     scheme: definition.scheme,
                     identifier: definition.indentifier,
                     documentUri: documentData.uri,
@@ -374,11 +427,10 @@ class BlobStore {
             }
         }
 
-        const refs = []
         for (const reference of data.references) {
             for (const arr of [reference.definitions, reference.references]) {
                 for (const range of arr || []) {
-                    refs.push({
+                    await this.refInserter.insert({
                         scheme: reference.scheme,
                         identifier: reference.indentifier,
                         documentUri: documentData.uri,
@@ -387,44 +439,6 @@ class BlobStore {
                 }
             }
         }
-
-        // TODO - 999 based on number of things being inserted
-        const maxBatchSize = 124
-
-        //
-        // TODO - make chunk inserter a generic thing
-        //
-
-        const chunk = async <T>(items: T[], visitor: (batch: T[]) => Promise<void>): Promise<void> => {
-            while (items.length > maxBatchSize) {
-                await visitor(items.slice(0, maxBatchSize))
-                items = items.slice(maxBatchSize)
-            }
-
-            if (items.length > 0) {
-                await visitor(items)
-            }
-        }
-
-        await chunk(defs, batch =>
-            this.connection
-                .createQueryBuilder()
-                .insert()
-                .into(DefModel)
-                .values(batch)
-                .execute()
-                .then(() => {})
-        )
-
-        await chunk(refs, batch =>
-            this.connection
-                .createQueryBuilder()
-                .insert()
-                .into(RefModel)
-                .values(batch)
-                .execute()
-                .then(() => {})
-        )
     }
 
     //
