@@ -272,7 +272,7 @@ describe('e2e test suite', () => {
             })
             await driver.page.goto(baseURL + '/aws/test/-/blob/README')
             const blob: string = await (await driver.page.waitFor(() => {
-                const elem = document.querySelector<HTMLInputElement>('.e2e-repo-blob')
+                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
                 return elem && elem.textContent
             })).jsonValue()
 
