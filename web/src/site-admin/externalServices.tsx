@@ -440,6 +440,7 @@ export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServ
                             signingKey: '<signing key>',
                         },
                         ttl: '3h',
+                        hardTTL: '72h',
                     }
                     const comment =
                         '// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server'

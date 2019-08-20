@@ -193,3 +193,12 @@ include:
 - JS formatting/linting (prettier, tslint, stylelint, graphql-lint)
 - Dockerfile linter (hadolint)
 - Check whether the Go module folders are "tidy" (go mod tidy)
+
+## Release testing
+
+To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
+
+For testing with a single Docker image, run something like
+```
+IMAGE=sourcegraph/server:3.7.0-rc.1 ./dev/run-server-image.sh
+```

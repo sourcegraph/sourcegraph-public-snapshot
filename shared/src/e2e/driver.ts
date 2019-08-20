@@ -5,9 +5,9 @@ import * as os from 'os'
 import puppeteer, { LaunchOptions, PageEventObj, Page, Serializable } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../shared/src/graphql/schema'
-import { readEnvBoolean, readEnvString, retry } from '../util/e2e-test-utils'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
+import { IMutation, IQuery } from '../graphql/schema'
+import { readEnvBoolean, readEnvString, retry } from './e2e-test-utils'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -186,7 +186,6 @@ export class Driver {
     public async paste(value: string): Promise<void> {
         await this.page.evaluate(
             async d => {
-                // @ts-ignore
                 await navigator.clipboard.writeText(d.value)
             },
             { value }
@@ -306,6 +305,56 @@ export class Driver {
             variables: { lastID: site.configuration.id, input: newConfig },
         })
         dataOrThrowErrors(updateConfigResponse)
+    }
+
+    public async resetUserSettings(): Promise<void> {
+        const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
+            request: gql`
+                query UserSettings {
+                    currentUser {
+                        id
+                        settingsCascade {
+                            subjects {
+                                latestSettings {
+                                    id
+                                    contents
+                                }
+                            }
+                        }
+                    }
+                }
+            `,
+            variables: {},
+        })
+
+        const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
+
+        if (currentUser && currentUser.settingsCascade) {
+            const emptySettings = '{}'
+            const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
+
+            if (latestSettings && latestSettings.contents !== emptySettings) {
+                const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+                    request: gql`
+                        mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                            settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                                overwriteSettings(contents: $contents) {
+                                    empty {
+                                        alwaysNil
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                    variables: {
+                        contents: emptySettings,
+                        subject: currentUser.id,
+                        lastID: latestSettings.id,
+                    },
+                })
+                dataOrThrowErrors(updateConfigResponse)
+            }
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 import * as path from 'path'
-import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { getTokenWithSelector } from '../util/e2e-test-utils'
-import { baseURL, createDriverForTest, Driver, gitHubToken } from './util'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
+import { getTokenWithSelector } from '../../../shared/src/e2e/e2e-test-utils'
+import { baseURL, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
 
 const PHABRICATOR_BASE_URL = 'http://127.0.0.1'
 

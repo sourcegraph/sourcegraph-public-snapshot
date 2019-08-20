@@ -22,8 +22,8 @@ func TestMakeFileMatchURIFromSymbol(t *testing.T) {
 	}
 	baseURI, _ := gituri.Parse("https://github.com/foo/bar")
 	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
-	commit := &gitCommitResolver{
-		repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+	commit := &GitCommitResolver{
+		repo:   &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
 		oid:    "c1",
 		author: *toSignatureResolver(&gitSignatureWithDate),
 	}

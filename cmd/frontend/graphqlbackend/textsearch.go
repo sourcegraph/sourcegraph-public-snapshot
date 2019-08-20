@@ -78,12 +78,12 @@ func (fm *fileMatchResolver) Key() string {
 
 func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
-	// (which would make it slow). This gitCommitResolver will return empty
+	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
 	return &gitTreeEntryResolver{
-		commit: &gitCommitResolver{
-			repo:     &repositoryResolver{repo: fm.repo},
-			oid:      gitObjectID(fm.commitID),
+		commit: &GitCommitResolver{
+			repo:     &RepositoryResolver{repo: fm.repo},
+			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
 		path: fm.JPath,
@@ -91,8 +91,8 @@ func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
 	}
 }
 
-func (fm *fileMatchResolver) Repository() *repositoryResolver {
-	return &repositoryResolver{repo: fm.repo}
+func (fm *fileMatchResolver) Repository() *RepositoryResolver {
+	return &RepositoryResolver{repo: fm.repo}
 }
 
 func (fm *fileMatchResolver) Resource() string {
@@ -115,7 +115,7 @@ func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
-func (fm *fileMatchResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (fm *fileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return fm, true }
 func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
@@ -630,9 +630,9 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
 					if isSymbol && m.SymbolInfo != nil {
-						commit := &gitCommitResolver{
-							repo:     &repositoryResolver{repo: repoRev.Repo},
-							oid:      gitObjectID(repoRev.IndexedHEADCommit()),
+						commit := &GitCommitResolver{
+							repo:     &RepositoryResolver{repo: repoRev.Repo},
+							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
 							inputRev: &inputRev,
 						}
 
@@ -861,14 +861,10 @@ func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []st
 	return zoektQueries, nil
 }
 
-type zoektBackend interface {
-	ListAll(context.Context) (*zoekt.RepoList, error)
-}
-
 // zoektIndexedRepos splits the input repo list into two parts: (1) the
 // repositories `indexed` by Zoekt and (2) the repositories that are
 // `unindexed`.
-func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions, err error) {
 	count := 0
 	for _, r := range revs {
 		if len(r.Revs) > 0 && r.Revs[0].RevSpec == "" {
@@ -893,7 +889,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 
 	for _, rev := range revs {
 		repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
-		if !ok {
+		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, rev)
 			continue
 		}
@@ -936,7 +932,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	)
 
 	if args.Zoekt.Enabled() {
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, nil)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -1187,23 +1183,4 @@ func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) 
 	})
 
 	return flattened
-}
-
-type semaphore chan struct{}
-
-// Acquire increments the semaphore. Up to cap(sem) can be acquired
-// concurrently. If the context is canceled before acquiring the context
-// error is returned.
-func (sem semaphore) Acquire(ctx context.Context) error {
-	select {
-	case sem <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-// Release decrements the semaphore.
-func (sem semaphore) Release() {
-	<-sem
 }

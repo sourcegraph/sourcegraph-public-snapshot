@@ -269,7 +269,7 @@ dev/migrate.sh up
 
 If you see this error when opening the app:
 
-`500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/style.bundle.css: no such file or directory`
+`500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/app.bundle.css: no such file or directory`
 
 that means Webpack hasn't finished compiling the styles yet (it takes about 3 minutes).
 Simply wait a little while for a message from webpack like `web | Time: 180000ms` to appear

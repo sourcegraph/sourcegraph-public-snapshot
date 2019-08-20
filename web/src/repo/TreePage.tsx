@@ -331,10 +331,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                             {/* eslint-enable react/jsx-no-bind */}
                             <div className="tree-page__section">
                                 <h3 className="tree-page__section-header">Changes</h3>
-                                <FilteredConnection<
-                                    GQL.IGitCommit,
-                                    Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>
-                                >
+                                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                                     {...this.props}
                                     className="mt-2 tree-page__section--commits"
                                     listClassName="list-group list-group-flush"
@@ -343,7 +340,6 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     queryConnection={this.queryCommits}
                                     nodeComponent={GitCommitNode}
                                     nodeComponentProps={{
-                                        repoName: this.props.repoName,
                                         className: 'list-group-item',
                                         compact: true,
                                     }}

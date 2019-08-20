@@ -646,7 +646,7 @@ func (e *badRequestError) Cause() error {
 
 // searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
 type searchSuggestionResolver struct {
-	// result is either a repositoryResolver or a gitTreeEntryResolver
+	// result is either a RepositoryResolver or a gitTreeEntryResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
 	score int
@@ -656,8 +656,8 @@ type searchSuggestionResolver struct {
 	label string
 }
 
-func (r *searchSuggestionResolver) ToRepository() (*repositoryResolver, bool) {
-	res, ok := r.result.(*repositoryResolver)
+func (r *searchSuggestionResolver) ToRepository() (*RepositoryResolver, bool) {
+	res, ok := r.result.(*RepositoryResolver)
 	return res, ok
 }
 
@@ -687,11 +687,11 @@ func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
 // newSearchResultResolver returns a new searchResultResolver wrapping the
 // given result.
 //
-// A panic occurs if the type of result is not a *repositoryResolver or
+// A panic occurs if the type of result is not a *RepositoryResolver or
 // *gitTreeEntryResolver.
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
-	case *repositoryResolver:
+	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
 	case *gitTreeEntryResolver:

@@ -28,7 +28,7 @@ func NamespaceByID(ctx context.Context, id graphql.ID) (Namespace, error) {
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
-		return orgByID(ctx, id)
+		return OrgByID(ctx, id)
 	default:
 		return nil, errors.New("invalid ID for namespace")
 	}

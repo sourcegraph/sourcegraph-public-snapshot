@@ -67,14 +67,14 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 		}
 	}
 
-	// Convert the repos to repositoryResolvers.
+	// Convert the repos to RepositoryResolvers.
 	results := make([]searchResultResolver, 0, len(repos))
 	for _, r := range repos {
 		if len(results) == int(limit) {
 			common.limitHit = true
 			break
 		}
-		results = append(results, &repositoryResolver{repo: r.Repo, icon: repoIcon})
+		results = append(results, &RepositoryResolver{repo: r.Repo, icon: repoIcon})
 	}
 
 	return results, common, nil

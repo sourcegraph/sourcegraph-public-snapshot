@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -46,8 +45,8 @@ func (s *surveyResponseResolver) Better() *string {
 	return s.surveyResponse.Better
 }
 
-func (s *surveyResponseResolver) CreatedAt() string {
-	return s.surveyResponse.CreatedAt.Format(time.RFC3339)
+func (s *surveyResponseResolver) CreatedAt() DateTime {
+	return DateTime{Time: s.surveyResponse.CreatedAt}
 }
 
 // SurveySubmissionInput contains a satisfaction (NPS) survey response.

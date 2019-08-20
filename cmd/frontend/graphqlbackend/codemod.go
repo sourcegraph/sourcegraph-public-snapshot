@@ -42,14 +42,14 @@ type args struct {
 
 // codemodResultResolver is a resolver for the GraphQL type `CodemodResult`
 type codemodResultResolver struct {
-	commit  *gitCommitResolver
+	commit  *GitCommitResolver
 	path    string
 	fileURL string
 	diff    string
 	matches []*searchResultMatchResolver
 }
 
-func (r *codemodResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
@@ -306,8 +306,8 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 			return nil, err
 		}
 		result := codemodResultResolver{
-			commit: &gitCommitResolver{
-				repo:     &repositoryResolver{repo: repoRevs.Repo},
+			commit: &GitCommitResolver{
+				repo:     &RepositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
 			},
 			path:    raw.URI,

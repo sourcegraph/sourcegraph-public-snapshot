@@ -8,7 +8,9 @@ import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
@@ -24,7 +26,12 @@ import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 
-export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
+export interface SearchResultsProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        SettingsCascadeProps,
+        TelemetryProps,
+        ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -173,6 +180,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     calculateShowMoreResultsCount={this.calculateCount}
                 />
                 <SearchResultsList
+                    {...this.props}
                     resultsOrError={this.state.resultsOrError}
                     onShowMoreResultsClick={this.showMoreResults}
                     onExpandAllResultsToggle={this.onExpandAllResultsToggle}
@@ -182,14 +190,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onSavedQueryModalClose={this.onModalClose}
                     onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                     didSave={this.state.didSaveQuery}
-                    location={this.props.location}
-                    history={this.props.history}
-                    authenticatedUser={this.props.authenticatedUser}
-                    settingsCascade={this.props.settingsCascade}
-                    isLightTheme={this.props.isLightTheme}
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                    deployType={this.props.deployType}
                 />
             </div>
         )

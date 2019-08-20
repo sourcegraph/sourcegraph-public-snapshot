@@ -32,13 +32,6 @@ func (r *recipient) String() string {
 	return fmt.Sprintf("{%s email:%v slack:%v}", r.spec, r.email, r.slack)
 }
 
-func (r recipient) subject() api.SettingsSubject {
-	if r.spec.userID != 0 {
-		return api.SettingsSubject{User: &r.spec.userID}
-	}
-	return api.SettingsSubject{Org: &r.spec.orgID}
-}
-
 // getNotificationRecipients retrieves the list of recipients who should receive notifications for
 // events related to the saved search.
 func getNotificationRecipients(ctx context.Context, spec api.SavedQueryIDSpec, query api.ConfigSavedQuery) ([]*recipient, error) {

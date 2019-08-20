@@ -1,7 +1,12 @@
 import * as path from 'path'
-import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { retry } from '../util/e2e-test-utils'
-import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from './util'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
+import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from '../../../shared/src/e2e/driver'
+
+import got from 'got'
+import { gql } from '../../../shared/src/graphql/graphql'
+import { random } from 'lodash'
+import MockDate from 'mockdate'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -36,6 +41,7 @@ describe('e2e test suite', () => {
             'sourcegraph/sourcegraph-typescript',
         ]
         await driver.ensureLoggedIn()
+        await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: 'github',
             displayName: 'e2e-test-github',
@@ -49,9 +55,12 @@ describe('e2e test suite', () => {
         })
     }
 
-    // Start browser.
     beforeAll(
         async () => {
+            // Reset date mocking
+            MockDate.reset()
+
+            // Start browser.
             driver = await createDriverForTest()
             await init()
         },
@@ -75,12 +84,14 @@ describe('e2e test suite', () => {
         () => driver.page
     )
 
-    // Clear local storage to reset sidebar selection (files or tabs) for each test
     beforeEach(async () => {
         if (driver) {
+            // Clear local storage to reset sidebar selection (files or tabs) for each test
             await driver.page.evaluate(() => {
                 localStorage.setItem('repo-rev-sidebar-last-tab', 'files')
             })
+
+            await driver.resetUserSettings()
         }
     })
 
@@ -88,6 +99,8 @@ describe('e2e test suite', () => {
         test('Check settings are saved and applied', async () => {
             await driver.page.goto(baseURL + '/users/test/settings')
             await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+
+            const message = 'A wild notice appears!'
             await driver.replaceText({
                 selector: '.e2e-settings-file .monaco-editor',
                 newText: JSON.stringify({
@@ -95,7 +108,7 @@ describe('e2e test suite', () => {
                         {
                             dismissable: false,
                             location: 'top',
-                            message: 'A wild notice appears!',
+                            message,
                         },
                     ],
                 }),
@@ -103,16 +116,69 @@ describe('e2e test suite', () => {
             })
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             await driver.page.waitForSelector('.e2e-global-alert .global-alerts__alert', { visible: true })
-            await driver.page.evaluate(() => {
+            await driver.page.evaluate(message => {
                 const elem = document.querySelector('.e2e-global-alert .global-alerts__alert')
                 if (!elem) {
                     throw new Error('No .e2e-global-alert .global-alerts__alert element found')
                 }
-                const notice = 'A wild notice appears!'
-                if (!(elem as HTMLElement).innerText.includes(notice)) {
-                    throw new Error('Expected "' + notice + '" message, but didn\'t find it')
+                if (!(elem as HTMLElement).innerText.includes(message)) {
+                    throw new Error('Expected "' + message + '" message, but didn\'t find it')
                 }
+            }, message)
+        })
+
+        test('Check access tokens work (create, use and delete)', async () => {
+            await driver.page.goto(baseURL + '/users/test/settings/tokens/new')
+            await driver.page.waitForSelector('.e2e-create-access-token-description')
+
+            const name = 'E2E Test ' + new Date().toISOString() + ' ' + random(1, 1e7)
+
+            await driver.replaceText({
+                selector: '.e2e-create-access-token-description',
+                newText: name,
+                selectMethod: 'keyboard',
             })
+
+            await driver.page.click('.e2e-create-access-token-submit')
+            const token: string = await (await driver.page.waitForFunction(() => {
+                const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
+                return elem && elem.value
+            })).jsonValue()
+
+            const resp = await got.post('/.api/graphql', {
+                baseUrl: baseURL,
+                headers: {
+                    Authorization: 'token ' + token,
+                },
+                body: {
+                    query: gql`
+                        query {
+                            currentUser {
+                                username
+                            }
+                        }
+                    `,
+                    variables: {},
+                },
+                json: true,
+            })
+
+            const username = resp.body.data.currentUser.username
+            expect(username).toBe('test')
+
+            await Promise.all([
+                driver.acceptNextDialog(),
+                (await driver.page.waitForSelector(
+                    `[data-e2e-access-token-description="${name}"] .e2e-access-token-delete`,
+                    { visible: true }
+                )).click(),
+            ])
+
+            await driver.page.waitFor(
+                name => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
+                {},
+                name
+            )
         })
     })
 
@@ -181,6 +247,40 @@ describe('e2e test suite', () => {
             // Make sure repository slug without path pattern redirects to path pattern
             await driver.page.goto(baseURL + '/' + slug)
             await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
+        })
+
+        const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
+        const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
+        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
+
+        const testIfAwsCredentialsSet =
+            awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
+                ? test
+                : test.skip.bind(test)
+
+        testIfAwsCredentialsSet('AWS CodeCommit', async () => {
+            await driver.ensureHasExternalService({
+                kind: 'awscodecommit',
+                displayName: 'e2e-aws-code-commit',
+                config: JSON.stringify({
+                    region: 'us-west-1',
+                    accessKeyID: awsAccessKeyID,
+                    secretAccessKey: awsSecretAccessKey,
+                    repositoryPathPattern: 'aws/{name}',
+                    gitCredentials: {
+                        username: awsCodeCommitUsername,
+                        password: awsCodeCommitPassword,
+                    },
+                }),
+            })
+            await driver.page.goto(baseURL + '/aws/test/-/blob/README')
+            const blob: string = await (await driver.page.waitFor(() => {
+                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                return elem && elem.textContent
+            })).jsonValue()
+
+            expect(blob).toBe('README\n\nchange')
         })
     })
 

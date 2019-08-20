@@ -5,7 +5,7 @@ import * as path from 'path'
 import puppeteer from 'puppeteer'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
-import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 
 const BROWSER = process.env.E2E_BROWSER || 'chrome'
 

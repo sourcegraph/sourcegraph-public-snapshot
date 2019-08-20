@@ -25,9 +25,9 @@ import (
 
 // commitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
 type commitSearchResultResolver struct {
-	commit         *gitCommitResolver
-	refs           []*gitRefResolver
-	sourceRefs     []*gitRefResolver
+	commit         *GitCommitResolver
+	refs           []*GitRefResolver
+	sourceRefs     []*GitRefResolver
 	messagePreview *highlightedString
 	diffPreview    *highlightedString
 	icon           string
@@ -37,9 +37,9 @@ type commitSearchResultResolver struct {
 	matches        []*searchResultMatchResolver
 }
 
-func (r *commitSearchResultResolver) Commit() *gitCommitResolver         { return r.commit }
-func (r *commitSearchResultResolver) Refs() []*gitRefResolver            { return r.refs }
-func (r *commitSearchResultResolver) SourceRefs() []*gitRefResolver      { return r.sourceRefs }
+func (r *commitSearchResultResolver) Commit() *GitCommitResolver         { return r.commit }
+func (r *commitSearchResultResolver) Refs() []*GitRefResolver            { return r.refs }
+func (r *commitSearchResultResolver) SourceRefs() []*GitRefResolver      { return r.sourceRefs }
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
 func (r *commitSearchResultResolver) Icon() string {
@@ -62,7 +62,7 @@ func (r *commitSearchResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
 
-func (r *commitSearchResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *commitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (r *commitSearchResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
 func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return r, true
@@ -268,16 +268,16 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		rawResults = rawResults[:maxResults]
 	}
 
-	repoResolver := &repositoryResolver{repo: repo}
+	repoResolver := &RepositoryResolver{repo: repo}
 	results = make([]*commitSearchResultResolver, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
 		commitResolver := toGitCommitResolver(repoResolver, &commit)
 		results[i] = &commitSearchResultResolver{commit: commitResolver}
 
-		addRefs := func(dst *[]*gitRefResolver, src []string) {
+		addRefs := func(dst *[]*GitRefResolver, src []string) {
 			for _, ref := range src {
-				*dst = append(*dst, &gitRefResolver{
+				*dst = append(*dst, &GitRefResolver{
 					repo: repoResolver,
 					name: ref,
 				})
@@ -389,7 +389,7 @@ func cleanDiffPreview(highlights []*highlightedRange, rawDiffResult string) (str
 	return body, highlights
 }
 
-func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *gitCommitResolver) (string, error) {
+func createLabel(rawResult *git.LogCommitSearchResult, commitResolver *GitCommitResolver) (string, error) {
 	message := commitSubject(rawResult.Commit.Message)
 	author := rawResult.Commit.Author.Name
 	repoName := displayRepoName(commitResolver.Repository().Name())

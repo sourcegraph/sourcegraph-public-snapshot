@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchapi "github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
 )
 
@@ -461,26 +458,6 @@ func toString(m []protocol.FileMatch) string {
 	return buf.String()
 }
 
-func toStringNew(sr *searchapi.Result) string {
-	buf := new(bytes.Buffer)
-	for _, f := range sr.Files {
-		if len(f.LineMatches) == 0 {
-			buf.WriteString(f.Path)
-			buf.WriteByte('\n')
-		}
-		for _, l := range f.LineMatches {
-			buf.WriteString(f.Path)
-			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber))
-			buf.WriteByte(':')
-			buf.Write(l.Line)
-			buf.WriteByte('\n')
-		}
-
-	}
-	return buf.String()
-}
-
 func sanityCheckSorted(m []protocol.FileMatch) error {
 	if !sort.IsSorted(sortByPath(m)) {
 		return errors.New("unsorted file matches, please sortByPath")
@@ -538,87 +515,3 @@ type sortByLineNumber []protocol.LineMatch
 func (m sortByLineNumber) Len() int           { return len(m) }
 func (m sortByLineNumber) Less(i, j int) bool { return m[i].LineNumber < m[j].LineNumber }
 func (m sortByLineNumber) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
-
-func noOpAnyChar(re *syntax.Regexp) {
-	if re.Op == syntax.OpAnyChar {
-		re.Op = syntax.OpAnyCharNotNL
-	}
-	for _, s := range re.Sub {
-		noOpAnyChar(s)
-	}
-}
-
-func patternToQuery(p *protocol.PatternInfo) (query.Q, error) {
-	var and []query.Q
-
-	parseRe := func(pattern string, filenameOnly bool) (query.Q, error) {
-		// these are the flags used by zoekt, which differ to searcher.
-		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		if err != nil {
-			return nil, err
-		}
-		noOpAnyChar(re)
-		// zoekt decides to use its literal optimization at the query parser
-		// level, so we check if our regex can just be a literal.
-		if re.Op == syntax.OpLiteral {
-			return &query.Substring{
-				Pattern:       string(re.Rune),
-				CaseSensitive: (!filenameOnly && p.IsCaseSensitive) || (filenameOnly && p.PathPatternsAreCaseSensitive),
-
-				FileName: filenameOnly,
-			}, nil
-		}
-		return &query.Regexp{
-			Regexp:        re,
-			CaseSensitive: (!filenameOnly && p.IsCaseSensitive) || (filenameOnly && p.PathPatternsAreCaseSensitive),
-
-			FileName: filenameOnly,
-		}, nil
-	}
-	fileRe := func(pattern string) (query.Q, error) {
-		return parseRe(pattern, true)
-	}
-
-	if p.IsRegExp {
-		q, err := parseRe(p.Pattern, false)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	} else {
-		and = append(and, query.ExpandFileContent(&query.Substring{
-			Pattern:       p.Pattern,
-			CaseSensitive: p.IsCaseSensitive,
-		}))
-	}
-
-	if p.IsWordMatch {
-		return nil, errors.New("query does not support word match")
-	}
-	if !p.PathPatternsAreRegExps && (len(p.IncludePatterns) > 0 || p.IncludePattern != "" || p.ExcludePattern != "") {
-		return nil, errors.New("query only supports regex path patterns")
-	}
-	for _, p := range p.IncludePatterns {
-		q, err := fileRe(p)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if p.IncludePattern != "" {
-		q, err := fileRe(p.IncludePattern)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if p.ExcludePattern != "" {
-		q, err := fileRe(p.ExcludePattern)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &query.Not{Child: q})
-	}
-
-	return query.Map(query.Simplify(query.NewAnd(and...)), nil, query.ExpandFileContent), nil
-}
