@@ -1,5 +1,5 @@
 import { Connection, createConnection } from 'typeorm'
-import { DocumentBlob } from './entities'
+import { DocumentData } from './entities'
 import { Id } from 'lsif-protocol'
 import Yallist from 'yallist'
 
@@ -195,16 +195,16 @@ export class ConnectionCache extends GenericCache<string, Connection> {
 }
 
 /**
- * `BlobCache` is a cache of deserialized `DocumentBlob` values indexed
+ * `DocumentCache` is a cache of deserialized `DocumentData` values indexed
  * by their Identifer.
  */
-export class BlobCache extends GenericCache<Id, DocumentBlob> {
+export class DocumentCache extends GenericCache<Id, DocumentData> {
     /**
-     * Create a new `BlobCache` with the given maximum (soft) size for
+     * Create a new `DocumentCache` with the given maximum (soft) size for
      * all items in the cache.
      */
     constructor(max: number) {
-        super(max, BlobCache.sizeFunction, BlobCache.disposeFunction)
+        super(max, DocumentCache.sizeFunction, DocumentCache.disposeFunction)
     }
 
     /**
@@ -215,10 +215,10 @@ export class BlobCache extends GenericCache<Id, DocumentBlob> {
      * @param factory The function used to create a document.
      * @param callback The function invoked with the document.
      */
-    public withBlob<T>(
+    public withDocument<T>(
         documentId: Id,
-        factory: () => Promise<DocumentBlob>,
-        callback: (blob: DocumentBlob) => Promise<T>
+        factory: () => Promise<DocumentData>,
+        callback: (document: DocumentData) => Promise<T>
     ): Promise<T> {
         return this.withValue(documentId, factory, callback)
     }

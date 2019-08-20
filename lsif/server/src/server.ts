@@ -3,7 +3,7 @@ import express from 'express'
 import { ERRNOLSIFDATA, makeBackend } from './backend'
 import { readEnvInt, hasErrorCode, readEnv } from './util'
 import { wrap } from 'async-middleware'
-import { ConnectionCache, BlobCache } from './cache'
+import { ConnectionCache, DocumentCache } from './cache'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -13,15 +13,15 @@ const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 // TODO - document these
 const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
 const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 20)
-const BLOB_CACHE_SIZE = readEnvInt('BLOB_CACHE_SIZE', 100)
+const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 100)
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
-    const blobCache = new BlobCache(BLOB_CACHE_SIZE)
-    const backend = await makeBackend(connectionCache, blobCache)
+    const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
+    const backend = await makeBackend(connectionCache, documentCache)
     const app = express()
     app.use(errorHandler)
 

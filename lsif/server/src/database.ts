@@ -2,11 +2,11 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { DocumentBlob, MonikerData, RangeData, ReferenceResultData, ResultSetData } from './entities'
+import { MonikerData, RangeData, ReferenceResultData, ResultSetData, DocumentData } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
-import { BlobCache, ConnectionCache } from './cache'
+import { ConnectionCache, DocumentCache } from './cache'
 
 const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
 const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
@@ -21,13 +21,13 @@ export class Database {
      *
      * @param xrepoDatabase The cross-repo databse.
      * @param connectionCache The cache of SQLite connections.
-     * @param blobCache The cache of loaded document blobs.
+     * @param documentCache The cache of loaded document.
      * @param database The filename of the database.
      */
     constructor(
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
-        private blobCache: BlobCache,
+        private documentCache: DocumentCache,
         private database: string
     ) {}
 
@@ -37,7 +37,7 @@ export class Database {
      * @param uri The URI of the document.
      */
     public async exists(uri: string): Promise<boolean> {
-        return (await this.findBlob(uri)) !== undefined
+        return (await this.findDocument(uri)) !== undefined
     }
 
     /**
@@ -47,24 +47,24 @@ export class Database {
      * @param position The current hover position.
      */
     public async definitions(uri: string, position: lsp.Position): Promise<lsp.Location | lsp.Location[] | undefined> {
-        const blob = await this.findBlob(uri)
-        if (!blob) {
+        const document = await this.findDocument(uri)
+        if (!document) {
             return undefined
         }
 
-        const range = findRange(blob, position)
+        const range = findRange(document.orderedRanges, position)
         if (!range) {
             return undefined
         }
 
-        const resultData = findResult(blob.resultSets, blob.definitionResults, range, 'definitionResult')
+        const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
         if (resultData) {
-            return asLocations(blob.ranges, blob.orderedRanges, uri, resultData.values)
+            return asLocations(document.ranges, document.orderedRanges, uri, resultData.values)
         }
 
-        for (const moniker of findMonikers(blob.resultSets, blob.monikers, range)) {
+        for (const moniker of findMonikers(document.resultSets, document.monikers, range)) {
             if (moniker.kind === 'import') {
-                return await this.remoteDefinition(blob, moniker)
+                return await this.remoteDefinition(document, moniker)
             }
 
             const defs = await this.localDefinition(moniker)
@@ -83,23 +83,23 @@ export class Database {
      * @param position The current hover position.
      */
     public async references(uri: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
-        const blob = await this.findBlob(uri)
-        if (!blob) {
+        const document = await this.findDocument(uri)
+        if (!document) {
             return undefined
         }
 
-        const range = findRange(blob, position)
+        const range = findRange(document.orderedRanges, position)
         if (!range) {
             return undefined
         }
 
-        const resultData = findResult(blob.resultSets, blob.referenceResults, range, 'referenceResult')
-        const monikers = findMonikers(blob.resultSets, blob.monikers, range)
-        const result = await this.localReferences(uri, blob, resultData, monikers)
+        const resultData = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
+        const monikers = findMonikers(document.resultSets, document.monikers, range)
+        const result = await this.localReferences(uri, document, resultData, monikers)
 
         for (const moniker of monikers) {
             if (moniker.kind === 'export') {
-                const moreResult = await this.remoteReferences(blob, moniker)
+                const moreResult = await this.remoteReferences(document, moniker)
                 result.push(...moreResult)
                 break
             }
@@ -115,17 +115,17 @@ export class Database {
      * @param position The current hover position.
      */
     public async hover(uri: string, position: lsp.Position): Promise<lsp.Hover | undefined> {
-        const blob = await this.findBlob(uri)
-        if (!blob) {
+        const document = await this.findDocument(uri)
+        if (!document) {
             return undefined
         }
 
-        const range = findRange(blob, position)
+        const range = findRange(document.orderedRanges, position)
         if (!range) {
             return undefined
         }
 
-        return findResult(blob.resultSets, blob.hovers, range, 'hoverResult')
+        return findResult(document.resultSets, document.hovers, range, 'hoverResult')
     }
 
     // TODO - document
@@ -148,14 +148,14 @@ export class Database {
 
     // TODO - document
     private async remoteDefinition(
-        blob: DocumentBlob,
+        document: DocumentData,
         moniker: MonikerData
     ): Promise<lsp.Location | lsp.Location[] | undefined> {
         if (!moniker.packageInformation) {
             return undefined
         }
 
-        const packageInformation = blob.packageInformation.get(moniker.packageInformation)
+        const packageInformation = document.packageInformation.get(moniker.packageInformation)
         if (!packageInformation) {
             return undefined
         }
@@ -178,7 +178,7 @@ export class Database {
         const subDb = new Database(
             this.xrepoDatabase,
             this.connectionCache,
-            this.blobCache,
+            this.documentCache,
             makeFilename(packageEntity.repository, packageEntity.commit)
         )
 
@@ -201,14 +201,14 @@ export class Database {
     // TODO - document
     private async localReferences(
         uri: string,
-        blob: DocumentBlob,
+        document: DocumentData,
         resultData: ReferenceResultData | undefined,
         monikers: MonikerData[]
     ): Promise<lsp.Location[]> {
         if (resultData) {
             const result = []
-            result.push(...asLocations(blob.ranges, blob.orderedRanges, uri, resultData.definitions))
-            result.push(...asLocations(blob.ranges, blob.orderedRanges, uri, resultData.references))
+            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.definitions))
+            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.references))
             return result
         }
 
@@ -233,12 +233,12 @@ export class Database {
     }
 
     // TODO - document
-    private async remoteReferences(blob: DocumentBlob, moniker: MonikerData): Promise<lsp.Location[]> {
+    private async remoteReferences(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[]> {
         if (!moniker.packageInformation) {
             return []
         }
 
-        const packageInformation = blob.packageInformation.get(moniker.packageInformation)
+        const packageInformation = document.packageInformation.get(moniker.packageInformation)
         if (!packageInformation) {
             return []
         }
@@ -260,7 +260,7 @@ export class Database {
             const subDb = new Database(
                 this.xrepoDatabase,
                 this.connectionCache,
-                this.blobCache,
+                this.documentCache,
                 makeFilename(reference.repository, reference.commit)
             )
 
@@ -284,21 +284,23 @@ export class Database {
     }
 
     /**
-     * Return a parsed document blob with the given URI. The result of this
+     * Return a parsed document that describes the given URI. The result of this
      * method is cached across all database instances.
      *
      * @param uri The uri of the document.
      */
-    private async findBlob(uri: string): Promise<DocumentBlob | undefined> {
-        const blobFactory = async (): Promise<DocumentBlob> => {
+    private async findDocument(uri: string): Promise<DocumentData | undefined> {
+        const factory = async (): Promise<DocumentData> => {
             const document = await this.withConnection(connection =>
                 connection.getRepository(DocumentModel).findOneOrFail(uri)
             )
 
-            return await decodeJSON<DocumentBlob>(document.value)
+            return await decodeJSON<DocumentData>(document.value)
         }
 
-        return await this.blobCache.withBlob(`${this.database}::${uri}`, blobFactory, blob => Promise.resolve(blob))
+        return await this.documentCache.withDocument(`${this.database}::${uri}`, factory, document =>
+            Promise.resolve(document)
+        )
     }
 
     /**
@@ -317,14 +319,13 @@ export class Database {
 }
 
 // TODO - document
-// TODO - order ranges so we can search this efficiently
-function findRange(blob: DocumentBlob, position: lsp.Position): RangeData | undefined {
+function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeData | undefined {
     let lo = 0
-    let hi = blob.orderedRanges.length - 1
+    let hi = orderedRanges.length - 1
 
     while (lo <= hi) {
         const mid = Math.floor((lo + hi) / 2)
-        const range = blob.orderedRanges[mid]
+        const range = orderedRanges[mid]
 
         const cmp = comparePosition(range, position)
         if (cmp === 0) {

@@ -11,9 +11,9 @@ import {
     ResultSetData,
     DefinitionResultData,
     ReferenceResultData,
-    DocumentBlob,
     HoverData,
     PackageInformationData,
+    DocumentData,
 } from './entities'
 import {
     Id,
@@ -67,7 +67,7 @@ export interface SymbolReference {
     identifier: string
 }
 
-interface DocumentData {
+interface DocumentMeta {
     id: Id
     uri: Uri
 }
@@ -98,7 +98,7 @@ interface DocumentDatabaseData {
     references: ExternalReference[]
 }
 
-interface WrappedDocumentBlob extends DocumentBlob {
+interface WrappedDocumentData extends DocumentData {
     id: Id
     uri: string
     contains: Id[]
@@ -111,7 +111,7 @@ interface MonikerScopedResultData<T> {
     data: T
 }
 
-export async function convertToBlob(
+export async function convert(
     connectionCache: ConnectionCache,
     input: Readable,
     outFile: string
@@ -126,14 +126,14 @@ export async function convertToBlob(
         outFile,
         [DefModel, DocumentModel, MetaModel, RefModel],
         async connection => {
-            const blobStore = new BlobStore(connection)
+            const importer = new Importer(connection)
             const lines = readline.createInterface({ input })
 
             for await (const line of lines) {
-                await blobStore.insert(parseLine(line))
+                await importer.insert(parseLine(line))
             }
 
-            return await blobStore.finalize()
+            return await importer.finalize()
         }
     )
 }
@@ -184,14 +184,14 @@ interface HandlerMap {
     [K: string]: (element: any) => Promise<void>
 }
 
-class BlobStore {
+class Importer {
     // Handler vtables
     private vertexHandlerMap: HandlerMap = {}
     private edgeHandlerMap: HandlerMap = {}
 
     // Vertex data
     private definitionDatas: Map<Id, Map<Id, DefinitionResultData>> = new Map()
-    private documents: Map<Id, DocumentData> = new Map()
+    private documents: Map<Id, DocumentMeta> = new Map()
     private hoverDatas: Map<Id, HoverData> = new Map()
     private monikerDatas: Map<Id, MonikerData> = new Map()
     private packageInformationDatas: Map<Id, PackageInformationData> = new Map()
@@ -204,7 +204,7 @@ class BlobStore {
     private monikerAttachments: Map<Id, Id> = new Map()
 
     // Documents under construction
-    private documentDatas: Map<Id, WrappedDocumentBlob | null> = new Map()
+    private documentDatas: Map<Id, WrappedDocumentData | null> = new Map()
 
     // TODO
     private projectRoot: string | undefined
@@ -448,8 +448,8 @@ class BlobStore {
     //
     // TODO - categorize
 
-    private getOrCreateDocumentData(document: DocumentData): WrappedDocumentBlob {
-        let result: WrappedDocumentBlob | undefined | null = this.documentDatas.get(document.id)
+    private getOrCreateDocumentData(document: DocumentMeta): WrappedDocumentData {
+        let result: WrappedDocumentData | undefined | null = this.documentDatas.get(document.id)
         if (result === null) {
             throw new Error(`The document ${document.uri} has already been processed`)
         }
@@ -509,75 +509,83 @@ class BlobStore {
         this.monikerDatas.set(monikerData.identifier, monikerData)
     }
 
-    //
-    // Blob things
-
-    private async addReferencedDataToBlob(blob: WrappedDocumentBlob, item: RangeData | ResultSetData): Promise<void> {
+    private async addReferencedDataToDocument(
+        document: WrappedDocumentData,
+        item: RangeData | ResultSetData
+    ): Promise<void> {
         const monikers = []
         for (const itemMoniker of item.monikers || []) {
             const moniker = assertDefined(itemMoniker, this.monikerDatas)
-            blob.monikers.set(itemMoniker, moniker)
+            document.monikers.set(itemMoniker, moniker)
             monikers.push(moniker)
         }
 
         // Many ranges can point to the same result set. Make sure we only travers once.
-        if (item.next && !blob.resultSets.has(item.next)) {
+        if (item.next && !document.resultSets.has(item.next)) {
             const resultSet = assertDefined(item.next, this.resultSetDatas)
-            blob.resultSets.set(item.next, resultSet)
-            await this.addReferencedDataToBlob(blob, resultSet)
+            document.resultSets.set(item.next, resultSet)
+            await this.addReferencedDataToDocument(document, resultSet)
         }
 
-        if (item.hoverResult && !blob.hovers.has(item.hoverResult)) {
+        if (item.hoverResult && !document.hovers.has(item.hoverResult)) {
             const hoverResult = assertDefined(item.hoverResult, this.hoverDatas)
-            blob.hovers.set(item.hoverResult, hoverResult)
+            document.hovers.set(item.hoverResult, hoverResult)
         }
 
         if (item.definitionResult) {
-            this.addDefinitionResultsToBlob(blob, item.definitionResult, monikers)
+            this.addDefinitionResultsToDocument(document, item.definitionResult, monikers)
         }
 
         if (item.referenceResult) {
-            this.addReferenceResultsToBlob(blob, item.referenceResult, monikers)
+            this.addReferenceResultsToDocument(document, item.referenceResult, monikers)
         }
     }
 
-    private addDefinitionResultsToBlob(blob: WrappedDocumentBlob, definitionResult: Id, monikers: MonikerData[]): void {
+    private addDefinitionResultsToDocument(
+        document: WrappedDocumentData,
+        definitionResult: Id,
+        monikers: MonikerData[]
+    ): void {
         const map = assertDefined(definitionResult, this.definitionDatas)
-        const definitions = map.get(blob.id)
+        const definitions = map.get(document.id)
         if (!definitions) {
             return
         }
 
         const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
         for (const moniker of nonlocalMonikers) {
-            blob.definitions.push({ moniker, data: definitions })
+            document.definitions.push({ moniker, data: definitions })
         }
 
         if (nonlocalMonikers.length === 0) {
-            blob.definitionResults.set(definitionResult, definitions)
+            document.definitionResults.set(definitionResult, definitions)
         }
     }
 
-    private addReferenceResultsToBlob(blob: WrappedDocumentBlob, referenceResult: Id, monikers: MonikerData[]): void {
+    private addReferenceResultsToDocument(
+        document: WrappedDocumentData,
+        referenceResult: Id,
+        monikers: MonikerData[]
+    ): void {
         const map = assertDefined(referenceResult, this.referenceDatas)
-        const references = map.get(blob.id)
+        const references = map.get(document.id)
         if (!references) {
             return
         }
 
         const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
         for (const moniker of nonlocalMonikers) {
-            blob.references.push({ moniker, data: references })
+            document.references.push({ moniker, data: references })
         }
 
         if (nonlocalMonikers.length === 0) {
-            blob.referenceResults.set(referenceResult, references)
+            document.referenceResults.set(referenceResult, references)
         }
     }
 
-    private async finalizeDocument(blob: WrappedDocumentBlob): Promise<DocumentDatabaseData> {
+    private async finalizeDocument(document: WrappedDocumentData): Promise<DocumentDatabaseData> {
         for (const [key, value] of this.packageInformationDatas) {
-            blob.packageInformation.set(key, value)
+            document.packageInformation.set(key, value)
         }
 
         for (const data of this.monikerDatas.values()) {
@@ -606,38 +614,38 @@ class BlobStore {
             source.monikers = Array.from(ids)
         }
 
-        for (const id of blob.contains) {
+        for (const id of document.contains) {
             const range = assertDefined(id, this.rangeDatas)
-            blob.orderedRanges.push(range)
-            await this.addReferencedDataToBlob(blob, range)
+            document.orderedRanges.push(range)
+            await this.addReferencedDataToDocument(document, range)
         }
 
-        blob.orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
+        document.orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
 
-        for (const [index, range] of blob.orderedRanges.entries()) {
-            blob.ranges.set(range.id, index)
+        for (const [index, range] of document.orderedRanges.entries()) {
+            document.ranges.set(range.id, index)
         }
 
         const definitions = []
-        for (const definition of blob.definitions) {
+        for (const definition of document.definitions) {
             definitions.push({
                 scheme: definition.moniker.scheme,
                 indentifier: definition.moniker.identifier,
-                ranges: flattenRanges(blob, definition.data.values),
+                ranges: flattenRanges(document, definition.data.values),
             })
         }
 
         const references = []
-        for (const reference of blob.references) {
+        for (const reference of document.references) {
             references.push({
                 scheme: reference.moniker.scheme,
                 indentifier: reference.moniker.identifier,
-                definitions: flattenRanges(blob, reference.data.definitions),
-                references: flattenRanges(blob, reference.data.references),
+                definitions: flattenRanges(document, reference.data.definitions),
+                references: flattenRanges(document, reference.data.references),
             })
         }
 
-        return { encoded: await encodeJSON(blob), definitions, references }
+        return { encoded: await encodeJSON(document), definitions, references }
     }
 }
 
@@ -661,15 +669,15 @@ function convertPackageInformation(e: PackageInformation): PackageInformationDat
     return e.version ? { name: e.name, version: e.version } : { name: e.name, version: '$missing' }
 }
 
-function flattenRanges(blob: WrappedDocumentBlob, ids: Id[]): FlattenedRange[] {
+function flattenRanges(document: WrappedDocumentData, ids: Id[]): FlattenedRange[] {
     const ranges = []
     for (const id of ids) {
-        const rangeIndex = blob.ranges.get(id)
+        const rangeIndex = document.ranges.get(id)
         if (!rangeIndex) {
             continue
         }
 
-        const range = blob.orderedRanges[rangeIndex]
+        const range = document.orderedRanges[rangeIndex]
         ranges.push({
             startLine: range.start.line,
             startCharacter: range.start.character,

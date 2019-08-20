@@ -1,7 +1,7 @@
 import { Id, MonikerKind } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 
-export interface DocumentBlob {
+export interface DocumentData {
     ranges: Map<Id, number>
     orderedRanges: RangeData[]
     resultSets: Map<Id, ResultSetData>
