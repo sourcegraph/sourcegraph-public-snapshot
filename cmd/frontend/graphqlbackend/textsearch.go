@@ -965,8 +965,12 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	if len(indexVals) > 0 {
 		index := indexVals[len(indexVals)-1]
 		switch parseYesNoOnly(index) {
-		case Only:
+		case Yes, True:
 			// default
+			if args.Zoekt.Enabled() {
+				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+			}
+		case Only:
 			if !args.Zoekt.Enabled() {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
@@ -976,10 +980,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
-		case Yes, True:
-			if args.Zoekt.Enabled() {
-				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
-			}
 		case No, False:
 			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
 			searcherRepos = append(searcherRepos, zoektRepos...)
