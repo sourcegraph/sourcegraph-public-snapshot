@@ -1,8 +1,8 @@
 import { Observable, zip } from 'rxjs'
-import { filter, map, switchMap, tap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileInfo } from '../code_intelligence'
-import { DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
+import { PhabricatorMode } from '.'
 import { resolveDiffRev } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
 import { getPhabricatorState } from './util'
@@ -12,16 +12,22 @@ export const resolveRevisionFileInfo = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     getPhabricatorState(window.location, requestGraphQL).pipe(
-        filter((state): state is RevisionState => state.mode === PhabricatorMode.Revision),
-        map(({ rawRepoName, headCommitID, baseCommitID }) => ({
-            rawRepoName,
-            commitID: headCommitID,
-            baseCommitID,
-        })),
-        map(info => ({
-            ...info,
-            filePath: getFilePathFromFileForRevision(codeView),
-        }))
+        map(
+            (state): FileInfo => {
+                if (state.mode !== PhabricatorMode.Revision) {
+                    throw new Error(
+                        `Unexpected Phabricator state for resolveRevisionFileInfo, PhabricatorMode: ${state.mode}`
+                    )
+                }
+                const { rawRepoName, headCommitID, baseCommitID } = state
+                return {
+                    rawRepoName,
+                    commitID: headCommitID,
+                    baseCommitID,
+                    filePath: getFilePathFromFileForRevision(codeView),
+                }
+            }
+        )
     )
 
 export const resolveDiffFileInfo = (
@@ -29,8 +35,10 @@ export const resolveDiffFileInfo = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     getPhabricatorState(window.location, requestGraphQL).pipe(
-        filter((state): state is DifferentialState => state.mode === PhabricatorMode.Differential),
         switchMap(state => {
+            if (state.mode !== PhabricatorMode.Differential) {
+                throw new Error(`Unexpected PhabricatorState for resolveDiffFileInfo, PhabricatorMode: ${state.mode}`)
+            }
             const { filePath, baseFilePath } = getFilepathFromFileForDiff(codeView)
             const resolveBaseCommitID = resolveDiffRev(
                 {
@@ -104,5 +112,19 @@ export const resolveDiffusionFileInfo = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
     getPhabricatorState(window.location, requestGraphQL).pipe(
-        filter((state): state is DiffusionState => state.mode === PhabricatorMode.Diffusion)
+        map(
+            (state): FileInfo => {
+                if (state.mode !== PhabricatorMode.Diffusion) {
+                    throw new Error(
+                        `Unexpected PhabricatorState for resolveDiffusionFileInfo, PhabricatorMode: ${state.mode}`
+                    )
+                }
+                const { filePath, commitID, rawRepoName } = state
+                return {
+                    filePath,
+                    commitID,
+                    rawRepoName,
+                }
+            }
+        )
     )
