@@ -2,7 +2,7 @@ import * as readline from 'readline'
 import * as uuid from 'uuid'
 import { DocumentModel, DefModel, MetaModel, RefModel } from './models'
 import { Connection } from 'typeorm'
-import { connectionCache } from './cache'
+import { ConnectionCache } from './cache'
 import { fs } from 'mz'
 import { encodeJSON } from './encoding'
 import {
@@ -111,7 +111,11 @@ interface MonikerScopedResultData<T> {
     data: T
 }
 
-export async function convertToBlob(input: Readable, outFile: string): Promise<XrepoSymbols> {
+export async function convertToBlob(
+    connectionCache: ConnectionCache,
+    input: Readable,
+    outFile: string
+): Promise<XrepoSymbols> {
     try {
         await fs.unlink(outFile)
     } catch (err) {

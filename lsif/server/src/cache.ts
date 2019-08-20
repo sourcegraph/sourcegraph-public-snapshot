@@ -229,7 +229,3 @@ export class BlobCache extends GenericCache<Id, DocumentBlob> {
     // Let GC handle the cleanup of the object on cache eviction.
     private static disposeFunction = (): void => {}
 }
-
-// TODO - make non-globals
-export const connectionCache = new ConnectionCache(5) // TODO - configure
-export const blobCache = new BlobCache(25) // TODO - configure

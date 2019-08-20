@@ -5,6 +5,7 @@ import { hasErrorCode, readEnv } from './util'
 import { convertToBlob, SymbolReference } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
+import { BlobCache, ConnectionCache } from './cache'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
@@ -29,7 +30,11 @@ const STORAGE_ROOT = readEnv('LSIF_STORAGE_ROOT', 'lsif-storage')
  * Backend for LSIF dumps stored in SQLite.
  */
 export class SQLiteBackend {
-    constructor(private xrepoDatabase: XrepoDatabase) {}
+    constructor(
+        private xrepoDatabase: XrepoDatabase,
+        private connectionCache: ConnectionCache,
+        private blobCache: BlobCache
+    ) {}
 
     /**
      * Read the content of the temporary file containing a JSON-encoded LSIF
@@ -37,7 +42,11 @@ export class SQLiteBackend {
      * can be subsequently read by the `createRunner` method.
      */
     public async insertDump(input: Readable, repository: string, commit: string): Promise<void> {
-        const { exported, imported } = await convertToBlob(input, makeFilename(repository, commit))
+        const { exported, imported } = await convertToBlob(
+            this.connectionCache,
+            input,
+            makeFilename(repository, commit)
+        )
 
         for (const exportedPackage of exported) {
             await this.xrepoDatabase.addPackage(
@@ -98,7 +107,7 @@ export class SQLiteBackend {
             throw e
         }
 
-        return new Database(this.xrepoDatabase, file)
+        return new Database(this.xrepoDatabase, this.connectionCache, this.blobCache, file)
     }
 }
 
@@ -109,7 +118,7 @@ export function makeFilename(repository: string, commit: string): string {
     return path.join(STORAGE_ROOT, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
-export async function makeBackend(): Promise<SQLiteBackend> {
+export async function makeBackend(connectionCache: ConnectionCache, blobCache: BlobCache): Promise<SQLiteBackend> {
     try {
         await fs.mkdir(STORAGE_ROOT)
     } catch (e) {
@@ -128,5 +137,5 @@ export async function makeBackend(): Promise<SQLiteBackend> {
         }
     }
 
-    return new SQLiteBackend(new XrepoDatabase(filename))
+    return new SQLiteBackend(new XrepoDatabase(connectionCache, filename), connectionCache, blobCache)
 }

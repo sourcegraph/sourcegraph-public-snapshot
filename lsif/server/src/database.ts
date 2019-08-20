@@ -1,5 +1,4 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { connectionCache, blobCache } from './cache'
 import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
@@ -7,6 +6,7 @@ import { DocumentBlob, MonikerData, RangeData, ReferenceResultData, ResultSetDat
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
+import { BlobCache, ConnectionCache } from './cache'
 
 const MONIKER_KIND_PREFERENCES = ['import', 'local', 'export']
 const MONIKER_SCHEME_PREFERENCES = ['npm', 'tsc']
@@ -20,9 +20,16 @@ export class Database {
      * filename of the database that contains data for a particular repository/commit.
      *
      * @param xrepoDatabase The cross-repo databse.
+     * @param connectionCache The cache of SQLite connections.
+     * @param blobCache The cache of loaded document blobs.
      * @param database The filename of the database.
      */
-    constructor(private xrepoDatabase: XrepoDatabase, private database: string) {}
+    constructor(
+        private xrepoDatabase: XrepoDatabase,
+        private connectionCache: ConnectionCache,
+        private blobCache: BlobCache,
+        private database: string
+    ) {}
 
     /**
      * Determine if data exists for a particular document in this database.
@@ -168,7 +175,12 @@ export class Database {
         parts[1] = '' // WTF
         moniker.identifier = parts.join(':')
 
-        const subDb = new Database(this.xrepoDatabase, makeFilename(packageEntity.repository, packageEntity.commit))
+        const subDb = new Database(
+            this.xrepoDatabase,
+            this.connectionCache,
+            this.blobCache,
+            makeFilename(packageEntity.repository, packageEntity.commit)
+        )
 
         const defsResult = await subDb.withConnection(connection =>
             connection.getRepository(DefModel).find({
@@ -245,7 +257,12 @@ export class Database {
             parts[1] = '' // WTF
             moniker.identifier = parts.join(':')
 
-            const subDb = new Database(this.xrepoDatabase, makeFilename(reference.repository, reference.commit))
+            const subDb = new Database(
+                this.xrepoDatabase,
+                this.connectionCache,
+                this.blobCache,
+                makeFilename(reference.repository, reference.commit)
+            )
 
             const refsResult = await subDb.withConnection(connection =>
                 connection.getRepository(RefModel).find({
@@ -281,7 +298,7 @@ export class Database {
             return await decodeJSON<DocumentBlob>(document.value)
         }
 
-        return await blobCache.withBlob(`${this.database}::${uri}`, blobFactory, blob => Promise.resolve(blob))
+        return await this.blobCache.withBlob(`${this.database}::${uri}`, blobFactory, blob => Promise.resolve(blob))
     }
 
     /**
@@ -291,7 +308,7 @@ export class Database {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await connectionCache.withConnection(
+        return await this.connectionCache.withConnection(
             this.database,
             [DefModel, DocumentModel, MetaModel, RefModel],
             callback

@@ -1,6 +1,6 @@
 import { Connection } from 'typeorm'
 import { testFilter, createFilter } from './encoding'
-import { connectionCache } from './cache'
+import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
 
 /**
@@ -11,8 +11,11 @@ import { ReferenceModel, PackageModel } from './models'
 export class XrepoDatabase {
     /**
      * Create a new ` XrepoDatabase` backed by the given database filename.
+     *
+     * @param connectionCache The cache of SQLite connections.
+     * @param database The filename of the database.
      */
-    constructor(private database: string) {}
+    constructor(private connectionCache: ConnectionCache, private database: string) {}
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
@@ -116,6 +119,6 @@ export class XrepoDatabase {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], callback)
+        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], callback)
     }
 }
