@@ -227,14 +227,8 @@ describe('regression test suite', () => {
             },
             5 * 1000
         )
-
-        // todo: 5.5 search with repo group
-        // todo: 5.11 filter by fork status and archived status
-        // Search for `fork:only repo:sourcegraph`
-        //     Expect results to be list of forked repositories, including `vscode`, `goreman`, `zoekt`
-        // Search for `fork:no repo:sourcegraph`
-        //     Expect results to be list of Sourcegraph repositories, including `sourcegraph`, `sourcegraph-classic`, `deploy-sourcegraph`
-
-        // todo: 5.15 search for something on a non-master branch of a large repo
+        test('Release test 5.11a: Search with fork:only')
+        test('Release test 5.11b: Search with fork:no')
+        test('Release test 5.15: Search for something on a non-master branch of a large repository')
     })
 })
