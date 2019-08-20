@@ -29,7 +29,7 @@ const SiteSchemaJSON = `{
       "group": "Search"
     },
     "search.index.symbols.enabled": {
-      "description": "Whether indexed symbol search is enabled. This is contingent on indexed search being enabled. Enabling this will require re-indexing every repository. This is a time consuming operation. It will also require more storage and ram to accommodate the additional symbols information. ",
+      "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Search"
