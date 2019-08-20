@@ -24,11 +24,6 @@ export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue
  */
 export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
 
-export const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-export const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
-export const awsCodeCommitGitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
-export const awsCodeCommitGitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
-
 export const baseURL = readEnvString({ variable: 'SOURCEGRAPH_BASE_URL', defaultValue: 'http://localhost:3080' })
 
 /**
