@@ -253,10 +253,9 @@ describe('e2e test suite', () => {
                 : test.skip.bind(test)
 
         testIfAwsCredentialsSet('AWS CodeCommit', async () => {
-            const displayName = 'e2e-aws-code-commit-' + random(1, 1e7)
             await driver.ensureHasExternalService({
                 kind: 'awscodecommit',
-                displayName,
+                displayName: 'e2e-aws-code-commit',
                 config: JSON.stringify({
                     region: 'us-west-1',
                     accessKeyID: awsAccessKeyID,
