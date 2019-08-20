@@ -311,6 +311,52 @@ export class Driver {
         })
         dataOrThrowErrors(updateConfigResponse)
     }
+
+    public async resetUserSettings(): Promise<void> {
+        const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
+            request: gql`
+                query UserSettings {
+                    currentUser {
+                        id
+                        settingsCascade {
+                            subjects {
+                                latestSettings {
+                                    id
+                                    contents
+                                }
+                            }
+                        }
+                    }
+                }
+            `,
+            variables: {},
+        })
+        const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
+        if (currentUser && currentUser.settingsCascade) {
+            const [userSettings] = currentUser.settingsCascade.subjects.slice(-1)
+            if (userSettings.latestSettings) {
+                const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+                    request: gql`
+                        mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                            settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                                overwriteSettings(contents: $contents) {
+                                    empty {
+                                        alwaysNil
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                    variables: {
+                        contents: '{}',
+                        subject: currentUser.id,
+                        lastID: userSettings.latestSettings.id,
+                    },
+                })
+                dataOrThrowErrors(updateConfigResponse)
+            }
+        }
+    }
 }
 
 function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {

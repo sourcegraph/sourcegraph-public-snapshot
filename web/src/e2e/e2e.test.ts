@@ -39,6 +39,7 @@ describe('e2e test suite', () => {
             'sourcegraph/sourcegraph-typescript',
         ]
         await driver.ensureLoggedIn()
+        await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: 'github',
             displayName: 'e2e-test-github',
@@ -78,12 +79,14 @@ describe('e2e test suite', () => {
         () => driver.page
     )
 
-    // Clear local storage to reset sidebar selection (files or tabs) for each test
     beforeEach(async () => {
         if (driver) {
+            // Clear local storage to reset sidebar selection (files or tabs) for each test
             await driver.page.evaluate(() => {
                 localStorage.setItem('repo-rev-sidebar-last-tab', 'files')
             })
+
+            await driver.resetUserSettings()
         }
     })
 
@@ -117,14 +120,6 @@ describe('e2e test suite', () => {
                     throw new Error('Expected "' + message + '" message, but didn\'t find it')
                 }
             }, message)
-
-            await driver.replaceText({
-                selector: '.e2e-settings-file .monaco-editor',
-                newText: '{}',
-                selectMethod: 'keyboard',
-            })
-            await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
-            await driver.page.waitFor(() => !document.querySelector('.e2e-global-alert .global-alerts__alert'))
         })
 
         test('Check access tokens work (create, use and delete)', async () => {
