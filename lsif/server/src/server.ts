@@ -50,7 +50,7 @@ async function main(): Promise<void> {
             checkCommit(commit)
 
             try {
-                const db = await backend.createRunner(repository, commit)
+                const db = await backend.createDatabase(repository, commit)
                 const result = !file || (await db.exists(file))
                 res.json(result)
             } catch (e) {
@@ -75,7 +75,7 @@ async function main(): Promise<void> {
             const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
             try {
-                const db = await backend.createRunner(repository, commit)
+                const db = await backend.createDatabase(repository, commit)
                 res.json(await db[cleanMethod](path, position))
             } catch (e) {
                 if (hasErrorCode(e, ERRNOLSIFDATA)) {

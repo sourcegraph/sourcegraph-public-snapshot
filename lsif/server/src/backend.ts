@@ -1,11 +1,13 @@
 import * as path from 'path'
-import { fs } from 'mz'
+import { fs, readline } from 'mz'
 import { Database } from './database'
 import { hasErrorCode, readEnv } from './util'
-import { convert, SymbolReference } from './importer'
+import { SymbolReference, Importer } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
 import { ConnectionCache, DocumentCache } from './cache'
+import { DefModel, MetaModel, RefModel, DocumentModel } from './models'
+import { Edge, Vertex } from 'lsif-protocol'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
@@ -42,7 +44,36 @@ export class SQLiteBackend {
      * can be subsequently read by the `createRunner` method.
      */
     public async insertDump(input: Readable, repository: string, commit: string): Promise<void> {
-        const { exported, imported } = await convert(this.connectionCache, input, makeFilename(repository, commit))
+        const outFile = makeFilename(repository, commit)
+
+        try {
+            await fs.unlink(outFile)
+        } catch (e) {
+            if (!hasErrorCode(e, 'ENOENT')) {
+                throw e
+            }
+        }
+
+        const { exported, imported } = await this.connectionCache.withConnection(
+            outFile,
+            [DefModel, DocumentModel, MetaModel, RefModel],
+            async connection => {
+                const importer = new Importer(connection)
+
+                let element: Vertex | Edge
+                for await (const line of readline.createInterface({ input })) {
+                    try {
+                        element = JSON.parse(line)
+                    } catch (e) {
+                        throw new Error(`Parsing failed for line:\n${line}`)
+                    }
+
+                    await importer.insert(element)
+                }
+
+                return await importer.finalize()
+            }
+        )
 
         for (const exportedPackage of exported) {
             await this.xrepoDatabase.addPackage(
@@ -86,11 +117,11 @@ export class SQLiteBackend {
     }
 
     /**
-     * Create a query runner relevant to the given repository and commit hash. This
+     * Create a database relevant to the given repository and commit hash. This
      * assumes that data for this subset of data has already been inserted via
      * `insertDump` (otherwise this method is expected to throw).
      */
-    public async createRunner(repository: string, commit: string): Promise<Database> {
+    public async createDatabase(repository: string, commit: string): Promise<Database> {
         const file = makeFilename(repository, commit)
 
         try {

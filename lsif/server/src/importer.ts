@@ -1,9 +1,6 @@
-import * as readline from 'readline'
 import * as uuid from 'uuid'
 import { DocumentModel, DefModel, MetaModel, RefModel } from './models'
 import { Connection } from 'typeorm'
-import { ConnectionCache } from './cache'
-import { fs } from 'mz'
 import { encodeJSON } from './encoding'
 import {
     MonikerData,
@@ -44,7 +41,6 @@ import {
     MetaData,
     ElementTypes,
 } from 'lsif-protocol'
-import { Readable } from 'stream'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 
 const INTERNAL_LSIF_VERSION = '0.1.0'
@@ -111,41 +107,6 @@ interface MonikerScopedResultData<T> {
     data: T
 }
 
-export async function convert(
-    connectionCache: ConnectionCache,
-    input: Readable,
-    outFile: string
-): Promise<XrepoSymbols> {
-    try {
-        await fs.unlink(outFile)
-    } catch (err) {
-        // TODO
-    }
-
-    return await connectionCache.withConnection(
-        outFile,
-        [DefModel, DocumentModel, MetaModel, RefModel],
-        async connection => {
-            const importer = new Importer(connection)
-            const lines = readline.createInterface({ input })
-
-            for await (const line of lines) {
-                await importer.insert(parseLine(line))
-            }
-
-            return await importer.finalize()
-        }
-    )
-}
-
-function parseLine(line: string): Vertex | Edge {
-    try {
-        return JSON.parse(line)
-    } catch (err) {
-        throw new Error(`Parsing failed for line:\n${line}`)
-    }
-}
-
 class Inserter<T> {
     private batch: QueryDeepPartialEntity<T>[] = []
 
@@ -184,7 +145,7 @@ interface HandlerMap {
     [K: string]: (element: any) => Promise<void>
 }
 
-class Importer {
+export class Importer {
     // Handler vtables
     private vertexHandlerMap: HandlerMap = {}
     private edgeHandlerMap: HandlerMap = {}
