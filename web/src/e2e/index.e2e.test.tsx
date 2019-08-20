@@ -611,11 +611,7 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('.e2e-blob .selected .line')
                     const selectedLineNumber = await driver.page.evaluate(() => {
                         const elem = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
-                        if (!elem || !elem.dataset.line) {
-                            return 0
-                        }
-
-                        return parseInt(elem.dataset.line, 10)
+                        return elem && elem.dataset.line && parseInt(elem.dataset.line, 10)
                     })
 
                     expect(selectedLineNumber).toEqual(line)
