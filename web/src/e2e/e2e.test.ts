@@ -2,6 +2,7 @@ import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from '../../../shared/src/e2e/driver'
+
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
@@ -239,6 +240,41 @@ describe('e2e test suite', () => {
             // Make sure repository slug without path pattern redirects to path pattern
             await driver.page.goto(baseURL + '/' + slug)
             await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
+        })
+
+        const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
+        const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
+        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
+
+        const testIfAwsCredentialsSet =
+            awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
+                ? test
+                : test.skip.bind(test)
+
+        testIfAwsCredentialsSet('AWS CodeCommit', async () => {
+            const displayName = 'e2e-aws-code-commit-' + random(1, 1e7)
+            await driver.ensureHasExternalService({
+                kind: 'awscodecommit',
+                displayName,
+                config: JSON.stringify({
+                    region: 'us-west-1',
+                    accessKeyID: awsAccessKeyID,
+                    secretAccessKey: awsSecretAccessKey,
+                    repositoryPathPattern: 'aws/{name}',
+                    gitCredentials: {
+                        username: awsCodeCommitUsername,
+                        password: awsCodeCommitPassword,
+                    },
+                }),
+            })
+            await driver.page.goto(baseURL + '/aws/test/-/blob/README')
+            const blob: string = await (await driver.page.waitFor(() => {
+                const elem = document.querySelector<HTMLInputElement>('.e2e-repo-blob')
+                return elem && elem.textContent
+            })).jsonValue()
+
+            expect(blob).toBe('README\n\nchange')
         })
     })
 

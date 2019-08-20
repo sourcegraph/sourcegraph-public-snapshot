@@ -290,7 +290,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {renderMode === 'code' && (
                     <Blob
                         {...this.props}
-                        className="blob-page__blob"
+                        className="blob-page__blob e2e-repo-blob"
                         content={this.state.blobOrError.content}
                         html={this.state.blobOrError.highlight.html}
                         wrapCode={this.state.wrapCode}
