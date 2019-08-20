@@ -215,7 +215,7 @@ describe('regression test suite', () => {
             'Release test 5.8: Search for a repository by name.',
             async () => {
                 await driver.page.goto(baseURL + '/search?q=repo:^auth0/go-jwt-middleware$')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length == 1)
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
             },
             5 * 1000
         )
@@ -223,7 +223,7 @@ describe('regression test suite', () => {
             'Release test 5.10: Perform global, case-sensitive search.',
             async () => {
                 await driver.page.goto(baseURL + '/search?repo:%5Egithub%5C.com/adjust/go-wrk%24+String+case:yes')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length == 2)
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
             },
             5 * 1000
         )
