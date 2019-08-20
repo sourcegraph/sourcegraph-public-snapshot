@@ -603,7 +603,8 @@ describe('e2e test suite', () => {
             for (const { name, filePath, index, line } of highlightSymbolTests) {
                 test(name, async () => {
                     await driver.page.goto(baseURL + filePath)
-                    await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
+                    await driver.page.waitForSelector('[data-e2e-tab="symbols"]')
+                    await driver.page.click('[data-e2e-tab="symbols"]')
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
                     await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
 
