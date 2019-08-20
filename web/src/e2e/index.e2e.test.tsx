@@ -606,11 +606,16 @@ describe('e2e test suite', () => {
                     await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
                     await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
-                    const selectedLine = await driver.page.waitForSelector('.e2e-blob .selected .line')
-                    const selectedLineNumber = await driver.page.evaluate(
-                        e => parseInt(e.getAttribute('data-line')),
-                        selectedLine
-                    )
+
+                    await driver.page.waitForSelector('.e2e-blob .selected .line')
+                    const selectedLineNumber = await driver.page.evaluate(() => {
+                        const elem = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
+                        if (!elem || !elem.dataset.line) {
+                            return 0
+                        }
+
+                        return parseInt(elem.dataset.line, 10)
+                    })
 
                     expect(selectedLineNumber).toEqual(line)
                 })
