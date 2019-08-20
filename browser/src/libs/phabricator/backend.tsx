@@ -476,6 +476,14 @@ function getStagingDetails(
 }
 
 interface ResolvedDiff extends ResolvedRevSpec {
+    /**
+     * Whether this commit lives on a staging repository.
+     * See https://secure.phabricator.com/book/phabricator/article/harbormaster/#change-handoff
+     */
+    isStagingCommit?: boolean
+    /**
+     * The name of the staging repository, if it is synced to the Sourcegraph instance.
+     */
     stagingRepoName?: string
 }
 

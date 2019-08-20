@@ -45,13 +45,19 @@ export const resolveDiffFileInfo = (
                 },
                 requestGraphQL
             ).pipe(
-                tap(info => {
-                    console.log('resolveBaseCommitID', info)
-                }),
-                map(({ commitID, stagingRepoName }) => ({
-                    baseCommitID: commitID,
-                    baseRawRepoName: stagingRepoName || state.baseRawRepoName,
-                }))
+                map(
+                    ({
+                        commitID,
+                        stagingRepoName,
+                        isStagingCommit,
+                    }): Pick<FileInfo, 'baseCommitID' | 'baseRev' | 'baseRawRepoName'> => ({
+                        baseCommitID: commitID,
+                        // Only keep the rev if this is not a staging commit,
+                        // or if the staging repo is synced to the Sourcegraph instance.
+                        baseRev: !isStagingCommit || stagingRepoName !== undefined ? state.baseRev : undefined,
+                        baseRawRepoName: stagingRepoName || state.baseRawRepoName,
+                    })
+                )
             )
             const resolveHeadCommitID = resolveDiffRev(
                 {
@@ -66,24 +72,27 @@ export const resolveDiffFileInfo = (
                 },
                 requestGraphQL
             ).pipe(
-                tap(info => {
-                    console.log('resolveHeadCommitID', info)
-                }),
-                map(({ commitID, stagingRepoName }) => ({
-                    commitID,
-                    rawRepoName: stagingRepoName || state.headRawRepoName,
-                }))
+                map(
+                    ({
+                        commitID,
+                        stagingRepoName,
+                        isStagingCommit,
+                    }): Pick<FileInfo, 'commitID' | 'rev' | 'rawRepoName'> => ({
+                        commitID,
+                        // Only keep the rev if this is not a staging commit,
+                        // or if the staging repo is synced to the Sourcegraph instance.
+                        rev: !isStagingCommit || stagingRepoName !== undefined ? state.headRev : undefined,
+                        rawRepoName: stagingRepoName || state.headRawRepoName,
+                    })
+                )
             )
             return zip(resolveBaseCommitID, resolveHeadCommitID).pipe(
                 map(
-                    ([{ baseCommitID, baseRawRepoName }, { commitID, rawRepoName }]): FileInfo => ({
-                        ...state,
-                        baseCommitID,
-                        commitID,
+                    ([baseInfo, headInfo]): FileInfo => ({
+                        ...baseInfo,
+                        ...headInfo,
+                        baseFilePath,
                         filePath,
-                        baseFilePath: baseFilePath || filePath,
-                        baseRawRepoName,
-                        rawRepoName,
                     })
                 )
             )
