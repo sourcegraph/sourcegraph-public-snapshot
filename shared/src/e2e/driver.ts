@@ -331,10 +331,14 @@ export class Driver {
             `,
             variables: {},
         })
+
         const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
+
         if (currentUser && currentUser.settingsCascade) {
-            const [userSettings] = currentUser.settingsCascade.subjects.slice(-1)
-            if (userSettings.latestSettings) {
+            const emptySettings = '{}'
+            const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
+
+            if (latestSettings && latestSettings.contents !== emptySettings) {
                 const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
                     request: gql`
                         mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
@@ -348,9 +352,9 @@ export class Driver {
                         }
                     `,
                     variables: {
-                        contents: '{}',
+                        contents: emptySettings,
                         subject: currentUser.id,
-                        lastID: userSettings.latestSettings.id,
+                        lastID: latestSettings.id,
                     },
                 })
                 dataOrThrowErrors(updateConfigResponse)
