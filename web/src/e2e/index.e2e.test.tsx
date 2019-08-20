@@ -588,38 +588,31 @@ describe('e2e test suite', () => {
                     name: 'highlights correct line for Go',
                     filePath:
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
+                    index: 5,
+                    line: 65,
                 },
                 {
                     name: 'highlights correct line for Typescript',
                     filePath:
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
+                    index: 3,
+                    line: 17,
                 },
             ]
 
-            for (const { name, filePath } of highlightSymbolTests) {
+            for (const { name, filePath, index, line } of highlightSymbolTests) {
                 test(name, async () => {
                     await driver.page.goto(baseURL + filePath)
-
                     await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
-
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+                    await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
+                    const selectedLine = await driver.page.waitForSelector('.e2e-blob .selected .line')
+                    const selectedLineNumber = await driver.page.evaluate(
+                        e => parseInt(e.getAttribute('data-line')),
+                        selectedLine
+                    )
 
-                    let evaluated = false
-                    for (const selector of await driver.page.$$('.e2e-symbol-link')) {
-                        const href = await (await selector.getProperty('href')).jsonValue()
-                        const line = href.match(/#L(\d+):\d+-\d+:\d+$/)[1]
-                        await selector.click()
-                        const selectedLine = await driver.page.waitForSelector('.e2e-blob .selected .line')
-                        const selectedLineNumber = await driver.page.evaluate(
-                            e => e.getAttribute('data-line'),
-                            selectedLine
-                        )
-
-                        evaluated = true
-                        expect(line).toEqual(selectedLineNumber)
-                    }
-
-                    expect(evaluated).toEqual(true)
+                    expect(selectedLineNumber).toEqual(line)
                 })
             }
         })
