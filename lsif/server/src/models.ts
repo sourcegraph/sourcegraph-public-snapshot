@@ -48,70 +48,10 @@ export class DocumentModel {
 }
 
 /**
- * `DefModel` is an entity within the database describing LSIF data for a single repository
- * and commit pair. This maps external monikers to their range and the document that contains
- * the definition of the moniker.
+ * `Symbols` the base class for `DefModel` and `RefModel` as they have identical
+ * column descriptions.
  */
-@Entity({ name: 'defs' })
-@Index(['scheme', 'identifier'])
-export class DefModel {
-    /**
-     * `id` is a unique ID required by typeorm entities.
-     */
-    @PrimaryColumn()
-    public id!: number
-
-    /**
-     * `scheme` describes the package manager type (e.g. npm, pip).
-     */
-    @Column()
-    public scheme!: string
-
-    /**
-     * `identifier` describes the moniker.
-     */
-    @Column()
-    public identifier!: string
-
-    /**
-     * `documentUri` is the uri of the document to which this definition belongs.
-     */
-    @Column()
-    public documentUri!: string
-
-    /**
-     * `startLine` is the zero-indexed line describing the start of this range.
-     */
-    @Column()
-    public startLine!: number
-
-    /**
-     * `endLine` is the zero-indexed line describing the end of this range.
-     */
-    @Column()
-    public endLine!: number
-
-    /**
-     * `startCharacter` is the zero-indexed line describing the start of this range.
-     */
-    @Column()
-    public startCharacter!: number
-
-    /**
-     * `endCharacter` is the zero-indexed line describing the end of this range.
-     */
-    @Column()
-    public endCharacter!: number
-}
-
-/**
- * `RefModel` is an entity within the database describing LSIF data for a single repository
- * and commit pair. This maps imported monikers to their range and the document that contains
- * a reference to the moniker.
- */
-@Entity({ name: 'refs' })
-@Index(['scheme', 'identifier'])
-export class RefModel {
+class Symbols {
     /**
      * `id` is a unique ID required by typeorm entities.
      */
@@ -160,6 +100,24 @@ export class RefModel {
     @Column()
     public endCharacter!: number
 }
+
+/**
+ * `DefModel` is an entity within the database describing LSIF data for a single repository
+ * and commit pair. This maps external monikers to their range and the document that contains
+ * the definition of the moniker.
+ */
+@Entity({ name: 'defs' })
+@Index(['scheme', 'identifier'])
+export class DefModel extends Symbols {}
+
+/**
+ * `RefModel` is an entity within the database describing LSIF data for a single repository
+ * and commit pair. This maps imported monikers to their range and the document that contains
+ * a reference to the moniker.
+ */
+@Entity({ name: 'refs' })
+@Index(['scheme', 'identifier'])
+export class RefModel extends Symbols {}
 
 /**
  * `PackageModel` is an entity within the xrepo database. This maps a given repository and
