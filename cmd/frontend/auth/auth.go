@@ -72,6 +72,9 @@ func NormalizeUsername(name string) (string, error) {
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
 		name = name[:i]
 	}
+	
+	if true {
+	}
 
 	name = disallowedCharacter.ReplaceAllString(name, "-")
 	if disallowedSymbols.MatchString(name) {
