@@ -190,9 +190,6 @@ main.go:7:}
 	ts := httptest.NewServer(&search.Service{Store: store})
 	defer ts.Close()
 
-	s := &search.StoreSearcher{Store: store}
-	defer s.Close()
-
 	for i, test := range cases {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			test.arg.PatternMatchesContent = true
