@@ -1,7 +1,8 @@
 import * as uuid from 'uuid'
-import { DocumentModel, DefModel, MetaModel, RefModel } from './models'
 import { Connection } from 'typeorm'
+import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { encodeJSON } from './encoding'
+import { Inserter } from './inserter'
 import {
     MonikerData,
     RangeData,
@@ -41,9 +42,11 @@ import {
     MetaData,
     ElementTypes,
 } from 'lsif-protocol'
-import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 
 const INTERNAL_LSIF_VERSION = '0.1.0'
+
+//
+//
 
 export interface XrepoSymbols {
     exported: Package[]
@@ -63,16 +66,21 @@ export interface SymbolReference {
     identifier: string
 }
 
+//
+//
+
 interface DocumentMeta {
     id: Id
     uri: Uri
 }
 
-interface FlattenedRange {
-    startLine: number
-    startCharacter: number
-    endLine: number
-    endCharacter: number
+//
+//
+
+interface DocumentDatabaseData {
+    encoded: string
+    definitions: ExternalDefinition[]
+    references: ExternalReference[]
 }
 
 interface ExternalDefinition {
@@ -88,11 +96,15 @@ interface ExternalReference {
     references: FlattenedRange[]
 }
 
-interface DocumentDatabaseData {
-    encoded: string
-    definitions: ExternalDefinition[]
-    references: ExternalReference[]
+interface FlattenedRange {
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
 }
+
+//
+//
 
 interface WrappedDocumentData extends DocumentData {
     id: Id
@@ -107,39 +119,8 @@ interface MonikerScopedResultData<T> {
     data: T
 }
 
-class Inserter<T> {
-    private batch: QueryDeepPartialEntity<T>[] = []
-
-    constructor(private connection: Connection, private model: Function, private maxBatchSize: number) {}
-
-    public async insert(model: QueryDeepPartialEntity<T>): Promise<void> {
-        this.batch.push(model)
-
-        if (this.batch.length >= this.maxBatchSize) {
-            await this.executeBatch()
-        }
-    }
-
-    public finalize(): Promise<void> {
-        return this.executeBatch()
-    }
-
-    private async executeBatch(): Promise<void> {
-        if (this.batch.length === 0) {
-            return
-        }
-
-        await this.connection
-            .createQueryBuilder()
-            .insert()
-            .into(this.model)
-            .values(this.batch)
-            .execute()
-            .then(() => {})
-
-        this.batch = []
-    }
-}
+//
+//
 
 interface HandlerMap {
     [K: string]: (element: any) => Promise<void>
