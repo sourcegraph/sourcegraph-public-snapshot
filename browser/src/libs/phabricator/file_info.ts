@@ -1,4 +1,4 @@
-import { from, Observable, zip } from 'rxjs'
+import { Observable, zip } from 'rxjs'
 import { filter, map, switchMap, tap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileInfo } from '../code_intelligence'
@@ -11,8 +11,8 @@ export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
-    from(getPhabricatorState(window.location, requestGraphQL)).pipe(
-        filter((state): state is RevisionState => state !== null && state.mode === PhabricatorMode.Revision),
+    getPhabricatorState(window.location, requestGraphQL).pipe(
+        filter((state): state is RevisionState => state.mode === PhabricatorMode.Revision),
         map(({ rawRepoName, headCommitID, baseCommitID }) => ({
             rawRepoName,
             commitID: headCommitID,
@@ -28,8 +28,8 @@ export const resolveDiffFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
-    from(getPhabricatorState(window.location, requestGraphQL)).pipe(
-        filter((state): state is DifferentialState => state !== null && state.mode === PhabricatorMode.Differential),
+    getPhabricatorState(window.location, requestGraphQL).pipe(
+        filter((state): state is DifferentialState => state.mode === PhabricatorMode.Differential),
         switchMap(state => {
             const { filePath, baseFilePath } = getFilepathFromFileForDiff(codeView)
             const resolveBaseCommitID = resolveDiffRev(
@@ -94,6 +94,6 @@ export const resolveDiffusionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfo> =>
-    from(getPhabricatorState(window.location, requestGraphQL)).pipe(
-        filter((state): state is DiffusionState => state !== null && state.mode === PhabricatorMode.Diffusion)
+    getPhabricatorState(window.location, requestGraphQL).pipe(
+        filter((state): state is DiffusionState => state.mode === PhabricatorMode.Diffusion)
     )

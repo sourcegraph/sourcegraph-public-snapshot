@@ -171,9 +171,7 @@ function getRepoPHIDForRevisionID(revisionID: number): Observable<string> {
     )
 }
 
-interface CreatePhabricatorRepoOptions extends Pick<PlatformContext, 'requestGraphQL'> {
-    callsign: string
-    repoName: string
+interface CreatePhabricatorRepoOptions extends Pick<PlatformContext, 'requestGraphQL'>, PhabricatorRepoDetails {
     phabricatorURL: string
 }
 
@@ -268,6 +266,9 @@ function getRepoDetailsFromRepoPHID(
                 switchMap(details => {
                     if (!details) {
                         return throwError(new Error('could not parse repo details'))
+                    }
+                    if (!repo.fields || !repo.fields.callsign) {
+                        return throwError(new Error('callsign not found'))
                     }
                     return createPhabricatorRepo({
                         callsign: repo.fields.callsign,
