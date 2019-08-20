@@ -609,7 +609,6 @@ class BlobStore {
         }
 
         blob.orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
-        console.log(blob.orderedRanges)
 
         for (const [index, range] of blob.orderedRanges.entries()) {
             blob.ranges.set(range.id, index)
