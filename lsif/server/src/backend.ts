@@ -54,10 +54,14 @@ export class SQLiteBackend {
             }
         }
 
-        const { exported, imported } = await this.connectionCache.withConnection(
+        const { imported, exported } = await this.connectionCache.withConnection(
             outFile,
             [DefModel, DocumentModel, MetaModel, RefModel],
             async connection => {
+                // TODO - see if these are being applied
+                await connection.query('pragma synchronous = OFF')
+                await connection.query('pragma journal_mode = OFF')
+
                 const importer = new Importer(connection)
 
                 let element: Vertex | Edge
@@ -68,22 +72,17 @@ export class SQLiteBackend {
                         throw new Error(`Parsing failed for line:\n${line}`)
                     }
 
-                    await importer.insert(element)
+                    try {
+                        await importer.insert(element)
+                    } catch (e) {
+                        throw new Error(`Failed to process line:\n${line}\nCaused by:\n${e}`)
+                    }
                 }
 
-                return await importer.finalize()
+                const value = await importer.finalize()
+                return value
             }
         )
-
-        for (const exportedPackage of exported) {
-            await this.xrepoDatabase.addPackage(
-                exportedPackage.scheme,
-                exportedPackage.name,
-                exportedPackage.version,
-                repository,
-                commit
-            )
-        }
 
         const identifiers: Map<
             string,
@@ -92,6 +91,8 @@ export class SQLiteBackend {
                 ids: Set<string>
             }
         > = new Map()
+
+        // TODO - rewrite, this is messy
 
         for (const importedSymbol of imported) {
             const hash = `${importedSymbol.scheme}::${importedSymbol.name}::${importedSymbol.version}`
@@ -112,6 +113,17 @@ export class SQLiteBackend {
                 repository,
                 commit,
                 Array.from(ids)
+            )
+        }
+
+        // TODO - need to do in bulk
+        for (const exportedPackage of exported) {
+            await this.xrepoDatabase.addPackage(
+                exportedPackage.scheme,
+                exportedPackage.name,
+                exportedPackage.version,
+                repository,
+                commit
             )
         }
     }
