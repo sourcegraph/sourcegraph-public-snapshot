@@ -52,7 +52,7 @@ export class Database {
 
         const resultData = findResult(blob.resultSets, blob.definitionResults, range, 'definitionResult')
         if (resultData) {
-            return asLocations(blob.ranges, uri, resultData.values)
+            return asLocations(blob.ranges, blob.orderedRanges, uri, resultData.values)
         }
 
         for (const moniker of findMonikers(blob.resultSets, blob.monikers, range)) {
@@ -195,8 +195,8 @@ export class Database {
     ): Promise<lsp.Location[]> {
         if (resultData) {
             const result = []
-            result.push(...asLocations(blob.ranges, uri, resultData.definitions))
-            result.push(...asLocations(blob.ranges, uri, resultData.references))
+            result.push(...asLocations(blob.ranges, blob.orderedRanges, uri, resultData.definitions))
+            result.push(...asLocations(blob.ranges, blob.orderedRanges, uri, resultData.references))
             return result
         }
 
@@ -302,9 +302,22 @@ export class Database {
 // TODO - document
 // TODO - order ranges so we can search this efficiently
 function findRange(blob: DocumentBlob, position: lsp.Position): RangeData | undefined {
-    for (const range of blob.ranges.values()) {
-        if (containsPosition(range, position)) {
+    let lo = 0
+    let hi = blob.orderedRanges.length - 1
+
+    while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2)
+        const range = blob.orderedRanges[mid]
+
+        const cmp = comparePosition(range, position)
+        if (cmp === 0) {
             return range
+        }
+
+        if (cmp < 0) {
+            lo = mid + 1
+        } else {
+            hi = mid - 1
         }
     }
 
@@ -388,18 +401,21 @@ function sortMonikers(monikers: MonikerData[]): MonikerData[] {
 }
 
 // TODO - document
-function asLocations(ranges: Map<Id, RangeData>, uri: string, ids: Id[]): lsp.Location[] {
+function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: string, ids: Id[]): lsp.Location[] {
     const locations = []
     for (const id of ids) {
-        const range = ranges.get(id)
-        if (range) {
-            locations.push(
-                lsp.Location.create(uri, {
-                    start: range.start,
-                    end: range.end,
-                })
-            )
+        const rangeIndex = ranges.get(id)
+        if (!rangeIndex) {
+            continue
         }
+
+        const range = orderedRanges[rangeIndex]
+        locations.push(
+            lsp.Location.create(uri, {
+                start: range.start,
+                end: range.end,
+            })
+        )
     }
 
     return locations
@@ -421,18 +437,22 @@ function makeRange(result: {
 }
 
 // TODO - document
-function containsPosition(range: lsp.Range, position: lsp.Position): boolean {
-    if (position.line < range.start.line || range.end.line < position.line) {
-        return false
+function comparePosition(range: lsp.Range, position: lsp.Position): number {
+    if (position.line < range.start.line) {
+        return +1
+    }
+
+    if (position.line > range.end.line) {
+        return -1
     }
 
     if (position.line === range.start.line && position.character < range.start.character) {
-        return false
+        return +1
     }
 
-    if (position.line === range.end.line && range.end.character < position.character) {
-        return false
+    if (position.line === range.end.line && position.character > range.end.character) {
+        return -1
     }
 
-    return true
+    return 0
 }

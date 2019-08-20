@@ -2,9 +2,8 @@ import { Id, MonikerKind } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 
 export interface DocumentBlob {
-    // TODO - make searchable via two-phase binary search
-    // TODO - prune things that can't be reached (see if there is redundancy here)
-    ranges: Map<Id, RangeData>
+    ranges: Map<Id, number>
+    orderedRanges: RangeData[]
     resultSets: Map<Id, ResultSetData>
     definitionResults: Map<Id, DefinitionResultData>
     referenceResults: Map<Id, ReferenceResultData>
@@ -14,6 +13,7 @@ export interface DocumentBlob {
 }
 
 export interface RangeData {
+    id: Id
     start: lsp.Position // TODO - flatten these
     end: lsp.Position // TODO - flatten these
     monikers: Id[]

@@ -447,6 +447,7 @@ class BlobStore {
             definitions: [],
             references: [],
             ranges: new Map(),
+            orderedRanges: [],
             resultSets: new Map(),
             definitionResults: new Map(),
             referenceResults: new Map(),
@@ -589,8 +590,15 @@ class BlobStore {
 
         for (const id of blob.contains) {
             const range = assertDefined(id, this.rangeDatas)
-            blob.ranges.set(id, range)
+            blob.orderedRanges.push(range)
             await this.addReferencedDataToBlob(blob, range)
+        }
+
+        blob.orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
+        console.log(blob.orderedRanges)
+
+        for (const [index, range] of blob.orderedRanges.entries()) {
+            blob.ranges.set(range.id, index)
         }
 
         const definitions = []
@@ -639,15 +647,18 @@ function convertPackageInformation(e: PackageInformation): PackageInformationDat
 function flattenRanges(blob: WrappedDocumentBlob, ids: Id[]): FlattenedRange[] {
     const ranges = []
     for (const id of ids) {
-        const range = blob.ranges.get(id)
-        if (range) {
-            ranges.push({
-                startLine: range.start.line,
-                startCharacter: range.start.character,
-                endLine: range.end.line,
-                endCharacter: range.end.character,
-            })
+        const rangeIndex = blob.ranges.get(id)
+        if (!rangeIndex) {
+            continue
         }
+
+        const range = blob.orderedRanges[rangeIndex]
+        ranges.push({
+            startLine: range.start.line,
+            startCharacter: range.start.character,
+            endLine: range.end.line,
+            endCharacter: range.end.character,
+        })
     }
 
     return ranges
