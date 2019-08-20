@@ -1,6 +1,6 @@
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
-import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID } from './backend'
+import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitHelper } from './backend'
 import { map } from 'rxjs/operators'
 import { Observable, throwError } from 'rxjs'
 
@@ -134,7 +134,8 @@ function getBaseCommitIDFromRevisionPage(): string {
 
 export function getPhabricatorState(
     loc: Location,
-    requestGraphQL: PlatformContext['requestGraphQL']
+    requestGraphQL: PlatformContext['requestGraphQL'],
+    queryConduit: QueryConduitHelper<any>
 ): Observable<DiffusionState | DifferentialState | RevisionState | ChangeState> {
     try {
         const stateUrl = loc.href.replace(loc.origin, '')
@@ -145,7 +146,7 @@ export function getPhabricatorState(
                 throw new Error(`Could not determine file path from diffusionMatch, stateUrl: ${stateUrl}`)
             }
             const callsign = getCallsignFromPageTag()
-            return getRepoDetailsFromCallsign(callsign, requestGraphQL).pipe(
+            return getRepoDetailsFromCallsign(callsign, requestGraphQL, queryConduit).pipe(
                 map(
                     ({ rawRepoName }): DiffusionState => ({
                         mode: PhabricatorMode.Diffusion,
@@ -201,7 +202,7 @@ export function getPhabricatorState(
                 baseRev = maxDiff.revDescription.concat('~1')
             }
 
-            return getRepoDetailsFromRevisionID(revisionID, requestGraphQL).pipe(
+            return getRepoDetailsFromRevisionID(revisionID, requestGraphQL, queryConduit).pipe(
                 map(
                     ({ rawRepoName }): DifferentialState => ({
                         baseRawRepoName: rawRepoName,
@@ -222,7 +223,7 @@ export function getPhabricatorState(
             const callsign = revisionMatch[1]
             const headCommitID = revisionMatch[2]
             const baseCommitID = getBaseCommitIDFromRevisionPage()
-            return getRepoDetailsFromCallsign(callsign, requestGraphQL).pipe(
+            return getRepoDetailsFromCallsign(callsign, requestGraphQL, queryConduit).pipe(
                 map(
                     ({ rawRepoName }): RevisionState => ({
                         mode: PhabricatorMode.Revision,
@@ -239,7 +240,7 @@ export function getPhabricatorState(
             const filePath = changeMatch[8]
             const callsign = getCallsignFromPageTag()
             const commitID = getCommitIDFromPageTag()
-            return getRepoDetailsFromCallsign(callsign, requestGraphQL).pipe(
+            return getRepoDetailsFromCallsign(callsign, requestGraphQL, queryConduit).pipe(
                 map(
                     ({ rawRepoName }): ChangeState => ({
                         mode: PhabricatorMode.Change,
@@ -271,9 +272,9 @@ export function getPhabricatorState(
                 throw new Error('failed parsing diffID')
             }
             const diffID = parseInt(diffMatch[1], 10)
-            return getRepoDetailsFromRevisionID(revisionID, requestGraphQL).pipe(
+            return getRepoDetailsFromRevisionID(revisionID, requestGraphQL, queryConduit).pipe(
                 map(
-                    ({ rawRepoName, callsign }): DifferentialState => {
+                    ({ rawRepoName }): DifferentialState => {
                         let baseRev = `phabricator/base/${diffID}`
                         let headRev = `phabricator/diff/${diffID}`
 

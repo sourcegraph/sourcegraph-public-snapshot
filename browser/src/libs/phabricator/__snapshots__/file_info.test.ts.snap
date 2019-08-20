@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Phabricator file info resolveDiffusionFileInfo Diffusion - single file coode view 1`] = `
+Object {
+  "commitID": "e67b3c02c7195c052acff13261f0c9fd1ba53011",
+  "filePath": "mux.go",
+  "rawRepoName": "github.com/gorilla/mux",
+}
+`;
+
+exports[`Phabricator file info resolveRevisionFileInfo() commit view 1`] = `
+Object {
+  "baseCommitID": "50fbc3e7fbfcdb4fb850686588071e5f0bdd4a0a",
+  "commitID": "eab9c4f3d22d907d728aa0f5918934357866249e",
+  "filePath": "mux.go",
+  "rawRepoName": "github.com/gorilla/mux",
+}
+`;
