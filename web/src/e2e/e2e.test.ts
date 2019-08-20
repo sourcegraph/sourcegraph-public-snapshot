@@ -6,6 +6,7 @@ import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
+import MockDate from 'mockdate'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -52,9 +53,12 @@ describe('e2e test suite', () => {
         })
     }
 
-    // Start browser.
     beforeAll(
         async () => {
+            // Reset date mocking
+            MockDate.reset()
+
+            // Start browser.
             driver = await createDriverForTest()
             await init()
         },
@@ -123,8 +127,7 @@ describe('e2e test suite', () => {
             await driver.page.goto(baseURL + '/users/test/settings/tokens/new')
             await driver.page.waitForSelector('.e2e-create-access-token-description')
 
-            const now = await driver.page.evaluate(() => new Date().toISOString())
-            const name = 'E2E Test ' + now + ' ' + random(1, 1e7)
+            const name = 'E2E Test ' + new Date().toISOString() + ' ' + random(1, 1e7)
 
             await driver.replaceText({
                 selector: '.e2e-create-access-token-description',
