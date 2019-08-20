@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"io/ioutil"
 	"math"
@@ -957,7 +958,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	// Support index:yes (default), index:only, and index:no in search query.
 	indexVals, _ := args.Query.StringValues(query.FieldIndex)
-	if len(indexVals) == 0 && conf.SearchIndexEnabled() {
+	if len(indexVals) == 0 && envvar.SourcegraphDotComMode() && conf.SearchIndexEnabled() {
 		// Default to index:only.
 		indexVals = []string{"only"}
 	}
