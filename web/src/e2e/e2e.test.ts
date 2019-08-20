@@ -27,6 +27,7 @@ describe('e2e test suite', () => {
 
     async function init(): Promise<void> {
         const repoSlugs = [
+            'gitblit/gitblit',
             'gorilla/mux',
             'gorilla/securecookie',
             'sourcegraphtest/AlwaysCloningTest',
@@ -567,6 +568,53 @@ describe('e2e test suite', () => {
                     ],
                     symbolTypes: ['constant', 'constant', 'constant', 'function', 'function', 'function', 'constant'],
                 },
+                {
+                    name: 'lists symbols in file for Java',
+                    filePath:
+                        '/github.com/gitblit/gitblit@41e6a701953c6f3ec0c4b2375426e4205a1c6a00/-/blob/src/main/java/com/gitblit/models/Activity.java',
+                    symbolNames: [
+                        'com.gitblit.models',
+                        'Activity',
+                        'serialVersionUID',
+                        'startDate',
+                        'endDate',
+                        'commits',
+                        'authorMetrics',
+                        'repositoryMetrics',
+                        'authorExclusions',
+                        'Activity',
+                        'Activity',
+                        'excludeAuthors',
+                        'addCommit',
+                        'addCommit',
+                        'getCommitCount',
+                        'getCommits',
+                        'getAuthorMetrics',
+                        'getRepositoryMetrics',
+                        'compareTo',
+                    ],
+                    symbolTypes: [
+                        'package',
+                        'class',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                        'method',
+                    ],
+                },
             ]
 
             for (const symbolTest of listSymbolsTests) {
@@ -591,22 +639,84 @@ describe('e2e test suite', () => {
                 })
             }
 
-            test('navigates to file on symbol click', async () => {
-                const repoBaseURL =
-                    baseURL + '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-'
-                const symbolPath = '/blob/cmd/go-diff/go-diff.go#L19:2-19:10'
+            const navigateToSymbolTests = [
+                {
+                    name: 'navigates to file on symbol click for Go',
+                    repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
+                    filePath: '/tree/cmd',
+                    symbolPath: '/blob/cmd/go-diff/go-diff.go#L19:2-19:10',
+                },
+                {
+                    name: 'navigates to file on symbol click for Java',
+                    repoPath: '/github.com/gitblit/gitblit@41e6a701953c6f3ec0c4b2375426e4205a1c6a00',
+                    filePath: '/tree/src/main/java/com/gitblit/models',
+                    symbolPath: '/blob/src/main/java/com/gitblit/models/Activity.java#L140:13-140:27',
+                },
+                {
+                    name: 'displays valid symbols at different file depths for Go (./router.go)',
+                    repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
+                    filePath: '/tree/traceapp',
+                    symbolPath: '/blob/traceapp/router.go#L31:6-31:15',
+                },
+                {
+                    name: 'displays valid symbols at different file depths for Go (./tmpl/data.go)',
+                    repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
+                    filePath: '/tree/traceapp',
+                    symbolPath: '/blob/traceapp/tmpl/data.go#L11:6-11:21',
+                },
+            ]
 
-                await driver.page.goto(repoBaseURL + '/tree/cmd')
+            for (const navigationTest of navigateToSymbolTests) {
+                test(navigationTest.name, async () => {
+                    const repoBaseURL = baseURL + navigationTest.repoPath + '/-'
 
-                await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
+                    await driver.page.goto(repoBaseURL + navigationTest.filePath)
 
-                await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+                    await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
 
-                await (await driver.page.waitForSelector(`.e2e-symbol-link[href*="${symbolPath}"]`, {
-                    visible: true,
-                })).click()
-                await driver.assertWindowLocation(repoBaseURL + symbolPath, true)
-            })
+                    await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+
+                    await (await driver.page.waitForSelector(`.e2e-symbol-link[href*="${navigationTest.symbolPath}"]`, {
+                        visible: true,
+                    })).click()
+                    await driver.assertWindowLocation(repoBaseURL + navigationTest.symbolPath, true)
+                })
+            }
+
+            const highlightSymbolTests = [
+                {
+                    name: 'highlights correct line for Go',
+                    filePath:
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
+                    index: 5,
+                    line: 65,
+                },
+                {
+                    name: 'highlights correct line for Typescript',
+                    filePath:
+                        '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
+                    index: 3,
+                    line: 17,
+                },
+            ]
+
+            for (const { name, filePath, index, line } of highlightSymbolTests) {
+                test(name, async () => {
+                    await driver.page.goto(baseURL + filePath)
+                    await driver.page.waitForSelector('[data-e2e-tab="symbols"]')
+                    await driver.page.click('[data-e2e-tab="symbols"]')
+                    await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
+                    await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
+
+                    await driver.page.waitForSelector('.e2e-blob .selected .line')
+                    const selectedLineNumber = await driver.page.evaluate(() => {
+                        const elem = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
+                        return elem && elem.dataset.line && parseInt(elem.dataset.line, 10)
+                    })
+
+                    expect(selectedLineNumber).toEqual(line)
+                })
+            }
         })
 
         describe('directory page', () => {
