@@ -40,6 +40,7 @@ describe('e2e test suite', () => {
             'sourcegraph/sourcegraph-typescript',
         ]
         await driver.ensureLoggedIn()
+        await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: 'github',
             displayName: 'e2e-test-github',
@@ -82,12 +83,14 @@ describe('e2e test suite', () => {
         () => driver.page
     )
 
-    // Clear local storage to reset sidebar selection (files or tabs) for each test
     beforeEach(async () => {
         if (driver) {
+            // Clear local storage to reset sidebar selection (files or tabs) for each test
             await driver.page.evaluate(() => {
                 localStorage.setItem('repo-rev-sidebar-last-tab', 'files')
             })
+
+            await driver.resetUserSettings()
         }
     })
 

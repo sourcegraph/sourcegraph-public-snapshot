@@ -306,6 +306,56 @@ export class Driver {
         })
         dataOrThrowErrors(updateConfigResponse)
     }
+
+    public async resetUserSettings(): Promise<void> {
+        const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
+            request: gql`
+                query UserSettings {
+                    currentUser {
+                        id
+                        settingsCascade {
+                            subjects {
+                                latestSettings {
+                                    id
+                                    contents
+                                }
+                            }
+                        }
+                    }
+                }
+            `,
+            variables: {},
+        })
+
+        const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
+
+        if (currentUser && currentUser.settingsCascade) {
+            const emptySettings = '{}'
+            const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
+
+            if (latestSettings && latestSettings.contents !== emptySettings) {
+                const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+                    request: gql`
+                        mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                            settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                                overwriteSettings(contents: $contents) {
+                                    empty {
+                                        alwaysNil
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                    variables: {
+                        contents: emptySettings,
+                        subject: currentUser.id,
+                        lastID: latestSettings.id,
+                    },
+                })
+                dataOrThrowErrors(updateConfigResponse)
+            }
+        }
+    }
 }
 
 function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
