@@ -864,7 +864,7 @@ func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []st
 // zoektIndexedRepos splits the input repo list into two parts: (1) the
 // repositories `indexed` by Zoekt and (2) the repositories that are
 // `unindexed`.
-func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions, err error) {
 	count := 0
 	for _, r := range revs {
 		if len(r.Revs) > 0 && r.Revs[0].RevSpec == "" {
@@ -889,7 +889,7 @@ func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*sear
 
 	for _, rev := range revs {
 		repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
-		if !ok {
+		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, rev)
 			continue
 		}
@@ -932,7 +932,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	)
 
 	if args.Zoekt.Enabled() {
-		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos)
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, nil)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
 			tr.LogFields(otlog.String("indexErr", err.Error()))

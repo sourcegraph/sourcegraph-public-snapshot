@@ -2,9 +2,11 @@ import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { baseURL, createDriverForTest, Driver, gitHubToken, percySnapshot } from '../../../shared/src/e2e/driver'
+
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
+import MockDate from 'mockdate'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -38,6 +40,7 @@ describe('e2e test suite', () => {
             'sourcegraph/sourcegraph-typescript',
         ]
         await driver.ensureLoggedIn()
+        await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: 'github',
             displayName: 'e2e-test-github',
@@ -51,9 +54,12 @@ describe('e2e test suite', () => {
         })
     }
 
-    // Start browser.
     beforeAll(
         async () => {
+            // Reset date mocking
+            MockDate.reset()
+
+            // Start browser.
             driver = await createDriverForTest()
             await init()
         },
@@ -77,12 +83,14 @@ describe('e2e test suite', () => {
         () => driver.page
     )
 
-    // Clear local storage to reset sidebar selection (files or tabs) for each test
     beforeEach(async () => {
         if (driver) {
+            // Clear local storage to reset sidebar selection (files or tabs) for each test
             await driver.page.evaluate(() => {
                 localStorage.setItem('repo-rev-sidebar-last-tab', 'files')
             })
+
+            await driver.resetUserSettings()
         }
     })
 
@@ -122,8 +130,7 @@ describe('e2e test suite', () => {
             await driver.page.goto(baseURL + '/users/test/settings/tokens/new')
             await driver.page.waitForSelector('.e2e-create-access-token-description')
 
-            const now = await driver.page.evaluate(() => new Date().toISOString())
-            const name = 'E2E Test ' + now + ' ' + random(1, 1e7)
+            const name = 'E2E Test ' + new Date().toISOString() + ' ' + random(1, 1e7)
 
             await driver.replaceText({
                 selector: '.e2e-create-access-token-description',
@@ -239,6 +246,40 @@ describe('e2e test suite', () => {
             // Make sure repository slug without path pattern redirects to path pattern
             await driver.page.goto(baseURL + '/' + slug)
             await driver.assertWindowLocationPrefix('/' + pathPatternSlug)
+        })
+
+        const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
+        const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
+        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
+
+        const testIfAwsCredentialsSet =
+            awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
+                ? test
+                : test.skip.bind(test)
+
+        testIfAwsCredentialsSet('AWS CodeCommit', async () => {
+            await driver.ensureHasExternalService({
+                kind: 'awscodecommit',
+                displayName: 'e2e-aws-code-commit',
+                config: JSON.stringify({
+                    region: 'us-west-1',
+                    accessKeyID: awsAccessKeyID,
+                    secretAccessKey: awsSecretAccessKey,
+                    repositoryPathPattern: 'aws/{name}',
+                    gitCredentials: {
+                        username: awsCodeCommitUsername,
+                        password: awsCodeCommitPassword,
+                    },
+                }),
+            })
+            await driver.page.goto(baseURL + '/aws/test/-/blob/README')
+            const blob: string = await (await driver.page.waitFor(() => {
+                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                return elem && elem.textContent
+            })).jsonValue()
+
+            expect(blob).toBe('README\n\nchange')
         })
     })
 

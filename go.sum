@@ -644,8 +644,8 @@ github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614 h1:MrlKMpoGse4bC
 github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
-github.com/sourcegraph/zoekt v0.0.0-20190814145959-75b5f541fb2b h1:UkskSL5YB6WrNMxd0dsjzd0tzcdvlva6fnW3gOQZnEA=
-github.com/sourcegraph/zoekt v0.0.0-20190814145959-75b5f541fb2b/go.mod h1:ktJjC94Qpag2sLp96e8uSc6KZ3hRoxz1pyN1yRKsOy4=
+github.com/sourcegraph/zoekt v0.0.0-20190819202617-014a202a7b3d h1:gqd14PHERGyN1+j+vG0iJKVlYLupvVBqr+Q0I38B4NY=
+github.com/sourcegraph/zoekt v0.0.0-20190819202617-014a202a7b3d/go.mod h1:ktJjC94Qpag2sLp96e8uSc6KZ3hRoxz1pyN1yRKsOy4=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.1.0/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
