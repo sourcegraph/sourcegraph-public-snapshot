@@ -1,29 +1,38 @@
 import * as lsp from 'vscode-languageserver'
 import * as semver from 'semver'
+import * as tmp from 'tmp-promise'
 import RelateUrl from 'relateurl'
-import { Document, Edge, EdgeLabels, ElementTypes, HoverResult, Range, Vertex, VertexLabels } from 'lsif-protocol'
-import { Hover, MarkupContent, MarkupKind } from 'vscode-languageserver-types'
+import {
+    Document,
+    Edge,
+    EdgeLabels,
+    ElementTypes,
+    HoverResult,
+    Range,
+    Vertex,
+    VertexLabels,
+    DefinitionResult,
+    Moniker,
+    PackageInformation,
+    ReferenceResult,
+    ResultSet,
+} from 'lsif-protocol'
 import { MetaData } from './ms/server/protocol.compress'
-import { Mutation, NQuad, Value, DgraphClient } from 'dgraph-js'
-import { Schema } from 'jsonschema'
-import { validate } from './dgraph.schema'
-import { flattenRange } from './dgraph.range'
+import { fs, child_process } from 'mz'
+
+interface HandlerMap {
+    [K: string]: (element: any) => void
+}
 
 /**
  * Inserts LSIF dump data into Dgraph.
  */
 export class DgraphImporter {
-    private mutation: Mutation
-    private idCounter = 0
     private rootInfo: { rootUri: URL; repoUidRef: string; commitUidRef: string } | undefined
+    private rdfStream!: fs.WriteStream
 
-    constructor(
-        private client: DgraphClient,
-        private repository: string,
-        private commit: string,
-        private schema: Schema
-    ) {
-        this.mutation = new Mutation()
+    constructor(private repository: string, private commit: string) {
+        this.initHandlers()
     }
 
     /**
@@ -32,120 +41,122 @@ export class DgraphImporter {
      * cleanup of the transaction.
      */
     public async import(items: (Vertex | Edge)[]): Promise<void> {
-        console.log('doing mutation setup')
-        console.time('setup')
+        // Create temp file to receive the request body
+        const tempPath = (await tmp.file()).path
+        console.log('tempPath', tempPath)
 
-        items.forEach(element => {
-            if (element.type === ElementTypes.vertex) {
-                this.insertVertex(element)
-            } else {
-                this.insertEdge(element)
+        return new Promise((resolve, reject) => {
+            try {
+                this.rdfStream = fs.createWriteStream(tempPath)
+
+                console.log('about to generate rdf')
+                console.time('generating rdf')
+
+                for (const element of items) {
+                    this.handleElement(element)
+                }
+
+                console.timeEnd('generating rdf')
+
+                this.rdfStream.on('close', () => {
+                    console.log('about to run live loader')
+                    console.time('running live loader')
+                    const cmd = `dgraph live -C -z localhost:5080 -c 1 -r ${tempPath}`
+                    console.log(cmd)
+                    child_process
+                        .exec(cmd)
+                        .then(([out, error]) => {
+                            console.log('OUT=====')
+                            console.log(out)
+                            console.log('ERR=====')
+                            console.log(error)
+
+                            console.timeEnd('running live loader')
+                        })
+                        .then(resolve)
+                        .catch(e => {
+                            console.log('FAILURE')
+                            console.timeEnd('running live loader')
+                            reject(e)
+                        })
+                })
+            } catch (e) {
+                reject(e)
+            } finally {
+                this.rdfStream.end()
             }
         })
-
-        console.timeEnd('setup')
-
-        console.log('nquads:', this.mutation.getSetList().length)
-        console.log('calling mutate')
-
-        const transaction = this.client.newTxn()
-        try {
-            console.time('mutate')
-            const assigned = await transaction.mutate(this.mutation)
-            console.timeEnd('mutate')
-
-            console.log('calling commit')
-            console.time('commit')
-            await transaction.commit()
-            console.timeEnd('commit')
-            console.log(assigned.toObject())
-        } finally {
-            await transaction.discard()
-        }
     }
 
-    /**
-     * Insert data related to the given edge into the mutation.
-     */
-    private insertEdge(element: Edge): void {
-        // 1:n edges get flattened into multiple 1:1 edges
-        const inVs = Edge.is1N(element) ? element.inVs : [element.inV]
-        for (const inV of inVs || []) {
-            const nquad = makeTriplet(uidRef(element.outV), element.label, uidRef(inV))
-            this.mutation.addSet(nquad)
-            if (element.label === EdgeLabels.item) {
-                // Make sure the ranges linked by item are linked to the document with a contains
-                // Otherwise it would not be possible to determine which document result ranges belong too
-                // This depends on contains having reverse edges enabled
-                this.mutation.addSet(makeTriplet(uidRef(element.document), EdgeLabels.contains, uidRef(inV)))
+    private vertexHandlerMap: HandlerMap = {}
+
+    private initHandlers(): void {
+        // Register vertex handlers
+        this.vertexHandlerMap[VertexLabels.definitionResult] = e => this.handleDefinitionResult(e)
+        this.vertexHandlerMap[VertexLabels.document] = e => this.handleDocument(e)
+        this.vertexHandlerMap[VertexLabels.hoverResult] = e => this.handleHover(e)
+        this.vertexHandlerMap[VertexLabels.metaData] = e => this.handleMetaData(e)
+        this.vertexHandlerMap[VertexLabels.moniker] = e => this.handleMoniker(e)
+        this.vertexHandlerMap[VertexLabels.packageInformation] = e => this.handlePackageInformation(e)
+        this.vertexHandlerMap[VertexLabels.range] = e => this.handleRange(e)
+        this.vertexHandlerMap[VertexLabels.referenceResult] = e => this.handleReferenceResult(e)
+        this.vertexHandlerMap[VertexLabels.resultSet] = e => this.handleResultSet(e)
+    }
+
+    private handleElement(element: Vertex | Edge): void {
+        if (element.type === ElementTypes.vertex) {
+            const handler = this.vertexHandlerMap[element.label]
+            if (handler) {
+                handler(element)
             }
+        } else {
+            this.handleEdge(element)
         }
     }
 
-    /**
-     * Insert data related to te given vertex into the mutation.
-     */
-    private insertVertex(element: Vertex): void {
-        if (element.label === VertexLabels.event) {
-            return
-        }
+    private handleDefinitionResult(vertex: DefinitionResult): void {
+        // FIXME - no properties
+    }
 
-        if (element.label === VertexLabels.metaData) {
-            this.insertMetadata(element)
-            return
-        }
-
+    private handleDocument(vertex: Document): void {
         if (!this.rootInfo) {
-            // TODO - these should be generic validation errors
-            throw Object.assign(
-                new Error('The first vertex must be a metaData vertex that specifies the projectRoot URI'),
-                { status: 422 }
-            )
+            throw new Error('No root info')
         }
 
-        const { type, ...rest } = element
-        const vertexId = String(element.id)
-        const vertexProperties = this.getVertexProperties(element, rest)
-
-        if (element.label === VertexLabels.document) {
-            // Add contains edge from commit to document
-            this.mutation.addSet(makeTriplet(this.rootInfo.commitUidRef, EdgeLabels.contains, uidRef(vertexId)))
-        }
-
-        // Add subgraph for vertex properties
-        this.addObject(
-            null,
-            vertexProperties,
-            vertexId,
-            validate(this.schema.definitions!.Vertex, {
-                type,
-                ...vertexProperties,
-            })
-        )
+        const id = uidRef(vertex.id)
+        const path = decodeURIComponent(relativeUrl(this.rootInfo.rootUri, new URL(vertex.uri)))
+        this.rdfStream.write(`${this.rootInfo.commitUidRef} <${EdgeLabels.contains}> ${id} .\n`)
+        this.rdfStream.write(`${id} <Document.path> ${makeValue(path)} .\n`)
     }
 
-    /**
-     * Insert data associated with the project. This is assumed to be at the top
-     * level of the dump. This method populates the `rootInfo` of the object, which
-     * may be used by other methods to construct relative URIs.
-     */
-    private insertMetadata(element: MetaData): void {
-        if (!element.projectRoot) {
+    private handleHover(vertex: HoverResult): void {
+        const id = uidRef(vertex.id)
+        const hoverId = this.nextObjectId()
+        const markupId = this.nextObjectId()
+        const normalized = normalizeHover(vertex.result)
+        this.rdfStream.write(`${id} <HoverResult.result> ${hoverId} .\n`)
+        this.rdfStream.write(`${hoverId} <Hover.contents> ${markupId} .\n`)
+        this.rdfStream.write(`${markupId} <MarkupContent.kind> "markdown" .\n`)
+        this.rdfStream.write(`${markupId} <MarkupContent.value> ${makeValue(normalized)} .\n`)
+    }
+
+    private handleMetaData(vertex: MetaData): void {
+        if (!vertex.projectRoot) {
             // TODO - these should be generic validation errors
             throw Object.assign(new Error(`${VertexLabels.metaData} must have a projectRoot field.`), {
                 status: 422,
             })
         }
 
-        const rootUri = new URL(element.projectRoot)
+        const rootUri = new URL(vertex.projectRoot)
         // Needed to properly resolve relative URLs
         if (!rootUri.pathname.endsWith('/')) {
             rootUri.pathname += '/'
         }
 
-        if (!semver.satisfies(element.version, '^0.4.0')) {
+        if (!semver.satisfies(vertex.version, '^0.4.0')) {
             // TODO - these should be generic validation errors
-            throw Object.assign(new Error(`Unsupported LSIF version ${element.version}. Supported ^0.4.3`), {
+            throw Object.assign(new Error(`Unsupported LSIF version ${vertex.version}. Supported ^0.4.3`), {
                 status: 422,
             })
         }
@@ -159,142 +170,61 @@ export class DgraphImporter {
             commitUidRef,
         }
 
-        // Create repository and commit vertexes (not part of LSIF spec)
-        this.mutation.addSet(makeTriplet(repoUidRef, 'Repository.name', makeValue(this.repository)))
-        this.mutation.addSet(makeTriplet(repoUidRef, 'Repository.label', makeValue('repository')))
-        this.mutation.addSet(makeTriplet(repoUidRef, EdgeLabels.contains, commitUidRef))
-        this.mutation.addSet(makeTriplet(commitUidRef, 'Commit.oid', makeValue(this.commit)))
-        this.mutation.addSet(makeTriplet(commitUidRef, 'Commit.label', makeValue('commit')))
+        this.rdfStream.write(`${repoUidRef} <Repository.name> ${makeValue(this.repository)} .\n`)
+        this.rdfStream.write(`${repoUidRef} <Repository.label> ${makeValue('repository')} .\n`)
+        this.rdfStream.write(`${repoUidRef} <${EdgeLabels.contains}> ${commitUidRef} .\n`)
+        this.rdfStream.write(`${commitUidRef} <Commit.oid> ${makeValue(this.commit)} .\n`)
+        this.rdfStream.write(`${commitUidRef} <Commit.label> ${makeValue('commit')} .\n`)
     }
 
-    /**
-     * Explicitly construct metadata for a generic vertex.
-     */
-    private getVertexProperties(element: Vertex, defaultProperties: object): object {
-        if (element.label === VertexLabels.document) {
-            return this.getDocumentVertexProperties(element)
-        } else if (element.label === VertexLabels.hoverResult) {
-            return this.getHoverResultVertexProperties(element)
-        } else if (element.label === VertexLabels.range) {
-            return this.getRangeVertexProperties(element)
-        }
-
-        return defaultProperties
+    private handleMoniker(vertex: Moniker): void {
+        const id = uidRef(vertex.id)
+        this.rdfStream.write(`${id} <Moniker.scheme> ${makeValue(vertex.scheme)} .\n`)
+        this.rdfStream.write(`${id} <Moniker.kind> ${makeValue(vertex.kind)} .\n`)
+        this.rdfStream.write(`${id} <Moniker.identifier> ${makeValue(vertex.identifier)} .\n`)
     }
 
-    /**
-     * Explicitly construct metadata for a document vertex.
-     */
-    private getDocumentVertexProperties(element: Document): object {
-        // Ignore content for now to not bloat DB
-        const { uri, contents, ...rest } = element
-        // Store root-relative path instead of URI to exclude context from the local machine
-        const path = decodeURIComponent(relativeUrl(this.rootInfo!.rootUri, new URL(uri)))
-        return { ...rest, path }
+    private handlePackageInformation(vertex: PackageInformation): void {
+        const id = uidRef(vertex.id)
+        this.rdfStream.write(`${id} <PackageInformation.name> ${makeValue(vertex.name)} .\n`)
+        this.rdfStream.write(`${id} <PackageInformation.manager> ${makeValue(vertex.manager)} .\n`)
+        this.rdfStream.write(`${id} <PackageInformation.version> ${makeValue(vertex.version)} .\n`)
     }
 
-    /**
-     * Explicitly construct metadata for a hover result vertex.
-     */
-    private getHoverResultVertexProperties(element: HoverResult): object {
-        // normalize to MarkupContent to remove union types
-        return { ...element, result: normalizeHover(element.result) }
+    private handleRange(vertex: Range): void {
+        const id = uidRef(vertex.id)
+        this.rdfStream.write(`${id} <Range.startLine> ${makeValue(vertex.start.line)} .\n`)
+        this.rdfStream.write(`${id} <Range.startCharacter> ${makeValue(vertex.start.character)} .\n`)
+        this.rdfStream.write(`${id} <Range.endLine> ${makeValue(vertex.end.line)} .\n`)
+        this.rdfStream.write(`${id} <Range.endCharacter> ${makeValue(vertex.end.character)} .\n`)
     }
 
-    /**
-     * Explicitly construct metadata for a range vertex.
-     */
-    private getRangeVertexProperties(element: Range): object {
-        // Flatten range properties so it's possible to query them
-        const { start, end, ...rest } = element
-        return { ...rest, ...flattenRange(element) }
+    private handleReferenceResult(vertex: ReferenceResult): void {
+        // FIXME - no properties
     }
 
-    /**
-     * TODO - document
-     */
-    private addObject(parentConnection: ParentConnection | null, obj: object, objId: string, schema: Schema): void {
-        // if (!schema.title) {
-        //     throw Object.assign(new Error('Passed schema has no title'), { schema, obj })
-        // }
-
-        // For objects, start a new node and add NQuads for its properties recursively
-        // If there is a parent, link from it
-        if (parentConnection) {
-            this.mutation.addSet(
-                makeTriplet(uidRef(parentConnection.subjectId), parentConnection.predicate, uidRef(objId))
-            )
-        }
-
-        for (const [propertyName, propertyValue] of Object.entries(obj)) {
-            // TODO - this is the only place that any schema is used
-            // Can we get a substitutable value that doesn't require
-            // any of the schema crud?
-
-            this.addAny(
-                { subjectId: objId, predicate: `${schema.title}.${propertyName}` },
-                propertyValue,
-                schema.properties![propertyName]
-            )
-        }
+    private handleResultSet(vertex: ResultSet): void {
+        // FIXME - no properties
     }
 
-    /**
-     * TODO - document
-     */
-    private addAny(parentConnection: ParentConnection, value: unknown, schema: Schema): void {
-        // Ignore undefined or null properties
-        if (value === undefined || value === null) {
-            return
-        }
+    private handleEdge(edge: Edge): void {
+        const inVs = Edge.is1N(edge) ? edge.inVs : [edge.inV]
+        for (const inV of inVs || []) {
+            this.rdfStream.write(`${uidRef(edge.outV)} <${edge.label}> ${uidRef(inV)} .\n`)
 
-        if (typeof value === 'object' && value !== null) {
-            // For arrays, create multiple edges from object to every array item
-            // CAVEAT 1: The order of array items get lost here.
-            // In general, LSP arrays are unordered sets.
-            // If a list is not, we could add the index as a facet.
-            // CAVEAT 2: Nested lists get flattened.
-            // I am not aware of any nested lists in LSIF.
-            // Possible alternative: create a node for the array.
-            if (Array.isArray(value)) {
-                for (const [index, item] of value.entries()) {
-                    const itemSchema = (schema.items as Schema[])[index]
-                    this.addAny(parentConnection, item, itemSchema)
-                }
-
-                return
+            if (edge.label === EdgeLabels.item) {
+                this.rdfStream.write(`${uidRef(edge.document)} <${EdgeLabels.contains}> ${uidRef(inV)} .\n`)
             }
-
-            this.addObject(parentConnection, value, this.nextObjectId(), schema)
-            return
         }
-
-        // For scalars, create an edge from object to scalar value
-        this.mutation.addSet(
-            makeTriplet(uidRef(parentConnection.subjectId), parentConnection.predicate, makeValue(value))
-        )
     }
 
-    /**
-     * Generate a unique string identifier.
-     */
+    private idCounter = 0
+
     private nextObjectId(): string {
-        return `lsifobject${this.idCounter++}`
+        return uidRef(`lsifobject${this.idCounter++}`)
     }
 }
 
-/**
- * An object used to track contains relationships as mutations as
- * the predicates of an LSIF dump are read.
- */
-interface ParentConnection {
-    subjectId: string
-    predicate: string
-}
-
-/**
- * Returns the relative URL from `from` to `to` (the inverse of `url.resolve`).
- */
 function relativeUrl(from: URL, to: URL): string {
     return RelateUrl.relate(from.href, to.href, {
         defaultPorts: {}, // Do not remove default ports
@@ -303,28 +233,19 @@ function relativeUrl(from: URL, to: URL): string {
     })
 }
 
-/**
- * Ensure that the LSP hover object always uses MarkupContent as Dgraph does
- * not have support for union types.
- */
-function normalizeHover(hover: Hover): Hover {
-    const normalized = (Array.isArray(hover.contents) ? hover.contents : [hover.contents])
+function normalizeHover(hover: lsp.Hover): string {
+    return (Array.isArray(hover.contents) ? hover.contents : [hover.contents])
         .map(normalizeContent)
         .filter(s => !!s.trim())
         .join('\n\n---\n\n')
-
-    return { ...hover, contents: { kind: MarkupKind.Markdown, value: normalized } }
 }
 
-/**
- * Convert (possibly) marked content into a bare string.
- */
 function normalizeContent(content: string | lsp.MarkupContent | { language: string; value: string }): string {
     if (typeof content === 'string') {
         return content
     }
 
-    if (MarkupContent.is(content)) {
+    if (lsp.MarkupContent.is(content)) {
         return content.value
     }
 
@@ -335,48 +256,22 @@ function normalizeContent(content: string | lsp.MarkupContent | { language: stri
     return ''
 }
 
-/**
- * Create a placeholder UID reference.
- */
 function uidRef(id: string | number): string {
-    return '_:' + id
+    return `_:${id}`
 }
 
-/**
- * Create a Dgraph triplet from the subject UID, a globally unique predicate
- * (this is `Type.property` by convention), and a UID or scalar object value.
- */
-function makeTriplet(subject: string, predicate: string, object: Value | string): NQuad {
-    const nquad = new NQuad()
-    nquad.setSubject(subject)
-    nquad.setPredicate(predicate)
-
-    if (typeof object === 'string') {
-        nquad.setObjectId(object)
-    } else {
-        nquad.setObjectValue(object)
+function makeValue(value: any): string {
+    if (typeof value === 'string') {
+        return JSON.stringify(value)
     }
 
-    return nquad
-}
-
-/**
- * Convert a TS scalar value into a Dgraph value.
- */
-function makeValue(value: any): Value {
-    const graphValue = new Value()
+    if (typeof value === 'boolean') {
+        return `"${value}^^<xs:boolean>`
+    }
 
     if (typeof value === 'number') {
-        if (Number.isInteger(value)) {
-            graphValue.setIntVal(value)
-        } else {
-            graphValue.setDoubleVal(value)
-        }
-    } else if (typeof value === 'boolean') {
-        graphValue.setBoolVal(value)
-    } else if (typeof value === 'string') {
-        graphValue.setStrVal(value)
+        return `"${value}"^^<xs:float>`
     }
 
-    return graphValue
+    return '"<UNKNOWN>"'
 }

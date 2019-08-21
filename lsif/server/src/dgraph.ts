@@ -5,7 +5,6 @@ import { DgraphClient, DgraphClientStub, Operation } from 'dgraph-js'
 import { DgraphImporter } from './dgraph.importer'
 import { Edge, Vertex } from 'lsif-protocol'
 import { fs } from 'mz'
-import { getJsonSchema } from './dgraph.schema'
 import { unflattenRange, FlatRange } from './dgraph.range'
 import dedent from 'dedent'
 import chalk from 'chalk'
@@ -13,7 +12,7 @@ import chalk from 'chalk'
 /**
  * Which host and port to use to connect to the Dgraph gRPC server.
  */
-const DGRAPH_ADDRESS = process.env.DGRAPH_ADDRESS || undefined
+const DGRAPH_ADDRESS = process.env.DGRAPH_ADDRESS || 'localhost:9080'
 
 /**
  * Backend for SQLite dumps stored in Dgraph.
@@ -67,6 +66,9 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
         const { processStats } = await instrument(async () => {
             const contents = await fs.readFile(tempPath, 'utf-8')
             const lines = contents.trim().split('\n')
+
+            console.log('about to parse file')
+            console.time('parsing file')
             const items = lines.map((line, index): Vertex | Edge => {
                 try {
                     return JSON.parse(line)
@@ -75,9 +77,9 @@ export class DgraphBackend implements Backend<DgraphQueryRunner> {
                     throw err
                 }
             })
+            console.timeEnd('parsing file')
 
-            const schema = await getJsonSchema()
-            const importer = new DgraphImporter(this.client, repository, commit, schema)
+            const importer = new DgraphImporter(repository, commit)
             await importer.import(items)
         })
 
