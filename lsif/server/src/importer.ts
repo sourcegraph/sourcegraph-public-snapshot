@@ -10,7 +10,13 @@ import {
     ReferenceResultData,
     HoverData,
     PackageInformationData,
-    DocumentData,
+    DocumentMeta,
+    WrappedDocumentData,
+    XrepoSymbols,
+    SymbolReference,
+    Package,
+    FlattenedRange,
+    MonikerScopedResultData,
 } from './entities'
 import {
     Id,
@@ -18,7 +24,6 @@ import {
     EdgeLabels,
     Vertex,
     Edge,
-    Uri,
     MonikerKind,
     ItemEdgeProperties,
     Document,
@@ -44,68 +49,16 @@ import {
 
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
-//
-//
-
-export interface XrepoSymbols {
-    imported: SymbolReference[]
-    exported: Package[]
-}
-
-export interface SymbolReference {
-    scheme: string
-    name: string
-    version: string
-    identifier: string
-}
-
-export interface Package {
-    scheme: string
-    name: string
-    version: string
-}
-
-//
-//
-
-interface DocumentMeta {
-    id: Id
-    uri: Uri
-}
-
-//
-//
-
-interface FlattenedRange {
-    startLine: number
-    startCharacter: number
-    endLine: number
-    endCharacter: number
-}
-
-//
-//
-
-interface WrappedDocumentData extends DocumentData {
-    id: Id
-    uri: string
-    contains: Id[]
-    definitions: MonikerScopedResultData<DefinitionResultData>[]
-    references: MonikerScopedResultData<ReferenceResultData>[]
-}
-
-interface MonikerScopedResultData<T> {
-    moniker: MonikerData
-    data: T
-}
-
-//
-//
-
+/**
+ * `HandlerMap``TODO
+ */
 interface HandlerMap {
     [K: string]: (element: any) => Promise<void>
 }
 
+/**
+ * `Importer` TODO
+ */
 export class Importer {
     // Handler vtables
     private vertexHandlerMap: HandlerMap = {}
@@ -229,14 +182,14 @@ export class Importer {
         await this.defInserter.finalize()
         await this.refInserter.finalize()
 
-        const imported = this.mapMonikersIntoSet<SymbolReference>(this.importedMonikers, (source, packageInfo) => ({
+        const imported: SymbolReference[] = this.mapMonikersIntoSet(this.importedMonikers, (source, packageInfo) => ({
             scheme: source.scheme,
             name: packageInfo.name,
             version: packageInfo.version,
             identifier: source.identifier,
         }))
 
-        const exported = this.mapMonikersIntoSet<Package>(this.exportedMonikers, (source, packageInfo) => ({
+        const exported: Package[] = this.mapMonikersIntoSet(this.exportedMonikers, (source, packageInfo) => ({
             scheme: source.scheme,
             name: packageInfo.name,
             version: packageInfo.version,

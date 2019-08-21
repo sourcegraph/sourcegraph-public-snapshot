@@ -1,4 +1,4 @@
-import { Id, MonikerKind } from 'lsif-protocol'
+import { Id, MonikerKind, Uri } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 
 export interface DocumentData {
@@ -57,3 +57,61 @@ export interface PackageInformationData {
     name: string
     version: string
 }
+
+//
+//
+
+export interface XrepoSymbols {
+    imported: SymbolReference[]
+    exported: Package[]
+}
+
+export interface SymbolReference {
+    scheme: string
+    name: string
+    version: string
+    identifier: string
+}
+
+export interface Package {
+    scheme: string
+    name: string
+    version: string
+}
+
+//
+//
+
+export interface DocumentMeta {
+    id: Id
+    uri: Uri
+}
+
+//
+//
+
+export interface FlattenedRange {
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
+}
+
+//
+//
+
+export interface WrappedDocumentData extends DocumentData {
+    id: Id
+    uri: string
+    contains: Id[]
+    definitions: MonikerScopedResultData<DefinitionResultData>[]
+    references: MonikerScopedResultData<ReferenceResultData>[]
+}
+
+export interface MonikerScopedResultData<T> {
+    moniker: MonikerData
+    data: T
+}
+
+//
+//

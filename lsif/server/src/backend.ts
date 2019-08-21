@@ -2,12 +2,13 @@ import * as path from 'path'
 import { fs, readline } from 'mz'
 import { Database } from './database'
 import { hasErrorCode, readEnv } from './util'
-import { SymbolReference, Importer } from './importer'
+import { Importer } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
 import { ConnectionCache, DocumentCache } from './cache'
 import { DefModel, MetaModel, RefModel, DocumentModel } from './models'
 import { Edge, Vertex } from 'lsif-protocol'
+import { SymbolReference } from './entities'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
@@ -79,8 +80,7 @@ export class SQLiteBackend {
                     }
                 }
 
-                const value = await importer.finalize()
-                return value
+                return await importer.finalize()
             }
         )
 
@@ -92,7 +92,8 @@ export class SQLiteBackend {
             }
         > = new Map()
 
-        // TODO - rewrite, this is messy
+        // TODO - do in bulk
+        // TODO - do in transaction
 
         for (const importedSymbol of imported) {
             const hash = `${importedSymbol.scheme}::${importedSymbol.name}::${importedSymbol.version}`
@@ -116,7 +117,6 @@ export class SQLiteBackend {
             )
         }
 
-        // TODO - need to do in bulk
         for (const exportedPackage of exported) {
             await this.xrepoDatabase.addPackage(
                 exportedPackage.scheme,
