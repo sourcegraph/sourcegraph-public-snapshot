@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
-import { baseURL, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
+import { sourcegraphBaseUrl, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -140,7 +140,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=alksdjflaksjdflkasjdf')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
                 await driver.page.waitForSelector('.e2e-search-results')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-results').length >= 1)
                 await driver.page.evaluate(() => {
@@ -158,7 +158,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error type:", expect a few results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=%22error+type:%22')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=%22error+type:%22')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
             },
             5 * 1000
@@ -166,7 +166,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -174,7 +174,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -182,7 +182,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error count:>1000", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error+count:1000')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=error+count:1000')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -190,7 +190,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "repohasfile:copying", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=repohasfile:copying')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=repohasfile:copying')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
