@@ -408,7 +408,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
-		defaultRepos, err = defaultRepositories(ctx)
+		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+			return zoektIndexedRepos(ctx, IndexedSearch(), revs, nil)
+		}
+		getRawDefaultRepos := func(ctx context.Context) ([]*types.Repo, error) {
+			return db.DefaultRepos.List(ctx)
+		}
+		defaultRepos, err = defaultRepositories(ctx, getRawDefaultRepos, getIndexedRepos)
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
@@ -508,9 +514,12 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	return repoRevisions, missingRepoRevisions, overLimit, err
 }
 
-func defaultRepositories(ctx context.Context) ([]*types.Repo, error) {
+type indexedReposFunc func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error)
+type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
+
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, getIndexedRepos indexedReposFunc) ([]*types.Repo, error) {
 	// Get the list of default repos from the db.
-	defaultRepos, err := db.DefaultRepos.List(ctx)
+	defaultRepos, err := getRawDefaultRepos(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying db for default repos")
 	}
@@ -523,8 +532,8 @@ func defaultRepositories(ctx context.Context) ([]*types.Repo, error) {
 		}
 		defaultRepoRevs = append(defaultRepoRevs, rr)
 	}
-	zoekt := IndexedSearch()
-	indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, defaultRepoRevs, nil)
+
+	indexed, unindexed, err := getIndexedRepos(ctx, defaultRepoRevs)
 	if err != nil {
 		return nil, errors.Wrap(err, "finding subset of default repos that are indexed")
 	}
@@ -541,13 +550,13 @@ func defaultRepositories(ctx context.Context) ([]*types.Repo, error) {
 		log15.Info("some unindexed repos found; listing up to 10 of them", "unindexed", names)
 	}
 	// Exclude any that aren't indexed.
-	indexedMap := make(map[api.RepoName]bool, len(indexed))
+	indexedMap := make(map[api.RepoID]bool, len(indexed))
 	for _, r := range indexed {
-		indexedMap[r.Repo.Name] = true
+		indexedMap[r.Repo.ID] = true
 	}
 	var defaultRepos2 []*types.Repo
 	for _, r := range defaultRepos {
-		if indexedMap[r.Name] {
+		if indexedMap[r.ID] {
 			defaultRepos2 = append(defaultRepos2, r)
 		}
 	}

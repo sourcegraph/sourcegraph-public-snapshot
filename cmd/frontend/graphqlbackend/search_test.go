@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"reflect"
 	"testing"
 
@@ -235,4 +236,49 @@ func testStringResult(result *searchSuggestionResolver) string {
 		return "<removed>"
 	}
 	return name
+}
+
+func Test_defaultRepositories(t *testing.T) {
+	tcs := []struct {
+		name             string
+		defaultsInDb     []string
+		indexedRepoNames []string
+		want             []string
+	}{
+		{
+			name:             "none in db => none returned",
+			defaultsInDb:     nil,
+			indexedRepoNames: nil,
+			want:             nil,
+		},
+		{
+			name:             "two in db, one indexed => indexed repo returned",
+			defaultsInDb:     []string{"unindexedrepo", "indexedrepo"},
+			indexedRepoNames: []string{"indexedrepo"},
+			want:             []string{"indexedrepo"},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			indexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+				return indexed, unindexed, nil
+			}
+			getRawDefaultRepos := func(ctx context.Context) ([]*types.Repo, error) {
+				var drs []*types.Repo
+				return drs, nil
+			}
+			ctx := context.Background()
+			drs, err := defaultRepositories(ctx, getRawDefaultRepos, indexedRepos)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var drNames []string
+			for _, dr := range drs {
+				drNames = append(drNames, string(dr.Name))
+			}
+			if !reflect.DeepEqual(drNames, tc.want) {
+				t.Errorf("names of default repos = %v, want %v", drNames, tc.want)
+			}
+		})
+	}
 }
