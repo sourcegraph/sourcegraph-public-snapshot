@@ -283,20 +283,21 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		for _, image := range []string{dockerHubImage, gcrImage} {
 			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
 				cmds = append(cmds,
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, image, c.version)),
 					bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
 				)
 			}
 
 			if app == "server" && c.releaseBranch {
 				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", image, c.version, image, c.branch)),
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", baseImage, c.version, image, c.branch)),
 					bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, c.branch)),
 				)
 			}
 
 			if insiders {
 				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, c.version, image)),
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", baseImage, c.version, image)),
 					bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
 				)
 			}
