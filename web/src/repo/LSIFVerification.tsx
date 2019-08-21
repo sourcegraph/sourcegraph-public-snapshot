@@ -89,14 +89,14 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
         return (
             <div className="lsif-verification">
                 {this.state.tokenOrError && !isErrorLike(this.state.tokenOrError) ? (
-                    <div className="alert alert-success">
-                        <CheckIcon className="icon-inline" /> Topic found. Here's the LSIF upload token:
+                    <div className="alert alert-success mb-1">
+                        <CheckIcon className="icon-inline mb-1" /> Topic found. Here's the LSIF upload token:
                         <CopyableText text={this.state.tokenOrError} size={128} />
                         You can remove the topic now.
                     </div>
                 ) : (
                     <>
-                        <div>
+                        <div className="mb-1">
                             To get an LSIF upload token for this repository, prove that you own the repository by adding
                             a GitHub topic to <a href={`https://${this.props.repoName}`}>{this.props.repoName}</a> with
                             the following name:
@@ -104,10 +104,10 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
 
                         {this.state.challengeOrError ? (
                             <>
-                                <CopyableText text={this.state.challengeOrError} size={16} />
+                                <CopyableText className="mb-1" text={this.state.challengeOrError} size={16} />
                                 <button
                                     type="button"
-                                    className="btn btn-primary"
+                                    className="btn btn-primary mb-1"
                                     disabled={this.state.verifying}
                                     onClick={this.onClickVerify}
                                 >
@@ -115,11 +115,11 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
                                     Check now
                                 </button>
                                 {isErrorLike(this.state.tokenOrError) && (
-                                    <div className="alert alert-danger">{this.state.tokenOrError.toString()}</div>
+                                    <div className="alert alert-danger mb-1">{this.state.tokenOrError.toString()}</div>
                                 )}
                             </>
                         ) : (
-                            <div>Loading challenge...</div>
+                            <div className="mb-1">Loading challenge...</div>
                         )}
                     </>
                 )}
