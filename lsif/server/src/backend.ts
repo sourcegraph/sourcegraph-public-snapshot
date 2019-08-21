@@ -8,7 +8,6 @@ import { Readable } from 'stream'
 import { ConnectionCache, DocumentCache } from './cache'
 import { DefModel, MetaModel, RefModel, DocumentModel } from './models'
 import { Edge, Vertex } from 'lsif-protocol'
-import { SymbolReference } from './entities'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
@@ -55,15 +54,15 @@ export class SQLiteBackend {
             }
         }
 
-        const { imported, exported } = await this.connectionCache.withConnection(
+        const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
             [DefModel, DocumentModel, MetaModel, RefModel],
-            async connection => {
+            async entityManager => {
                 // TODO - see if these are being applied
-                await connection.query('pragma synchronous = OFF')
-                await connection.query('pragma journal_mode = OFF')
+                // await connection.query('pragma synchronous = OFF')
+                // await connection.query('pragma journal_mode = OFF')
 
-                const importer = new Importer(connection)
+                const importer = new Importer(entityManager)
 
                 let element: Vertex | Edge
                 for await (const line of readline.createInterface({ input })) {
@@ -84,48 +83,8 @@ export class SQLiteBackend {
             }
         )
 
-        const identifiers: Map<
-            string,
-            {
-                importedSymbol: SymbolReference
-                ids: Set<string>
-            }
-        > = new Map()
-
-        // TODO - do in bulk
-        // TODO - do in transaction
-
-        for (const importedSymbol of imported) {
-            const hash = `${importedSymbol.scheme}::${importedSymbol.name}::${importedSymbol.version}`
-            const result = identifiers.get(hash)
-            if (result) {
-                const { ids } = result
-                ids.add(importedSymbol.identifier)
-            } else {
-                identifiers.set(hash, { importedSymbol, ids: new Set([importedSymbol.identifier]) })
-            }
-        }
-
-        for (const { importedSymbol, ids } of identifiers.values()) {
-            await this.xrepoDatabase.addReference(
-                importedSymbol.scheme,
-                importedSymbol.name,
-                importedSymbol.version,
-                repository,
-                commit,
-                Array.from(ids)
-            )
-        }
-
-        for (const exportedPackage of exported) {
-            await this.xrepoDatabase.addPackage(
-                exportedPackage.scheme,
-                exportedPackage.name,
-                exportedPackage.version,
-                repository,
-                commit
-            )
-        }
+        await this.xrepoDatabase.addPackages(repository, commit, packages)
+        await this.xrepoDatabase.addReferences(repository, commit, references)
     }
 
     /**

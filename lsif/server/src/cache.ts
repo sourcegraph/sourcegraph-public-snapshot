@@ -1,4 +1,4 @@
-import { Connection, createConnection } from 'typeorm'
+import { Connection, createConnection, EntityManager } from 'typeorm'
 import { DocumentData } from './entities'
 import { Id } from 'lsif-protocol'
 import Yallist from 'yallist'
@@ -185,6 +185,15 @@ export class ConnectionCache extends GenericCache<string, Connection> {
             })
 
         return this.withValue(database, factory, callback)
+    }
+
+    // TODO - document
+    public withTransactionalEntityManager<T>(
+        database: string,
+        entities: Function[],
+        callback: (entityManager: EntityManager) => Promise<T>
+    ): Promise<T> {
+        return this.withConnection(database, entities, connection => connection.transaction(em => callback(em)))
     }
 
     // Each handle is roughly the same size.

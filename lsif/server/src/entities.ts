@@ -62,21 +62,19 @@ export interface PackageInformationData {
 //
 
 export interface XrepoSymbols {
-    imported: SymbolReference[]
-    exported: Package[]
-}
-
-export interface SymbolReference {
-    scheme: string
-    name: string
-    version: string
-    identifier: string
+    packages: Package[]
+    references: SymbolReferences[]
 }
 
 export interface Package {
     scheme: string
     name: string
     version: string
+}
+
+export interface SymbolReferences {
+    package: Package
+    identifiers: string[]
 }
 
 //

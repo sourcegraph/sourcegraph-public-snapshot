@@ -1,7 +1,9 @@
-import { Connection } from 'typeorm'
+import { Connection, EntityManager } from 'typeorm'
 import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
+import { Package, SymbolReferences } from './entities'
+import { Inserter } from './inserter'
 
 /**
  * `XrepoDatabase` is a SQLite database that stitches together the references
@@ -37,6 +39,7 @@ export class XrepoDatabase {
     }
 
     /**
+     * TODO - redocument
      * Correlate a `repository` and `commit` with a unique package manager `scheme`, `name`, and `version`.
      *
      * @param scheme The package manager scheme (e.g. npm, pip).
@@ -45,15 +48,15 @@ export class XrepoDatabase {
      * @param repository The repository that defines the given package.
      * @param commit The commit of the that defines the given package.
      */
-    public async addPackage(
-        scheme: string,
-        name: string,
-        version: string,
-        repository: string,
-        commit: string
-    ): Promise<void> {
-        return await this.withConnection(async connection => {
-            await connection.getRepository(PackageModel).save({ scheme, name, version, repository, commit })
+    public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
+        return await this.withTransactionalEntityManager(async entityManager => {
+            const inserter = new Inserter(entityManager, PackageModel, 6)
+            for (const pkg of packages) {
+                // TODO - upsert
+                await inserter.insert({ repository, commit, ...pkg })
+            }
+
+            await inserter.finalize()
         })
     }
 
@@ -87,6 +90,7 @@ export class XrepoDatabase {
     }
 
     /**
+     * TODO - redocument
      * Correlate the given `repository` and `commit` with the given package and mark the
      * set of `uris` that are used within that pacakge.
      *
@@ -97,18 +101,21 @@ export class XrepoDatabase {
      * @param commit The commit that depends on the given pacakge.
      * @param uris The set of URIs that are used by this repository and commit in the given package.
      */
-    public async addReference(
-        scheme: string,
-        name: string,
-        version: string,
-        repository: string,
-        commit: string,
-        uris: string[]
-    ): Promise<void> {
-        return await this.withConnection(async connection => {
-            await connection
-                .getRepository(ReferenceModel)
-                .save({ scheme, name, version, repository, commit, filter: await createFilter(uris) })
+    public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
+        return await this.withTransactionalEntityManager(async entityManager => {
+            const inserter = new Inserter(entityManager, ReferenceModel, 7)
+            for (const reference of references) {
+                // TODO - upsert
+
+                await inserter.insert({
+                    repository,
+                    commit,
+                    filter: await createFilter(reference.identifiers), // TODO - rename from URIs
+                    ...reference.package,
+                })
+            }
+
+            await inserter.finalize()
         })
     }
 
@@ -120,5 +127,19 @@ export class XrepoDatabase {
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], callback)
+    }
+
+    /**
+     * Invoke `callback` with a transactional SQLite manager manager object
+     * obtained from the cache or created on cache miss.
+     *
+     * @param callback The function invoke with the entity manager.
+     */
+    private async withTransactionalEntityManager<T>(callback: (conenection: EntityManager) => Promise<T>): Promise<T> {
+        return await this.connectionCache.withTransactionalEntityManager(
+            this.database,
+            [PackageModel, ReferenceModel],
+            callback
+        )
     }
 }

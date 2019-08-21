@@ -1,4 +1,4 @@
-import { Connection } from 'typeorm'
+import { EntityManager } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 
 /**
@@ -21,16 +21,15 @@ export class Inserter<T> {
     private batch: QueryDeepPartialEntity<T>[] = []
 
     /**
-     * Creates a new `Inserter` with the given connection (which must remain
-     * active during the lifetime of this instance), the constructor of the
-     * model object for the table, and the maximum batch size. This number
+     * Creates a new `Inserter` with the given entity manager, the constructor
+     * of the model object for the table, and the maximum batch size. This number
      * should be calculated by floor(MAX_VAR_NUMBER / fields_in_record).
      *
-     * @param connection The SQLite ocnnection.
+     * @param entityManager A transactional SQLite entity manager.
      * @param model The model object constructor.
      * @param maxBatchSize The maximum number of records that can be inserted at once.
      */
-    constructor(private connection: Connection, private model: Function, private maxBatchSize: number) {}
+    constructor(private entityManager: EntityManager, private model: Function, private maxBatchSize: number) {}
 
     /**
      * Submit a model for insertion. This may happen immediately, on a
@@ -62,7 +61,7 @@ export class Inserter<T> {
             return
         }
 
-        await this.connection
+        await this.entityManager
             .createQueryBuilder()
             .insert()
             .into(this.model)

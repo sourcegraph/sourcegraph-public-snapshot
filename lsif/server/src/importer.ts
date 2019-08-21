@@ -1,4 +1,4 @@
-import { Connection } from 'typeorm'
+import { EntityManager } from 'typeorm'
 import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { encodeJSON } from './encoding'
 import { Inserter } from './inserter'
@@ -13,7 +13,6 @@ import {
     DocumentMeta,
     WrappedDocumentData,
     XrepoSymbols,
-    SymbolReference,
     Package,
     FlattenedRange,
     MonikerScopedResultData,
@@ -112,11 +111,11 @@ export class Importer {
     private monikerSets: Map<Id, Id[]> = new Map()
 
     /**
-     * Create a new `Importer` with the given SQLite connection.
+     * Create a new `Importer` with the given entity manager.
      *
-     * @param connection A SQLite connection.
+     * @param entityManager A transactional SQLite entity manager.
      */
-    constructor(private connection: Connection) {
+    constructor(private entityManager: EntityManager) {
         // Convert f into an async function
         const wrap = <T>(f: (element: T) => void) => (element: T) => Promise.resolve(f(element))
 
@@ -149,10 +148,10 @@ export class Importer {
         // model is calculated based on the number of fields inserted. If fields
         // are added to the models, these numbers will also need to change.
 
-        this.metaInserter = new Inserter(this.connection, MetaModel, Math.floor(999 / 3))
-        this.documentInserter = new Inserter(this.connection, DocumentModel, Math.floor(999 / 2))
-        this.defInserter = new Inserter(this.connection, DefModel, Math.floor(999 / 8))
-        this.refInserter = new Inserter(this.connection, RefModel, Math.floor(999 / 8))
+        this.metaInserter = new Inserter(this.entityManager, MetaModel, Math.floor(999 / 3))
+        this.documentInserter = new Inserter(this.entityManager, DocumentModel, Math.floor(999 / 2))
+        this.defInserter = new Inserter(this.entityManager, DefModel, Math.floor(999 / 8))
+        this.refInserter = new Inserter(this.entityManager, RefModel, Math.floor(999 / 8))
     }
 
     /**
@@ -182,20 +181,47 @@ export class Importer {
         await this.defInserter.finalize()
         await this.refInserter.finalize()
 
-        const imported: SymbolReference[] = this.mapMonikersIntoSet(this.importedMonikers, (source, packageInfo) => ({
-            scheme: source.scheme,
-            name: packageInfo.name,
-            version: packageInfo.version,
-            identifier: source.identifier,
+        const temp1: Set<string> = new Set()
+        for (const id of this.exportedMonikers) {
+            const source = assertDefined(id, 'moniker', this.monikerDatas)
+            const packageInformationId = assertId(source.packageInformation)
+            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
+            temp1.add(
+                JSON.stringify({
+                    scheme: source.scheme,
+                    name: packageInfo.name,
+                    version: packageInfo.version,
+                })
+            )
+        }
+
+        const packages = Array.from(temp1).map(value => JSON.parse(value) as Package)
+
+        const temp2: Map<string, string[]> = new Map()
+        for (const id of this.importedMonikers) {
+            const source = assertDefined(id, 'moniker', this.monikerDatas)
+            const packageInformationId = assertId(source.packageInformation)
+            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
+            const pkg = JSON.stringify({
+                scheme: source.scheme,
+                name: packageInfo.name,
+                version: packageInfo.version,
+            })
+
+            const list = temp2.get(pkg)
+            if (list) {
+                list.push(source.identifier)
+            } else {
+                temp2.set(pkg, [source.identifier])
+            }
+        }
+
+        const references = Array.from(temp2).map(([key, identifiers]) => ({
+            package: JSON.parse(key) as Package,
+            identifiers,
         }))
 
-        const exported: Package[] = this.mapMonikersIntoSet(this.exportedMonikers, (source, packageInfo) => ({
-            scheme: source.scheme,
-            name: packageInfo.name,
-            version: packageInfo.version,
-        }))
-
-        return { imported, exported }
+        return { packages, references }
     }
 
     //
@@ -478,29 +504,6 @@ export class Importer {
 
     //
     // Helper Functions
-
-    /**
-     * Map each supplied moniker id through the mapper function, which takes the moniker and
-     * its package information object as parameters. Internally, this function serializes JSON
-     * objects into a set to remove duplicates, then rehydrates the object payloads.
-     *
-     * @param source The of moniker ids.
-     * @param mapper The mapping function.
-     */
-    private mapMonikersIntoSet<T>(
-        source: Set<Id>,
-        mapper: (source: MonikerData, packageInfo: PackageInformationData) => object
-    ): T[] {
-        const target: Set<string> = new Set()
-        for (const id of source) {
-            const source = assertDefined(id, 'moniker', this.monikerDatas)
-            const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
-            target.add(JSON.stringify(mapper(source, packageInfo)))
-        }
-
-        return Array.from(target).map(value => JSON.parse(value) as T)
-    }
 
     /**
      * Creates a function that takes an `element`, then correlates that
