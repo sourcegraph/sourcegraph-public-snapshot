@@ -241,8 +241,10 @@ export function getRepoDetailsFromCallsign(
  * The Phabricator extension updates the window object automatically, but in the
  * case it fails we query the conduit API.
  */
-export function getSourcegraphURLFromConduit(): Observable<string> {
-    return queryConduit<{ url: string }>('/api/sourcegraph.configuration', {}).pipe(map(({ url }) => url))
+export function getSourcegraphURLFromConduit(): Promise<string> {
+    return queryConduit<{ url: string }>('/api/sourcegraph.configuration', {})
+        .pipe(map(({ url }) => url))
+        .toPromise()
 }
 
 function getRepoDetailsFromRepoPHID(
