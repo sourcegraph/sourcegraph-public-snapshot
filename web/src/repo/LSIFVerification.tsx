@@ -90,7 +90,7 @@ export class LSIFVerification extends React.PureComponent<Props, State> {
             <div className="lsif-verification">
                 {this.state.tokenOrError && !isErrorLike(this.state.tokenOrError) ? (
                     <div className="alert alert-success mb-1">
-                        <CheckIcon className="icon-inline mb-1" /> Topic found. Here's the LSIF upload token:
+                        <CheckIcon className="icon-inline" /> Topic found. Here's the LSIF upload token:
                         <CopyableText text={this.state.tokenOrError} size={128} />
                         You can remove the topic now.
                     </div>
