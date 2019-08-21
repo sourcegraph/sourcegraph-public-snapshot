@@ -1,5 +1,5 @@
 import { from, Observable, of, throwError } from 'rxjs'
-import { map, mapTo, switchMap, catchError, tap } from 'rxjs/operators'
+import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
