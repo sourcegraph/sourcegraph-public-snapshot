@@ -29,62 +29,6 @@ function getCommitIDFromPageTag(): string {
     return match[2]
 }
 
-function isDifferentialLanded(): boolean {
-    const closedElement = document.getElementsByClassName('visual-only phui-icon-view phui-font-fa fa-check-square-o')
-    return closedElement.length > 0
-}
-
-const DIFF_LINK = /D[0-9]+\?id=([0-9]+)/i
-function getMaxDiffFromTabView(): { diffID: number; revDescription: string } | null {
-    // first, find Revision contents table box
-    const headerShells = document.getElementsByClassName('phui-header-header')
-    let revisionContents: Element | null = null
-    for (const headerShell of Array.from(headerShells)) {
-        if (headerShell.textContent === 'Revision Contents') {
-            revisionContents = headerShell
-        }
-    }
-    if (!revisionContents) {
-        return null
-    }
-    const parentContainer = revisionContents.parentElement!.parentElement!.parentElement!.parentElement!.parentElement!
-    const tables = parentContainer.getElementsByClassName('aphront-table-view')
-    for (const table of Array.from(tables)) {
-        const tableRows = (table as HTMLTableElement).rows
-        const row = tableRows[0]
-        // looking for the history tab of the revision contents table
-        if (row.children[0].textContent !== 'Diff') {
-            continue
-        }
-        const links = table.getElementsByTagName('a')
-        let max: { diffID: number; revDescription: string } | null = null
-        for (const link of Array.from(links)) {
-            const linkHref = link.getAttribute('href')
-            if (!linkHref) {
-                continue
-            }
-            const matches = DIFF_LINK.exec(linkHref)
-            if (!matches) {
-                continue
-            }
-            if (!link.parentNode!.parentNode!.childNodes[2].childNodes[0]) {
-                continue
-            }
-            const revDescription = (link.parentNode!.parentNode!.childNodes[2].childNodes[0] as any).href
-            const shaMatch = TAG_PATTERN.exec(revDescription)
-            if (!shaMatch) {
-                continue
-            }
-            max =
-                max && max.diffID > parseInt(matches[1], 10)
-                    ? max
-                    : { diffID: parseInt(matches[1], 10), revDescription: shaMatch[2] }
-        }
-        return max
-    }
-    return null
-}
-
 const DIFF_PATTERN = /Diff ([0-9]+)/
 function getDiffIdFromDifferentialPage(): number {
     const diffsContainer = document.getElementById('differential-review-stage')
@@ -160,55 +104,29 @@ export function getPhabricatorState(
         const differentialMatch = PHAB_DIFFERENTIAL_REGEX.exec(stateUrl)
         if (differentialMatch) {
             const differentialID = differentialMatch[1]
-            const comparison = differentialMatch[7]
+            const comparison = differentialMatch[3]
             const revisionID = parseInt(differentialID.split('D')[1], 10)
-            let diffID = differentialMatch[6] ? parseInt(differentialMatch[6], 10) : undefined
+            let diffID = differentialMatch[2] ? parseInt(differentialMatch[2], 10) : undefined
             if (!diffID) {
                 diffID = getDiffIdFromDifferentialPage()
             }
-            let baseRev = `phabricator/base/${diffID}`
-            let headRev = `phabricator/diff/${diffID}`
 
             let baseDiffID: number | undefined
-
-            const maxDiff = getMaxDiffFromTabView()
-            const diffLanded = isDifferentialLanded()
-            if (diffLanded && !maxDiff) {
-                throw new Error(
-                    'looking for the final diff id in the revision contents table failed. expected final row to have the commit in the description field.'
-                )
-            }
             if (comparison) {
                 // urls that looks like this: http://phabricator.aws.sgdev.org/D3?vs=on&id=8&whitespace=ignore-most#toc
-                // if the first parameter (vs=) is not 'on', not sure how to handle
-                const comparisonMatch = COMPARISON_REGEX.exec(comparison)!
-                const leftID = comparisonMatch[1]
-                if (leftID !== 'on') {
-                    baseDiffID = parseInt(leftID, 10)
-                    baseRev = `phabricator/diff/${baseDiffID}`
-                } else {
-                    baseRev = `phabricator/base/${comparisonMatch[2]}`
+                const comparisonMatch = COMPARISON_REGEX.exec(comparison)
+                const comparisonBase = comparisonMatch && comparisonMatch[1]
+                if (comparisonBase && comparisonBase !== 'on') {
+                    baseDiffID = parseInt(comparisonBase, 10)
+                    console.log(`comparison diffID ${diffID} baseDiffID ${baseDiffID}`)
                 }
-                headRev = `phabricator/diff/${comparisonMatch[2]}`
-                if (diffLanded && maxDiff && comparisonMatch[2] === `${maxDiff.diffID}`) {
-                    headRev = maxDiff.revDescription
-                    baseRev = headRev.concat('~1')
-                }
-            }
-            // check if the diff we are viewing is the max diff. if so,
-            // right is the merged rev into master, and left is master~1
-            else if (diffLanded && maxDiff && diffID === maxDiff.diffID) {
-                headRev = maxDiff.revDescription
-                baseRev = maxDiff.revDescription.concat('~1')
             }
 
             return getRepoDetailsFromRevisionID(revisionID, requestGraphQL, queryConduit).pipe(
                 map(
                     ({ rawRepoName }): DifferentialState => ({
                         baseRawRepoName: rawRepoName,
-                        baseRev,
                         headRawRepoName: rawRepoName,
-                        headRev, // This will be blank on GitHub, but on a manually staged instance should exist
                         revisionID,
                         diffID: diffID!,
                         baseDiffID,
@@ -274,35 +192,13 @@ export function getPhabricatorState(
             const diffID = parseInt(diffMatch[1], 10)
             return getRepoDetailsFromRevisionID(revisionID, requestGraphQL, queryConduit).pipe(
                 map(
-                    ({ rawRepoName }): DifferentialState => {
-                        let baseRev = `phabricator/base/${diffID}`
-                        let headRev = `phabricator/diff/${diffID}`
-
-                        const maxDiff = getMaxDiffFromTabView()
-                        const diffLanded = isDifferentialLanded()
-                        if (diffLanded && !maxDiff) {
-                            throw new Error(
-                                'Could not find the final diffID in the revision contents table. expected final row to have the commit in the description field.'
-                            )
-                        }
-
-                        // check if the diff we are viewing is the max diff. if so,
-                        // right is the merged rev into master, and left is master~1
-                        if (diffLanded && maxDiff && diffID === maxDiff.diffID) {
-                            headRev = maxDiff.revDescription
-                            baseRev = maxDiff.revDescription.concat('~1')
-                        }
-
-                        return {
-                            baseRawRepoName: rawRepoName,
-                            baseRev,
-                            headRawRepoName: rawRepoName,
-                            headRev, // This will be blank on GitHub, but on a manually staged instance should exist
-                            revisionID,
-                            diffID,
-                            mode: PhabricatorMode.Differential,
-                        }
-                    }
+                    ({ rawRepoName }): DifferentialState => ({
+                        baseRawRepoName: rawRepoName,
+                        headRawRepoName: rawRepoName,
+                        revisionID,
+                        diffID,
+                        mode: PhabricatorMode.Differential,
+                    })
                 )
             )
         }

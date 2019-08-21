@@ -58,15 +58,8 @@ export const resolveDiffFileInfo = (
                 queryConduit
             ).pipe(
                 map(
-                    ({
-                        commitID,
-                        stagingRepoName,
-                        isStagingCommit,
-                    }): Pick<FileInfo, 'baseCommitID' | 'baseRev' | 'baseRawRepoName'> => ({
+                    ({ commitID, stagingRepoName }): Pick<FileInfo, 'baseCommitID' | 'baseRawRepoName'> => ({
                         baseCommitID: commitID,
-                        // Only keep the rev if this is not a staging commit,
-                        // or if the staging repo is synced to the Sourcegraph instance.
-                        baseRev: !isStagingCommit || stagingRepoName !== undefined ? state.baseRev : undefined,
                         baseRawRepoName: stagingRepoName || state.baseRawRepoName,
                     })
                 )
@@ -87,15 +80,8 @@ export const resolveDiffFileInfo = (
                 queryConduit
             ).pipe(
                 map(
-                    ({
+                    ({ commitID, stagingRepoName }): Pick<FileInfo, 'commitID' | 'rawRepoName'> => ({
                         commitID,
-                        stagingRepoName,
-                        isStagingCommit,
-                    }): Pick<FileInfo, 'commitID' | 'rev' | 'rawRepoName'> => ({
-                        commitID,
-                        // Only keep the rev if this is not a staging commit,
-                        // or if the staging repo is synced to the Sourcegraph instance.
-                        rev: !isStagingCommit || stagingRepoName !== undefined ? state.headRev : undefined,
                         rawRepoName: stagingRepoName || state.headRawRepoName,
                     })
                 )
@@ -105,7 +91,7 @@ export const resolveDiffFileInfo = (
                     ([baseInfo, headInfo]): FileInfo => ({
                         ...baseInfo,
                         ...headInfo,
-                        baseFilePath,
+                        baseFilePath: baseFilePath || filePath,
                         filePath,
                     })
                 )

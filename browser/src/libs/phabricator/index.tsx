@@ -39,9 +39,7 @@ export interface BaseDiffSpec {
 
 export interface DifferentialState extends RevisionSpec, DiffSpec, BaseDiffSpec {
     mode: PhabricatorMode.Differential
-    baseRev: string
     baseRawRepoName: string
-    headRev: string
     headRawRepoName: string
 }
 

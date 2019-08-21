@@ -140,12 +140,12 @@ export function queryConduit<T>(endpoint: string, params: {}): Observable<T> {
 
 function getDiffDetailsFromConduit(
     diffID: number,
-    differentialID: number,
+    revisionID: number,
     queryConduit: QueryConduitHelper<ConduitDiffDetailsResponse>
 ): Observable<ConduitDiffDetails> {
     return queryConduit('/api/differential.querydiffs', {
         ids: [diffID],
-        revisionIDs: [differentialID],
+        revisionIDs: [revisionID],
     }).pipe(map(diffDetails => diffDetails[`${diffID}`]))
 }
 
@@ -365,51 +365,48 @@ interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'>,
     description?: string
 }
 
-const resolveStagingRev = memoizeObservable(
-    ({ requestGraphQL, ...variables }: ResolveStagingOptions): Observable<ResolvedRevSpec> =>
-        requestGraphQL<GQL.IMutation>({
-            request: gql`
-                mutation ResolveStagingRev(
-                    $repoName: String!
-                    $diffID: ID!
-                    $baseRev: String!
-                    $patch: String
-                    $date: String
-                    $authorName: String
-                    $authorEmail: String
-                    $description: String
+const resolveStagingRev = ({ requestGraphQL, ...variables }: ResolveStagingOptions): Observable<ResolvedRevSpec> =>
+    requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation ResolveStagingRev(
+                $repoName: String!
+                $diffID: ID!
+                $baseRev: String!
+                $patch: String
+                $date: String
+                $authorName: String
+                $authorEmail: String
+                $description: String
+            ) {
+                resolvePhabricatorDiff(
+                    repoName: $repoName
+                    diffID: $diffID
+                    baseRev: $baseRev
+                    patch: $patch
+                    date: $date
+                    authorName: $authorName
+                    authorEmail: $authorEmail
+                    description: $description
                 ) {
-                    resolvePhabricatorDiff(
-                        repoName: $repoName
-                        diffID: $diffID
-                        baseRev: $baseRev
-                        patch: $patch
-                        date: $date
-                        authorName: $authorName
-                        authorEmail: $authorEmail
-                        description: $description
-                    ) {
-                        oid
-                    }
+                    oid
                 }
-            `,
-            variables,
-            mightContainPrivateInfo: true,
-        }).pipe(
-            map(dataOrThrowErrors),
-            map(({ resolvePhabricatorDiff }) => {
-                if (!resolvePhabricatorDiff) {
-                    throw new Error('Empty resolvePhabricatorDiff')
-                }
-                const { oid } = resolvePhabricatorDiff
-                if (!oid) {
-                    throw new Error('Could not resolve staging rev: empty oid')
-                }
-                return { commitID: oid }
-            })
-        ),
-    ({ diffID }: ResolveStagingOptions) => diffID.toString()
-)
+            }
+        `,
+        variables,
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(({ resolvePhabricatorDiff }) => {
+            if (!resolvePhabricatorDiff) {
+                throw new Error('Empty resolvePhabricatorDiff')
+            }
+            const { oid } = resolvePhabricatorDiff
+            if (!oid) {
+                throw new Error('Could not resolve staging rev: empty oid')
+            }
+            return { commitID: oid }
+        })
+    )
 
 function hasThisFileChanged(filePath: string, changes: ConduitDiffChange[]): boolean {
     for (const change of changes) {
@@ -489,11 +486,6 @@ function getStagingDetails(
 
 interface ResolvedDiff extends ResolvedRevSpec {
     /**
-     * Whether this commit lives on a staging repository.
-     * See https://secure.phabricator.com/book/phabricator/article/harbormaster/#change-handoff
-     */
-    isStagingCommit?: boolean
-    /**
      * The name of the staging repository, if it is synced to the Sourcegraph instance.
      */
     stagingRepoName?: string
@@ -519,7 +511,9 @@ export function resolveDiffRev(
 
             // When resolving the base, use the commit ID from the diff details.
             if (props.isBase && !props.useDiffForBase) {
-                return of({ commitID: diffDetails.sourceControlBaseRevision })
+                return of({
+                    commitID: diffDetails.sourceControlBaseRevision,
+                })
             }
             if (!stagingDetails || stagingDetails.unconfigured) {
                 // If there are no staging details, get the patch from the conduit API,
