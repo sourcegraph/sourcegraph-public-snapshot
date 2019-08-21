@@ -220,7 +220,7 @@ describe('regression test suite', () => {
             5 * 1000
         )
         test(
-            'Release test 5.10: Perform global, case-sensitive search.',
+            'Release test 5.10: Perform a case-sensitive search.',
             async () => {
                 await driver.page.goto(baseURL + '/search?repo:%5Egithub%5C.com/adjust/go-wrk%24+String+case:yes')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
