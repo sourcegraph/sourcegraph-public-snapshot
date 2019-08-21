@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -405,14 +407,50 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	var defaultRepos []*types.Repo
-	// TODO(ijt): make sure filters like file: don't prevent default repos from being used.
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
-		// TODO(ijt): check config like search.defaultRepos.enabled so installations not
-		// using default_repos won't have to pay the ~0.5 msec cost of this query.
 		defaultRepos, err = db.DefaultRepos.List(ctx)
 		if err != nil {
-			return nil, nil, false, err
+			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
+
+		// Only include the repos that have been indexed.
+		defaultRepoRevs := make([]*search.RepositoryRevisions, 0, len(defaultRepos))
+		for _, r := range defaultRepos {
+			rr := &search.RepositoryRevisions{
+				Repo: r,
+				Revs: []search.RevisionSpecifier{{RevSpec: ""}},
+			}
+			defaultRepoRevs = append(defaultRepoRevs, rr)
+		}
+		zoekt := IndexedSearch()
+		indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, defaultRepoRevs, nil)
+		if err != nil {
+			return nil, nil, false, errors.Wrap(err, "finding subset of default repos that are indexed")
+		}
+		// If any are unindexed, log the first few so we can find out if something is going wrong with those.
+		if len(unindexed) > 0 {
+			N := len(unindexed)
+			if N > 10 {
+				N = 10
+			}
+			var names []string
+			for i := 0; i < N; i++ {
+				names = append(names, string(unindexed[i].Repo.Name))
+			}
+			log15.Info("some unindexed repos found; listing up to 10 of them", "unindexed", names)
+		}
+		// Exclude any that aren't indexed.
+		indexedMap := make(map[api.RepoName]bool, len(indexed))
+		for _, r := range indexed {
+			indexedMap[r.Repo.Name] = true
+		}
+		var defaultRepos2 []*types.Repo
+		for _, r := range defaultRepos {
+			if indexedMap[r.Name] {
+				defaultRepos2 = append(defaultRepos2, r)
+			}
+		}
+		defaultRepos = defaultRepos2
 	}
 
 	var repos []*types.Repo
