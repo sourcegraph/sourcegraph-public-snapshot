@@ -646,6 +646,7 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20190819202617-014a202a7b3d h1:gqd14PHERGyN1+j+vG0iJKVlYLupvVBqr+Q0I38B4NY=
 github.com/sourcegraph/zoekt v0.0.0-20190819202617-014a202a7b3d/go.mod h1:ktJjC94Qpag2sLp96e8uSc6KZ3hRoxz1pyN1yRKsOy4=
+github.com/sourcegraph/zoekt v0.0.0-20190821142101-b6bd1c5c5553/go.mod h1:ktJjC94Qpag2sLp96e8uSc6KZ3hRoxz1pyN1yRKsOy4=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.1.0/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
