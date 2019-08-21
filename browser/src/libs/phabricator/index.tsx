@@ -23,7 +23,7 @@ export interface RevisionSpec {
 export interface DiffSpec {
     /**
      * The ID of the 'head' diff that is being viewed in the Differential UI.
-     * A Differential revision is made up of one or more 'Diffs' (commits).
+     * A Differential revision is made up of one or more 'Diffs' (patches).
      */
     diffID: number
 }
