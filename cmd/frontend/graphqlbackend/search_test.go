@@ -3,12 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"reflect"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -242,7 +242,7 @@ func Test_defaultRepositories(t *testing.T) {
 	tcs := []struct {
 		name             string
 		defaultsInDb     []string
-		indexedRepoNames []string
+		indexedRepoNames map[string]bool
 		want             []string
 	}{
 		{
@@ -254,18 +254,35 @@ func Test_defaultRepositories(t *testing.T) {
 		{
 			name:             "two in db, one indexed => indexed repo returned",
 			defaultsInDb:     []string{"unindexedrepo", "indexedrepo"},
-			indexedRepoNames: []string{"indexedrepo"},
+			indexedRepoNames: map[string]bool{"indexedrepo": true},
 			want:             []string{"indexedrepo"},
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			indexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-				return indexed, unindexed, nil
+			var drs []*types.Repo
+			for i, name := range tc.defaultsInDb {
+				r := &types.Repo{
+					ID:   api.RepoID(i),
+					Name: api.RepoName(name),
+				}
+				drs = append(drs, r)
 			}
 			getRawDefaultRepos := func(ctx context.Context) ([]*types.Repo, error) {
-				var drs []*types.Repo
 				return drs, nil
+			}
+			indexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+				for _, r := range drs {
+					r2 := &search.RepositoryRevisions{
+						Repo: r,
+					}
+					if tc.indexedRepoNames[string(r.Name)] {
+						indexed = append(indexed, r2)
+					} else {
+						unindexed = append(unindexed, r2)
+					}
+				}
+				return indexed, unindexed, nil
 			}
 			ctx := context.Background()
 			drs, err := defaultRepositories(ctx, getRawDefaultRepos, indexedRepos)
