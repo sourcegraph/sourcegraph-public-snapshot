@@ -1,7 +1,7 @@
 {
   "name": "lsif-server",
   "description": "LSIF Server with an HTTP API",
-  "author": "Microsoft Corporation and Sourcegraph",
+  "author": "Sourcegraph",
   "license": "MIT",
   "version": "0.1.0",
   "engines": {
