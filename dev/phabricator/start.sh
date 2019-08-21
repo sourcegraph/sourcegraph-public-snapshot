@@ -46,7 +46,7 @@ docker run -d --name $db_container -e ALLOW_EMPTY_PASSWORD=yes \
     bitnami/mariadb:latest
 
 # Start the application
-docker run -d --name $app_container -p 80:80 -p 443:443 -p 22:22 \
+docker run -d --name $app_container -p 80:80 -p 443:443 \
     --net $network \
     --volume $app_volume:/bitnami \
     -e PHABRICATOR_USERNAME=admin \
