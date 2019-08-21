@@ -408,49 +408,10 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
-		defaultRepos, err = db.DefaultRepos.List(ctx)
+		defaultRepos, err = defaultRepositories(ctx)
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
-
-		// Only include the repos that have been indexed.
-		defaultRepoRevs := make([]*search.RepositoryRevisions, 0, len(defaultRepos))
-		for _, r := range defaultRepos {
-			rr := &search.RepositoryRevisions{
-				Repo: r,
-				Revs: []search.RevisionSpecifier{{RevSpec: ""}},
-			}
-			defaultRepoRevs = append(defaultRepoRevs, rr)
-		}
-		zoekt := IndexedSearch()
-		indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, defaultRepoRevs, nil)
-		if err != nil {
-			return nil, nil, false, errors.Wrap(err, "finding subset of default repos that are indexed")
-		}
-		// If any are unindexed, log the first few so we can find out if something is going wrong with those.
-		if len(unindexed) > 0 {
-			N := len(unindexed)
-			if N > 10 {
-				N = 10
-			}
-			var names []string
-			for i := 0; i < N; i++ {
-				names = append(names, string(unindexed[i].Repo.Name))
-			}
-			log15.Info("some unindexed repos found; listing up to 10 of them", "unindexed", names)
-		}
-		// Exclude any that aren't indexed.
-		indexedMap := make(map[api.RepoName]bool, len(indexed))
-		for _, r := range indexed {
-			indexedMap[r.Repo.Name] = true
-		}
-		var defaultRepos2 []*types.Repo
-		for _, r := range defaultRepos {
-			if indexedMap[r.Name] {
-				defaultRepos2 = append(defaultRepos2, r)
-			}
-		}
-		defaultRepos = defaultRepos2
 	}
 
 	var repos []*types.Repo
@@ -545,6 +506,52 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	return repoRevisions, missingRepoRevisions, overLimit, err
+}
+
+func defaultRepositories(ctx context.Context) ([]*types.Repo, error) {
+	// Get the list of default repos from the db.
+	defaultRepos, err := db.DefaultRepos.List(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying db for default repos")
+	}
+	// Find out which of the default repos have been indexed.
+	defaultRepoRevs := make([]*search.RepositoryRevisions, 0, len(defaultRepos))
+	for _, r := range defaultRepos {
+		rr := &search.RepositoryRevisions{
+			Repo: r,
+			Revs: []search.RevisionSpecifier{{RevSpec: ""}},
+		}
+		defaultRepoRevs = append(defaultRepoRevs, rr)
+	}
+	zoekt := IndexedSearch()
+	indexed, unindexed, err := zoektIndexedRepos(ctx, zoekt, defaultRepoRevs, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "finding subset of default repos that are indexed")
+	}
+	// If any are unindexed, log the first few so we can find out if something is going wrong with those.
+	if len(unindexed) > 0 {
+		N := len(unindexed)
+		if N > 10 {
+			N = 10
+		}
+		var names []string
+		for i := 0; i < N; i++ {
+			names = append(names, string(unindexed[i].Repo.Name))
+		}
+		log15.Info("some unindexed repos found; listing up to 10 of them", "unindexed", names)
+	}
+	// Exclude any that aren't indexed.
+	indexedMap := make(map[api.RepoName]bool, len(indexed))
+	for _, r := range indexed {
+		indexedMap[r.Repo.Name] = true
+	}
+	var defaultRepos2 []*types.Repo
+	for _, r := range defaultRepos {
+		if indexedMap[r.Name] {
+			defaultRepos2 = append(defaultRepos2, r)
+		}
+	}
+	return defaultRepos2, nil
 }
 
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
