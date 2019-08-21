@@ -16,11 +16,11 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/pkg/errors"
-
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -980,6 +980,24 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			zoektRepos = nil
 		default:
 			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
+		}
+	} else if envvar.SourcegraphDotComMode() && len(zoektRepos) > 0 && maxReposToSearch() > len(zoektRepos) {
+		// Work like index:only.
+		common.missing = make([]*types.Repo, len(searcherRepos))
+		for i, r := range searcherRepos {
+			common.missing[i] = r.Repo
+		}
+		searcherRepos = nil
+
+		// TODO(ijt): Remove this logging code once we find out why some default repos are being searched with
+		// searcher instead of zoekt.
+		// Log the first few missing repos
+		if len(common.missing) > 0 {
+			firstFew := common.missing
+			if len(firstFew) > 10 {
+				firstFew = firstFew[:10]
+			}
+			log15.Info("some non-indexed repos came up", "firstFew", firstFew)
 		}
 	}
 
