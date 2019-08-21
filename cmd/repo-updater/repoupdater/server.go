@@ -432,26 +432,47 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
+	resp := protocol.StatusMessagesResponse{
+		Messages: []protocol.StatusMessage{},
+	}
+
 	notCloned, err := s.computeNotClonedCount(r.Context())
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := protocol.StatusMessagesResponse{
-		Messages: []protocol.StatusMessage{},
-	}
-
 	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			Type:    protocol.CloningStatusMessage,
+			Type: protocol.Cloning,
+			Cloning: &protocol.CloningStatusMessage{
+				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
+			},
 		})
+	}
+
+	if multiErr := s.Syncer.MultiSourceError(); multiErr != nil {
+		for _, sourceErr := range multiErr.Errors {
+			m := newSyncErrMessage(sourceErr)
+			resp.Messages = append(resp.Messages, m)
+		}
 	}
 
 	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
 
 	respond(w, http.StatusOK, resp)
+}
+
+func newSyncErrMessage(err *repos.SourceError) protocol.StatusMessage {
+	return protocol.StatusMessage{
+		Type: protocol.SyncError,
+		SyncError: &protocol.SyncErrorStatusMessage{
+			Message:                    err.Err.Error(),
+			ExternalServiceId:          err.ExtSvc.ID,
+			ExternalServiceKind:        err.ExtSvc.Kind,
+			ExternalServiceDisplayName: err.ExtSvc.DisplayName,
+		},
+	}
 }
 
 func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {

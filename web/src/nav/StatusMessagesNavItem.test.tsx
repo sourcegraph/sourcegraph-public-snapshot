@@ -10,20 +10,52 @@ describe('StatusMessagesNavItem', () => {
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('no messages', () => {
-        const fetchMessages = (): Observable<GQL.IStatusMessage[]> => of([])
+        const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(
             renderer.create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />).toJSON()
         ).toMatchSnapshot()
     })
 
     describe('one CLONING message', () => {
-        const message: GQL.IStatusMessage = {
-            __typename: 'StatusMessage',
-            type: GQL.StatusMessageType.CLONING,
+        const message: GQL.StatusMessage = {
+            __typename: 'CloningStatusMessage',
             message: 'Currently cloning repositories...',
         }
 
-        const fetchMessages = (): Observable<GQL.IStatusMessage[]> => of([message])
+        const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([message])
+        test('as non-site admin', () => {
+            expect(
+                renderer
+                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+
+        test('as site admin', () => {
+            expect(
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            scheduler={queueScheduler}
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                        />
+                    )
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+    })
+
+    describe('one SYNCERROR message', () => {
+        const message: GQL.StatusMessage = {
+            __typename: 'SyncErrorStatusMessage',
+            message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
+            externalServiceId: '4',
+            externalServiceDisplayName: 'Github Enterprise',
+            externalServiceKind: 'GITHUB',
+        }
+
+        const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
                 renderer

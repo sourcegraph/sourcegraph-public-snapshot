@@ -1,4 +1,8 @@
 .status-messages-nav-item {
+    &__dropdown-divider {
+        margin: 0.5rem 0;
+    }
+
     &__nav-link {
         @media only percy {
             visibility: hidden;
@@ -8,11 +12,12 @@
     &__dropdown-menu {
         min-width: 22rem;
         max-width: 22rem;
-        padding: 0.5rem 1rem;
+        padding: 1rem;
     }
     &__entry {
         padding: 0.5rem 1rem;
-        white-space: normal;
+        word-wrap: break-word;
+        white-space: pre-line;
         &-link {
             margin-bottom: 0;
         }

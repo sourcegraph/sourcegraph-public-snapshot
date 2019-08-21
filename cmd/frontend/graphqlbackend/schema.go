@@ -3712,18 +3712,27 @@ type ProductSubscriptionEvent {
     url: String
 }
 
-# The type of a StatusMessage
-enum StatusMessageType {
-    CLONING
+# An status message produced when repositories are being cloned
+type CloningStatusMessage {
+    # The message of this status message
+    message: String!
+}
+
+# An status message produced when repositories could not be synced from code
+# hosts
+type SyncErrorStatusMessage {
+    # The message of this status message
+    message: String!
+    # The id of the external service that failed to sync
+    externalServiceId: String!
+    # The kind of the external service that failed to sync
+    externalServiceKind: String!
+    # The display name of the external service that failed to sync
+    externalServiceDisplayName: String!
 }
 
 # A status message
-type StatusMessage {
-    # The message of this status message
-    message: String!
-    # The type.
-    type: StatusMessageType!
-}
+union StatusMessage = CloningStatusMessage | SyncErrorStatusMessage
 
 # An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use

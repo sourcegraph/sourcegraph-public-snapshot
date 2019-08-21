@@ -13,6 +13,25 @@ import (
 )
 
 func TestStatusMessages(t *testing.T) {
+	graphqlQuery := `
+		query StatusMessages {
+			statusMessages {
+				__typename
+
+				... on CloningStatusMessage {
+					message
+				}
+
+				... on SyncErrorStatusMessage {
+					message
+					externalServiceId
+					externalServiceKind
+					externalServiceDisplayName
+				}
+			}
+		}
+	`
+
 	resetMocks()
 	t.Run("unauthenticated", func(t *testing.T) {
 		result, err := (&schemaResolver{}).StatusMessages(context.Background())
@@ -54,14 +73,7 @@ func TestStatusMessages(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: GraphQLSchema,
-				Query: `
-				query {
-					statusMessages {
-					    type
-						message
-					}
-				}
-			`,
+				Query:  graphqlQuery,
 				ExpectedResult: `
 				{
 					"statusMessages": []
@@ -80,8 +92,19 @@ func TestStatusMessages(t *testing.T) {
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
 				{
-					Type:    protocol.CloningStatusMessage,
-					Message: "Currently cloning 5 repositories in parallel...",
+					Type: protocol.Cloning,
+					Cloning: &protocol.CloningStatusMessage{
+						Message: "Currently cloning 5 repositories in parallel...",
+					},
+				},
+				{
+					Type: protocol.SyncError,
+					SyncError: &protocol.SyncErrorStatusMessage{
+						Message:                    "Authentication failed. Please check credentials.",
+						ExternalServiceId:          1,
+						ExternalServiceKind:        "github",
+						ExternalServiceDisplayName: "GitHub.com testing",
+					},
 				},
 			}}
 			return res, nil
@@ -91,21 +114,21 @@ func TestStatusMessages(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Schema: GraphQLSchema,
-				Query: `
-				query {
-					statusMessages {
-					    type
-						message
-					}
-				}
-			`,
+				Query:  graphqlQuery,
 				ExpectedResult: `
 				{
 					"statusMessages": [
-					{
-						"type": "CLONING",
-						"message": "Currently cloning 5 repositories in parallel..."
-					}
+						{
+							"__typename": "CloningStatusMessage",
+							"message": "Currently cloning 5 repositories in parallel..."
+						},
+						{
+							"__typename": "SyncErrorStatusMessage",
+							"externalServiceDisplayName": "GitHub.com testing",
+							"externalServiceId": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
+							"externalServiceKind": "github",
+							"message": "Authentication failed. Please check credentials."
+						}
 					]
 				}
 			`,
