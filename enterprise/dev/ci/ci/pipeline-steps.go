@@ -277,6 +277,8 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			bk.Cmd(getBuildScript()),
 		)
 
+		cmds = append(cmds, bk.Cmd("yes | gcloud auth configure-docker"))
+
 		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
