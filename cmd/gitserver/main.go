@@ -73,7 +73,7 @@ func main() {
 	}
 	go func() {
 		for {
-			// gitserver.Janitor()
+			gitserver.Janitor()
 			time.Sleep(janitorInterval2)
 		}
 	}()
