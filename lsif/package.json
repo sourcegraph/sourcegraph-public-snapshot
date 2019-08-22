@@ -30,7 +30,7 @@
   },
   "scripts": {
     "typecheck": "tsc -p .",
-    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && env FORCE_COLOR=1 node -r source-map-support/register out/server.bundle.js'\" --noClear",
+    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && node out/server.bundle.js'\" --noClear",
     "build": "parcel build --out-dir out --out-file server.bundle.js --target node --public-url ./ src/server.ts",
     "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
