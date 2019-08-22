@@ -31,8 +31,11 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     role="menu"
     tabIndex="-1"
   >
+    <h3>
+      External Service Status
+    </h3>
     <div
-      className="status-messages-nav-item__entry"
+      className="status-messages-nav-item__entry mb-3"
     >
       <h4>
         Repositories up to date
@@ -76,8 +79,11 @@ exports[`StatusMessagesNavItem one CLONING message as non-site admin 1`] = `
     role="menu"
     tabIndex="-1"
   >
+    <h3>
+      External Service Status
+    </h3>
     <div
-      className="status-messages-nav-item__entry"
+      className="status-messages-nav-item__entry mb-3 alert alert-info"
     >
       <h4>
         Repositories cloning
@@ -121,8 +127,11 @@ exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
     role="menu"
     tabIndex="-1"
   >
+    <h3>
+      External Service Status
+    </h3>
     <div
-      className="status-messages-nav-item__entry"
+      className="status-messages-nav-item__entry mb-3 alert alert-info"
     >
       <h4>
         Repositories cloning
@@ -134,7 +143,7 @@ exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
         className="status-messages-nav-item__entry-link"
       >
         <a
-          className=""
+          className="alert-link"
           onClick={[Function]}
           to="/site-admin/external-services"
         >
@@ -177,8 +186,11 @@ exports[`StatusMessagesNavItem one SYNCERROR message as non-site admin 1`] = `
     role="menu"
     tabIndex="-1"
   >
+    <h3>
+      External Service Status
+    </h3>
     <div
-      className="status-messages-nav-item__entry alert alert-danger mb-0"
+      className="status-messages-nav-item__entry mb-3 alert alert-danger"
     >
       <h4>
         Syncing external service "GitHub.com" failed:
@@ -222,8 +234,11 @@ exports[`StatusMessagesNavItem one SYNCERROR message as site admin 1`] = `
     role="menu"
     tabIndex="-1"
   >
+    <h3>
+      External Service Status
+    </h3>
     <div
-      className="status-messages-nav-item__entry alert alert-danger mb-0"
+      className="status-messages-nav-item__entry mb-3 alert alert-danger"
     >
       <h4>
         Syncing external service "GitHub.com" failed:

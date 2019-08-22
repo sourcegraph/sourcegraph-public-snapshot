@@ -53,7 +53,7 @@ interface StatusMessageEntryProps {
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
     <div
         key={props.text}
-        className={classNames('status-messages-nav-item__entry', props.alert && `alert alert-${props.alert} mb-0`)}
+        className={classNames('status-messages-nav-item__entry mb-3', props.alert && `alert alert-${props.alert}`)}
     >
         <h4>{props.title}</h4>
         <p>{props.text}</p>
@@ -119,6 +119,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         linkTo="/site-admin/external-services"
                         linkText="Configure external services"
                         linkOnClick={this.toggleIsOpen}
+                        alert="info"
                     />
                 )
             case 'SyncErrorStatusMessage':
@@ -177,26 +178,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
+                    <h3>External Service Status</h3>
                     {isErrorLike(this.state.messagesOrError) ? (
                         <div className="status-messages-nav-item__entry alert alert-danger mb-0">
                             <h4>Failed to load status messages:</h4>
                             <p>{startCase(this.state.messagesOrError.message)}</p>
                         </div>
                     ) : this.state.messagesOrError.length > 0 ? (
-                        this.state.messagesOrError.map((m, i) => {
-                            if (!isErrorLike(this.state.messagesOrError) && i < this.state.messagesOrError.length - 1) {
-                                return (
-                                    <>
-                                        {this.renderMessage(m)}
-                                        <DropdownItem
-                                            className="status-messages-nav-item__dropdown-divider"
-                                            divider={true}
-                                        ></DropdownItem>
-                                    </>
-                                )
-                            }
-                            return this.renderMessage(m)
-                        })
+                        this.state.messagesOrError.map(m => this.renderMessage(m))
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
