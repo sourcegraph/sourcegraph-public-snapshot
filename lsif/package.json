@@ -32,8 +32,7 @@
     "typecheck": "tsc -p .",
     "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && node out/server.bundle.js'\" --noClear",
     "build": "parcel build --out-dir out --out-file server.bundle.js --target node --public-url ./ src/server.ts",
-    "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
-    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
-    "fixup": "sed -i '' 's/\r$//' ./node_modules/lsif-sqlite/bin/lsif-sqlite"
+    "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
+    "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
   }
 }
