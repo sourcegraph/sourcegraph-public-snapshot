@@ -23,7 +23,7 @@ type Syncer struct {
 	// Sourcegraph.com
 	FailFullSync bool
 
-	// LastSourcerError contains the last error returned by the Sourcer in each
+	// multiSourceErr contains the last error returned by the Sourcer in each
 	// Sync. It's reset with each Sync and if the Sourcer produced no error,
 	// it's set to nil.
 	multiSourceErr   *MultiSourceError
