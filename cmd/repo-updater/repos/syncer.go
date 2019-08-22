@@ -27,7 +27,7 @@ type Syncer struct {
 	// Sync. It's reset with each Sync and if the Sourcer produced no error,
 	// it's set to nil.
 	multiSourceErr   *MultiSourceError
-	multiSourceErrMu sync.RWMutex
+	multiSourceErrMu sync.Mutex
 
 	store   Store
 	sourcer Sourcer
@@ -350,8 +350,8 @@ func (s *Syncer) setOrResetMultiSourceErr(err error) {
 // LastSyncErrors returns the SourceErrors that were produced in the last Sync
 // run. If the slice is empty, the last sync run didn't produce any errors.
 func (s *Syncer) LastSyncErrors() []*SourceError {
-	s.multiSourceErrMu.RLock()
-	defer s.multiSourceErrMu.RUnlock()
+	s.multiSourceErrMu.Lock()
+	defer s.multiSourceErrMu.Unlock()
 
 	var errors []*SourceError
 	if s.multiSourceErr != nil {
