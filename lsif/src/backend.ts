@@ -97,6 +97,9 @@ export class Backend {
             range.startCharacter: int @index(int) .
             range.startLine: int @index(int) .
             contains: uid @reverse .
+            moniker.identifier: string @index(exact) .
+            moniker: uid @reverse .
+            nextMoniker: uid @reverse .
         `)
 
         await this.client.alter(op)
