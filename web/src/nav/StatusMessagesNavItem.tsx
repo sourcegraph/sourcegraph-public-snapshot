@@ -11,6 +11,7 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
+import classNames from 'classnames'
 
 export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
     return queryGraphQL(
@@ -48,25 +49,22 @@ interface StatusMessageEntryProps {
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
 }
 
-const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => {
-    let className = 'status-messages-nav-item__entry'
-    if (props.alert) {
-        className = `${className} alert ${props.alert} mb-0`
-    }
-    return (
-        <div key={props.text} className={className}>
-            <h4>{props.title}</h4>
-            <p>{props.text}</p>
-            {props.showLink && (
-                <p className="status-messages-nav-item__entry-link">
-                    <Link to={props.linkTo} className={props.alert ? 'alert-link' : ''} onClick={props.linkOnClick}>
-                        {props.linkText}
-                    </Link>
-                </p>
-            )}
-        </div>
-    )
-}
+const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
+    <div
+        key={props.text}
+        className={classNames('status-messages-nav-item__entry', props.alert && `alert ${props.alert} mb-0`)}
+    >
+        <h4>{props.title}</h4>
+        <p>{props.text}</p>
+        {props.showLink && (
+            <p className="status-messages-nav-item__entry-link">
+                <Link to={props.linkTo} className={props.alert ? 'alert-link' : ''} onClick={props.linkOnClick}>
+                    {props.linkText}
+                </Link>
+            </p>
+        )}
+    </div>
+)
 
 interface Props {
     fetchMessages: () => Observable<GQL.StatusMessage[]>
