@@ -239,7 +239,7 @@ exports[`StatusMessagesNavItem one SYNCERROR message as site admin 1`] = `
           onClick={[Function]}
           to="/site-admin/external-services/4"
         >
-          Edit "Github Enterprise"...
+          Edit "Github Enterprise"
         </a>
       </p>
     </div>

@@ -114,7 +114,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
         const title = `Syncing external service "${displayName}" failed:`
         const linkTo = `/site-admin/external-services/${extSvcID}`
-        const linkText = `Edit "${displayName}"...`
+        const linkText = `Edit "${displayName}"`
 
         return (
             <StatusMessagesNavItemEntry
