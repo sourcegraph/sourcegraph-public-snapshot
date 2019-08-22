@@ -39,14 +39,11 @@ export class XrepoDatabase {
     }
 
     /**
-     * TODO - redocument
-     * Correlate a `repository` and `commit` with a unique package manager `scheme`, `name`, and `version`.
+     * Correlate a `repository` and `commit` with a set of unqiue packages.
      *
-     * @param scheme The package manager scheme (e.g. npm, pip).
-     * @param name The package name.
-     * @param version The package version.
      * @param repository The repository that defines the given package.
      * @param commit The commit of the that defines the given package.
+     * @param packages The package list (scheme, name, and version).
      */
     public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
@@ -90,16 +87,12 @@ export class XrepoDatabase {
     }
 
     /**
-     * TODO - redocument
-     * Correlate the given `repository` and `commit` with the given package and mark the
-     * set of `uris` that are used within that pacakge.
+     * Correlate the given `repository` and `commit` with the the names referenced from a
+     * particular remote package.
      *
-     * @param scheme The package manager scheme (e.g. npm, pip).
-     * @param name The package name.
-     * @param version The package version.
      * @param repository The repository that depends on the given pacakge.
      * @param commit The commit that depends on the given pacakge.
-     * @param uris The set of URIs that are used by this repository and commit in the given package.
+     * @param references The package data (scheme, name, and version) and the symbosl that the package references.
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
@@ -110,7 +103,7 @@ export class XrepoDatabase {
                 await inserter.insert({
                     repository,
                     commit,
-                    filter: await createFilter(reference.identifiers), // TODO - rename from URIs
+                    filter: await createFilter(reference.identifiers),
                     ...reference.package,
                 })
             }

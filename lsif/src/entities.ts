@@ -43,6 +43,7 @@ export interface ReferenceResultData {
 
 export interface HoverData {
     // TODO - normalize content
+    // TODO - used MarkupContent, MarkedString is deprecated
     contents: lsp.MarkupContent | lsp.MarkedString | lsp.MarkedString[]
 }
 

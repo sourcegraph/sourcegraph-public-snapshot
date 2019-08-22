@@ -194,7 +194,7 @@ export class Database {
 
         // FIXME
         moniker.identifier = fixMonikerIdentifier(moniker)
-        const uriFilter = (uri: string) => makeRemoteUri(packageEntity, uri)
+        const uriFilter = (uri: string): string => makeRemoteUri(packageEntity, uri)
         return await Database.monikerResults(db, DefModel, moniker, uriFilter)
     }
 
@@ -235,7 +235,7 @@ export class Database {
 
             // FIXME
             moniker.identifier = fixMonikerIdentifier(moniker)
-            const uriFilter = (uri: string) => makeRemoteUri(reference, uri)
+            const uriFilter = (uri: string): string => makeRemoteUri(reference, uri)
             const references = await Database.monikerResults(db, RefModel, moniker, uriFilter)
             allReferences.push(...references)
         }

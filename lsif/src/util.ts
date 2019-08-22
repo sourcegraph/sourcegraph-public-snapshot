@@ -18,6 +18,8 @@ export function readEnv(key: string, defaultValue: string): string {
     return process.env[key] || defaultValue
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Determine if an exception value has the given error code.
  *

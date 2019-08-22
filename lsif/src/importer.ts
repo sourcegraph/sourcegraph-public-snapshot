@@ -60,7 +60,7 @@ const INTERNAL_LSIF_VERSION = '0.1.0'
  */
 interface HandlerMap {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [K: string]: (element: any) => void
+    [K: string]: (element: any) => Promise<void>
 }
 
 /**
