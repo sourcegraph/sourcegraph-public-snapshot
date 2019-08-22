@@ -86,6 +86,23 @@ func (r savedSearchResolver) User(ctx context.Context) (*UserResolver, error) {
 	return UserByIDInt32(ctx, *r.s.UserID)
 }
 
+func (r savedSearchResolver) Namespace(ctx context.Context) (*namespaceResolver, error) {
+	if r.s.OrgID != nil {
+		n, err := NamespaceByID(ctx, marshalOrgID(*r.s.OrgID))
+		if err != nil {
+			return nil, err
+		}
+		return &namespaceResolver{n}, nil
+	}
+	if r.s.UserID != nil {
+		n, err := NamespaceByID(ctx, marshalUserID(*r.s.UserID))
+		if err != nil {
+			return nil, err
+		}
+		return &namespaceResolver{n}, nil
+	}
+	return nil, nil
+}
 func (r savedSearchResolver) Org(ctx context.Context) (*OrgResolver, error) {
 	if r.s.OrgID == nil {
 		return nil, nil

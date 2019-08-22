@@ -149,11 +149,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                         !isErrorLike(this.state.savedSearchesOrError) &&
                         this.state.savedSearchesOrError.length > 0 &&
                         this.state.savedSearchesOrError
-                            .filter(
-                                search =>
-                                    (search.org && search.org.id === this.props.namespace.id) ||
-                                    (search.user && search.user.id === this.props.namespace.id)
-                            )
+                            .filter(search => search.namespace.id && this.props.namespace.id === search.namespace.id)
                             .map(search => (
                                 <SavedSearchNode
                                     key={search.id}
