@@ -79,22 +79,6 @@ func (r savedSearchResolver) Description() string { return r.s.Description }
 
 func (r savedSearchResolver) Query() string { return r.s.Query }
 
-func (r savedSearchResolver) UserID() *graphql.ID {
-	if r.s.UserID == nil {
-		return nil
-	}
-	userID := marshalUserID(*r.s.UserID)
-	return &userID
-}
-
-func (r savedSearchResolver) OrgID() *graphql.ID {
-	if r.s.OrgID == nil {
-		return nil
-	}
-	orgID := marshalOrgID(*r.s.OrgID)
-	return &orgID
-}
-
 func (r savedSearchResolver) User(ctx context.Context) (*UserResolver, error) {
 	if r.s.UserID == nil {
 		return nil, nil

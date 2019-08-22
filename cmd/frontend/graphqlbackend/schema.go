@@ -1011,10 +1011,6 @@ type SavedSearch implements Node {
     user: User
     # The org that owns the saved search if the owner is an org.
     org: Org
-    # The user ID of the owner if the owner is a user.
-    userID: ID
-    # The organization ID of the owner if the owner is an org.
-    orgID: ID
     # The Slack webhook URL associated with this saved search, if any.
     slackWebhookURL: String
 }

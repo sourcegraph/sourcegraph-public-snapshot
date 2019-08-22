@@ -245,8 +245,6 @@ const savedSearchFragment = gql`
         org {
             id
         }
-        userID
-        orgID
         slackWebhookURL
     }
 `
@@ -287,8 +285,6 @@ export function fetchSavedSearch(id: GQL.ID): Observable<GQL.ISavedSearch> {
                         org {
                             id
                         }
-                        userID
-                        orgID
                     }
                 }
             }
