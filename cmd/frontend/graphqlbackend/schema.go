@@ -1007,6 +1007,10 @@ type SavedSearch implements Node {
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
+    # The user that owns the saved search if the owner is a user
+    user: User
+    # The org that owns the saved search if the owner is an org.
+    org: Org
     # The user ID of the owner if the owner is a user.
     userID: ID
     # The organization ID of the owner if the owner is an org.

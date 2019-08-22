@@ -94,6 +94,21 @@ func (r savedSearchResolver) OrgID() *graphql.ID {
 	orgID := marshalOrgID(*r.s.OrgID)
 	return &orgID
 }
+
+func (r savedSearchResolver) User(ctx context.Context) (*UserResolver, error) {
+	if r.s.UserID == nil {
+		return nil, nil
+	}
+	return UserByIDInt32(ctx, *r.s.UserID)
+}
+
+func (r savedSearchResolver) Org(ctx context.Context) (*OrgResolver, error) {
+	if r.s.OrgID == nil {
+		return nil, nil
+	}
+	return OrgByIDInt32(ctx, *r.s.OrgID)
+}
+
 func (r savedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
 
 func toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
