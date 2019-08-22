@@ -177,9 +177,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
                     {isErrorLike(this.state.messagesOrError) ? (
-                        <div className="status-messages-nav-item__entry">
+                        <div className="status-messages-nav-item__entry alert alert-danger mb-0">
                             <h4>Failed to load status messages:</h4>
-                            <p className="alert alert-danger">{startCase(this.state.messagesOrError.message)}</p>
+                            <p>{startCase(this.state.messagesOrError.message)}</p>
                         </div>
                     ) : this.state.messagesOrError.length > 0 ? (
                         this.state.messagesOrError.map((m, i) => {
