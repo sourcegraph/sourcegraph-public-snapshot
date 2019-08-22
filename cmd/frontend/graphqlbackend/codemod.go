@@ -42,18 +42,19 @@ type args struct {
 
 // codemodResultResolver is a resolver for the GraphQL type `CodemodResult`
 type codemodResultResolver struct {
-	commit  *gitCommitResolver
+	commit  *GitCommitResolver
 	path    string
 	fileURL string
 	diff    string
 	matches []*searchResultMatchResolver
 }
 
-func (r *codemodResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
+
 func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return r, true
 }
@@ -61,6 +62,7 @@ func (r *codemodResultResolver) ToCodemodResult() (*codemodResultResolver, bool)
 func (r *codemodResultResolver) searchResultURIs() (string, string) {
 	return string(r.commit.repo.repo.Name), r.path
 }
+
 func (r *codemodResultResolver) resultCount() int32 {
 	return int32(len(r.matches))
 }
@@ -119,7 +121,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	if len(includeFileFilter) > 0 {
 		includeFileFilterText = includeFileFilter[0]
 		// only file names or files with extensions in the following characterset are allowed
-		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`).MatchString
+		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z0-9_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the 'file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
@@ -128,7 +130,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	var excludeFileFilterText string
 	if len(excludeFileFilter) > 0 {
 		excludeFileFilterText = excludeFileFilter[0]
-		var IsAlphanumericWithPeriod = regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the '-file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
@@ -162,7 +164,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		repoRev := *repoRev // shadow variable so it doesn't change while goroutine is running
+		repoRev := repoRev // shadow variable so it doesn't change while goroutine is running
 		goroutine.Go(func() {
 			defer wg.Done()
 			results, searchErr := callCodemodInRepo(ctx, repoRev, cmodArgs)
@@ -219,7 +221,7 @@ func toMatchResolver(fileURL string, raw *rawCodemodResult) ([]*searchResultMatc
 		nil
 }
 
-func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, args *args) (results []codemodResultResolver, err error) {
+func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, args *args) (results []codemodResultResolver, err error) {
 	tr, ctx := trace.New(ctx, "callCodemodInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v, replace: %+v", repoRevs, args.matchTemplate, args.rewriteTemplate))
 	defer func() {
 		tr.LazyPrintf("%d results", len(results))
@@ -304,8 +306,8 @@ func callCodemodInRepo(ctx context.Context, repoRevs search.RepositoryRevisions,
 			return nil, err
 		}
 		result := codemodResultResolver{
-			commit: &gitCommitResolver{
-				repo:     &repositoryResolver{repo: repoRevs.Repo},
+			commit: &GitCommitResolver{
+				repo:     &RepositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
 			},
 			path:    raw.URI,

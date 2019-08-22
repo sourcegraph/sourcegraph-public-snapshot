@@ -28,6 +28,12 @@ const SiteSchemaJSON = `{
       "!go": { "pointer": true },
       "group": "Search"
     },
+    "search.index.symbols.enabled": {
+      "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Search"
+    },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.",
       "type": "array",
@@ -36,6 +42,12 @@ const SiteSchemaJSON = `{
       },
       "group": "Search",
       "examples": [["go.sum", "package-lock.json", "*.thrift"]]
+    },
+    "debug.search.symbolsParallelism": {
+      "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["20"]]
     },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",

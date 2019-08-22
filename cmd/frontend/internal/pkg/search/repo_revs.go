@@ -3,6 +3,7 @@ package search
 import (
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	dbquery "github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
@@ -63,7 +64,20 @@ type RepositoryRevisions struct {
 	// It is written to by zoektIndexedRepos and read later by zoektSearchHEAD.
 	// See https://github.com/sourcegraph/sourcegraph/pull/4702 for the performance
 	// rationale.
-	IndexedHEADCommit api.CommitID
+	mu                sync.Mutex
+	indexedHEADCommit api.CommitID
+}
+
+func (r *RepositoryRevisions) IndexedHEADCommit() api.CommitID {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.indexedHEADCommit
+}
+
+func (r *RepositoryRevisions) SetIndexedHEADCommit(ihc api.CommitID) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.indexedHEADCommit = ihc
 }
 
 // ParseRepositoryRevisions parses strings that refer to a repository and 0
@@ -121,11 +135,11 @@ func parseRev(spec string) RevisionSpecifier {
 
 // GitserverRepo is a convenience function to return the gitserver.Repo for
 // r.Repo. The returned Repo will not have the URL set, only the name.
-func (r RepositoryRevisions) GitserverRepo() gitserver.Repo {
+func (r *RepositoryRevisions) GitserverRepo() gitserver.Repo {
 	return gitserver.Repo{Name: r.Repo.Name}
 }
 
-func (r RepositoryRevisions) String() string {
+func (r *RepositoryRevisions) String() string {
 	if len(r.Revs) == 0 {
 		return string(r.Repo.Name)
 	}

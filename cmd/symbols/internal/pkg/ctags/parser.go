@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -97,6 +97,11 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	if err := proc.read(&init); err != nil {
 		proc.Close()
 		return nil, err
+	}
+
+	if init.Typ == "error" {
+		proc.Close()
+		return nil, errors.Errorf("starting %s failed with: %s", ctagsCommand, init.Message)
 	}
 
 	return &proc, nil

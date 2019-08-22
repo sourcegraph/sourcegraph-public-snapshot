@@ -1,6 +1,7 @@
 package ctags
 
 import (
+	"os"
 	"os/exec"
 	"reflect"
 	"testing"
@@ -15,6 +16,9 @@ func TestParser(t *testing.T) {
 
 	p, err := NewParser(command)
 	if err != nil {
+		if os.Getenv("CI") == "" {
+			t.Skipf("failed to start universal-ctags. Assuming it is due to our custom build of universal-ctags not being installed. Reason: %v", err)
+		}
 		t.Fatal(err)
 	}
 	defer p.Close()

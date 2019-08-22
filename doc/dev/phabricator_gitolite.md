@@ -96,7 +96,7 @@ kubectl apply -f ./phabricator
 
 ##### Docker (local)
 
-You can run locally via docker. We have 
+You can run locally via docker. We have
 [<https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator>](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/phabricator)
 for this using
 [Bitnami.](https://docs.bitnami.com/installer/apps/phabricator/)
@@ -136,6 +136,8 @@ dev/phabricator/stop.sh
     the repository.
 
 #### Install the Sourcegraph Phabricator extension.
+
+You can use `dev/phabricator/install-sourcegraph.sh`. To install it manually:
 
 SSH into your Phabricator instance and follow [the installation steps in the README.](https://github.com/sourcegraph/phabricator-extension/blob/master/README.md#installation)
 If you used the helper scripts, the root Phabricator directory
@@ -209,7 +211,7 @@ will be `/opt/bitnami/phabricator`.
     ```
 4. Verify that the phabricator assets are served:
     - `%NGROK_URL%/.assets/extension/scripts/phabricator.bundle.js`
-    - `%NGROK_URL%/.assets/extension/css/style.bundle.css`
+    - `%NGROK_URL%/.assets/extension/css/app.bundle.css`
 5. Set [`sourcegraph.url`](https://phabricator.sgdev.org/config/edit/sourcegraph.url/) to your tunnelled ngrok URL
 6. Verify the [`sourcegraph.callsignMappings`](https://phabricator.sgdev.org/config/edit/sourcegraph.callsignMappings/) are correctly set
 7. Verify [`sourcegraph.enabled`](https://phabricator.sgdev.org/config/edit/sourcegraph.enabled/) is set to `true`

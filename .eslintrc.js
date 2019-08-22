@@ -43,11 +43,6 @@ const config = {
             message:
               'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
           },
-          {
-            element: 'select',
-            message:
-              'Use the Select component in src/components/Select.tsx instead of the native HTML select element for proper cross-browser styling',
-          },
         ],
       },
     ],

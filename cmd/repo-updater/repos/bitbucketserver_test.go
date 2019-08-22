@@ -29,18 +29,18 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 			Token: "secret",
 		},
 		"ssh": {
-			Url:                         "bitbucket.example.com",
+			Url:                         "https://bitbucket.example.com",
 			Token:                       "secret",
 			InitialRepositoryEnablement: true,
 			GitURLType:                  "ssh",
 		},
 		"path-pattern": {
-			Url:                   "bitbucket.example.com",
+			Url:                   "https://bitbucket.example.com",
 			Token:                 "secret",
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
 		},
 		"username": {
-			Url:                   "bitbucket.example.com",
+			Url:                   "https://bitbucket.example.com",
 			Username:              "foo",
 			Token:                 "secret",
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
@@ -100,11 +100,11 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 
 	cases := map[string]*schema.BitbucketServerConnection{
 		"none": {
-			Url:   "bitbucket.example.com",
+			Url:   "https://bitbucket.example.com",
 			Token: "secret",
 		},
 		"name": {
-			Url:   "bitbucket.example.com",
+			Url:   "https://bitbucket.example.com",
 			Token: "secret",
 			Exclude: []*schema.ExcludedBitbucketServerRepo{{
 				Name: "SG/python-langserver-fork",
@@ -113,12 +113,12 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 			}},
 		},
 		"id": {
-			Url:     "bitbucket.example.com",
+			Url:     "https://bitbucket.example.com",
 			Token:   "secret",
 			Exclude: []*schema.ExcludedBitbucketServerRepo{{Id: 4}},
 		},
 		"pattern": {
-			Url:   "bitbucket.example.com",
+			Url:   "https://bitbucket.example.com",
 			Token: "secret",
 			Exclude: []*schema.ExcludedBitbucketServerRepo{{
 				Pattern: "SG/python.*",
@@ -127,7 +127,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 			}},
 		},
 		"both": {
-			Url:   "bitbucket.example.com",
+			Url:   "https://bitbucket.example.com",
 			Token: "secret",
 			// We match on the bitbucket server repo name, not the repository path pattern.
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",

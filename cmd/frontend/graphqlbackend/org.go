@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -30,10 +29,10 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*OrgResolver, error) {
-	return orgByID(ctx, args.ID)
+	return OrgByID(ctx, args.ID)
 }
 
-func orgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
+func OrgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
 	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err
@@ -80,7 +79,7 @@ func (o *OrgResolver) URL() string { return "/organizations/" + o.org.Name }
 
 func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings") }
 
-func (o *OrgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
+func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.CreatedAt} }
 
 func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list the org members.

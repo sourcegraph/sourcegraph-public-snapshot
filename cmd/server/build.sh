@@ -60,6 +60,9 @@ echo "--- prometheus config"
 mkdir "$OUTPUT/etc"
 cp -r dev/prometheus "$OUTPUT/etc"
 
+echo "--- grafana config"
+cp -r dev/grafana "$OUTPUT/etc"
+
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --build-arg COMMIT_SHA \
