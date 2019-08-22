@@ -57,9 +57,9 @@ function unflattenRange(flatRange: FlatRange): lsp.Range {
 }
 
 /**
- * Backend for LSIF dumps stored in Dgraph.
+ * `Backend` stores LSIF dump data in a remote Dgraph instance.
  */
-export class DgraphBackend {
+export class Backend {
     /**
      * `clientStub` is a Dgraph gRPC stub.
      */
@@ -71,7 +71,7 @@ export class DgraphBackend {
     private client: DgraphClient
 
     /**
-     * Create a new `DgraphBackend` instance. This will connect to the instance
+     * Create a new `Backend` instance. This will connect to the instance
      * running at the configured address.
      */
     constructor() {

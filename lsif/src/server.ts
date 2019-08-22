@@ -1,6 +1,6 @@
 import bodyParser from 'body-parser'
 import express from 'express'
-import { DgraphBackend } from './backend'
+import { Backend } from './backend'
 import { readEnv, readEnvInt } from './util'
 
 /**
@@ -8,14 +8,16 @@ import { readEnv, readEnvInt } from './util'
  */
 const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 
-// TODO - document these
+/**
+ * The maximum size of an LSIF dump upload.
+ */
 const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
-    const backend = new DgraphBackend()
+    const backend = new Backend()
     await backend.initialize()
     const app = express()
     app.use(errorHandler)
