@@ -21,6 +21,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.7.1
+
+### Fixed
+
+- When re-indexing repositories, we now continue to serve from the old index in the meantime. Thus, you can upgrade to 3.7.1 without downtime.
+- Indexed symbol search is now faster, as we've fixed a performance issue that occurred when many repositories without any symbols existed.
+- Indexed symbol search now uses less disk space when upgrading directly to v3.7.1 as we properly remove old indexes.
+
 ## 3.7.0
 
 ### Added
