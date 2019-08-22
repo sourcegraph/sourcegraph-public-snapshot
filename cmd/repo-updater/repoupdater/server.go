@@ -451,28 +451,21 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	if multiErr := s.Syncer.MultiSourceError(); multiErr != nil {
-		for _, sourceErr := range multiErr.Errors {
-			m := newSyncErrMessage(sourceErr)
-			resp.Messages = append(resp.Messages, m)
-		}
+	for _, e := range s.Syncer.LastSyncErrors() {
+		resp.Messages = append(resp.Messages, protocol.StatusMessage{
+			Type: protocol.SyncError,
+			SyncError: &protocol.SyncErrorStatusMessage{
+				Message:                    e.Err.Error(),
+				ExternalServiceId:          e.ExtSvc.ID,
+				ExternalServiceKind:        e.ExtSvc.Kind,
+				ExternalServiceDisplayName: e.ExtSvc.DisplayName,
+			},
+		})
 	}
 
 	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
 
 	respond(w, http.StatusOK, resp)
-}
-
-func newSyncErrMessage(err *repos.SourceError) protocol.StatusMessage {
-	return protocol.StatusMessage{
-		Type: protocol.SyncError,
-		SyncError: &protocol.SyncErrorStatusMessage{
-			Message:                    err.Err.Error(),
-			ExternalServiceId:          err.ExtSvc.ID,
-			ExternalServiceKind:        err.ExtSvc.Kind,
-			ExternalServiceDisplayName: err.ExtSvc.DisplayName,
-		},
-	}
 }
 
 func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {

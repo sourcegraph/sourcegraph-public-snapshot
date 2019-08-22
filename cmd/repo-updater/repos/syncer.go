@@ -347,10 +347,18 @@ func (s *Syncer) SetOrResetMultiSourceErr(err error) {
 	s.multiSourceErrMu.Unlock()
 }
 
-func (s *Syncer) MultiSourceError() *MultiSourceError {
+// LastSyncErrors returns the SourceErrors that were produced in the last Sync
+// run. If the slice is empty, the last sync run didn't produce any errors.
+func (s *Syncer) LastSyncErrors() []*SourceError {
 	s.multiSourceErrMu.RLock()
 	defer s.multiSourceErrMu.RUnlock()
-	return s.multiSourceErr
+
+	var errors []*SourceError
+	if s.multiSourceErr != nil {
+		errors = s.multiSourceErr.Errors
+	}
+
+	return errors
 }
 
 func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
