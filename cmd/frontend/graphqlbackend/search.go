@@ -411,10 +411,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
 			return zoektIndexedRepos(ctx, IndexedSearch(), revs, nil)
 		}
-		getRawDefaultRepos := func(ctx context.Context) ([]*types.Repo, error) {
-			return db.DefaultRepos.List(ctx)
-		}
-		defaultRepos, err = defaultRepositories(ctx, getRawDefaultRepos, getIndexedRepos)
+		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
