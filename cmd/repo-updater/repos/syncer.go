@@ -322,7 +322,7 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 		// produces an error through multiple syncs, the state of
 		// multiSourceErr would flip-flop between here and the `ListRepos` call
 		// further down.
-		s.SetOrResetMultiSourceErr(err)
+		s.setOrResetMultiSourceErr(err)
 		return nil, err
 	}
 
@@ -330,12 +330,12 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	defer cancel()
 
 	repos, err := srcs.ListRepos(ctx)
-	s.SetOrResetMultiSourceErr(err)
+	s.setOrResetMultiSourceErr(err)
 
 	return repos, err
 }
 
-func (s *Syncer) SetOrResetMultiSourceErr(err error) {
+func (s *Syncer) setOrResetMultiSourceErr(err error) {
 	s.multiSourceErrMu.Lock()
 
 	if multiSourceErr, ok := err.(*MultiSourceError); ok {

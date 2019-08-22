@@ -553,7 +553,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		name            string
 		stored          repos.Repos
 		gitserverCloned []string
-		syncerErr       *repos.MultiSourceError
+		sourcerErr      error
 		res             *protocol.StatusMessagesResponse
 		err             string
 	}{
@@ -635,12 +635,8 @@ func TestServer_StatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name: "one syncer err",
-			syncerErr: &repos.MultiSourceError{
-				Errors: []*repos.SourceError{
-					{Err: errors.New("github is down"), ExtSvc: githubService},
-				},
-			},
+			name:       "one syncer err",
+			sourcerErr: errors.New("github is down"),
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
@@ -669,10 +665,23 @@ func TestServer_StatusMessages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			err = store.UpsertExternalServices(ctx, githubService)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			clock := repos.NewFakeClock(time.Now(), 0)
 			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
-			syncer.SetOrResetMultiSourceErr(tc.syncerErr)
+
+			if tc.sourcerErr != nil {
+				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
+				// Run Sync so that possibly `LastSyncErrors` is set
+				syncer = repos.NewSyncer(store, sourcer, nil, clock.Now)
+				_, err := syncer.Sync(ctx)
+				if err != nil {
+					return
+				}
+			}
 
 			s := &Server{
 				Syncer:          syncer,
