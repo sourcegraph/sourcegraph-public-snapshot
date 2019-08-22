@@ -572,7 +572,6 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type: protocol.Cloning,
 						Cloning: &protocol.CloningStatusMessage{
 							Message: "1 repositories enqueued for cloning...",
 						},
@@ -587,7 +586,6 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type: protocol.Cloning,
 						Cloning: &protocol.CloningStatusMessage{
 							Message: "1 repositories enqueued for cloning...",
 						},
@@ -610,7 +608,6 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type: protocol.Cloning,
 						Cloning: &protocol.CloningStatusMessage{
 							Message: "2 repositories enqueued for cloning...",
 						},
@@ -640,7 +637,6 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type: protocol.SyncError,
 						SyncError: &protocol.SyncErrorStatusMessage{
 							Message:                    "github is down",
 							ExternalServiceId:          githubService.ID,

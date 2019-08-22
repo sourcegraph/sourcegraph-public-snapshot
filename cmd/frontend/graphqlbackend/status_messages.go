@@ -6,7 +6,6 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]statusMessageResolver, error) {
@@ -23,13 +22,13 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]statusMessageRes
 	}
 
 	for _, m := range result.Messages {
-		if m.Type == protocol.Cloning && m.Cloning != nil {
+		if m.Cloning != nil {
 			messages = append(messages, &cloningStatusMessageResolver{
 				message: m.Cloning.Message,
 			})
 		}
 
-		if m.Type == protocol.SyncError && m.SyncError != nil {
+		if m.SyncError != nil {
 			messages = append(messages, &syncErrorStatusMessageResolver{
 				message:                    m.SyncError.Message,
 				externalServiceId:          marshalExternalServiceID(m.SyncError.ExternalServiceId),

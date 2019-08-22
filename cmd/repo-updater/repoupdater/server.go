@@ -444,7 +444,6 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 
 	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Type: protocol.Cloning,
 			Cloning: &protocol.CloningStatusMessage{
 				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
 			},
@@ -453,7 +452,6 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 
 	for _, e := range s.Syncer.LastSyncErrors() {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Type: protocol.SyncError,
 			SyncError: &protocol.SyncErrorStatusMessage{
 				Message:                    e.Err.Error(),
 				ExternalServiceId:          e.ExtSvc.ID,

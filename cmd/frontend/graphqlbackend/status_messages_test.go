@@ -92,13 +92,11 @@ func TestStatusMessages(t *testing.T) {
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
 				{
-					Type: protocol.Cloning,
 					Cloning: &protocol.CloningStatusMessage{
 						Message: "Currently cloning 5 repositories in parallel...",
 					},
 				},
 				{
-					Type: protocol.SyncError,
 					SyncError: &protocol.SyncErrorStatusMessage{
 						Message:                    "Authentication failed. Please check credentials.",
 						ExternalServiceId:          1,
