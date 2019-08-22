@@ -239,7 +239,7 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 
 		cmdDir := func() string {
 			cmdDirByApp := map[string]string{
-				"lsif-server": "lsif/server",
+				"lsif-server": "lsif",
 			}
 			if cmdDir, ok := cmdDirByApp[app]; ok {
 				return cmdDir

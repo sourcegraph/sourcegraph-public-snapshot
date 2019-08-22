@@ -1,8 +1,7 @@
 import bodyParser from 'body-parser'
 import express from 'express'
 import { DgraphBackend } from './backend'
-import { readEnvInt, readEnv } from './util'
-import { wrap } from 'async-middleware'
+import { readEnv, readEnvInt } from './util'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -21,49 +20,46 @@ async function main(): Promise<void> {
     const app = express()
     app.use(errorHandler)
 
-    app.get('/ping', (req, res) => {
+    app.get('/ping', (_, res) => {
         res.send({ pong: 'pong' })
     })
 
-    app.post(
-        '/upload',
-        bodyParser.raw({ limit: MAX_UPLOAD }),
-        wrap(async (req, res) => {
+    app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
+        try {
             const { repository, commit } = req.query
             checkRepository(repository)
             checkCommit(commit)
-
             await backend.insertDump(req, repository, commit)
             res.json(null)
-        })
-    )
+        } catch (e) {
+            return next(e)
+        }
+    })
 
-    app.post(
-        '/exists',
-        wrap(async (req, res) => {
+    app.post('/exists', async (req, res, next) => {
+        try {
             const { repository, commit, file } = req.query
             checkRepository(repository)
             checkCommit(commit)
+            res.json(await backend.exists(repository, commit, file))
+        } catch (e) {
+            return next(e)
+        }
+    })
 
-            const result = !file || (await backend.exists(repository, commit, file))
-            res.json(result)
-        })
-    )
-
-    app.post(
-        '/request',
-        bodyParser.json({ limit: '1mb' }), // TODO - this seems HUGE for this request
-        wrap(async (req, res) => {
+    app.post('/request', bodyParser.json({ limit: '1mb' }), async (req, res, next) => {
+        try {
             const { repository, commit } = req.query
             const { path, position, method } = req.body
             checkRepository(repository)
             checkCommit(commit)
             checkMethod(method, ['definitions', 'references', 'hover'])
             const cleanMethod = method as 'definitions' | 'references' | 'hover'
-
             res.json(await backend[cleanMethod](repository, commit, path, position))
-        })
-    )
+        } catch (e) {
+            return next(e)
+        }
+    })
 
     app.listen(HTTP_PORT, () => {
         console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
