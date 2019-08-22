@@ -72,7 +72,7 @@ async function main(): Promise<void> {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * Middleware functino used to convert uncaught exceptions into 500 responses.
+ * Middleware function used to convert uncaught exceptions into 500 responses.
  */
 function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
     if (err && err.status) {
