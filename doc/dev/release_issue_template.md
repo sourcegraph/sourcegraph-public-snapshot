@@ -25,6 +25,9 @@ Run a find replace on:
 
 - [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
 - [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
+- [ ] Create a new test grid for MAJOR.MINOR by cloning the release testing grid template (https://sourcegraph-team.monday.com/boards/278184929/) and renaming it to "MAJOR.MINOR Release test grid".
+    - [ ] Ping the @distribution team to determine which rows should be tested and in which environments.
+    - [ ] Ping each team, and ask them to identify which of the optional rows that they own should be tested this iteration.
 
 ## 3 working days before release (YYYY-MM-DD)
 
