@@ -1,4 +1,7 @@
 #!/bin/bash
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
 set -eu -o pipefail
 
 echo "--- make sure yarn.lock doesn't change when running yarn"
