@@ -554,7 +554,7 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 	for _, r := range indexed {
 		indexedMap[r.Repo.ID] = true
 	}
-	var defaultRepos2 []*types.Repo
+	defaultRepos2 := make([]*types.Repo, 0, len(indexedMap))
 	for _, r := range defaultRepos {
 		if indexedMap[r.ID] {
 			defaultRepos2 = append(defaultRepos2, r)
