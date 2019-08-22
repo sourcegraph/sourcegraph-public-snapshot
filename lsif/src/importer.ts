@@ -30,6 +30,7 @@ const DGRAPH_LIVE_LOADER_ADDRESS = readEnv('DGRAPH_LIVE_LOADER_ADDRESS', 'localh
  * can handle an object of that particular type during import.
  */
 interface HandlerMap {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [K: string]: (element: any) => void
 }
 
@@ -63,7 +64,7 @@ export class Importer {
     constructor(private repository: string, private commit: string) {
         // Register vertex handlers
         this.vertexHandlerMap[VertexLabels.document] = e => this.handleDocument(e)
-        this.vertexHandlerMap[VertexLabels.hoverResult] = e => this.handleHover(e)
+        this.vertexHandlerMap[VertexLabels.hoverResult] = e => this.handleHoverResult(e)
         this.vertexHandlerMap[VertexLabels.metaData] = e => this.handleMetaData(e)
         this.vertexHandlerMap[VertexLabels.moniker] = e => this.handleMoniker(e)
         this.vertexHandlerMap[VertexLabels.packageInformation] = e => this.handlePackageInformation(e)
@@ -183,7 +184,7 @@ export class Importer {
      *
      * @param vertex The vertex object.
      */
-    private handleHover(vertex: HoverResult): void {
+    private handleHoverResult(vertex: HoverResult): void {
         this.emitVertex(vertex, 'hoverResult', {
             kind: makeValue('markdown'),
             value: makeValue(normalizeHover(vertex.result)),

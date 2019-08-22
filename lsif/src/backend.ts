@@ -5,7 +5,10 @@ import * as tmp from 'tmp-promise'
 import { Readable } from 'stream'
 import { readEnv } from './util'
 
+// TODO - document
 const DGRAPH_ADDRESS = readEnv('DGRAPH_ADDRESS', 'localhost:9080')
+
+// TODO - document these
 
 interface ExistsResult {
     matching: [
