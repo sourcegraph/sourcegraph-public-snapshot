@@ -127,6 +127,7 @@ export class DgraphImporter {
         const path = decodeURIComponent(relativeUrl(this.rootInfo.rootUri, new URL(vertex.uri)))
         this.rdfStream.write(`${this.rootInfo.commitUidRef} <${EdgeLabels.contains}> ${id} .\n`)
         this.rdfStream.write(`${id} <Document.path> ${makeValue(path)} .\n`)
+        this.rdfStream.write(`${id} <Document.label> "document" .\n`)
     }
 
     private handleHover(vertex: HoverResult): void {
