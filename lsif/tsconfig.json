@@ -1,18 +1,9 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "esModuleInterop": true,
-    "lib": ["esnext", "esnext.asynciterable"],
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "noEmit": false,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "outDir": "out",
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "skipLibCheck": true,
-    "sourceMap": true,
     "strict": true,
     "target": "esnext",
   },
