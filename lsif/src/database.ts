@@ -193,7 +193,7 @@ export class Database {
         )
 
         // FIXME
-        moniker.identifier = fixMonikerIdentifier(moniker)
+        fixMonikerIdentifier(moniker)
         const uriFilter = (uri: string): string => makeRemoteUri(packageEntity, uri)
         return await Database.monikerResults(db, DefModel, moniker, uriFilter)
     }
@@ -233,8 +233,7 @@ export class Database {
                 makeFilename(reference.repository, reference.commit)
             )
 
-            // FIXME
-            moniker.identifier = fixMonikerIdentifier(moniker)
+            fixMonikerIdentifier(moniker)
             const uriFilter = (uri: string): string => makeRemoteUri(reference, uri)
             const references = await Database.monikerResults(db, RefModel, moniker, uriFilter)
             allReferences.push(...references)
@@ -532,8 +531,8 @@ function comparePosition(range: lsp.Range, position: lsp.Position): number {
 }
 
 // TODO - make this unnecessary, or figure out why it needs to stay
-function fixMonikerIdentifier(moniker: MonikerData): string {
+function fixMonikerIdentifier(moniker: MonikerData): void {
     const parts = moniker.identifier.split(':')
     parts[1] = ''
-    return parts.join(':')
+    moniker.identifier = parts.join(':')
 }
