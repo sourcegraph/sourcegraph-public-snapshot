@@ -106,28 +106,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderSyncErrorMessage(message: GQL.ISyncErrorStatusMessage): JSX.Element | null {
-        const displayName = message.externalServiceDisplayName
-        const extSvcID = message.externalServiceId
-
-        const title = `Syncing external service "${displayName}" failed:`
-        const linkTo = `/site-admin/external-services/${extSvcID}`
-        const linkText = `Edit "${displayName}"`
-
-        return (
-            <StatusMessagesNavItemEntry
-                key={message.message}
-                title={title}
-                text={message.message}
-                showLink={this.props.isSiteAdmin}
-                linkTo={linkTo}
-                linkText={linkText}
-                linkOnClick={this.toggleIsOpen}
-                alert="alert-danger"
-            />
-        )
-    }
-
     private renderMessage(message: GQL.StatusMessage): JSX.Element | null {
         switch (message.__typename) {
             case 'CloningStatusMessage':
@@ -143,7 +121,18 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     />
                 )
             case 'SyncErrorStatusMessage':
-                return this.renderSyncErrorMessage(message)
+                return (
+                    <StatusMessagesNavItemEntry
+                        key={message.message}
+                        title={`Syncing external service "${message.externalServiceDisplayName}" failed:`}
+                        text={message.message}
+                        showLink={this.props.isSiteAdmin}
+                        linkTo={`/site-admin/external-services/${message.externalServiceId}`}
+                        linkText={`Edit "${message.externalServiceDisplayName}"`}
+                        linkOnClick={this.toggleIsOpen}
+                        alert="alert-danger"
+                    />
+                )
         }
     }
 
