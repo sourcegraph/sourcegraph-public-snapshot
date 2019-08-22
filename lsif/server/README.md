@@ -6,7 +6,7 @@ This is an HTTP server on top of https://github.com/Microsoft/vscode-lsif-extens
 - [src/json.ts](src/json.ts)
 - [src/files.ts](src/files.ts)
 
-The only new file is [src/http-server.ts](src/http-server.ts), which is a Node.js Express HTTP server with the following API:
+The only new file is [src/server.ts](src/server.ts), which is a Node.js Express HTTP server with the following API:
 
 ## API
 

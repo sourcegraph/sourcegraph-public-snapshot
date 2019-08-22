@@ -1,7 +1,7 @@
 {
   "name": "lsif-server",
   "description": "LSIF Server with an HTTP API",
-  "author": "Microsoft Corporation and Sourcegraph",
+  "author": "Sourcegraph",
   "license": "MIT",
   "version": "0.1.0",
   "engines": {
@@ -50,8 +50,8 @@
   },
   "scripts": {
     "typecheck": "tsc -p .",
-    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && env FORCE_COLOR=1 node -r source-map-support/register out/http-server.bundle.js'\" --noClear",
-    "build": "parcel build --out-dir out --out-file http-server.bundle.js --target node --public-url ./ src/http-server.ts",
+    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && env FORCE_COLOR=1 node -r source-map-support/register out/server.bundle.js'\" --noClear",
+    "build": "parcel build --out-dir out --out-file server.bundle.js --target node --public-url ./ src/server.ts",
     "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "fixup": "sed -i '' 's/\r$//' ./node_modules/lsif-sqlite/bin/lsif-sqlite"
