@@ -202,6 +202,7 @@ const services = {
     },
 }
 
-export const extensionsController: Pick<Controller, 'services'> = {
+export const extensionsController: Pick<Controller, 'executeCommand' | 'services'> = {
+    executeCommand: () => Promise.resolve(),
     services: services as any,
 }

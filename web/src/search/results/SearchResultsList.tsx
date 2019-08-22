@@ -15,8 +15,11 @@ import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
@@ -30,7 +33,12 @@ import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-export interface SearchResultsListProps extends SettingsCascadeProps, ThemeProps {
+export interface SearchResultsListProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        TelemetryProps,
+        SettingsCascadeProps,
+        ThemeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -335,16 +343,17 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                 <>
                                     {/* Info Bar */}
                                     <SearchResultsInfoBar
-                                        authenticatedUser={this.props.authenticatedUser}
+                                        {...this.props}
                                         results={results}
-                                        allExpanded={this.props.allExpanded}
-                                        didSave={this.props.didSave}
-                                        onDidCreateSavedQuery={this.props.onDidCreateSavedQuery}
-                                        onExpandAllResultsToggle={this.props.onExpandAllResultsToggle}
-                                        onSaveQueryClick={this.props.onSaveQueryClick}
-                                        onShowMoreResultsClick={this.props.onShowMoreResultsClick}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
                                         displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                        // This isn't always correct, but the penalty for a false-positive is
+                                        // low.
+                                        hasRepoishField={
+                                            parsedQuery
+                                                ? parsedQuery.includes('repo:') || parsedQuery.includes('repogroup:')
+                                                : false
+                                        }
                                     />
 
                                     {/* Results */}
@@ -523,15 +532,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
      * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.
      */
     private getCheckpoint(): number {
-        const at = this.props.location.hash.replace(/^#/, '')
-
-        let checkpoint: number
-
-        if (!at) {
-            checkpoint = 0
-        } else {
-            checkpoint = parseInt(at, 10)
-        }
+        const checkpoint = parseInt(this.props.location.hash.substr(1), 10) || 0
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {

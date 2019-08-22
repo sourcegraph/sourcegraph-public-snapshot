@@ -31,18 +31,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/metrics"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+var requestMeter = metrics.NewRequestMeter("gitserver", "Total number of requests sent to gitserver.")
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = NewClient(&http.Client{
 	// nethttp.Transport will propagate opentracing spans
 	Transport: &nethttp.Transport{
-		RoundTripper: &http.Transport{
+		RoundTripper: requestMeter.Transport(&http.Transport{
 			// Default is 2, but we can send many concurrent requests
 			MaxIdleConnsPerHost: 500,
-		},
+		}, func(u *url.URL) string {
+			// break it down by API function call (ie "/archive", "/exec", "/is-repo-cloneable", etc)
+			return u.Path
+		}),
 	},
 })
 

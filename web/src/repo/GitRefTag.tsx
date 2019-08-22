@@ -10,7 +10,7 @@ interface Props {
     /**
      * Called when the mousedown event is triggered on the element.
      */
-    onMouseDown: () => void
+    onMouseDown?: () => void
 }
 
 export const GitRefTag: React.FunctionComponent<Props> = ({ gitRef, onMouseDown }: Props) => {

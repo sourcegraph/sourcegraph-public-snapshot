@@ -36,7 +36,7 @@ export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, disabled, s
                     type="button"
                     disabled={saveDiscardDisabled}
                     title={saveDiscardTitle || 'Save changes'}
-                    className="btn btn-sm btn-success save-toolbar__item save-toolbar__btn save-toolbar__btn-first"
+                    className="btn btn-sm btn-success save-toolbar__item save-toolbar__btn save-toolbar__btn-first e2e-save-toolbar-save"
                     onClick={onSave}
                 >
                     <CheckIcon className="icon-inline" /> Save changes
@@ -45,7 +45,7 @@ export const SaveToolbar: React.FunctionComponent<Props> = ({ dirty, disabled, s
                     type="button"
                     disabled={saveDiscardDisabled}
                     title={saveDiscardTitle || 'Discard changes'}
-                    className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last"
+                    className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last e2e-save-toolbar-discard"
                     onClick={onDiscard}
                 >
                     <CloseIcon className="icon-inline" /> Discard

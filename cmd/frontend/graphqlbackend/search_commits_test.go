@@ -52,7 +52,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := search.RepositoryRevisions{
+	repoRevs := &search.RepositoryRevisions{
 		Repo: &types.Repo{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
@@ -67,8 +67,8 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantCommit := gitCommitResolver{
-		repo:   &repositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
+	wantCommit := GitCommitResolver{
+		repo:   &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},
 		oid:    "c1",
 		author: *toSignatureResolver(&gitSignatureWithDate),
 	}
@@ -239,6 +239,25 @@ func Test_highlightMatches(t *testing.T) {
 					{
 						line:      2,
 						character: 3,
+						length:    1,
+					},
+				},
+			},
+		},
+
+		// https://github.com/sourcegraph/sourcegraph/issues/4791
+		{
+			name: "unicode search that would be broken by tolower",
+			args: args{
+				pattern: regexp.MustCompile(`İ`),
+				data:    []byte(`İi`),
+			},
+			want: &highlightedString{
+				value: "İi",
+				highlights: []*highlightedRange{
+					{
+						line:      1,
+						character: 0,
 						length:    1,
 					},
 				},

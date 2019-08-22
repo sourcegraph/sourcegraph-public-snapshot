@@ -4,20 +4,25 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/google/zoekt"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-lsp"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
@@ -31,7 +36,7 @@ type searchSymbolResult struct {
 	symbol  protocol.Symbol
 	baseURI *gituri.URI
 	lang    string
-	commit  *gitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
+	commit  *GitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
 }
 
 func (s *searchSymbolResult) uri() *gituri.URI {
@@ -62,12 +67,119 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &searchResultsCommon{}
+	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
 	var (
-		run = parallel.NewRun(20)
-		mu  sync.Mutex
+		searcherRepos = args.Repos
+		zoektRepos    []*search.RepositoryRevisions
 	)
-	for _, repoRevs := range args.Repos {
+
+	if args.Zoekt.Enabled() {
+		filter := func(repo *zoekt.Repository) bool {
+			return repo.HasSymbols
+		}
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
+		if err != nil {
+			// Don't hard fail if index is not available yet.
+			tr.LogFields(otlog.String("indexErr", err.Error()))
+			if ctx.Err() == nil {
+				log15.Warn("zoektIndexedRepos failed", "error", err)
+			}
+			common.indexUnavailable = true
+			err = nil
+		}
+	}
+
+	common.repos = make([]*types.Repo, len(args.Repos))
+	for i, repo := range args.Repos {
+		common.repos[i] = repo.Repo
+	}
+
+	index, _ := args.Query.StringValues(query.FieldIndex)
+	if len(index) > 0 {
+		index := index[len(index)-1]
+		switch parseYesNoOnly(index) {
+		case Yes, True:
+			// default
+			if args.Zoekt.Enabled() {
+				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+			}
+		case Only:
+			if !args.Zoekt.Enabled() {
+				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
+			}
+			common.missing = make([]*types.Repo, len(searcherRepos))
+			for i, r := range searcherRepos {
+				common.missing[i] = r.Repo
+			}
+			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
+			searcherRepos = nil
+		case No, False:
+			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
+			searcherRepos = append(searcherRepos, zoektRepos...)
+			zoektRepos = nil
+		default:
+			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
+		}
+	}
+
+	var (
+		run = parallel.NewRun(conf.SearchSymbolsParallelism())
+		mu  sync.Mutex
+
+		unflattened       [][]*fileMatchResolver
+		flattenedSize     int
+		overLimitCanceled bool
+	)
+
+	addMatches := func(matches []*fileMatchResolver) {
+		if len(matches) > 0 {
+			common.resultCount += int32(len(matches))
+			sort.Slice(matches, func(i, j int) bool {
+				a, b := matches[i].uri, matches[j].uri
+				return a > b
+			})
+			unflattened = append(unflattened, matches)
+			flattenedSize += len(matches)
+
+			if flattenedSize > int(args.Pattern.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
+				overLimitCanceled = true
+				common.limitHit = true
+				cancelAll()
+			}
+		}
+	}
+
+	run.Acquire()
+	goroutine.Go(func() {
+		defer run.Release()
+		query := args.Pattern
+		k := zoektResultCountFactor(len(zoektRepos), query)
+		opts := zoektSearchOpts(k, query)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, args.Zoekt.Client, opts, true, time.Since)
+		mu.Lock()
+		defer mu.Unlock()
+		if ctx.Err() == nil {
+			for _, repo := range zoektRepos {
+				common.searched = append(common.searched, repo.Repo)
+				common.indexed = append(common.indexed, repo.Repo)
+			}
+			for repo := range reposLimitHit {
+				common.partial[api.RepoName(repo)] = struct{}{}
+			}
+		}
+		if limitHit {
+			common.limitHit = true
+		}
+		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+		if searchErr != nil && err == nil && !overLimitCanceled {
+			err = searchErr
+			tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
+		}
+		addMatches(matches)
+	})
+
+	for _, repoRevs := range searcherRepos {
 		repoRevs := repoRevs
 		if ctx.Err() != nil {
 			break
@@ -85,7 +197,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			mu.Lock()
 			defer mu.Unlock()
 			limitHit := symbolCount(res) > limit
-			repoErr = handleRepoSearchResult(common, *repoRevs, limitHit, false, repoErr)
+			repoErr = handleRepoSearchResult(common, repoRevs, limitHit, false, repoErr)
 			if repoErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
 					// Only record error if it's not directly caused by a context error.
@@ -95,15 +207,13 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 				common.searched = append(common.searched, repoRevs.Repo)
 			}
 			if repoSymbols != nil {
-				res = append(res, repoSymbols...)
-				if limitHit {
-					cancelAll()
-				}
+				addMatches(repoSymbols)
 			}
 		})
 	}
 	err = run.Wait()
-	res2 := limitSymbolResults(res, limit)
+	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
+	res2 := limitSymbolResults(flattened, limit)
 	common.limitHit = symbolCount(res2) < symbolCount(res)
 	return res2, common, err
 }
@@ -178,9 +288,9 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
-		commit := &gitCommitResolver{
-			repo:     &repositoryResolver{repo: repoRevs.Repo},
-			oid:      gitObjectID(commitID),
+		commit := &GitCommitResolver{
+			repo:     &RepositoryResolver{repo: repoRevs.Repo},
+			oid:      GitObjectID(commitID),
 			inputRev: &inputRev,
 			// NOTE: Not all fields are set, for performance.
 		}
@@ -202,7 +312,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
 				repo:    symbolRes.commit.repo.repo,
-				// Don't get commit from gitCommitResolver.OID() because we don't want to
+				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
 				commitID: api.CommitID(symbolRes.commit.oid),
 			}

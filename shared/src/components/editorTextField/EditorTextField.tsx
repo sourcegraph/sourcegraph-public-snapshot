@@ -107,7 +107,7 @@ interface Props
     extends ExtensionsControllerProps,
         Pick<
             TextareaHTMLAttributes<HTMLTextAreaElement>,
-            'className' | 'placeholder' | 'autoFocus' | 'onKeyDown' | 'rows' | 'spellCheck'
+            'className' | 'placeholder' | 'autoFocus' | 'onKeyDown' | 'rows' | 'spellCheck' | 'disabled' | 'style'
         > {
     /**
      * The ID of the editor that this component is backed by.

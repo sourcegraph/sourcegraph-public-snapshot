@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"time"
-
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -68,12 +66,12 @@ func (r *externalServiceResolver) Config() string {
 	return r.externalService.Config
 }
 
-func (r *externalServiceResolver) CreatedAt() string {
-	return r.externalService.CreatedAt.Format(time.RFC3339)
+func (r *externalServiceResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.externalService.CreatedAt}
 }
 
-func (r *externalServiceResolver) UpdatedAt() string {
-	return r.externalService.UpdatedAt.Format(time.RFC3339)
+func (r *externalServiceResolver) UpdatedAt() DateTime {
+	return DateTime{Time: r.externalService.UpdatedAt}
 }
 
 func (r *externalServiceResolver) Warning() *string {

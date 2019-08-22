@@ -1,6 +1,8 @@
 package graphqlbackend
 
-import "time"
+import (
+	"time"
+)
 
 // GetConfiguredProductLicenseInfo is called to obtain the product subscription info when creating
 // the GraphQL resolver for the GraphQL type ProductLicenseInfo.
@@ -30,6 +32,6 @@ func (r ProductLicenseInfo) UserCount() int32 {
 	return int32(r.UserCountValue)
 }
 
-func (r ProductLicenseInfo) ExpiresAt() string {
-	return r.ExpiresAtValue.Format(time.RFC3339)
+func (r ProductLicenseInfo) ExpiresAt() DateTime {
+	return DateTime{Time: r.ExpiresAtValue}
 }

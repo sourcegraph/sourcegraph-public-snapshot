@@ -109,9 +109,9 @@ type RegistryExtension interface {
 	Publisher(ctx context.Context) (RegistryPublisher, error)
 	Name() string
 	Manifest(ctx context.Context) (ExtensionManifest, error)
-	CreatedAt() *string
-	UpdatedAt() *string
-	PublishedAt(context.Context) (*string, error)
+	CreatedAt() *DateTime
+	UpdatedAt() *DateTime
+	PublishedAt(context.Context) (*DateTime, error)
 	URL() string
 	RemoteURL() *string
 	RegistryName() (string, error)

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
+import isAbsoluteUrl from 'is-absolute-url'
 
 /**
  * Uses react-router-dom's <Link> for relative URLs, <a> for absolute URLs. This is useful because passing an
@@ -7,8 +8,4 @@ import { Link, LinkProps } from 'react-router-dom'
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
 export const RouterLinkOrAnchor: React.FunctionComponent<LinkProps> = props =>
-    typeof props.to === 'string' && /^https?:\/\//.test(props.to) ? (
-        <a href={props.to} {...props} />
-    ) : (
-        <Link {...props} />
-    )
+    typeof props.to === 'string' && isAbsoluteUrl(props.to) ? <a href={props.to} {...props} /> : <Link {...props} />

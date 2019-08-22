@@ -34,10 +34,10 @@ window.sgdocs = (() => {
   /**
    * Smoothly scroll to an element
    *
-   * @param {*} element Element to scroll to
-   * @param {*} elementOffsetTop Optionally reduce vertical scroll distance
+   * @param {HTMLElement} element Element to scroll to
+   * @param {number} elementOffsetTop Optionally reduce vertical scroll distance
    */
-  function scrollToElement(element, elementOffsetTop=0) {
+  function scrollToElement(element, elementOffsetTop = 0) {
     if (!element) {
       return
     }
@@ -135,7 +135,7 @@ window.sgdocs = (() => {
     schemaDocs.forEach(schemaDoc => {
       schemaDoc.querySelectorAll(`span`).forEach(el => {
         const keyNameMatch = el.innerText.match(/^"(.*)"/)
-        const isKey = el.nextSibling && el.nextSibling.textContent.includes(':') ? true : false
+        const isKey = el.nextSibling && el.nextSibling.textContent.includes(':')
 
         if (!isKey || !keyNameMatch) {
           return
@@ -143,12 +143,13 @@ window.sgdocs = (() => {
 
         // Add a named anchor to get the hover functionality we need
         const keyText = keyNameMatch[1]
-        const id = keyText.replace('.', '-')
-        const anchor = document
-          .createRange()
-          .createContextualFragment(
-            `<a id="${id}" class="schema-doc-key" href="#${id}" rel="nofollow" aria-hidden="true">"${keyText}"</a>`
-          ).firstElementChild
+        const id = keyText.replace(/\./g, '-')
+        const anchor = document.createElement('a')
+        anchor.id = id
+        anchor.className = 'schema-doc-key'
+        anchor.href = '#' + id
+        anchor.rel = 'nofollow'
+        anchor.textContent = `"${keyText}"`
         anchor.style.color = el.style.color
         el.replaceWith(anchor)
 

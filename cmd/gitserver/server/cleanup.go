@@ -367,7 +367,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 			return errors.Wrap(err, "finding the amount of space free on disk")
 		}
 		G := float64(1024 * 1024 * 1024)
-		log15.Info("cleanup: removed least recently used repo",
+		log15.Warn("cleanup: removed least recently used repo",
 			"repo", d,
 			"how old", time.Since(dirModTimes[d]),
 			"free space in GiB", float64(actualFreeBytes)/G,
