@@ -194,6 +194,7 @@ export class DgraphImporter {
 
     private handleRange(vertex: Range): void {
         const id = uidRef(vertex.id)
+        this.rdfStream.write(`${id} <Range.label> "range" .\n`)
         this.rdfStream.write(`${id} <Range.startLine> ${makeValue(vertex.start.line)} .\n`)
         this.rdfStream.write(`${id} <Range.startCharacter> ${makeValue(vertex.start.character)} .\n`)
         this.rdfStream.write(`${id} <Range.endLine> ${makeValue(vertex.end.line)} .\n`)
