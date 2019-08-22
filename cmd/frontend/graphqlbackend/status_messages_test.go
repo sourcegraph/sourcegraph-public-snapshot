@@ -24,9 +24,10 @@ func TestStatusMessages(t *testing.T) {
 
 				... on SyncErrorStatusMessage {
 					message
-					externalServiceId
-					externalServiceKind
-					externalServiceDisplayName
+					externalService {
+						id
+						displayName
+					}
 				}
 			}
 		}
@@ -89,6 +90,11 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 
+		db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+			return &types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil
+		}
+		defer func() { db.Mocks.ExternalServices.GetByID = nil }()
+
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
 				{
@@ -114,22 +120,23 @@ func TestStatusMessages(t *testing.T) {
 				Schema: GraphQLSchema,
 				Query:  graphqlQuery,
 				ExpectedResult: `
-				{
-					"statusMessages": [
-						{
-							"__typename": "CloningStatusMessage",
-							"message": "Currently cloning 5 repositories in parallel..."
-						},
-						{
-							"__typename": "SyncErrorStatusMessage",
-							"externalServiceDisplayName": "GitHub.com testing",
-							"externalServiceId": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
-							"externalServiceKind": "github",
-							"message": "Authentication failed. Please check credentials."
-						}
-					]
-				}
-			`,
+					{
+						"statusMessages": [
+							{
+								"__typename": "CloningStatusMessage",
+								"message": "Currently cloning 5 repositories in parallel..."
+							},
+							{
+								"__typename": "SyncErrorStatusMessage",
+								"externalService": {
+									"displayName": "GitHub.com testing",
+									"id": "RXh0ZXJuYWxTZXJ2aWNlOjE="
+								},
+								"message": "Authentication failed. Please check credentials."
+							}
+						]
+					}
+				`,
 			},
 		})
 	})

@@ -3723,12 +3723,8 @@ type CloningStatusMessage {
 type SyncErrorStatusMessage {
     # The message of this status message
     message: String!
-    # The id of the external service that failed to sync
-    externalServiceId: String!
-    # The kind of the external service that failed to sync
-    externalServiceKind: String!
-    # The display name of the external service that failed to sync
-    externalServiceDisplayName: String!
+    # The external service that failed to sync
+    externalService: ExternalService!
 }
 
 # A status message

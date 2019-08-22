@@ -181,7 +181,7 @@ exports[`StatusMessagesNavItem one SYNCERROR message as non-site admin 1`] = `
       className="status-messages-nav-item__entry alert alert-danger mb-0"
     >
       <h4>
-        Syncing external service "Github Enterprise" failed:
+        Syncing external service "GitHub.com" failed:
       </h4>
       <p>
         failed to list organization kubernetes repos: request returned status 404: Not Found
@@ -226,7 +226,7 @@ exports[`StatusMessagesNavItem one SYNCERROR message as site admin 1`] = `
       className="status-messages-nav-item__entry alert alert-danger mb-0"
     >
       <h4>
-        Syncing external service "Github Enterprise" failed:
+        Syncing external service "GitHub.com" failed:
       </h4>
       <p>
         failed to list organization kubernetes repos: request returned status 404: Not Found
@@ -237,9 +237,9 @@ exports[`StatusMessagesNavItem one SYNCERROR message as site admin 1`] = `
         <a
           className="alert-link"
           onClick={[Function]}
-          to="/site-admin/external-services/4"
+          to="/site-admin/external-services/abcd"
         >
-          Edit "Github Enterprise"
+          Edit "GitHub.com"
         </a>
       </p>
     </div>

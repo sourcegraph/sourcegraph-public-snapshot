@@ -3,8 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
-	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
@@ -30,10 +30,8 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]statusMessageRes
 
 		if m.SyncError != nil {
 			messages = append(messages, &syncErrorStatusMessageResolver{
-				message:                    m.SyncError.Message,
-				externalServiceId:          marshalExternalServiceID(m.SyncError.ExternalServiceId),
-				externalServiceDisplayName: m.SyncError.ExternalServiceDisplayName,
-				externalServiceKind:        m.SyncError.ExternalServiceKind,
+				message:           m.SyncError.Message,
+				externalServiceId: m.SyncError.ExternalServiceId,
 			})
 		}
 	}
@@ -59,10 +57,8 @@ func (n *cloningStatusMessageResolver) ToSyncErrorStatusMessage() (*syncErrorSta
 }
 
 type syncErrorStatusMessageResolver struct {
-	message                    string
-	externalServiceId          graphql.ID
-	externalServiceDisplayName string
-	externalServiceKind        string
+	message           string
+	externalServiceId int64
 }
 
 func (n *syncErrorStatusMessageResolver) Message() string { return n.message }
@@ -72,12 +68,11 @@ func (n *syncErrorStatusMessageResolver) ToCloningStatusMessage() (*cloningStatu
 func (n *syncErrorStatusMessageResolver) ToSyncErrorStatusMessage() (*syncErrorStatusMessageResolver, bool) {
 	return n, true
 }
-func (n *syncErrorStatusMessageResolver) ExternalServiceId() string {
-	return string(n.externalServiceId)
-}
-func (n *syncErrorStatusMessageResolver) ExternalServiceDisplayName() string {
-	return n.externalServiceDisplayName
-}
-func (n *syncErrorStatusMessageResolver) ExternalServiceKind() string {
-	return n.externalServiceKind
+func (n *syncErrorStatusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
+	externalService, err := db.ExternalServices.GetByID(ctx, n.externalServiceId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalServiceResolver{externalService: externalService}, nil
 }

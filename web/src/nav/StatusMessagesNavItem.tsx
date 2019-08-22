@@ -26,9 +26,10 @@ export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
 
                     ... on SyncErrorStatusMessage {
                         message
-                        externalServiceId
-                        externalServiceKind
-                        externalServiceDisplayName
+                        externalService {
+                            id
+                            displayName
+                        }
                     }
                 }
             }
@@ -124,11 +125,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 return (
                     <StatusMessagesNavItemEntry
                         key={message.message}
-                        title={`Syncing external service "${message.externalServiceDisplayName}" failed:`}
+                        title={`Syncing external service "${message.externalService.displayName}" failed:`}
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
-                        linkTo={`/site-admin/external-services/${message.externalServiceId}`}
-                        linkText={`Edit "${message.externalServiceDisplayName}"`}
+                        linkTo={`/site-admin/external-services/${message.externalService.id}`}
+                        linkText={`Edit "${message.externalService.displayName}"`}
                         linkOnClick={this.toggleIsOpen}
                         alert="danger"
                     />

@@ -50,9 +50,16 @@ describe('StatusMessagesNavItem', () => {
         const message: GQL.StatusMessage = {
             __typename: 'SyncErrorStatusMessage',
             message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
-            externalServiceId: '4',
-            externalServiceDisplayName: 'Github Enterprise',
-            externalServiceKind: 'GITHUB',
+            externalService: {
+                __typename: 'ExternalService',
+                id: 'abcd',
+                displayName: 'GitHub.com',
+                kind: GQL.ExternalServiceKind.GITHUB,
+                config: '{}',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                warning: '',
+            },
         }
 
         const fetchMessages = () => of([message])
