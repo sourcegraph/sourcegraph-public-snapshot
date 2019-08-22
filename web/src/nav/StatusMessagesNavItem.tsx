@@ -45,14 +45,14 @@ interface StatusMessageEntryProps {
     showLink?: boolean
     linkTo: string
     linkText: string
-    alert?: string
+    alert?: 'danger' | 'warning' | 'info' | 'success'
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
 }
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
     <div
         key={props.text}
-        className={classNames('status-messages-nav-item__entry', props.alert && `alert ${props.alert} mb-0`)}
+        className={classNames('status-messages-nav-item__entry', props.alert && `alert alert-${props.alert} mb-0`)}
     >
         <h4>{props.title}</h4>
         <p>{props.text}</p>
@@ -130,7 +130,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         linkTo={`/site-admin/external-services/${message.externalServiceId}`}
                         linkText={`Edit "${message.externalServiceDisplayName}"`}
                         linkOnClick={this.toggleIsOpen}
-                        alert="alert-danger"
+                        alert="danger"
                     />
                 )
         }
