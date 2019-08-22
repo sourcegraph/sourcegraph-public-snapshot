@@ -638,10 +638,8 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						SyncError: &protocol.SyncErrorStatusMessage{
-							Message:                    "github is down",
-							ExternalServiceId:          githubService.ID,
-							ExternalServiceKind:        githubService.Kind,
-							ExternalServiceDisplayName: githubService.DisplayName,
+							Message:           "github is down",
+							ExternalServiceId: githubService.ID,
 						},
 					},
 				},

@@ -453,10 +453,8 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 	for _, e := range s.Syncer.LastSyncErrors() {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
 			SyncError: &protocol.SyncErrorStatusMessage{
-				Message:                    e.Err.Error(),
-				ExternalServiceId:          e.ExtSvc.ID,
-				ExternalServiceKind:        e.ExtSvc.Kind,
-				ExternalServiceDisplayName: e.ExtSvc.DisplayName,
+				Message:           e.Err.Error(),
+				ExternalServiceId: e.ExtSvc.ID,
 			},
 		})
 	}

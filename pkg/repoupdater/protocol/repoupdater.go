@@ -179,10 +179,8 @@ type CloningStatusMessage struct {
 }
 
 type SyncErrorStatusMessage struct {
-	Message                    string
-	ExternalServiceId          int64
-	ExternalServiceKind        string
-	ExternalServiceDisplayName string
+	Message           string
+	ExternalServiceId int64
 }
 
 type StatusMessage struct {

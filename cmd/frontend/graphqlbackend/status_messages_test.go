@@ -104,10 +104,8 @@ func TestStatusMessages(t *testing.T) {
 				},
 				{
 					SyncError: &protocol.SyncErrorStatusMessage{
-						Message:                    "Authentication failed. Please check credentials.",
-						ExternalServiceId:          1,
-						ExternalServiceKind:        "github",
-						ExternalServiceDisplayName: "GitHub.com testing",
+						Message:           "Authentication failed. Please check credentials.",
+						ExternalServiceId: 1,
 					},
 				},
 			}}
