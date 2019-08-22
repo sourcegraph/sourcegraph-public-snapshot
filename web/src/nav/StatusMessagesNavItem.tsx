@@ -185,13 +185,13 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         this.state.messagesOrError.map((m, i) => {
                             if (!isErrorLike(this.state.messagesOrError) && i < this.state.messagesOrError.length - 1) {
                                 return (
-                                    <div>
+                                    <>
                                         {this.renderMessage(m)}
                                         <DropdownItem
                                             className="status-messages-nav-item__dropdown-divider"
                                             divider={true}
                                         ></DropdownItem>
-                                    </div>
+                                    </>
                                 )
                             }
                             return this.renderMessage(m)
