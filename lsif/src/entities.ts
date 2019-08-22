@@ -1,6 +1,7 @@
 import { Id, MonikerKind, Uri } from 'lsif-protocol'
 import * as lsp from 'vscode-languageserver-protocol'
 
+// TODO - document these
 export interface DocumentData {
     ranges: Map<Id, number>
     orderedRanges: RangeData[]

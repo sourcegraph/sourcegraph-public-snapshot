@@ -46,17 +46,29 @@ import {
     ElementTypes,
 } from 'lsif-protocol'
 
+/**
+ * The internal version of our SQLite databases. We need to keep this in case
+ * we add something that can't be done transparently; if we change how we process
+ * something in the future we'll need to consider a number of previous version
+ * while we update or re-process the already-uploaded data.
+ */
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
 /**
- * `HandlerMap``TODO
+ * `HandlerMap` is a mapping from vertex or edge labels to the function that
+ * can handle an object of that particular type during import.
  */
 interface HandlerMap {
-    [K: string]: (element: any) => Promise<void>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [K: string]: (element: any) => void
 }
 
 /**
- * `Importer` TODO
+ * `Importer` processes an upload of an LSIF dump. This class receives the
+ * parsed vertex or edge, line by line, from the caller, and adds it into a
+ * new database file on disk. Once finalized, the database is ready for use
+ * and relevant cross-repository metadata is returned to the caller, which
+ * is used to populate the xrepo database.
  */
 export class Importer {
     // Handler vtables

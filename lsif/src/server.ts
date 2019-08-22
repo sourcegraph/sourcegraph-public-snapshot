@@ -9,9 +9,21 @@ import { ConnectionCache, DocumentCache } from './cache'
  */
 const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 
-// TODO - document these
+/**
+ * The maximum size of an LSIF dump upload.
+ */
 const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
+
+/**
+ * The number of SQLite connections that can be opened at once. This
+ * value may be exceeded for a short period if many handles are held
+ * at once.
+ */
 const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 20)
+
+/**
+ * The maximum number of documents that can be held in memory at once.
+ */
 const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 100)
 
 /**
@@ -92,8 +104,11 @@ async function main(): Promise<void> {
     })
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
- * Middleware functino used to convert uncaught exceptions into 500 responses.
+ * Middleware function used to convert uncaught exceptions into 500 responses.
  */
 function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
     if (err && err.status) {
