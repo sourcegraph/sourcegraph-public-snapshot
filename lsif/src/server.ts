@@ -2,7 +2,6 @@ import bodyParser from 'body-parser'
 import express from 'express'
 import { ERRNOLSIFDATA, makeBackend } from './backend'
 import { readEnvInt, hasErrorCode, readEnv } from './util'
-import { wrap } from 'async-middleware'
 import { ConnectionCache, DocumentCache } from './cache'
 
 /**
@@ -25,26 +24,24 @@ async function main(): Promise<void> {
     const app = express()
     app.use(errorHandler)
 
-    app.get('/ping', (req, res) => {
+    app.get('/ping', (_, res) => {
         res.send({ pong: 'pong' })
     })
 
-    app.post(
-        '/upload',
-        bodyParser.raw({ limit: MAX_UPLOAD }),
-        wrap(async (req, res) => {
+    app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
+        try {
             const { repository, commit } = req.query
             checkRepository(repository)
             checkCommit(commit)
-
             await backend.insertDump(req, repository, commit)
             res.json(null)
-        })
-    )
+        } catch (e) {
+            return next(e)
+        }
+    })
 
-    app.post(
-        '/exists',
-        wrap(async (req, res) => {
+    app.post('/exists', async (req, res, next) => {
+        try {
             const { repository, commit, file } = req.query
             checkRepository(repository)
             checkCommit(commit)
@@ -56,17 +53,18 @@ async function main(): Promise<void> {
             } catch (e) {
                 if (hasErrorCode(e, ERRNOLSIFDATA)) {
                     res.json(false)
-                } else {
-                    throw e
+                    return
                 }
-            }
-        })
-    )
 
-    app.post(
-        '/request',
-        bodyParser.json({ limit: '1mb' }), // TODO - this seems HUGE for this request
-        wrap(async (req, res) => {
+                throw e
+            }
+        } catch (e) {
+            return next(e)
+        }
+    })
+
+    app.post('/request', bodyParser.json({ limit: '1mb' }), async (req, res, next) => {
+        try {
             const { repository, commit } = req.query
             const { path, position, method } = req.body
             checkRepository(repository)
@@ -84,8 +82,10 @@ async function main(): Promise<void> {
 
                 throw e
             }
-        })
-    )
+        } catch (e) {
+            return next(e)
+        }
+    })
 
     app.listen(HTTP_PORT, () => {
         console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
