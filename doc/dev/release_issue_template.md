@@ -82,7 +82,7 @@ Run a find replace on:
     ```
     IMAGE=sourcegraph/server:MAJOR.MINOR.0-rc.1 ./dev/run-server-image.sh
     ```
-  - [ ] Mention that testing is the top priority, it is expected to take the whole day, and that regressions should be tagged as release blockers.
+  - [ ] Mention that testing is the top priority, it is expected to take the whole day, and that known or suspected regressions should be tagged as release blockers.
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
 - [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to triage them to a different milestone (backlog preferred).
