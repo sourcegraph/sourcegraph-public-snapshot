@@ -432,20 +432,30 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
+	resp := protocol.StatusMessagesResponse{
+		Messages: []protocol.StatusMessage{},
+	}
+
 	notCloned, err := s.computeNotClonedCount(r.Context())
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := protocol.StatusMessagesResponse{
-		Messages: []protocol.StatusMessage{},
-	}
-
 	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			Type:    protocol.CloningStatusMessage,
+			Cloning: &protocol.CloningStatusMessage{
+				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
+			},
+		})
+	}
+
+	for _, e := range s.Syncer.LastSyncErrors() {
+		resp.Messages = append(resp.Messages, protocol.StatusMessage{
+			SyncError: &protocol.SyncErrorStatusMessage{
+				Message:           e.Err.Error(),
+				ExternalServiceId: e.ExtSvc.ID,
+			},
 		})
 	}
 

@@ -543,10 +543,17 @@ func TestServer_RepoExternalServices(t *testing.T) {
 }
 
 func TestServer_StatusMessages(t *testing.T) {
+	githubService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+	}
+
 	testCases := []struct {
 		name            string
 		stored          repos.Repos
 		gitserverCloned []string
+		sourcerErr      error
 		res             *protocol.StatusMessagesResponse
 		err             string
 	}{
@@ -565,8 +572,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type:    protocol.CloningStatusMessage,
-						Message: "1 repositories enqueued for cloning...",
+						Cloning: &protocol.CloningStatusMessage{
+							Message: "1 repositories enqueued for cloning...",
+						},
 					},
 				},
 			},
@@ -578,8 +586,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type:    protocol.CloningStatusMessage,
-						Message: "1 repositories enqueued for cloning...",
+						Cloning: &protocol.CloningStatusMessage{
+							Message: "1 repositories enqueued for cloning...",
+						},
 					},
 				},
 			},
@@ -599,8 +608,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type:    protocol.CloningStatusMessage,
-						Message: "2 repositories enqueued for cloning...",
+						Cloning: &protocol.CloningStatusMessage{
+							Message: "2 repositories enqueued for cloning...",
+						},
 					},
 				},
 			},
@@ -621,6 +631,20 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{},
 			},
 		},
+		{
+			name:       "one syncer err",
+			sourcerErr: errors.New("github is down"),
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						SyncError: &protocol.SyncErrorStatusMessage{
+							Message:           "github is down",
+							ExternalServiceId: githubService.ID,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -635,8 +659,29 @@ func TestServer_StatusMessages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			err = store.UpsertExternalServices(ctx, githubService)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			s := &Server{Store: store, GitserverClient: gitserverClient}
+			clock := repos.NewFakeClock(time.Now(), 0)
+			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+
+			if tc.sourcerErr != nil {
+				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
+				// Run Sync so that possibly `LastSyncErrors` is set
+				syncer = repos.NewSyncer(store, sourcer, nil, clock.Now)
+				_, err := syncer.Sync(ctx)
+				if err != nil {
+					return
+				}
+			}
+
+			s := &Server{
+				Syncer:          syncer,
+				Store:           store,
+				GitserverClient: gitserverClient,
+			}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()

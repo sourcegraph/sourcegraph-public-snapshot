@@ -11,14 +11,26 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
+import classNames from 'classnames'
 
-export function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
+export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
     return queryGraphQL(
         gql`
             query StatusMessages {
                 statusMessages {
-                    message
-                    type
+                    __typename
+
+                    ... on CloningStatusMessage {
+                        message
+                    }
+
+                    ... on SyncErrorStatusMessage {
+                        message
+                        externalService {
+                            id
+                            displayName
+                        }
+                    }
                 }
             }
         `
@@ -28,28 +40,54 @@ export function fetchAllStatusMessages(): Observable<GQL.IStatusMessage[]> {
     )
 }
 
+type EntryType = 'warning' | 'success' | 'progress'
+
 interface StatusMessageEntryProps {
     title: string
     text: string
     showLink?: boolean
     linkTo: string
     linkText: string
+    style: EntryType
+    linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
+}
+
+function entryIcon(style: EntryType): JSX.Element {
+    switch (style) {
+        case 'warning':
+            return <CloudAlertIcon className="icon-inline mr-1" />
+        case 'success':
+            return <CloudCheckIcon className="icon-inline mr-1" />
+        case 'progress':
+            return <CloudSyncIcon className="icon-inline mr-1" />
+    }
 }
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
-    <div key={props.text} className="status-messages-nav-item__entry">
-        <h4>{props.title}</h4>
+    <div
+        key={props.text}
+        className={classNames(
+            'status-messages-nav-item__entry mb-3',
+            props.style && `status-messages-nav-item__entry-border-${props.style}`
+        )}
+    >
+        <h4>
+            {entryIcon(props.style)}
+            {props.title}
+        </h4>
         <p>{props.text}</p>
         {props.showLink && (
             <p className="status-messages-nav-item__entry-link">
-                <Link to={props.linkTo}>Configure external services</Link>
+                <Link to={props.linkTo} onClick={props.linkOnClick}>
+                    {props.linkText}
+                </Link>
             </p>
         )}
     </div>
 )
 
 interface Props {
-    fetchMessages: () => Observable<GQL.IStatusMessage[]>
+    fetchMessages: () => Observable<GQL.StatusMessage[]>
 
     /** Scheduler for the refresh timer */
     scheduler?: SchedulerLike
@@ -58,7 +96,7 @@ interface Props {
 }
 
 interface State {
-    messagesOrError: GQL.IStatusMessage[] | ErrorLike
+    messagesOrError: GQL.StatusMessage[] | ErrorLike
     isOpen: boolean
 }
 
@@ -88,9 +126,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderMessage(message: GQL.IStatusMessage): JSX.Element | null {
-        switch (message.type) {
-            case GQL.StatusMessageType.CLONING:
+    private renderMessage(message: GQL.StatusMessage): JSX.Element | null {
+        switch (message.__typename) {
+            case 'CloningStatusMessage':
                 return (
                     <StatusMessagesNavItemEntry
                         key={message.message}
@@ -99,9 +137,52 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         showLink={this.props.isSiteAdmin}
                         linkTo="/site-admin/external-services"
                         linkText="Configure external services"
+                        linkOnClick={this.toggleIsOpen}
+                        style="progress"
+                    />
+                )
+            case 'SyncErrorStatusMessage':
+                return (
+                    <StatusMessagesNavItemEntry
+                        key={message.message}
+                        title={`Syncing external service "${message.externalService.displayName}" failed:`}
+                        text={message.message}
+                        showLink={this.props.isSiteAdmin}
+                        linkTo={`/site-admin/external-services/${message.externalService.id}`}
+                        linkText={`Edit "${message.externalService.displayName}"`}
+                        linkOnClick={this.toggleIsOpen}
+                        style="warning"
                     />
                 )
         }
+    }
+
+    private renderIcon(): JSX.Element | null {
+        if (isErrorLike(this.state.messagesOrError)) {
+            return <CloudAlertIcon className="icon-inline" />
+        }
+        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'SyncErrorStatusMessage')) {
+            return (
+                <CloudAlertIcon
+                    className="icon-inline"
+                    data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
+                />
+            )
+        }
+        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'CloningStatusMessage')) {
+            return (
+                <CloudSyncIcon
+                    className="icon-inline"
+                    data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
+                />
+            )
+        }
+        return (
+            <CloudCheckIcon
+                className="icon-inline"
+                data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
+            />
+        )
     }
 
     public render(): JSX.Element | null {
@@ -112,26 +193,15 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 className="nav-link py-0 px-0 status-messages-nav-item__nav-link"
             >
                 <DropdownToggle caret={false} className="btn btn-icon" nav={true}>
-                    {isErrorLike(this.state.messagesOrError) ? (
-                        <CloudAlertIcon className="icon-inline" />
-                    ) : this.state.messagesOrError.some(({ type }) => type === GQL.StatusMessageType.CLONING) ? (
-                        <CloudSyncIcon
-                            className="icon-inline"
-                            data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
-                        />
-                    ) : (
-                        <CloudCheckIcon
-                            className="icon-inline"
-                            data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
-                        />
-                    )}
+                    {this.renderIcon()}
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
+                    <h3>External Service Status</h3>
                     {isErrorLike(this.state.messagesOrError) ? (
-                        <div className="status-messages-nav-item__entry">
+                        <div className="status-messages-nav-item__entry alert alert-danger mb-0">
                             <h4>Failed to load status messages:</h4>
-                            <p className="alert alert-danger">{startCase(this.state.messagesOrError.message)}</p>
+                            <p>{startCase(this.state.messagesOrError.message)}</p>
                         </div>
                     ) : this.state.messagesOrError.length > 0 ? (
                         this.state.messagesOrError.map(m => this.renderMessage(m))
@@ -142,6 +212,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             showLink={this.props.isSiteAdmin}
                             linkTo="/site-admin/external-services"
                             linkText="Configure external services"
+                            linkOnClick={this.toggleIsOpen}
+                            style="success"
                         />
                     )}
                 </DropdownMenu>
