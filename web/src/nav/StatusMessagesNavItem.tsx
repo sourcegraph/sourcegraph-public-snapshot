@@ -40,26 +40,45 @@ export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
     )
 }
 
+type EntryType = 'warning' | 'success' | 'progress'
+
 interface StatusMessageEntryProps {
     title: string
     text: string
     showLink?: boolean
     linkTo: string
     linkText: string
-    alert?: 'danger' | 'warning' | 'info' | 'success'
+    style: EntryType
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
+}
+
+function entryIcon(style: EntryType): JSX.Element {
+    switch (style) {
+        case 'warning':
+            return <CloudAlertIcon className="icon-inline mr-1" />
+        case 'success':
+            return <CloudCheckIcon className="icon-inline mr-1" />
+        case 'progress':
+            return <CloudSyncIcon className="icon-inline mr-1" />
+    }
 }
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
     <div
         key={props.text}
-        className={classNames('status-messages-nav-item__entry mb-3', props.alert && `alert alert-${props.alert}`)}
+        className={classNames(
+            'status-messages-nav-item__entry mb-3',
+            props.style && `status-messages-nav-item__entry-border-${props.style}`
+        )}
     >
-        <h4>{props.title}</h4>
+        <h4>
+            {entryIcon(props.style)}
+            {props.title}
+        </h4>
         <p>{props.text}</p>
         {props.showLink && (
             <p className="status-messages-nav-item__entry-link">
-                <Link to={props.linkTo} className={props.alert ? 'alert-link' : ''} onClick={props.linkOnClick}>
+                <Link to={props.linkTo} onClick={props.linkOnClick}>
                     {props.linkText}
                 </Link>
             </p>
@@ -119,7 +138,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         linkTo="/site-admin/external-services"
                         linkText="Configure external services"
                         linkOnClick={this.toggleIsOpen}
-                        alert="info"
+                        style="progress"
                     />
                 )
             case 'SyncErrorStatusMessage':
@@ -132,7 +151,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         linkTo={`/site-admin/external-services/${message.externalService.id}`}
                         linkText={`Edit "${message.externalService.displayName}"`}
                         linkOnClick={this.toggleIsOpen}
-                        alert="danger"
+                        style="warning"
                     />
                 )
         }
@@ -194,6 +213,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             linkTo="/site-admin/external-services"
                             linkText="Configure external services"
                             linkOnClick={this.toggleIsOpen}
+                            style="success"
                         />
                     )}
                 </DropdownMenu>

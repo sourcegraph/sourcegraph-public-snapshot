@@ -21,5 +21,16 @@
         &-link {
             margin-bottom: 0;
         }
+        &-border-success {
+            border-left: 6px solid $success;
+        }
+
+        &-border-warning {
+            border-left: 6px solid $warning;
+        }
+
+        &-border-progress {
+            border-left: 6px solid $info;
+        }
     }
 }
