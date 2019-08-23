@@ -146,7 +146,7 @@ function getDiffDetailsFromConduit(
     return queryConduit('/api/differential.querydiffs', {
         ids: [diffID],
         revisionIDs: [revisionID],
-    }).pipe(map(diffDetails => diffDetails[`${diffID}`]))
+    }).pipe(map(diffDetails => diffDetails[String(diffID)]))
 }
 
 function getRawDiffFromConduit(diffID: number, queryConduit: QueryConduitHelper<string>): Observable<string> {
