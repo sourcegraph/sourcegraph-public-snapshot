@@ -115,7 +115,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         }
         return (
             <div
-                className={`hover-overlay card ${className}`}
+                className={classNames('hover-overlay', className)}
                 ref={hoverRef}
                 // tslint:disable-next-line:jsx-ban-props needed for dynamic styling
                 style={

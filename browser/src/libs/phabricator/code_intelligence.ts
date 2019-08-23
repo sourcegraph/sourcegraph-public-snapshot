@@ -185,7 +185,9 @@ export const phabricatorCodeHost: CodeHost = {
         actionItemIconClass: 'action-item__icon--phabricator',
     },
     hoverOverlayClassProps: {
+        className: 'aphront-dialog-view hover-overlay--phabricator',
         actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
+        closeButtonClassName: 'button grey hover-overlay__close-button--phabricator',
     },
     codeViewsRequireTokenization: true,
 }

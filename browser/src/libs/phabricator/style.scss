@@ -1,3 +1,13 @@
+.hover-overlay--phabricator {
+    margin: 0;
+}
+
+.hover-overlay__close-button--phabricator {
+    // Fight Phabricator selector specificity
+    background: transparent !important;
+    border: none !important;
+}
+
 // Mimics Phabricator's font icon style
 .action-item__icon--phabricator {
     height: 14px;
