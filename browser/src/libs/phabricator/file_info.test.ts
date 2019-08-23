@@ -132,7 +132,7 @@ interface Fixture {
     conduitResponseMap?: ConduitResponseMap
 }
 
-const getFileInfo = async (
+const resolveFileInfoFromFixture = async (
     { url, htmlFixture, codeViewSelector, graphQLResponseMap, conduitResponseMap }: Fixture,
     resolver: Resolver
 ): Promise<FileInfo> => {
@@ -161,7 +161,7 @@ describe('Phabricator file info', () => {
     describe('resolveRevisionFileInfo()', () => {
         test('Commit view', async () => {
             expect(
-                await getFileInfo(
+                await resolveFileInfoFromFixture(
                     {
                         htmlFixture: 'commit-view.html',
                         url: 'https://phabricator.sgdev.org/rMUXeab9c4f3d22d907d728aa0f5918934357866249e',
@@ -181,7 +181,7 @@ describe('Phabricator file info', () => {
     describe('resolveDiffusionFileInfo()', () => {
         test('Diffusion - single file code view', async () => {
             expect(
-                await getFileInfo(
+                await resolveFileInfoFromFixture(
                     {
                         htmlFixture: 'diffusion.html',
                         url: 'https://phabricator.sgdev.org/source/gorilla/browse/master/mux.go',
@@ -200,7 +200,7 @@ describe('Phabricator file info', () => {
     describe('resolveDiffFileInfo()', () => {
         test('Differential revision - no staging repo', async () => {
             expect(
-                await getFileInfo(
+                await resolveFileInfoFromFixture(
                     {
                         htmlFixture: 'differential-revision.html',
                         url: 'https://phabricator.sgdev.org/D7',
@@ -238,7 +238,7 @@ describe('Phabricator file info', () => {
         })
         test('Differential revision - staging repo not synced', async () => {
             expect(
-                await getFileInfo(
+                await resolveFileInfoFromFixture(
                     {
                         htmlFixture: 'differential-revision.html',
                         url: 'https://phabricator.sgdev.org/D7',
@@ -257,7 +257,7 @@ describe('Phabricator file info', () => {
         })
         test('Differential revision - staging repo synced', async () => {
             expect(
-                await getFileInfo(
+                await resolveFileInfoFromFixture(
                     {
                         htmlFixture: 'differential-revision.html',
                         url: 'https://phabricator.sgdev.org/D7',
@@ -289,7 +289,7 @@ describe('Phabricator file info', () => {
         })
         test('Differential revision - comparing diffs - staging repo not synced', async () => {
             expect(
-                await getFileInfo(
+                await resolveFileInfoFromFixture(
                     {
                         htmlFixture: 'differential-diff-comparison.html',
                         url: 'https://phabricator.sgdev.org/D1?vs=2&id=3&whitespace=ignore-most#toc',
@@ -318,7 +318,7 @@ describe('Phabricator file info', () => {
         })
         test('Differential revision - comparing diffs - staging repo synced', async () => {
             expect(
-                await getFileInfo(
+                await resolveFileInfoFromFixture(
                     {
                         htmlFixture: 'differential-diff-comparison.html',
                         url: 'https://phabricator.sgdev.org/D1?vs=2&id=3&whitespace=ignore-most#toc',
