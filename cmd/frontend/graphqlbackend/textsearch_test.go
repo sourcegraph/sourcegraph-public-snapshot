@@ -350,14 +350,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 		if !zoekt.Enabled() {
 			t.Fatal("zoekt object says it is not enabled")
 		}
-		wantRes := []*fileMatchResolver { { uri: repoName } }
+		wantRes := []*fileMatchResolver{{uri: repoName}}
 		if len(res) != 1 {
 			t.Errorf("got %d results, want 1", len(res))
 		}
 		if !reflect.DeepEqual(res, wantRes) {
 			t.Errorf("res is %s, want %s", spew.Sdump(res), spew.Sdump(wantRes))
 		}
-		wantRepos := []*types.Repo{ { Name: api.RepoName(repoName) } }
+		wantRepos := []*types.Repo{{Name: api.RepoName(repoName)}}
 		if !common.indexUnavailable {
 			t.Errorf("common.indexUnavailable is unexpectedly false. It should be true because zoekt is returning errors.")
 		}
