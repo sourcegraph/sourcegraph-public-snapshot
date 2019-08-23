@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/net/http2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -57,8 +58,12 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 		cf = NewHTTPClientFactory()
 	}
 
-	cli, err := cf.Client(func(c *http.Client) error {
-		*c = *awsConfig.HTTPClient
+	cli, err := cf.Doer(func(c *http.Client) error {
+		tr := aws.NewBuildableHTTPClient().GetTransport()
+		if err := http2.ConfigureTransport(tr); err != nil {
+			return err
+		}
+		c.Transport = tr
 		return nil
 	})
 	if err != nil {
