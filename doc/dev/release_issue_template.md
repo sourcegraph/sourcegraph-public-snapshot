@@ -25,6 +25,10 @@ Run a find replace on:
 
 - [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
 - [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
+- [ ] Create a new test grid for MAJOR.MINOR by cloning the previous [release testing grid on Monday.com](https://sourcegraph-team.monday.com) and renaming it to "MAJOR.MINOR Release test grid".
+    - [ ] Reset all tested cells to "To test", unless the "Automated" column is marked as "Done". See [this article for how to update multiple values in Monday.com](https://support.monday.com/hc/en-us/articles/115005335049-Batch-Actions-Edit-multiple-items-in-one-click).
+    - [ ] Ping each team, and ask them to identify which of the optional rows that they own should be tested this iteration.
+    - [ ] Ping the @distribution team to determine which environments each row should be tested in.
 
 ## 3 working days before release (YYYY-MM-DD)
 
@@ -114,4 +118,4 @@ Run a find replace on:
 - [ ] Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
 - [ ] Close this issue.
 - [ ] Close the milestone.
-- [ ] Notify the next release captain that they are on duty for the next release.
+- [ ] Notify the next release captain that they are on duty for the next release. Include a link to this release issue template.
