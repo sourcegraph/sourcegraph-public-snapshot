@@ -165,6 +165,7 @@
     "node-sass": "^4.12.0",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "p-retry": "^4.1.0",
+    "parcel-bundler": "^1.12.3",
     "postcss-loader": "^3.0.0",
     "prettier": "^1.18.2",
     "puppeteer": "1.19.0",

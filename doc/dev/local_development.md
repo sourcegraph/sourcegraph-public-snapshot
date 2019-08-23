@@ -237,7 +237,7 @@ Noticing problems with <code>node_modules/</code> or package versions? Try
 running this command to clear the local package cache.
 
 ```
-yarn cache clean; rm -rf node_modules web/node_modules; yarn; cd web; yarn
+yarn cache clean; rm -rf node_modules; yarn;
 ```
 
 ##### dial tcp 127.0.0.1:3090: connect: connection refused

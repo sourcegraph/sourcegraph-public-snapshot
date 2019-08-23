@@ -103,11 +103,6 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
-# Management console webapp
-[ -n "${OFFLINE-}" ] || {
-    pushd ./cmd/management-console/web && yarn --no-progress && popd
-}
-
 # LSIF server
 [ -n "${OFFLINE-}" ] || {
     pushd ./lsif/server && yarn --no-progress && popd

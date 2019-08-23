@@ -5,10 +5,9 @@ set -ex
 
 # for node_modules/@sourcegraph/tsconfig/tsconfig.json
 pushd ../..
-yarn install
+yarn --frozen-lockfile
 popd
 
 pushd web/
-yarn install
 yarn run build
 popd
