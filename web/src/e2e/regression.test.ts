@@ -198,7 +198,7 @@ describe('regression test suite', () => {
         test(
             'Release test 5.1.2: Perform global text search for something with more than 1000 results and use count:1000',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=.+count:1000')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=.+count:1000')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -206,7 +206,7 @@ describe('regression test suite', () => {
         test(
             'Release test 5.2.2: Perform global text search for a regular expression without indexing: "index:no ^func.*$", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=index:no+^func.*$')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -214,7 +214,7 @@ describe('regression test suite', () => {
         test(
             'Release test 5.8: Search for a repository by name.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=repo:^auth0/go-jwt-middleware$')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:^auth0/go-jwt-middleware$')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
             },
             5 * 1000
@@ -222,7 +222,9 @@ describe('regression test suite', () => {
         test(
             'Release test 5.10: Perform a case-sensitive search.',
             async () => {
-                await driver.page.goto(baseURL + '/search?repo:%5Egithub%5C.com/adjust/go-wrk%24+String+case:yes')
+                await driver.page.goto(
+                    sourcegraphBaseUrl + '/search?repo:%5Egithub%5C.com/adjust/go-wrk%24+String+case:yes'
+                )
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
             },
             5 * 1000
