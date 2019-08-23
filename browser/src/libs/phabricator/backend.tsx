@@ -252,10 +252,6 @@ function getRepoDetailsFromRepoPHID(
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit: QueryConduitHelper<ConduitReposResponse>
 ): Observable<PhabricatorRepoDetails> {
-    const form = createConduitRequestForm()
-    form.set('params[constraints]', JSON.stringify({ phids: [phid] }))
-    form.set('params[attachments]', '{ "uris": true }')
-
     return queryConduit('/api/diffusion.repository.search', {
         constraints: {
             phids: [phid],
