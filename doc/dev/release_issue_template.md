@@ -30,7 +30,7 @@ Run a find replace on:
     - [ ] Ping each team, and ask them to identify which of the optional rows that they own should be tested this iteration.
     - [ ] Ping the @distribution team to determine which environments each row should be tested in.
 
-## 3 working days before release (YYYY-MM-DD)
+## 4 working days before release (YYYY-MM-DD)
 
 - [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` ([example](https://github.com/sourcegraph/sourcegraph/pull/2323)).
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
@@ -70,10 +70,22 @@ Run a find replace on:
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
     - [ ] Tear down this Kubernetes cluster.
+- [ ] Delete entries from section 15 (CHANGELOG) of the testing grid, or move them into permanent sections above. Add new CHANGELOG items for this release into section 15. Assign the feature owner as the tester for each row.
+- [ ] Send a message to #dev-announce to kick off testing day.
+  - [ ] Include a link to the testing grid.
+  - [ ] Include the command to run the latest release candidate:
+    ```
+    IMAGE=sourcegraph/server:MAJOR.MINOR.0-rc.1 ./dev/run-server-image.sh
+    ```
+  - [ ] Mention that testing is the top priority, it is expected to take the whole day, and that known or suspected regressions should be tagged as release blockers.
+
+
+
+## 3 working days before release (YYYY-MM-DD)
+
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
 - [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to triage them to a different milestone (backlog preferred).
-- [ ] Remind the team that they should submit [retrospective feedback](retrospectives/index.md) 24 hours before the scheduled retrospective meeting.
 
 ## As necessary
 
@@ -119,3 +131,4 @@ Run a find replace on:
 - [ ] Close this issue.
 - [ ] Close the milestone.
 - [ ] Notify the next release captain that they are on duty for the next release. Include a link to this release issue template.
+- [ ] Remind the team that they should submit [retrospective feedback](retrospectives/index.md) 24 hours before the scheduled retrospective meeting.
