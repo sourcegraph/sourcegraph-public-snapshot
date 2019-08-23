@@ -229,7 +229,7 @@ export function getRepoDetailsFromCallsign(
                 repoName: details.rawRepoName,
                 phabricatorURL: window.location.origin,
                 requestGraphQL,
-            }).pipe(mapTo(details)) as Observable<PhabricatorRepoDetails>
+            }).pipe(mapTo(details))
         })
     )
 }
@@ -282,7 +282,7 @@ function getRepoDetailsFromRepoPHID(
                         requestGraphQL,
                     }).pipe(mapTo(details))
                 })
-            ) as Observable<PhabricatorRepoDetails>
+            )
         })
     )
 }
