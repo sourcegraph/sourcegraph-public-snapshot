@@ -139,8 +139,7 @@ export function queryConduit<T>(endpoint: string, params: {}): Observable<T> {
 }
 
 function getDiffDetailsFromConduit(
-    diffID: number,
-    revisionID: number,
+    { diffID, revisionID }: RevisionSpec & DiffSpec,
     queryConduit: QueryConduitHelper<ConduitDiffDetailsResponse>
 ): Observable<ConduitDiffDetails> {
     return queryConduit('/api/differential.querydiffs', {
@@ -429,7 +428,7 @@ function getPropsWithDiffDetails(
     props: ResolveDiffOpt,
     queryConduit: QueryConduitHelper<any>
 ): Observable<PropsWithDiffDetails> {
-    return getDiffDetailsFromConduit(props.diffID, props.revisionID, queryConduit).pipe(
+    return getDiffDetailsFromConduit(props, queryConduit).pipe(
         switchMap(diffDetails => {
             if (props.isBase || !props.baseDiffID || hasThisFileChanged(props.filePath, diffDetails.changes)) {
                 // no need to update props
@@ -438,7 +437,7 @@ function getPropsWithDiffDetails(
                     diffDetails,
                 })
             }
-            return getDiffDetailsFromConduit(props.baseDiffID, props.revisionID, queryConduit).pipe(
+            return getDiffDetailsFromConduit(props, queryConduit).pipe(
                 map(
                     (diffDetails): PropsWithDiffDetails => ({
                         ...props,
