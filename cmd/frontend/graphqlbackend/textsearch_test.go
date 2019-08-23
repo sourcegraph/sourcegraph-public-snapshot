@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -223,87 +224,153 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
-		repoName := repo.Name
-		switch repoName {
-		case "foo/one":
-			return []*fileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
-		case "foo/two":
-			return []*fileMatchResolver{
-				{
-					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
-				},
-			}, false, nil
-		case "foo/empty":
-			return nil, false, nil
-		case "foo/cloning":
-			return nil, false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
-		case "foo/missing":
-			return nil, false, &vcs.RepoNotExistError{Repo: repoName}
-		case "foo/missing-db":
-			return nil, false, &errcode.Mock{Message: "repo not found: foo/missing-db", IsNotFound: true}
-		case "foo/timedout":
-			return nil, false, context.DeadlineExceeded
-		case "foo/no-rev":
-			return nil, false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
-		default:
-			return nil, false, errors.New("Unexpected repo")
+	t.Run("searching for foo gets two results when there are two file matches", func(t *testing.T) {
+		mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+			repoName := repo.Name
+			switch repoName {
+			case "foo/one":
+				return []*fileMatchResolver{
+					{
+						uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					},
+				}, false, nil
+			case "foo/two":
+				return []*fileMatchResolver{
+					{
+						uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+					},
+				}, false, nil
+			case "foo/empty":
+				return nil, false, nil
+			case "foo/cloning":
+				return nil, false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
+			case "foo/missing":
+				return nil, false, &vcs.RepoNotExistError{Repo: repoName}
+			case "foo/missing-db":
+				return nil, false, &errcode.Mock{Message: "repo not found: foo/missing-db", IsNotFound: true}
+			case "foo/timedout":
+				return nil, false, context.DeadlineExceeded
+			case "foo/no-rev":
+				return nil, false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
+			default:
+				return nil, false, errors.New("Unexpected repo")
+			}
 		}
-	}
-	defer func() { mockSearchFilesInRepo = nil }()
+		defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+		zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
 
-	q, err := query.ParseAndCheck("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	args := &search.Args{
-		Pattern: &search.PatternInfo{
-			FileMatchLimit: defaultMaxSearchResults,
-			Pattern:        "foo",
-		},
-		Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
-		Query: q,
-		Zoekt: zoekt,
-	}
-	results, common, err := searchFilesInRepos(context.Background(), args)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(results) != 2 {
-		t.Errorf("expected two results, got %d", len(results))
-	}
-	if v := toRepoNames(common.cloning); !reflect.DeepEqual(v, []api.RepoName{"foo/cloning"}) {
-		t.Errorf("unexpected cloning: %v", v)
-	}
-	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].Name < common.missing[j].Name }) // to make deterministic
-	if v := toRepoNames(common.missing); !reflect.DeepEqual(v, []api.RepoName{"foo/missing", "foo/missing-db"}) {
-		t.Errorf("unexpected missing: %v", v)
-	}
-	if v := toRepoNames(common.timedout); !reflect.DeepEqual(v, []api.RepoName{"foo/timedout"}) {
-		t.Errorf("unexpected timedout: %v", v)
-	}
+		q, err := query.ParseAndCheck("foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		args := &search.Args{
+			Pattern: &search.PatternInfo{
+				FileMatchLimit: defaultMaxSearchResults,
+				Pattern:        "foo",
+			},
+			Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
+			Query: q,
+			Zoekt: zoekt,
+		}
+		results, common, err := searchFilesInRepos(context.Background(), args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != 2 {
+			t.Errorf("expected two results, got %d", len(results))
+		}
+		if v := toRepoNames(common.cloning); !reflect.DeepEqual(v, []api.RepoName{"foo/cloning"}) {
+			t.Errorf("unexpected cloning: %v", v)
+		}
+		sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].Name < common.missing[j].Name }) // to make deterministic
+		if v := toRepoNames(common.missing); !reflect.DeepEqual(v, []api.RepoName{"foo/missing", "foo/missing-db"}) {
+			t.Errorf("unexpected missing: %v", v)
+		}
+		if v := toRepoNames(common.timedout); !reflect.DeepEqual(v, []api.RepoName{"foo/timedout"}) {
+			t.Errorf("unexpected timedout: %v", v)
+		}
 
-	// If we specify a rev and it isn't found, we fail the whole search since
-	// that should be checked earlier.
-	args = &search.Args{
-		Pattern: &search.PatternInfo{
-			FileMatchLimit: defaultMaxSearchResults,
-			Pattern:        "foo",
-		},
-		Repos: makeRepositoryRevisions("foo/no-rev@dev"),
-		Query: q,
-		Zoekt: zoekt,
-	}
-	_, _, err = searchFilesInRepos(context.Background(), args)
-	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
-		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
-	}
+		// If we specify a rev and it isn't found, we fail the whole search since
+		// that should be checked earlier.
+		args = &search.Args{
+			Pattern: &search.PatternInfo{
+				FileMatchLimit: defaultMaxSearchResults,
+				Pattern:        "foo",
+			},
+			Repos: makeRepositoryRevisions("foo/no-rev@dev"),
+			Query: q,
+			Zoekt: zoekt,
+		}
+		_, _, err = searchFilesInRepos(context.Background(), args)
+		if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
+			t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
+		}
+	})
+
+	t.Run("search falls back to non-indexed if indexed search is enabled but the indexed search service is down", func(t *testing.T) {
+		repoName := "github.com/bob/micdrop"
+		qStr := fmt.Sprintf("repo:%s func", repoName)
+		q, err := query.ParseAndCheck(qStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+			matches = []*fileMatchResolver{
+				{
+					uri: repoName,
+				},
+			}
+			return
+		}
+		defer func() { mockSearchFilesInRepo = nil }()
+
+		zoekt := &searchbackend.Zoekt{
+			Client: &errorSearcher{
+				listError:   errors.New("cannot return list because indexed-search pod is down"),
+				searchError: errors.New("cannot search because indexed-search pod is down"),
+			},
+		}
+
+		args := &search.Args{
+			Pattern: &search.PatternInfo{
+				FileMatchLimit: 100,
+				Pattern:        "func",
+			},
+			Repos: makeRepositoryRevisions("github.com/bob/micdrop"),
+			Query: q,
+			Zoekt: zoekt,
+		}
+		ctx := context.Background()
+		res, common, err := searchFilesInRepos(ctx, args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !zoekt.Enabled() {
+			t.Fatal("zoekt object says it is not enabled")
+		}
+		wantRes := []*fileMatchResolver { { uri: repoName } }
+		if len(res) != 1 {
+			t.Errorf("got %d results, want 1", len(res))
+		}
+		if !reflect.DeepEqual(res, wantRes) {
+			t.Errorf("res is %s, want %s", spew.Sdump(res), spew.Sdump(wantRes))
+		}
+		wantRepos := []*types.Repo{ { Name: api.RepoName(repoName) } }
+		if !common.indexUnavailable {
+			t.Errorf("common.indexUnavailable is unexpectedly false. It should be true because zoekt is returning errors.")
+		}
+		if !reflect.DeepEqual(common.repos, wantRepos) {
+			t.Errorf("common.repos is %s, want %s", spew.Sdump(common.repos), spew.Sdump(wantRepos))
+		}
+		if !reflect.DeepEqual(common.searched, wantRepos) {
+			t.Errorf("common.searched is %s, want %s", spew.Sdump(common.searched), spew.Sdump(wantRepos))
+		}
+		if len(common.indexed) != 0 {
+			t.Errorf("len(common.indexed) is %d, want 0", len(common.indexed))
+		}
+	})
 }
 
 func TestRepoShouldBeSearched(t *testing.T) {
@@ -382,14 +449,19 @@ func (ss *fakeSearcher) String() string {
 }
 
 type errorSearcher struct {
-	err error
+	searchError error
+	listError   error
 
 	// Default all unimplemented zoekt.Searcher methods to panic.
 	zoekt.Searcher
 }
 
 func (es *errorSearcher) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	return nil, es.err
+	return nil, es.searchError
+}
+
+func (es *errorSearcher) List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error) {
+	return nil, es.listError
 }
 
 func Test_zoektSearchHEAD(t *testing.T) {
@@ -472,7 +544,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				query:           &search.PatternInfo{PathPatternsAreRegExps: true},
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: true,
-				searcher:        &errorSearcher{err: errors.New("womp womp")},
+				searcher:        &errorSearcher{searchError: errors.New("womp womp")},
 				opts:            zoekt.SearchOptions{},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
