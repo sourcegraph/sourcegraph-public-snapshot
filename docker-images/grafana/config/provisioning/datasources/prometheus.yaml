@@ -1,0 +1,9 @@
+apiVersion: 1
+
+datasources:
+  - name: sg-prometheus
+    type: prometheus
+    access: proxy
+    url: http://host.docker.internal:9090
+    isDefault: true
+    editable: false
