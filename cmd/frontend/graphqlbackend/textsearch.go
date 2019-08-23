@@ -941,6 +941,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			}
 			common.indexUnavailable = true
 			err = nil
+			// Fall back on non-indexed search.
+			zoektRepos = nil
+			searcherRepos = args.Repos
 		}
 	}
 
