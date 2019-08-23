@@ -84,6 +84,10 @@ interface ConduitDiffDetailsResponse {
     [id: string]: ConduitDiffDetails
 }
 
+/**
+ * Creates the `FormData` used to pass parameters along with Conduit API requests,
+ * including the CSRF token.
+ */
 function createConduitRequestForm(): FormData {
     const searchForm = document.querySelector('.phabricator-search-menu form')
     if (!searchForm) {
@@ -115,6 +119,9 @@ type ConduitResponse<T> =
 
 export type QueryConduitHelper<T> = (endpoint: string, params: {}) => Observable<T>
 
+/**
+ * Generic helper to query the Phabricator Conduit API.
+ */
 export function queryConduit<T>(endpoint: string, params: {}): Observable<T> {
     const form = createConduitRequestForm()
     for (const [key, value] of Object.entries(params)) {
@@ -138,6 +145,11 @@ export function queryConduit<T>(endpoint: string, params: {}): Observable<T> {
     )
 }
 
+/**
+ * Queries the Phabricator Conduit API for the {@link ConduitDiffDetails} matching the given
+ * revision and diff IDs. {@link ConduitDiffDetails} notably contain the staging details for the diff,
+ * including the base and head commit IDs on the staging repository.
+ */
 function getDiffDetailsFromConduit(
     { diffID, revisionID }: RevisionSpec & DiffSpec,
     queryConduit: QueryConduitHelper<ConduitDiffDetailsResponse>
@@ -158,6 +170,10 @@ interface ConduitDifferentialQueryResponse {
     }
 }
 
+/**
+ * Queries the Phabricator Conduit API for the PHID (Phabricator's opaque unique ID)
+ * of the repository matching the given revisionID.
+ */
 function getRepoPHIDForRevisionID(
     revisionID: number,
     queryConduit: QueryConduitHelper<ConduitDifferentialQueryResponse>
@@ -201,6 +217,10 @@ interface PhabricatorRepoDetails {
     rawRepoName: string
 }
 
+/**
+ * Queries the Phabricator Conduit API for a repository matching the given callsign,
+ * and emits the {@link PhabricatorRepoDetails} if found.
+ */
 export function getRepoDetailsFromCallsign(
     callsign: string,
     requestGraphQL: PlatformContext['requestGraphQL'],
@@ -235,7 +255,7 @@ export function getRepoDetailsFromCallsign(
 }
 
 /**
- * Queries the sourcegraph.configuration conduit API endpoint.
+ * Queries the Phabricator Conduit API sourcegraph.configuration endpoint.
  *
  * The Phabricator extension updates the window object automatically, but in the
  * case it fails we query the conduit API.
@@ -287,6 +307,10 @@ function getRepoDetailsFromRepoPHID(
     )
 }
 
+/**
+ * Queries the Phabricator Conduit API for a repository matching the given revisionID,
+ * and emits the {@link PhabricatorRepoDetails} for that repository if found.
+ */
 export function getRepoDetailsFromRevisionID(
     revisionID: number,
     requestGraphQL: PlatformContext['requestGraphQL'],
@@ -362,6 +386,10 @@ interface ResolveStagingOptions extends Pick<PlatformContext, 'requestGraphQL'>,
     description?: string
 }
 
+/**
+ * Returns the commit ID of the one-off commit created on the Sourcegraph instance for the given
+ * repo/diffID/patch, creating that commit if needed.
+ */
 const resolveStagingRev = ({ requestGraphQL, ...variables }: ResolveStagingOptions): Observable<ResolvedRevSpec> =>
     requestGraphQL<GQL.IMutation>({
         request: gql`
@@ -424,6 +452,11 @@ interface PropsWithDiffDetails extends ResolveDiffOpt {
     diffDetails: ConduitDiffDetails
 }
 
+/**
+ *
+ * @param props
+ * @param queryConduit
+ */
 function getPropsWithDiffDetails(
     props: ResolveDiffOpt,
     queryConduit: QueryConduitHelper<any>
@@ -488,6 +521,21 @@ interface ResolvedDiff extends ResolvedRevSpec {
     stagingRepoName?: string
 }
 
+/**
+ * Emits the {@link ResolvedDiff} for the base or head commit of a Phabricator diff.
+ * - If possible, the base commit from the source control repository will be used.
+ * - If a staging repository is configured and is synced to the Sourcegraph instance,
+ * the commit ID on the staging repository will be returned, and the {@link ResolvedDiff}
+ * will include the `stagingRepoName`.
+ * - If a staging repository is configured but it isn't synced to the Sourcegraph instance,
+ * a one-off staging commit will be created from the raw diff on the Sourcegraph instance,
+ * and its commit ID will be returned ({@see resolveStagingRev}).
+ * - If no staging repository is configured, and the commit doesn't exist on the Sourcegraph instance
+ * (for example in the case of a revision created through the Phabricator UI from a raw diff), a one-off
+ * staging commit will be created from the raw diff on the Sourcegraph instance, and its commit ID will
+ * be returned ({@see resolveStagingRev}).
+ *
+ */
 export function resolveDiffRev(
     props: ResolveDiffOpt,
     requestGraphQL: PlatformContext['requestGraphQL'],
