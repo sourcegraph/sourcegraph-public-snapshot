@@ -2,14 +2,16 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
-func (r *schemaResolver) StatusMessages(ctx context.Context) ([]statusMessageResolver, error) {
-	var messages []statusMessageResolver
+func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
+	var messages []*statusMessageResolver
 
 	// 🚨 SECURITY: Only site admins can see status messages.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -22,54 +24,36 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]statusMessageRes
 	}
 
 	for _, m := range result.Messages {
-		if m.Cloning != nil {
-			messages = append(messages, &cloningStatusMessageResolver{
-				message: m.Cloning.Message,
-			})
-		}
-
-		if m.SyncError != nil {
-			messages = append(messages, &syncErrorStatusMessageResolver{
-				message:           m.SyncError.Message,
-				externalServiceId: m.SyncError.ExternalServiceId,
-			})
-		}
+		messages = append(messages, &statusMessageResolver{message: m})
 	}
 
 	return messages, nil
 }
 
-type statusMessageResolver interface {
-	ToCloningStatusMessage() (*cloningStatusMessageResolver, bool)
-	ToSyncErrorStatusMessage() (*syncErrorStatusMessageResolver, bool)
+type statusMessageResolver struct {
+	message protocol.StatusMessage
 }
 
-type cloningStatusMessageResolver struct {
-	message string
+func (r *statusMessageResolver) ToCloningStatusMessage() (*statusMessageResolver, bool) {
+	return r, r.message.Cloning != nil
 }
 
-func (n *cloningStatusMessageResolver) Message() string { return n.message }
-func (n *cloningStatusMessageResolver) ToCloningStatusMessage() (*cloningStatusMessageResolver, bool) {
-	return n, true
-}
-func (n *cloningStatusMessageResolver) ToSyncErrorStatusMessage() (*syncErrorStatusMessageResolver, bool) {
-	return nil, false
+func (r *statusMessageResolver) ToSyncErrorStatusMessage() (*statusMessageResolver, bool) {
+	return r, r.message.SyncError != nil
 }
 
-type syncErrorStatusMessageResolver struct {
-	message           string
-	externalServiceId int64
+func (r *statusMessageResolver) Message() (string, error) {
+	if r.message.Cloning != nil {
+		return r.message.Cloning.Message, nil
+	}
+	if r.message.SyncError != nil {
+		return r.message.SyncError.Message, nil
+	}
+	return "", errors.New("status message is of unknown type")
 }
 
-func (n *syncErrorStatusMessageResolver) Message() string { return n.message }
-func (n *syncErrorStatusMessageResolver) ToCloningStatusMessage() (*cloningStatusMessageResolver, bool) {
-	return nil, false
-}
-func (n *syncErrorStatusMessageResolver) ToSyncErrorStatusMessage() (*syncErrorStatusMessageResolver, bool) {
-	return n, true
-}
-func (n *syncErrorStatusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
-	externalService, err := db.ExternalServices.GetByID(ctx, n.externalServiceId)
+func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
+	externalService, err := db.ExternalServices.GetByID(ctx, r.message.SyncError.ExternalServiceId)
 	if err != nil {
 		return nil, err
 	}
