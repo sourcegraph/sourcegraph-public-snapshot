@@ -35,7 +35,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
       External Service Status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry-border-success"
+      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
     >
       <h4>
         <svg
@@ -94,7 +94,7 @@ exports[`StatusMessagesNavItem one CLONING message as non-site admin 1`] = `
       External Service Status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry-border-progress"
+      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
     >
       <h4>
         <svg
@@ -153,7 +153,7 @@ exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
       External Service Status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry-border-progress"
+      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
     >
       <h4>
         <svg
@@ -222,7 +222,7 @@ exports[`StatusMessagesNavItem one SYNCERROR message as non-site admin 1`] = `
       External Service Status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry-border-warning"
+      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
     >
       <h4>
         <svg
@@ -281,7 +281,7 @@ exports[`StatusMessagesNavItem one SYNCERROR message as site admin 1`] = `
       External Service Status
     </h3>
     <div
-      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry-border-warning"
+      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
     >
       <h4>
         <svg
