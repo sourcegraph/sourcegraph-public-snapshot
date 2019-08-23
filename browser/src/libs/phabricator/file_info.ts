@@ -3,14 +3,14 @@ import { map, switchMap } from 'rxjs/operators'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { FileInfo } from '../code_intelligence'
 import { PhabricatorMode } from '.'
-import { queryConduit as queryConduitAPI, resolveDiffRev } from './backend'
+import { queryConduitHelper, resolveDiffRev } from './backend'
 import { getFilepathFromFileForDiff, getFilePathFromFileForRevision } from './scrape'
 import { getPhabricatorState } from './util'
 
 export const resolveRevisionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit = queryConduitAPI
+    queryConduit = queryConduitHelper
 ): Observable<FileInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
         map(
@@ -34,7 +34,7 @@ export const resolveRevisionFileInfo = (
 export const resolveDiffFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit = queryConduitAPI
+    queryConduit = queryConduitHelper
 ): Observable<FileInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
         switchMap(state => {
@@ -102,7 +102,7 @@ export const resolveDiffFileInfo = (
 export const resolveDiffusionFileInfo = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit = queryConduitAPI
+    queryConduit = queryConduitHelper
 ): Observable<FileInfo> =>
     getPhabricatorState(window.location, requestGraphQL, queryConduit).pipe(
         map(

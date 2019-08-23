@@ -122,7 +122,7 @@ export type QueryConduitHelper<T> = (endpoint: string, params: {}) => Observable
 /**
  * Generic helper to query the Phabricator Conduit API.
  */
-export function queryConduit<T>(endpoint: string, params: {}): Observable<T> {
+export function queryConduitHelper<T>(endpoint: string, params: {}): Observable<T> {
     const form = createConduitRequestForm()
     for (const [key, value] of Object.entries(params)) {
         form.set(`params[${key}]`, JSON.stringify(value))
@@ -152,16 +152,16 @@ export function queryConduit<T>(endpoint: string, params: {}): Observable<T> {
  */
 function getDiffDetailsFromConduit(
     { diffID, revisionID }: RevisionSpec & DiffSpec,
-    queryConduit: QueryConduitHelper<ConduitDiffDetailsResponse>
+    queryConduit = queryConduitHelper
 ): Observable<ConduitDiffDetails> {
-    return queryConduit('/api/differential.querydiffs', {
+    return queryConduit<ConduitDiffDetailsResponse>('/api/differential.querydiffs', {
         ids: [diffID],
         revisionIDs: [revisionID],
     }).pipe(map(diffDetails => diffDetails[String(diffID)]))
 }
 
-function getRawDiffFromConduit(diffID: number, queryConduit: QueryConduitHelper<string>): Observable<string> {
-    return queryConduit('/api/differential.getrawdiff', { diffID })
+function getRawDiffFromConduit(diffID: number, queryConduit = queryConduitHelper): Observable<string> {
+    return queryConduit<string>('/api/differential.getrawdiff', { diffID })
 }
 
 interface ConduitDifferentialQueryResponse {
@@ -174,11 +174,8 @@ interface ConduitDifferentialQueryResponse {
  * Queries the Phabricator Conduit API for the PHID (Phabricator's opaque unique ID)
  * of the repository matching the given revisionID.
  */
-function getRepoPHIDForRevisionID(
-    revisionID: number,
-    queryConduit: QueryConduitHelper<ConduitDifferentialQueryResponse>
-): Observable<string> {
-    return queryConduit('/api/differential.query', { ids: [revisionID] }).pipe(
+function getRepoPHIDForRevisionID(revisionID: number, queryConduit = queryConduitHelper): Observable<string> {
+    return queryConduit<ConduitDifferentialQueryResponse>('/api/differential.query', { ids: [revisionID] }).pipe(
         map(result => {
             const phid = result['0'].repositoryPHID
             if (!phid) {
@@ -261,7 +258,7 @@ export function getRepoDetailsFromCallsign(
  * case it fails we query the conduit API.
  */
 export function getSourcegraphURLFromConduit(): Promise<string> {
-    return queryConduit<{ url: string }>('/api/sourcegraph.configuration', {})
+    return queryConduitHelper<{ url: string }>('/api/sourcegraph.configuration', {})
         .pipe(map(({ url }) => url))
         .toPromise()
 }
@@ -269,9 +266,9 @@ export function getSourcegraphURLFromConduit(): Promise<string> {
 function getRepoDetailsFromRepoPHID(
     phid: string,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit: QueryConduitHelper<ConduitReposResponse>
+    queryConduit = queryConduitHelper
 ): Observable<PhabricatorRepoDetails> {
-    return queryConduit('/api/diffusion.repository.search', {
+    return queryConduit<ConduitReposResponse>('/api/diffusion.repository.search', {
         constraints: {
             phids: [phid],
         },
@@ -314,7 +311,7 @@ function getRepoDetailsFromRepoPHID(
 export function getRepoDetailsFromRevisionID(
     revisionID: number,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit: QueryConduitHelper<any>
+    queryConduit = queryConduitHelper
 ): Observable<PhabricatorRepoDetails> {
     return getRepoPHIDForRevisionID(revisionID, queryConduit).pipe(
         switchMap(repositoryPHID => getRepoDetailsFromRepoPHID(repositoryPHID, requestGraphQL, queryConduit))
@@ -452,11 +449,6 @@ interface PropsWithDiffDetails extends ResolveDiffOpt {
     diffDetails: ConduitDiffDetails
 }
 
-/**
- *
- * @param props
- * @param queryConduit
- */
 function getPropsWithDiffDetails(
     props: ResolveDiffOpt,
     queryConduit: QueryConduitHelper<any>
