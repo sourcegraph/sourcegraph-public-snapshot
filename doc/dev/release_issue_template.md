@@ -60,9 +60,7 @@ Run a find replace on:
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Run the new version of Sourcegraph on a clean Kubernetes cluster with no previous data.
-    - [ ] Log in to https://console.cloud.google.com, select `sourcegraph-dev` project and create the new Kubernetes cluster.
-    - [ ] Set up the new version of Sourcegraph on that cluster using our docs.
-    - [ ] Initialize the site by creating an admin account.
+    - [ ] Create a new Kubernetes cluster using https://github.com/sourcegraph/deploy-k8s-helper.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
