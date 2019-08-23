@@ -48,12 +48,12 @@ interface StatusMessageEntryProps {
     showLink?: boolean
     linkTo: string
     linkText: string
-    style: EntryType
+    entryType: EntryType
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
 }
 
-function entryIcon(style: EntryType): JSX.Element {
-    switch (style) {
+function entryIcon(entryType: EntryType): JSX.Element {
+    switch (entryType) {
         case 'warning':
             return <CloudAlertIcon className="icon-inline mr-1" />
         case 'success':
@@ -68,11 +68,11 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
         key={props.text}
         className={classNames(
             'status-messages-nav-item__entry mb-3',
-            props.style && `status-messages-nav-item__entry-border-${props.style}`
+            props.entryType && `status-messages-nav-item__entry--border-${props.entryType}`
         )}
     >
         <h4>
-            {entryIcon(props.style)}
+            {entryIcon(props.entryType)}
             {props.title}
         </h4>
         <p>{props.text}</p>
@@ -138,7 +138,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         linkTo="/site-admin/external-services"
                         linkText="Configure external services"
                         linkOnClick={this.toggleIsOpen}
-                        style="progress"
+                        entryType="progress"
                     />
                 )
             case 'SyncErrorStatusMessage':
@@ -151,7 +151,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         linkTo={`/site-admin/external-services/${message.externalService.id}`}
                         linkText={`Edit "${message.externalService.displayName}"`}
                         linkOnClick={this.toggleIsOpen}
-                        style="warning"
+                        entryType="warning"
                     />
                 )
         }
@@ -213,7 +213,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             linkTo="/site-admin/external-services"
                             linkText="Configure external services"
                             linkOnClick={this.toggleIsOpen}
-                            style="success"
+                            entryType="success"
                         />
                     )}
                 </DropdownMenu>
