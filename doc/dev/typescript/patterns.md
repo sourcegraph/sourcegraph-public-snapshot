@@ -41,7 +41,7 @@ class MyComponent extends React.Component {
     )
   }
 
-  // Method that gets run on disposal
+  // React lifecycle method that gets run on disposal
   public componentWillUnmount(): void {
     // Unsubscribes all Subscriptions that were made
     this.subscriptions.unsubscribe()
