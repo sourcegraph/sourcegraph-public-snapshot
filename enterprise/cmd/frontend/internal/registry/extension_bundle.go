@@ -64,7 +64,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-XSS-Protection", "1; mode=block")
 
 	// 🚨 SECURITY sourcegraph.com only: downstream Sourcegraph sites' clients to access this file directly.
-	// On private registries, requests to fetch extension  bundles are authenticated, and Access-Control headers
+	// On private registries, requests to fetch extension bundles are authenticated, and Access-Control headers
 	// should be preserved.
 	if envvar.SourcegraphDotComMode() {
 		w.Header().Del("Access-Control-Allow-Credentials") // credentials are not needed
