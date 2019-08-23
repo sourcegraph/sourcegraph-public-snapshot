@@ -2,6 +2,7 @@ import bodyParser from 'body-parser'
 import express from 'express'
 import { Backend } from './backend'
 import { readEnv, readEnvInt } from './util'
+import { zlib } from 'mz'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -31,7 +32,7 @@ async function main(): Promise<void> {
             const { repository, commit } = req.query
             checkRepository(repository)
             checkCommit(commit)
-            await backend.insertDump(req, repository, commit)
+            await backend.insertDump(req.pipe(zlib.createGunzip()), repository, commit)
             res.json(null)
         } catch (e) {
             return next(e)
