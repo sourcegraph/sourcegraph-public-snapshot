@@ -5,59 +5,10 @@ import * as tmp from 'tmp-promise'
 import { Readable } from 'stream'
 import { readEnv } from './util'
 
-// TODO - document
+/**
+ * The address used to connect to the Dgraph server for queries.
+ */
 const DGRAPH_ADDRESS = readEnv('DGRAPH_ADDRESS', 'localhost:9080')
-
-// TODO - document these
-
-interface ExistsResult {
-    matching: [
-        {
-            uid: string
-        }
-    ]
-}
-
-interface QueryHoverResult {
-    matchingRanges: [FlatRange]
-    resultSets: lsp.MarkupContent[]
-}
-
-interface QueryLocationResult<K extends string> {
-    resultRanges: {
-        [_ in K]: ResultRanges[]
-    }[]
-}
-
-interface ResultRanges {
-    item: (ResultRange)[]
-}
-
-interface ResultRange extends FlatRange {
-    containedBy: {
-        path: string
-        containedBy: {
-            oid: string
-            containedBy: {
-                name: string
-            }[]
-        }[]
-    }[]
-}
-
-interface FlatRange {
-    startLine: number
-    startCharacter: number
-    endLine: number
-    endCharacter: number
-}
-
-function unflattenRange(flatRange: FlatRange): lsp.Range {
-    return {
-        start: { line: flatRange.startLine, character: flatRange.startCharacter },
-        end: { line: flatRange.endLine, character: flatRange.endCharacter },
-    }
-}
 
 /**
  * `Backend` stores LSIF dump data in a remote Dgraph instance.
@@ -97,6 +48,7 @@ export class Backend {
             range.startCharacter: int @index(int) .
             range.startLine: int @index(int) .
             contains: uid @reverse .
+
             moniker.identifier: string @index(exact) .
             moniker: uid @reverse .
             nextMoniker: uid @reverse .
@@ -154,7 +106,9 @@ export class Backend {
             $repository: repository,
             $commit: commit,
             $path: path,
-        })).getJson() as ExistsResult
+        })).getJson() as {
+            matching: [{ uid: string }]
+        }
 
         return result.matching.length > 0
     }
@@ -167,13 +121,32 @@ export class Backend {
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      */
-    public definitions(
+    public async definitions(
         repository: string,
         commit: string,
         path: string,
         position: lsp.Position
     ): Promise<lsp.Location | lsp.Location[] | null> {
-        return this.queryLocation('textDocument/definition', repository, commit, path, position)
+        const result = (await this.client.newTxn().queryWithVars(Backend.definitionQuery, {
+            $repository: repository,
+            $commit: commit,
+            $path: path,
+            $line: `${position.line}`,
+            $character: `${position.character}`,
+        })).getJson() as {
+            resultRanges: {
+                'textDocument/definition': { item: ResultRange[] }[]
+            }[]
+            monikersAndPackages: MonikerAndPackage[]
+        }
+
+        const flattened = result.resultRanges.flatMap(r => r['textDocument/definition']).flatMap(r => r.item)
+
+        // Pluck the document, repo and commit from the definition was found in
+        return flattened.flatMap(({ document: [{ path }], ...flatRange }) => ({
+            uri: path,
+            range: unflattenRange(flatRange),
+        }))
     }
 
     /**
@@ -184,13 +157,32 @@ export class Backend {
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      */
-    public references(
+    public async references(
         repository: string,
         commit: string,
         path: string,
         position: lsp.Position
     ): Promise<lsp.Location | lsp.Location[] | null> {
-        return this.queryLocation('textDocument/references', repository, commit, path, position)
+        const result = (await this.client.newTxn().queryWithVars(Backend.referencesQuery, {
+            $repository: repository,
+            $commit: commit,
+            $path: path,
+            $line: `${position.line}`,
+            $character: `${position.character}`,
+        })).getJson() as {
+            resultRanges: {
+                'textDocument/references': { item: ResultRange[] }[]
+            }[]
+            monikersAndPackages: MonikerAndPackage[]
+        }
+
+        const flattened = result.resultRanges.flatMap(r => r['textDocument/references']).flatMap(r => r.item)
+
+        // Pluck the document, repo and commit from the definition was found in
+        return flattened.flatMap(({ document: [{ path }], ...flatRange }) => ({
+            uri: path,
+            range: unflattenRange(flatRange),
+        }))
     }
 
     /**
@@ -207,30 +199,16 @@ export class Backend {
         path: string,
         position: lsp.Position
     ): Promise<lsp.Hover | null> {
-        const query = `
-            query queryHover($repository: string!, $commit: string!, $path: string!, $line: int!, $character: int!) {
-                ${this.matchingRangesQuery}
-
-                resultSets(func: uid(results)) @normalize @filter(has(<textDocument/hover>)) {
-                    <textDocument/hover> (first: 1) {
-                        result: {
-                            contents: {
-                                kind: hoverResult.kind
-                                value: hoverResult.value
-                            }
-                        }
-                    }
-                }
-            }
-        `
-
-        const result = (await this.client.newTxn().queryWithVars(query, {
+        const result = (await this.client.newTxn().queryWithVars(Backend.hoverQuery, {
             $repository: repository,
             $commit: commit,
             $path: path,
             $line: `${position.line}`,
             $character: `${position.character}`,
-        })).getJson() as QueryHoverResult
+        })).getJson() as {
+            matchingRanges: FlatRange[]
+            resultSets: lsp.MarkupContent[]
+        }
 
         if (result.matchingRanges[0]) {
             const range = unflattenRange(result.matchingRanges[0])
@@ -241,71 +219,15 @@ export class Backend {
         return null
     }
 
-    /**
-     * Query matching result ranges for the given `key`.
-     *
-     * @param key The key by which to filter vertices.
-     * @param repository The repository of the project to which the path belongs.
-     * @param commit The commit hash of the project to which the path belongs.
-     * @param path The path of the document to which the position belongs.
-     * @param position The current hover position.
-     */
-    private async queryLocation<K extends string>(
-        key: K,
-        repository: string,
-        commit: string,
-        path: string,
-        position: lsp.Position
-    ): Promise<lsp.Location[]> {
-        const query = `
-            query queryLocation($repository: string!, $commit: string!, $path: string!, $line: int!, $character: int!) {
-                ${this.matchingRangesQuery}
-
-                resultRanges(func: uid(results)) @filter(has(<${key}>)) {
-                    <${key}> {
-                        item {
-                            startLine: range.startLine
-                            startCharacter: range.startCharacter
-                            endLine: range.endLine
-                            endCharacter: range.endCharacter
-                            containedBy: ~contains @filter(has(document.label)) {
-                                path: document.path
-                                containedBy: ~contains @filter(has(commit.label)) {
-                                    revhash: commit.revhash
-                                    containedBy: ~contains @filter(has(repository.label)) {
-                                        name: repository.name
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        `
-
-        const result = (await this.client.newTxn().queryWithVars(query, {
-            $repository: repository,
-            $commit: commit,
-            $path: path,
-            $line: `${position.line}`,
-            $character: `${position.character}`,
-        })).getJson() as QueryLocationResult<K>
-
-        const flattened = result.resultRanges.flatMap(r => r[key]).flatMap(r => r.item)
-
-        // Pluck the document, repo and commit from the definition was found in
-        return flattened.flatMap(({ containedBy: [{ path }], ...flatRange }) => ({
-            uri: path,
-            range: unflattenRange(flatRange),
-        }))
-    }
+    //
+    // Queries
 
     /**
-     * `matchingRangesQuery` is a sub-query that populates matchingRanges with the set of ranges
-     * that occur within the given repository, commit, path, and position. This query expects the
-     * variables `$repository`, `$commit`, `$path`, `$line`, and `$character`.
+     * `matchingRangeAndResultSetsQuery` sub-query that populates `matchingRangeAndResultSets` with the
+     * uids of the range and attached resultSet vertices that occupy the given position in the given
+     * path. This query expects the variables `$repository`, `$commit`, `$path`, `$line`, and `$character`.
      */
-    private matchingRangesQuery = `
+    private static matchingRangeAndResultSetsQuery = `
         matchingRanges(func: has(repository.label)) @filter(eq(repository.name, $repository)) @normalize {
             contains @filter(has(commit.label) and eq(commit.revhash, $commit)) {
                 contains @filter(has(document.label) and eq(document.path, $path)) {
@@ -328,8 +250,159 @@ export class Backend {
         }
 
         var(func: uid(matchingRanges)) @recurse {
-            results as uid
+            matchingRangeAndResultSets as uid
             next
         }
     `
+
+    /**
+     * TODO
+     */
+    private static monikersQuery = `
+        var(func: uid(matchingRangeAndResultSets)) @filter(has(<moniker>)) {
+            moniker as <moniker> {
+                uid
+            }
+        }
+
+        var(func: uid(moniker)) @recurse {
+            monikers as uid
+            ~nextMoniker
+        }
+
+        monikersAndPackages(func: uid(monikers)) {
+            uid
+            kind: moniker.kind
+            scheme: moniker.scheme
+            identifier: moniker.identifier
+            packageInformation {
+                manager: packageInformation.manager
+                name: packageInformation.name
+                version: packageInformation.version
+            }
+        }
+    `
+
+    /**
+     * TODO
+     */
+    private static definitionQuery = `
+        query queryLocation($repository: string!, $commit: string!, $path: string!, $line: int!, $character: int!) {
+            ${Backend.matchingRangeAndResultSetsQuery}
+            ${Backend.monikersQuery}
+
+            resultRanges(func: uid(matchingRangeAndResultSets)) @filter(has(<textDocument/definition>)) {
+                <textDocument/definition> {
+                    item {
+                        startLine: range.startLine
+                        startCharacter: range.startCharacter
+                        endLine: range.endLine
+                        endCharacter: range.endCharacter
+                        document: ~contains @filter(has(document.label)) {
+                            path: document.path
+
+                            # containedBy: ~contains @filter(has(commit.label)) {
+                            #     revhash: commit.revhash
+                            #     containedBy: ~contains @filter(has(repository.label)) {
+                            #         name: repository.name
+                            #     }
+                            # }
+                        }
+                    }
+                }
+            }
+        }
+    `
+
+    /**
+     * TODO
+     */
+    private static referencesQuery = `
+        query queryLocation($repository: string!, $commit: string!, $path: string!, $line: int!, $character: int!) {
+            ${Backend.matchingRangeAndResultSetsQuery}
+            ${Backend.monikersQuery}
+
+            resultRanges(func: uid(matchingRangeAndResultSets)) @filter(has(<textDocument/references>)) {
+                <textDocument/references> {
+                    item {
+                        startLine: range.startLine
+                        startCharacter: range.startCharacter
+                        endLine: range.endLine
+                        endCharacter: range.endCharacter
+                        document: ~contains @filter(has(document.label)) {
+                            path: document.path
+
+                            # commit: ~contains @filter(has(commit.label)) {
+                            #     revhash: commit.revhash
+                            #     repository: ~contains @filter(has(repository.label)) {
+                            #         name: repository.name
+                            #     }
+                            # }
+                        }
+                    }
+                }
+            }
+        }
+    `
+
+    /**
+     * TODO
+     */
+    private static hoverQuery = `
+        query queryHover($repository: string!, $commit: string!, $path: string!, $line: int!, $character: int!) {
+            ${Backend.matchingRangeAndResultSetsQuery}
+
+            resultSets(func: uid(matchingRangeAndResultSets)) @normalize @filter(has(<textDocument/hover>)) {
+                <textDocument/hover> (first: 1) {
+                    result: {
+                        contents: {
+                            kind: hoverResult.kind
+                            value: hoverResult.value
+                        }
+                    }
+                }
+            }
+        }
+    `
+}
+
+/**
+ * TODO
+ */
+interface FlatRange {
+    startLine: number
+    startCharacter: number
+    endLine: number
+    endCharacter: number
+}
+
+/**
+ * TODO
+ */
+interface ResultRange extends FlatRange {
+    document: { path: string }[]
+}
+
+/**
+ * TODO
+ */
+interface MonikerAndPackage {
+    kind: string
+    scheme: string
+    identifier: string
+    pacakgeInformation?: {
+        manager: string
+        name: string
+        version: string
+    }
+}
+
+/**
+ * TODO
+ */
+function unflattenRange(flatRange: FlatRange): lsp.Range {
+    return {
+        start: { line: flatRange.startLine, character: flatRange.startCharacter },
+        end: { line: flatRange.endLine, character: flatRange.endCharacter },
+    }
 }
