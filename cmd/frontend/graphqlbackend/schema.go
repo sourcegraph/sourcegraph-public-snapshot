@@ -1007,10 +1007,8 @@ type SavedSearch implements Node {
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
-    # The user that owns the saved search if the owner is a user
-    user: User
-    # The org that owns the saved search if the owner is an org.
-    org: Org
+    # The user or org that owns this saved search.
+    namespace: Namespace!
     # The Slack webhook URL associated with this saved search, if any.
     slackWebhookURL: String
 }
