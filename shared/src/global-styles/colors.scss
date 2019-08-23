@@ -64,3 +64,59 @@ $color-light-text-6: #1d2535;
 
 $color-light-border: #cad2e2;
 $color-light-border-2: #e4e9f1;
+
+// Tell Bootstrap to use colors from OpenColor
+$blue: $oc-blue-7;
+$indigo: $oc-indigo-7;
+$purple: $oc-violet-7;
+$pink: $oc-pink-7;
+$red: $oc-red-7;
+$orange: $oc-orange-7;
+$yellow: $oc-yellow-7;
+$green: $oc-green-9;
+$teal: $oc-teal-7;
+$cyan: $oc-cyan-7;
+
+$primary: $blue;
+$secondary: #2b3750;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$secondary-light: darken($gray-01, 5%);
+
+$theme-colors-light: (
+    'secondary': $secondary-light,
+);
+
+$body-color: var(--body-color);
+$body-bg: var(--body-bg);
+
+$text-muted: var(--text-muted);
+
+$body-color-light: $gray-19;
+$body-color-dark: $white;
+
+:root {
+    --primary: #{$primary};
+    --secondary: #{$secondary};
+    --success: #{$success};
+    --info: #{$info};
+    --warning: #{$warning};
+    --danger: #{$danger};
+    --body-color: #{$body-color-light};
+    --body-bg: #fbfdff;
+    --text-muted: #{$color-light-text-2};
+    --link-color: #566e9f;
+    --link-hover-color: #1d2535;
+}
+.theme-light {
+    --secondary: #{$secondary-light};
+}
+.theme-dark {
+    --body-color: #{$body-color-dark};
+    --body-bg: #04070e;
+    --text-muted: #{$color-text-1};
+    --link-color: #a2b0cd;
+    --link-hover-color: #ffffff;
+}
