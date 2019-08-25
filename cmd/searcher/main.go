@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
@@ -61,10 +60,6 @@ func main() {
 	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
-	rpcHandler, err := rpc.Server(&search.StoreSearcher{Store: service.Store})
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	host := ""
 	if env.InsecureDev {
@@ -80,11 +75,6 @@ func main() {
 				w.Write([]byte("ok"))
 				return
 			}
-			if r.URL.Path == rpc.DefaultRPCPath {
-				rpcHandler.ServeHTTP(w, r)
-				return
-			}
-
 			handler.ServeHTTP(w, r)
 		}),
 	}

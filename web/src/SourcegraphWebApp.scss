@@ -12,8 +12,7 @@ $media-md: 768px;
 $media-lg: 992px;
 $media-xl: 1200px;
 
-@import 'open-color/open-color.scss';
-@import './global-styles/colors';
+@import '../../shared/src/global-styles/colors.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: 2px;
@@ -31,42 +30,6 @@ $container-max-widths: (
     lg: null,
     xl: 1140px,
 );
-
-// Tell Bootstrap to use colors from OpenColor
-$blue: $oc-blue-7;
-$indigo: $oc-indigo-7;
-$purple: $oc-violet-7;
-$pink: $oc-pink-7;
-$red: $oc-red-7;
-$orange: $oc-orange-7;
-$yellow: $oc-yellow-7;
-$green: $oc-green-9;
-$teal: $oc-teal-7;
-$cyan: $oc-cyan-7;
-
-$primary: $blue;
-$secondary: #2b3750;
-$success: $green;
-$info: $cyan;
-$warning: $yellow;
-$danger: $red;
-$secondary-light: darken($gray-01, 5%);
-
-$theme-colors-light: (
-    'secondary': $secondary-light,
-);
-
-:root {
-    --primary: #{$primary};
-    --secondary: #{$secondary};
-    --success: #{$success};
-    --info: #{$info};
-    --warning: #{$warning};
-    --danger: #{$danger};
-}
-.theme-light {
-    --secondary: #{$secondary-light};
-}
 
 $body-color: var(--body-color);
 $body-bg: var(--body-bg);
@@ -148,7 +111,7 @@ $code-bg: var(--body-bg);
 @import './global-styles/dropdown';
 @import './global-styles/nav';
 @import './global-styles/type';
-@import './global-styles/icons';
+@import '../../shared/src/global-styles/icons';
 @import './global-styles/list-group';
 @import './global-styles/tables';
 @import './global-styles/code';
@@ -268,6 +231,7 @@ body,
 @import './user/settings/UserSettingsArea';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
+@import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
 @import './open/OpenPage';

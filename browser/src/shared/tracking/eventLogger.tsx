@@ -83,7 +83,7 @@ export class EventLogger implements TelemetryService {
      *
      * @param eventName The ID of the action executed.
      */
-    public async log(eventName: string): Promise<void> {
+    public async log(eventName: string, eventProperties?: any): Promise<void> {
         switch (eventName) {
             case 'goToDefinition':
             case 'goToDefinition.preloaded':

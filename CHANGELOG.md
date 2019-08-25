@@ -16,10 +16,19 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - A `hardTTL` setting was added to the [Bitbucket Server `authorization` config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration). This setting specifies a duration after which a user's cached permissions must be updated before any user action is authorized. This contrasts with the already existing `ttl` setting which defines a duration after which a user's cached permissions will get updated in the background, but the previously cached (and now stale) permissions are used to authorize any user action occuring before the update concludes. If your previous `ttl` value is larger than the default of the new `hardTTL` setting (i.e. **3 days**), you must change the `ttl` to be smaller or, `hardTTL` to be larger.
+- Sourcegraph now receives [pings](https://docs.sourcegraph.com/admin/pings) on which extensions are activated from Sourcegraph.com.
 
 ### Fixed
 
 ### Removed
+
+## 3.7.1
+
+### Fixed
+
+- When re-indexing repositories, we now continue to serve from the old index in the meantime. Thus, you can upgrade to 3.7.1 without downtime.
+- Indexed symbol search is now faster, as we've fixed a performance issue that occurred when many repositories without any symbols existed.
+- Indexed symbol search now uses less disk space when upgrading directly to v3.7.1 as we properly remove old indexes.
 
 ## 3.7.0
 

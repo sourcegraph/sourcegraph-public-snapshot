@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -405,13 +407,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	var defaultRepos []*types.Repo
-	// TODO(ijt): make sure filters like file: don't prevent default repos from being used.
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
-		// TODO(ijt): check config like search.defaultRepos.enabled so installations not
-		// using default_repos won't have to pay the ~0.5 msec cost of this query.
-		defaultRepos, err = db.DefaultRepos.List(ctx)
+		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+			return zoektIndexedRepos(ctx, IndexedSearch(), revs, nil)
+		}
+		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
 		if err != nil {
-			return nil, nil, false, err
+			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
 	}
 
@@ -507,6 +509,55 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	return repoRevisions, missingRepoRevisions, overLimit, err
+}
+
+type indexedReposFunc func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error)
+type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
+
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, getIndexedRepos indexedReposFunc) ([]*types.Repo, error) {
+	// Get the list of default repos from the db.
+	defaultRepos, err := getRawDefaultRepos(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying db for default repos")
+	}
+	// Find out which of the default repos have been indexed.
+	defaultRepoRevs := make([]*search.RepositoryRevisions, 0, len(defaultRepos))
+	for _, r := range defaultRepos {
+		rr := &search.RepositoryRevisions{
+			Repo: r,
+			Revs: []search.RevisionSpecifier{{RevSpec: ""}},
+		}
+		defaultRepoRevs = append(defaultRepoRevs, rr)
+	}
+
+	indexed, unindexed, err := getIndexedRepos(ctx, defaultRepoRevs)
+	if err != nil {
+		return nil, errors.Wrap(err, "finding subset of default repos that are indexed")
+	}
+	// If any are unindexed, log the first few so we can find out if something is going wrong with those.
+	if len(unindexed) > 0 {
+		N := len(unindexed)
+		if N > 10 {
+			N = 10
+		}
+		var names []string
+		for i := 0; i < N; i++ {
+			names = append(names, string(unindexed[i].Repo.Name))
+		}
+		log15.Info("some unindexed repos found; listing up to 10 of them", "unindexed", names)
+	}
+	// Exclude any that aren't indexed.
+	indexedMap := make(map[api.RepoID]bool, len(indexed))
+	for _, r := range indexed {
+		indexedMap[r.Repo.ID] = true
+	}
+	defaultRepos2 := make([]*types.Repo, 0, len(indexedMap))
+	for _, r := range defaultRepos {
+		if indexedMap[r.ID] {
+			defaultRepos2 = append(defaultRepos2, r)
+		}
+	}
+	return defaultRepos2, nil
 }
 
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {

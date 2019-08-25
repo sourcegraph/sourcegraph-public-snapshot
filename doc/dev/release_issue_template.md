@@ -25,8 +25,12 @@ Run a find replace on:
 
 - [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
 - [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
+- [ ] Create a new test grid for MAJOR.MINOR by cloning the previous [release testing grid on Monday.com](https://sourcegraph-team.monday.com) and renaming it to "MAJOR.MINOR Release test grid".
+    - [ ] Reset all tested cells to "To test", unless the "Automated" column is marked as "Done". See [this article for how to update multiple values in Monday.com](https://support.monday.com/hc/en-us/articles/115005335049-Batch-Actions-Edit-multiple-items-in-one-click).
+    - [ ] Ping each team, and ask them to identify which of the optional rows that they own should be tested this iteration.
+    - [ ] Ping the @distribution team to determine which environments each row should be tested in.
 
-## 3 working days before release (YYYY-MM-DD)
+## 4 working days before release (YYYY-MM-DD)
 
 - [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` ([example](https://github.com/sourcegraph/sourcegraph/pull/2323)).
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
@@ -60,18 +64,28 @@ Run a find replace on:
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
 - [ ] Run the new version of Sourcegraph on a clean Kubernetes cluster with no previous data.
-    - [ ] Log in to https://console.cloud.google.com, select `sourcegraph-dev` project and create the new Kubernetes cluster.
-    - [ ] Set up the new version of Sourcegraph on that cluster using our docs.
-    - [ ] Initialize the site by creating an admin account.
+    - [ ] Create a new Kubernetes cluster using https://github.com/sourcegraph/deploy-k8s-helper.
     - [ ] Add a public repository (i.e. https://github.com/sourcegraph/sourcegraph).
     - [ ] Add a private repository (i.e. https://github.com/sourcegraph/infrastructure).
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
     - [ ] Tear down this Kubernetes cluster.
+- [ ] Delete entries from section 15 (CHANGELOG) of the testing grid, or move them into permanent sections above. Add new CHANGELOG items for this release into section 15. Assign the feature owner as the tester for each row.
+- [ ] Send a message to #dev-announce to kick off testing day.
+  - [ ] Include a link to the testing grid.
+  - [ ] Include the command to run the latest release candidate:
+    ```
+    IMAGE=sourcegraph/server:MAJOR.MINOR.0-rc.1 ./dev/run-server-image.sh
+    ```
+  - [ ] Mention that testing is the top priority, it is expected to take the whole day, and that known or suspected regressions should be tagged as release blockers.
+
+
+
+## 3 working days before release (YYYY-MM-DD)
+
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
 - [ ] Review all open issues in the release milestone that aren't blocking and ask assignees to triage them to a different milestone (backlog preferred).
-- [ ] Remind the team that they should submit [retrospective feedback](retrospectives/index.md) 24 hours before the scheduled retrospective meeting.
 
 ## As necessary
 
@@ -116,4 +130,5 @@ Run a find replace on:
 - [ ] Merge the blog post ([example](https://github.com/sourcegraph/about/pull/83)).
 - [ ] Close this issue.
 - [ ] Close the milestone.
-- [ ] Notify the next release captain that they are on duty for the next release.
+- [ ] Notify the next release captain that they are on duty for the next release. Include a link to this release issue template.
+- [ ] Remind the team that they should submit [retrospective feedback](retrospectives/index.md) 24 hours before the scheduled retrospective meeting.
