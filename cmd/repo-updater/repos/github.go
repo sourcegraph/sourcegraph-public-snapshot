@@ -116,6 +116,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s GithubSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+	// TODO(mrnugget): we need to deduplicate the repos here with a `seen` set
+	// TODO(mrnugget): when we do ^ we can also do the `excludes` filtering here
 	s.listAllRepositories(ctx, results)
 }
 
