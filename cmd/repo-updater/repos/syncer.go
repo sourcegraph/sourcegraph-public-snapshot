@@ -328,16 +328,15 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	return srcs.ListRepos(ctx)
 }
 
-func (s *Syncer) setOrResetLastSyncErr(err *error) {
-	s.lastSyncErrMu.Lock()
-	defer s.lastSyncErrMu.Unlock()
-
-	if err != nil {
-		s.lastSyncErr = *err
-		return
+func (s *Syncer) setOrResetLastSyncErr(perr *error) {
+	var err error
+	if perr != nil {
+		err = *perr
 	}
 
-	s.lastSyncErr = nil
+	s.lastSyncErrMu.Lock()
+	s.lastSyncErr = err
+	s.lastSyncErrMu.Unlock()
 }
 
 // LastSyncError returns the error that was produced in the last Sync run. If
