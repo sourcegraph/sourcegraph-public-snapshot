@@ -4,6 +4,7 @@ import { ERRNOLSIFDATA, makeBackend } from './backend'
 import { readEnvInt, hasErrorCode, readEnv } from './util'
 import { ConnectionCache, DocumentCache } from './cache'
 import { zlib } from 'mz'
+import promBundle from 'express-prom-bundle'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -40,6 +41,12 @@ async function main(): Promise<void> {
     app.get('/ping', (_, res) => {
         res.send({ pong: 'pong' })
     })
+
+    app.use(
+        promBundle({
+            // TODO - tune histogram buckets or switch to summary
+        })
+    )
 
     app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
         try {

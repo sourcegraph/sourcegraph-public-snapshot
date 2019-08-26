@@ -1,12 +1,13 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
+import { ConnectionCache, DocumentCache } from './cache'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, ResultSetData, DocumentData } from './entities'
+import { DefModel, DocumentModel, MetaModel, PackageModel, RefModel } from './models'
+import { DocumentData, MonikerData, RangeData, ResultSetData } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
-import { ConnectionCache, DocumentCache } from './cache'
+import { databaseQueryDurationHistogram } from './metrics'
 
 /**
  * `Database` wraps operations around a single repository/commit pair.
@@ -297,7 +298,14 @@ export class Database {
         return await this.connectionCache.withConnection(
             this.database,
             [DefModel, DocumentModel, MetaModel, RefModel],
-            callback
+            connection => {
+                const end = databaseQueryDurationHistogram.startTimer()
+                try {
+                    return callback(connection)
+                } finally {
+                    end()
+                }
+            }
         )
     }
 }

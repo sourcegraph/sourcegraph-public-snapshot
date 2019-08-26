@@ -45,6 +45,7 @@ import {
     MetaData,
     ElementTypes,
 } from 'lsif-protocol'
+import { databaseInsertionDurationHistogram, databaseInsertionCounter } from './metrics'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -160,10 +161,15 @@ export class Importer {
         // model is calculated based on the number of fields inserted. If fields
         // are added to the models, these numbers will also need to change.
 
-        this.metaInserter = new Inserter(this.entityManager, MetaModel, Math.floor(999 / 3))
-        this.documentInserter = new Inserter(this.entityManager, DocumentModel, Math.floor(999 / 2))
-        this.defInserter = new Inserter(this.entityManager, DefModel, Math.floor(999 / 8))
-        this.refInserter = new Inserter(this.entityManager, RefModel, Math.floor(999 / 8))
+        const metrics = {
+            insertionCounter: databaseInsertionCounter,
+            insertionDurationHistogram: databaseInsertionDurationHistogram,
+        }
+
+        this.metaInserter = new Inserter(this.entityManager, MetaModel, Math.floor(999 / 3), metrics)
+        this.documentInserter = new Inserter(this.entityManager, DocumentModel, Math.floor(999 / 2), metrics)
+        this.defInserter = new Inserter(this.entityManager, DefModel, Math.floor(999 / 8), metrics)
+        this.refInserter = new Inserter(this.entityManager, RefModel, Math.floor(999 / 8), metrics)
     }
 
     /**

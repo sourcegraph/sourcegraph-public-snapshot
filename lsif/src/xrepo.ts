@@ -4,6 +4,17 @@ import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
 import { Package, SymbolReferences } from './entities'
 import { Inserter } from './inserter'
+import {
+    xrepoQueryDurationHistogram,
+    xrepoInsertionCounter,
+    xrepoInsertionDurationHistogram,
+    bloomFilterHitCounter,
+} from './metrics'
+
+const insertionMetrics = {
+    insertionCounter: xrepoInsertionCounter,
+    insertionDurationHistogram: xrepoInsertionDurationHistogram,
+}
 
 /**
  * `XrepoDatabase` is a SQLite database that stitches together the references
@@ -47,7 +58,8 @@ export class XrepoDatabase {
      */
     public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new Inserter(entityManager, PackageModel, 6)
+            const inserter = new Inserter(entityManager, PackageModel, 6, insertionMetrics)
+
             for (const pkg of packages) {
                 // TODO - upsert
                 await inserter.insert({ repository, commit, ...pkg })
@@ -71,18 +83,23 @@ export class XrepoDatabase {
      */
     public async getReferences(scheme: string, name: string, version: string, uri: string): Promise<ReferenceModel[]> {
         return await this.withConnection(connection =>
-            connection
-                .getRepository(ReferenceModel)
-                .find({
-                    where: {
-                        scheme,
-                        name,
-                        version,
-                    },
-                })
-                .then((results: ReferenceModel[]) =>
-                    results.filter(async result => await testFilter(result.filter, uri))
-                )
+            connection.getRepository(ReferenceModel).find({
+                where: {
+                    scheme,
+                    name,
+                    version,
+                },
+            })
+        ).then((results: ReferenceModel[]) =>
+            results.filter(async result => {
+                if (await testFilter(result.filter, uri)) {
+                    bloomFilterHitCounter.labels('hit').inc()
+                    return true
+                }
+
+                bloomFilterHitCounter.labels('miss').inc()
+                return false
+            })
         )
     }
 
@@ -96,7 +113,8 @@ export class XrepoDatabase {
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new Inserter(entityManager, ReferenceModel, 7)
+            const inserter = new Inserter(entityManager, ReferenceModel, 7, insertionMetrics)
+
             for (const reference of references) {
                 // TODO - upsert
 
@@ -119,7 +137,14 @@ export class XrepoDatabase {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], callback)
+        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], connection => {
+            const end = xrepoQueryDurationHistogram.startTimer()
+            try {
+                return callback(connection)
+            } finally {
+                end()
+            }
+        })
     }
 
     /**

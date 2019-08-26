@@ -1,7 +1,16 @@
+import promClient from 'prom-client'
+import Yallist from 'yallist'
 import { Connection, createConnection, EntityManager } from 'typeorm'
 import { DocumentData } from './entities'
 import { Id } from 'lsif-protocol'
-import Yallist from 'yallist'
+import {
+    ConnectionCacheEvictionCounter,
+    ConnectionCacheHitCounter,
+    ConnectionCacheSizeGauge,
+    DocumentCacheEvictionCounter,
+    DocumentCacheHitCounter,
+    DocumentCacheSizeGauge,
+} from './metrics'
 
 /**
  * `CacheEntry` is a wrapper around a cache value promise.
@@ -33,6 +42,30 @@ interface CacheEntry<K, V> {
 }
 
 /**
+ * `CacheMetrics` is a bag of prometheus metric objects that apply to a
+ * particular instance `GenericCache`.
+ */
+interface CacheMetrics {
+    /**
+     * `hitCounter` is incremented on each cache hit or cache miss.
+     */
+    hitCounter: promClient.Counter
+
+    /**
+     * `evictionCounter` is incremented on each cache eviction, and a
+     * special label is applied if an entry cannot be evicted because
+     * it is currently being used.
+     */
+    evictionCounter: promClient.Counter
+
+    /**
+     * `sizeGauge` is incremented on each cache insertion and decremented
+     * on each cache eviction.
+     */
+    sizeGauge: promClient.Gauge
+}
+
+/**
  * `GenericCache` is a generic LRU cache.
  */
 class GenericCache<K, V> {
@@ -50,17 +83,24 @@ class GenericCache<K, V> {
      * `size` is the additive size of the items currently in the cache.
      */
     private size = 0
-
+    /**
+ *
     /**
      * Create a new `GenericCache` with the given maximum (soft) size for
      * all items in the cache, a function that determine the size of a
      * cache item from its resolved value, and a function that is called
      * when an item falls out of the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
+     * @param sizeFunction A function that determines the size of a cache item.
+     * @param disposeFunction A function that disposes of evicted cache items.
+     * @param metrics The bag of metrics to use for this instance of the cache.
      */
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
-        private disposeFunction: (value: V) => void
+        private disposeFunction: (value: V) => void,
+        private metrics: CacheMetrics
     ) {}
 
     /**
@@ -98,10 +138,12 @@ class GenericCache<K, V> {
     private getEntry(key: K, factory: () => Promise<V>): CacheEntry<K, V> {
         const node = this.cache.get(key)
         if (node) {
+            this.metrics.hitCounter.labels('hit').inc()
             this.lruList.unshiftNode(node)
             return node.value
         }
 
+        this.metrics.hitCounter.labels('miss').inc()
         const promise = factory()
         const newEntry = { key, promise, size: 0, readers: 0 }
         promise.then(value => this.resolved(newEntry, value), () => {})
@@ -127,6 +169,7 @@ class GenericCache<K, V> {
         const size = this.sizeFunction(value)
         this.size += size
         entry.size = size
+        this.metrics.sizeGauge.inc(size)
 
         let node = this.lruList.tail
         while (this.size > this.max && node) {
@@ -137,9 +180,13 @@ class GenericCache<K, V> {
 
             if (readers === 0) {
                 this.size -= size
+                this.metrics.evictionCounter.labels('evict').inc()
+                this.metrics.sizeGauge.dec(size)
                 this.lruList.removeNode(node)
                 this.cache.delete(node.value.key)
                 promise.then(value => this.disposeFunction(value), () => {})
+            } else {
+                this.metrics.evictionCounter.labels('locked').inc()
             }
 
             node = prev
@@ -157,7 +204,11 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * all items in the cache.
      */
     constructor(max: number) {
-        super(max, ConnectionCache.sizeFunction, ConnectionCache.connectionFunction)
+        super(max, ConnectionCache.sizeFunction, ConnectionCache.connectionFunction, {
+            hitCounter: ConnectionCacheHitCounter,
+            sizeGauge: ConnectionCacheSizeGauge,
+            evictionCounter: ConnectionCacheEvictionCounter,
+        })
     }
 
     /**
@@ -181,13 +232,21 @@ export class ConnectionCache extends GenericCache<string, Connection> {
                 type: 'sqlite',
                 name: database,
                 synchronize: true,
-                // logging: 'all',
+                logging: ['error', 'warn'],
+                maxQueryExecutionTime: 1000,
             })
 
         return this.withValue(database, factory, callback)
     }
 
-    // TODO - document
+    /**
+     * Like `withConnection`, but will open a transaction on the connection
+     * before invoking the callback.
+     *
+     * @param database The database filename.
+     * @param entities The set of expected entities present in this schema.
+     * @param callback The function invoke with a SQLite transaction connection.
+     */
     public withTransactionalEntityManager<T>(
         database: string,
         entities: Function[],
@@ -213,7 +272,11 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
      * all items in the cache.
      */
     constructor(max: number) {
-        super(max, DocumentCache.sizeFunction, DocumentCache.disposeFunction)
+        super(max, DocumentCache.sizeFunction, DocumentCache.disposeFunction, {
+            hitCounter: DocumentCacheHitCounter,
+            sizeGauge: DocumentCacheSizeGauge,
+            evictionCounter: DocumentCacheEvictionCounter,
+        })
     }
 
     /**

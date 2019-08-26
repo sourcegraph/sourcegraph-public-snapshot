@@ -1,5 +1,23 @@
+import promClient from 'prom-client'
 import { EntityManager } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
+
+/**
+ * `InserterMetrics` is a bag of prometheus metric objects that apply to
+ * a particular instance of `Inserter`.
+ */
+interface InserterMetrics {
+    /**
+     * `insertionCounter` increments on each insertion.
+     */
+    insertionCounter: promClient.Counter
+
+    /**
+     * `insertionDurationHistogram` is observed on each round-trip to the
+     * database.
+     */
+    insertionDurationHistogram: promClient.Histogram
+}
 
 /**
  * `Inserter` is a batch inserter for a SQLite table. Inserting hundreds or
@@ -28,8 +46,14 @@ export class Inserter<T> {
      * @param entityManager A transactional SQLite entity manager.
      * @param model The model object constructor.
      * @param maxBatchSize The maximum number of records that can be inserted at once.
+     * @param metrics The bag of metrics to use for this instance of the inserter.
      */
-    constructor(private entityManager: EntityManager, private model: Function, private maxBatchSize: number) {}
+    constructor(
+        private entityManager: EntityManager,
+        private model: Function,
+        private maxBatchSize: number,
+        private metrics: InserterMetrics
+    ) {}
 
     /**
      * Submit a model for insertion. This may happen immediately, on a
@@ -61,13 +85,20 @@ export class Inserter<T> {
             return
         }
 
-        await this.entityManager
-            .createQueryBuilder()
-            .insert()
-            .into(this.model)
-            .values(this.batch)
-            .execute()
-            .then(() => {})
+        this.metrics.insertionCounter.inc(this.batch.length)
+        const end = this.metrics.insertionDurationHistogram.startTimer()
+
+        try {
+            await this.entityManager
+                .createQueryBuilder()
+                .insert()
+                .into(this.model)
+                .values(this.batch)
+                .execute()
+                .then(() => {})
+        } finally {
+            end()
+        }
 
         this.batch = []
     }
