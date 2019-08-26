@@ -158,12 +158,12 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "GITOLITE",
-			// 	Config: marshalJSON(t, &schema.GitoliteConnection{
-			// 		Host: "ssh://git@127.0.0.1:2222",
-			// 	}),
-			// },
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					Host: "ssh://git@127.0.0.1:2222",
+				}),
+			},
 			// {
 			// 	Kind: "AWSCODECOMMIT",
 			// 	Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
@@ -284,17 +284,17 @@ func TestSources_ListRepos(t *testing.T) {
 			// 		},
 			// 	}),
 			// },
-			// {
-			// 	Kind: "GITOLITE",
-			// 	Config: marshalJSON(t, &schema.GitoliteConnection{
-			// 		Prefix:    "gitolite.mycorp.com/",
-			// 		Host:      "ssh://git@127.0.0.1:2222",
-			// 		Blacklist: `gitolite\.mycorp\.com\/foo`,
-			// 		Exclude: []*schema.ExcludedGitoliteRepo{
-			// 			{Name: "bar"},
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					Prefix:    "gitolite.mycorp.com/",
+					Host:      "ssh://git@127.0.0.1:2222",
+					Blacklist: `gitolite\.mycorp\.com\/foo`,
+					Exclude: []*schema.ExcludedGitoliteRepo{
+						{Name: "bar"},
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -538,14 +538,14 @@ func TestSources_ListRepos(t *testing.T) {
 			// 		RepositoryPathPattern: "a/b/c/{name}",
 			// 	}),
 			// },
-			// {
-			// 	Kind: "GITOLITE",
-			// 	Config: marshalJSON(t, &schema.GitoliteConnection{
-			// 		// Prefix serves as a sort of repositoryPathPattern for Gitolite
-			// 		Prefix: "gitolite.mycorp.com/",
-			// 		Host:   "ssh://git@127.0.0.1:2222",
-			// 	}),
-			// },
+			{
+				Kind: "GITOLITE",
+				Config: marshalJSON(t, &schema.GitoliteConnection{
+					// Prefix serves as a sort of repositoryPathPattern for Gitolite
+					Prefix: "gitolite.mycorp.com/",
+					Host:   "ssh://git@127.0.0.1:2222",
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
