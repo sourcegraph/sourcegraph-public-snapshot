@@ -240,7 +240,6 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan *Source
 	}()
 
 	seen := make(map[int]bool)
-
 	for b := range ch {
 		if b.err != nil {
 			results <- &SourceResult{Source: s, Err: b.err}

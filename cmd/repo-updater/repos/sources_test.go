@@ -147,16 +147,16 @@ func TestSources_ListRepos(t *testing.T) {
 			// 		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 			// 	}),
 			// },
-			// {
-			// 	Kind: "BITBUCKETSERVER",
-			// 	Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			// 		Url:   "http://127.0.0.1:7990",
-			// 		Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-			// 		RepositoryQuery: []string{
-			// 			"all",
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   "http://127.0.0.1:7990",
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryQuery: []string{
+						"all",
+					},
+				}),
+			},
 			// {
 			// 	Kind: "GITOLITE",
 			// 	Config: marshalJSON(t, &schema.GitoliteConnection{
@@ -247,25 +247,25 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "BITBUCKETSERVER",
-			// 	Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			// 		Url:   "http://127.0.0.1:7990",
-			// 		Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-			// 		Repos: []string{
-			// 			"ORG/foo",
-			// 			"org/BAZ",
-			// 		},
-			// 		RepositoryQuery: []string{
-			// 			"?visibility=private",
-			// 		},
-			// 		Exclude: []*schema.ExcludedBitbucketServerRepo{
-			// 			{Name: "ORG/Foo"},   // test case insensitivity
-			// 			{Id: 3},             // baz id
-			// 			{Pattern: ".*/bar"}, // only matches org/bar
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   "http://127.0.0.1:7990",
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					Repos: []string{
+						"ORG/foo",
+						"org/BAZ",
+					},
+					RepositoryQuery: []string{
+						"?visibility=private",
+					},
+					Exclude: []*schema.ExcludedBitbucketServerRepo{
+						{Name: "ORG/Foo"},   // test case insensitivity
+						{Id: 3},             // baz id
+						{Pattern: ".*/bar"}, // only matches org/bar
+					},
+				}),
+			},
 			// {
 			// 	Kind: "AWSCODECOMMIT",
 			// 	Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
@@ -403,19 +403,19 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "BITBUCKETSERVER",
-			// 	Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			// 		Url:             "http://127.0.0.1:7990",
-			// 		Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
-			// 		RepositoryQuery: []string{"none"},
-			// 		Repos: []string{
-			// 			"Org/foO",
-			// 			"org/baz",
-			// 			"ORG/bar",
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:             "http://127.0.0.1:7990",
+					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryQuery: []string{"none"},
+					Repos: []string{
+						"Org/foO",
+						"org/baz",
+						"ORG/bar",
+					},
+				}),
+			},
 			// {
 			// 	Kind: "OTHER",
 			// 	Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
@@ -514,16 +514,16 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "BITBUCKETSERVER",
-			// 	Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			// 		Url:                   "http://127.0.0.1:7990",
-			// 		Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
-			// 		RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
-			// 		RepositoryQuery:       []string{"none"},
-			// 		Repos:                 []string{"org/baz"},
-			// 	}),
-			// },
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:                   "http://127.0.0.1:7990",
+					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"org/baz"},
+				}),
+			},
 			// {
 			// 	Kind: "AWSCODECOMMIT",
 			// 	Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
