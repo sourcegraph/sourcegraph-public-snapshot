@@ -203,10 +203,11 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
             return null
         }
 
-        const files = document.getElementsByClassName('file')
         const { pageType } = parseURL()
         const isSingleCodeFile =
-            files.length === 1 && pageType === 'blob' && document.getElementsByClassName('diff-view').length === 0
+            pageType === 'blob' &&
+            document.getElementsByClassName('file').length === 1 &&
+            document.getElementsByClassName('diff-view').length === 0
 
         if (isSingleCodeFile) {
             return { element: elem, ...singleFileCodeView }
