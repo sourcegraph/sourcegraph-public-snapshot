@@ -525,6 +525,7 @@ type SiteConfiguration struct {
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 	SearchIndexSymbolsEnabled         *bool                       `json:"search.index.symbols.enabled,omitempty"`
 	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
+	SearchVersion                     int                         `json:"search.version,omitempty"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`

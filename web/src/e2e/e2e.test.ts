@@ -313,7 +313,7 @@ describe('e2e test suite', () => {
 
         test('Search results code', async () => {
             await driver.page.goto(
-                sourcegraphBaseUrl + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"'
+                sourcegraphBaseUrl + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go func NewRouter'
             )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704

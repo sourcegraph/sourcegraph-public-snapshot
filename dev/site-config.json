@@ -4,5 +4,6 @@
     "discussions": "enabled"
   },
   "disablePublicRepoRedirects": true,
-  "repoListUpdateInterval": 1
+  "repoListUpdateInterval": 1,
+  "search.version": "V0"
 }

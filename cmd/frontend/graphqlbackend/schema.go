@@ -803,6 +803,10 @@ type Query {
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
+        # Which version of the search syntax to use. Currently this chooses
+        # between regexp (V0) and literal (V1) as the default in the absence of
+        # the patternType field.
+        version: SearchVersion = V0
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
     savedSearches: [SavedSearch!]!
@@ -831,6 +835,12 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+}
+
+# Version of the search graphQL query, including the syntax of the query field.
+enum SearchVersion {
+    V0 # patternType defaults to regexp
+    V1 # patternType defaults to literal
 }
 
 # A query and an associated number of times it occurred.

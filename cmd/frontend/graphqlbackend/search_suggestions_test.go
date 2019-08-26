@@ -19,7 +19,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 	getSuggestions := func(t *testing.T, query string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
+		r, err := (&schemaResolver{}).Search(&struct{ Query, Version string }{Query: query, Version: "V0"})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -104,7 +104,7 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("single term invalid regex", func(t *testing.T) {
-		sr, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "[foo"})
+		sr, err := (&schemaResolver{}).Search(&struct{ Query, Version string }{Query: "[foo", Version: "V0"})
 		if err != nil {
 			t.Fatal(err)
 		}

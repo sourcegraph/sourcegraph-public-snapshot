@@ -156,6 +156,26 @@ describe('regression test suite', () => {
             },
             5 * 1000
         )
+        test('Perform repo-specific search with star and parens to be interpreted literally, index:only', async () => {
+            await driver.page.goto(
+                sourcegraphBaseUrl +
+                    '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24+lang:go+index:only+func%28w+http.ResponseWriter%2C+r+*http.Request%29'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
+        })
+        test('Perform repo-specific search with star and parens to be interpreted literally, index:no', async () => {
+            await driver.page.goto(
+                sourcegraphBaseUrl +
+                    '/search?q=repo:%5Egithub%5C.com/auth0/go-jwt-middleware%24+lang:go+index:no+func%28w+http.ResponseWriter%2C+r+*http.Request%29'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
+        })
+        test('Perform repo-specific search for a specific string containing a backslash-encoded newline', async () => {
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:%5Egithub%5C.com/gorilla/mux%24++"completed+successfully.%5Cn'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result)').length === 1)
+        })
         test(
             'Perform global text search for "error type:", expect a few results.',
             async () => {
