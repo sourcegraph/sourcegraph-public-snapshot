@@ -99,15 +99,30 @@ func NewSourceMetrics() SourceMetrics {
 
 // ListRepos calls into the inner Source registers the observed results.
 func (o *observedSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+	var (
+		err   error
+		count float64
+	)
+
 	defer func(began time.Time) {
-		// TODO: fix this
-		// secs := time.Since(began).Seconds()
-		// count := float64(len(rs))
-		// o.metrics.ListRepos.Observe(secs, count, &err)
-		// log(o.log, "source.list-repos", &err)
+		secs := time.Since(began).Seconds()
+		o.metrics.ListRepos.Observe(secs, count, &err)
+		log(o.log, "source.list-repos", &err)
 	}(time.Now())
 
-	o.Source.ListRepos(ctx, results)
+	uncounted := make(chan *SourceResult)
+	go func() {
+		o.Source.ListRepos(ctx, uncounted)
+		close(uncounted)
+	}()
+
+	for res := range uncounted {
+		results <- res
+		if res.Err != nil {
+			err = res.Err
+		}
+		count++
+	}
 }
 
 // NewObservedStore wraps the given Store with error logging,
