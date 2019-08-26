@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
@@ -85,12 +84,8 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 
 // ListRepos returns all GitLab repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GitLabSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	projs, err := s.listAllProjects(ctx)
-	for _, proj := range projs {
-		repos = append(repos, s.makeRepo(proj))
-	}
-	return repos, err
+func (s GitLabSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+	s.listAllProjects(ctx, results)
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -149,7 +144,7 @@ func (s *GitLabSource) excludes(p *gitlab.Project) bool {
 	return s.exclude[p.PathWithNamespace] || s.exclude[strconv.Itoa(p.ID)]
 }
 
-func (s *GitLabSource) listAllProjects(ctx context.Context) ([]*gitlab.Project, error) {
+func (s *GitLabSource) listAllProjects(ctx context.Context, results chan *SourceResult) {
 	type batch struct {
 		projs []*gitlab.Project
 		err   error
@@ -245,24 +240,20 @@ func (s *GitLabSource) listAllProjects(ctx context.Context) ([]*gitlab.Project, 
 	}()
 
 	seen := make(map[int]bool)
-	errs := new(multierror.Error)
-	var projects []*gitlab.Project
 
 	for b := range ch {
 		if b.err != nil {
-			errs = multierror.Append(errs, b.err)
+			results <- &SourceResult{Source: s, Err: b.err}
 			continue
 		}
 
 		for _, proj := range b.projs {
 			if !seen[proj.ID] && !s.excludes(proj) {
-				projects = append(projects, proj)
+				results <- &SourceResult{Source: s, Repo: s.makeRepo(proj)}
 				seen[proj.ID] = true
 			}
 		}
 	}
-
-	return projects, errs.ErrorOrNil()
 }
 
 var schemeOrHostNotEmptyErr = errors.New("scheme and host should be empty")

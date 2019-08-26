@@ -55,8 +55,8 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
 		return NewGithubSource(svc, cf)
-	// case "gitlab":
-	// 	return NewGitLabSource(svc, cf)
+	case "gitlab":
+		return NewGitLabSource(svc, cf)
 	// case "bitbucketserver":
 	// 	return NewBitbucketServerSource(svc, cf)
 	// case "bitbucketcloud":

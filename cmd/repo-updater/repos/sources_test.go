@@ -129,16 +129,16 @@ func TestSources_ListRepos(t *testing.T) {
 					Repos: []string{"sourcegraph/sourcegraph"},
 				}),
 			},
-			// {
-			// 	Kind: "GITLAB",
-			// 	Config: marshalJSON(t, &schema.GitLabConnection{
-			// 		Url:   "https://gitlab.com",
-			// 		Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
-			// 		ProjectQuery: []string{
-			// 			"?search=gokulkarthick",
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:   "https://gitlab.com",
+					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
+					ProjectQuery: []string{
+						"?search=gokulkarthick",
+					},
+				}),
+			},
 			// {
 			// 	Kind: "BITBUCKETCLOUD",
 			// 	Config: marshalJSON(t, &schema.BitbucketCloudConnection{
@@ -232,21 +232,21 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "GITLAB",
-			// 	Config: marshalJSON(t, &schema.GitLabConnection{
-			// 		Url:   "https://gitlab.com",
-			// 		Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
-			// 		ProjectQuery: []string{
-			// 			"?search=gokulkarthick",
-			// 			"?search=dotfiles-vegetableman",
-			// 		},
-			// 		Exclude: []*schema.ExcludedGitLabProject{
-			// 			{Name: "gokulkarthick/gokulkarthick"},
-			// 			{Id: 7789240},
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:   "https://gitlab.com",
+					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
+					ProjectQuery: []string{
+						"?search=gokulkarthick",
+						"?search=dotfiles-vegetableman",
+					},
+					Exclude: []*schema.ExcludedGitLabProject{
+						{Name: "gokulkarthick/gokulkarthick"},
+						{Id: 7789240},
+					},
+				}),
+			},
 			// {
 			// 	Kind: "BITBUCKETSERVER",
 			// 	Config: marshalJSON(t, &schema.BitbucketServerConnection{
@@ -390,19 +390,19 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "GITLAB",
-			// 	Config: marshalJSON(t, &schema.GitLabConnection{
-			// 		Url:          "https://gitlab.com",
-			// 		Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
-			// 		ProjectQuery: []string{"none"},
-			// 		Projects: []*schema.GitLabProject{
-			// 			{Name: "gnachman/iterm2"},
-			// 			{Name: "gnachman/iterm2-missing"},
-			// 			{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:          "https://gitlab.com",
+					Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
+					ProjectQuery: []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+						{Name: "gnachman/iterm2-missing"},
+						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
+					},
+				}),
+			},
 			// {
 			// 	Kind: "BITBUCKETSERVER",
 			// 	Config: marshalJSON(t, &schema.BitbucketServerConnection{
@@ -502,18 +502,18 @@ func TestSources_ListRepos(t *testing.T) {
 					Repos:                 []string{"tsenart/vegeta"},
 				}),
 			},
-			// {
-			// 	Kind: "GITLAB",
-			// 	Config: marshalJSON(t, &schema.GitLabConnection{
-			// 		Url:                   "https://gitlab.com",
-			// 		Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
-			// 		RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
-			// 		ProjectQuery:          []string{"none"},
-			// 		Projects: []*schema.GitLabProject{
-			// 			{Name: "gnachman/iterm2"},
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "gnachman/iterm2"},
+					},
+				}),
+			},
 			// {
 			// 	Kind: "BITBUCKETSERVER",
 			// 	Config: marshalJSON(t, &schema.BitbucketServerConnection{
