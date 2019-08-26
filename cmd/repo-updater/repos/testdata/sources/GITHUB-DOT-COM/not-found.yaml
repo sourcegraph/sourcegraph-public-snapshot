@@ -6,7 +6,7 @@ interactions:
     form: {}
     headers:
       Accept:
-      - application/vnd.github.jean-grey-preview+json
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/repos/foobarfoobarfoobar/please-let-this-not-exist
@@ -25,7 +25,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 27 May 2019 11:18:20 GMT
+      - Mon, 26 Aug 2019 09:56:12 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -34,14 +34,18 @@ interactions:
       - 404 Not Found
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
+      X-Accepted-Oauth-Scopes:
+      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json
       X-Github-Request-Id:
-      - DC46:018F:211355B:42830E9:5CEBC77C
+      - D4F6:1462F:92ACBC9:B2D8565:5D63ACBC
+      X-Oauth-Scopes:
+      - repo
       X-Xss-Protection:
       - 1; mode=block
     status: 404 Not Found

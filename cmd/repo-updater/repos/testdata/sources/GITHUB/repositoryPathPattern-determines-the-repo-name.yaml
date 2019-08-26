@@ -2,18 +2,19 @@
 version: 1
 interactions:
 - request:
-    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tviewerPermission\n}\n\tquery
-      {\nrepo_tsenart_vegeta: repository(owner: \"tsenart\", name: \"vegeta\") { ...
-      on Repository { ...RepositoryFields } }\n}","variables":{}}'
+    body: ""
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/graphql
-    method: POST
+    url: https://api.github.com/repos/tsenart/vegeta
+    method: GET
   response:
-    body: '{"data":{"repo_tsenart_vegeta":{"id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","databaseId":12080551,"nameWithOwner":"tsenart/vegeta","description":"HTTP
-      load testing tool and library. It''s over 9000!","url":"https://github.com/tsenart/vegeta","isPrivate":false,"isFork":false,"isArchived":false,"viewerPermission":"READ"}}}'
+    body: '{"message":"API rate limit exceeded for 217.227.149.93. (But here''s the
+      good news: Authenticated requests get a higher rate limit. Check out the documentation
+      for more details.)","documentation_url":"https://developer.github.com/v3/#rate-limiting"}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -21,36 +22,30 @@ interactions:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
         X-GitHub-Media-Type
-      Cache-Control:
-      - no-cache
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 27 May 2019 11:18:20 GMT
+      - Mon, 26 Aug 2019 09:51:47 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
       - GitHub.com
       Status:
-      - 200 OK
+      - 403 Forbidden
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json
       X-Github-Request-Id:
-      - DC46:018F:211354B:42830C5:5CEBC77C
-      X-Oauth-Scopes:
-      - repo
+      - D371:1FCDD:73F16C6:8D2FB1A:5D63ABB3
       X-Xss-Protection:
       - 1; mode=block
-    status: 200 OK
-    code: 200
+    status: 403 Forbidden
+    code: 403
     duration: ""
