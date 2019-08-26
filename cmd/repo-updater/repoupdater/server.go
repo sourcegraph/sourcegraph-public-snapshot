@@ -311,7 +311,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		_, err = src.ListRepos(ctx)
+		_, err = repos.ListAll(ctx, src)
 		if err != nil && ctx.Err() != nil {
 			// ignore if we took too long
 			err = nil

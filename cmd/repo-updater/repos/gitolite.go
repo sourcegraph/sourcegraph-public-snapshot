@@ -72,21 +72,19 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 
 // ListRepos returns all Gitolite repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s *GitoliteSource) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (s *GitoliteSource) ListRepos(ctx context.Context, results chan *SourceResult) {
 	all, err := s.cli.ListGitolite(ctx, s.conn.Host)
 	if err != nil {
-		return nil, err
+		results <- &SourceResult{Source: s, Err: err}
+		return
 	}
 
-	repos := make([]*Repo, 0, len(all))
 	for _, r := range all {
 		repo := s.makeRepo(r)
 		if !s.excludes(r, repo) {
-			repos = append(repos, repo)
+			results <- &SourceResult{Source: s, Repo: repo}
 		}
 	}
-
-	return repos, nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.

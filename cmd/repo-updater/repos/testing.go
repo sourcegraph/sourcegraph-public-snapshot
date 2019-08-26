@@ -47,12 +47,15 @@ func NewFakeSource(svc *ExternalService, err error, rs ...*Repo) *FakeSource {
 
 // ListRepos returns the Repos that FakeSource was instantiated with
 // as well as the error, if any.
-func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
-	repos := make([]*Repo, len(s.repos))
-	for i, r := range s.repos {
-		repos[i] = r.With(Opt.RepoSources(s.svc.URN()))
+func (s FakeSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+	if s.err != nil {
+		results <- &SourceResult{Source: s, Err: s.err}
+		return
 	}
-	return repos, s.err
+
+	for _, r := range s.repos {
+		results <- &SourceResult{Source: s, Repo: r.With(Opt.RepoSources(s.svc.URN()))}
+	}
 }
 
 // ExternalServices returns a singleton slice containing the external service.
