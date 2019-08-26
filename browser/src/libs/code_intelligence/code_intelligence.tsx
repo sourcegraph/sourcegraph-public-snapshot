@@ -710,13 +710,17 @@ export function handleCodeHost({
             {
                 let decorationsByLine: DecorationMapByLine = new Map()
                 const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                    decorationsByLine = applyDecorations(
-                        domFunctions,
-                        element,
-                        decorations || [],
-                        decorationsByLine,
-                        fileInfo.baseCommitID ? 'head' : undefined
-                    )
+                    try {
+                        decorationsByLine = applyDecorations(
+                            domFunctions,
+                            element,
+                            decorations || [],
+                            decorationsByLine,
+                            fileInfo.baseCommitID ? 'head' : undefined
+                        )
+                    } catch (err) {
+                        console.error('Could not apply head decorations to code view', codeViewEvent.element, err)
+                    }
                 }
                 codeViewEvent.subscriptions.add(
                     extensionsController.services.textDocumentDecoration
@@ -732,13 +736,17 @@ export function handleCodeHost({
             if (fileInfo.baseCommitID && fileInfo.baseFilePath) {
                 let decorationsByLine: DecorationMapByLine = new Map()
                 const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                    decorationsByLine = applyDecorations(
-                        domFunctions,
-                        element,
-                        decorations || [],
-                        decorationsByLine,
-                        'base'
-                    )
+                    try {
+                        decorationsByLine = applyDecorations(
+                            domFunctions,
+                            element,
+                            decorations || [],
+                            decorationsByLine,
+                            'base'
+                        )
+                    } catch (err) {
+                        console.error('Could not apply base decorations to code view', codeViewEvent.element, err)
+                    }
                 }
                 codeViewEvent.subscriptions.add(
                     extensionsController.services.textDocumentDecoration
