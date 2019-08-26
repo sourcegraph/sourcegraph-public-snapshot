@@ -308,26 +308,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			results := make(chan *SourceResult)
-			done := make(chan struct{})
-			go func() {
-				githubSrc.ListRepos(context.Background(), results)
-				done <- struct{}{}
-			}()
-			go func() {
-				<-done
-				close(results)
-			}()
-
-			var repos []*Repo
-			for res := range results {
-				if res.Err != nil {
-					err = res.Err
-					break
-				}
-				repos = append(repos, res.Repo)
-			}
-
+			repos, err := Drain(context.Background(), githubSrc)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}

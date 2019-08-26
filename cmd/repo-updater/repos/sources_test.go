@@ -750,26 +750,7 @@ func TestSources_ListRepos(t *testing.T) {
 					ctx = context.Background()
 				}
 
-				results := make(chan *SourceResult)
-				done := make(chan struct{})
-				go func() {
-					srcs.ListRepos(ctx, results)
-					done <- struct{}{}
-				}()
-				go func() {
-					<-done
-					close(results)
-				}()
-
-				var repos []*Repo
-				for res := range results {
-					if res.Err != nil {
-						err = res.Err
-						break
-					}
-					repos = append(repos, res.Repo)
-				}
-
+				repos, err := Drain(ctx, srcs)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 				}

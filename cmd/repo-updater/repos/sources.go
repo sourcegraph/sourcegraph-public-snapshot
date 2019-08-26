@@ -210,3 +210,30 @@ func group(srcs []Source) map[string]Sources {
 
 	return groups
 }
+
+func Drain(ctx context.Context, src Source) ([]*Repo, error) {
+	results := make(chan *SourceResult)
+	done := make(chan struct{})
+
+	go func() {
+		src.ListRepos(ctx, results)
+		done <- struct{}{}
+	}()
+
+	go func() {
+		<-done
+		close(results)
+	}()
+
+	var repos []*Repo
+	errs := new(multierror.Error)
+	for res := range results {
+		if res.Err != nil {
+			errs = multierror.Append(errs, res.Err)
+			continue
+		}
+		repos = append(repos, res.Repo)
+	}
+
+	return repos, errs.ErrorOrNil()
+}

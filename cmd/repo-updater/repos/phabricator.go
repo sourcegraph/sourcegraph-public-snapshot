@@ -198,25 +198,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 				continue
 			}
 
-			results := make(chan *SourceResult)
-			done := make(chan struct{})
-			go func() {
-				src.ListRepos(context.Background(), results)
-				done <- struct{}{}
-			}()
-			go func() {
-				<-done
-				close(results)
-			}()
-
-			var repos []*Repo
-			for res := range results {
-				if res.Err != nil {
-					err = res.Err
-					break
-				}
-				repos = append(repos, res.Repo)
-			}
+			repos, err := Drain(ctx, src)
 			if err != nil {
 				log15.Error("Error fetching Phabricator repos", "err", err)
 				continue

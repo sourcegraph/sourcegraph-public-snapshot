@@ -311,25 +311,11 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		results := make(chan *repos.SourceResult)
-		done := make(chan struct{})
-		go func() {
-			src.ListRepos(ctx, results)
-			done <- struct{}{}
-		}()
-		go func() {
-			<-done
-			close(results)
-		}()
-
-		for res := range results {
+		_, err = repos.Drain(ctx, src)
+		if err != nil && ctx.Err() != nil {
 			// ignore if we took too long
-			if res.Err != nil && ctx.Err() == nil {
-				errch <- res.Err
-			}
+			err = nil
 		}
-		// Signal that we're done
-		errch <- nil
 	}()
 
 	select {
