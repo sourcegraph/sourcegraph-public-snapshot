@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
@@ -58,12 +57,8 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 
 // ListRepos returns all Bitbucket Cloud repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s BitbucketCloudSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	rs, err := s.listAllRepos(ctx)
-	for _, r := range rs {
-		repos = append(repos, s.makeRepo(r))
-	}
-	return repos, err
+func (s BitbucketCloudSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+	s.listAllRepos(ctx, results)
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -137,7 +132,7 @@ func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo)
 	return u.String()
 }
 
-func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcloud.Repo, error) {
+func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan *SourceResult) {
 	type batch struct {
 		repos []*bitbucketcloud.Repo
 		err   error
@@ -191,12 +186,10 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 	}()
 
 	seen := make(map[string]bool)
-	errs := new(multierror.Error)
-	var repos []*bitbucketcloud.Repo
-
 	for r := range ch {
 		if r.err != nil {
-			errs = multierror.Append(errs, r.err)
+			results <- &SourceResult{Source: s, Err: r.err}
+			continue
 		}
 
 		for _, repo := range r.repos {
@@ -206,11 +199,9 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context) ([]*bitbucketcl
 			}
 
 			if !seen[repo.UUID] {
-				repos = append(repos, repo)
+				results <- &SourceResult{Source: s, Repo: s.makeRepo(repo)}
 				seen[repo.UUID] = true
 			}
 		}
 	}
-
-	return repos, errs.ErrorOrNil()
 }

@@ -59,8 +59,8 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 		return NewGitLabSource(svc, cf)
 	case "bitbucketserver":
 		return NewBitbucketServerSource(svc, cf)
-	// case "bitbucketcloud":
-	// 	return NewBitbucketCloudSource(svc, cf)
+	case "bitbucketcloud":
+		return NewBitbucketCloudSource(svc, cf)
 	// case "gitolite":
 	// 	return NewGitoliteSource(svc, cf)
 	// case "phabricator":

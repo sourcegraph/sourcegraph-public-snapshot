@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -139,14 +140,14 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "BITBUCKETCLOUD",
-			// 	Config: marshalJSON(t, &schema.BitbucketCloudConnection{
-			// 		Url:         "https://bitbucket.org",
-			// 		Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
-			// 		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
-			// 	}),
-			// },
+			{
+				Kind: "BITBUCKETCLOUD",
+				Config: marshalJSON(t, &schema.BitbucketCloudConnection{
+					Url:         "https://bitbucket.org",
+					Username:    bitbucketcloud.GetenvTestBitbucketCloudUsername(),
+					AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+				}),
+			},
 			{
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
