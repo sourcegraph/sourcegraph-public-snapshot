@@ -4,6 +4,7 @@ import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
+import { TelemetryService } from '../telemetry/telemetryService'
 import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
@@ -140,6 +141,12 @@ export interface PlatformContext {
      * Used for extension development purposes, to run an extension that isn't on the registry.
      */
     sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
+
+    /**
+     * A telemetry service implementation to log events.
+     * Optional because it's currently only used in the web app platform.
+     */
+    telemetryService?: TelemetryService
 }
 
 /**

@@ -84,6 +84,7 @@
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
+/SECURITY.md @beyang @nicksnyder
 /.dockerignore @beyang
 /.mailmap @beyang
 /tsconfig.json @felixfbecker

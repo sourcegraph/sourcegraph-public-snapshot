@@ -1,13 +1,13 @@
 module github.com/sourcegraph/sourcegraph
 
 require (
-	cloud.google.com/go v0.44.0
+	cloud.google.com/go v0.44.3
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OpenPeeDeeP/depguard v1.0.0 // indirect
 	github.com/RoaringBitmap/roaring v0.4.18
 	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
-	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
+	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20190105021324-abcd57078448 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
@@ -32,7 +32,6 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
 	github.com/felixge/httpsnoop v1.0.0
-	github.com/garyburd/redigo v1.6.0
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
@@ -41,7 +40,7 @@ require (
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
 	github.com/go-critic/go-critic v0.3.4 // indirect
 	github.com/go-delve/delve v1.2.0
-	github.com/go-redsync/redsync v1.0.1
+	github.com/go-redsync/redsync v1.3.0
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate/v4 v4.2.3
 	github.com/golang/gddo v0.0.0-20181116215533-9bd4a3295021
@@ -58,7 +57,7 @@ require (
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
 	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.3.1
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0
@@ -70,7 +69,7 @@ require (
 	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/schema v1.0.2
 	github.com/gorilla/securecookie v1.1.1
-	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
+	github.com/gorilla/sessions v1.2.0
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/goware/urlx v0.2.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190204230732-e582242c92cc
@@ -98,15 +97,17 @@ require (
 	github.com/lightstep/lightstep-tracer-go v0.15.6
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
+	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0
 	github.com/mattn/goreman v0.2.1
 	github.com/mcuadros/go-version v0.0.0-20180611085657-6d5863ca60fa
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d // indirect
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
-	github.com/onsi/ginkgo v1.8.0 // indirect
-	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/onsi/ginkgo v1.9.0 // indirect
+	github.com/onsi/gomega v1.6.0 // indirect
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190324214902-3020fec0e66b
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pelletier/go-toml v1.4.0 // indirect
@@ -114,6 +115,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.1.0
+	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4 // indirect
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/segmentio/fasthash v1.0.0
@@ -144,6 +146,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.4.0 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
+	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt v1.1.1
@@ -161,14 +164,16 @@ require (
 	github.com/zenazn/goji v0.9.0 // indirect
 	go.uber.org/automaxprocs v1.2.0
 	golang.org/x/arch v0.0.0-20190312162104-788fe5ffcd8c // indirect
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
+	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
+	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
-	golang.org/x/sys v0.0.0-20190812073006-9eafafc0a87e
+	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190809145639-6d4652c779c4
-	google.golang.org/grpc v1.22.1 // indirect
+	golang.org/x/tools v0.0.0-20190823093517-aa644d2adf2a
+	google.golang.org/api v0.9.0 // indirect
+	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
+	google.golang.org/grpc v1.23.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
