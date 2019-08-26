@@ -490,6 +490,25 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 	return o.store.UpsertRepos(ctx, repos...)
 }
 
+// DeleteReposExcept calls into the inner Store and registers the observed results.
+func (o *ObservedStore) DeleteReposExcept(ctx context.Context, ids ...uint32) (err error) {
+	tr, ctx := o.trace(ctx, "Store.DeleteReposExcept")
+	tr.LogFields(otlog.Int("count", len(ids)))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(ids))
+
+		o.metrics.UpsertRepos.Observe(secs, count, &err)
+		log(o.log, "store.delete-repos-except", &err, "count", len(ids))
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.DeleteReposExcept(ctx, ids...)
+}
+
 func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
 	txctx := o.txctx
 	if txctx == nil {

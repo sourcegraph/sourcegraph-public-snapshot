@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -27,6 +28,7 @@ type Store interface {
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
+	DeleteReposExcept(ctx context.Context, ids ...uint32) error
 
 	ListAllRepoNames(context.Context) ([]api.RepoName, error)
 }
@@ -507,6 +509,36 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		if err != nil {
 			return errors.Wrap(err, op.name)
 		}
+	}
+
+	return nil
+}
+
+func deleteReposExceptQuery(ids ...uint32) *sqlf.Query {
+	queryIDs := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		if id != 0 {
+			queryIDs = append(queryIDs, sqlf.Sprintf("%d", id))
+		}
+	}
+	return sqlf.Sprintf("DELETE FROM repo WHERE id NOT in (%s)", sqlf.Join(queryIDs, ","))
+}
+
+// DeleteReposExcept deletes every repo in the repos table except the given repos
+func (s *DBStore) DeleteReposExcept(ctx context.Context, ids ...uint32) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	q := deleteReposExceptQuery(ids...)
+	fmt.Printf("q=%+v. len(q.Args())=%d\n", q, len(q.Args()))
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "delete-repos-except")
+	}
+
+	if err = rows.Close(); err != nil {
+		return errors.Wrap(err, "delete-repos-except")
 	}
 
 	return nil

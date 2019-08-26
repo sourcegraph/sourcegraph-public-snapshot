@@ -189,6 +189,31 @@ func (s *FakeStore) UpsertExternalServices(ctx context.Context, svcs ...*Externa
 	return nil
 }
 
+// DeleteReposExcept updates or inserts the given ExternalServices.
+func (s *FakeStore) DeleteReposExcept(ctx context.Context, ids ...uint32) error {
+	if s.repoByID == nil {
+		s.repoByID = make(map[uint32]*Repo)
+	}
+
+	seen := make(map[uint32]bool)
+	for _, id := range ids {
+		seen[id] = true
+	}
+
+	deletes := []uint32{}
+	for id, _ := range s.repoByID {
+		if !seen[id] {
+			deletes = append(deletes, id)
+		}
+
+	}
+	for _, id := range deletes {
+		delete(s.repoByID, id)
+	}
+
+	return nil
+}
+
 // GetRepoByName looks a repo by its name, returning it if found.
 func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
 	if s.GetRepoByNameError != nil {

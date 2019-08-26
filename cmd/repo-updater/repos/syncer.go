@@ -89,8 +89,11 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 		return Diff{}, errors.New("Syncer is not enabled")
 	}
 
-	var sourced Repos
-	if sourced, err = s.sourced(ctx); err != nil {
+	sourcedCtx, cancel := context.WithTimeout(ctx, sourceTimeout)
+	defer cancel()
+
+	sourced, err := s.sourced(sourcedCtx)
+	if err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -104,23 +107,103 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 		store = txs
 	}
 
-	var stored Repos
-	if stored, err = store.ListRepos(ctx, StoreListReposArgs{}); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
+	errs := new(MultiSourceError)
+
+	combinedDiff := Diff{
+		Modified:   []*Repo{},
+		Added:      []*Repo{},
+		Unmodified: []*Repo{},
+		Deleted:    []*Repo{},
+	}
+	for result := range sourced {
+		if result.Err != nil {
+			for _, extSvc := range result.Source.ExternalServices() {
+				errs.Append(&SourceError{Err: result.Err, ExtSvc: extSvc})
+			}
+			continue
+		}
+
+		args := StoreListReposArgs{
+			Names:         []string{result.Repo.Name},
+			ExternalRepos: []api.ExternalRepoSpec{result.Repo.ExternalRepo},
+			UseOr:         true,
+		}
+		storedSubset, err := store.ListRepos(ctx, args)
+		if err != nil {
+			return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.list-repos")
+		}
+
+		diff = NewDiff(Repos([]*Repo{result.Repo}), storedSubset)
+
+		for _, repo := range diff.Deleted {
+			combinedDiff.Deleted = append(combinedDiff.Deleted, repo)
+		}
+
+		for _, repo := range diff.Modified {
+			combinedDiff.Modified = append(combinedDiff.Modified, repo)
+		}
+
+		for _, repo := range diff.Added {
+			combinedDiff.Added = append(combinedDiff.Added, repo)
+		}
+
+		for _, repo := range diff.Unmodified {
+			combinedDiff.Unmodified = append(combinedDiff.Unmodified, repo)
+		}
+
+		upserts := s.upserts(diff)
+
+		if err = store.UpsertRepos(ctx, upserts...); err != nil {
+			return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
+		}
+
+		if s.diffs != nil {
+			s.diffs <- diff
+		}
 	}
 
-	diff = NewDiff(sourced, stored)
-	upserts := s.upserts(diff)
-
-	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
+	toKeep := make(map[uint32]bool)
+	fmt.Printf("combinedDiff")
+	fmt.Printf("\tdeleted=")
+	for _, repo := range combinedDiff.Deleted {
+		combinedDiff.Deleted = append(combinedDiff.Deleted, repo)
+		fmt.Printf("%q ", repo.Name)
 	}
 
-	if s.diffs != nil {
-		s.diffs <- diff
+	fmt.Printf("\tmodified=")
+	for _, repo := range combinedDiff.Modified {
+		combinedDiff.Modified = append(combinedDiff.Modified, repo)
+		toKeep[repo.ID] = true
+		fmt.Printf("%q ", repo.Name)
 	}
 
-	return diff, nil
+	fmt.Printf("\tadded=")
+	for _, repo := range combinedDiff.Added {
+		combinedDiff.Added = append(combinedDiff.Added, repo)
+		toKeep[repo.ID] = true
+		fmt.Printf("%q ", repo.Name)
+	}
+	for _, repo := range combinedDiff.Unmodified {
+		toKeep[repo.ID] = true
+	}
+	fmt.Printf("\tummodified=%d", len(combinedDiff.Unmodified))
+	fmt.Printf("\n")
+
+	fmt.Printf("len(toKeep)=%d\n", len(toKeep))
+	keepIDs := []uint32{}
+	for id, keep := range toKeep {
+		if keep {
+			keepIDs = append(keepIDs, id)
+		}
+	}
+	if err = store.DeleteReposExcept(ctx, keepIDs...); err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.delete-repos-except")
+	}
+	fmt.Printf("syncing done!\n")
+
+	s.setOrResetMultiSourceErr(errs.ErrorOrNil())
+
+	return combinedDiff, nil
 }
 
 // SyncSubset runs the syncer on a subset of the stored repositories. It will
@@ -310,7 +393,7 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context) (chan *SourceResult, error) {
 	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
 		return nil, err
@@ -326,9 +409,6 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
-	defer cancel()
-
 	results := make(chan *SourceResult)
 	done := make(chan struct{})
 	go func() {
@@ -340,22 +420,7 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 		close(results)
 	}()
 
-	var repos []*Repo
-	errs := new(MultiSourceError)
-
-	for result := range results {
-		if result.Err != nil {
-			for _, extSvc := range result.Source.ExternalServices() {
-				errs.Append(&SourceError{Err: result.Err, ExtSvc: extSvc})
-			}
-			continue
-		}
-
-		repos = append(repos, result.Repo)
-	}
-
-	s.setOrResetMultiSourceErr(errs.ErrorOrNil())
-	return repos, errs.ErrorOrNil()
+	return results, nil
 }
 
 func (s *Syncer) setOrResetMultiSourceErr(err error) {
