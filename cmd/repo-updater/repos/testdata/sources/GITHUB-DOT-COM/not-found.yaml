@@ -25,7 +25,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 26 Aug 2019 09:56:12 GMT
+      - Mon, 26 Aug 2019 12:55:14 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -34,8 +34,6 @@ interactions:
       - 404 Not Found
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -43,9 +41,7 @@ interactions:
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json
       X-Github-Request-Id:
-      - D4F6:1462F:92ACBC9:B2D8565:5D63ACBC
-      X-Oauth-Scopes:
-      - repo
+      - C76E:AC27:7515C69:8EDA32C:5D63D6B1
       X-Xss-Protection:
       - 1; mode=block
     status: 404 Not Found

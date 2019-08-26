@@ -227,6 +227,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				"github.com/gorilla/muxy",
 				"github.com/gorilla/i18n",
 				"github.com/gorilla/template",
+				"github.com/gorilla/.github",
 			}),
 			conf: &schema.GitHubConnection{
 				Url:   "https://github.com",
@@ -259,6 +260,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				"github.com/gorilla/i18n",
 				"github.com/gorilla/template",
 				"github.com/golang-migrate/migrate",
+				"github.com/gorilla/.github",
 			}),
 			conf: &schema.GitHubConnection{
 				Url:   "https://github.com",
@@ -306,7 +308,26 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			repos, err := githubSrc.ListRepos(context.Background())
+			results := make(chan *SourceResult)
+			done := make(chan struct{})
+			go func() {
+				githubSrc.ListRepos(context.Background(), results)
+				done <- struct{}{}
+			}()
+			go func() {
+				<-done
+				close(results)
+			}()
+
+			var repos []*Repo
+			for res := range results {
+				if res.Err != nil {
+					err = res.Err
+					break
+				}
+				repos = append(repos, res.Repo)
+			}
+
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
