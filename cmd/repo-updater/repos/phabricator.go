@@ -37,10 +37,11 @@ func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*Phabricat
 
 // ListRepos returns all Phabricator repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s *PhabricatorSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan *SourceResult) {
 	cli, err := s.client(ctx)
 	if err != nil {
-		return nil, err
+		results <- &SourceResult{Source: s, Err: err}
+		return
 	}
 
 	cursor := &phabricator.Cursor{Limit: 100, Order: "oldest"}
@@ -48,7 +49,8 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context) (repos []*Repo, err e
 		var page []*phabricator.Repo
 		page, cursor, err = cli.ListRepos(ctx, phabricator.ListReposArgs{Cursor: cursor})
 		if err != nil {
-			return nil, err
+			results <- &SourceResult{Source: s, Err: err}
+			return
 		}
 
 		for _, r := range page {
@@ -58,17 +60,16 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context) (repos []*Repo, err e
 
 			repo, err := s.makeRepo(r)
 			if err != nil {
-				return nil, err
+				results <- &SourceResult{Source: s, Err: err}
+				return
 			}
-			repos = append(repos, repo)
+			results <- &SourceResult{Source: s, Repo: repo}
 		}
 
 		if cursor.After == "" {
 			break
 		}
 	}
-
-	return repos, nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -197,7 +198,25 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 				continue
 			}
 
-			repos, err := src.ListRepos(ctx)
+			results := make(chan *SourceResult)
+			done := make(chan struct{})
+			go func() {
+				src.ListRepos(context.Background(), results)
+				done <- struct{}{}
+			}()
+			go func() {
+				<-done
+				close(results)
+			}()
+
+			var repos []*Repo
+			for res := range results {
+				if res.Err != nil {
+					err = res.Err
+					break
+				}
+				repos = append(repos, res.Repo)
+			}
 			if err != nil {
 				log15.Error("Error fetching Phabricator repos", "err", err)
 				continue

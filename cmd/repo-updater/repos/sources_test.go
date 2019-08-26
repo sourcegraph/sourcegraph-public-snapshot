@@ -18,9 +18,11 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -670,61 +672,61 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
-	// {
-	// 	svcs := ExternalServices{
-	// 		{
-	// 			Kind: "PHABRICATOR",
-	// 			Config: marshalJSON(t, &schema.PhabricatorConnection{
-	// 				Url:   "https://secure.phabricator.com",
-	// 				Token: os.Getenv("PHABRICATOR_TOKEN"),
-	// 			}),
-	// 		},
-	// 	}
-	//
-	// 	testCases = append(testCases, testCase{
-	// 		name: "phabricator",
-	// 		svcs: svcs,
-	// 		assert: func(*ExternalService) ReposAssertion {
-	// 			return func(t testing.TB, rs Repos) {
-	// 				t.Helper()
-	//
-	// 				if len(rs) == 0 {
-	// 					t.Fatalf("no repos yielded")
-	// 				}
-	//
-	// 				for _, r := range rs {
-	// 					repo := r.Metadata.(*phabricator.Repo)
-	// 					if repo.VCS != "git" {
-	// 						t.Fatalf("non git repo yielded: %+v", repo)
-	// 					}
-	//
-	// 					if repo.Status == "inactive" {
-	// 						t.Fatalf("inactive repo yielded: %+v", repo)
-	// 					}
-	//
-	// 					if repo.Name == "" {
-	// 						t.Fatalf("empty repo name: %+v", repo)
-	// 					}
-	//
-	// 					if !r.Enabled {
-	// 						t.Fatalf("repo disabled: %+v", repo)
-	// 					}
-	//
-	// 					ext := api.ExternalRepoSpec{
-	// 						ID:          repo.PHID,
-	// 						ServiceType: "phabricator",
-	// 						ServiceID:   "https://secure.phabricator.com",
-	// 					}
-	//
-	// 					if have, want := r.ExternalRepo, ext; have != want {
-	// 						t.Fatal(cmp.Diff(have, want))
-	// 					}
-	// 				}
-	// 			}
-	// 		},
-	// 		err: "<nil>",
-	// 	})
-	// }
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "PHABRICATOR",
+				Config: marshalJSON(t, &schema.PhabricatorConnection{
+					Url:   "https://secure.phabricator.com",
+					Token: os.Getenv("PHABRICATOR_TOKEN"),
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "phabricator",
+			svcs: svcs,
+			assert: func(*ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					if len(rs) == 0 {
+						t.Fatalf("no repos yielded")
+					}
+
+					for _, r := range rs {
+						repo := r.Metadata.(*phabricator.Repo)
+						if repo.VCS != "git" {
+							t.Fatalf("non git repo yielded: %+v", repo)
+						}
+
+						if repo.Status == "inactive" {
+							t.Fatalf("inactive repo yielded: %+v", repo)
+						}
+
+						if repo.Name == "" {
+							t.Fatalf("empty repo name: %+v", repo)
+						}
+
+						if !r.Enabled {
+							t.Fatalf("repo disabled: %+v", repo)
+						}
+
+						ext := api.ExternalRepoSpec{
+							ID:          repo.PHID,
+							ServiceType: "phabricator",
+							ServiceID:   "https://secure.phabricator.com",
+						}
+
+						if have, want := r.ExternalRepo, ext; have != want {
+							t.Fatal(cmp.Diff(have, want))
+						}
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
 
 	for _, tc := range testCases {
 		tc := tc
