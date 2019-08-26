@@ -29,23 +29,22 @@ func NewOtherSource(svc *ExternalService) (*OtherSource, error) {
 
 // ListRepos returns all Other repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s OtherSource) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (s OtherSource) ListRepos(ctx context.Context, results chan *SourceResult) {
 	urls, err := s.cloneURLs()
 	if err != nil {
-		return nil, err
+		results <- &SourceResult{Source: s, Err: err}
+		return
 	}
 
 	urn := s.svc.URN()
-	repos := make([]*Repo, 0, len(urls))
 	for _, u := range urls {
 		r, err := s.otherRepoFromCloneURL(urn, u)
 		if err != nil {
-			return nil, err
+			results <- &SourceResult{Source: s, Err: err}
+			return
 		}
-		repos = append(repos, r)
+		results <- &SourceResult{Source: s, Repo: r}
 	}
-
-	return repos, nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.

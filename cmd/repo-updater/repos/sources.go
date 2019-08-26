@@ -67,8 +67,8 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 		return NewPhabricatorSource(svc, cf)
 	case "awscodecommit":
 		return NewAWSCodeCommitSource(svc, cf)
-	// case "other":
-	// 	return NewOtherSource(svc)
+	case "other":
+		return NewOtherSource(svc)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}

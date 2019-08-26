@@ -178,15 +178,15 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "OTHER",
-			// 	Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
-			// 		Url: "https://github.com",
-			// 		Repos: []string{
-			// 			"google/go-cmp",
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "OTHER",
+				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+					Url: "https://github.com",
+					Repos: []string{
+						"google/go-cmp",
+					},
+				}),
+			},
 		}
 
 		testCases = append(testCases, testCase{
@@ -419,15 +419,15 @@ func TestSources_ListRepos(t *testing.T) {
 					},
 				}),
 			},
-			// {
-			// 	Kind: "OTHER",
-			// 	Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
-			// 		Url: "https://github.com",
-			// 		Repos: []string{
-			// 			"google/go-cmp",
-			// 		},
-			// 	}),
-			// },
+			{
+				Kind: "OTHER",
+				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+					Url: "https://github.com",
+					Repos: []string{
+						"google/go-cmp",
+					},
+				}),
+			},
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
