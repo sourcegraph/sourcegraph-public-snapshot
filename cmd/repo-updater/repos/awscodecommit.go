@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -100,16 +99,8 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 // ListRepos returns all AWS Code Commit repositories accessible to all
 // connections configured in Sourcegraph via the external services
 // configuration.
-func (s *AWSCodeCommitSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	rs, err := s.listAllRepositories(ctx)
-	for _, r := range rs {
-		awsRepo, err := s.makeRepo(r)
-		if err != nil {
-			return repos, err
-		}
-		repos = append(repos, awsRepo)
-	}
-	return repos, err
+func (s *AWSCodeCommitSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+	s.listAllRepositories(ctx, results)
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -155,21 +146,23 @@ func (s *AWSCodeCommitSource) authenticatedRemoteURL(repo *awscodecommit.Reposit
 	return u.String()
 }
 
-func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context) ([]*awscodecommit.Repository, error) {
-	repos := []*awscodecommit.Repository{}
-	errs := new(multierror.Error)
-
+func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results chan *SourceResult) {
 	var nextToken string
 	for {
 		batch, token, err := s.client.ListRepositories(ctx, nextToken)
 		if err != nil {
-			errs = multierror.Append(errs, err)
-			break
+			results <- &SourceResult{Source: s, Err: err}
+			return
 		}
 
 		for _, r := range batch {
 			if !s.excludes(r) {
-				repos = append(repos, r)
+				repo, err := s.makeRepo(r)
+				if err != nil {
+					results <- &SourceResult{Source: s, Err: err}
+					return
+				}
+				results <- &SourceResult{Source: s, Repo: repo}
 			}
 		}
 
@@ -179,8 +172,6 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context) ([]*awsco
 
 		nextToken = token
 	}
-
-	return repos, errs.ErrorOrNil()
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
