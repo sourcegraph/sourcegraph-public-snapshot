@@ -458,7 +458,7 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, re
 	s.listSearch(ctx, query, results)
 }
 
-// TODO: listAllRepositories returns the repositories from the given `orgs`, `repos`, and
+// listAllRepositories returns the repositories from the given `orgs`, `repos`, and
 // `repositoryQuery` config options excluding the ones specified by `exclude`.
 func (s *GithubSource) listAllRepositories(ctx context.Context, results chan *SourceResult) {
 	s.listRepos(ctx, s.config.Repos, results)
