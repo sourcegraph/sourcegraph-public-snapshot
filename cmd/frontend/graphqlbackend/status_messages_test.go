@@ -18,11 +18,15 @@ func TestStatusMessages(t *testing.T) {
 			statusMessages {
 				__typename
 
-				... on CloningStatusMessage {
+				... on CloningProgress {
 					message
 				}
 
-				... on SyncErrorStatusMessage {
+				... on SyncError {
+					message
+				}
+
+				... on ExternalServiceSyncError {
 					message
 					externalService {
 						id
@@ -98,14 +102,19 @@ func TestStatusMessages(t *testing.T) {
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
 				{
-					Cloning: &protocol.CloningStatusMessage{
+					Cloning: &protocol.CloningProgress{
 						Message: "Currently cloning 5 repositories in parallel...",
 					},
 				},
 				{
-					SyncError: &protocol.SyncErrorStatusMessage{
+					ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
 						Message:           "Authentication failed. Please check credentials.",
 						ExternalServiceId: 1,
+					},
+				},
+				{
+					SyncError: &protocol.SyncError{
+						Message: "Could not save to database",
 					},
 				},
 			}}
@@ -121,16 +130,20 @@ func TestStatusMessages(t *testing.T) {
 					{
 						"statusMessages": [
 							{
-								"__typename": "CloningStatusMessage",
+								"__typename": "CloningProgress",
 								"message": "Currently cloning 5 repositories in parallel..."
 							},
 							{
-								"__typename": "SyncErrorStatusMessage",
+								"__typename": "ExternalServiceSyncError",
 								"externalService": {
 									"displayName": "GitHub.com testing",
 									"id": "RXh0ZXJuYWxTZXJ2aWNlOjE="
 								},
 								"message": "Authentication failed. Please check credentials."
+							},
+							{
+								"__typename": "SyncError",
+								"message": "Could not save to database"
 							}
 						]
 					}

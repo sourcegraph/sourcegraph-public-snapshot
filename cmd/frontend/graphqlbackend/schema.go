@@ -826,7 +826,7 @@ type Query {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
-    # Lists all status messages
+    # FOR INTERNAL USE ONLY: Lists all status messages
     statusMessages: [StatusMessage!]!
 
     # Look up a namespace by ID.
@@ -3712,23 +3712,31 @@ type ProductSubscriptionEvent {
     url: String
 }
 
-# An status message produced when repositories are being cloned
-type CloningStatusMessage {
+# FOR INTERNAL USE ONLY: A status message produced when repositories are being
+# cloned
+type CloningProgress {
     # The message of this status message
     message: String!
 }
 
-# An status message produced when repositories could not be synced from code
-# hosts
-type SyncErrorStatusMessage {
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced from an external service
+type ExternalServiceSyncError {
     # The message of this status message
     message: String!
     # The external service that failed to sync
     externalService: ExternalService!
 }
 
-# A status message
-union StatusMessage = CloningStatusMessage | SyncErrorStatusMessage
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced
+type SyncError {
+    # The message of this status message
+    message: String!
+}
+
+# FOR INTERNAL USE ONLY: A status message
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 # An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
