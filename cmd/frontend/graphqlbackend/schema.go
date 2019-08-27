@@ -826,7 +826,7 @@ type Query {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
-    # Lists all status messages
+    # FOR INTERNAL USE ONLY: Lists all status messages
     statusMessages: [StatusMessage!]!
 
     # Look up a namespace by ID.
@@ -3712,14 +3712,15 @@ type ProductSubscriptionEvent {
     url: String
 }
 
-# A status message produced when repositories are being cloned
+# FOR INTERNAL USE ONLY: A status message produced when repositories are being
+# cloned
 type CloningProgress {
     # The message of this status message
     message: String!
 }
 
-# A status message produced when repositories could not be synced from an
-# external service
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced from an external service
 type ExternalServiceSyncError {
     # The message of this status message
     message: String!
@@ -3727,13 +3728,14 @@ type ExternalServiceSyncError {
     externalService: ExternalService!
 }
 
-# A status message produced when repositories could not be synced
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced
 type SyncError {
     # The message of this status message
     message: String!
 }
 
-# A status message
+# FOR INTERNAL USE ONLY: A status message
 union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 # An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
