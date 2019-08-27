@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -62,9 +63,13 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-XSS-Protection", "1; mode=block")
 
-	// Allow downstream Sourcegraph sites' clients to access this file directly.
-	w.Header().Del("Access-Control-Allow-Credentials") // credentials are not needed
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// 🚨 SECURITY sourcegraph.com only: downstream Sourcegraph sites' clients to access this file directly.
+	// On private registries, requests to fetch extension bundles are authenticated, and Access-Control headers
+	// should be preserved.
+	if envvar.SourcegraphDotComMode() {
+		w.Header().Del("Access-Control-Allow-Credentials") // credentials are not needed
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 
 	// We want to cache forever because an extension release is immutable, except that if the
 	// database is reset and and the registry_extension_releases.id sequence starts over, we don't

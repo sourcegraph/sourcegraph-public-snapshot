@@ -84,6 +84,7 @@
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
+/SECURITY.md @beyang @nicksnyder
 /.dockerignore @beyang
 /.mailmap @beyang
 /tsconfig.json @felixfbecker
@@ -235,7 +236,7 @@ README.md @sqs
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
-/lsif/ @chrismwendt @sourcegraph/code-nav
+/lsif/ @chrismwendt @efritz @sourcegraph/code-nav
 
 # Development
 /dev/fakehub @ijt

@@ -2,7 +2,6 @@ import { Connection, EntityManager } from 'typeorm'
 import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
-import { Package, SymbolReferences } from './entities'
 import { Inserter } from './inserter'
 import {
     xrepoQueryDurationHistogram,
@@ -14,6 +13,44 @@ import {
 const insertionMetrics = {
     insertionCounter: xrepoInsertionCounter,
     insertionDurationHistogram: xrepoInsertionDurationHistogram,
+}
+
+/**
+ * `Package` represents a package provided by a project or a package that is
+ * a dependency of a project, depending on its use.
+ */
+export interface Package {
+    /**
+     * `scheme` is the scheme of the package (e.g. npm, pip).
+     */
+    scheme: string
+
+    /**
+     * `name` is the name of the package.
+     */
+    name: string
+
+    /**
+     * `version` is the version of the package.
+     */
+    version: string
+}
+
+/**
+ * `SymbolReferences` represents a use of a set of symbols from a particular
+ * dependent package of a project.
+ */
+export interface SymbolReferences {
+    /**
+     * `package` is the package from which the symbols are imported.
+     */
+    package: Package
+
+    /**
+     * `identifiers` are the unique identifiers of the symbols imported from
+     * the package.
+     */
+    identifiers: string[]
 }
 
 /**
@@ -117,7 +154,6 @@ export class XrepoDatabase {
 
             for (const reference of references) {
                 // TODO - upsert
-
                 await inserter.insert({
                     repository,
                     commit,

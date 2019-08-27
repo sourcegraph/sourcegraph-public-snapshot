@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	"gopkg.in/inconshreveable/log15.v2"
 )
