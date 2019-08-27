@@ -33,7 +33,12 @@ interface CacheEntry<K, V> {
 }
 
 /**
- * `GenericCache` is a generic LRU cache.
+ * `GenericCache` is a generic LRU cache. We use this instead of the
+ * `lru-cache` apckage available in NPM so that we can handle async
+ * payloads in a more first-class way as well as shedding some of the
+ * cruft around evictions -- we need to ensure database handles are
+ * closed when they are no longer accessible, and we also do not want
+ * to evict any database handle while it is actively being used.
  */
 class GenericCache<K, V> {
     /**
