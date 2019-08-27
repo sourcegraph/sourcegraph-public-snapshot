@@ -74,10 +74,10 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without region, accessKeyID, secretAccessKey, gitCredentials",
 			config: `{}`,
 			assert: includes(
-				"(root): region is required",
-				"(root): accessKeyID is required",
-				"(root): secretAccessKey is required",
-				"(root): gitCredentials is required",
+				"region is required",
+				"accessKeyID is required",
+				"secretAccessKey is required",
+				"gitCredentials is required",
 			),
 		},
 		{
@@ -185,8 +185,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "witout prefix nor host",
 			config: `{}`,
 			assert: includes(
-				"(root): prefix is required",
-				"(root): host is required",
+				"prefix is required",
+				"host is required",
 			),
 		},
 		{
@@ -203,8 +203,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "witout prefix nor host",
 			config: `{}`,
 			assert: includes(
-				"(root): prefix is required",
-				"(root): host is required",
+				"prefix is required",
+				"host is required",
 			),
 		},
 		{
@@ -299,9 +299,9 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, username nor appPassword",
 			config: `{}`,
 			assert: includes(
-				"(root): url is required",
-				"(root): username is required",
-				"(root): appPassword is required",
+				"url is required",
+				"username is required",
+				"appPassword is required",
 			),
 		},
 		{
@@ -354,8 +354,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, username, repositoryQuery nor repos",
 			config: `{}`,
 			assert: includes(
-				"(root): url is required",
-				"(root): username is required",
+				"url is required",
+				"username is required",
 				"at least one of repositoryQuery or repos must be set",
 			),
 		},
@@ -363,7 +363,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "BITBUCKETSERVER",
 			desc:   "without username",
 			config: `{}`,
-			assert: includes("(root): username is required"),
+			assert: includes("username is required"),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -382,7 +382,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "with token AND password",
 			config: `{"token": "foo", "password": "bar"}`,
 			assert: includes(
-				"(root): Must validate one and only one schema (oneOf)",
+				"Must validate one and only one schema (oneOf)",
 				"password: Invalid type. Expected: null, given: string",
 			),
 		},
@@ -606,8 +606,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, token, repositoryQuery, repos nor orgs",
 			config: `{}`,
 			assert: includes(
-				"(root): url is required",
-				"(root): token is required",
+				"url is required",
+				"token is required",
 				"at least one of repositoryQuery, repos or orgs must be set",
 			),
 		},
@@ -856,9 +856,9 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, token nor projectQuery",
 			config: `{}`,
 			assert: includes(
-				"(root): url is required",
-				"(root): token is required",
-				"(root): projectQuery is required",
+				"url is required",
+				"token is required",
+				"projectQuery is required",
 			),
 		},
 		{
@@ -1017,8 +1017,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without repos nor token",
 			config: `{}`,
 			assert: includes(
-				`(root): Must validate at least one schema (anyOf)`,
-				`(root): token is required`,
+				`Must validate at least one schema (anyOf)`,
+				`token is required`,
 			),
 		},
 		{
@@ -1049,7 +1049,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "OTHER",
 			desc:   "without url nor repos array",
 			config: `{}`,
-			assert: includes(`(root): repos is required`),
+			assert: includes(`repos is required`),
 		},
 		{
 			kind:   "OTHER",
