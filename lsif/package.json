@@ -5,11 +5,13 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
+    "@types/morgan": "^1.7.37",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "express-prom-bundle": "^5.1.5",
     "lsif-protocol": "0.4.3",
+    "morgan": "^1.9.1",
     "mz": "^2.7.0",
     "prom-client": "^11.5.3",
     "sqlite3": "^4.1.0",

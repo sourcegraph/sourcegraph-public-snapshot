@@ -1,8 +1,9 @@
 import bodyParser from 'body-parser'
 import express from 'express'
-import { ERRNOLSIFDATA, makeBackend } from './backend'
-import { readEnvInt, hasErrorCode, readEnv } from './util'
+import morgan from 'morgan'
 import { ConnectionCache, DocumentCache } from './cache'
+import { ERRNOLSIFDATA, makeBackend } from './backend'
+import { hasErrorCode, readEnv, readEnvInt } from './util'
 import { zlib } from 'mz'
 import promBundle from 'express-prom-bundle'
 
@@ -35,7 +36,9 @@ async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
     const backend = await makeBackend(connectionCache, documentCache)
+
     const app = express()
+    app.use(morgan('tiny'))
     app.use(errorHandler)
 
     app.get('/ping', (_, res) => {
