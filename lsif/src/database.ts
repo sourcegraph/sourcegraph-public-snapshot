@@ -194,8 +194,6 @@ export class Database {
             makeFilename(packageEntity.repository, packageEntity.commit)
         )
 
-        // FIXME
-        fixMonikerIdentifier(moniker)
         const uriFilter = (uri: string): string => makeRemoteUri(packageEntity, uri)
         return await Database.monikerResults(db, DefModel, moniker, uriFilter)
     }
@@ -538,11 +536,4 @@ function comparePosition(range: lsp.Range, position: lsp.Position): number {
     }
 
     return 0
-}
-
-// TODO - make this unnecessary, or figure out why it needs to stay
-function fixMonikerIdentifier(moniker: MonikerData): void {
-    const parts = moniker.identifier.split(':')
-    parts[1] = ''
-    moniker.identifier = parts.join(':')
 }
