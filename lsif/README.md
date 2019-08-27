@@ -1,4 +1,4 @@
-# LSIF Code Intelligence
+# LSIF code intelligence
 
 [LSIF](https://code.visualstudio.com/blogs/2019/02/19/lsif) is a file format that stores code intelligence information such as hover docstrings, definitions, and references.
 
