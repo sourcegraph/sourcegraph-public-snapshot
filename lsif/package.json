@@ -29,7 +29,7 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && node out/server.bundle.js'\" --noClear",
-    "build": "parcel build --out-dir out --out-file server.bundle.js --target node --bundle-node-modules src/server.ts",
+    "build": "parcel build --out-dir out --out-file server.bundle.js --target node src/server.ts",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
   }
