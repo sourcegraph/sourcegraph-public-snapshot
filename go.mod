@@ -5,7 +5,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OpenPeeDeeP/depguard v1.0.0 // indirect
 	github.com/RoaringBitmap/roaring v0.4.18
-	github.com/aws/aws-sdk-go-v2 v0.7.0
+	github.com/aws/aws-sdk-go-v2 v0.11.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20190105021324-abcd57078448 // indirect
@@ -170,7 +170,7 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190823093517-aa644d2adf2a
+	golang.org/x/tools v0.0.0-20190823170909-c4a336ef6a2f
 	google.golang.org/api v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
 	google.golang.org/grpc v1.23.0 // indirect
