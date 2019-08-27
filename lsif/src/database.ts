@@ -101,7 +101,7 @@ export class Database {
         }
 
         for (const moniker of monikers) {
-            if (moniker.kind === 'export') {
+            if (moniker.kind === 'import' || moniker.kind === 'export') {
                 const { remoteLocations, nextPage } = await this.remoteReferences(document, moniker, page)
                 locations.push(...remoteLocations)
                 return { data: locations, nextPage }
