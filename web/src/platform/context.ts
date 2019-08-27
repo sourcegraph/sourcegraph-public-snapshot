@@ -11,6 +11,7 @@ import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubjec
 import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { Tooltip } from '../components/tooltip/Tooltip'
+import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
@@ -66,6 +67,7 @@ export function createPlatformContext(): PlatformContext {
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
+        telemetryService: eventLogger,
     }
     return context
 }

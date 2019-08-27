@@ -59,7 +59,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one CLONING message as non-site admin 1`] = `
+exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`] = `
 <div
   className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}
@@ -118,7 +118,7 @@ exports[`StatusMessagesNavItem one CLONING message as non-site admin 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
+exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 <div
   className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}
@@ -187,7 +187,7 @@ exports[`StatusMessagesNavItem one CLONING message as site admin 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one SYNCERROR message as non-site admin 1`] = `
+exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site admin 1`] = `
 <div
   className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}
@@ -246,7 +246,7 @@ exports[`StatusMessagesNavItem one SYNCERROR message as non-site admin 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one SYNCERROR message as site admin 1`] = `
+exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admin 1`] = `
 <div
   className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}
@@ -308,6 +308,134 @@ exports[`StatusMessagesNavItem one SYNCERROR message as site admin 1`] = `
           to="/site-admin/external-services/abcd"
         >
           Edit "GitHub.com"
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
+<div
+  className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className="btn btn-icon nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    <svg
+      className="mdi-icon icon-inline"
+      data-tooltip="Repositories up to date"
+      fill="currentColor"
+      height={24}
+      viewBox="0 0 24 24"
+      width={24}
+    >
+      <path
+        d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+      />
+    </svg>
+  </a>
+  <div
+    aria-hidden={true}
+    className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <h3>
+      External Service Status
+    </h3>
+    <div
+      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+    >
+      <h4>
+        <svg
+          className="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
+          />
+        </svg>
+        Syncing repositories failed:
+      </h4>
+      <p>
+        syncer.sync.store.upsert-repos: pg: unique constraint foobar
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
+<div
+  className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
+  onKeyDown={[Function]}
+>
+  <a
+    aria-expanded={false}
+    aria-haspopup={true}
+    className="btn btn-icon nav-link"
+    href="#"
+    onClick={[Function]}
+  >
+    <svg
+      className="mdi-icon icon-inline"
+      data-tooltip="Repositories up to date"
+      fill="currentColor"
+      height={24}
+      viewBox="0 0 24 24"
+      width={24}
+    >
+      <path
+        d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+      />
+    </svg>
+  </a>
+  <div
+    aria-hidden={true}
+    className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+    role="menu"
+    tabIndex="-1"
+  >
+    <h3>
+      External Service Status
+    </h3>
+    <div
+      className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
+    >
+      <h4>
+        <svg
+          className="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
+          />
+        </svg>
+        Syncing repositories failed:
+      </h4>
+      <p>
+        syncer.sync.store.upsert-repos: pg: unique constraint foobar
+      </p>
+      <p
+        className="status-messages-nav-item__entry-link"
+      >
+        <a
+          onClick={[Function]}
+          to="/site-admin/external-services"
+        >
+          Configure external services
         </a>
       </p>
     </div>

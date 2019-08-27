@@ -20,11 +20,15 @@ export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
                 statusMessages {
                     __typename
 
-                    ... on CloningStatusMessage {
+                    ... on CloningProgress {
                         message
                     }
 
-                    ... on SyncErrorStatusMessage {
+                    ... on SyncError {
+                        message
+                    }
+
+                    ... on ExternalServiceSyncError {
                         message
                         externalService {
                             id
@@ -128,7 +132,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     private renderMessage(message: GQL.StatusMessage): JSX.Element | null {
         switch (message.__typename) {
-            case 'CloningStatusMessage':
+            case 'CloningProgress':
                 return (
                     <StatusMessagesNavItemEntry
                         key={message.message}
@@ -141,7 +145,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         entryType="progress"
                     />
                 )
-            case 'SyncErrorStatusMessage':
+            case 'ExternalServiceSyncError':
                 return (
                     <StatusMessagesNavItemEntry
                         key={message.message}
@@ -154,6 +158,19 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         entryType="warning"
                     />
                 )
+            case 'SyncError':
+                return (
+                    <StatusMessagesNavItemEntry
+                        key={message.message}
+                        title="Syncing repositories failed:"
+                        text={message.message}
+                        showLink={this.props.isSiteAdmin}
+                        linkTo="/site-admin/external-services"
+                        linkText="Configure external services"
+                        linkOnClick={this.toggleIsOpen}
+                        entryType="warning"
+                    />
+                )
         }
     }
 
@@ -161,7 +178,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isErrorLike(this.state.messagesOrError)) {
             return <CloudAlertIcon className="icon-inline" />
         }
-        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'SyncErrorStatusMessage')) {
+        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'ExternalServiceSyncError')) {
             return (
                 <CloudAlertIcon
                     className="icon-inline"
@@ -169,7 +186,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 />
             )
         }
-        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'CloningStatusMessage')) {
+        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'CloningProgress')) {
             return (
                 <CloudSyncIcon
                     className="icon-inline"

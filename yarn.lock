@@ -1582,10 +1582,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.0.6":
-  version "0.0.6"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.0.6.tgz#6c8349cfd7bf604028de7564cdd0562f63bc850f"
-  integrity sha512-gPRPJhpvbV9cMEdq6WsBzjC/jtKLnEqds3Hw3RdRwQL7one4ca0Yz6ZqaZf4viZn+EZFZhyzku/JbsWgDV4i1w==
+"@sourcegraph/eslint-config@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.1.0.tgz#260c1b33945b65f53965b902e121b0dcf247619a"
+  integrity sha512-W5gbS2EstUop5hAk4xakrE5YMC6PQp5Cax7S+sk0XqWqvlG8WjzUCmjNSGkOIFLUSSUItlFhe6VHTeaoiE03Nw==
   dependencies:
     "@typescript-eslint/eslint-plugin" "^1.13.0"
     "@typescript-eslint/parser" "^1.13.0"

@@ -554,6 +554,7 @@ func TestServer_StatusMessages(t *testing.T) {
 		stored          repos.Repos
 		gitserverCloned []string
 		sourcerErr      error
+		listRepoErr     error
 		res             *protocol.StatusMessagesResponse
 		err             string
 	}{
@@ -572,7 +573,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Cloning: &protocol.CloningStatusMessage{
+						Cloning: &protocol.CloningProgress{
 							Message: "1 repositories enqueued for cloning...",
 						},
 					},
@@ -586,7 +587,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Cloning: &protocol.CloningStatusMessage{
+						Cloning: &protocol.CloningProgress{
 							Message: "1 repositories enqueued for cloning...",
 						},
 					},
@@ -608,7 +609,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Cloning: &protocol.CloningStatusMessage{
+						Cloning: &protocol.CloningProgress{
 							Message: "2 repositories enqueued for cloning...",
 						},
 					},
@@ -632,14 +633,27 @@ func TestServer_StatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:       "one syncer err",
+			name:       "one external service syncer err",
 			sourcerErr: errors.New("github is down"),
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						SyncError: &protocol.SyncErrorStatusMessage{
+						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
 							Message:           "github is down",
 							ExternalServiceId: githubService.ID,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:        "one syncer err",
+			listRepoErr: errors.New("could not connect to database"),
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						SyncError: &protocol.SyncError{
+							Message: "syncer.sync.store.list-repos: could not connect to database",
 						},
 					},
 				},
@@ -667,14 +681,12 @@ func TestServer_StatusMessages(t *testing.T) {
 			clock := repos.NewFakeClock(time.Now(), 0)
 			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
 
-			if tc.sourcerErr != nil {
+			if tc.sourcerErr != nil || tc.listRepoErr != nil {
+				store.ListReposError = tc.listRepoErr
 				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 				// Run Sync so that possibly `LastSyncErrors` is set
 				syncer = repos.NewSyncer(store, sourcer, nil, clock.Now)
-				_, err := syncer.Sync(ctx)
-				if err != nil {
-					return
-				}
+				_, _ = syncer.Sync(ctx)
 			}
 
 			s := &Server{
