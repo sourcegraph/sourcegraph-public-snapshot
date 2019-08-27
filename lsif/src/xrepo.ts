@@ -3,6 +3,12 @@ import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
 import { Inserter } from './inserter'
+import { readEnvInt } from './util'
+
+/**
+ * The maximum number of databases to open when finding global references.
+ */
+const GLOBAL_REFERENCE_CHUNK_SIZE = readEnvInt('LSIF_GLOBAL_REFERENCE_CHUNK_SIZE', 50)
 
 /**
  * `Package` represents a package provided by a project or a package that is
@@ -105,22 +111,39 @@ export class XrepoDatabase {
      * @param name The package name.
      * @param version The package version.
      * @param uri The uri to test.
+     * @param page The page index being requested.
      */
-    public async getReferences(scheme: string, name: string, version: string, uri: string): Promise<ReferenceModel[]> {
+    public async getReferences(
+        scheme: string,
+        name: string,
+        version: string,
+        uri: string,
+        page: number | undefined
+    ): Promise<{ references: ReferenceModel[]; nextPage: number | null }> {
+        const skip = page || 0
         return await this.withConnection(connection =>
-            connection
-                .getRepository(ReferenceModel)
-                .find({
-                    where: {
-                        scheme,
-                        name,
-                        version,
-                    },
-                })
-                .then((results: ReferenceModel[]) =>
-                    results.filter(async result => await testFilter(result.filter, uri))
-                )
-        )
+            connection.getRepository(ReferenceModel).find({
+                where: {
+                    scheme,
+                    name,
+                    version,
+                },
+                skip,
+                take: GLOBAL_REFERENCE_CHUNK_SIZE + 1,
+            })
+        ).then((results: ReferenceModel[]) => {
+            const hasMore = results.length > GLOBAL_REFERENCE_CHUNK_SIZE
+            if (hasMore) {
+                results.pop()
+            }
+
+            const filteredResults = results.filter(async result => await testFilter(result.filter, uri))
+
+            return {
+                references: filteredResults,
+                nextPage: hasMore ? skip + GLOBAL_REFERENCE_CHUNK_SIZE : null,
+            }
+        })
     }
 
     /**

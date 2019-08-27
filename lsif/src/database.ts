@@ -43,10 +43,10 @@ export class Database {
      * @param uri The document to which the position belongs.
      * @param position The current hover position.
      */
-    public async definitions(uri: string, position: lsp.Position): Promise<lsp.Location | lsp.Location[] | undefined> {
+    public async definitions(uri: string, position: lsp.Position): Promise<lsp.Location[]> {
         const { document, range } = await this.findRange(uri, position)
         if (!document || !range) {
-            return undefined
+            return []
         }
 
         const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
@@ -66,7 +66,7 @@ export class Database {
             }
         }
 
-        return undefined
+        return []
     }
 
     /**
@@ -74,36 +74,41 @@ export class Database {
      *
      * @param uri The document to which the position belongs.
      * @param position The current hover position.
+     * @param page The page index being requested.
      */
-    public async references(uri: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
+    public async references(
+        uri: string,
+        position: lsp.Position,
+        page: number | undefined
+    ): Promise<{ data: lsp.Location[]; nextPage: number | null }> {
         const { document, range } = await this.findRange(uri, position)
         if (!document || !range) {
-            return undefined
+            return { data: [], nextPage: null }
         }
 
         // TODO - vet logic - should xrepo search be explicitly enabled via query flag?
         const resultData = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
         const monikers = findMonikers(document.resultSets, document.monikers, range)
 
-        const result = []
+        const locations = []
         if (resultData) {
-            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.definitions))
-            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.references))
+            locations.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.definitions))
+            locations.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.references))
         } else {
             for (const moniker of monikers) {
-                result.push(...(await Database.monikerResults(this, RefModel, moniker, uri => uri)))
+                locations.push(...(await Database.monikerResults(this, RefModel, moniker, uri => uri)))
             }
         }
 
         for (const moniker of monikers) {
             if (moniker.kind === 'export') {
-                const moreResult = await this.remoteReferences(document, moniker)
-                result.push(...moreResult)
-                break
+                const { remoteLocations, nextPage } = await this.remoteReferences(document, moniker, page)
+                locations.push(...remoteLocations)
+                return { data: locations, nextPage }
             }
         }
 
-        return result
+        return { data: locations, nextPage: null }
     }
 
     /**
@@ -162,17 +167,14 @@ export class Database {
      * @param document The document containing the reference.
      * @param moniker The target moniker.
      */
-    private async remoteDefinitions(
-        document: DocumentData,
-        moniker: MonikerData
-    ): Promise<lsp.Location | lsp.Location[] | undefined> {
+    private async remoteDefinitions(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[]> {
         if (!moniker.packageInformation) {
-            return undefined
+            return []
         }
 
         const packageInformation = document.packageInformation.get(moniker.packageInformation)
         if (!packageInformation) {
-            return undefined
+            return []
         }
 
         const packageEntity = await this.xrepoDatabase.getPackage(
@@ -182,7 +184,7 @@ export class Database {
         )
 
         if (!packageEntity) {
-            return undefined
+            return []
         }
 
         const db = new Database(
@@ -205,26 +207,32 @@ export class Database {
      * are queried for the target moniker.
      *
      * @param document The document containing the definition.
-     * @param moniker THe target moniker.
+     * @param moniker The target moniker.
+     * @param page The page index being requested.
      */
-    private async remoteReferences(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[]> {
+    private async remoteReferences(
+        document: DocumentData,
+        moniker: MonikerData,
+        page: number | undefined
+    ): Promise<{ remoteLocations: lsp.Location[]; nextPage: number | null }> {
         if (!moniker.packageInformation) {
-            return []
+            return { remoteLocations: [], nextPage: null }
         }
 
         const packageInformation = document.packageInformation.get(moniker.packageInformation)
         if (!packageInformation) {
-            return []
+            return { remoteLocations: [], nextPage: null }
         }
 
-        const references = await this.xrepoDatabase.getReferences(
+        const { references, nextPage } = await this.xrepoDatabase.getReferences(
             moniker.scheme,
             packageInformation.name,
             packageInformation.version,
-            moniker.identifier
+            moniker.identifier,
+            page
         )
 
-        const allReferences = []
+        const promises: Promise<lsp.Location[]>[] = []
         for (const reference of references) {
             const db = new Database(
                 this.xrepoDatabase,
@@ -233,13 +241,15 @@ export class Database {
                 makeFilename(reference.repository, reference.commit)
             )
 
-            fixMonikerIdentifier(moniker)
-            const uriFilter = (uri: string): string => makeRemoteUri(reference, uri)
-            const references = await Database.monikerResults(db, RefModel, moniker, uriFilter)
-            allReferences.push(...references)
+            promises.push(
+                Database.monikerResults(db, RefModel, moniker, (uri: string): string => makeRemoteUri(reference, uri))
+            )
         }
 
-        return allReferences
+        const resolved = await Promise.all(promises)
+        const remoteLocations = ([] as lsp.Location[]).concat(...resolved)
+
+        return { remoteLocations, nextPage }
     }
 
     /**

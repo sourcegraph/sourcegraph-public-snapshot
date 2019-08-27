@@ -41,20 +41,21 @@ async function main(): Promise<void> {
         res.send({ pong: 'pong' })
     })
 
-    app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
-        try {
+    app.post(
+        '/upload',
+        bodyParser.raw({ limit: MAX_UPLOAD }),
+        wrap(async (req, res) => {
             const { repository, commit } = req.query
             checkRepository(repository)
             checkCommit(commit)
             await backend.insertDump(req.pipe(zlib.createGunzip()), repository, commit)
             res.json(null)
-        } catch (e) {
-            return next(e)
-        }
-    })
+        })
+    )
 
-    app.post('/exists', async (req, res, next) => {
-        try {
+    app.post(
+        '/exists',
+        wrap(async (req, res) => {
             const { repository, commit, file } = req.query
             checkRepository(repository)
             checkCommit(commit)
@@ -71,38 +72,82 @@ async function main(): Promise<void> {
 
                 throw e
             }
-        } catch (e) {
-            return next(e)
-        }
-    })
+        })
+    )
 
-    app.post('/request', bodyParser.json({ limit: '1mb' }), async (req, res, next) => {
-        try {
+    app.post(
+        '/definitions',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(async (req, res) => {
             const { repository, commit } = req.query
-            const { path, position, method } = req.body
+            const { path, position } = req.body
             checkRepository(repository)
             checkCommit(commit)
-            checkMethod(method, ['definitions', 'references', 'hover'])
-            const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-            try {
-                const db = await backend.createDatabase(repository, commit)
-                res.json(await db[cleanMethod](path, position))
-            } catch (e) {
-                if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                    throw Object.assign(e, { status: 404 })
-                }
+            const db = await backend.createDatabase(repository, commit)
+            const data = await db.definitions(path, position)
+            res.json({ data })
+        })
+    )
 
-                throw e
-            }
-        } catch (e) {
-            return next(e)
-        }
-    })
+    app.post(
+        '/references',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(async (req, res) => {
+            const { repository, commit, page } = req.query
+            const { path, position } = req.body
+            checkRepository(repository)
+            checkCommit(commit)
+
+            const db = await backend.createDatabase(repository, commit)
+            const { data, nextPage } = await db.references(path, position, page)
+            res.json({ data, nextPage })
+        })
+    )
+
+    app.post(
+        '/hover',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(async (req, res) => {
+            // TODO - why are these split this way?
+            const { repository, commit } = req.query
+            const { path, position } = req.body
+            checkRepository(repository)
+            checkCommit(commit)
+
+            const db = await backend.createDatabase(repository, commit)
+            const data = await db.hover(path, position)
+            res.json({ data })
+        })
+    )
 
     app.listen(HTTP_PORT, () => {
         console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
     })
+}
+
+/**
+ * Turn an async handler function into an express handler. Catch any exceptions that
+ * are thrown and pass them to the registered error handler. If the exception is an
+ * ERRNOLSIFDATA exception, return with a 404 response.
+ *
+ * @param handler The two-argument handler.
+ */
+function wrap(
+    handler: (req: express.Request, res: express.Response) => Promise<void>
+): (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<void> {
+    return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        try {
+            return await handler(req, res)
+        } catch (e) {
+            if (hasErrorCode(e, ERRNOLSIFDATA)) {
+                res.status(404).send({ message: e.message })
+                return
+            }
+
+            return next(e)
+        }
+    }
 }
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -138,17 +183,6 @@ export function checkRepository(repository: any): void {
 export function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error('Must specify the commit as a 40 character hash ' + commit), { status: 400 })
-    }
-}
-
-/**
- * Throws an error with status 422 if the requested method is not supported.
- */
-export function checkMethod(method: string, supportedMethods: string[]): void {
-    if (!supportedMethods.includes(method)) {
-        throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
-            status: 422,
-        })
     }
 }
 
