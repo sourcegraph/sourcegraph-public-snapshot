@@ -64,6 +64,8 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 			return err
 		}
 		c.Transport = tr
+		wrapWithoutRedirect(c)
+
 		return nil
 	})
 	if err != nil {
@@ -190,4 +192,63 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context) ([]*awsco
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
 	return s.exclude[r.Name] || s.exclude[r.ID]
+}
+
+// The code below is copied from
+// github.com/aws/aws-sdk-go-v2@v0.11.0/aws/client.go so we use the same HTTP
+// client that AWS wants to use, but fits into our HTTP factory
+// pattern. Additionally we change wrapWithoutRedirect to mutate c instead of
+// returning a copy.
+func wrapWithoutRedirect(c *http.Client) {
+	tr := c.Transport
+	if tr == nil {
+		tr = http.DefaultTransport
+	}
+
+	c.CheckRedirect = limitedRedirect
+	c.Transport = stubBadHTTPRedirectTransport{
+		tr: tr,
+	}
+}
+
+func limitedRedirect(r *http.Request, via []*http.Request) error {
+	// Request.Response, in CheckRedirect is the response that is triggering
+	// the redirect.
+	resp := r.Response
+	if r.URL.String() == stubBadHTTPRedirectLocation {
+		resp.Header.Del(stubBadHTTPRedirectLocation)
+		return http.ErrUseLastResponse
+	}
+
+	switch resp.StatusCode {
+	case 307, 308:
+		// Only allow 307 and 308 redirects as they preserve the method.
+		return nil
+	}
+
+	return http.ErrUseLastResponse
+}
+
+type stubBadHTTPRedirectTransport struct {
+	tr http.RoundTripper
+}
+
+const stubBadHTTPRedirectLocation = `https://amazonaws.com/badhttpredirectlocation`
+
+func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	resp, err := t.tr.RoundTrip(r)
+	if err != nil {
+		return resp, err
+	}
+
+	// TODO S3 is the only known service to return 301 without location header.
+	// consider moving this to a S3 customization.
+	switch resp.StatusCode {
+	case 301, 302:
+		if v := resp.Header.Get("Location"); len(v) == 0 {
+			resp.Header.Set("Location", stubBadHTTPRedirectLocation)
+		}
+	}
+
+	return resp, err
 }
