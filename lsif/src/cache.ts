@@ -187,7 +187,14 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         return this.withValue(database, factory, callback)
     }
 
-    // TODO - document
+    /**
+     * Like `withConnection`, but will open a transaction on the connection
+     * before invoking the callback.
+     *
+     * @param database The database filename.
+     * @param entities The set of expected entities present in this schema.
+     * @param callback The function invoke with a SQLite transaction connection.
+     */
     public withTransactionalEntityManager<T>(
         database: string,
         entities: Function[],

@@ -120,7 +120,7 @@ function dumpJSON<T>(value: T): string {
  * @param value The value to unmarshal.
  */
 function parseJSON<T>(value: string): T {
-    return JSON.parse(value, (key, value) => {
+    return JSON.parse(value, (_, value) => {
         if (typeof value === 'object' && value !== null && value.type === 'map') {
             return new Map(value.value)
         }

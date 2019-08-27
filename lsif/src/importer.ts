@@ -10,12 +10,8 @@ import {
     ReferenceResultData,
     HoverData,
     PackageInformationData,
-    DocumentMeta,
-    WrappedDocumentData,
-    XrepoSymbols,
-    Package,
+    DocumentData,
     FlattenedRange,
-    MonikerScopedResultData,
 } from './entities'
 import {
     Id,
@@ -44,7 +40,9 @@ import {
     EventScope,
     MetaData,
     ElementTypes,
+    Moniker,
 } from 'lsif-protocol'
+import { Package, SymbolReferences } from './xrepo'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -53,6 +51,44 @@ import {
  * while we update or re-process the already-uploaded data.
  */
 const INTERNAL_LSIF_VERSION = '0.1.0'
+
+/**
+ * `DecoratedDocumentData` is a `DocumentData` instance with additional context
+ * during the importing of an LSIF dump.
+ */
+export interface DecoratedDocumentData extends DocumentData {
+    /**
+     * `id` is the identifier of the document.
+     */
+    id: Id
+
+    /**
+     * `uri` is the URI of the document.
+     */
+    uri: string
+
+    /**
+     * `contains` is the running set of identifiers that have a contains edge
+     * to this document in the LSIF dump.
+     */
+    contains: Id[]
+
+    /**
+     * `definitions` carries the data of definitionResult edges attached within
+     * the document if there is a non-local moniker attached to it; otherwise,
+     * the definition result data would be stored in `definitionResults` in the
+     * superclass.
+     */
+    definitions: { data: DefinitionResultData; moniker: MonikerData }[]
+
+    /**
+     * `references` carries the data of referenceResult edges attached within
+     * the document if there is a non-local moniker attached to it; otherwise,
+     * the reference result data would be stored in `referenceResults` in the
+     * superclass.
+     */
+    references: { data: ReferenceResultData; moniker: MonikerData }[]
+}
 
 /**
  * `HandlerMap` is a mapping from vertex or edge labels to the function that
@@ -83,7 +119,7 @@ export class Importer {
 
     // Vertex data
     private definitionDatas: Map<Id, Map<Id, DefinitionResultData>> = new Map()
-    private documents: Map<Id, DocumentMeta> = new Map()
+    private documents: Map<Id, string> = new Map()
     private hoverDatas: Map<Id, HoverData> = new Map()
     private monikerDatas: Map<Id, MonikerData> = new Map()
     private packageInformationDatas: Map<Id, PackageInformationData> = new Map()
@@ -114,7 +150,7 @@ export class Importer {
      * document begin events and are inserted into the databse on document end
      * events.
      */
-    private documentDatas: Map<Id, WrappedDocumentData> = new Map()
+    private documentDatas: Map<Id, DecoratedDocumentData> = new Map()
 
     /**
      * `monikerSets` holds the relation from moniker to the set of monikers that
@@ -184,21 +220,29 @@ export class Importer {
 
     /**
      * Ensure that any outstanding records are flushed to the database. Also
-     * returns  the set of packages exported from and symbols imported into
-     * the dump.
+     * returns the set of packages provided by the project analyzed by this
+     * LSIF dump as well as the symbols imported into the LSIF dump from
+     * external packages.
      */
-    public async finalize(): Promise<XrepoSymbols> {
+    public async finalize(): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
         await this.metaInserter.finalize()
         await this.documentInserter.finalize()
         await this.defInserter.finalize()
         await this.refInserter.finalize()
 
-        const temp1: Set<string> = new Set()
+        return { packages: this.getPackages(), references: this.getReferences() }
+    }
+
+    /**
+     * Return the set of packages provided by the project analyzed by this LSIF dump.
+     */
+    private getPackages(): Package[] {
+        const packageHashes: Set<string> = new Set()
         for (const id of this.exportedMonikers) {
             const source = assertDefined(id, 'moniker', this.monikerDatas)
             const packageInformationId = assertId(source.packageInformation)
             const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
-            temp1.add(
+            packageHashes.add(
                 JSON.stringify({
                     scheme: source.scheme,
                     name: packageInfo.name,
@@ -207,9 +251,14 @@ export class Importer {
             )
         }
 
-        const packages = Array.from(temp1).map(value => JSON.parse(value) as Package)
+        return Array.from(packageHashes).map(value => JSON.parse(value) as Package)
+    }
 
-        const temp2: Map<string, string[]> = new Map()
+    /**
+     * Return the symbols imported into the LSIF dump from external packages.
+     */
+    private getReferences(): SymbolReferences[] {
+        const packageIdentifiers: Map<string, string[]> = new Map()
         for (const id of this.importedMonikers) {
             const source = assertDefined(id, 'moniker', this.monikerDatas)
             const packageInformationId = assertId(source.packageInformation)
@@ -220,20 +269,18 @@ export class Importer {
                 version: packageInfo.version,
             })
 
-            const list = temp2.get(pkg)
+            const list = packageIdentifiers.get(pkg)
             if (list) {
                 list.push(source.identifier)
             } else {
-                temp2.set(pkg, [source.identifier])
+                packageIdentifiers.set(pkg, [source.identifier])
             }
         }
 
-        const references = Array.from(temp2).map(([key, identifiers]) => ({
+        return Array.from(packageIdentifiers).map(([key, identifiers]) => ({
             package: JSON.parse(key) as Package,
             identifiers,
         }))
-
-        return { packages, references }
     }
 
     //
@@ -271,9 +318,9 @@ export class Importer {
     // is finalized.
 
     private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
-    private handleDocument = this.setById(this.documents, (e: Document) => ({ id: e.id, uri: e.uri }))
+    private handleDocument = this.setById(this.documents, (e: Document) => e.uri)
     private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => e.result)
-    private handleMoniker = this.setById(this.monikerDatas, e => e)
+    private handleMoniker = this.setById(this.monikerDatas, convertMoniker)
     private handlePackageInformation = this.setById(this.packageInformationDatas, convertPackageInformation)
     private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...e, monikers: [] }))
     private handleReferenceResult = this.setById(this.referenceDatas, () => new Map())
@@ -450,11 +497,11 @@ export class Importer {
      * @param event The document begin event.
      */
     private handleDocumentBegin(event: DocumentEvent): void {
-        const document = assertDefined(event.data, 'document', this.documents)
+        const uri = assertDefined(event.data, 'document', this.documents)
 
-        this.documentDatas.set(document.id, {
-            id: document.id,
-            uri: document.uri.slice(this.projectRoot.length + 1),
+        this.documentDatas.set(event.data, {
+            id: event.data,
+            uri: uri.slice(this.projectRoot.length + 1),
             contains: [],
             definitions: [],
             references: [],
@@ -486,11 +533,11 @@ export class Importer {
         await this.documentInserter.insert({ uri: document.uri, value: await encodeJSON(document) })
 
         // Insert all related definitions
-        for (const definition of document.definitions) {
-            for (const range of flattenRanges(document, definition.data.values)) {
+        for (const { data, moniker } of document.definitions) {
+            for (const range of flattenRanges(document, data.values)) {
                 await this.defInserter.insert({
-                    scheme: definition.moniker.scheme,
-                    identifier: definition.moniker.identifier,
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
                     documentUri: document.uri,
                     ...range,
                 })
@@ -498,15 +545,15 @@ export class Importer {
         }
 
         // Insert all related references
-        for (const reference of document.references) {
+        for (const { data, moniker } of document.references) {
             const ranges = []
-            ranges.push(...flattenRanges(document, reference.data.definitions))
-            ranges.push(...flattenRanges(document, reference.data.references))
+            ranges.push(...flattenRanges(document, data.definitions))
+            ranges.push(...flattenRanges(document, data.references))
 
             for (const range of ranges) {
                 await this.refInserter.insert({
-                    scheme: reference.moniker.scheme,
-                    identifier: reference.moniker.identifier,
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
                     documentUri: document.uri,
                     ...range,
                 })
@@ -583,21 +630,25 @@ export class Importer {
      *
      * @param document The document object.
      */
-    private async finalizeDocument(document: WrappedDocumentData): Promise<void> {
+    private async finalizeDocument(document: DecoratedDocumentData): Promise<void> {
+        const orderedRanges: (RangeData & { id: Id })[] = []
         for (const id of document.contains) {
             const range = assertDefined(id, 'range', this.rangeDatas)
-            document.orderedRanges.push(range)
+            orderedRanges.push({ id, ...range })
             await this.attachItemToDocument(document, id, range)
         }
 
         // Sort ranges by their starting position
-        document.orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
+        orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
 
         // Populate a reverse lookup so ranges can be queried by id
         // via `orderedRanges[range[id]]`.
-        for (const [index, range] of document.orderedRanges.entries()) {
+        for (const [index, range] of orderedRanges.entries()) {
             document.ranges.set(range.id, index)
         }
+
+        // eslint-disable-next-line require-atomic-updates
+        document.orderedRanges = orderedRanges.map(({ id, ...range }) => range)
     }
 
     /**
@@ -610,7 +661,7 @@ export class Importer {
      * @param item The range or result set.
      */
     private async attachItemToDocument(
-        document: WrappedDocumentData,
+        document: DecoratedDocumentData,
         id: Id,
         item: RangeData | ResultSetData
     ): Promise<void> {
@@ -668,7 +719,7 @@ export class Importer {
      * @param item The range or result set.
      */
     private attachItemMonikersToDocument(
-        document: WrappedDocumentData,
+        document: DecoratedDocumentData,
         id: Id,
         item: RangeData | ResultSetData
     ): MonikerData[] {
@@ -715,8 +766,8 @@ export class Importer {
     private attachResultsToDocument<T>(
         name: string,
         sourceMap: Map<Id, Map<Id, T>>,
-        document: WrappedDocumentData,
-        documentArray: MonikerScopedResultData<T>[],
+        document: DecoratedDocumentData,
+        documentArray: { data: T; moniker: MonikerData }[],
         documentMap: Map<Id, T>,
         id: Id | undefined,
         monikers: MonikerData[]
@@ -798,13 +849,17 @@ function convertMetadata(meta: MetaData): { lsifVersion: string; sourcegraphVers
     }
 }
 
+function convertMoniker(moniker: Moniker): MonikerData {
+    return { kind: moniker.kind || MonikerKind.local, scheme: moniker.scheme, identifier: moniker.identifier }
+}
+
 /**
  * Convert a protocol `PackageInformation` object into a `PackgeInformationData` object.
  *
  * @param info The protocol object.
  */
 function convertPackageInformation(info: PackageInformation): PackageInformationData {
-    return info.version ? { name: info.name, version: info.version } : { name: info.name, version: '$missing' }
+    return { name: info.name, version: info.version || '$missing' }
 }
 
 /**
@@ -814,7 +869,7 @@ function convertPackageInformation(info: PackageInformation): PackageInformation
  * @param document The document object.
  * @param ids The list of ids.
  */
-function flattenRanges(document: WrappedDocumentData, ids: Id[]): FlattenedRange[] {
+function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
     const ranges = []
     for (const id of ids) {
         const rangeIndex = document.ranges.get(id)
