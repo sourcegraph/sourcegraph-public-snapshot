@@ -16,8 +16,19 @@ import (
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
 // ignoring the given external services.
 func NewFakeSourcer(err error, srcs ...Source) Sourcer {
-	return func(...*ExternalService) (Sources, error) {
-		return srcs, err
+	return func(svcs ...*ExternalService) (Sources, error) {
+		errs := new(MultiSourceError)
+
+		if err != nil {
+			for _, svc := range svcs {
+				errs.Append(&SourceError{Err: err, ExtSvc: svc})
+			}
+			if len(svcs) == 0 {
+				errs.Append(&SourceError{Err: err, ExtSvc: nil})
+			}
+		}
+
+		return srcs, errs.ErrorOrNil()
 	}
 }
 

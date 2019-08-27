@@ -26,7 +26,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
-		errs := new(multierror.Error)
+		errs := new(MultiSourceError)
 
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
@@ -35,7 +35,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 			src, err := NewSource(svc, cf)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs.Append(&SourceError{Err: err, ExtSvc: svc})
 				continue
 			}
 
@@ -86,6 +86,60 @@ type Source interface {
 	ExternalServices() ExternalServices
 }
 
+type SourceError struct {
+	Err    error
+	ExtSvc *ExternalService
+}
+
+func (s *SourceError) Error() string {
+	if multiErr, ok := s.Err.(*multierror.Error); ok {
+		multiErr.ErrorFormat = sourceErrorFormatFunc
+		return multiErr.Error()
+	}
+	return s.Err.Error()
+}
+
+func sourceErrorFormatFunc(es []error) string {
+	if len(es) == 1 {
+		return es[0].Error()
+	}
+
+	points := make([]string, len(es))
+	for i, err := range es {
+		points[i] = fmt.Sprintf("* %s", err)
+	}
+
+	return fmt.Sprintf(
+		"%d errors occurred:\n\t%s\n\n",
+		len(es), strings.Join(points, "\n\t"))
+}
+
+type MultiSourceError struct {
+	Errors []*SourceError
+}
+
+func (s *MultiSourceError) Error() string {
+	errs := new(multierror.Error)
+	for _, e := range s.Errors {
+		errs = multierror.Append(errs, e)
+	}
+	return errs.Error()
+}
+
+func (s *MultiSourceError) Append(errs ...*SourceError) {
+	s.Errors = append(s.Errors, errs...)
+}
+
+func (s *MultiSourceError) ErrorOrNil() error {
+	if s == nil {
+		return nil
+	}
+	if len(s.Errors) == 0 {
+		return nil
+	}
+	return s
+}
+
 // Sources is a list of Sources that implements the Source interface.
 type Sources []Source
 
@@ -99,7 +153,7 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 	type result struct {
 		src   Source
 		repos []*Repo
-		err   error
+		errs  []*SourceError
 	}
 
 	// Group sources by external service kind so that we execute requests
@@ -115,7 +169,11 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 			defer wg.Done()
 			for _, src := range sources {
 				if repos, err := src.ListRepos(ctx); err != nil {
-					ch <- result{src: src, err: err}
+					var errs []*SourceError
+					for _, extSvc := range src.ExternalServices() {
+						errs = append(errs, &SourceError{Err: err, ExtSvc: extSvc})
+					}
+					ch <- result{src: src, errs: errs}
 				} else {
 					ch <- result{src: src, repos: repos}
 				}
@@ -129,11 +187,11 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 	}()
 
 	var repos []*Repo
-	errs := new(multierror.Error)
+	errs := new(MultiSourceError)
 
 	for r := range ch {
-		if r.err != nil {
-			errs = multierror.Append(errs, r.err)
+		if len(r.errs) != 0 {
+			errs.Append(r.errs...)
 		} else {
 			repos = append(repos, r.repos...)
 		}

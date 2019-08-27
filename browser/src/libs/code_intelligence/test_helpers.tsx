@@ -3,7 +3,7 @@ import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 
-interface GraphQLResponseMap {
+export interface GraphQLResponseMap {
     [requestName: string]: (
         variables: { [k: string]: any },
         mightContainPrivateInfo?: boolean

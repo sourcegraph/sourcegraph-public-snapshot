@@ -151,8 +151,3 @@ type SurveyResponse struct {
 	Better    *string
 	CreatedAt time.Time
 }
-
-type StatusMessage struct {
-	Message string
-	Type    string
-}
