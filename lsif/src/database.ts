@@ -117,14 +117,14 @@ export class Database {
      * @param uri The document to which the position belongs.
      * @param position The current hover position.
      */
-    public async hover(uri: string, position: lsp.Position): Promise<lsp.Hover | undefined> {
+    public async hover(uri: string, position: lsp.Position): Promise<lsp.Hover | null> {
         const { document, range } = await this.findRange(uri, position)
         if (!document || !range) {
-            return undefined
+            return null
         }
 
         // All hover contents should be contained in the document.
-        return findResult(document.resultSets, document.hovers, range, 'hoverResult')
+        return findResult(document.resultSets, document.hovers, range, 'hoverResult') || null
     }
 
     //
