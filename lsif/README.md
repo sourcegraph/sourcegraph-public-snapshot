@@ -8,7 +8,7 @@ The HTTP [src](server) runs behind Sourcegraph (for auth) and receives and store
 
 ## API
 
-### `/upload`
+_`/upload`_
 
 Receives an LSIF dump encoded as JSON lines.
 
@@ -19,14 +19,25 @@ URL query parameters:
 
 The request body must be HTML form data with a single file (e.g. `curl -F "data=@file.lsif" ...`).
 
-### `/request`
+---
 
-Performs a `hover`, a `definitions`, or a `references` request for the given repository@commit and returns the result. Fails if there is no LSIF data for the given repository@commit.
-
-The request body must be a JSON object with these properties:
+The remaining methods perform LSP-like requests for the provided repository@commit and returns the result. Fails if there is no LSIF data for the given repository@commit. The request body must be a JSON object with these properties:
 
 - `repository`: the name of the repository (e.g. `github.com/sourcegraph/codeintellify`)
 - `commit`: the 40 character hash of the commit
-- `method`: `hover`, `definitions`, or `references`
 - `path`: the file path in the repository. This deviates from `uri` in the LSIF specification because Sourcegraph currently only supports same-repository code intelligence.
 - `position`: the `{ line, character }` in the file at which the request is being made
+
+The reponse payload is in the `data` field of the JSON response.
+
+_`/definitions`_
+
+Performs a definitions request for the given repository@commit and returns the result.
+
+_`/references`_
+
+Performs a references request for the given repository@commit and returns the result. This method additionally takes a `page` query parameter indicating the page of results when searching for global references. The `nextPage` key of the JSON response indicates the value of the subsequent page in the result set. If this key is `null`, then no pages remain.
+
+_`/hover`_
+
+Performs a hover request for the given repository@commit and returns the result.
