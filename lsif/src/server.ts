@@ -100,7 +100,7 @@ async function main(): Promise<void> {
             checkCommit(commit)
 
             const db = await backend.createDatabase(repository, commit)
-            const { data, nextPage } = await db.references(path, position, page)
+            const { data, nextPage } = await db.references(path, position, page !== '' ? parseInt(page, 10) : undefined)
             res.json({ data, nextPage })
         })
     )

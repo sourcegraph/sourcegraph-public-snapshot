@@ -120,7 +120,9 @@ export class XrepoDatabase {
         uri: string,
         page: number | undefined
     ): Promise<{ references: ReferenceModel[]; nextPage: number | null }> {
-        const skip = page || 0
+        const skip = ((page || 1) - 1) * GLOBAL_REFERENCE_CHUNK_SIZE
+        console.log(page, skip, (page || 1) + 1)
+
         return await this.withConnection(connection =>
             connection.getRepository(ReferenceModel).find({
                 where: {
@@ -141,7 +143,7 @@ export class XrepoDatabase {
 
             return {
                 references: filteredResults,
-                nextPage: hasMore ? skip + GLOBAL_REFERENCE_CHUNK_SIZE : null,
+                nextPage: hasMore ? (page || 1) + 1 : null,
             }
         })
     }
