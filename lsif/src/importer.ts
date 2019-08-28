@@ -1,4 +1,5 @@
 import { EntityManager } from 'typeorm'
+import { isEqual, uniqWith } from 'lodash'
 import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import RelateUrl from 'relateurl'
 import { encodeJSON } from './encoding'
@@ -238,21 +239,19 @@ export class LsifImporter {
      * Return the set of packages provided by the project analyzed by this LSIF dump.
      */
     private getPackages(): Package[] {
-        const packageHashes: Set<string> = new Set()
+        const packageHashes: Package[] = []
         for (const id of this.exportedMonikers) {
             const source = assertDefined(id, 'moniker', this.monikerDatas)
             const packageInformationId = assertId(source.packageInformation)
             const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
-            packageHashes.add(
-                JSON.stringify({
-                    scheme: source.scheme,
-                    name: packageInfo.name,
-                    version: packageInfo.version,
-                })
-            )
+            packageHashes.push({
+                scheme: source.scheme,
+                name: packageInfo.name,
+                version: packageInfo.version,
+            })
         }
 
-        return Array.from(packageHashes).map(value => JSON.parse(value) as Package)
+        return uniqWith(packageHashes, isEqual)
     }
 
     /**
