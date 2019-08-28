@@ -35,8 +35,11 @@
   },
   "scripts": {
     "typecheck": "tsc -p .",
-    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build && node out/server.bundle.js'\" --noClear",
-    "build": "parcel build --out-dir out --out-file server.bundle.js --target node src/server.ts",
+    "serve": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build-server && node out/server.bundle.js'\" --noClear",
+    "work": "tsc-watch --noEmit --onSuccess \"bash -c 'yarn run build-worker && node out/worker.bundle.js'\" --noClear",
+    "build": "yarn run build-server && yarn run build-worker",
+    "build-server": "parcel build --out-dir out --out-file server.bundle.js --target node src/server.ts",
+    "build-worker": "parcel build --out-dir out --out-file worker.bundle.js --target node src/worker.ts",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
   }
