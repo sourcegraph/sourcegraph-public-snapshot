@@ -26,7 +26,7 @@
     "typescript": "^3.5.3"
   },
   "scripts": {
-    "typecheck": "tsc -p .",
+    "typecheck": "tsc --noEmit",
     "serve": "tsc-watch --onSuccess \"node --inspect out/server.js\" --noClear",
     "build": "tsc",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
