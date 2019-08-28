@@ -92,7 +92,7 @@ async function main(): Promise<void> {
 
             try {
                 const db = await backend.createDatabase(repository, commit)
-                res.json(await db[cleanMethod](path, position))
+                res.json((await db[cleanMethod](path, position)) || null)
             } catch (e) {
                 if (hasErrorCode(e, ERRNOLSIFDATA)) {
                     throw Object.assign(e, { status: 404 })
