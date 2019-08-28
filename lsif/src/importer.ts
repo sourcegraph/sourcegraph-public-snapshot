@@ -1,7 +1,10 @@
-import { EntityManager } from 'typeorm'
+import RelateUrl from 'relateurl'
 import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { encodeJSON } from './encoding'
+import { EntityManager } from 'typeorm'
+import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { Inserter } from './inserter'
+import { Package, SymbolReferences } from './xrepo'
 import {
     MonikerData,
     RangeData,
@@ -40,7 +43,6 @@ import {
     ElementTypes,
     Moniker,
 } from 'lsif-protocol'
-import { Package, SymbolReferences } from './xrepo'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
