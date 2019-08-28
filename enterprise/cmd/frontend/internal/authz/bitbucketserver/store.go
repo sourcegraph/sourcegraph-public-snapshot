@@ -324,6 +324,7 @@ const loadRepoIDsQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.loadRepoIDs
 SELECT id FROM repo
 WHERE external_service_type = %s AND external_service_id = %s AND external_id IN (%s)
+ORDER BY id ASC
 `
 
 func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs []uint32) (ids *roaring.Bitmap, err error) {
@@ -344,21 +345,26 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 		return nil, err
 	}
 
-	ids = roaring.New()
-
+	ns := make([]uint32, 0, len(externalIDs))
 	for rows.Next() {
 		var id uint32
 		if err = rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		ids.Add(id)
+		ns = append(ns, id)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return ids, rows.Close()
+	if err = rows.Close(); err != nil {
+		return nil, err
+	}
+
+	ids = roaring.BitmapOf(ns...)
+	ids.RunOptimize()
+	return ids, nil
 }
 
 func loadQuery(p *Permissions) *sqlf.Query {

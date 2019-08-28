@@ -67,7 +67,7 @@ func BenchmarkStore(b *testing.B) {
 		s.block = true
 
 		ps := &Permissions{
-			UserID: 99,
+			UserID: 100,
 			Perm:   authz.Read,
 			Type:   "repos",
 		}
@@ -85,7 +85,7 @@ func BenchmarkStore(b *testing.B) {
 		s.block = true
 
 		ps := &Permissions{
-			UserID: 99,
+			UserID: 101,
 			Perm:   authz.Read,
 			Type:   "repos",
 		}
