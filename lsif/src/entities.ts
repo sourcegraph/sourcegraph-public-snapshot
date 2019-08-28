@@ -52,7 +52,7 @@ export interface DocumentData {
 }
 
 /**
- * ~ResultObjectData` contains the set of fields shared by a range or a
+ * `ResultObjectData` contains the set of fields shared by a range or a
  * result set vertex. It contains the same relevant edge data, which can
  * be subsequently queried in the containing document.
  */

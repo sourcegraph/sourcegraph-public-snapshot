@@ -4,7 +4,7 @@
 
 Sourcegraph receives and stores LSIF files uploaded using [upload-lsif.sh](upload-lsif.sh) (usually used in CI, similar to [Codecov's Bash Uploader](https://docs.codecov.io/docs/about-the-codecov-bash-uploader)), then uses that information to provide fast and precise code intelligence when viewing files.
 
-The HTTP [src](server) runs behind Sourcegraph (for auth) and receives and stores LSIF dump uploads and services requests for relevant LSP queries.
+The HTTP [server](src) runs behind Sourcegraph (for auth) and receives and stores LSIF dump uploads and services requests for relevant LSP queries.
 
 ## API
 
@@ -29,4 +29,4 @@ The request body must be a JSON object with these properties:
 - `commit`: the 40 character hash of the commit
 - `method`: `hover`, `definitions`, or `references`
 - `path`: the file path in the repository.
-- `position`: the `{ line, character }` in the file at which the request is being made
+- `position`: the zero-based `{ line, character }` in the file at which the request is being made

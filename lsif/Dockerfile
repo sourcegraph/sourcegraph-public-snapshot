@@ -27,4 +27,4 @@ RUN apk add --no-cache tini nodejs-current=11.3.0-r0
 COPY --from=builder /lsif /lsif
 
 EXPOSE 3186
-ENTRYPOINT ["/sbin/tini", "--", "node", "/lsif/out/server.bundle.js"]
+ENTRYPOINT ["/sbin/tini", "--", "node", "/lsif/out/server.js"]
