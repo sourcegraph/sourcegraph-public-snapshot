@@ -127,22 +127,22 @@ export class Database {
 
     /**
      * Query the defs or refs table of `db` for items that match the given moniker. Convert
-     * each result into an LSP location. The `uriFilter` function is invoked on each result
+     * each result into an LSP location. The `uriTransformer` function is invoked on each result
      * item to modify the resulting locations.
      *
      * @param db The target database.
-     * @param model The constructor for `T`.
+     * @param model The constructor for the model type.
      * @param moniker The target moniker.
-     * @param uriFilter The function used to alter location uris.
+     * @param uriTransformer The function used to alter location uris.
      */
-    private static async monikerResults<T extends DefModel | RefModel>(
+    private static async monikerResults(
         db: Database,
-        model: Function,
+        model: typeof DefModel | typeof RefModel,
         moniker: MonikerData,
-        uriFilter: (uri: string) => string
+        uriTransformer: (uri: string) => string
     ): Promise<lsp.Location[]> {
         const results = await db.withConnection(connection =>
-            connection.getRepository<T>(model).find({
+            connection.getRepository<DefModel | RefModel>(model).find({
                 where: {
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
