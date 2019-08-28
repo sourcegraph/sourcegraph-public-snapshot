@@ -167,4 +167,5 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
 
 main().catch(e => {
     console.error(e)
+    setTimeout(() => process.exit(1), 0)
 })
