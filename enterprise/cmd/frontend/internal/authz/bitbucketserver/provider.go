@@ -24,6 +24,7 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 	pageSize int // Page size to use in paginated requests.
 	store    *store
+	block    bool // Performs blocking permissions updates if true
 }
 
 var _ authz.Provider = ((*Provider)(nil))
@@ -108,7 +109,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		Type:   "repos",
 	}
 
-	err = p.store.LoadPermissions(ctx, &ps, p.update(userName))
+	err = p.store.LoadPermissions(ctx, &ps, p.update(userName), p.block)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 		Type:   "repos",
 	}
 
-	return p.store.UpdatePermissions(ctx, ps, p.update(u.Username))
+	return p.store.UpdatePermissions(ctx, ps, p.update(u.Username), true)
 }
 
 // update returns a PermissionsUpdateFunc that fetches the IDs of

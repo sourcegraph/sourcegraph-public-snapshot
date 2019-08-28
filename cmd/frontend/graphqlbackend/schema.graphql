@@ -152,6 +152,8 @@ type Mutation {
     # - Discussion threads and comments created by the user.
     #
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
+    # Updates a user's cached permissions of all external services with authorization enabled.
+    updateUserPermissions(input: UpdateUserPermissionsInput!): EmptyResponse!
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     # Creates an access token that grants the privileges of the specified user (referred to as the access token's
@@ -176,6 +178,7 @@ type Mutation {
     #
     # Only site admins or the user who is associated with the external account may perform this mutation.
     deleteExternalAccount(externalAccount: ID!): EmptyResponse!
+
     # Invite the user with the given username to join the organization. The invited user account must already
     # exist.
     #
@@ -358,6 +361,12 @@ input AddExternalServiceInput {
     displayName: String!
     # The JSON configuration of the external service.
     config: String!
+}
+
+# Input to update a user's cached permissions.
+input UpdateUserPermissionsInput {
+    # The username of the user.
+    username: String
 }
 
 # Fields to update for an existing external service.

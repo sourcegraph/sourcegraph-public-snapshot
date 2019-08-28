@@ -39,7 +39,6 @@ type store struct {
 	hardTTL time.Duration
 	cache   *cache
 	clock   func() time.Time
-	block   bool // Perform blocking updates if true.
 	updates chan *Permissions
 }
 
@@ -127,6 +126,7 @@ func (s *store) LoadPermissions(
 	ctx context.Context,
 	p **Permissions,
 	update PermissionsUpdateFunc,
+	block bool,
 ) (err error) {
 	if s == nil || p == nil || *p == nil {
 		return nil
@@ -151,7 +151,7 @@ func (s *store) LoadPermissions(
 		return nil
 	}
 
-	return s.UpdatePermissions(ctx, *p, update)
+	return s.UpdatePermissions(ctx, *p, update, block)
 }
 
 // UpdatePermissions updates the given Permissions, calling the update function
@@ -160,6 +160,7 @@ func (s *store) UpdatePermissions(
 	ctx context.Context,
 	p *Permissions,
 	update PermissionsUpdateFunc,
+	block bool,
 ) (err error) {
 	ctx, save := s.observe(ctx, "UpdatePermissions", "")
 	defer func() { save(&err, p.tracingFields()...) }()
@@ -168,7 +169,7 @@ func (s *store) UpdatePermissions(
 	expired := *p
 	expired.IDs = nil
 
-	if !s.block { // Non blocking code path
+	if !block { // Non blocking code path
 		go func(expired *Permissions) {
 			err := s.update(ctx, expired, update)
 			if err != nil && err != errLockNotAvailable {

@@ -66,3 +66,10 @@ type Provider interface {
 	// problems.
 	Validate() (problems []string)
 }
+
+// Cache is an optional interface that some Providers may implement
+// which allows for controlling the permissions cache of a single
+// user.
+type Cache interface {
+	UpdatePermissions(context.Context, *types.User) error
+}

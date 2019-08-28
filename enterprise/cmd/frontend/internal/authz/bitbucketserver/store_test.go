@@ -45,7 +45,6 @@ func BenchmarkStore(b *testing.B) {
 
 	b.Run("ttl=0", func(b *testing.B) {
 		s := newStore(db, 0, DefaultHardTTL, clock, newCache())
-		s.block = true
 
 		ps := &Permissions{
 			UserID: 99,
@@ -54,7 +53,7 @@ func BenchmarkStore(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, &ps, update, true)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -63,7 +62,6 @@ func BenchmarkStore(b *testing.B) {
 
 	b.Run("ttl=60s/no-in-memory-cache", func(b *testing.B) {
 		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, nil)
-		s.block = true
 
 		ps := &Permissions{
 			UserID: 100,
@@ -72,7 +70,7 @@ func BenchmarkStore(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, &ps, update, true)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -81,7 +79,6 @@ func BenchmarkStore(b *testing.B) {
 
 	b.Run("ttl=60s/in-memory-cache", func(b *testing.B) {
 		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, newCache())
-		s.block = true
 
 		ps := &Permissions{
 			UserID: 101,
@@ -90,7 +87,7 @@ func BenchmarkStore(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, &ps, update, true)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -152,7 +149,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		load := func(s *store) (*Permissions, error) {
 			ps := *ps
 			p := &ps
-			return p, s.LoadPermissions(ctx, &p, update)
+			return p, s.LoadPermissions(ctx, &p, update, false)
 		}
 
 		array := func(ids *roaring.Bitmap) []uint32 {
