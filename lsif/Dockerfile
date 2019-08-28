@@ -1,13 +1,16 @@
-FROM mhart/alpine-node:12.9.1@sha256:d633cfd36a2284ac1b5f91e518f048251358207a016af3f40953346d76278c74 AS builder
+FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS builder
 
-COPY package.json yarn.lock /opt/sourcegraph/lsif-server/
-RUN yarn --cwd /opt/sourcegraph/lsif-server
+RUN apk add --no-cache nodejs-current=11.3.0-r0 nodejs-npm=10.14.2-r0
+RUN npm install -g yarn@1.17.3
 
-COPY tsconfig.json /opt/sourcegraph/lsif-server
-COPY src /opt/sourcegraph/lsif-server/src
-RUN yarn --cwd /opt/sourcegraph/lsif-server run build
+COPY package.json yarn.lock /lsif/
+RUN yarn --cwd /lsif
 
-FROM mhart/alpine-node:slim-12.9.1@sha256:d62b3b3b9779d8cd3b5b9e3ffad05409e7ad04004165e9c4d56f0d15f2382bf3
+COPY tsconfig.json /lsif
+COPY src /lsif/src
+RUN yarn --cwd /lsif run build
+
+FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -19,9 +22,9 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini nodejs-current=11.3.0-r0
 
-COPY --from=builder /opt/sourcegraph/lsif-server /opt/sourcegraph/lsif-server
+COPY --from=builder /lsif /lsif
 
 EXPOSE 3186
-ENTRYPOINT ["/sbin/tini", "--", "node", "/opt/sourcegraph/lsif-server/out/server.bundle.js"]
+ENTRYPOINT ["/sbin/tini", "--", "node", "/lsif/out/server.bundle.js"]
