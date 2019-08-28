@@ -116,7 +116,7 @@ export function makeFilename(repository: string, commit: string): string {
     return path.join(STORAGE_ROOT, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
-export async function makeBackend(
+export async function createBackend(
     connectionCache: ConnectionCache,
     documentCache: DocumentCache
 ): Promise<SQLiteBackend> {

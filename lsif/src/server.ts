@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import express from 'express'
 import { ConnectionCache, DocumentCache } from './cache'
-import { ERRNOLSIFDATA, makeBackend } from './backend'
+import { ERRNOLSIFDATA, createBackend } from './backend'
 import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
 import { zlib } from 'mz'
@@ -34,7 +34,7 @@ const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
 async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
-    const backend = await makeBackend(connectionCache, documentCache)
+    const backend = await createBackend(connectionCache, documentCache)
     const app = express()
     app.use(errorHandler)
 
