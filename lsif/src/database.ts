@@ -19,13 +19,13 @@ export class Database {
      * @param xrepoDatabase The cross-repo databse.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded document.
-     * @param database The filename of the database.
+     * @param databasePath The path to the database file.
      */
     constructor(
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
-        private database: string
+        private databasePath: string
     ) {}
 
     /**
@@ -257,7 +257,7 @@ export class Database {
             return await decodeJSON<DocumentData>(document.value)
         }
 
-        return await this.documentCache.withDocument(`${this.database}::${uri}`, factory, document =>
+        return await this.documentCache.withDocument(`${this.databasePath}::${uri}`, factory, document =>
             Promise.resolve(document)
         )
     }
@@ -295,7 +295,7 @@ export class Database {
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return await this.connectionCache.withConnection(
-            this.database,
+            this.databasePath,
             [DefModel, DocumentModel, MetaModel, RefModel],
             callback
         )
