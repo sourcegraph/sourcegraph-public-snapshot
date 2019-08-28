@@ -28,5 +28,5 @@ The request body must be a JSON object with these properties:
 - `repository`: the name of the repository (e.g. `github.com/sourcegraph/codeintellify`)
 - `commit`: the 40 character hash of the commit
 - `method`: `hover`, `definitions`, or `references`
-- `path`: the file path in the repository. This deviates from `uri` in the LSIF specification because Sourcegraph currently only supports same-repository code intelligence.
+- `path`: the file path in the repository.
 - `position`: the `{ line, character }` in the file at which the request is being made
