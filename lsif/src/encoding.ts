@@ -99,11 +99,11 @@ export async function decode(value: string): Promise<string> {
 function dumpJSON<T>(value: T): string {
     return JSON.stringify(
         value,
-        function(key, value) {
-            if (this[key] instanceof Map) {
+        (_, value) => {
+            if (value instanceof Map) {
                 return {
                     type: 'map',
-                    value: [...this[key]],
+                    value: [...value],
                 }
             }
 
