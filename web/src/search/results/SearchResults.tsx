@@ -21,10 +21,12 @@ import {
     submitSearch,
     toggleSearchFilter,
     toggleSearchFilterAndReplaceSampleRepogroup,
+    toggleSearchType,
 } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
+import SearchResultTypeTabs from './SearchResultTypeTabs'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -58,6 +60,8 @@ interface SearchResultsState {
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
 }
+
+export type SEARCH_TYPES = 'code' | 'diff' | 'commit' | 'symbol'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
@@ -179,6 +183,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}
                 />
+                <SearchResultTypeTabs query={this.props.navbarSearchQuery} onTabClicked={this.onTypeTabClicked} />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
@@ -279,5 +284,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             : toggleSearchFilter(this.props.navbarSearchQuery, value)
 
         submitSearch(this.props.history, newQuery, 'filter')
+    }
+
+    private onTypeTabClicked = (value: SEARCH_TYPES) => {
+        const newQuery = toggleSearchType(this.props.navbarSearchQuery, value)
+
+        submitSearch(this.props.history, newQuery, 'type')
     }
 }

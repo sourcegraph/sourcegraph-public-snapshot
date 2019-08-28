@@ -3,6 +3,7 @@ import { ActivationProps } from '../../../shared/src/components/activation/Activ
 import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
+import { SEARCH_TYPES } from './results/SearchResults'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -11,7 +12,7 @@ import { eventLogger } from '../tracking/eventLogger'
 export function submitSearch(
     history: H.History,
     query: string,
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter',
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
     activation?: ActivationProps['activation']
 ): void {
     // Go to search results page
@@ -74,6 +75,36 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
     return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
 }
 
+export function toggleSearchType(query: string, searchType: SEARCH_TYPES): string {
+    if (searchType === 'code') {
+        const replaceSearchType = /(\b|^)type:\w*(\s|$)/
+        // RegExp to match `repogroup:sample` in any part of a query.
+        const matchSearchType = /(\b|^)type:\w*(\s*|$)/
+
+        if (matchSearchType.test(query)) {
+            query = query.replace(replaceSearchType, '')
+        }
+
+        return query
+    } else {
+        const idx = queryIndexOfScope(query, 'type:' + searchType)
+        if (idx >= 0) {
+            return query
+        }
+
+        const replaceSearchType = /(\b|^)type:\w*(\b|$)/
+        // RegExp to match `type:$TYPE` in any part of a query.
+        const matchSearchType = /(\b|^)type:\w*(\s*|$)/
+
+        if (matchSearchType.test(query)) {
+            query = query.replace(replaceSearchType, `type:${searchType}`)
+        } else {
+            query = query + ` type:${searchType}`
+        }
+    }
+
+    return query
+}
 /** Returns true if the given value is of the GraphQL SearchResults type */
 export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
