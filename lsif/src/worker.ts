@@ -29,6 +29,8 @@ async function main(): Promise<void> {
     await worker.connect()
     exitHook(() => worker.end())
     worker.start().catch(e => console.error(e))
+
+    console.log('Listening for uploads')
 }
 
 /**
