@@ -26,7 +26,7 @@ export class NoLSIFDataError extends Error {
 /**
  * Where on the file system to store LSIF files.
  */
-const STORAGE_ROOT = process.env['LSIF_STORAGE_ROOT'] || 'lsif-storage'
+const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
  * Backend for LSIF dumps stored in SQLite.

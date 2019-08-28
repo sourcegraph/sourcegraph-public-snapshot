@@ -14,7 +14,7 @@ const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 /**
  * The maximum size of an LSIF dump upload.
  */
-const MAX_UPLOAD = process.env['LSIF_MAX_UPLOAD'] || '100mb'
+const MAX_UPLOAD = process.env.LSIF_MAX_UPLOAD || '100mb'
 
 /**
  * The number of SQLite connections that can be opened at once. This
