@@ -2,7 +2,7 @@ import bodyParser from 'body-parser'
 import express from 'express'
 import { ConnectionCache, DocumentCache } from './cache'
 import { ERRNOLSIFDATA, makeBackend } from './backend'
-import { hasErrorCode, readEnv, readEnvInt } from './util'
+import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
 import { zlib } from 'mz'
 
@@ -14,7 +14,7 @@ const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 /**
  * The maximum size of an LSIF dump upload.
  */
-const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
+const MAX_UPLOAD = process.env['LSIF_MAX_UPLOAD'] || '100mb'
 
 /**
  * The number of SQLite connections that can be opened at once. This

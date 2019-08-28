@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { fs, readline } from 'mz'
 import { Database } from './database'
-import { hasErrorCode, readEnv } from './util'
+import { hasErrorCode } from './util'
 import { Importer } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
@@ -26,7 +26,7 @@ export class NoLSIFDataError extends Error {
 /**
  * Where on the file system to store LSIF files.
  */
-const STORAGE_ROOT = readEnv('LSIF_STORAGE_ROOT', 'lsif-storage')
+const STORAGE_ROOT = process.env['LSIF_STORAGE_ROOT'] || 'lsif-storage'
 
 /**
  * Backend for LSIF dumps stored in SQLite.
