@@ -38,7 +38,6 @@ func BenchmarkStore(b *testing.B) {
 	}
 
 	update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
-		time.Sleep(2 * time.Second) // Emulate slow code host
 		return ids, &c, nil
 	}
 
