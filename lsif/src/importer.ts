@@ -872,7 +872,7 @@ function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRan
     const ranges = []
     for (const id of ids) {
         const rangeIndex = document.ranges.get(id)
-        if (!rangeIndex) {
+        if (rangeIndex === undefined) {
             continue
         }
 
@@ -903,7 +903,7 @@ function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
 
     while (true) {
         const val = frontier.pop()
-        if (!val) {
+        if (val === undefined) {
             break
         }
 
