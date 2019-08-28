@@ -207,7 +207,6 @@ export interface PackageInformationData {
 
 /**
  * `FlattenedRange` is an LSP range that has been squashed into a single layer.
- * This saves some space when serialized as JSON.
  */
 export interface FlattenedRange {
     /**
