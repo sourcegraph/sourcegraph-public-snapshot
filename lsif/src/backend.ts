@@ -84,8 +84,10 @@ export class SQLiteBackend {
             }
         )
 
-        await this.xrepoDatabase.addPackages(repository, commit, packages)
-        await this.xrepoDatabase.addReferences(repository, commit, references)
+        await Promise.all([
+            this.xrepoDatabase.addPackages(repository, commit, packages),
+            this.xrepoDatabase.addReferences(repository, commit, references),
+        ])
     }
 
     /**
