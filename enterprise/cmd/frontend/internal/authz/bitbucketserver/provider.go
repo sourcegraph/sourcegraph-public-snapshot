@@ -102,41 +102,49 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		userName = user.Name
 	}
 
-	ids := make(map[int]*types.Repo, len(repos))
-	for _, r := range repos {
-		if id, _ := strconv.Atoi(r.ExternalRepo.ID); id != 0 {
-			ids[id] = r
-		}
-	}
-
-	update := func(ctx context.Context) ([]uint32, error) {
-		visible, err := p.repos(ctx, userName)
-		if err != nil && err != errNoResults {
-			return nil, err
-		}
-
-		authorized := make([]uint32, 0, len(repos))
-		for _, r := range visible {
-			if repo, ok := ids[r.ID]; ok {
-				authorized = append(authorized, uint32(repo.ID))
-			}
-		}
-
-		return authorized, nil
-	}
-
 	ps := &Permissions{
 		UserID: userID,
 		Perm:   authz.Read,
 		Type:   "repos",
 	}
 
-	err = p.store.LoadPermissions(ctx, &ps, update)
+	err = p.store.LoadPermissions(ctx, &ps, p.update(userName))
 	if err != nil {
 		return nil, err
 	}
 
 	return ps.Authorized(repos), nil
+}
+
+// UpdatePermissions forces an update of the permissions of the given
+// user.
+func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
+	ps := &Permissions{
+		UserID: u.ID,
+		Perm:   authz.Read,
+		Type:   "repos",
+	}
+
+	return p.store.UpdatePermissions(ctx, ps, p.update(u.Username))
+}
+
+// update returns a PermissionsUpdateFunc that fetches the IDs of
+// all the repos the user with the given userName is authorized to
+// see.
+func (p *Provider) update(userName string) PermissionsUpdateFunc {
+	return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
+		visible, err := p.repos(ctx, userName)
+		if err != nil && err != errNoResults {
+			return nil, p.codeHost, err
+		}
+
+		ids := make([]uint32, 0, len(visible))
+		for _, r := range visible {
+			ids = append(ids, uint32(r.ID))
+		}
+
+		return ids, p.codeHost, nil
+	}
 }
 
 // FetchAccount satisfies the authz.Provider interface.
