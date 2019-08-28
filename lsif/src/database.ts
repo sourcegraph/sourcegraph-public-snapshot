@@ -2,7 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, ResultSetData, DocumentData } from './entities'
+import { MonikerData, RangeData, ResultSetData, DocumentData, FlattenedRange } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
@@ -469,13 +469,7 @@ function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: s
             continue
         }
 
-        const range = orderedRanges[rangeIndex]
-        locations.push(
-            lsp.Location.create(uri, {
-                start: range.start,
-                end: range.end,
-            })
-        )
+        locations.push(lsp.Location.create(uri, makeRange(orderedRanges[rangeIndex])))
     }
 
     return locations
@@ -514,20 +508,20 @@ function makeRange(result: {
  * @param range The range.
  * @param position The position.
  */
-function comparePosition(range: lsp.Range, position: lsp.Position): number {
-    if (position.line < range.start.line) {
+function comparePosition(range: FlattenedRange, position: lsp.Position): number {
+    if (position.line < range.startLine) {
         return +1
     }
 
-    if (position.line > range.end.line) {
+    if (position.line > range.endLine) {
         return -1
     }
 
-    if (position.line === range.start.line && position.character < range.start.character) {
+    if (position.line === range.startLine && position.character < range.startCharacter) {
         return +1
     }
 
-    if (position.line === range.end.line && position.character > range.end.character) {
+    if (position.line === range.endLine && position.character > range.endCharacter) {
         return -1
     }
 

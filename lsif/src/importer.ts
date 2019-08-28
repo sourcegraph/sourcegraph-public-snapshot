@@ -314,7 +314,7 @@ export class Importer {
     private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => normalizeHover(e.result))
     private handleMoniker = this.setById(this.monikerDatas, convertMoniker)
     private handlePackageInformation = this.setById(this.packageInformationDatas, convertPackageInformation)
-    private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...e, monikers: [] }))
+    private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...flattenRange(e), monikers: [] }))
     private handleReferenceResult = this.setById(this.referenceDatas, () => new Map())
     private handleResultSet = this.setById(this.resultSetDatas, () => ({ monikers: [] }))
 
@@ -529,7 +529,7 @@ export class Importer {
 
         // Insert all related definitions
         for (const { ids, moniker } of document.definitions) {
-            for (const range of flattenRanges(document, ids)) {
+            for (const range of lookupRanges(document, ids)) {
                 await this.defInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -541,7 +541,7 @@ export class Importer {
 
         // Insert all related references
         for (const { ids, moniker } of document.references) {
-            for (const range of flattenRanges(document, ids)) {
+            for (const range of lookupRanges(document, ids)) {
                 await this.refInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -622,7 +622,7 @@ export class Importer {
         }
 
         // Sort ranges by their starting position
-        orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
+        orderedRanges.sort((a, b) => a.startLine - b.startLine || a.startCharacter - b.startCharacter)
 
         // Populate a reverse lookup so ranges can be queried by id
         // via `orderedRanges[range[id]]`.
@@ -845,13 +845,14 @@ function convertPackageInformation(info: PackageInformation): PackageInformation
 }
 
 /**
- * Convert a set of range identifiers into flattened range objects. This requires
- * the document's `ranges` and `orderedRanges` fields to be completely populated.
- *k
+ * Convert a set of range identifers into the flattened range objects stored by
+ * identifier in the given document. This requires that the document's `ranges`
+ * and `orderedRanges` fields to be completely populated.
+ *
  * @param document The document object.
  * @param ids The list of ids.
  */
-function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
+function lookupRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
     const ranges = []
     for (const id of ids) {
         const rangeIndex = document.ranges.get(id)
@@ -860,12 +861,7 @@ function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRan
         }
 
         const range = document.orderedRanges[rangeIndex]
-        ranges.push({
-            startLine: range.start.line,
-            startCharacter: range.start.character,
-            endLine: range.end.line,
-            endCharacter: range.end.character,
-        })
+        ranges.push(range)
     }
 
     return ranges
@@ -930,4 +926,18 @@ function normalizeHover(hover: Hover): string {
         .map(c => normalizeContent(c).trim())
         .filter(s => s)
         .join(separator)
+}
+
+/**
+ * Construct a flattened four-tuple of numbers from an LSP range.
+ *
+ * @param range The LSP range.
+ */
+function flattenRange(range: Range): FlattenedRange {
+    return {
+        startLine: range.start.line,
+        startCharacter: range.end.line,
+        endLine: range.end.line,
+        endCharacter: range.end.character,
+    }
 }

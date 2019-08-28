@@ -1,5 +1,4 @@
 import { Id, MonikerKind } from 'lsif-protocol';
-import { Position } from 'vscode-languageserver-protocol';
 
 /**
  * `DocumentData` stores data for a single document within an LSIF dump. The
@@ -100,17 +99,7 @@ interface ResultObjectData {
  * It contains the same relevant edge data, which can be subsequently queried in
  * the containing document.
  */
-export interface RangeData extends ResultObjectData {
-    /**
-     * `start` is the start position of the range.
-     */
-    start: Position
-
-    /**
-     * `end` is the end position of the range.
-     */
-    end: Position
-}
+export interface RangeData extends ResultObjectData, FlattenedRange {}
 
 /**
  * `ResultSetData` is an internal representation of a result set vertex from an
