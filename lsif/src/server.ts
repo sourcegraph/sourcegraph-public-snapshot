@@ -4,7 +4,7 @@ import { ConnectionCache, DocumentCache } from './cache'
 import { ERRNOLSIFDATA, createBackend } from './backend'
 import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
-import { zlib } from 'mz'
+import * as zlib from 'mz/zlib'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.

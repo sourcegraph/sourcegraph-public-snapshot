@@ -1,5 +1,6 @@
 import * as path from 'path'
-import { fs, readline } from 'mz'
+import * as fs from 'mz/fs'
+import * as readline from 'mz/readline'
 import { Database } from './database'
 import { hasErrorCode } from './util'
 import { Importer } from './importer'
