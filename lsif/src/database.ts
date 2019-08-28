@@ -97,8 +97,8 @@ export class Database {
 
         for (const moniker of monikers) {
             if (moniker.kind === 'import' || moniker.kind === 'export') {
-                const moreResult = await this.remoteReferences(document, moniker)
-                result = result.concat(moreResult)
+                const remoteResults = await this.remoteReferences(document, moniker)
+                result = result.concat(remoteResults)
                 break
             }
         }
