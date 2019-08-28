@@ -97,20 +97,16 @@ export async function decode(value: string): Promise<string> {
  * @param value The value to jsonify.
  */
 function dumpJSON<T>(value: T): string {
-    return JSON.stringify(
-        value,
-        (_, value) => {
-            if (value instanceof Map) {
-                return {
-                    type: 'map',
-                    value: [...value],
-                }
+    return JSON.stringify(value, (_, value) => {
+        if (value instanceof Map) {
+            return {
+                type: 'map',
+                value: [...value],
             }
+        }
 
-            return value
-        },
-        0
-    )
+        return value
+    })
 }
 
 /**
