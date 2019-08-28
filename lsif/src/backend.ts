@@ -61,10 +61,9 @@ export class SQLiteBackend {
             (entityManager: EntityManager) => importLsif(entityManager, parseLines(readline.createInterface({ input })))
         )
 
-        await Promise.all([
-            this.xrepoDatabase.addPackages(repository, commit, packages),
-            this.xrepoDatabase.addReferences(repository, commit, references),
-        ])
+        // These needs to be done in sequence as SQLite can only have one write txn at a time.
+        await this.xrepoDatabase.addPackages(repository, commit, packages)
+        await this.xrepoDatabase.addReferences(repository, commit, references)
     }
 
     /**
