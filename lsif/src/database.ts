@@ -489,7 +489,7 @@ function makeRemoteUri(pkg: PackageModel, path: string): string {
 }
 
 /**
- * Construct an LSP range from a flattened four-tuple of numbers.
+ * Construct an LSP range from a flat range.
  *
  * @param result The start/end line/character of the range.
  */
