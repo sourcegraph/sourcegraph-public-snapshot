@@ -17,5 +17,5 @@ export function readEnvInt(key: string, defaultValue: number): number {
  * @param expectedCode The expected error code.
  */
 export function hasErrorCode(e: any, expectedCode: string): boolean {
-    return 'code' in e && e.code === expectedCode
+    return e && e.code === expectedCode
 }
