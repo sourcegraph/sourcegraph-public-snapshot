@@ -108,7 +108,7 @@ interface HandlerMap {
  * and relevant cross-repository metadata is returned to the caller, which
  * is used to populate the xrepo database.
  */
-export class LsifImporter {
+class LsifImporter {
     // Handler vtables
     private vertexHandlerMap: HandlerMap = {}
     private edgeHandlerMap: HandlerMap = {}
@@ -930,4 +930,32 @@ function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
     }
 
     return combined
+}
+
+/**
+ * Handle the lifecycle of an importer. Creates an `LsifImporter`. This will create
+ * a new importer, insert each vertex and edge in the given stream, then call the
+ * importer's finalize method.
+ *
+ * @param entityManager A transactional SQLite entity manager.
+ * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ */
+export async function importLsif(
+    entityManager: EntityManager,
+    elements: AsyncIterable<Vertex | Edge>
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    const importer = new LsifImporter(entityManager)
+
+    let i = 0
+    for await (const element of elements) {
+        try {
+            await importer.insert(element)
+        } catch (e) {
+            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+        }
+
+        i++
+    }
+
+    return await importer.finalize()
 }
