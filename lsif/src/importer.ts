@@ -128,7 +128,7 @@ export class Importer {
     private resultSetDatas: Map<Id, ResultSetData> = new Map()
 
     /**
-     * `projectRoot` is the prefix of all document URIs. This is extracted from
+     * `projectRoot` is the root of all document URIs. This is extracted from
      * the metadata vertex at the beginning of processing.
      */
     private projectRoot = ''
