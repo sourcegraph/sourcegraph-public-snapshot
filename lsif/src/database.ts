@@ -303,7 +303,7 @@ export class Database {
 }
 
 /**
- * Perform binary search over the ordered rnages of a document, returning
+ * Perform binary search over the ordered ranges of a document, returning
  * the range that includes it (if it exists). LSIF requires that no ranges
  * overlap in a single document. Then, we can compare a position against a
  * range by saying that it's contained within it (what we want), occurs
