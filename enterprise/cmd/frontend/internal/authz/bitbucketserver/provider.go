@@ -133,17 +133,11 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 // see.
 func (p *Provider) update(userName string) PermissionsUpdateFunc {
 	return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
-		visible, err := p.repos(ctx, userName)
+		visible, err := p.repoIDs(ctx, userName)
 		if err != nil && err != errNoResults {
 			return nil, p.codeHost, err
 		}
-
-		ids := make([]uint32, 0, len(visible))
-		for _, r := range visible {
-			ids = append(ids, uint32(r.ID))
-		}
-
-		return ids, p.codeHost, nil
+		return visible, p.codeHost, nil
 	}
 }
 
@@ -192,9 +186,9 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 var errNoResults = errors.New("no results returned by the Bitbucket Server API")
 
-// repos returns all repositories for which the given user has the permission to read from
+// repoIDs returns all repository IDs for which the given user has the permission to read from
 // the Bitbucket Server API. when no username is given, only public repos are returned.
-func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucketserver.Repo, err error) {
+func (p *Provider) repoIDs(ctx context.Context, username string) (ids []uint32, err error) {
 	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	c := p.client
 
@@ -210,15 +204,19 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 		if err != nil {
 			return nil, err
 		}
-		all = append(all, repos...)
+
+		for _, r := range repos {
+			ids = append(ids, uint32(r.ID))
+		}
+
 		t = next
 	}
 
-	if len(all) == 0 {
+	if len(ids) == 0 {
 		err = errNoResults
 	}
 
-	return all, err
+	return ids, err
 }
 
 func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketserver.UserFilter) (*bitbucketserver.User, error) {
