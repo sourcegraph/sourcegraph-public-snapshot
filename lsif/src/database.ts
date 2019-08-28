@@ -51,7 +51,7 @@ export class Database {
 
         const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
         if (resultData) {
-            return asLocations(document.ranges, document.orderedRanges, uri, resultData.values)
+            return asLocations(document.ranges, document.orderedRanges, path, resultData)
         }
 
         // TODO - vet this logic of finding the first result
@@ -87,8 +87,7 @@ export class Database {
 
         const result = []
         if (resultData) {
-            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.definitions))
-            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.references))
+            result.push(...asLocations(document.ranges, document.orderedRanges, path, resultData))
         } else {
             for (const moniker of monikers) {
                 result.push(...(await Database.monikerResults(this, RefModel, moniker, path => path)))

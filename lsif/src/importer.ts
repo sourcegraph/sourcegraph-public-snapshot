@@ -6,8 +6,6 @@ import {
     MonikerData,
     RangeData,
     ResultSetData,
-    DefinitionResultData,
-    ReferenceResultData,
     HoverData,
     PackageInformationData,
     DocumentData,
@@ -79,7 +77,7 @@ export interface DecoratedDocumentData extends DocumentData {
      * the definition result data would be stored in `definitionResults` in the
      * superclass.
      */
-    definitions: { data: DefinitionResultData; moniker: MonikerData }[]
+    definitions: { ids: Id[]; moniker: MonikerData }[]
 
     /**
      * `references` carries the data of referenceResult edges attached within
@@ -87,7 +85,7 @@ export interface DecoratedDocumentData extends DocumentData {
      * the reference result data would be stored in `referenceResults` in the
      * superclass.
      */
-    references: { data: ReferenceResultData; moniker: MonikerData }[]
+    references: { ids: Id[]; moniker: MonikerData }[]
 }
 
 /**
@@ -118,13 +116,13 @@ export class Importer {
     private refInserter: Inserter<RefModel>
 
     // Vertex data
-    private definitionDatas: Map<Id, Map<Id, DefinitionResultData>> = new Map()
+    private definitionDatas: Map<Id, Map<Id, Id[]>> = new Map()
     private documents: Map<Id, string> = new Map()
     private hoverDatas: Map<Id, HoverData> = new Map()
     private monikerDatas: Map<Id, MonikerData> = new Map()
     private packageInformationDatas: Map<Id, PackageInformationData> = new Map()
     private rangeDatas: Map<Id, RangeData> = new Map()
-    private referenceDatas: Map<Id, Map<Id, ReferenceResultData>> = new Map()
+    private referenceDatas: Map<Id, Map<Id, Id[]>> = new Map()
     private resultSetDatas: Map<Id, ResultSetData> = new Map()
 
     /**
@@ -351,18 +349,15 @@ export class Importer {
      */
     private handleItemEdge(edge: item): void {
         if (edge.property === undefined) {
-            const defaultValue = { values: [] }
-            this.handleGenericItemEdge(edge, 'definitionResult', this.definitionDatas, defaultValue, 'values')
+            this.handleGenericItemEdge(edge, 'definitionResult', this.definitionDatas)
         }
 
         if (edge.property === ItemEdgeProperties.definitions) {
-            const defaultValue = { definitions: [], references: [] }
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas, defaultValue, 'definitions')
+            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas)
         }
 
         if (edge.property === ItemEdgeProperties.references) {
-            const defaultValue = { definitions: [], references: [] }
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas, defaultValue, 'references')
+            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas)
         }
     }
 
@@ -539,8 +534,8 @@ export class Importer {
         await this.documentInserter.insert({ path: document.path, value: await encodeJSON(document) })
 
         // Insert all related definitions
-        for (const { data, moniker } of document.definitions) {
-            for (const range of flattenRanges(document, data.values)) {
+        for (const { ids, moniker } of document.definitions) {
+            for (const range of flattenRanges(document, ids)) {
                 await this.defInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -551,12 +546,8 @@ export class Importer {
         }
 
         // Insert all related references
-        for (const { data, moniker } of document.references) {
-            const ranges = []
-            ranges.push(...flattenRanges(document, data.definitions))
-            ranges.push(...flattenRanges(document, data.references))
-
-            for (const range of ranges) {
+        for (const { ids, moniker } of document.references) {
+            for (const range of flattenRanges(document, ids)) {
                 await this.refInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -582,34 +573,26 @@ export class Importer {
     }
 
     /**
-     * Adds data to a nested array within the two-tier `map`. Let `outV`
-     * and `inVs` be the source and destinations of `edge`, such that
-     * `map` is indexed in the outer level by `outV` and indexed in the
-     * inner level by document. This method adds the destination edges
-     * to `map[outV][document][field]`, and creates any data structure
-     * on th epath that has not yet been constructed.
+     * Adds data to a nested array within `map`. Let `outV` and `inVs` be
+     * the source and destinations of `edge`, such that `map` is indexed in
+     * the outer level by `outV` and indexed in the inner level by document.
+     * This method adds the destination edges to `map[outV][document]` and
+     * creates any data structures on the path that has not yet been
+     * constructed.
      *
      * @param edge The edge.
      * @param name The type of map (used for exception message).
      * @param map The map to populate.
-     * @param defaultValue The value to use if inner map is not populated.
-     * @param field The field containing the target array.
      */
-    private handleGenericItemEdge<T extends { [K in F]: Id[] }, F extends string>(
-        edge: item,
-        name: string,
-        map: Map<Id, Map<Id, T>>,
-        defaultValue: T,
-        field: F
-    ): void {
+    private handleGenericItemEdge(edge: item, name: string, map: Map<Id, Map<Id, Id[]>>): void {
         const innerMap = assertDefined(edge.outV, name, map)
         let data = innerMap.get(edge.document)
         if (!data) {
-            data = defaultValue
+            data = []
             innerMap.set(edge.document, data)
         }
 
-        data[field].push(...edge.inVs)
+        data.push(...edge.inVs)
     }
 
     /**
@@ -773,7 +756,7 @@ export class Importer {
         name: string,
         sourceMap: Map<Id, Map<Id, T>>,
         document: DecoratedDocumentData,
-        documentArray: { data: T; moniker: MonikerData }[],
+        documentArray: { ids: T; moniker: MonikerData }[],
         documentMap: Map<Id, T>,
         id: Id | undefined,
         monikers: MonikerData[]
@@ -790,7 +773,7 @@ export class Importer {
 
         const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
         for (const moniker of nonlocalMonikers) {
-            documentArray.push({ moniker, data })
+            documentArray.push({ ids: data, moniker })
         }
 
         if (nonlocalMonikers.length === 0) {

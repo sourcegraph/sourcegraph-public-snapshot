@@ -26,14 +26,16 @@ export interface DocumentData {
     resultSets: Map<Id, ResultSetData>
 
     /**
-     * `definitionResults` map identifiers to a definition result.
+     * `definitionResults` map identifiers to set of range identifiers that compose
+     * the definition result.
      */
-    definitionResults: Map<Id, DefinitionResultData>
+    definitionResults: Map<Id, Id[]>
 
     /**
-     * `referenceResults` map identifiers to a reference result.
+     * `referenceResults` map identifiers to set of range identifiers that compose
+     * the definition result.
      */
-    referenceResults: Map<Id, ReferenceResultData>
+    referenceResults: Map<Id, Id[]>
 
     /**
      * `hovers` map identifiers to a hover result.
@@ -116,39 +118,6 @@ export interface RangeData extends ResultObjectData {
  * queried in the containing document.
  */
 export interface ResultSetData extends ResultObjectData {}
-
-/**
- * `DefinitionResultData` holds data used to answer a definitions query.
- */
-export interface DefinitionResultData {
-    /**
-     * `values` is a list of range identifiers that specify the definition. The
-     * range objects can be queried by their identifier within the containing
-     * document.
-     */
-    values: Id[]
-}
-
-/**
- * `ReferenceResultData` holds data used to answer a references query.
- */
-export interface ReferenceResultData {
-    // TODO - these can be collapsed, they're always merged in the API
-
-    /**
-     * `definitions` is a list of range identifiers that specify the definition of
-     * a target reference. The range objects can be queried by their identifier within
-     * the containing document.
-     */
-    definitions: Id[]
-
-    /**
-     * `references` is a list of range identifiers that specify the references of
-     * a target definition. The range objects can be queried by their identifier
-     * within the containing document.
-     */
-    references: Id[]
-}
 
 /**
  * `HoverData` holds data used to answer a hover query.
