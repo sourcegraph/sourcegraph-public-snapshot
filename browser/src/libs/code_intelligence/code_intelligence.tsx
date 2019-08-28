@@ -96,6 +96,7 @@ import {
 import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
+import { SourcegraphIntegrationURLs } from '../../platform/context'
 
 registerHighlightContributions()
 
@@ -849,17 +850,19 @@ const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
-export async function injectCodeIntelligenceToCodeHost(
+export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
+    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
-): Promise<Subscription> {
+): Subscription {
     const subscriptions = new Subscription()
-    const sourcegraphURL = await observeSourcegraphURL(isExtension)
-        .pipe(take(1))
-        .toPromise()
-    const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
+    const { platformContext, extensionsController } = initializeExtensions(
+        codeHost,
+        { sourcegraphURL, assetsURL },
+        isExtension
+    )
     const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
     subscriptions.add(

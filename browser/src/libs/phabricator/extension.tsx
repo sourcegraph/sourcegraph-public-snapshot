@@ -7,6 +7,7 @@ import { injectCodeIntelligence } from '../code_intelligence/inject'
 import { injectExtensionMarker } from '../sourcegraph/inject'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
 import { metaClickOverride } from './util'
+import { DEFAULT_ASSETS_URL } from '../../shared/util/context'
 
 // Just for informational purposes (see getPlatformContext())
 window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
@@ -31,20 +32,23 @@ async function init(): Promise<void> {
         )
         return
     }
-    // Backwards compat: Support Legacy Phabricator extension. Check that the Phabricator integration
-    // passed the bundle url. Legacy Phabricator extensions inject CSS via the loader.js script
-    // so we do not need to do this here.
-    if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
-        injectExtensionMarker()
-        await injectCodeIntelligence(IS_EXTENSION)
-        metaClickOverride()
-        return
-    }
 
     const sourcegraphURL =
         window.localStorage.getItem('SOURCEGRAPH_URL') ||
         window.SOURCEGRAPH_URL ||
         (await getSourcegraphURLFromConduit())
+    const assetsURL = DEFAULT_ASSETS_URL
+
+    // Backwards compat: Support Legacy Phabricator extension. Check that the Phabricator integration
+    // passed the bundle url. Legacy Phabricator extensions inject CSS via the loader.js script
+    // so we do not need to do this here.
+    if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
+        injectExtensionMarker()
+        injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+        metaClickOverride()
+        return
+    }
+
     // eslint-disable-next-line require-atomic-updates
     window.SOURCEGRAPH_URL = sourcegraphURL
     const css = await getPhabricatorCSS(sourcegraphURL)
@@ -56,7 +60,7 @@ async function init(): Promise<void> {
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     metaClickOverride()
     injectExtensionMarker()
-    await injectCodeIntelligence(IS_EXTENSION)
+    injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
 init().catch(err => console.error('Error initializing Phabricator integration', err))

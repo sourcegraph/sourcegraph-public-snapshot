@@ -14,12 +14,19 @@ setLinkComponent(({ to, children, ...props }) => (
     </a>
 ))
 
-async function init(): Promise<void> {
+function init(): void {
     console.log('Sourcegraph native integration is running')
     const sourcegraphURL = window.SOURCEGRAPH_URL
     if (!sourcegraphURL) {
         throw new Error('window.SOURCEGRAPH_URL is undefined')
     }
+
+    // Allow the assetsURL to be configurable for code hosts that self-host the integration bundle
+    let assetsURL = window.SOURCEGRAPH_ASSETS_URL || new URL('/.assets/extension/', sourcegraphURL).href
+    if (!assetsURL.endsWith('/')) {
+        assetsURL += '/'
+    }
+
     if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
         // If the extension marker already exists, it means the browser extension is currently executing.
         // Dispatch a custom event to signal that browser extension resources should be cleaned up.
@@ -30,15 +37,13 @@ async function init(): Promise<void> {
     const link = document.createElement('link')
     link.setAttribute('rel', 'stylesheet')
     link.setAttribute('type', 'text/css')
-    link.setAttribute('href', sourcegraphURL + '/.assets/extension/css/style.bundle.css')
+    link.setAttribute('href', new URL('css/style.bundle.css', assetsURL).href)
     link.id = 'sourcegraph-styles'
     document.getElementsByTagName('head')[0].appendChild(link)
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription
-    await injectCodeIntelligence(IS_EXTENSION)
+    injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
-init().catch(err => {
-    console.error('Error initializing integration', err)
-})
+init()

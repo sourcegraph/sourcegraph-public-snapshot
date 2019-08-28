@@ -17,12 +17,28 @@ import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/c
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 
+export interface SourcegraphIntegrationURLs {
+    /**
+     * The Sourcegraph URL for extensions, find-references, ...
+     */
+    sourcegraphURL: string
+
+    /**
+     * The base URL where assets will be fetched from (CSS, extension host
+     * worker bundle, ...)
+     *
+     * This is on the sourcegraph URL in most cases, but may be different for
+     * native code hosts that self-host the integration bundle.
+     */
+    assetsURL: string
+}
+
 /**
  * Creates the {@link PlatformContext} for the browser extension.
  */
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
-    sourcegraphURL: string,
+    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
@@ -120,7 +136,7 @@ export function createPlatformContext(
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
-        createExtensionHost: () => createExtensionHost(sourcegraphURL),
+        createExtensionHost: () => createExtensionHost({ sourcegraphURL, assetsURL }),
         getScriptURLForExtension: async bundleURL => {
             if (isInPage) {
                 return bundleURL
