@@ -20,12 +20,12 @@ const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
  * value may be exceeded for a short period if many handles are held
  * at once.
  */
-const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 20)
+const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 1000)
 
 /**
  * The maximum number of documents that can be held in memory at once.
  */
-const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 100)
+const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
