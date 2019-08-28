@@ -28,6 +28,11 @@ const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 1000)
 const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
 
 /**
+ * Whether or not to log a message when the HTTP server is ready and listening.
+ */
+const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
+
+/**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
@@ -101,7 +106,9 @@ async function main(): Promise<void> {
     })
 
     app.listen(HTTP_PORT, () => {
-        console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
+        if (LOG_READY) {
+            console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
+        }
     })
 }
 
