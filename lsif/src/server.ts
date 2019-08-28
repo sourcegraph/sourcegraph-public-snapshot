@@ -45,11 +45,12 @@ async function main(): Promise<void> {
     app.post(
         '/upload',
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
                 const { repository, commit } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
-                await backend.insertDump(req.pipe(zlib.createGunzip()), repository, commit)
+                const input = req.pipe(zlib.createGunzip()).on('error', next)
+                await backend.insertDump(input, repository, commit)
                 res.json(null)
             }
         )
