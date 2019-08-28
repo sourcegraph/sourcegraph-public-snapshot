@@ -58,16 +58,7 @@ export async function testFilter(filter: string, uri: string): Promise<boolean> 
  * @param value The value to encode.
  */
 export function encodeJSON<T>(value: T): Promise<string> {
-    return encode(dumpJSON(value))
-}
-
-/**
- * Return the base64-encoded gzipped representation of `value`.
- *
- * @param value The value to encode.
- */
-export async function encode(value: string): Promise<string> {
-    return (await gzip(Buffer.from(value))).toString('base64')
+    return b64gzip(dumpJSON(value))
 }
 
 /**
@@ -76,15 +67,24 @@ export async function encode(value: string): Promise<string> {
  * @param value The value to decode.
  */
 export async function decodeJSON<T>(value: string): Promise<T> {
-    return parseJSON(await decode(value))
+    return parseJSON(await unb64gzip(value))
 }
 
 /**
- * Reverse the operation of `encode`.
+ * Return the base64-encoded gzipped representation of `value`.
+ *
+ * @param value The value to encode.
+ */
+async function b64gzip(value: string): Promise<string> {
+    return (await gzip(Buffer.from(value))).toString('base64')
+}
+
+/**
+ * Reverse the operation of `b64gzip`.
  *
  * @param value The value to decode.
  */
-export async function decode(value: string): Promise<string> {
+async function unb64gzip(value: string): Promise<string> {
     return (await gunzip(Buffer.from(value, 'base64'))).toString()
 }
 
