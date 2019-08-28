@@ -339,7 +339,7 @@ export class Importer {
         if (this.documentDatas.has(edge.outV)) {
             const source = assertDefined(edge.outV, 'document', this.documentDatas)
             mapAssertDefined(edge.inVs, 'range', this.rangeDatas)
-            source.contains.push(...edge.inVs)
+            source.contains = source.contains.concat(edge.inVs)
         }
     }
 
@@ -546,17 +546,15 @@ export class Importer {
 
         // Insert all related references
         for (const { data, moniker } of document.references) {
-            const ranges = []
-            ranges.push(...flattenRanges(document, data.definitions))
-            ranges.push(...flattenRanges(document, data.references))
-
-            for (const range of ranges) {
-                await this.refInserter.insert({
-                    scheme: moniker.scheme,
-                    identifier: moniker.identifier,
-                    documentUri: document.uri,
-                    ...range,
-                })
+            for (const ids of [data.definitions, data.references]) {
+                for (const range of flattenRanges(document, ids)) {
+                    await this.refInserter.insert({
+                        scheme: moniker.scheme,
+                        identifier: moniker.identifier,
+                        documentUri: document.uri,
+                        ...range,
+                    })
+                }
             }
         }
     }
@@ -603,6 +601,7 @@ export class Importer {
             innerMap.set(edge.document, data)
         }
 
+        // TODO - use concat instead
         data[field].push(...edge.inVs)
     }
 
@@ -900,7 +899,7 @@ function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRan
  */
 function reachableMonikers(monikerSets: Map<Id, Id[]>, id: Id): Set<Id> {
     const combined = new Set<Id>()
-    const frontier = [id]
+    let frontier = [id]
 
     while (true) {
         const val = frontier.pop()
@@ -914,7 +913,7 @@ function reachableMonikers(monikerSets: Map<Id, Id[]>, id: Id): Set<Id> {
 
         const nextValues = monikerSets.get(val)
         if (nextValues) {
-            frontier.push(...nextValues)
+            frontier = frontier.concat(nextValues)
         }
 
         combined.add(val)

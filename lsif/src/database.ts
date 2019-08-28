@@ -85,20 +85,20 @@ export class Database {
         const resultData = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
         const monikers = findMonikers(document.resultSets, document.monikers, range)
 
-        const result = []
+        let result: lsp.Location[] = []
         if (resultData) {
-            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.definitions))
-            result.push(...asLocations(document.ranges, document.orderedRanges, uri, resultData.references))
+            result = result.concat(asLocations(document.ranges, document.orderedRanges, uri, resultData.definitions))
+            result = result.concat(asLocations(document.ranges, document.orderedRanges, uri, resultData.references))
         } else {
             for (const moniker of monikers) {
-                result.push(...(await Database.monikerResults(this, RefModel, moniker, uri => uri)))
+                result = result.concat(await Database.monikerResults(this, RefModel, moniker, uri => uri))
             }
         }
 
         for (const moniker of monikers) {
             if (moniker.kind === 'import' || moniker.kind === 'export') {
                 const moreResult = await this.remoteReferences(document, moniker)
-                result.push(...moreResult)
+                result = result.concat(moreResult)
                 break
             }
         }
@@ -224,7 +224,7 @@ export class Database {
             moniker.identifier
         )
 
-        const allReferences = []
+        let allReferences: lsp.Location[] = []
         for (const reference of references) {
             const db = new Database(
                 this.xrepoDatabase,
@@ -236,7 +236,7 @@ export class Database {
             fixMonikerIdentifier(moniker)
             const uriTransformer = (uri: string): string => makeRemoteUri(reference, uri)
             const references = await Database.monikerResults(db, RefModel, moniker, uriTransformer)
-            allReferences.push(...references)
+            allReferences = allReferences.concat(references)
         }
 
         return allReferences
