@@ -145,6 +145,7 @@ func Main() {
 		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`lsif-server: node /lsif/out/server.bundle.js | grep -v 'Listening for HTTP requests'`,
+		`lsif-worker: node /lsif/out/worker.bundle.js | grep -v 'Listening for uploads'`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,

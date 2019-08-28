@@ -41,18 +41,19 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
     go build \
-      -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
-      -buildmode exe \
-      -installsuffix netgo \
-      -tags "dist netgo" \
-      -o "$bindir/$(basename "$pkg")" "$pkg"
+        -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
+        -buildmode exe \
+        -installsuffix netgo \
+        -tags "dist netgo" \
+        -o "$bindir/$(basename "$pkg")" "$pkg"
 done
 
 echo "--- build sqlite for symbols"
 env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
 
-echo "--- build lsif-server"
-IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
+echo "--- build lsif-server and lsif-worker"
+IMAGE=sourcegraph/lsif-server:ci ./lsif/build-server.sh
+IMAGE=sourcegraph/lsif-worker:ci ./lsif/build-worker.sh
 
 echo "--- prometheus config"
 mkdir "$OUTPUT/etc"
