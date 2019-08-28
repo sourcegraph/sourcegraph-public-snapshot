@@ -669,7 +669,7 @@ export class Importer {
         // Add hover to document, if it doesn't exist
         if (item.hoverResult && !document.hovers.has(item.hoverResult)) {
             const hoverResult = assertDefined(item.hoverResult, 'hoverResult', this.hoverDatas)
-            document.hovers.set(item.hoverResult, hoverResult)
+            document.hovers.set(item.hoverResult, normalizeHover(hoverResult))
         }
 
         // Attach definition and reference results results to the document.
@@ -910,4 +910,31 @@ function reachableMonikers(monikerSets: Map<Id, Id[]>, id: Id): Set<Id> {
     }
 
     return combined
+}
+
+/**
+ * Normalize an LSP hover object into a string.
+ *
+ * @param hover The hover object.
+ */
+function normalizeHover(hover: Hover): string {
+    const normalizeContent = (content: string | MarkupContent | { language: string; value: string }): string => {
+        if (typeof content === 'string') {
+            return content
+        }
+
+        if (MarkupContent.is(content)) {
+            return content.value
+        }
+
+        const tick = '```'
+        return `${tick}${content.language}\n${content.value}\n${tick}`
+    }
+
+    const separator = '\n\n---\n\n'
+    const contents = Array.isArray(hover.contents) ? hover.contents : [hover.contents]
+    return contents
+        .map(c => normalizeContent(c).trim())
+        .filter(s => s)
+        .join(separator)
 }

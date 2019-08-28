@@ -118,7 +118,12 @@ export class Database {
         }
 
         // All hover contents should be contained in the document.
-        return findResult(document.resultSets, document.hovers, range, 'hoverResult')
+        const contents = findResult(document.resultSets, document.hovers, range, 'hoverResult')
+        if (!contents) {
+            return undefined
+        }
+
+        return { contents }
     }
 
     //

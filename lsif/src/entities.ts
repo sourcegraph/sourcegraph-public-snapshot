@@ -40,7 +40,7 @@ export interface DocumentData {
     /**
      * `hovers` map identifiers to a hover result.
      */
-    hovers: Map<Id, HoverData>
+    hovers: Map<Id, string>
 
     /**
      * `monikers` map identifiers to a moniker.
