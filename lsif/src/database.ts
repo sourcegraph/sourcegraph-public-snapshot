@@ -150,7 +150,7 @@ export class Database {
             })
         )
 
-        return results.map(result => lsp.Location.create(uriFilter(result.documentUri), makeRange(result)))
+        return results.map(result => lsp.Location.create(uriTransformer(result.documentUri), makeRange(result)))
     }
 
     /**
@@ -194,8 +194,8 @@ export class Database {
 
         // FIXME
         fixMonikerIdentifier(moniker)
-        const uriFilter = (uri: string): string => makeRemoteUri(packageEntity, uri)
-        return await Database.monikerResults(db, DefModel, moniker, uriFilter)
+        const uriTransformer = (uri: string): string => makeRemoteUri(packageEntity, uri)
+        return await Database.monikerResults(db, DefModel, moniker, uriTransformer)
     }
 
     /**
@@ -234,8 +234,8 @@ export class Database {
             )
 
             fixMonikerIdentifier(moniker)
-            const uriFilter = (uri: string): string => makeRemoteUri(reference, uri)
-            const references = await Database.monikerResults(db, RefModel, moniker, uriFilter)
+            const uriTransformer = (uri: string): string => makeRemoteUri(reference, uri)
+            const references = await Database.monikerResults(db, RefModel, moniker, uriTransformer)
             allReferences.push(...references)
         }
 
