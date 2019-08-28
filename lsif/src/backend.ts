@@ -61,7 +61,9 @@ export class SQLiteBackend {
             (entityManager: EntityManager) => importLsif(entityManager, parseLines(readline.createInterface({ input })))
         )
 
-        // These needs to be done in sequence as SQLite can only have one write txn at a time.
+        // These needs to be done in sequence as SQLite can only have one
+        // write txn at a time without causing the other one to abort with
+        // a weird error.
         await this.xrepoDatabase.addPackages(repository, commit, packages)
         await this.xrepoDatabase.addReferences(repository, commit, references)
     }
