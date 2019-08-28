@@ -1,5 +1,6 @@
 import { EntityManager } from 'typeorm'
 import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
+import RelateUrl from 'relateurl'
 import { encodeJSON } from './encoding'
 import { TableInserter } from './inserter'
 import {
@@ -131,7 +132,7 @@ export class LsifImporter {
      * `projectRoot` is the root of all document URIs. This is extracted from
      * the metadata vertex at the beginning of processing.
      */
-    private projectRoot = ''
+    private projectRoot?: URL
 
     /**
      * `importedMonikers` is the set of exported moniker identifiers that have
@@ -294,7 +295,7 @@ export class LsifImporter {
      * @param vertex The metadata vertex.
      */
     private async handleMetaData(vertex: MetaData): Promise<void> {
-        this.projectRoot = vertex.projectRoot
+        this.projectRoot = new URL(vertex.projectRoot)
         await this.metaInserter.insert(convertMetadata(vertex))
     }
 
@@ -497,11 +498,21 @@ export class LsifImporter {
      * @param event The document begin event.
      */
     private handleDocumentBegin(event: DocumentEvent): void {
+        if (!this.projectRoot) {
+            throw new Error('No project root has been defined.')
+        }
+
         const uri = assertDefined(event.data, 'document', this.documents)
+
+        const path = RelateUrl.relate(this.projectRoot.href, new URL(uri).href, {
+            defaultPorts: {},
+            output: RelateUrl.PATH_RELATIVE,
+            removeRootTrailingSlash: false,
+        })
 
         this.documentDatas.set(event.data, {
             id: event.data,
-            uri: uri.slice(this.projectRoot.length + 1),
+            uri: path,
             contains: [],
             definitions: [],
             references: [],
