@@ -3,7 +3,7 @@ import * as fs from 'mz/fs'
 import * as readline from 'mz/readline'
 import { Database } from './database'
 import { hasErrorCode } from './util'
-import { Importer } from './importer'
+import { LsifImporter } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
 import { ConnectionCache, DocumentCache } from './cache'
@@ -62,7 +62,7 @@ export class SQLiteBackend {
                 // await connection.query('pragma synchronous = OFF')
                 // await connection.query('pragma journal_mode = OFF')
 
-                const importer = new Importer(entityManager)
+                const importer = new LsifImporter(entityManager)
 
                 let element: Vertex | Edge
                 for await (const line of readline.createInterface({ input })) {

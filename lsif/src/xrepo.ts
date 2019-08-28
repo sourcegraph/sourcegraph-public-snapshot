@@ -2,7 +2,7 @@ import { Connection, EntityManager } from 'typeorm'
 import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
-import { Inserter } from './inserter'
+import { TableInserter } from './inserter'
 
 /**
  * `Package` represents a package provided by a project or a package that is
@@ -84,7 +84,7 @@ export class XrepoDatabase {
      */
     public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new Inserter(entityManager, PackageModel, 6)
+            const inserter = new TableInserter(entityManager, PackageModel, 6)
             for (const pkg of packages) {
                 // TODO - upsert
                 await inserter.insert({ repository, commit, ...pkg })
@@ -133,7 +133,7 @@ export class XrepoDatabase {
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new Inserter(entityManager, ReferenceModel, 7)
+            const inserter = new TableInserter(entityManager, ReferenceModel, 7)
             for (const reference of references) {
                 // TODO - upsert
                 await inserter.insert({

@@ -1,7 +1,7 @@
 import { EntityManager } from 'typeorm'
 import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { encodeJSON } from './encoding'
-import { Inserter } from './inserter'
+import { TableInserter } from './inserter'
 import {
     MonikerData,
     RangeData,
@@ -100,22 +100,22 @@ interface HandlerMap {
 }
 
 /**
- * `Importer` processes an upload of an LSIF dump. This class receives the
+ * `LsifImporter` processes an upload of an LSIF dump. This class receives the
  * parsed vertex or edge, line by line, from the caller, and adds it into a
  * new database file on disk. Once finalized, the database is ready for use
  * and relevant cross-repository metadata is returned to the caller, which
  * is used to populate the xrepo database.
  */
-export class Importer {
+export class LsifImporter {
     // Handler vtables
     private vertexHandlerMap: HandlerMap = {}
     private edgeHandlerMap: HandlerMap = {}
 
     // Bulk database inserters
-    private metaInserter: Inserter<MetaModel>
-    private documentInserter: Inserter<DocumentModel>
-    private defInserter: Inserter<DefModel>
-    private refInserter: Inserter<RefModel>
+    private metaInserter: TableInserter<MetaModel>
+    private documentInserter: TableInserter<DocumentModel>
+    private defInserter: TableInserter<DefModel>
+    private refInserter: TableInserter<RefModel>
 
     // Vertex data
     private definitionDatas: Map<Id, Map<Id, DefinitionResultData>> = new Map()
@@ -159,7 +159,7 @@ export class Importer {
     private monikerSets = new Map<Id, Set<Id>>()
 
     /**
-     * Create a new `Importer` with the given entity manager.
+     * Create a new `LsifImporter` with the given entity manager.
      *
      * @param entityManager A transactional SQLite entity manager.
      */
@@ -196,10 +196,10 @@ export class Importer {
         // model is calculated based on the number of fields inserted. If fields
         // are added to the models, these numbers will also need to change.
 
-        this.metaInserter = new Inserter(this.entityManager, MetaModel, Math.floor(999 / 3))
-        this.documentInserter = new Inserter(this.entityManager, DocumentModel, Math.floor(999 / 2))
-        this.defInserter = new Inserter(this.entityManager, DefModel, Math.floor(999 / 8))
-        this.refInserter = new Inserter(this.entityManager, RefModel, Math.floor(999 / 8))
+        this.metaInserter = new TableInserter(this.entityManager, MetaModel, Math.floor(999 / 3))
+        this.documentInserter = new TableInserter(this.entityManager, DocumentModel, Math.floor(999 / 2))
+        this.defInserter = new TableInserter(this.entityManager, DefModel, Math.floor(999 / 8))
+        this.refInserter = new TableInserter(this.entityManager, RefModel, Math.floor(999 / 8))
     }
 
     /**
