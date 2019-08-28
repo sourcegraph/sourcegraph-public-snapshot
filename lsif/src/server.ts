@@ -1,8 +1,9 @@
 import bodyParser from 'body-parser'
 import express from 'express'
-import { ERRNOLSIFDATA, makeBackend } from './backend'
-import { readEnvInt, hasErrorCode, readEnv } from './util'
 import { ConnectionCache, DocumentCache } from './cache'
+import { ERRNOLSIFDATA, makeBackend } from './backend'
+import { hasErrorCode, readEnv, readEnvInt } from './util'
+import { wrap } from 'async-middleware'
 import { zlib } from 'mz'
 
 /**
@@ -41,64 +42,69 @@ async function main(): Promise<void> {
         res.send({ pong: 'pong' })
     })
 
-    app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
-        try {
-            const { repository, commit } = req.query
-            checkRepository(repository)
-            checkCommit(commit)
-            await backend.insertDump(req.pipe(zlib.createGunzip()), repository, commit)
-            res.json(null)
-        } catch (e) {
-            return next(e)
-        }
-    })
-
-    app.post('/exists', async (req, res, next) => {
-        try {
-            const { repository, commit, file } = req.query
-            checkRepository(repository)
-            checkCommit(commit)
-
-            try {
-                const db = await backend.createDatabase(repository, commit)
-                const result = !file || (await db.exists(file))
-                res.json(result)
-            } catch (e) {
-                if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                    res.json(false)
-                    return
-                }
-
-                throw e
+    app.post(
+        '/upload',
+        bodyParser.raw({ limit: MAX_UPLOAD }),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
+                await backend.insertDump(req.pipe(zlib.createGunzip()), repository, commit)
+                res.json(null)
             }
-        } catch (e) {
-            return next(e)
-        }
-    })
+        )
+    )
 
-    app.post('/request', bodyParser.json({ limit: '1mb' }), async (req, res, next) => {
-        try {
-            const { repository, commit } = req.query
-            const { path, position, method } = req.body
-            checkRepository(repository)
-            checkCommit(commit)
-            checkMethod(method, ['definitions', 'references', 'hover'])
-            const cleanMethod = method as 'definitions' | 'references' | 'hover'
+    app.post(
+        '/exists',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit, file } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
 
-            try {
-                const db = await backend.createDatabase(repository, commit)
-                res.json(await db[cleanMethod](path, position))
-            } catch (e) {
-                if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                    throw Object.assign(e, { status: 404 })
+                try {
+                    const db = await backend.createDatabase(repository, commit)
+                    const result = !file || (await db.exists(file))
+                    res.json(result)
+                } catch (e) {
+                    if (hasErrorCode(e, ERRNOLSIFDATA)) {
+                        res.json(false)
+                        return
+                    }
+
+                    throw e
                 }
-
-                throw e
             }
-        } catch (e) {
-            return next(e)
-        }
-    })
+        )
+    )
+
+    app.post(
+        '/request',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit } = req.query
+                const { path, position, method } = req.body
+                checkRepository(repository)
+                checkCommit(commit)
+                checkMethod(method, ['definitions', 'references', 'hover'])
+                const cleanMethod = method as 'definitions' | 'references' | 'hover'
+
+                try {
+                    const db = await backend.createDatabase(repository, commit)
+                    res.json(await db[cleanMethod](path, position))
+                } catch (e) {
+                    if (hasErrorCode(e, ERRNOLSIFDATA)) {
+                        throw Object.assign(e, { status: 404 })
+                    }
+
+                    throw e
+                }
+            }
+        )
+    )
 
     app.listen(HTTP_PORT, () => {
         console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
