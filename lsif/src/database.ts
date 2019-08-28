@@ -452,10 +452,10 @@ function sortMonikers(monikers: MonikerData[]): MonikerData[] {
 /**
  * Convert the given range identifiers into LSP location objects.
  *
- * @param ranges The map of ranges of the document.
+ * @param ranges The map of ranges of the document (from identifier to the range's index inorderedRanges).
  * @param orderedRanges The ordered ranges of the document.
  * @param uri The location URI.
- * @param ids The set of ids.
+ * @param ids The set of range identifiers for each resulting location.
  */
 function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: string, ids: Id[]): lsp.Location[] {
     const locations = []
