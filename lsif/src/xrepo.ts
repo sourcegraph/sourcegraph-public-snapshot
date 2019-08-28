@@ -1,8 +1,10 @@
 import { Connection, EntityManager } from 'typeorm'
 import { testFilter, createFilter } from './encoding'
+import * as path from 'path'
 import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
 import { Inserter } from './inserter'
+import { STORAGE_ROOT } from './settings'
 
 /**
  * `Package` represents a package provided by a project or a package that is
@@ -48,13 +50,16 @@ export interface SymbolReferences {
  * jump to definition and find references features.
  */
 export class XrepoDatabase {
+    private database!: string
+
     /**
-     * Create a new ` XrepoDatabase` backed by the given database filename.
+     * Create a new ` XrepoDatabase` with the given connection cache.
      *
      * @param connectionCache The cache of SQLite connections.
-     * @param database The filename of the database.
      */
-    constructor(private connectionCache: ConnectionCache, private database: string) {}
+    constructor(private connectionCache: ConnectionCache) {
+        this.database = path.join(STORAGE_ROOT, 'correlation.db')
+    }
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.

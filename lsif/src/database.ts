@@ -4,7 +4,7 @@ import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
 import { MonikerData, RangeData, ResultSetData, DocumentData } from './entities'
 import { Id } from 'lsif-protocol'
-import { makeFilename } from './backend'
+import { makeFilename } from './util'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache, DocumentCache } from './cache'
 

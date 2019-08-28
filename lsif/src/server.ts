@@ -1,52 +1,68 @@
+import * as path from 'path'
 import bodyParser from 'body-parser'
+import exitHook from 'async-exit-hook'
 import express from 'express'
-import { ERRNOLSIFDATA, makeBackend } from './backend'
-import { readEnvInt, hasErrorCode, readEnv } from './util'
+import uuid from 'uuid'
 import { ConnectionCache, DocumentCache } from './cache'
-import { zlib } from 'mz'
-
-/**
- * Which port to run the LSIF server on. Defaults to 3186.
- */
-const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
-
-/**
- * The maximum size of an LSIF dump upload.
- */
-const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
-
-/**
- * The number of SQLite connections that can be opened at once. This
- * value may be exceeded for a short period if many handles are held
- * at once.
- */
-const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 1000)
-
-/**
- * The maximum number of documents that can be held in memory at once.
- */
-const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
+import { Database } from './database'
+import { fs, zlib } from 'mz'
+import { hasErrorCode, makeFilename } from './util'
+import { Queue, Scheduler } from 'node-resque'
+import { XrepoDatabase } from './xrepo'
+import {
+    STORAGE_ROOT,
+    CONNECTION_CACHE_SIZE,
+    DOCUMENT_CACHE_SIZE,
+    MAX_UPLOAD,
+    HTTP_PORT,
+    REDIS_PORT,
+    REDIS_HOST,
+} from './settings'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
+    await createDirectory(STORAGE_ROOT)
+    await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
+
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
-    const backend = await makeBackend(connectionCache, documentCache)
+    const xrepoDatabase = new XrepoDatabase(connectionCache)
+    const queue = await setupQueue()
+
     const app = express()
     app.use(errorHandler)
 
-    app.get('/ping', (_, res) => {
-        res.send({ pong: 'pong' })
-    })
+    const createDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+        const file = makeFilename(repository, commit)
+
+        try {
+            await fs.stat(file)
+        } catch (e) {
+            if (hasErrorCode(e, 'ENOENT')) {
+                return undefined
+            }
+
+            throw e
+        }
+
+        return new Database(xrepoDatabase, connectionCache, documentCache, file)
+    }
 
     app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
         try {
             const { repository, commit } = req.query
             checkRepository(repository)
             checkCommit(commit)
-            await backend.insertDump(req.pipe(zlib.createGunzip()), repository, commit)
+            const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+            const writeStream = fs.createWriteStream(filename)
+            // TODO - do validation
+            req.pipe(zlib.createGunzip())
+                .pipe(zlib.createGzip())
+                .pipe(writeStream)
+            await new Promise(resolve => writeStream.on('finish', resolve))
+            await queue.enqueue('lsif', 'convert', [repository, commit, filename])
             res.json(null)
         } catch (e) {
             return next(e)
@@ -59,18 +75,14 @@ async function main(): Promise<void> {
             checkRepository(repository)
             checkCommit(commit)
 
-            try {
-                const db = await backend.createDatabase(repository, commit)
-                const result = !file || (await db.exists(file))
-                res.json(result)
-            } catch (e) {
-                if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                    res.json(false)
-                    return
-                }
-
-                throw e
+            const db = await createDatabase(repository, commit)
+            if (!db) {
+                res.json(false)
+                return
             }
+
+            const result = !file || (await db.exists(file))
+            res.json(result)
         } catch (e) {
             return next(e)
         }
@@ -85,16 +97,12 @@ async function main(): Promise<void> {
             checkMethod(method, ['definitions', 'references', 'hover'])
             const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-            try {
-                const db = await backend.createDatabase(repository, commit)
-                res.json(await db[cleanMethod](path, position))
-            } catch (e) {
-                if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                    throw Object.assign(e, { status: 404 })
-                }
-
-                throw e
+            const db = await createDatabase(repository, commit)
+            if (!db) {
+                throw Object.assign(new Error('No LSIF data'), { status: 404 })
             }
+
+            res.json(await db[cleanMethod](path, position))
         } catch (e) {
             return next(e)
         }
@@ -103,6 +111,49 @@ async function main(): Promise<void> {
     app.listen(HTTP_PORT, () => {
         console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
     })
+}
+
+/**
+ * Connect and start an active connection to the worker queue. We also run a
+ * node-resque scheduler on each server instance, as these are guaranteed to
+ * always be up with a responsive system. The schedulers will do their own
+ * master election via a redis key and will check for dead workers attached
+ * to the queue.
+ */
+async function setupQueue(): Promise<Queue> {
+    const connectionOptions = {
+        host: REDIS_HOST,
+        port: REDIS_PORT,
+        namespace: 'lsif',
+    }
+
+    const queue = new Queue({ connection: connectionOptions })
+    queue.on('error', e => console.error(e))
+    await queue.connect()
+    exitHook(() => queue.end())
+
+    const scheduler = new Scheduler({ connection: connectionOptions })
+    scheduler.on('error', e => console.error(e))
+    await scheduler.connect()
+    exitHook(() => scheduler.end())
+    scheduler.start().catch(e => console.error(e))
+
+    return queue
+}
+
+/**
+ * Ensure the given directory path exists.
+ *
+ * @param path The directory path.
+ */
+async function createDirectory(path: string): Promise<void> {
+    try {
+        await fs.mkdir(path)
+    } catch (e) {
+        if (!hasErrorCode(e, 'EEXIST')) {
+            throw e
+        }
+    }
 }
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -152,6 +203,4 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(e => {
-    console.error(e)
-})
+main().catch(e => console.error(e))

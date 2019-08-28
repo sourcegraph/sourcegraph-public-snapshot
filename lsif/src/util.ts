@@ -1,22 +1,5 @@
-/**
- * Reads an integer from an environment variable or defaults to the given value.
- *
- * @param key The environment variable name.
- * @param defaultValue The default value.
- */
-export function readEnvInt(key: string, defaultValue: number): number {
-    return (process.env[key] && parseInt(process.env[key] || '', 10)) || defaultValue
-}
-
-/**
- * Reads a string from an environment variable or defaults to the given value.
- *
- * @param key The environment variable name.
- * @param defaultValue The default value.
- */
-export function readEnv(key: string, defaultValue: string): string {
-    return process.env[key] || defaultValue
-}
+import * as path from 'path'
+import { STORAGE_ROOT } from './settings'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -28,4 +11,11 @@ export function readEnv(key: string, defaultValue: string): string {
  */
 export function hasErrorCode(e: any, expectedCode: string): boolean {
     return 'code' in e && e.code === expectedCode
+}
+
+/**
+ *.Computes the filename of the LSIF dump from the given repository and commit hash.
+ */
+export function makeFilename(repository: string, commit: string): string {
+    return path.join(STORAGE_ROOT, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
