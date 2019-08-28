@@ -352,14 +352,14 @@ function findResult<T>(
     data: RangeData | ResultSetData,
     property: 'definitionResult' | 'referenceResult' | 'hoverResult'
 ): T | undefined {
-    return withChain(resultSets, data, current => {
+    for (const current of walkChain(resultSets, data)) {
         const value = current[property]
         if (value) {
             return map.get(value)
         }
+    }
 
-        return undefined
-    })
+    return undefined
 }
 
 /**
@@ -375,50 +375,39 @@ function findMonikers(
     data: RangeData | ResultSetData
 ): MonikerData[] {
     const monikerSet: MonikerData[] = []
-
-    withChain(resultSets, data, current => {
+    for (const current of walkChain(resultSets, data)) {
         for (const id of current.monikers) {
             const moniker = monikers.get(id)
             if (moniker) {
                 monikerSet.push(moniker)
             }
         }
-
-        return undefined
-    })
+    }
 
     return sortMonikers(monikerSet)
 }
 
 /**
- * Invoke the `visitor` function on each object in the chain of `next`
- * edges starting at `data`. If the `visitor` function returns a non
- * undefined value, it will be returned immediately.
+ * Return an iterabel of the range and result set items that are attached
+ * to the given initial data. The initial data is yielded immediately.
  *
  * @param resultSets The map of results sets of the document.
  * @param data The range or result set object.
- * @param visitor The visitor function to invoke.
  */
-function withChain<T>(
+function* walkChain<T>(
     resultSets: Map<Id, ResultSetData>,
-    data: RangeData | ResultSetData,
-    visitor: (current: RangeData | ResultSetData) => T | undefined
-): T | undefined {
+    data: RangeData | ResultSetData
+): Iterable<RangeData | ResultSetData> {
     let current: RangeData | ResultSetData | undefined = data
-    while (current) {
-        const value = visitor(current)
-        if (value) {
-            return value
-        }
 
+    while (current) {
+        yield current
         if (!current.next) {
-            break
+            return
         }
 
         current = resultSets.get(current.next)
     }
-
-    return undefined
 }
 
 /**
