@@ -12,11 +12,6 @@ import * as zlib from 'mz/zlib'
 const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 
 /**
- * The maximum size of an LSIF dump upload.
- */
-const MAX_UPLOAD = process.env.LSIF_MAX_UPLOAD || '100mb'
-
-/**
  * The number of SQLite connections that can be opened at once. This
  * value may be exceeded for a short period if many handles are held
  * at once.
@@ -49,7 +44,6 @@ async function main(): Promise<void> {
 
     app.post(
         '/upload',
-        bodyParser.raw({ limit: MAX_UPLOAD }),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
