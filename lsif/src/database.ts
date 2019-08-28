@@ -485,7 +485,10 @@ function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: s
  * @param path The path relative to the project root.
  */
 function makeRemoteUri(pkg: PackageModel, path: string): string {
-    return `git://${pkg.repository}?${pkg.commit}#${path}`
+    const url = new URL(`git://${pkg.repository}`)
+    url.search = pkg.commit
+    url.hash = path
+    return url.href
 }
 
 /**
