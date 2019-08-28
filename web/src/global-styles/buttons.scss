@@ -26,7 +26,7 @@
         @extend .icon-inline;
     }
 
-    &:focus:not(:disabled):not(.disabled) {
+    &:focus-visible:not(:disabled):not(.disabled) {
         box-shadow: 0 0 0 2px rgba($primary, 0.5);
     }
 
