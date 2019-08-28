@@ -151,7 +151,7 @@ export class PackageModel {
     public version!: string
 
     /**
-     * `repository` is the source repository.
+     * `repository` is the name of the source repository.
      */
     @Column()
     public repository!: string
