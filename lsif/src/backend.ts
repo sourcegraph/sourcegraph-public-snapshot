@@ -75,7 +75,7 @@ export class SQLiteBackend {
                     try {
                         await importer.insert(element)
                     } catch (e) {
-                        throw new Error(`Failed to process line:\n${line}\nCaused by:\n${e}`)
+                        throw Object.assign(new Error(`Failed to process line:\n${line}`), { e })
                     }
                 }
 
