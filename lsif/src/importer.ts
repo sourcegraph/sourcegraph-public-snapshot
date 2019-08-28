@@ -137,26 +137,26 @@ export class Importer {
      * `importedMonikers` is the set of exported moniker identifiers that have
      * package information attached.
      */
-    private importedMonikers: Set<Id> = new Set()
+    private importedMonikers = new Set<Id>()
 
     /**
      * `exportedMonikers` is the set of exported moniker identifiers that have
      * package information attached.
      */
-    private exportedMonikers: Set<Id> = new Set()
+    private exportedMonikers = new Set<Id>()
 
     /**
      * `documentDatas` are decorated `DocumentData` objects that are created on
      * document begin events and are inserted into the databse on document end
      * events.
      */
-    private documentDatas: Map<Id, DecoratedDocumentData> = new Map()
+    private documentDatas = new Map<Id, DecoratedDocumentData>()
 
     /**
      * `monikerSets` holds the relation from moniker to the set of monikers that
      * they are related to via nextMoniker edges. This relation is symmetric.
      */
-    private monikerSets: Map<Id, Id[]> = new Map()
+    private monikerSets = new Map<Id, Id[]>()
 
     /**
      * Create a new `Importer` with the given entity manager.
