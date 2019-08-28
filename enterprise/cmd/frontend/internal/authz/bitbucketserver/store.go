@@ -3,6 +3,7 @@ package bitbucketserver
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -307,23 +308,25 @@ func (s *store) load(ctx context.Context, p *Permissions) (err error) {
 	return p.IDs.UnmarshalBinary(ids)
 }
 
-func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) *sqlf.Query {
-	ids := make([]*sqlf.Query, 0, len(externalIDs))
-	for _, eid := range externalIDs {
-		ids = append(ids, sqlf.Sprintf("%d", eid))
+func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
+	ids, err := json.Marshal(externalIDs)
+	if err != nil {
+		return nil, err
 	}
+
 	return sqlf.Sprintf(
 		loadRepoIDsQueryFmtStr,
 		c.ServiceType,
 		c.ServiceID,
-		sqlf.Join(ids, ","),
-	)
+		ids,
+	), nil
 }
 
 const loadRepoIDsQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.loadRepoIDs
 SELECT id FROM repo
-WHERE external_service_type = %s AND external_service_id = %s AND external_id IN (%s)
+WHERE external_service_type = %s AND external_service_id = %s
+AND external_id IN (SELECT jsonb_array_elements_text(%s))
 ORDER BY id ASC
 `
 
@@ -337,7 +340,10 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 		save(&err, fs...)
 	}()
 
-	q := loadRepoIDsQuery(c, externalIDs)
+	var q *sqlf.Query
+	if q, err = loadRepoIDsQuery(c, externalIDs); err != nil {
+		return nil, err
+	}
 
 	var rows *sql.Rows
 	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
