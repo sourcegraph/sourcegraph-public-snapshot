@@ -35,10 +35,10 @@ export class MetaModel {
 @Entity({ name: 'documents' })
 export class DocumentModel {
     /**
-     * `uri` is the root-relative path of the document.
+     * `path` is the root-relative path of the document.
      */
     @PrimaryColumn()
-    public uri!: string
+    public path!: string
 
     /**
      * `value` is the JSON-encoded document data.
@@ -71,10 +71,10 @@ class Symbols {
     public identifier!: string
 
     /**
-     * `documentUri` is the uri of the document to which this reference belongs.
+     * `documentPath` is the path of the document to which this reference belongs.
      */
     @Column()
-    public documentUri!: string
+    public documentPath!: string
 
     /**
      * `startLine` is the zero-indexed line describing the start of this range.

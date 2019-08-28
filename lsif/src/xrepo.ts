@@ -95,18 +95,18 @@ export class XrepoDatabase {
     }
 
     /**
-     * Find all repository/commit pairs that reference `uri` in the given package. The
+     * Find all repository/commit pairs that reference `value` in the given package. The
      * returned results will include only repositories that have a dependency on the given
      * package. The returned results may (but is not likely to) include a repository/commit
-     * pair that does not reference `uri`. See cache.ts for configuration values that tune
+     * pair that does not reference `value`. See cache.ts for configuration values that tune
      * the bloom filter false positive rates.
      *
      * @param scheme The package manager scheme (e.g. npm, pip).
      * @param name The package name.
      * @param version The package version.
-     * @param uri The uri to test.
+     * @param value The value to test.
      */
-    public async getReferences(scheme: string, name: string, version: string, uri: string): Promise<ReferenceModel[]> {
+    public async getReferences(scheme: string, name: string, version: string, value: string): Promise<ReferenceModel[]> {
         return await this.withConnection(connection =>
             connection
                 .getRepository(ReferenceModel)
@@ -118,7 +118,7 @@ export class XrepoDatabase {
                     },
                 })
                 .then((results: ReferenceModel[]) =>
-                    results.filter(async result => await testFilter(result.filter, uri))
+                    results.filter(async result => await testFilter(result.filter, value))
                 )
         )
     }

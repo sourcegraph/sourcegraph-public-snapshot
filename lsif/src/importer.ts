@@ -63,9 +63,9 @@ export interface DecoratedDocumentData extends DocumentData {
     id: Id
 
     /**
-     * `uri` is the URI of the document.
+     * `path` is the root-relative path of the document.
      */
-    uri: string
+    path: string
 
     /**
      * `contains` is the running set of identifiers that have a contains edge
@@ -128,7 +128,7 @@ export class Importer {
     private resultSetDatas: Map<Id, ResultSetData> = new Map()
 
     /**
-     * ~projectRoot` is the prefix of all document URIs. This is extracted from
+     * ~projectRoot` is the prefix of all document paths. This is extracted from
      * the metadata vertex at the beginning of processing.
      */
     private projectRoot = ''
@@ -288,13 +288,13 @@ export class Importer {
 
     /**
      * This should be the first vertex seen. Extract the project root so we
-     * can create relative URIs for documnets. Insert a row in the meta
+     * can create relative paths for documnets. Insert a row in the meta
      * table with the LSIF protocol version.
      *
      * @param vertex The metadata vertex.
      */
     private async handleMetaData(vertex: MetaData): Promise<void> {
-        this.projectRoot = vertex.projectRoot
+        this.projectRoot = new URL(vertex.projectRoot).href
         await this.metaInserter.insert(convertMetadata(vertex))
     }
 
@@ -499,9 +499,15 @@ export class Importer {
     private handleDocumentBegin(event: DocumentEvent): void {
         const uri = assertDefined(event.data, 'document', this.documents)
 
+        const path = RelateUrl.relate(this.projectRoot, new URL(uri).href, {
+            defaultPorts: {},
+            output: RelateUrl.PATH_RELATIVE,
+            removeRootTrailingSlash: false,
+        })
+
         this.documentDatas.set(event.data, {
             id: event.data,
-            uri: uri.slice(this.projectRoot.length + 1),
+            path,
             contains: [],
             definitions: [],
             references: [],
@@ -530,7 +536,7 @@ export class Importer {
         await this.finalizeDocument(document)
 
         // Insert document record
-        await this.documentInserter.insert({ uri: document.uri, value: await encodeJSON(document) })
+        await this.documentInserter.insert({ path: document.path, value: await encodeJSON(document) })
 
         // Insert all related definitions
         for (const { data, moniker } of document.definitions) {
@@ -538,7 +544,7 @@ export class Importer {
                 await this.defInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
-                    documentUri: document.uri,
+                    documentPath: document.path,
                     ...range,
                 })
             }
@@ -554,7 +560,7 @@ export class Importer {
                 await this.refInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
-                    documentUri: document.uri,
+                    documentPath: document.path,
                     ...range,
                 })
             }
