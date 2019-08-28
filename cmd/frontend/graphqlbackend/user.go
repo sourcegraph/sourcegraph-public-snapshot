@@ -275,6 +275,8 @@ func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, err
 	return UserURLForSiteAdminBilling(ctx, r.user.ID)
 }
 
+func (r *UserResolver) NamespaceName() string { return r.user.Username }
+
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
