@@ -17,7 +17,6 @@ export const ERRNOLSIFDATA = 'NoLSIFData'
  */
 export class NoLSIFDataError extends Error {
     public readonly name = ERRNOLSIFDATA
-    public readonly code = ERRNOLSIFDATA
 
     constructor(repository: string, commit: string) {
         super(`No LSIF data available for ${repository}@${commit}.`)
