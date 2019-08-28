@@ -112,10 +112,10 @@ export class LsifImporter {
     private edgeHandlerMap: HandlerMap = {}
 
     // Bulk database inserters
-    private metaInserter: TableInserter<MetaModel>
-    private documentInserter: TableInserter<DocumentModel>
-    private defInserter: TableInserter<DefModel>
-    private refInserter: TableInserter<RefModel>
+    private metaInserter: TableInserter<MetaModel, new () => MetaModel>
+    private documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
+    private defInserter: TableInserter<DefModel, new () => DefModel>
+    private refInserter: TableInserter<RefModel, new () => RefModel>
 
     // Vertex data
     private definitionDatas: Map<Id, Map<Id, DefinitionResultData>> = new Map()

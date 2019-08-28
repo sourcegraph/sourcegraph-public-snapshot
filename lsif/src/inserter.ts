@@ -13,7 +13,7 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
  *
  * See https://www.sqlite.org/limits.html#max_variable_number.
  */
-export class TableInserter<T> {
+export class TableInserter<T, M extends new () => T> {
     /**
      * `batch` is the set of entity values that will be inserted in the
      * next invocation of `executeBatch`.
@@ -29,7 +29,7 @@ export class TableInserter<T> {
      * @param model The model object constructor.
      * @param maxBatchSize The maximum number of records that can be inserted at once.
      */
-    constructor(private entityManager: EntityManager, private model: Function, private maxBatchSize: number) {}
+    constructor(private entityManager: EntityManager, private model: M, private maxBatchSize: number) {}
 
     /**
      * Submit a model for insertion. This may happen immediately, on a
