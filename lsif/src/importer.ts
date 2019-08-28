@@ -156,7 +156,7 @@ export class Importer {
      * `monikerSets` holds the relation from moniker to the set of monikers that
      * they are related to via nextMoniker edges. This relation is symmetric.
      */
-    private monikerSets = new Map<Id, Id[]>()
+    private monikerSets = new Map<Id, Set<Id>>()
 
     /**
      * Create a new `Importer` with the given entity manager.
@@ -614,9 +614,9 @@ export class Importer {
     private correlateMonikers(a: Id, b: Id): void {
         const neighbors = this.monikerSets.get(a)
         if (neighbors) {
-            neighbors.push(b)
+            neighbors.add(b)
         } else {
-            this.monikerSets.set(a, [b])
+            this.monikerSets.set(a, new Set<Id>([b]))
         }
     }
 
@@ -897,7 +897,7 @@ function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRan
  * @param monikerSets A undirected graph of moniker ids.
  * @param id The initial moniker id.
  */
-function reachableMonikers(monikerSets: Map<Id, Id[]>, id: Id): Set<Id> {
+function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
     const combined = new Set<Id>()
     let frontier = [id]
 
@@ -913,7 +913,7 @@ function reachableMonikers(monikerSets: Map<Id, Id[]>, id: Id): Set<Id> {
 
         const nextValues = monikerSets.get(val)
         if (nextValues) {
-            frontier = frontier.concat(nextValues)
+            frontier = frontier.concat(Array.from(nextValues))
         }
 
         combined.add(val)
