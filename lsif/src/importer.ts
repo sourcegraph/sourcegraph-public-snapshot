@@ -5,15 +5,7 @@ import { EntityManager } from 'typeorm'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { Inserter } from './inserter'
 import { Package, SymbolReferences } from './xrepo'
-import {
-    MonikerData,
-    RangeData,
-    ResultSetData,
-    HoverData,
-    PackageInformationData,
-    DocumentData,
-    FlattenedRange,
-} from './entities'
+import { MonikerData, RangeData, ResultSetData, PackageInformationData, DocumentData, FlattenedRange } from './entities'
 import {
     Id,
     VertexLabels,
@@ -120,7 +112,7 @@ export class Importer {
     // Vertex data
     private definitionDatas: Map<Id, Map<Id, Id[]>> = new Map()
     private documents: Map<Id, string> = new Map()
-    private hoverDatas: Map<Id, HoverData> = new Map()
+    private hoverDatas: Map<Id, string> = new Map()
     private monikerDatas: Map<Id, MonikerData> = new Map()
     private packageInformationDatas: Map<Id, PackageInformationData> = new Map()
     private rangeDatas: Map<Id, RangeData> = new Map()
@@ -319,7 +311,7 @@ export class Importer {
 
     private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
     private handleDocument = this.setById(this.documents, (e: Document) => e.uri)
-    private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => e.result)
+    private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => normalizeHover(e.result))
     private handleMoniker = this.setById(this.monikerDatas, convertMoniker)
     private handlePackageInformation = this.setById(this.packageInformationDatas, convertPackageInformation)
     private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...e, monikers: [] }))
@@ -670,8 +662,7 @@ export class Importer {
 
         // Add hover to document, if it doesn't exist
         if (item.hoverResult && !document.hovers.has(item.hoverResult)) {
-            const hoverResult = assertDefined(item.hoverResult, 'hoverResult', this.hoverDatas)
-            document.hovers.set(item.hoverResult, normalizeHover(hoverResult))
+            document.hovers.set(item.hoverResult, assertDefined(item.hoverResult, 'hoverResult', this.hoverDatas))
         }
 
         // Attach definition and reference results results to the document.

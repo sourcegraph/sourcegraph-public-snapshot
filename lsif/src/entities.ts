@@ -1,5 +1,5 @@
-import { Id, MonikerKind } from 'lsif-protocol'
-import * as lsp from 'vscode-languageserver-protocol'
+import { Id, MonikerKind } from 'lsif-protocol';
+import { Position } from 'vscode-languageserver-protocol';
 
 /**
  * `DocumentData` stores data for a single document within an LSIF dump. The
@@ -104,12 +104,12 @@ export interface RangeData extends ResultObjectData {
     /**
      * `start` is the start position of the range.
      */
-    start: lsp.Position
+    start: Position
 
     /**
      * `end` is the end position of the range.
      */
-    end: lsp.Position
+    end: Position
 }
 
 /**
@@ -118,19 +118,6 @@ export interface RangeData extends ResultObjectData {
  * queried in the containing document.
  */
 export interface ResultSetData extends ResultObjectData {}
-
-/**
- * `HoverData` holds data used to answer a hover query.
- */
-export interface HoverData {
-    // TODO - normalize content
-    // TODO - used MarkupContent, MarkedString is deprecated
-
-    /**
-     * `contents` is the raw hover payload from the LSIf dump.
-     */
-    contents: lsp.MarkupContent | lsp.MarkedString | lsp.MarkedString[]
-}
 
 /**
  * `MonikerData` holds data about a moniker attached to a range or a result set.
