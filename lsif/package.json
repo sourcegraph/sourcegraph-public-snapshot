@@ -28,6 +28,7 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "serve": "tsc-watch --onSuccess \"node --inspect out/server.js\" --noClear",
+    "build": "tsc",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
   }
