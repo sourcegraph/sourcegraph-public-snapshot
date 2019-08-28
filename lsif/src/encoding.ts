@@ -31,7 +31,7 @@ export function createFilter(uris: string[]): Promise<string> {
     }
 
     // Need to shed the type of the array
-    const buckets = [].slice.call(filter.buckets)
+    const buckets = Array.from(filter.buckets)
 
     // Store the number of hash functions used to create this as it may change after
     // this value is serialized. We don't want to test with more hash functions than
