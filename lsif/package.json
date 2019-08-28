@@ -16,6 +16,7 @@
     "yallist": "^3.0.3"
   },
   "devDependencies": {
+    "@sourcegraph/tsconfig": "^4.0.0",
     "@types/bloomfilter": "^0.0.0",
     "@types/body-parser": "1.17.0",
     "@types/express": "4.17.0",
