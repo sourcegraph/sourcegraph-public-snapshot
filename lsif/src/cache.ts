@@ -162,7 +162,13 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * all items in the cache.
      */
     constructor(max: number) {
-        super(max, ConnectionCache.sizeFunction, ConnectionCache.connectionFunction)
+        super(
+            max,
+            // Each handle is roughly the same size.
+            () => 1,
+            // Close the underlying file handle on cache eviction.
+            (connection: Connection) => connection.close()
+        )
     }
 
     /**
@@ -207,12 +213,6 @@ export class ConnectionCache extends GenericCache<string, Connection> {
     ): Promise<T> {
         return this.withConnection(database, entities, connection => connection.transaction(em => callback(em)))
     }
-
-    // Each handle is roughly the same size.
-    private static sizeFunction = () => 1
-
-    // Close the underlying file handle on cache eviction.
-    private static connectionFunction = (connection: Connection) => connection.close()
 }
 
 /**
@@ -225,7 +225,13 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
      * all items in the cache.
      */
     constructor(max: number) {
-        super(max, DocumentCache.sizeFunction, DocumentCache.disposeFunction)
+        super(
+            max,
+            // TODO - determine memory size
+            () => 1,
+            // Let GC handle the cleanup of the object on cache eviction.
+            (): void => {}
+        )
     }
 
     /**
@@ -243,10 +249,4 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
     ): Promise<T> {
         return this.withValue(documentId, factory, callback)
     }
-
-    // TODO - determine memory size
-    private static sizeFunction = () => 1
-
-    // Let GC handle the cleanup of the object on cache eviction.
-    private static disposeFunction = (): void => {}
 }
