@@ -1,7 +1,5 @@
 import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index } from 'typeorm'
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 /**
  * `MetaModel` is an entity within the database describing LSIF data for a single repository
  * and commit pair. There should be only one metadata entity per database.
