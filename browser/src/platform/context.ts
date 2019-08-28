@@ -27,7 +27,7 @@ export interface SourcegraphIntegrationURLs {
      * The base URL where assets will be fetched from (CSS, extension host
      * worker bundle, ...)
      *
-     * This is on the sourcegraph URL in most cases, but may be different for
+     * This is the sourcegraph URL in most cases, but may be different for
      * native code hosts that self-host the integration bundle.
      */
     assetsURL: string
