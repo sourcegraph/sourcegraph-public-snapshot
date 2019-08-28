@@ -19,7 +19,7 @@ import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettings
 
 export interface SourcegraphIntegrationURLs {
     /**
-     * The Sourcegraph URL for extensions, find-references, ...
+     * The URL of the configured Sourcegraph instance. Used for extensions, find-references, ...
      */
     sourcegraphURL: string
 
