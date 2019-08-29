@@ -65,7 +65,6 @@ export class TableInserter<T, M extends new () => T> {
             .into(this.model)
             .values(this.batch)
             .execute()
-            .then(() => {})
 
         this.batch = []
     }
