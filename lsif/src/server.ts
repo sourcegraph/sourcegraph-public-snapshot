@@ -114,9 +114,6 @@ async function main(): Promise<void> {
     })
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  */
