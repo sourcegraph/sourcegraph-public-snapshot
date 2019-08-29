@@ -15,13 +15,13 @@ export class MetaModel {
     /**
      * The version string of the input LSIF that created this database.
      */
-    @Column('string')
+    @Column('text')
     public lsifVersion!: string
 
     /**
      * The internal version of the LSIF server that created this database.
      */
-    @Column('string')
+    @Column('text')
     public sourcegraphVersion!: string
 }
 
@@ -35,13 +35,13 @@ export class DocumentModel {
     /**
      * The root-relative path of the document.
      */
-    @PrimaryColumn('string')
+    @PrimaryColumn('text')
     public path!: string
 
     /**
      * The JSON-encoded document data.
      */
-    @Column('string')
+    @Column('text')
     public value!: string
 }
 
@@ -59,19 +59,19 @@ class Symbols {
     /**
      * The name of the package type (e.g. npm, pip).
      */
-    @Column('string')
+    @Column('text')
     public scheme!: string
 
     /**
      * The unique identifier of the moniker.
      */
-    @Column('string')
+    @Column('text')
     public identifier!: string
 
     /**
      * The path of the document to which this reference belongs.
      */
-    @Column('string')
+    @Column('text')
     public documentPath!: string
 
     /**
@@ -133,31 +133,31 @@ export class PackageModel {
     /**
      * The name of the package type (e.g. npm, pip).
      */
-    @Column('string')
+    @Column('text')
     public scheme!: string
 
     /**
      * The name of the package this repository and commit provides.
      */
-    @Column('string')
+    @Column('text')
     public name!: string
 
     /**
      * The version of the package this repository and commit provides.
      */
-    @Column('string')
+    @Column('text')
     public version!: string
 
     /**
      * The name of the source repository.
      */
-    @Column('string')
+    @Column('text')
     public repository!: string
 
     /**
      * The source commit.
      */
-    @Column('string')
+    @Column('text')
     public commit!: string
 }
 
@@ -177,31 +177,31 @@ export class ReferenceModel {
     /**
      * The name of the package type (e.g. npm, pip).
      */
-    @Column('string')
+    @Column('text')
     public scheme!: string
 
     /**
      * The name of the package this repository and commit depends on.
      */
-    @Column('string')
+    @Column('text')
     public name!: string
 
     /**
      * The version of the package this repository and commit depends on.
      */
-    @Column('string')
+    @Column('text')
     public version!: string
 
     /**
      * The name of the source repository.
      */
-    @Column('string')
+    @Column('text')
     public repository!: string
 
     /**
      * The source commit (revision hash).
      */
-    @Column('string')
+    @Column('text')
     public commit!: string
 
     /**
@@ -209,6 +209,6 @@ export class ReferenceModel {
      * and commit imports from the given package. Testing this filter will prevent the
      * backend from opening databases that will yield no results for a particular symbol.
      */
-    @Column('string')
+    @Column('text')
     public filter!: string
 }
