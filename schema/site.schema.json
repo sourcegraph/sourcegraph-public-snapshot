@@ -38,12 +38,6 @@
       "group": "Search",
       "examples": [["go.sum", "package-lock.json", "*.thrift"]]
     },
-    "search.version": {
-      "description": "Version of search queries to use, either 0 (regexp default) or 1 (literal default).",
-      "type": "integer",
-      "default": 0,
-      "group": "Search"
-    },
     "debug.search.symbolsParallelism": {
       "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
       "type": "integer",

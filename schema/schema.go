@@ -495,6 +495,7 @@ type Settings struct {
 	SearchRepositoryGroups    map[string][]string   `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries        []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	SearchScopes              []*SearchScope        `json:"search.scopes,omitempty"`
+	SearchVersion             string                `json:"search.version,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -525,7 +526,6 @@ type SiteConfiguration struct {
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
 	SearchIndexSymbolsEnabled         *bool                       `json:"search.index.symbols.enabled,omitempty"`
 	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
-	SearchVersion                     int                         `json:"search.version,omitempty"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
