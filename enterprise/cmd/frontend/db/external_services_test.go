@@ -74,10 +74,10 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without region, accessKeyID, secretAccessKey, gitCredentials",
 			config: `{}`,
 			assert: includes(
-				"region: region is required",
-				"accessKeyID: accessKeyID is required",
-				"secretAccessKey: secretAccessKey is required",
-				"gitCredentials: gitCredentials is required",
+				"region is required",
+				"accessKeyID is required",
+				"secretAccessKey is required",
+				"gitCredentials is required",
 			),
 		},
 		{
@@ -156,7 +156,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb",
 				"bar": "baz"
 			}]}`,
-			assert: includes(`bar: Additional property bar is not allowed`),
+			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
 			kind: "AWSCODECOMMIT",
@@ -185,8 +185,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "witout prefix nor host",
 			config: `{}`,
 			assert: includes(
-				"prefix: prefix is required",
-				"host: host is required",
+				"prefix is required",
+				"host is required",
 			),
 		},
 		{
@@ -203,8 +203,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "witout prefix nor host",
 			config: `{}`,
 			assert: includes(
-				"prefix: prefix is required",
-				"host: host is required",
+				"prefix is required",
+				"host is required",
 			),
 		},
 		{
@@ -218,8 +218,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "phabricator without url nor callsignCommand",
 			config: `{"phabricator": {}}`,
 			assert: includes(
-				"url: url is required",
-				"callsignCommand: callsignCommand is required",
+				"phabricator: url is required",
+				"phabricator: callsignCommand is required",
 			),
 		},
 		{
@@ -256,7 +256,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITOLITE",
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"name": "foo", "bar": "baz"}]}`,
-			assert: includes(`bar: Additional property bar is not allowed`),
+			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
 			kind: "GITOLITE",
@@ -299,9 +299,9 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, username nor appPassword",
 			config: `{}`,
 			assert: includes(
-				"url: url is required",
-				"username: username is required",
-				"appPassword: appPassword is required",
+				"url is required",
+				"username is required",
+				"appPassword is required",
 			),
 		},
 		{
@@ -354,8 +354,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, username, repositoryQuery nor repos",
 			config: `{}`,
 			assert: includes(
-				"url: url is required",
-				"username: username is required",
+				"url is required",
+				"username is required",
 				"at least one of repositoryQuery or repos must be set",
 			),
 		},
@@ -363,7 +363,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "BITBUCKETSERVER",
 			desc:   "without username",
 			config: `{}`,
-			assert: includes("username: username is required"),
+			assert: includes("username is required"),
 		},
 		{
 			kind:   "BITBUCKETSERVER",
@@ -382,7 +382,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "with token AND password",
 			config: `{"token": "foo", "password": "bar"}`,
 			assert: includes(
-				"(root): Must validate one and only one schema (oneOf)",
+				"Must validate one and only one schema (oneOf)",
 				"password: Invalid type. Expected: null, given: string",
 			),
 		},
@@ -444,7 +444,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "BITBUCKETSERVER",
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`bar: Additional property bar is not allowed`),
+			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
 			kind: "BITBUCKETSERVER",
@@ -531,7 +531,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"authorization": {}
 			}
 			`,
-			assert: includes("oauth: oauth is required"),
+			assert: includes("authorization: oauth is required"),
 		},
 		{
 			kind: "BITBUCKETSERVER",
@@ -544,8 +544,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			}
 			`,
 			assert: includes(
-				"consumerKey: consumerKey is required",
-				"signingKey: signingKey is required",
+				"authorization.oauth: consumerKey is required",
+				"authorization.oauth: signingKey is required",
 			),
 		},
 		{
@@ -606,8 +606,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, token, repositoryQuery, repos nor orgs",
 			config: `{}`,
 			assert: includes(
-				"url: url is required",
-				"token: token is required",
+				"url is required",
+				"token is required",
 				"at least one of repositoryQuery, repos or orgs must be set",
 			),
 		},
@@ -735,7 +735,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITHUB",
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"id": "foo", "bar": "baz"}]}`,
-			assert: includes(`bar: Additional property bar is not allowed`),
+			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
 			kind: "GITHUB",
@@ -791,7 +791,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITLAB",
 			desc:   "invalid additional exclude item properties",
 			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`bar: Additional property bar is not allowed`),
+			assert: includes(`exclude.0: Additional property bar is not allowed`),
 		},
 		{
 			kind: "GITLAB",
@@ -835,7 +835,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITLAB",
 			desc:   "invalid additional projects item properties",
 			config: `{"projects": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`bar: Additional property bar is not allowed`),
+			assert: includes(`projects.0: Additional property bar is not allowed`),
 		},
 		{
 			kind: "GITLAB",
@@ -856,9 +856,9 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without url, token nor projectQuery",
 			config: `{}`,
 			assert: includes(
-				"url: url is required",
-				"token: token is required",
-				"projectQuery: projectQuery is required",
+				"url is required",
+				"token is required",
+				"projectQuery is required",
 			),
 		},
 		{
@@ -1017,8 +1017,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			desc:   "without repos nor token",
 			config: `{}`,
 			assert: includes(
-				`(root): Must validate at least one schema (anyOf)`,
-				`token: token is required`,
+				`Must validate at least one schema (anyOf)`,
+				`token is required`,
 			),
 		},
 		{
@@ -1049,7 +1049,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "OTHER",
 			desc:   "without url nor repos array",
 			config: `{}`,
-			assert: includes(`repos: repos is required`),
+			assert: includes(`repos is required`),
 		},
 		{
 			kind:   "OTHER",

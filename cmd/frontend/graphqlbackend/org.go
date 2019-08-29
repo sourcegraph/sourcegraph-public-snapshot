@@ -169,6 +169,8 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (o *OrgResolver) NamespaceName() string { return o.org.Name }
+
 func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string

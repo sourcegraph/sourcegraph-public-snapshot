@@ -137,7 +137,7 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, arn string) (*Reposit
 	svc := codecommit.New(c.aws)
 	req := svc.GetRepositoryRequest(&codecommit.GetRepositoryInput{RepositoryName: &repoName})
 	req.SetContext(ctx)
-	result, err := req.Send()
+	result, err := req.Send(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos 
 	}
 	listReq := svc.ListRepositoriesRequest(&listInput)
 	listReq.SetContext(ctx)
-	listResult, err := listReq.Send()
+	listResult, err := listReq.Send(ctx)
 	if err != nil {
 		return nil, "", err
 	}
@@ -195,11 +195,11 @@ func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos 
 	return repos, nextNextToken, nil
 }
 
-func (c *Client) getRepositories(ctx context.Context, svc *codecommit.CodeCommit, repositoryNames []string) ([]*Repository, error) {
+func (c *Client) getRepositories(ctx context.Context, svc *codecommit.Client, repositoryNames []string) ([]*Repository, error) {
 	getInput := codecommit.BatchGetRepositoriesInput{RepositoryNames: repositoryNames}
 	getReq := svc.BatchGetRepositoriesRequest(&getInput)
 	getReq.SetContext(ctx)
-	getResult, err := getReq.Send()
+	getResult, err := getReq.Send(ctx)
 	if err != nil {
 		return nil, err
 	}
