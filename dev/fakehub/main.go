@@ -117,11 +117,16 @@ func (d httpDir) Open(name string) (http.File, error) {
 func configureRepos(root string) ([]string, error) {
 	var gitDirs []string
 	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
-		if !(filepath.Base(path) == ".git" && fi.IsDir()) {
-			return nil
-		}
 		if fileErr != nil {
 			log.Printf("error encountered on %s: %v", path, fileErr)
+			return nil
+		}
+		if !fi.IsDir() {
+			return nil
+		}
+		// stat now to avoid recursing into the rest of path
+		path = filepath.Join(path, ".git")
+		if _, err := os.Stat(path); os.IsNotExist(err) {
 			return nil
 		}
 		if err := configureOneRepo(path); err != nil {
@@ -129,7 +134,7 @@ func configureRepos(root string) ([]string, error) {
 			return nil
 		}
 		gitDirs = append(gitDirs, path)
-		return nil
+		return filepath.SkipDir
 	})
 	if err != nil {
 		return gitDirs, errors.Wrap(err, "configuring repos and gathering git dirs")
