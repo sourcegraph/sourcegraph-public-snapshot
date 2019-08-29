@@ -54,7 +54,7 @@ func BenchmarkStore(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -72,7 +72,7 @@ func BenchmarkStore(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -133,8 +133,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		ps := &Permissions{UserID: 42, Perm: authz.Read, Type: "repos"}
 		load := func(s *store) (*Permissions, error) {
 			ps := *ps
-			p := &ps
-			return p, s.LoadPermissions(ctx, &p, update)
+			return &ps, s.LoadPermissions(ctx, &ps, update)
 		}
 
 		array := func(ids *roaring.Bitmap) []uint32 {

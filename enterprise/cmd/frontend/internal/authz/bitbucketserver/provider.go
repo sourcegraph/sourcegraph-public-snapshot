@@ -108,7 +108,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		Type:   "repos",
 	}
 
-	err = p.store.LoadPermissions(ctx, &ps, p.update(userName))
+	err = p.store.LoadPermissions(ctx, ps, p.update(userName))
 	if err != nil {
 		return nil, err
 	}
