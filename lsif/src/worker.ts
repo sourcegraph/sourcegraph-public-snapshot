@@ -95,4 +95,7 @@ async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex |
     }
 }
 
-main().catch(e => console.error(e))
+main().catch(e => {
+    console.error(e)
+    setTimeout(() => process.exit(1), 100)
+})
