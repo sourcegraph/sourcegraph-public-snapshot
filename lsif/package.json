@@ -5,7 +5,6 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
-    "@types/morgan": "^1.7.37",
     "async-middleware": "^1.2.1",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
@@ -28,6 +27,7 @@
     "@types/body-parser": "1.17.0",
     "@types/express": "4.17.0",
     "@types/lodash": "^4.14.138",
+    "@types/morgan": "^1.7.37",
     "@types/mz": "0.0.32",
     "@types/relateurl": "^0.2.28",
     "@types/yallist": "^3.0.1",
