@@ -66,6 +66,6 @@ export const BLOOM_FILTER_NUM_HASH_FUNCTIONS = readEnvInt('BLOOM_FILTER_NUM_HASH
  * @param key The environment variable name.
  * @param defaultValue The default value.
  */
-export function readEnvInt(key: string, defaultValue: number): number {
+function readEnvInt(key: string, defaultValue: number): number {
     return (process.env[key] && parseInt(process.env[key] || '', 10)) || defaultValue
 }
