@@ -11,7 +11,7 @@ export const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
  */
-export const REDIS_HOST = readEnv('LSIF_REDIS_HOST', 'localhost')
+export const REDIS_HOST = process.env.LSIF_REDIS_HOST || 'localhost'
 
 /**
  * The port of the redis instance containing work queues. Defaults to 6379.
@@ -21,7 +21,7 @@ export const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
 /**
  * Where on the file system to store LSIF files.
  */
-export const STORAGE_ROOT = readEnv('LSIF_STORAGE_ROOT', 'lsif-storage')
+export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 //
 // Caches
@@ -68,14 +68,4 @@ export const BLOOM_FILTER_NUM_HASH_FUNCTIONS = readEnvInt('BLOOM_FILTER_NUM_HASH
  */
 export function readEnvInt(key: string, defaultValue: number): number {
     return (process.env[key] && parseInt(process.env[key] || '', 10)) || defaultValue
-}
-
-/**
- * Reads a string from an environment variable or defaults to the given value.
- *
- * @param key The environment variable name.
- * @param defaultValue The default value.
- */
-export function readEnv(key: string, defaultValue: string): string {
-    return process.env[key] || defaultValue
 }
