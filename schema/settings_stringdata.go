@@ -53,6 +53,11 @@ const SettingsSchemaJSON = `{
         "$ref": "#/definitions/SearchScope"
       }
     },
+    "search.version": {
+      "description": "Version of search queries to use, either V0 (regexp default) or V1 (literal default)",
+      "type": "string",
+      "default": "V0"
+    },
     "search.repositoryGroups": {
       "description": "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
       "type": "object",
