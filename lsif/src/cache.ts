@@ -4,56 +4,46 @@ import { Id } from 'lsif-protocol'
 import Yallist from 'yallist'
 
 /**
- * `CacheEntry` is a wrapper around a cache value promise.
+ * A wrapper around a cache value promise.
  */
 interface CacheEntry<K, V> {
-    /**
-     * `key` is the key that can retrieve this cache entry.
-     */
+    // The key that can retrieve this cache entry.
     key: K
 
-    /**
-     * `promise` is the promise that will resolve the cache value.
-     */
+    // The promise that will resolve the cache value.
     promise: Promise<V>
 
     /**
-     * `size` is the size of the promise value, once resolved. This
-     * value is initially zero and is updated once an appropriate can
-     * be determined from the result of `promise`.
+     * The size of the promise value, once resolved. This value is
+     * initially zero and is updated once an appropriate can be
+     * determined from the result of `promise`.
      */
     size: number
 
     /**
-     * `reader` is the number of active withValue calls referencing
-     * this entry. If this value is non-zero, it should not be evictable
-     * from the cache.
+     * The number of active withValue calls referencing this entry.
+     * If this value is non-zero, it should not be evictable from the
+     * cache.
      */
     readers: number
 }
 
 /**
- * `GenericCache` is a generic LRU cache. We use this instead of the
- * `lru-cache` apckage available in NPM so that we can handle async
- * payloads in a more first-class way as well as shedding some of the
- * cruft around evictions -- we need to ensure database handles are
- * closed when they are no longer accessible, and we also do not want
- * to evict any database handle while it is actively being used.
+ * A generic LRU cache. We use this instead of the `lru-cache` apckage
+ * available in NPM so that we can handle async payloads in a more
+ * first-class way as well as shedding some of the cruft around evictions.
+ * We need to ensure database handles are closed when they are no longer
+ * accessible, and we also do not want to evict any database handle while
+ * it is actively being used.
  */
 class GenericCache<K, V> {
-    /**
-     * `cache` is a map from from keys to nodes in `lruList`.
-     */
+    // A map from from keys to nodes in `lruList`.
     private cache = new Map<K, Yallist.Node<CacheEntry<K, V>>>()
 
-    /**
-     * `lruList` is a linked list of cache entires ordered by last-touch.
-     */
+    // A linked list of cache entires ordered by last-touch.
     private lruList = new Yallist<CacheEntry<K, V>>()
 
-    /**
-     * `size` is the additive size of the items currently in the cache.
-     */
+    // The additive size of the items currently in the cache.
     private size = 0
 
     /**
@@ -153,8 +143,7 @@ class GenericCache<K, V> {
 }
 
 /**
- * `ConnectionCache` is a cache of SQLite database connections indexed
- * by database filenames.
+ * A cache of SQLite database connections indexed by database filenames.
  */
 export class ConnectionCache extends GenericCache<string, Connection> {
     /**
@@ -162,7 +151,13 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * all items in the cache.
      */
     constructor(max: number) {
-        super(max, ConnectionCache.sizeFunction, ConnectionCache.connectionFunction)
+        super(
+            max,
+            // Each handle is roughly the same size.
+            () => 1,
+            // Close the underlying file handle on cache eviction.
+            (connection: Connection) => connection.close()
+        )
     }
 
     /**
@@ -207,17 +202,10 @@ export class ConnectionCache extends GenericCache<string, Connection> {
     ): Promise<T> {
         return this.withConnection(database, entities, connection => connection.transaction(em => callback(em)))
     }
-
-    // Each handle is roughly the same size.
-    private static sizeFunction = () => 1
-
-    // Close the underlying file handle on cache eviction.
-    private static connectionFunction = (connection: Connection) => connection.close()
 }
 
 /**
- * `DocumentCache` is a cache of deserialized `DocumentData` values indexed
- * by their Identifer.
+ * A cache of deserialized `DocumentData` values indexed by their Identifer.
  */
 export class DocumentCache extends GenericCache<Id, DocumentData> {
     /**
@@ -225,7 +213,13 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
      * all items in the cache.
      */
     constructor(max: number) {
-        super(max, DocumentCache.sizeFunction, DocumentCache.disposeFunction)
+        super(
+            max,
+            // TODO - determine memory size
+            () => 1,
+            // Let GC handle the cleanup of the object on cache eviction.
+            (): void => {}
+        )
     }
 
     /**
@@ -243,10 +237,4 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
     ): Promise<T> {
         return this.withValue(documentId, factory, callback)
     }
-
-    // TODO - determine memory size
-    private static sizeFunction = () => 1
-
-    // Let GC handle the cleanup of the object on cache eviction.
-    private static disposeFunction = (): void => {}
 }

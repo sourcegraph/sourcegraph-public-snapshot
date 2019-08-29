@@ -826,7 +826,7 @@ type Query {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
-    # Lists all status messages
+    # FOR INTERNAL USE ONLY: Lists all status messages
     statusMessages: [StatusMessage!]!
 
     # Look up a namespace by ID.
@@ -1075,6 +1075,10 @@ type CodemodResult implements GenericSearchResultInterface {
     detail: Markdown!
     # A list of matches in this search result.
     matches: [SearchResultMatch!]!
+    # The commit whose contents the codemod was run against.
+    commit: GitCommit!
+    # The raw diff of the modification.
+    rawDiff: String!
 }
 
 # A search result that is a diff between two diffable Git objects.
@@ -1420,6 +1424,14 @@ type GitRefConnection {
 
 # The differences between two Git commits in a repository.
 type RepositoryComparison {
+    # The repository that is the base (left-hand side) of this comparison.
+    baseRepository: Repository!
+
+    # The repository that is the head (right-hand side) of this comparison. Cross-repository
+    # comparisons are not yet supported, so this is always equal to
+    # RepositoryComparison.baseRepository.
+    headRepository: Repository!
+
     # The range that this comparison represents.
     range: GitRevisionRange!
     # The commits in the comparison range, excluding the base and including the head.
@@ -1748,6 +1760,11 @@ type PageInfo {
 type GitCommitConnection {
     # A list of Git commits.
     nodes: [GitCommit!]!
+    # The total number of Git commits in the connection. If the GitCommitConnection is paginated
+    # (e.g., because a "first" parameter was provided to the field that produced it), this field is
+    # null to avoid it taking unexpectedly long to compute the total count. Remove the pagination
+    # parameters to obtain a non-null value for this field.
+    totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
 }
@@ -2129,6 +2146,10 @@ interface Namespace {
     # The globally unique ID of this namespace.
     id: ID!
 
+    # The name of this namespace's component. For a user, this is the username. For an organization,
+    # this is the organization name.
+    namespaceName: String!
+
     # The URL to this namespace.
     url: String!
 }
@@ -2238,6 +2259,9 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # FOR INTERNAL USE ONLY.
     databaseID: Int!
+
+    # The name of this user namespace's component. For users, this is the username.
+    namespaceName: String!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2427,6 +2451,9 @@ type Org implements Node & SettingsSubject & Namespace {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
+
+    # The name of this user namespace's component. For organizations, this is the organization's name.
+    namespaceName: String!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -3712,23 +3739,31 @@ type ProductSubscriptionEvent {
     url: String
 }
 
-# An status message produced when repositories are being cloned
-type CloningStatusMessage {
+# FOR INTERNAL USE ONLY: A status message produced when repositories are being
+# cloned
+type CloningProgress {
     # The message of this status message
     message: String!
 }
 
-# An status message produced when repositories could not be synced from code
-# hosts
-type SyncErrorStatusMessage {
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced from an external service
+type ExternalServiceSyncError {
     # The message of this status message
     message: String!
     # The external service that failed to sync
     externalService: ExternalService!
 }
 
-# A status message
-union StatusMessage = CloningStatusMessage | SyncErrorStatusMessage
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced
+type SyncError {
+    # The message of this status message
+    message: String!
+}
+
+# FOR INTERNAL USE ONLY: A status message
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 # An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use

@@ -34,17 +34,24 @@ type statusMessageResolver struct {
 	message protocol.StatusMessage
 }
 
-func (r *statusMessageResolver) ToCloningStatusMessage() (*statusMessageResolver, bool) {
+func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, bool) {
 	return r, r.message.Cloning != nil
 }
 
-func (r *statusMessageResolver) ToSyncErrorStatusMessage() (*statusMessageResolver, bool) {
+func (r *statusMessageResolver) ToExternalServiceSyncError() (*statusMessageResolver, bool) {
+	return r, r.message.ExternalServiceSyncError != nil
+}
+
+func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.SyncError != nil
 }
 
 func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil
+	}
+	if r.message.ExternalServiceSyncError != nil {
+		return r.message.ExternalServiceSyncError.Message, nil
 	}
 	if r.message.SyncError != nil {
 		return r.message.SyncError.Message, nil
@@ -53,7 +60,8 @@ func (r *statusMessageResolver) Message() (string, error) {
 }
 
 func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
-	externalService, err := db.ExternalServices.GetByID(ctx, r.message.SyncError.ExternalServiceId)
+	id := r.message.ExternalServiceSyncError.ExternalServiceId
+	externalService, err := db.ExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

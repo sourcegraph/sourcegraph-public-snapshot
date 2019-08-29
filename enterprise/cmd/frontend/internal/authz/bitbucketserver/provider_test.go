@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
@@ -70,19 +71,34 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		repo := make(map[string]*types.Repo, len(f.repos))
-		repos := make([]*types.Repo, 0, len(f.repos))
+		stored := make([]*repos.Repo, 0, len(f.repos))
 		for _, r := range f.repos {
-			repo[r.Name] = &types.Repo{
-				ID:           api.RepoID(r.ID + 42), // Make them different
-				Name:         api.RepoName(r.Name),
+			stored = append(stored, &repos.Repo{
+				Name:         r.Name,
 				ExternalRepo: h.externalRepo(r),
-			}
-			repos = append(repos, repo[r.Name])
+				Sources:      map[string]*repos.SourceInfo{},
+			})
 		}
 
-		sort.Slice(repos, func(i, j int) bool {
-			return repos[i].Name <= repos[j].Name
+		ctx := context.Background()
+		err := repos.NewDBStore(db, sql.TxOptions{}).UpsertRepos(ctx, stored...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		repo := make(map[string]*types.Repo, len(f.repos))
+		toverify := make([]*types.Repo, 0, len(f.repos))
+		for _, r := range stored {
+			repo[r.Name] = &types.Repo{
+				ID:           api.RepoID(r.ID),
+				Name:         api.RepoName(r.Name),
+				ExternalRepo: r.ExternalRepo,
+			}
+			toverify = append(toverify, repo[r.Name])
+		}
+
+		sort.Slice(toverify, func(i, j int) bool {
+			return toverify[i].Name <= toverify[j].Name
 		})
 
 		for i, tc := range []struct {
@@ -172,7 +188,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 					acct = h.externalAccount(int32(i), tc.user)
 				}
 
-				perms, err := p.RepoPerms(tc.ctx, acct, repos)
+				perms, err := p.RepoPerms(tc.ctx, acct, toverify)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)

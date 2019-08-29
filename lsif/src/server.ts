@@ -1,23 +1,25 @@
+import * as fs from 'mz/fs'
 import * as path from 'path'
+import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import uuid from 'uuid'
-import { ConnectionCache, DocumentCache } from './cache'
-import { Database } from './database'
-import { fs, zlib } from 'mz'
-import { hasErrorCode, makeFilename } from './util'
-import { Queue, Scheduler } from 'node-resque'
-import { XrepoDatabase } from './xrepo'
 import {
-    STORAGE_ROOT,
     CONNECTION_CACHE_SIZE,
     DOCUMENT_CACHE_SIZE,
-    MAX_UPLOAD,
     HTTP_PORT,
-    REDIS_PORT,
     REDIS_HOST,
+    REDIS_PORT,
+    STORAGE_ROOT,
+    LOG_READY,
 } from './settings'
+import { ConnectionCache, DocumentCache } from './cache'
+import { Database } from './database'
+import { hasErrorCode, makeFilename } from './util'
+import { Queue, Scheduler } from 'node-resque'
+import { wrap } from 'async-middleware'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -50,66 +52,72 @@ async function main(): Promise<void> {
         return new Database(xrepoDatabase, connectionCache, documentCache, file)
     }
 
-    app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
-        try {
-            const { repository, commit } = req.query
-            checkRepository(repository)
-            checkCommit(commit)
-            const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
-            const writeStream = fs.createWriteStream(filename)
-            // TODO - do validation
-            req.pipe(zlib.createGunzip())
-                .pipe(zlib.createGzip())
-                .pipe(writeStream)
-            await new Promise(resolve => writeStream.on('finish', resolve))
-            await queue.enqueue('lsif', 'convert', [repository, commit, filename])
-            res.json(null)
-        } catch (e) {
-            return next(e)
-        }
-    })
-
-    app.post('/exists', async (req, res, next) => {
-        try {
-            const { repository, commit, file } = req.query
-            checkRepository(repository)
-            checkCommit(commit)
-
-            const db = await createDatabase(repository, commit)
-            if (!db) {
-                res.json(false)
-                return
+    app.post(
+        '/upload',
+        wrap(
+            async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+                const { repository, commit } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
+                const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+                const writeStream = fs.createWriteStream(filename)
+                // TODO - do validation
+                req.pipe(zlib.createGunzip())
+                    .pipe(zlib.createGzip())
+                    .pipe(writeStream)
+                await new Promise(resolve => writeStream.on('finish', resolve))
+                await queue.enqueue('lsif', 'convert', [repository, commit, filename])
+                res.json(null)
             }
+        )
+    )
 
-            const result = !file || (await db.exists(file))
-            res.json(result)
-        } catch (e) {
-            return next(e)
-        }
-    })
+    app.post(
+        '/exists',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit, file } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
 
-    app.post('/request', bodyParser.json({ limit: '1mb' }), async (req, res, next) => {
-        try {
-            const { repository, commit } = req.query
-            const { path, position, method } = req.body
-            checkRepository(repository)
-            checkCommit(commit)
-            checkMethod(method, ['definitions', 'references', 'hover'])
-            const cleanMethod = method as 'definitions' | 'references' | 'hover'
+                const db = await createDatabase(repository, commit)
+                if (!db) {
+                    res.json(false)
+                    return
+                }
 
-            const db = await createDatabase(repository, commit)
-            if (!db) {
-                throw Object.assign(new Error('No LSIF data'), { status: 404 })
+                const result = !file || (await db.exists(file))
+                res.json(result)
             }
+        )
+    )
 
-            res.json(await db[cleanMethod](path, position))
-        } catch (e) {
-            return next(e)
-        }
-    })
+    app.post(
+        '/request',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit } = req.query
+                const { path, position, method } = req.body
+                checkRepository(repository)
+                checkCommit(commit)
+                checkMethod(method, ['definitions', 'references', 'hover'])
+                const cleanMethod = method as 'definitions' | 'references' | 'hover'
+
+                const db = await createDatabase(repository, commit)
+                if (!db) {
+                    throw Object.assign(new Error('No LSIF data'), { status: 404 })
+                }
+
+                res.json(await db[cleanMethod](path, position))
+            }
+        )
+    )
 
     app.listen(HTTP_PORT, () => {
-        console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
+        if (LOG_READY) {
+            console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
+        }
     })
 }
 
@@ -203,4 +211,7 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(e => console.error(e))
+main().catch(e => {
+    console.error(e)
+    setTimeout(() => process.exit(1), 0)
+})

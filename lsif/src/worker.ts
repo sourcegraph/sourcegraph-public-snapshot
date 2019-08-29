@@ -1,15 +1,15 @@
-import exitHook from 'async-exit-hook'
 import * as temp from 'temp'
+import exitHook from 'async-exit-hook'
 import { ConnectionCache } from './cache'
-import { fs, zlib, readline } from 'mz'
-import { Worker } from 'node-resque'
-import { makeFilename } from './util'
-import { XrepoDatabase } from './xrepo'
-import { Importer } from './importer'
-import { DocumentModel, RefModel, MetaModel, DefModel } from './models'
+import { createConnection, EntityManager } from 'typeorm'
+import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { Edge, Vertex } from 'lsif-protocol'
-import { createConnection } from 'typeorm'
-import { REDIS_HOST, REDIS_PORT } from './settings'
+import { fs, readline, zlib } from 'mz'
+import { importLsif } from './importer'
+import { LOG_READY, REDIS_HOST, REDIS_PORT } from './settings'
+import { makeFilename } from './util'
+import { Worker } from 'node-resque'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Runs the node-resque worker that converts raw LSIF dumps into SQLite databases.
@@ -30,7 +30,9 @@ async function main(): Promise<void> {
     exitHook(() => worker.end())
     worker.start().catch(e => console.error(e))
 
-    console.log('Listening for uploads')
+    if (LOG_READY) {
+        console.log('Listening for uploads')
+    }
 }
 
 /**
@@ -54,29 +56,16 @@ function makeConvertJob(
         })
 
         try {
-            const { packages, references } = await connection.transaction(async entityManager => {
-                const importer = new Importer(entityManager)
+            const { packages, references } = await connection.transaction((entityManager: EntityManager) =>
+                importLsif(entityManager, parseLines(readline.createInterface({ input })))
+            )
 
-                let element: Vertex | Edge
-                for await (const line of readline.createInterface({ input })) {
-                    try {
-                        element = JSON.parse(line)
-                    } catch (e) {
-                        throw new Error(`Parsing failed for line:\n${line}`)
-                    }
-
-                    try {
-                        await importer.insert(element)
-                    } catch (e) {
-                        throw new Error(`Failed to process line:\n${line}\nCaused by:\n${e}`)
-                    }
-                }
-
-                return await importer.finalize()
-            })
-
+            // These needs to be done in sequence as SQLite can only have one
+            // write txn at a time without causing the other one to abort with
+            // a weird error.
             await xrepoDatabase.addPackages(repository, commit, packages)
             await xrepoDatabase.addReferences(repository, commit, references)
+
             await fs.rename(outFile, makeFilename(repository, commit))
             await fs.unlink(filename)
         } catch (e) {
@@ -85,6 +74,24 @@ function makeConvertJob(
         } finally {
             await connection.close()
         }
+    }
+}
+
+/**
+ * Converts streaming JSON input into an iterable of vertex and edge objects.
+ *
+ * @param lines The stream of raw, uncompressed JSON lines.
+ */
+async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex | Edge> {
+    let i = 0
+    for await (const line of lines) {
+        try {
+            yield JSON.parse(line) as Vertex | Edge
+        } catch (e) {
+            throw new Error(`Parsing failed for line:\n${i}`)
+        }
+
+        i++
     }
 }
 

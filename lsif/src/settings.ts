@@ -1,7 +1,7 @@
 /**
- * Where on the file system to store LSIF files.
+ * Whether or not to log a message when the HTTP server is ready and listening.
  */
-export const STORAGE_ROOT = readEnv('LSIF_STORAGE_ROOT', 'lsif-storage')
+export const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -19,9 +19,9 @@ export const REDIS_HOST = readEnv('LSIF_REDIS_HOST', 'localhost')
 export const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
 
 /**
- * The maximum size of an LSIF dump upload.
+ * Where on the file system to store LSIF files.
  */
-export const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
+export const STORAGE_ROOT = readEnv('LSIF_STORAGE_ROOT', 'lsif-storage')
 
 //
 // Caches

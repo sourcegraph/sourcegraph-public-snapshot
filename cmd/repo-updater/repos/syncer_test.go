@@ -30,18 +30,16 @@ func TestSyncer_Sync(t *testing.T) {
 	gitlab := repos.ExternalService{ID: 2, Kind: "gitlab"}
 
 	for _, tc := range []struct {
-		name           string
-		sourcer        repos.Sourcer
-		store          repos.Store
-		err            string
-		lastSyncErrors string
+		name    string
+		sourcer repos.Sourcer
+		store   repos.Store
+		err     string
 	}{
 		{
-			name:           "sourcer error aborts sync",
-			sourcer:        repos.NewFakeSourcer(errors.New("boom")),
-			store:          new(repos.FakeStore),
-			err:            "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
-			lastSyncErrors: "boom",
+			name:    "sourcer error aborts sync",
+			sourcer: repos.NewFakeSourcer(errors.New("boom")),
+			store:   new(repos.FakeStore),
+			err:     "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name: "sources partial errors aborts sync",
@@ -49,9 +47,8 @@ func TestSyncer_Sync(t *testing.T) {
 				repos.NewFakeSource(&github, nil),
 				repos.NewFakeSource(&gitlab, errors.New("boom")),
 			),
-			store:          new(repos.FakeStore),
-			err:            "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
-			lastSyncErrors: "boom",
+			store: new(repos.FakeStore),
+			err:   "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name:    "store list error aborts sync",
@@ -79,12 +76,8 @@ func TestSyncer_Sync(t *testing.T) {
 				t.Errorf("have error %q, want %q", have, want)
 			}
 
-			haveErrs := make([]string, 0, len(syncer.LastSyncErrors()))
-			for _, e := range syncer.LastSyncErrors() {
-				haveErrs = append(haveErrs, fmt.Sprint(e))
-			}
-			if have, want := strings.Join(haveErrs, ","), tc.lastSyncErrors; have != want {
-				t.Errorf("have error %q, want %q", have, want)
+			if have, want := fmt.Sprint(syncer.LastSyncError()), tc.err; have != want {
+				t.Errorf("have LastSyncError %q, want %q", have, want)
 			}
 		})
 	}
