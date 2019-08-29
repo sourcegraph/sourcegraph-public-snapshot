@@ -1,12 +1,14 @@
 import * as React from 'react'
 
-interface Props {}
+interface Props {
+    enabled: boolean
+}
 
 export class DotStarButton extends React.PureComponent<Props> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            enabled: false,
+            enabled: props.enabled,
         }
     }
 

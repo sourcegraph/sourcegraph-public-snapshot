@@ -18,6 +18,7 @@ import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
+import { isErrorLike } from '../../../../shared/src/util/errors'
 
 interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, ActivationProps {
     authenticatedUser: GQL.IUser | null
@@ -68,6 +69,9 @@ export class SearchPage extends React.Component<Props, State> {
         }
         const hasScopes = this.getScopes().length > 0
         const quickLinks = this.getQuickLinks()
+        const tpsf = this.props.settingsCascade.final
+        const searchVersion = (tpsf && !isErrorLike(tpsf) && tpsf['search.version']) || 'V0'
+        const dotStarProps = { enabled: searchVersion !== 'V1' }
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -81,7 +85,7 @@ export class SearchPage extends React.Component<Props, State> {
                             autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
                         />
-                        <DotStarButton {...this.props} />
+                        <DotStarButton {...dotStarProps} />
                         <SearchButton />
                     </div>
                     {hasScopes ? (
