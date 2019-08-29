@@ -26,14 +26,14 @@ interface CacheEntry<K, V> {
 
     /**
      * The number of active withValue calls referencing this entry.
-     * If this value is non-zero, it should not be evictable from the
+     * If this value is non-zero, it should not be evict-able from the
      * cache.
      */
     readers: number
 }
 
 /**
- * A generic LRU cache. We use this instead of the `lru-cache` apckage
+ * A generic LRU cache. We use this instead of the `lru-cache` package
  * available in NPM so that we can handle async payloads in a more
  * first-class way as well as shedding some of the cruft around evictions.
  * We need to ensure database handles are closed when they are no longer
@@ -66,7 +66,7 @@ export class GenericCache<K, V> {
         private max: number,
         private sizeFunction: (value: V) => number,
         private disposeFunction: (value: V) => void
-    ) {}
+    ) { }
 
     /**
      * Check if `key` exists in the cache. If it does not, create a value
@@ -109,7 +109,7 @@ export class GenericCache<K, V> {
 
         const promise = factory()
         const newEntry = { key, promise, size: 0, readers: 0 }
-        promise.then(value => this.resolved(newEntry, value), () => {})
+        promise.then(value => this.resolved(newEntry, value), () => { })
         this.lruList.unshift(newEntry)
         const head = this.lruList.head
         if (head) {
@@ -144,7 +144,7 @@ export class GenericCache<K, V> {
                 this.size -= size
                 this.lruList.removeNode(node)
                 this.cache.delete(node.value.key)
-                promise.then(value => this.disposeFunction(value), () => {})
+                promise.then(value => this.disposeFunction(value), () => { })
             }
 
             node = prev
@@ -172,7 +172,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
 
     /**
      * Invoke `callback` with a SQLite connection object obtained from the
-     * cache or created on cache miss. This connection is guranteed not to
+     * cache or created on cache miss. This connection is guaranteed not to
      * be disposed by cache eviction while the callback is active.
      *
      * @param database The database filename.
@@ -228,7 +228,7 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
             // TODO - determine memory size
             () => 1,
             // Let GC handle the cleanup of the object on cache eviction.
-            (): void => {}
+            (): void => { }
         )
     }
 

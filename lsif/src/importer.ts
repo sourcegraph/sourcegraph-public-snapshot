@@ -301,7 +301,7 @@ class LsifImporter {
 
     /**
      * This should be the first vertex seen. Extract the project root so we
-     * can create relative paths for documnets. Insert a row in the meta
+     * can create relative paths for documents. Insert a row in the meta
      * table with the LSIF protocol version.
      *
      * @param vertex The metadata vertex.
@@ -411,7 +411,7 @@ class LsifImporter {
 
     /**
      * Sets the package information of the specified moniker. If the moniker is an export moniker,
-     * then the package information will also be returned as an exported pacakge by the `finalize`
+     * then the package information will also be returned as an exported package by the `finalize`
      * method. Ensures all referenced vertices are defined.
      *
      * @param edge The packageInformation edge.
@@ -487,7 +487,7 @@ class LsifImporter {
     /**
      * Initialize a blank document which will be fully populated on the invocation of
      * `handleDocumentEnd`. This document is created now so that we can stash the ids
-     * of ranges refered to by `contains` edges we see before the document end event
+     * of ranges referred to by `contains` edges we see before the document end event
      * occurs.
      *
      * @param event The document begin event.
@@ -676,7 +676,7 @@ class LsifImporter {
         }
 
         // Attach definition and reference results results to the document.
-        // This atatches some denormalized data on the `WrappedDocumentData`
+        // This attaches some denormalized data on the `WrappedDocumentData`
         // object which will also be used to populate the defs and refs
         // tables.
 
@@ -703,8 +703,8 @@ class LsifImporter {
 
     /**
      * Find all monikers reachable from the given range or result set, and
-     * add them to the item, and the document. If pacakge information is
-     * also attached, it is also atatched to the document.
+     * add them to the item, and the document. If package information is
+     * also attached, it is also attached to the document.
      *
      * @param document The document object.
      * @param id The identifier of the range or result set.
@@ -926,7 +926,7 @@ function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
 }
 
 /**
- * Handle the lifecycle of an importer. Creates an `LsifImporter`. This will create
+ * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
  * a new importer, insert each vertex and edge in the given stream, then call the
  * importer's finalize method.
  *

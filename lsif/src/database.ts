@@ -16,7 +16,7 @@ export class Database {
      * Create a new `Database` with the given cross-repo database instance and the
      * filename of the database that contains data for a particular repository/commit.
      *
-     * @param xrepoDatabase The cross-repo databse.
+     * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded document.
      * @param databasePath The path to the database file.
@@ -26,7 +26,7 @@ export class Database {
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
         private databasePath: string
-    ) {}
+    ) { }
 
     /**
      * Determine if data exists for a particular document in this database.
@@ -368,7 +368,7 @@ function findResult<T>(
  *
  * @param resultSets The map of results sets of the document.
  * @param monikers The map of monikers of the document.
- * @param data The range or restult set object.
+ * @param data The range or result set object.
  */
 function findMonikers(
     resultSets: Map<Id, ResultSetData>,
@@ -389,7 +389,7 @@ function findMonikers(
 }
 
 /**
- * Return an iterabel of the range and result set items that are attached
+ * Return an iterable of the range and result set items that are attached
  * to the given initial data. The initial data is yielded immediately.
  *
  * @param resultSets The map of results sets of the document.
@@ -439,7 +439,7 @@ function sortMonikers(monikers: MonikerData[]): MonikerData[] {
 /**
  * Convert the given range identifiers into LSP location objects.
  *
- * @param ranges The map of ranges of the document (from identifier to the range's index inorderedRanges).
+ * @param ranges The map of ranges of the document (from identifier to the range's index in `orderedRanges`).
  * @param orderedRanges The ordered ranges of the document.
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.

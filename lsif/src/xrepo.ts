@@ -53,7 +53,7 @@ export class XrepoDatabase {
      * @param connectionCache The cache of SQLite connections.
      * @param database The filename of the database.
      */
-    constructor(private connectionCache: ConnectionCache, private database: string) {}
+    constructor(private connectionCache: ConnectionCache, private database: string) { }
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
@@ -75,7 +75,7 @@ export class XrepoDatabase {
     }
 
     /**
-     * Correlate a `repository` and `commit` with a set of unqiue packages.
+     * Correlate a `repository` and `commit` with a set of unique packages.
      *
      * @param repository The repository that defines the given package.
      * @param commit The commit of the that defines the given package.
@@ -126,9 +126,9 @@ export class XrepoDatabase {
      * Correlate the given `repository` and `commit` with the the names referenced from a
      * particular remote package.
      *
-     * @param repository The repository that depends on the given pacakge.
-     * @param commit The commit that depends on the given pacakge.
-     * @param references The package data (scheme, name, and version) and the symbosl that the package references.
+     * @param repository The repository that depends on the given package.
+     * @param commit The commit that depends on the given package.
+     * @param references The package data (scheme, name, and version) and the symbols that the package references.
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
@@ -163,7 +163,7 @@ export class XrepoDatabase {
      *
      * @param callback The function invoke with the entity manager.
      */
-    private async withTransactionalEntityManager<T>(callback: (conenection: EntityManager) => Promise<T>): Promise<T> {
+    private async withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
         return await this.connectionCache.withTransactionalEntityManager(
             this.database,
             [PackageModel, ReferenceModel],
