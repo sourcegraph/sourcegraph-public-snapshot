@@ -1,17 +1,23 @@
 import * as React from 'react'
 
-interface Props {
-    value: string
-}
+interface Props {}
 
 export class DotStarButton extends React.PureComponent<Props> {
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            enabled: false,
+        }
+    }
+
     public render(): JSX.Element | null {
         return (
             <button
                 type="button"
-                className="btn btn-sm text-nowrap dot-star-button"
+                className={`btn btn-sm text-nowrap dot-star-button ${
+                    this.state.enabled ? ' dot-star-button--selected' : ''
+                }`}
                 data-testid="dot-star-button"
-                value={this.props.value}
                 title="Regular expression search style"
                 onMouseDown={this.onMouseDown}
                 onClick={this.onClick}
@@ -28,5 +34,6 @@ export class DotStarButton extends React.PureComponent<Props> {
 
     private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
         event.preventDefault()
+        this.setState({ enabled: !this.state.enabled })
     }
 }
