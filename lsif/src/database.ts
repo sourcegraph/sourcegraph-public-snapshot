@@ -9,7 +9,7 @@ import { XrepoDatabase } from './xrepo'
 import { ConnectionCache, DocumentCache } from './cache'
 
 /**
- * `Database` wraps operations around a single repository/commit pair.
+ * A wrapper around operations for single repository/commit pair.
  */
 export class Database {
     /**

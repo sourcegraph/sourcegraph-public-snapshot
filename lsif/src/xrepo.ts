@@ -5,45 +5,34 @@ import { ReferenceModel, PackageModel } from './models'
 import { TableInserter } from './inserter'
 
 /**
- * `Package` represents a package provided by a project or a package that is
- * a dependency of a project, depending on its use.
+ * Represents a package provided by a project or a package that is a dependency
+ * of a project, depending on its use.
  */
 export interface Package {
-    /**
-     * `scheme` is the scheme of the package (e.g. npm, pip).
-     */
+    // The scheme of the package (e.g. npm, pip).
     scheme: string
 
-    /**
-     * `name` is the name of the package.
-     */
+    // The name of the package.
     name: string
 
-    /**
-     * `version` is the version of the package.
-     */
+    // The version of the package.
     version: string
 }
 
 /**
- * `SymbolReferences` represents a use of a set of symbols from a particular
- * dependent package of a project.
+ * Represents a use of a set of symbols from a particular dependent package of
+ * a project.
  */
 export interface SymbolReferences {
-    /**
-     * `package` is the package from which the symbols are imported.
-     */
+    // The package from which the symbols are imported.
     package: Package
 
-    /**
-     * `identifiers` are the unique identifiers of the symbols imported from
-     * the package.
-     */
+    // The unique identifiers of the symbols imported from the package.
     identifiers: string[]
 }
 
 /**
- * `XrepoDatabase` is a SQLite database that stitches together the references
+ * A wrapper around a SQLite database that stitches together the references
  * between projects at a specific commit. This is used for cross-repository
  * jump to definition and find references features.
  */

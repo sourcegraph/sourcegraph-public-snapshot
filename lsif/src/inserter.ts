@@ -2,10 +2,9 @@ import { EntityManager } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 
 /**
- * `TableInserter` is a batch inserter for a SQLite table. Inserting hundreds
- * or thousands of rows in a loop is too inefficient, but due to the limit of
- * SQLITE_MAX_VARIABLE_NUMBER, the entire set of values cannot be inserted
- * in one bulk operation either.
+ * A batch inserter for a SQLite table. Inserting hundreds or thousands of rows in
+ * a loop is too inefficient, but due to the limit of SQLITE_MAX_VARIABLE_NUMBER,
+ * the entire set of values cannot be inserted in one bulk operation either.
  *
  * One inserter instance is created for each table that will receive a bulk
  * payload. The inserter will periodically perform the insert operation
@@ -14,10 +13,7 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
  * See https://www.sqlite.org/limits.html#max_variable_number.
  */
 export class TableInserter<T, M extends new () => T> {
-    /**
-     * `batch` is the set of entity values that will be inserted in the
-     * next invocation of `executeBatch`.
-     */
+    // The set of entity values that will be inserted in the next invocation of `executeBatch`.
     private batch: QueryDeepPartialEntity<T>[] = []
 
     /**

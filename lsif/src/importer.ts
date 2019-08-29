@@ -55,28 +55,24 @@ import { Package, SymbolReferences } from './xrepo'
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
 /**
- * `DecoratedDocumentData` is a `DocumentData` instance with additional context
- * during the importing of an LSIF dump.
+ * A wrapper around `DocumentData` with additional context required during the
+ * importing of an LSIF dump.
  */
 export interface DecoratedDocumentData extends DocumentData {
-    /**
-     * `id` is the identifier of the document.
-     */
+    // The identifier of the document.
     id: Id
 
-    /**
-     * `uri` is the URI of the document.
-     */
+    // The URI of the document.
     uri: string
 
     /**
-     * `contains` is the running set of identifiers that have a contains edge
-     * to this document in the LSIF dump.
+     * The running set of identifiers that have a contains edge to this document
+     * in the LSIF dump.
      */
     contains: Id[]
 
     /**
-     * `definitions` carries the data of definitionResult edges attached within
+     * A field that carries the data of definitionResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
      * the definition result data would be stored in `definitionResults` in the
      * superclass.
@@ -84,7 +80,7 @@ export interface DecoratedDocumentData extends DocumentData {
     definitions: { data: DefinitionResultData; moniker: MonikerData }[]
 
     /**
-     * `references` carries the data of referenceResult edges attached within
+     * A field that carries the data of referenceResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
      * the reference result data would be stored in `referenceResults` in the
      * superclass.
@@ -93,8 +89,8 @@ export interface DecoratedDocumentData extends DocumentData {
 }
 
 /**
- * `HandlerMap` is a mapping from vertex or edge labels to the function that
- * can handle an object of that particular type during import.
+ * A mapping from vertex or edge labels to the function that can handle an object
+ * of that particular type during import.
  */
 interface HandlerMap {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,11 +98,13 @@ interface HandlerMap {
 }
 
 /**
- * `LsifImporter` processes an upload of an LSIF dump. This class receives the
- * parsed vertex or edge, line by line, from the caller, and adds it into a
- * new database file on disk. Once finalized, the database is ready for use
+ * Common state around the conversion of a single LSIF dump upload. This class
+ * receives the parsed vertex or edge, line by line, from the caller, and adds it
+ * into a new database file on disk. Once finalized, the database is ready for use
  * and relevant cross-repository metadata is returned to the caller, which
  * is used to populate the xrepo database.
+ *
+ * This class should not be used directly - use the `importLsif` function instead.
  */
 class LsifImporter {
     // Handler vtables
@@ -130,33 +128,27 @@ class LsifImporter {
     private resultSetDatas: Map<Id, ResultSetData> = new Map()
 
     /**
-     * `projectRoot` is the root of all document URIs. This is extracted from
-     * the metadata vertex at the beginning of processing.
+     * The root of all document URIs. This is extracted from the metadata vertex at
+     * the beginning of processing.
      */
     private projectRoot?: URL
 
-    /**
-     * `importedMonikers` is the set of exported moniker identifiers that have
-     * package information attached.
-     */
+    // The set of exported moniker identifiers that have package information attached.
     private importedMonikers = new Set<Id>()
 
-    /**
-     * `exportedMonikers` is the set of exported moniker identifiers that have
-     * package information attached.
-     */
+    // The set of exported moniker identifiers that have package information attached.
     private exportedMonikers = new Set<Id>()
 
     /**
-     * `documentDatas` are decorated `DocumentData` objects that are created on
-     * document begin events and are inserted into the databse on document end
-     * events.
+     * A map of decorated `DocumentData` objects that are created on document begin events
+     * and are inserted into the databse on document end events.
      */
     private documentDatas = new Map<Id, DecoratedDocumentData>()
 
     /**
-     * `monikerSets` holds the relation from moniker to the set of monikers that
-     * they are related to via nextMoniker edges. This relation is symmetric.
+     * A mapping for the relation from moniker to the set of monikers that they are related
+     * to via nextMoniker edges. This relation is symmetric (if `a` is in `MonikerSets[b]`,
+     * then `b` is in `monikerSets[a]`).
      */
     private monikerSets = new Map<Id, Set<Id>>()
 
@@ -541,6 +533,7 @@ class LsifImporter {
 
         // Insert document record
         await this.documentInserter.insert({ uri: document.uri, value: await encodeJSON(document) })
+        // TODO - really prune everything that's no in the class
 
         // Insert all related definitions
         for (const { data, moniker } of document.definitions) {
@@ -574,7 +567,7 @@ class LsifImporter {
 
     /**
      * Creates a function that takes an `element`, then correlates that
-     * element's  identifier with the result from `factory` in `map`.
+     * element's identifier with the result from `factory` in `map`.
      *
      * @param map The map to populate.
      * @param factory The function that produces a value from `element`.
@@ -584,12 +577,8 @@ class LsifImporter {
     }
 
     /**
-     * Adds data to a nested array within the two-tier `map`. Let `outV`
-     * and `inVs` be the source and destinations of `edge`, such that
-     * `map` is indexed in the outer level by `outV` and indexed in the
-     * inner level by document. This method adds the destination edges
-     * to `map[outV][document][field]`, and creates any data structure
-     * on th epath that has not yet been constructed.
+     * Concatenate `edge.inVs` to the array at `map[edge.outV][edge.document][field]`.
+     * If any field is undefined, it is created on the fly.
      *
      * @param edge The edge.
      * @param name The type of map (used for exception message).
