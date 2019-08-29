@@ -80,15 +80,6 @@ export interface DecoratedDocumentData extends DocumentData {
 }
 
 /**
- * A mapping from vertex or edge labels to the function that can handle an object
- * of that particular type during import.
- */
-interface HandlerMap {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [K: string]: (element: any) => Promise<void>
-}
-
-/**
  * Common state around the conversion of a single LSIF dump upload. This class
  * receives the parsed vertex or edge, line by line, from the caller, and adds it
  * into a new database file on disk. Once finalized, the database is ready for use
@@ -98,10 +89,6 @@ interface HandlerMap {
  * This class should not be used directly - use the `importLsif` function instead.
  */
 class LsifImporter {
-    // Handler vtables
-    private vertexHandlerMap: HandlerMap = {}
-    private edgeHandlerMap: HandlerMap = {}
-
     // Bulk database inserters
     private metaInserter: TableInserter<MetaModel, new () => MetaModel>
     private documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
@@ -124,12 +111,6 @@ class LsifImporter {
      */
     private projectRoot?: URL
 
-    // The set of exported moniker identifiers that have package information attached.
-    private importedMonikers = new Set<Id>()
-
-    // The set of exported moniker identifiers that have package information attached.
-    private exportedMonikers = new Set<Id>()
-
     /**
      * A map of decorated `DocumentData` objects that are created on document begin events
      * and are inserted into the databse on document end events.
@@ -143,38 +124,18 @@ class LsifImporter {
      */
     private monikerSets = new Map<Id, Set<Id>>()
 
+    // The set of exported moniker identifiers that have package information attached.
+    private importedMonikers = new Set<Id>()
+
+    // The set of exported moniker identifiers that have package information attached.
+    private exportedMonikers = new Set<Id>()
+
     /**
      * Create a new `LsifImporter` with the given entity manager.
      *
      * @param entityManager A transactional SQLite entity manager.
      */
     constructor(private entityManager: EntityManager) {
-        // Convert f into an async function
-        const wrap = <T>(f: (element: T) => void) => (element: T) => Promise.resolve(f(element))
-
-        // Register vertex handlers
-        this.vertexHandlerMap[VertexLabels.definitionResult] = wrap(e => this.handleDefinitionResult(e))
-        this.vertexHandlerMap[VertexLabels.document] = wrap(e => this.handleDocument(e))
-        this.vertexHandlerMap[VertexLabels.event] = e => this.handleEvent(e)
-        this.vertexHandlerMap[VertexLabels.hoverResult] = wrap(e => this.handleHover(e))
-        this.vertexHandlerMap[VertexLabels.metaData] = e => this.handleMetaData(e)
-        this.vertexHandlerMap[VertexLabels.moniker] = wrap(e => this.handleMoniker(e))
-        this.vertexHandlerMap[VertexLabels.packageInformation] = wrap(e => this.handlePackageInformation(e))
-        this.vertexHandlerMap[VertexLabels.range] = wrap(e => this.handleRange(e))
-        this.vertexHandlerMap[VertexLabels.referenceResult] = wrap(e => this.handleReferenceResult(e))
-        this.vertexHandlerMap[VertexLabels.resultSet] = wrap(e => this.handleResultSet(e))
-
-        // Register edge handlers
-        this.edgeHandlerMap[EdgeLabels.contains] = wrap(e => this.handleContains(e))
-        this.edgeHandlerMap[EdgeLabels.item] = wrap(e => this.handleItemEdge(e))
-        this.edgeHandlerMap[EdgeLabels.moniker] = wrap(e => this.handleMonikerEdge(e))
-        this.edgeHandlerMap[EdgeLabels.next] = wrap(e => this.handleNextEdge(e))
-        this.edgeHandlerMap[EdgeLabels.nextMoniker] = wrap(e => this.handleNextMonikerEdge(e))
-        this.edgeHandlerMap[EdgeLabels.packageInformation] = wrap(e => this.handlePackageInformationEdge(e))
-        this.edgeHandlerMap[EdgeLabels.textDocument_definition] = wrap(e => this.handleDefinitionEdge(e))
-        this.edgeHandlerMap[EdgeLabels.textDocument_hover] = wrap(e => this.handleHoverEdge(e))
-        this.edgeHandlerMap[EdgeLabels.textDocument_references] = wrap(e => this.handleReferenceEdge(e))
-
         // Determine the max batch size of each model type. We cannot perform an
         // insert operation with more than 999 placeholder variables, so we need
         // to flush our batch before we reach that amount. The batch size for each
@@ -193,13 +154,76 @@ class LsifImporter {
      * @param element A vertex or edge element from the LSIF dump.
      */
     public async insert(element: Vertex | Edge): Promise<void> {
-        const handler =
-            element.type === ElementTypes.vertex
-                ? this.vertexHandlerMap[element.label]
-                : this.edgeHandlerMap[element.label]
+        if (element.type === ElementTypes.vertex) {
+            switch (element.label) {
+                case VertexLabels.metaData:
+                    await this.handleMetaData(element)
+                    break
+                case VertexLabels.event:
+                    await this.handleEvent(element)
+                    break
 
-        if (handler) {
-            await handler(element)
+                // The remaining vertex handlers stash data into an appropriate map. This data
+                // may be retrieved when an edge that references it is seen, or when a document
+                // is finalized.
+
+                case VertexLabels.definitionResult:
+                    this.definitionData.set(element.id, new Map())
+                    break
+                case VertexLabels.document:
+                    this.documentUris.set(element.id, element.uri)
+                    break
+                case VertexLabels.hoverResult:
+                    this.hoverData.set(element.id, normalizeHover(element.result))
+                    break
+                case VertexLabels.moniker:
+                    this.monikerData.set(element.id, convertMoniker(element))
+                    break
+                case VertexLabels.packageInformation:
+                    this.packageInformationData.set(element.id, convertPackageInformation(element))
+                    break
+                case VertexLabels.range:
+                    this.rangeData.set(element.id, convertRange(element))
+                    break
+                case VertexLabels.referenceResult:
+                    this.referenceData.set(element.id, new Map())
+                    break
+                case VertexLabels.resultSet:
+                    this.resultSetData.set(element.id, { monikers: [] })
+                    break
+            }
+        }
+
+        if (element.type === ElementTypes.edge) {
+            switch (element.label) {
+                case EdgeLabels.contains:
+                    this.handleContains(element)
+                    break
+                case EdgeLabels.item:
+                    this.handleItemEdge(element)
+                    break
+                case EdgeLabels.moniker:
+                    this.handleMonikerEdge(element)
+                    break
+                case EdgeLabels.next:
+                    this.handleNextEdge(element)
+                    break
+                case EdgeLabels.nextMoniker:
+                    this.handleNextMonikerEdge(element)
+                    break
+                case EdgeLabels.packageInformation:
+                    this.handlePackageInformationEdge(element)
+                    break
+                case EdgeLabels.textDocument_definition:
+                    this.handleDefinitionEdge(element)
+                    break
+                case EdgeLabels.textDocument_hover:
+                    this.handleHoverEdge(element)
+                    break
+                case EdgeLabels.textDocument_references:
+                    this.handleReferenceEdge(element)
+                    break
+            }
         }
     }
 
@@ -295,19 +319,6 @@ class LsifImporter {
             await this.handleDocumentEnd(vertex as DocumentEvent)
         }
     }
-
-    // The remaining vertex handlers stash data into an appropriate map. This data
-    // may be retrieved when an edge that references it is seen, or when a document
-    // is finalized.
-
-    private handleDefinitionResult = this.setById(this.definitionData, () => new Map())
-    private handleDocument = this.setById(this.documentUris, (e: Document) => e.uri)
-    private handleHover = this.setById(this.hoverData, (e: HoverResult) => normalizeHover(e.result))
-    private handleMoniker = this.setById(this.monikerData, convertMoniker)
-    private handlePackageInformation = this.setById(this.packageInformationData, convertPackageInformation)
-    private handleRange = this.setById(this.rangeData, (e: Range) => convertRange(e))
-    private handleReferenceResult = this.setById(this.referenceData, () => new Map())
-    private handleResultSet = this.setById(this.resultSetData, () => ({ monikers: [] }))
 
     //
     // Edge Handlers
@@ -560,17 +571,6 @@ class LsifImporter {
 
     //
     // Helper Functions
-
-    /**
-     * Creates a function that takes an `element`, then correlates that
-     * element's identifier with the result from `factory` in `map`.
-     *
-     * @param map The map to populate.
-     * @param factory The function that produces a value from `element`.
-     */
-    private setById<K extends { id: Id }, V>(map: Map<Id, V>, factory: (element: K) => V): (element: K) => void {
-        return (element: K) => map.set(element.id, factory(element))
-    }
 
     /**
      * Concatenate `edge.inVs` to the array at `map[edge.outV][edge.document]`.
