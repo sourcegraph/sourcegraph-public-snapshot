@@ -6,15 +6,21 @@ import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index } from 'ty
  */
 @Entity({ name: 'meta' })
 export class MetaModel {
-    // A unique ID required by typeorm entities.
+    /**
+     * A unique ID required by typeorm entities.
+     */
     @PrimaryGeneratedColumn()
     public id!: number
 
-    // The version string of the input LSIF that created this database.
+    /**
+     * The version string of the input LSIF that created this database.
+     */
     @Column()
     public lsifVersion!: string
 
-    // The internal version of the LSIF server that created this database.
+    /**
+     * The internal version of the LSIF server that created this database.
+     */
     @Column()
     public sourcegraphVersion!: string
 }
@@ -26,11 +32,15 @@ export class MetaModel {
  */
 @Entity({ name: 'documents' })
 export class DocumentModel {
-    // The root-relative path of the document.
+    /**
+     * The root-relative path of the document.
+     */
     @PrimaryColumn()
     public path!: string
 
-    // The JSON-encoded document data.
+    /**
+     * The JSON-encoded document data.
+     */
     @Column()
     public value!: string
 }
@@ -40,35 +50,51 @@ export class DocumentModel {
  * descriptions.
  */
 class Symbols {
-    // A unique ID required by typeorm entities.
+    /**
+     * A unique ID required by typeorm entities.
+     */
     @PrimaryColumn()
     public id!: number
 
-    // The name of the package type (e.g. npm, pip).
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
     @Column()
     public scheme!: string
 
-    // The unique identifier of the moniker.
+    /**
+     * The unique identifier of the moniker.
+     */
     @Column()
     public identifier!: string
 
-    // The path of the document to which this reference belongs.
+    /**
+     * The path of the document to which this reference belongs.
+     */
     @Column()
     public documentPath!: string
 
-    // The zero-indexed line describing the start of this range.
+    /**
+     * The zero-indexed line describing the start of this range.
+     */
     @Column()
     public startLine!: number
 
-    // The zero-indexed line describing the end of this range.
+    /**
+     * The zero-indexed line describing the end of this range.
+     */
     @Column()
     public endLine!: number
 
-    // The zero-indexed line describing the start of this range.
+    /**
+     * The zero-indexed line describing the start of this range.
+     */
     @Column()
     public startCharacter!: number
 
-    // The zero-indexed line describing the end of this range.
+    /**
+     * The zero-indexed line describing the end of this range.
+     */
     @Column()
     public endCharacter!: number
 }
@@ -98,27 +124,39 @@ export class RefModel extends Symbols {}
 @Entity({ name: 'packages' })
 @Index(['scheme', 'name', 'version'])
 export class PackageModel {
-    // A unique ID required by typeorm entities.
+    /**
+     * A unique ID required by typeorm entities.
+     */
     @PrimaryGeneratedColumn()
     public id!: number
 
-    // The name of the package type (e.g. npm, pip).
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
     @Column()
     public scheme!: string
 
-    // The name of the package this repository and commit provides.
+    /**
+     * The name of the package this repository and commit provides.
+     */
     @Column()
     public name!: string
 
-    // The version of the package this repository and commit provides.
+    /**
+     * The version of the package this repository and commit provides.
+     */
     @Column()
     public version!: string
 
-    // The name of the source repository.
+    /**
+     * The name of the source repository.
+     */
     @Column()
     public repository!: string
 
-    // The source commit.
+    /**
+     * The source commit.
+     */
     @Column()
     public commit!: string
 }
@@ -130,27 +168,39 @@ export class PackageModel {
 @Entity({ name: 'references' })
 @Index(['scheme', 'name', 'version'])
 export class ReferenceModel {
-    // A unique ID required by typeorm entities.
+    /**
+     * A unique ID required by typeorm entities.
+     */
     @PrimaryGeneratedColumn()
     public id!: number
 
-    // The name of the package type (e.g. npm, pip).
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
     @Column()
     public scheme!: string
 
-    // The name of the package this repository and commit depends on.
+    /**
+     * The name of the package this repository and commit depends on.
+     */
     @Column()
     public name!: string
 
-    // The version of the package this repository and commit depends on.
+    /**
+     * The version of the package this repository and commit depends on.
+     */
     @Column()
     public version!: string
 
-    // The name of the source repository.
+    /**
+     * The name of the source repository.
+     */
     @Column()
     public repository!: string
 
-    // The source commit (revision hash).
+    /**
+     * The source commit (revision hash).
+     */
     @Column()
     public commit!: string
 

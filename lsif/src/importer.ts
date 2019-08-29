@@ -48,10 +48,14 @@ const INTERNAL_LSIF_VERSION = '0.1.0'
  * importing of an LSIF dump.
  */
 export interface DecoratedDocumentData extends DocumentData {
-    // The identifier of the document.
+    /**
+     * The identifier of the document.
+     */
     id: Id
 
-    // The root-relative path of the document.
+    /**
+     * The root-relative path of the document.
+     */
     path: string
 
     /**
@@ -122,10 +126,14 @@ class LsifImporter {
      */
     private monikerSets = new Map<Id, Set<Id>>()
 
-    // The set of exported moniker identifiers that have package information attached.
+    /**
+     * The set of exported moniker identifiers that have package information attached.
+     */
     private importedMonikers = new Set<Id>()
 
-    // The set of exported moniker identifiers that have package information attached.
+    /**
+     * The set of exported moniker identifiers that have package information attached.
+     */
     private exportedMonikers = new Set<Id>()
 
     /**

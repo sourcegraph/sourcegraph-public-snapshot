@@ -7,10 +7,14 @@ import Yallist from 'yallist'
  * A wrapper around a cache value promise.
  */
 interface CacheEntry<K, V> {
-    // The key that can retrieve this cache entry.
+    /**
+     * The key that can retrieve this cache entry.
+     */
     key: K
 
-    // The promise that will resolve the cache value.
+    /**
+     * The promise that will resolve the cache value.
+     */
     promise: Promise<V>
 
     /**
@@ -37,13 +41,19 @@ interface CacheEntry<K, V> {
  * it is actively being used.
  */
 class GenericCache<K, V> {
-    // A map from from keys to nodes in `lruList`.
+    /**
+     * A map from from keys to nodes in `lruList`.
+     */
     private cache = new Map<K, Yallist.Node<CacheEntry<K, V>>>()
 
-    // A linked list of cache entires ordered by last-touch.
+    /**
+     * A linked list of cache entires ordered by last-touch.
+     */
     private lruList = new Yallist<CacheEntry<K, V>>()
 
-    // The additive size of the items currently in the cache.
+    /**
+     * The additive size of the items currently in the cache.
+     */
     private size = 0
 
     /**
