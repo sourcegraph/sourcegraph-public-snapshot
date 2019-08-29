@@ -23,8 +23,6 @@ interface ImmutableUser {
 
 type DeployType = 'cluster' | 'docker-container' | 'dev'
 
-type SearchVersion = 'V0' | 'V1'
-
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */

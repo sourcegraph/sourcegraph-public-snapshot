@@ -34,7 +34,7 @@ const genericSearchResultInterfaceFields = gql`
 
 export function search(
     query: string,
-    version: SearchVersion,
+    version: string,
     { extensionsController }: ExtensionsControllerProps<'services'>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
