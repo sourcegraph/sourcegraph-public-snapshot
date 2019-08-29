@@ -43,10 +43,10 @@ export class Database {
      * @param path The path fo the document to which the position belongs.
      * @param position The current hover position.
      */
-    public async definitions(path: string, position: lsp.Position): Promise<lsp.Location | lsp.Location[] | undefined> {
+    public async definitions(path: string, position: lsp.Position): Promise<lsp.Location[] | null> {
         const { document, range } = await this.findRange(path, position)
         if (!document || !range) {
-            return undefined
+            return null
         }
 
         const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
@@ -66,7 +66,7 @@ export class Database {
             }
         }
 
-        return undefined
+        return null
     }
 
     /**
@@ -166,17 +166,14 @@ export class Database {
      * @param document The document containing the reference.
      * @param moniker The target moniker.
      */
-    private async remoteDefinitions(
-        document: DocumentData,
-        moniker: MonikerData
-    ): Promise<lsp.Location | lsp.Location[] | undefined> {
+    private async remoteDefinitions(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[] | null> {
         if (!moniker.packageInformation) {
-            return undefined
+            return null
         }
 
         const packageInformation = document.packageInformation.get(moniker.packageInformation)
         if (!packageInformation) {
-            return undefined
+            return null
         }
 
         const packageEntity = await this.xrepoDatabase.getPackage(
@@ -186,7 +183,7 @@ export class Database {
         )
 
         if (!packageEntity) {
-            return undefined
+            return null
         }
 
         const db = new Database(
