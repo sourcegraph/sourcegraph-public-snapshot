@@ -9,19 +9,19 @@ export class MetaModel {
     /**
      * A unique ID required by typeorm entities.
      */
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
     /**
      * The version string of the input LSIF that created this database.
      */
-    @Column()
+    @Column('string')
     public lsifVersion!: string
 
     /**
      * The internal version of the LSIF server that created this database.
      */
-    @Column()
+    @Column('string')
     public sourcegraphVersion!: string
 }
 
@@ -35,13 +35,13 @@ export class DocumentModel {
     /**
      * The root-relative path of the document.
      */
-    @PrimaryColumn()
+    @PrimaryColumn('string')
     public path!: string
 
     /**
      * The JSON-encoded document data.
      */
-    @Column()
+    @Column('string')
     public value!: string
 }
 
@@ -53,49 +53,49 @@ class Symbols {
     /**
      * A unique ID required by typeorm entities.
      */
-    @PrimaryColumn()
+    @PrimaryColumn('int')
     public id!: number
 
     /**
      * The name of the package type (e.g. npm, pip).
      */
-    @Column()
+    @Column('string')
     public scheme!: string
 
     /**
      * The unique identifier of the moniker.
      */
-    @Column()
+    @Column('string')
     public identifier!: string
 
     /**
      * The path of the document to which this reference belongs.
      */
-    @Column()
+    @Column('string')
     public documentPath!: string
 
     /**
      * The zero-indexed line describing the start of this range.
      */
-    @Column()
+    @Column('int')
     public startLine!: number
 
     /**
      * The zero-indexed line describing the end of this range.
      */
-    @Column()
+    @Column('int')
     public endLine!: number
 
     /**
      * The zero-indexed line describing the start of this range.
      */
-    @Column()
+    @Column('int')
     public startCharacter!: number
 
     /**
      * The zero-indexed line describing the end of this range.
      */
-    @Column()
+    @Column('int')
     public endCharacter!: number
 }
 
@@ -127,37 +127,37 @@ export class PackageModel {
     /**
      * A unique ID required by typeorm entities.
      */
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
     /**
      * The name of the package type (e.g. npm, pip).
      */
-    @Column()
+    @Column('string')
     public scheme!: string
 
     /**
      * The name of the package this repository and commit provides.
      */
-    @Column()
+    @Column('string')
     public name!: string
 
     /**
      * The version of the package this repository and commit provides.
      */
-    @Column()
+    @Column('string')
     public version!: string
 
     /**
      * The name of the source repository.
      */
-    @Column()
+    @Column('string')
     public repository!: string
 
     /**
      * The source commit.
      */
-    @Column()
+    @Column('string')
     public commit!: string
 }
 
@@ -171,37 +171,37 @@ export class ReferenceModel {
     /**
      * A unique ID required by typeorm entities.
      */
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
     /**
      * The name of the package type (e.g. npm, pip).
      */
-    @Column()
+    @Column('string')
     public scheme!: string
 
     /**
      * The name of the package this repository and commit depends on.
      */
-    @Column()
+    @Column('string')
     public name!: string
 
     /**
      * The version of the package this repository and commit depends on.
      */
-    @Column()
+    @Column('string')
     public version!: string
 
     /**
      * The name of the source repository.
      */
-    @Column()
+    @Column('string')
     public repository!: string
 
     /**
      * The source commit (revision hash).
      */
-    @Column()
+    @Column('string')
     public commit!: string
 
     /**
@@ -209,6 +209,6 @@ export class ReferenceModel {
      * and commit imports from the given package. Testing this filter will prevent the
      * backend from opening databases that will yield no results for a particular symbol.
      */
-    @Column()
+    @Column('string')
     public filter!: string
 }

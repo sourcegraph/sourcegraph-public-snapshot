@@ -876,7 +876,7 @@ function convertRange(range: Range): RangeData {
  * @param document The document object.
  * @param ids The list of ids.
  */
-function lookupRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
+export function lookupRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
     const ranges = []
     for (const id of ids) {
         const rangeIndex = document.ranges.get(id)
@@ -900,7 +900,7 @@ function lookupRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRang
  * @param monikerSets A undirected graph of moniker ids.
  * @param id The initial moniker id.
  */
-function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
+export function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
     const combined = new Set<Id>()
     let frontier = [id]
 
@@ -958,7 +958,7 @@ export async function importLsif(
  *
  * @param hover The hover object.
  */
-function normalizeHover(hover: Hover): string {
+export function normalizeHover(hover: Hover): string {
     const normalizeContent = (content: string | MarkupContent | { language: string; value: string }): string => {
         if (typeof content === 'string') {
             return content
