@@ -1,11 +1,12 @@
+import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
 import express from 'express'
 import morgan from 'morgan'
-import { ConnectionCache, DocumentCache } from './cache'
-import { ERRNOLSIFDATA, makeBackend } from './backend'
-import { hasErrorCode, readEnv, readEnvInt } from './util'
-import { zlib } from 'mz'
 import promBundle from 'express-prom-bundle'
+import { ConnectionCache, DocumentCache } from './cache'
+import { createBackend, ERRNOLSIFDATA } from './backend'
+import { hasErrorCode, readEnvInt } from './util'
+import { wrap } from 'async-middleware'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -13,21 +14,21 @@ import promBundle from 'express-prom-bundle'
 const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
 
 /**
- * The maximum size of an LSIF dump upload.
- */
-const MAX_UPLOAD = readEnv('LSIF_MAX_UPLOAD', '100mb')
-
-/**
  * The number of SQLite connections that can be opened at once. This
  * value may be exceeded for a short period if many handles are held
  * at once.
  */
-const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 20)
+const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 1000)
 
 /**
  * The maximum number of documents that can be held in memory at once.
  */
-const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 100)
+const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
+
+/**
+ * Whether or not to log a message when the HTTP server is ready and listening.
+ */
+const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -35,8 +36,7 @@ const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 100)
 async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
-    const backend = await makeBackend(connectionCache, documentCache)
-
+    const backend = await createBackend(connectionCache, documentCache)
     const app = express()
     app.use(morgan('tiny'))
     app.use(errorHandler)
@@ -51,67 +51,75 @@ async function main(): Promise<void> {
         })
     )
 
-    app.post('/upload', bodyParser.raw({ limit: MAX_UPLOAD }), async (req, res, next) => {
-        try {
-            const { repository, commit } = req.query
-            checkRepository(repository)
-            checkCommit(commit)
-            await backend.insertDump(req.pipe(zlib.createGunzip()), repository, commit)
-            res.json(null)
-        } catch (e) {
-            return next(e)
-        }
-    })
-
-    app.post('/exists', async (req, res, next) => {
-        try {
-            const { repository, commit, file } = req.query
-            checkRepository(repository)
-            checkCommit(commit)
-
-            try {
-                const db = await backend.createDatabase(repository, commit)
-                const result = !file || (await db.exists(file))
-                res.json(result)
-            } catch (e) {
-                if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                    res.json(false)
-                    return
-                }
-
-                throw e
+    app.post(
+        '/upload',
+        wrap(
+            async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+                const { repository, commit } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
+                const input = req.pipe(zlib.createGunzip()).on('error', next)
+                await backend.insertDump(input, repository, commit)
+                res.json(null)
             }
-        } catch (e) {
-            return next(e)
-        }
-    })
+        )
+    )
 
-    app.post('/request', bodyParser.json({ limit: '1mb' }), async (req, res, next) => {
-        try {
-            const { repository, commit } = req.query
-            const { path, position, method } = req.body
-            checkRepository(repository)
-            checkCommit(commit)
-            checkMethod(method, ['definitions', 'references', 'hover'])
-            const cleanMethod = method as 'definitions' | 'references' | 'hover'
+    app.post(
+        '/exists',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit, file } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
 
-            try {
-                const db = await backend.createDatabase(repository, commit)
-                res.json(await db[cleanMethod](path, position))
-            } catch (e) {
-                if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                    throw Object.assign(e, { status: 404 })
+                try {
+                    const db = await backend.createDatabase(repository, commit)
+                    const result = !file || (await db.exists(file))
+                    res.json(result)
+                } catch (e) {
+                    if (hasErrorCode(e, ERRNOLSIFDATA)) {
+                        res.json(false)
+                        return
+                    }
+
+                    throw e
                 }
-
-                throw e
             }
-        } catch (e) {
-            return next(e)
-        }
-    })
+        )
+    )
+
+    app.post(
+        '/request',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit } = req.query
+                const { path, position, method } = req.body
+                checkRepository(repository)
+                checkCommit(commit)
+                checkMethod(method, ['definitions', 'references', 'hover'])
+                const cleanMethod = method as 'definitions' | 'references' | 'hover'
+
+                try {
+                    // TODO - is null needed here now?
+                    const db = await backend.createDatabase(repository, commit)
+                    res.json((await db[cleanMethod](path, position)) || null)
+                } catch (e) {
+                    if (hasErrorCode(e, ERRNOLSIFDATA)) {
+                        throw Object.assign(e, { status: 404 })
+                    }
+
+                    throw e
+                }
+            }
+        )
+    )
 
     app.listen(HTTP_PORT, () => {
-        console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
+        if (LOG_READY) {
+            console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
+        }
     })
 }
 
@@ -164,4 +172,5 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
 
 main().catch(e => {
     console.error(e)
+    setTimeout(() => process.exit(1), 0)
 })

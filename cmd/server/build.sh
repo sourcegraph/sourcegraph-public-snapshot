@@ -52,9 +52,7 @@ echo "--- build sqlite for symbols"
 env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
 
 echo "--- build lsif-server"
-yarn --cwd lsif --frozen-lockfile
-yarn --cwd lsif run build
-cp lsif/out/server.bundle.js "$OUTPUT/lsif-server.js"
+IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
 
 echo "--- prometheus config"
 mkdir "$OUTPUT/etc"

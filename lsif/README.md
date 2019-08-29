@@ -1,10 +1,10 @@
-# LSIF Code Intelligence
+# LSIF code intelligence
 
 [LSIF](https://code.visualstudio.com/blogs/2019/02/19/lsif) is a file format that stores code intelligence information such as hover docstrings, definitions, and references.
 
 Sourcegraph receives and stores LSIF files uploaded using [upload-lsif.sh](upload-lsif.sh) (usually used in CI, similar to [Codecov's Bash Uploader](https://docs.codecov.io/docs/about-the-codecov-bash-uploader)), then uses that information to provide fast and precise code intelligence when viewing files.
 
-The HTTP [src](server) runs behind Sourcegraph (for auth) and receives and stores LSIF dump uploads and services requests for relevant LSP queries.
+The HTTP [server](src) runs behind Sourcegraph (for auth) and receives and stores LSIF dump uploads and services requests for relevant LSP queries.
 
 ## API
 
@@ -28,5 +28,5 @@ The request body must be a JSON object with these properties:
 - `repository`: the name of the repository (e.g. `github.com/sourcegraph/codeintellify`)
 - `commit`: the 40 character hash of the commit
 - `method`: `hover`, `definitions`, or `references`
-- `path`: the file path in the repository. This deviates from `uri` in the LSIF specification because Sourcegraph currently only supports same-repository code intelligence.
-- `position`: the `{ line, character }` in the file at which the request is being made
+- `path`: the file path in the repository.
+- `position`: the zero-based `{ line, character }` in the file at which the request is being made

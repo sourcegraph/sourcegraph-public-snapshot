@@ -1,20 +1,13 @@
+import RelateUrl from 'relateurl'
 import { databaseInsertionCounter, databaseInsertionDurationHistogram } from './metrics'
 import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { encodeJSON } from './encoding'
 import { EntityManager } from 'typeorm'
-import { Inserter } from './inserter'
+import { Hover, MarkupContent } from 'vscode-languageserver-types'
+import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from './xrepo'
-import {
-    MonikerData,
-    RangeData,
-    ResultSetData,
-    DefinitionResultData,
-    ReferenceResultData,
-    HoverData,
-    PackageInformationData,
-    DocumentData,
-    FlattenedRange,
-} from './entities'
+import { TableInserter } from './inserter'
+import { DocumentData, FlattenedRange, MonikerData, PackageInformationData, RangeData, ResultSetData } from './entities'
 import {
     Id,
     VertexLabels,
@@ -23,7 +16,6 @@ import {
     Edge,
     MonikerKind,
     ItemEdgeProperties,
-    Document,
     DocumentEvent,
     Event,
     moniker,
@@ -37,7 +29,6 @@ import {
     PackageInformation,
     item,
     contains,
-    HoverResult,
     EventKind,
     EventScope,
     MetaData,
@@ -54,142 +45,100 @@ import {
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
 /**
- * `DecoratedDocumentData` is a `DocumentData` instance with additional context
- * during the importing of an LSIF dump.
+ * A wrapper around `DocumentData` with additional context required during the
+ * importing of an LSIF dump.
  */
 export interface DecoratedDocumentData extends DocumentData {
-    /**
-     * `id` is the identifier of the document.
-     */
+    // The identifier of the document.
     id: Id
 
-    /**
-     * `uri` is the URI of the document.
-     */
-    uri: string
+    // The root-relative path of the document.
+    path: string
 
     /**
-     * `contains` is the running set of identifiers that have a contains edge
-     * to this document in the LSIF dump.
+     * The running set of identifiers that have a contains edge to this document
+     * in the LSIF dump.
      */
     contains: Id[]
 
     /**
-     * `definitions` carries the data of definitionResult edges attached within
+     * A field that carries the data of definitionResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
      * the definition result data would be stored in `definitionResults` in the
      * superclass.
      */
-    definitions: { data: DefinitionResultData; moniker: MonikerData }[]
+    definitions: { ids: Id[]; moniker: MonikerData }[]
 
     /**
-     * `references` carries the data of referenceResult edges attached within
+     * A field that carries the data of referenceResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
      * the reference result data would be stored in `referenceResults` in the
      * superclass.
      */
-    references: { data: ReferenceResultData; moniker: MonikerData }[]
+    references: { ids: Id[]; moniker: MonikerData }[]
 }
 
 /**
- * `HandlerMap` is a mapping from vertex or edge labels to the function that
- * can handle an object of that particular type during import.
- */
-interface HandlerMap {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [K: string]: (element: any) => Promise<void>
-}
-
-/**
- * `Importer` processes an upload of an LSIF dump. This class receives the
- * parsed vertex or edge, line by line, from the caller, and adds it into a
- * new database file on disk. Once finalized, the database is ready for use
+ * Common state around the conversion of a single LSIF dump upload. This class
+ * receives the parsed vertex or edge, line by line, from the caller, and adds it
+ * into a new database file on disk. Once finalized, the database is ready for use
  * and relevant cross-repository metadata is returned to the caller, which
  * is used to populate the xrepo database.
+ *
+ * This class should not be used directly - use the `importLsif` function instead.
  */
-export class Importer {
-    // Handler vtables
-    private vertexHandlerMap: HandlerMap = {}
-    private edgeHandlerMap: HandlerMap = {}
-
+class LsifImporter {
     // Bulk database inserters
-    private metaInserter: Inserter<MetaModel>
-    private documentInserter: Inserter<DocumentModel>
-    private defInserter: Inserter<DefModel>
-    private refInserter: Inserter<RefModel>
+    private metaInserter: TableInserter<MetaModel, new () => MetaModel>
+    private documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
+    private defInserter: TableInserter<DefModel, new () => DefModel>
+    private refInserter: TableInserter<RefModel, new () => RefModel>
 
     // Vertex data
-    private definitionDatas: Map<Id, Map<Id, DefinitionResultData>> = new Map()
-    private documents: Map<Id, string> = new Map()
-    private hoverDatas: Map<Id, HoverData> = new Map()
-    private monikerDatas: Map<Id, MonikerData> = new Map()
-    private packageInformationDatas: Map<Id, PackageInformationData> = new Map()
-    private rangeDatas: Map<Id, RangeData> = new Map()
-    private referenceDatas: Map<Id, Map<Id, ReferenceResultData>> = new Map()
-    private resultSetDatas: Map<Id, ResultSetData> = new Map()
+    private definitionData: Map<Id, Map<Id, Id[]>> = new Map()
+    private documentUris: Map<Id, string> = new Map()
+    private hoverData: Map<Id, string> = new Map()
+    private monikerData: Map<Id, MonikerData> = new Map()
+    private packageInformationData: Map<Id, PackageInformationData> = new Map()
+    private rangeData: Map<Id, RangeData> = new Map()
+    private referenceData: Map<Id, Map<Id, Id[]>> = new Map()
+    private resultSetData: Map<Id, ResultSetData> = new Map()
 
     /**
-     * ~projectRoot` is the prefix of all document URIs. This is extracted from
-     * the metadata vertex at the beginning of processing.
+     * The root of all document URIs. This is extracted from the metadata vertex at
+     * the beginning of processing.
      */
-    private projectRoot = ''
+    private projectRoot?: URL
 
     /**
-     * `importedMonikers` is the set of exported moniker identifiers that have
-     * package information attached.
+     * A map of decorated `DocumentData` objects that are created on document begin events
+     * and are inserted into the databse on document end events.
      */
-    private importedMonikers: Set<Id> = new Set()
+    private documentData = new Map<Id, DecoratedDocumentData>()
 
     /**
-     * `exportedMonikers` is the set of exported moniker identifiers that have
-     * package information attached.
+     * A mapping for the relation from moniker to the set of monikers that they are related
+     * to via nextMoniker edges. This relation is symmetric (if `a` is in `MonikerSets[b]`,
+     * then `b` is in `monikerSets[a]`).
      */
-    private exportedMonikers: Set<Id> = new Set()
+    private monikerSets = new Map<Id, Set<Id>>()
+
+    // The set of exported moniker identifiers that have package information attached.
+    private importedMonikers = new Set<Id>()
+
+    // The set of exported moniker identifiers that have package information attached.
+    private exportedMonikers = new Set<Id>()
 
     /**
-     * `documentDatas` are decorated `DocumentData` objects that are created on
-     * document begin events and are inserted into the databse on document end
-     * events.
-     */
-    private documentDatas: Map<Id, DecoratedDocumentData> = new Map()
-
-    /**
-     * `monikerSets` holds the relation from moniker to the set of monikers that
-     * they are related to via nextMoniker edges. This relation is symmetric.
-     */
-    private monikerSets: Map<Id, Id[]> = new Map()
-
-    /**
-     * Create a new `Importer` with the given entity manager.
+     * Create a new `LsifImporter` with the given entity manager.
      *
      * @param entityManager A transactional SQLite entity manager.
      */
     constructor(private entityManager: EntityManager) {
-        // Convert f into an async function
-        const wrap = <T>(f: (element: T) => void) => (element: T) => Promise.resolve(f(element))
-
-        // Register vertex handlers
-        this.vertexHandlerMap[VertexLabels.definitionResult] = wrap(e => this.handleDefinitionResult(e))
-        this.vertexHandlerMap[VertexLabels.document] = wrap(e => this.handleDocument(e))
-        this.vertexHandlerMap[VertexLabels.event] = e => this.handleEvent(e)
-        this.vertexHandlerMap[VertexLabels.hoverResult] = wrap(e => this.handleHover(e))
-        this.vertexHandlerMap[VertexLabels.metaData] = e => this.handleMetaData(e)
-        this.vertexHandlerMap[VertexLabels.moniker] = wrap(e => this.handleMoniker(e))
-        this.vertexHandlerMap[VertexLabels.packageInformation] = wrap(e => this.handlePackageInformation(e))
-        this.vertexHandlerMap[VertexLabels.range] = wrap(e => this.handleRange(e))
-        this.vertexHandlerMap[VertexLabels.referenceResult] = wrap(e => this.handleReferenceResult(e))
-        this.vertexHandlerMap[VertexLabels.resultSet] = wrap(e => this.handleResultSet(e))
-
-        // Register edge handlers
-        this.edgeHandlerMap[EdgeLabels.contains] = wrap(e => this.handleContains(e))
-        this.edgeHandlerMap[EdgeLabels.item] = wrap(e => this.handleItemEdge(e))
-        this.edgeHandlerMap[EdgeLabels.moniker] = wrap(e => this.handleMonikerEdge(e))
-        this.edgeHandlerMap[EdgeLabels.next] = wrap(e => this.handleNextEdge(e))
-        this.edgeHandlerMap[EdgeLabels.nextMoniker] = wrap(e => this.handleNextMonikerEdge(e))
-        this.edgeHandlerMap[EdgeLabels.packageInformation] = wrap(e => this.handlePackageInformationEdge(e))
-        this.edgeHandlerMap[EdgeLabels.textDocument_definition] = wrap(e => this.handleDefinitionEdge(e))
-        this.edgeHandlerMap[EdgeLabels.textDocument_hover] = wrap(e => this.handleHoverEdge(e))
-        this.edgeHandlerMap[EdgeLabels.textDocument_references] = wrap(e => this.handleReferenceEdge(e))
+        const metrics = {
+            insertionCounter: databaseInsertionCounter,
+            insertionDurationHistogram: databaseInsertionDurationHistogram,
+        }
 
         // Determine the max batch size of each model type. We cannot perform an
         // insert operation with more than 999 placeholder variables, so we need
@@ -197,15 +146,10 @@ export class Importer {
         // model is calculated based on the number of fields inserted. If fields
         // are added to the models, these numbers will also need to change.
 
-        const metrics = {
-            insertionCounter: databaseInsertionCounter,
-            insertionDurationHistogram: databaseInsertionDurationHistogram,
-        }
-
-        this.metaInserter = new Inserter(this.entityManager, MetaModel, Math.floor(999 / 3), metrics)
-        this.documentInserter = new Inserter(this.entityManager, DocumentModel, Math.floor(999 / 2), metrics)
-        this.defInserter = new Inserter(this.entityManager, DefModel, Math.floor(999 / 8), metrics)
-        this.refInserter = new Inserter(this.entityManager, RefModel, Math.floor(999 / 8), metrics)
+        this.metaInserter = new TableInserter(this.entityManager, MetaModel, Math.floor(999 / 3), metrics)
+        this.documentInserter = new TableInserter(this.entityManager, DocumentModel, Math.floor(999 / 2), metrics)
+        this.defInserter = new TableInserter(this.entityManager, DefModel, Math.floor(999 / 8), metrics)
+        this.refInserter = new TableInserter(this.entityManager, RefModel, Math.floor(999 / 8), metrics)
     }
 
     /**
@@ -214,13 +158,76 @@ export class Importer {
      * @param element A vertex or edge element from the LSIF dump.
      */
     public async insert(element: Vertex | Edge): Promise<void> {
-        const handler =
-            element.type === ElementTypes.vertex
-                ? this.vertexHandlerMap[element.label]
-                : this.edgeHandlerMap[element.label]
+        if (element.type === ElementTypes.vertex) {
+            switch (element.label) {
+                case VertexLabels.metaData:
+                    await this.handleMetaData(element)
+                    break
+                case VertexLabels.event:
+                    await this.handleEvent(element)
+                    break
 
-        if (handler) {
-            await handler(element)
+                // The remaining vertex handlers stash data into an appropriate map. This data
+                // may be retrieved when an edge that references it is seen, or when a document
+                // is finalized.
+
+                case VertexLabels.definitionResult:
+                    this.definitionData.set(element.id, new Map())
+                    break
+                case VertexLabels.document:
+                    this.documentUris.set(element.id, element.uri)
+                    break
+                case VertexLabels.hoverResult:
+                    this.hoverData.set(element.id, normalizeHover(element.result))
+                    break
+                case VertexLabels.moniker:
+                    this.monikerData.set(element.id, convertMoniker(element))
+                    break
+                case VertexLabels.packageInformation:
+                    this.packageInformationData.set(element.id, convertPackageInformation(element))
+                    break
+                case VertexLabels.range:
+                    this.rangeData.set(element.id, convertRange(element))
+                    break
+                case VertexLabels.referenceResult:
+                    this.referenceData.set(element.id, new Map())
+                    break
+                case VertexLabels.resultSet:
+                    this.resultSetData.set(element.id, { monikers: [] })
+                    break
+            }
+        }
+
+        if (element.type === ElementTypes.edge) {
+            switch (element.label) {
+                case EdgeLabels.contains:
+                    this.handleContains(element)
+                    break
+                case EdgeLabels.item:
+                    this.handleItemEdge(element)
+                    break
+                case EdgeLabels.moniker:
+                    this.handleMonikerEdge(element)
+                    break
+                case EdgeLabels.next:
+                    this.handleNextEdge(element)
+                    break
+                case EdgeLabels.nextMoniker:
+                    this.handleNextMonikerEdge(element)
+                    break
+                case EdgeLabels.packageInformation:
+                    this.handlePackageInformationEdge(element)
+                    break
+                case EdgeLabels.textDocument_definition:
+                    this.handleDefinitionEdge(element)
+                    break
+                case EdgeLabels.textDocument_hover:
+                    this.handleHoverEdge(element)
+                    break
+                case EdgeLabels.textDocument_references:
+                    this.handleReferenceEdge(element)
+                    break
+            }
         }
     }
 
@@ -243,21 +250,19 @@ export class Importer {
      * Return the set of packages provided by the project analyzed by this LSIF dump.
      */
     private getPackages(): Package[] {
-        const packageHashes: Set<string> = new Set()
+        const packageHashes: Package[] = []
         for (const id of this.exportedMonikers) {
-            const source = assertDefined(id, 'moniker', this.monikerDatas)
+            const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
-            packageHashes.add(
-                JSON.stringify({
-                    scheme: source.scheme,
-                    name: packageInfo.name,
-                    version: packageInfo.version,
-                })
-            )
+            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
+            packageHashes.push({
+                scheme: source.scheme,
+                name: packageInfo.name,
+                version: packageInfo.version,
+            })
         }
 
-        return Array.from(packageHashes).map(value => JSON.parse(value) as Package)
+        return uniqWith(packageHashes, isEqual)
     }
 
     /**
@@ -266,9 +271,9 @@ export class Importer {
     private getReferences(): SymbolReferences[] {
         const packageIdentifiers: Map<string, string[]> = new Map()
         for (const id of this.importedMonikers) {
-            const source = assertDefined(id, 'moniker', this.monikerDatas)
+            const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
+            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
             const pkg = JSON.stringify({
                 scheme: source.scheme,
                 name: packageInfo.name,
@@ -294,13 +299,13 @@ export class Importer {
 
     /**
      * This should be the first vertex seen. Extract the project root so we
-     * can create relative URIs for documnets. Insert a row in the meta
+     * can create relative paths for documnets. Insert a row in the meta
      * table with the LSIF protocol version.
      *
      * @param vertex The metadata vertex.
      */
     private async handleMetaData(vertex: MetaData): Promise<void> {
-        this.projectRoot = vertex.projectRoot
+        this.projectRoot = new URL(vertex.projectRoot)
         await this.metaInserter.insert(convertMetadata(vertex))
     }
 
@@ -319,19 +324,6 @@ export class Importer {
         }
     }
 
-    // The remaining vertex handlers stash data into an appropriate map. This data
-    // may be retrieved when an edge that references it is seen, or when a document
-    // is finalized.
-
-    private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
-    private handleDocument = this.setById(this.documents, (e: Document) => e.uri)
-    private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => e.result)
-    private handleMoniker = this.setById(this.monikerDatas, convertMoniker)
-    private handlePackageInformation = this.setById(this.packageInformationDatas, convertPackageInformation)
-    private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...e, monikers: [] }))
-    private handleReferenceResult = this.setById(this.referenceDatas, () => new Map())
-    private handleResultSet = this.setById(this.resultSetDatas, () => ({ monikers: [] }))
-
     //
     // Edge Handlers
 
@@ -342,10 +334,10 @@ export class Importer {
      * @param edge The contains edge.
      */
     private handleContains(edge: contains): void {
-        if (this.documentDatas.has(edge.outV)) {
-            const source = assertDefined(edge.outV, 'document', this.documentDatas)
-            mapAssertDefined(edge.inVs, 'range', this.rangeDatas)
-            source.contains.push(...edge.inVs)
+        if (this.documentData.has(edge.outV)) {
+            const source = assertDefined(edge.outV, 'document', this.documentData)
+            mapAssertDefined(edge.inVs, 'range', this.rangeData)
+            source.contains = source.contains.concat(edge.inVs)
         }
     }
 
@@ -356,19 +348,15 @@ export class Importer {
      * @param edge The item edge.
      */
     private handleItemEdge(edge: item): void {
-        if (edge.property === undefined) {
-            const defaultValue = { values: [] }
-            this.handleGenericItemEdge(edge, 'definitionResult', this.definitionDatas, defaultValue, 'values')
-        }
+        switch (edge.property) {
+            case ItemEdgeProperties.definitions:
+            case ItemEdgeProperties.references:
+                this.handleGenericItemEdge(edge, 'referenceResult', this.referenceData)
+                break
 
-        if (edge.property === ItemEdgeProperties.definitions) {
-            const defaultValue = { definitions: [], references: [] }
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas, defaultValue, 'definitions')
-        }
-
-        if (edge.property === ItemEdgeProperties.references) {
-            const defaultValue = { definitions: [], references: [] }
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas, defaultValue, 'references')
+            case undefined:
+                this.handleGenericItemEdge(edge, 'definitionResult', this.definitionData)
+                break
         }
     }
 
@@ -382,10 +370,10 @@ export class Importer {
         const source = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'moniker', this.monikerDatas)
+        assertDefined(edge.inV, 'moniker', this.monikerData)
         source.monikers = [edge.inV]
     }
 
@@ -399,10 +387,10 @@ export class Importer {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'resultSet', this.resultSetDatas)
+        assertDefined(edge.inV, 'resultSet', this.resultSetData)
         outV.next = edge.inV
     }
 
@@ -413,8 +401,8 @@ export class Importer {
      * @param edge The nextMoniker edge.
      */
     private handleNextMonikerEdge(edge: nextMoniker): void {
-        assertDefined(edge.inV, 'moniker', this.monikerDatas)
-        assertDefined(edge.outV, 'moniker', this.monikerDatas)
+        assertDefined(edge.inV, 'moniker', this.monikerData)
+        assertDefined(edge.outV, 'moniker', this.monikerData)
         this.correlateMonikers(edge.inV, edge.outV) // Forward direction
         this.correlateMonikers(edge.outV, edge.inV) // Backwards direction
     }
@@ -427,8 +415,8 @@ export class Importer {
      * @param edge The packageInformation edge.
      */
     private handlePackageInformationEdge(edge: packageInformation): void {
-        const source = assertDefined(edge.outV, 'moniker', this.monikerDatas)
-        assertDefined(edge.inV, 'packageInformation', this.packageInformationDatas)
+        const source = assertDefined(edge.outV, 'moniker', this.monikerData)
+        assertDefined(edge.inV, 'packageInformation', this.packageInformationData)
         source.packageInformation = edge.inV
 
         if (source.kind === 'export') {
@@ -450,10 +438,10 @@ export class Importer {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'definitionResult', this.definitionDatas)
+        assertDefined(edge.inV, 'definitionResult', this.definitionData)
         outV.definitionResult = edge.inV
     }
 
@@ -467,10 +455,10 @@ export class Importer {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'hoverResult', this.hoverDatas)
+        assertDefined(edge.inV, 'hoverResult', this.hoverData)
         outV.hoverResult = edge.inV
     }
 
@@ -484,10 +472,10 @@ export class Importer {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'referenceResult', this.referenceDatas)
+        assertDefined(edge.inV, 'referenceResult', this.referenceData)
         outV.referenceResult = edge.inV
     }
 
@@ -503,11 +491,21 @@ export class Importer {
      * @param event The document begin event.
      */
     private handleDocumentBegin(event: DocumentEvent): void {
-        const uri = assertDefined(event.data, 'document', this.documents)
+        if (!this.projectRoot) {
+            throw new Error('No project root has been defined.')
+        }
 
-        this.documentDatas.set(event.data, {
+        const uri = assertDefined(event.data, 'document', this.documentUris)
+
+        const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(uri).href, {
+            defaultPorts: {},
+            output: RelateUrl.PATH_RELATIVE,
+            removeRootTrailingSlash: false,
+        })
+
+        this.documentData.set(event.data, {
             id: event.data,
-            uri: uri.slice(this.projectRoot.length + 1),
+            path,
             contains: [],
             definitions: [],
             references: [],
@@ -530,37 +528,45 @@ export class Importer {
      * @param event The document end event.
      */
     private async handleDocumentEnd(event: DocumentEvent): Promise<void> {
-        const document = assertDefined(event.data, 'document', this.documentDatas)
+        const document = assertDefined(event.data, 'document', this.documentData)
 
         // Finalize document
         await this.finalizeDocument(document)
 
         // Insert document record
-        await this.documentInserter.insert({ uri: document.uri, value: await encodeJSON(document) })
+        await this.documentInserter.insert({
+            path: document.path,
+            value: await encodeJSON({
+                ranges: document.ranges,
+                orderedRanges: document.orderedRanges,
+                resultSets: document.resultSets,
+                definitionResults: document.definitionResults,
+                referenceResults: document.referenceResults,
+                hovers: document.hovers,
+                monikers: document.monikers,
+                packageInformation: document.packageInformation,
+            }),
+        })
 
         // Insert all related definitions
-        for (const { data, moniker } of document.definitions) {
-            for (const range of flattenRanges(document, data.values)) {
+        for (const { ids, moniker } of document.definitions) {
+            for (const range of lookupRanges(document, ids)) {
                 await this.defInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
-                    documentUri: document.uri,
+                    documentPath: document.path,
                     ...range,
                 })
             }
         }
 
         // Insert all related references
-        for (const { data, moniker } of document.references) {
-            const ranges = []
-            ranges.push(...flattenRanges(document, data.definitions))
-            ranges.push(...flattenRanges(document, data.references))
-
-            for (const range of ranges) {
+        for (const { ids, moniker } of document.references) {
+            for (const range of lookupRanges(document, ids)) {
                 await this.refInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
-                    documentUri: document.uri,
+                    documentPath: document.path,
                     ...range,
                 })
             }
@@ -571,45 +577,23 @@ export class Importer {
     // Helper Functions
 
     /**
-     * Creates a function that takes an `element`, then correlates that
-     * element's  identifier with the result from `factory` in `map`.
-     *
-     * @param map The map to populate.
-     * @param factory The function that produces a value from `element`.
-     */
-    private setById<K extends { id: Id }, V>(map: Map<Id, V>, factory: (element: K) => V): (element: K) => void {
-        return (element: K) => map.set(element.id, factory(element))
-    }
-
-    /**
-     * Adds data to a nested array within the two-tier `map`. Let `outV`
-     * and `inVs` be the source and destinations of `edge`, such that
-     * `map` is indexed in the outer level by `outV` and indexed in the
-     * inner level by document. This method adds the destination edges
-     * to `map[outV][document][field]`, and creates any data structure
-     * on th epath that has not yet been constructed.
+     * Concatenate `edge.inVs` to the array at `map[edge.outV][edge.document]`.
+     * If any field is undefined, it is created on the fly.
      *
      * @param edge The edge.
      * @param name The type of map (used for exception message).
      * @param map The map to populate.
-     * @param defaultValue The value to use if inner map is not populated.
-     * @param field The field containing the target array.
      */
-    private handleGenericItemEdge<T extends { [K in F]: Id[] }, F extends string>(
-        edge: item,
-        name: string,
-        map: Map<Id, Map<Id, T>>,
-        defaultValue: T,
-        field: F
-    ): void {
+    private handleGenericItemEdge(edge: item, name: string, map: Map<Id, Map<Id, Id[]>>): void {
         const innerMap = assertDefined(edge.outV, name, map)
-        let data = innerMap.get(edge.document)
+        const data = innerMap.get(edge.document)
         if (!data) {
-            data = defaultValue
-            innerMap.set(edge.document, data)
+            innerMap.set(edge.document, edge.inVs)
+        } else {
+            for (const inV of edge.inVs) {
+                data.push(inV)
+            }
         }
-
-        data[field].push(...edge.inVs)
     }
 
     /**
@@ -621,9 +605,9 @@ export class Importer {
     private correlateMonikers(a: Id, b: Id): void {
         const neighbors = this.monikerSets.get(a)
         if (neighbors) {
-            neighbors.push(b)
+            neighbors.add(b)
         } else {
-            this.monikerSets.set(a, [b])
+            this.monikerSets.set(a, new Set<Id>([b]))
         }
     }
 
@@ -639,13 +623,13 @@ export class Importer {
     private async finalizeDocument(document: DecoratedDocumentData): Promise<void> {
         const orderedRanges: (RangeData & { id: Id })[] = []
         for (const id of document.contains) {
-            const range = assertDefined(id, 'range', this.rangeDatas)
+            const range = assertDefined(id, 'range', this.rangeData)
             orderedRanges.push({ id, ...range })
             await this.attachItemToDocument(document, id, range)
         }
 
         // Sort ranges by their starting position
-        orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
+        orderedRanges.sort((a, b) => a.startLine - b.startLine || a.startCharacter - b.startCharacter)
 
         // Populate a reverse lookup so ranges can be queried by id
         // via `orderedRanges[range[id]]`.
@@ -678,14 +662,14 @@ export class Importer {
 
         // Add result set to document, if it doesn't exist
         if (item.next && !document.resultSets.has(item.next)) {
-            const resultSet = assertDefined(item.next, 'resultSet', this.resultSetDatas)
+            const resultSet = assertDefined(item.next, 'resultSet', this.resultSetData)
             document.resultSets.set(item.next, resultSet)
             await this.attachItemToDocument(document, item.next, resultSet)
         }
 
         // Add hover to document, if it doesn't exist
         if (item.hoverResult && !document.hovers.has(item.hoverResult)) {
-            const hoverResult = assertDefined(item.hoverResult, 'hoverResult', this.hoverDatas)
+            const hoverResult = assertDefined(item.hoverResult, 'hoverResult', this.hoverData)
             document.hovers.set(item.hoverResult, hoverResult)
         }
 
@@ -696,7 +680,7 @@ export class Importer {
 
         this.attachResultsToDocument(
             'definitionResult',
-            this.definitionDatas,
+            this.definitionData,
             document,
             document.definitions,
             document.definitionResults,
@@ -706,7 +690,7 @@ export class Importer {
 
         this.attachResultsToDocument(
             'referenceResult',
-            this.referenceDatas,
+            this.referenceData,
             document,
             document.references,
             document.referenceResults,
@@ -735,7 +719,7 @@ export class Importer {
 
         const monikers = []
         for (const id of reachableMonikers(this.monikerSets, item.monikers[0])) {
-            const moniker = assertDefined(id, 'moniker', this.monikerDatas)
+            const moniker = assertDefined(id, 'moniker', this.monikerData)
             monikers.push(moniker)
             item.monikers.push(id)
             document.monikers.set(id, moniker)
@@ -744,7 +728,7 @@ export class Importer {
                 const packageInformation = assertDefined(
                     moniker.packageInformation,
                     'packageInformation',
-                    this.packageInformationDatas
+                    this.packageInformationData
                 )
 
                 document.packageInformation.set(moniker.packageInformation, packageInformation)
@@ -773,7 +757,7 @@ export class Importer {
         name: string,
         sourceMap: Map<Id, Map<Id, T>>,
         document: DecoratedDocumentData,
-        documentArray: { data: T; moniker: MonikerData }[],
+        documentArray: { ids: T; moniker: MonikerData }[],
         documentMap: Map<Id, T>,
         id: Id | undefined,
         monikers: MonikerData[]
@@ -790,7 +774,7 @@ export class Importer {
 
         const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
         for (const moniker of nonlocalMonikers) {
-            documentArray.push({ moniker, data })
+            documentArray.push({ ids: data, moniker })
         }
 
         if (nonlocalMonikers.length === 0) {
@@ -855,6 +839,11 @@ function convertMetadata(meta: MetaData): { lsifVersion: string; sourcegraphVers
     }
 }
 
+/**
+ * Convert a protocol `Moniker` object into a `MonikerData` object.
+ *
+ * @param moniker The moniker object.
+ */
 function convertMoniker(moniker: Moniker): MonikerData {
     return { kind: moniker.kind || MonikerKind.local, scheme: moniker.scheme, identifier: moniker.identifier }
 }
@@ -869,27 +858,32 @@ function convertPackageInformation(info: PackageInformation): PackageInformation
 }
 
 /**
- * Convert a set of range identifiers into flattened range objects. This requires
- * the document's `ranges` and `orderedRanges` fields to be completely populated.
- *k
+ * Convert a protocol `Range` object into a `RangeData` object.
+ *
+ * @param range The range object.
+ */
+function convertRange(range: Range): RangeData {
+    return { ...flattenRange(range), monikers: [] }
+}
+
+/**
+ * Convert a set of range identifers into the flattened range objects stored by
+ * identifier in the given document. This requires that the document's `ranges`
+ * and `orderedRanges` fields to be completely populated.
+ *
  * @param document The document object.
  * @param ids The list of ids.
  */
-function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
+function lookupRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
     const ranges = []
     for (const id of ids) {
         const rangeIndex = document.ranges.get(id)
-        if (!rangeIndex) {
+        if (rangeIndex === undefined) {
             continue
         }
 
         const range = document.orderedRanges[rangeIndex]
-        ranges.push({
-            startLine: range.start.line,
-            startCharacter: range.start.character,
-            endLine: range.end.line,
-            endCharacter: range.end.character,
-        })
+        ranges.push(range)
     }
 
     return ranges
@@ -904,13 +898,13 @@ function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRan
  * @param monikerSets A undirected graph of moniker ids.
  * @param id The initial moniker id.
  */
-function reachableMonikers(monikerSets: Map<Id, Id[]>, id: Id): Set<Id> {
+function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
     const combined = new Set<Id>()
-    const frontier = [id]
+    let frontier = [id]
 
     while (true) {
         const val = frontier.pop()
-        if (!val) {
+        if (val === undefined) {
             break
         }
 
@@ -920,11 +914,80 @@ function reachableMonikers(monikerSets: Map<Id, Id[]>, id: Id): Set<Id> {
 
         const nextValues = monikerSets.get(val)
         if (nextValues) {
-            frontier.push(...nextValues)
+            frontier = frontier.concat(Array.from(nextValues))
         }
 
         combined.add(val)
     }
 
     return combined
+}
+
+/**
+ * Handle the lifecycle of an importer. Creates an `LsifImporter`. This will create
+ * a new importer, insert each vertex and edge in the given stream, then call the
+ * importer's finalize method.
+ *
+ * @param entityManager A transactional SQLite entity manager.
+ * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ */
+export async function importLsif(
+    entityManager: EntityManager,
+    elements: AsyncIterable<Vertex | Edge>
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    const importer = new LsifImporter(entityManager)
+
+    let i = 0
+    for await (const element of elements) {
+        try {
+            await importer.insert(element)
+        } catch (e) {
+            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+        }
+
+        i++
+    }
+
+    return await importer.finalize()
+}
+
+/**
+ * Normalize an LSP hover object into a string.
+ *
+ * @param hover The hover object.
+ */
+function normalizeHover(hover: Hover): string {
+    const normalizeContent = (content: string | MarkupContent | { language: string; value: string }): string => {
+        if (typeof content === 'string') {
+            return content
+        }
+
+        if (MarkupContent.is(content)) {
+            return content.value
+        }
+
+        const tick = '```'
+        return `${tick}${content.language}\n${content.value}\n${tick}`
+    }
+
+    const separator = '\n\n---\n\n'
+    const contents = Array.isArray(hover.contents) ? hover.contents : [hover.contents]
+    return contents
+        .map(c => normalizeContent(c).trim())
+        .filter(s => s)
+        .join(separator)
+}
+
+/**
+ * Construct a flattened four-tuple of numbers from an LSP range.
+ *
+ * @param range The LSP range.
+ */
+function flattenRange(range: Range): FlattenedRange {
+    return {
+        startLine: range.start.line,
+        startCharacter: range.start.character,
+        endLine: range.end.line,
+        endCharacter: range.end.character,
+    }
 }

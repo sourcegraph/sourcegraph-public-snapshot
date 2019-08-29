@@ -444,19 +444,29 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 
 	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Cloning: &protocol.CloningStatusMessage{
+			Cloning: &protocol.CloningProgress{
 				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
 			},
 		})
 	}
 
-	for _, e := range s.Syncer.LastSyncErrors() {
-		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			SyncError: &protocol.SyncErrorStatusMessage{
-				Message:           e.Err.Error(),
-				ExternalServiceId: e.ExtSvc.ID,
-			},
-		})
+	if e := s.Syncer.LastSyncError(); e != nil {
+		if multiSourceErr, ok := errors.Cause(e).(*repos.MultiSourceError); ok {
+			for _, sourceErr := range multiSourceErr.Errors {
+				resp.Messages = append(resp.Messages, protocol.StatusMessage{
+					ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+						Message:           sourceErr.Err.Error(),
+						ExternalServiceId: sourceErr.ExtSvc.ID,
+					},
+				})
+			}
+		} else {
+			resp.Messages = append(resp.Messages, protocol.StatusMessage{
+				SyncError: &protocol.SyncError{
+					Message: e.Error(),
+				},
+			})
+		}
 	}
 
 	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)

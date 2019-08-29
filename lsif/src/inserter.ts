@@ -20,10 +20,9 @@ interface InserterMetrics {
 }
 
 /**
- * `Inserter` is a batch inserter for a SQLite table. Inserting hundreds or
- * thousands of rows in a loop is too inefficient, but due to the limit of
- * SQLITE_MAX_VARIABLE_NUMBER, the entire set of values cannot be inserted
- * in one bulk operation either.
+ * A batch inserter for a SQLite table. Inserting hundreds or thousands of rows in
+ * a loop is too inefficient, but due to the limit of SQLITE_MAX_VARIABLE_NUMBER,
+ * the entire set of values cannot be inserted in one bulk operation either.
  *
  * One inserter instance is created for each table that will receive a bulk
  * payload. The inserter will periodically perform the insert operation
@@ -31,15 +30,12 @@ interface InserterMetrics {
  *
  * See https://www.sqlite.org/limits.html#max_variable_number.
  */
-export class Inserter<T> {
-    /**
-     * `batch` is the set of entity values that will be inserted in the
-     * next invocation of `executeBatch`.
-     */
+export class TableInserter<T, M extends new () => T> {
+    // The set of entity values that will be inserted in the next invocation of `executeBatch`.
     private batch: QueryDeepPartialEntity<T>[] = []
 
     /**
-     * Creates a new `Inserter` with the given entity manager, the constructor
+     * Creates a new `TableInserter` with the given entity manager, the constructor
      * of the model object for the table, and the maximum batch size. This number
      * should be calculated by floor(MAX_VAR_NUMBER / fields_in_record).
      *
@@ -50,7 +46,7 @@ export class Inserter<T> {
      */
     constructor(
         private entityManager: EntityManager,
-        private model: Function,
+        private model: M,
         private maxBatchSize: number,
         private metrics: InserterMetrics
     ) {}

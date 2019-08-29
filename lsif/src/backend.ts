@@ -1,13 +1,15 @@
 import * as path from 'path'
-import { fs, readline } from 'mz'
+import * as fs from 'mz/fs'
+import * as readline from 'mz/readline'
 import { Database } from './database'
-import { hasErrorCode, readEnv } from './util'
-import { Importer } from './importer'
+import { hasErrorCode } from './util'
+import { importLsif } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
 import { ConnectionCache, DocumentCache } from './cache'
 import { DefModel, MetaModel, RefModel, DocumentModel } from './models'
 import { Edge, Vertex } from 'lsif-protocol'
+import { EntityManager } from 'typeorm'
 
 export const ERRNOLSIFDATA = 'NoLSIFData'
 
@@ -16,7 +18,6 @@ export const ERRNOLSIFDATA = 'NoLSIFData'
  */
 export class NoLSIFDataError extends Error {
     public readonly name = ERRNOLSIFDATA
-    public readonly code = ERRNOLSIFDATA
 
     constructor(repository: string, commit: string) {
         super(`No LSIF data available for ${repository}@${commit}.`)
@@ -26,7 +27,7 @@ export class NoLSIFDataError extends Error {
 /**
  * Where on the file system to store LSIF files.
  */
-const STORAGE_ROOT = readEnv('LSIF_STORAGE_ROOT', 'lsif-storage')
+const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
  * Backend for LSIF dumps stored in SQLite.
@@ -57,32 +58,12 @@ export class SQLiteBackend {
         const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
             [DefModel, DocumentModel, MetaModel, RefModel],
-            async entityManager => {
-                // TODO - see if these are being applied
-                // await connection.query('pragma synchronous = OFF')
-                // await connection.query('pragma journal_mode = OFF')
-
-                const importer = new Importer(entityManager)
-
-                let element: Vertex | Edge
-                for await (const line of readline.createInterface({ input })) {
-                    try {
-                        element = JSON.parse(line)
-                    } catch (e) {
-                        throw new Error(`Parsing failed for line:\n${line}`)
-                    }
-
-                    try {
-                        await importer.insert(element)
-                    } catch (e) {
-                        throw new Error(`Failed to process line:\n${line}\nCaused by:\n${e}`)
-                    }
-                }
-
-                return await importer.finalize()
-            }
+            (entityManager: EntityManager) => importLsif(entityManager, parseLines(readline.createInterface({ input })))
         )
 
+        // These needs to be done in sequence as SQLite can only have one
+        // write txn at a time without causing the other one to abort with
+        // a weird error.
         await this.xrepoDatabase.addPackages(repository, commit, packages)
         await this.xrepoDatabase.addReferences(repository, commit, references)
     }
@@ -116,7 +97,25 @@ export function makeFilename(repository: string, commit: string): string {
     return path.join(STORAGE_ROOT, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
-export async function makeBackend(
+/**
+ * Converts streaming JSON input into an iterable of vertex and edge objects.
+ *
+ * @param lines The stream of raw, uncompressed JSON lines.
+ */
+async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex | Edge> {
+    let i = 0
+    for await (const line of lines) {
+        try {
+            yield JSON.parse(line) as Vertex | Edge
+        } catch (e) {
+            throw new Error(`Parsing failed for line:\n${i}`)
+        }
+
+        i++
+    }
+}
+
+export async function createBackend(
     connectionCache: ConnectionCache,
     documentCache: DocumentCache
 ): Promise<SQLiteBackend> {

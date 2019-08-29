@@ -2,7 +2,7 @@ import { Connection, EntityManager } from 'typeorm'
 import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
 import { ReferenceModel, PackageModel } from './models'
-import { Inserter } from './inserter'
+import { TableInserter } from './inserter'
 import {
     xrepoQueryDurationHistogram,
     xrepoInsertionCounter,
@@ -16,45 +16,34 @@ const insertionMetrics = {
 }
 
 /**
- * `Package` represents a package provided by a project or a package that is
- * a dependency of a project, depending on its use.
+ * Represents a package provided by a project or a package that is a dependency
+ * of a project, depending on its use.
  */
 export interface Package {
-    /**
-     * `scheme` is the scheme of the package (e.g. npm, pip).
-     */
+    // The scheme of the package (e.g. npm, pip).
     scheme: string
 
-    /**
-     * `name` is the name of the package.
-     */
+    // The name of the package.
     name: string
 
-    /**
-     * `version` is the version of the package.
-     */
+    // The version of the package.
     version: string
 }
 
 /**
- * `SymbolReferences` represents a use of a set of symbols from a particular
- * dependent package of a project.
+ * Represents a use of a set of symbols from a particular dependent package of
+ * a project.
  */
 export interface SymbolReferences {
-    /**
-     * `package` is the package from which the symbols are imported.
-     */
+    // The package from which the symbols are imported.
     package: Package
 
-    /**
-     * `identifiers` are the unique identifiers of the symbols imported from
-     * the package.
-     */
+    // The unique identifiers of the symbols imported from the package.
     identifiers: string[]
 }
 
 /**
- * `XrepoDatabase` is a SQLite database that stitches together the references
+ * A wrapper around a SQLite database that stitches together the references
  * between projects at a specific commit. This is used for cross-repository
  * jump to definition and find references features.
  */
@@ -95,8 +84,7 @@ export class XrepoDatabase {
      */
     public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new Inserter(entityManager, PackageModel, 6, insertionMetrics)
-
+            const inserter = new TableInserter(entityManager, PackageModel, 6, insertionMetrics)
             for (const pkg of packages) {
                 // TODO - upsert
                 await inserter.insert({ repository, commit, ...pkg })
@@ -107,7 +95,7 @@ export class XrepoDatabase {
     }
 
     /**
-     * Find all repository/commit pairs that reference `uri` in the given package. The
+     * Find all repository/commit pairs that reference `value` in the given package. The
      * returned results will include only repositories that have a dependency on the given
      * package. The returned results may (but is not likely to) include a repository/commit
      * pair that does not reference `uri`. See cache.ts for configuration values that tune
@@ -116,9 +104,14 @@ export class XrepoDatabase {
      * @param scheme The package manager scheme (e.g. npm, pip).
      * @param name The package name.
      * @param version The package version.
-     * @param uri The uri to test.
+     * @param value The value to test.
      */
-    public async getReferences(scheme: string, name: string, version: string, uri: string): Promise<ReferenceModel[]> {
+    public async getReferences(
+        scheme: string,
+        name: string,
+        version: string,
+        value: string
+    ): Promise<ReferenceModel[]> {
         return await this.withConnection(connection =>
             connection.getRepository(ReferenceModel).find({
                 where: {
@@ -129,7 +122,7 @@ export class XrepoDatabase {
             })
         ).then((results: ReferenceModel[]) =>
             results.filter(async result => {
-                if (await testFilter(result.filter, uri)) {
+                if (await testFilter(result.filter, value)) {
                     bloomFilterHitCounter.labels('hit').inc()
                     return true
                 }
@@ -150,8 +143,7 @@ export class XrepoDatabase {
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new Inserter(entityManager, ReferenceModel, 7, insertionMetrics)
-
+            const inserter = new TableInserter(entityManager, ReferenceModel, 7, insertionMetrics)
             for (const reference of references) {
                 // TODO - upsert
                 await inserter.insert({

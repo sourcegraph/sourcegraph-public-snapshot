@@ -86,6 +86,22 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 	return resolvers, nil
 }
 
+func (r *gitCommitConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+	if r.first != nil {
+		// Return indeterminate total count if the caller requested an incomplete list of commits
+		// (which means we'd need an extra and expensive Git operation to determine the total
+		// count). This is to avoid `totalCount` taking significantly longer than `nodes` to
+		// compute, which would be unexpected to many API clients.
+		return nil, nil
+	}
+	commits, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	n := int32(len(commits))
+	return &n, nil
+}
+
 func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	commits, err := r.compute(ctx)
 	if err != nil {
