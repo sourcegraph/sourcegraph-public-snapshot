@@ -16,7 +16,7 @@ export class Database {
      * Create a new `Database` with the given cross-repo database instance and the
      * filename of the database that contains data for a particular repository/commit.
      *
-     * @param xrepoDatabase The cross-repo databse.
+     * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded document.
      * @param databasePath The path to the database file.
@@ -323,7 +323,7 @@ export class Database {
  * @param orderedRanges The ranges of the document, ordered by startLine/startCharacter.
  * @param position The user's hover position.
  */
-function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeData | undefined {
+export function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeData | undefined {
     let lo = 0
     let hi = orderedRanges.length - 1
 
@@ -359,7 +359,7 @@ function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeDat
  * @param data The range or result set object.
  * @param property The target property.
  */
-function findResult<T>(
+export function findResult<T>(
     resultSets: Map<Id, ResultSetData>,
     map: Map<Id, T>,
     data: RangeData | ResultSetData,
@@ -380,9 +380,9 @@ function findResult<T>(
  *
  * @param resultSets The map of results sets of the document.
  * @param monikers The map of monikers of the document.
- * @param data The range or restult set object.
+ * @param data The range or result set object.
  */
-function findMonikers(
+export function findMonikers(
     resultSets: Map<Id, ResultSetData>,
     monikers: Map<Id, MonikerData>,
     data: RangeData | ResultSetData
@@ -401,13 +401,13 @@ function findMonikers(
 }
 
 /**
- * Return an iterabel of the range and result set items that are attached
+ * Return an iterable of the range and result set items that are attached
  * to the given initial data. The initial data is yielded immediately.
  *
  * @param resultSets The map of results sets of the document.
  * @param data The range or result set object.
  */
-function* walkChain<T>(
+export function* walkChain<T>(
     resultSets: Map<Id, ResultSetData>,
     data: RangeData | ResultSetData
 ): Iterable<RangeData | ResultSetData> {
@@ -432,7 +432,7 @@ function* walkChain<T>(
  *
  * @param monikers The list of monikers.
  */
-function sortMonikers(monikers: MonikerData[]): MonikerData[] {
+export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
     const monikerKindPreferences = ['import', 'local', 'export']
     const monikerSchemePreferences = ['npm', 'tsc']
 
@@ -451,16 +451,21 @@ function sortMonikers(monikers: MonikerData[]): MonikerData[] {
 /**
  * Convert the given range identifiers into LSP location objects.
  *
- * @param ranges The map of ranges of the document (from identifier to the range's index inorderedRanges).
+ * @param ranges The map of ranges of the document (from identifier to the range's index in `orderedRanges`).
  * @param orderedRanges The ordered ranges of the document.
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: string, ids: Id[]): lsp.Location[] {
+export function asLocations(
+    ranges: Map<Id, number>,
+    orderedRanges: RangeData[],
+    uri: string,
+    ids: Id[]
+): lsp.Location[] {
     const locations = []
     for (const id of ids) {
         const rangeIndex = ranges.get(id)
-        if (!rangeIndex) {
+        if (rangeIndex === undefined) {
             continue
         }
 
@@ -483,7 +488,7 @@ function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: s
  * @param pkg The target package.
  * @param path The path relative to the project root.
  */
-function makeRemoteUri(pkg: PackageModel, path: string): string {
+export function makeRemoteUri(pkg: PackageModel, path: string): string {
     const url = new URL(`git://${pkg.repository}`)
     url.search = pkg.commit
     url.hash = path
@@ -512,7 +517,7 @@ function makeRange(result: {
  * @param range The range.
  * @param position The position.
  */
-function comparePosition(range: FlattenedRange, position: lsp.Position): number {
+export function comparePosition(range: FlattenedRange, position: lsp.Position): number {
     if (position.line < range.startLine) {
         return +1
     }

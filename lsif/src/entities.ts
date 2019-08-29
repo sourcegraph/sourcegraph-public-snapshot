@@ -18,7 +18,9 @@ export interface DocumentData {
      */
     orderedRanges: RangeData[]
 
-    // A map of identifiers to a result set.
+    /**
+     * A map of identifiers to a result set.
+     */
     resultSets: Map<Id, ResultSetData>
 
     /**
@@ -33,13 +35,19 @@ export interface DocumentData {
      */
     referenceResults: Map<Id, Id[]>
 
-    // A map of identifiers to a hover result.
+    /**
+     * A map of identifiers to a hover result.
+     */
     hovers: Map<Id, string>
 
-    // A map of identifiers to a moniker.
+    /**
+     * A map of identifiers to a moniker.
+     */
     monikers: Map<Id, MonikerData>
 
-    // A map of identifiers to package information.
+    /**
+     * A map of identifiers to package information.
+     */
     packageInformation: Map<Id, PackageInformationData>
 }
 
@@ -101,13 +109,19 @@ export interface ResultSetData extends ResultObjectData {}
  * Data about a moniker attached to a range or a result set.
  */
 export interface MonikerData {
-    // The kind of moniker (e.g. local, import, export).
+    /**
+     * The kind of moniker (e.g. local, import, export).
+     */
     kind: MonikerKind
 
-    // The name of the package type (e.g. npm, pip).
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
     scheme: string
 
-    // The unique identifier of the moniker.
+    /**
+     * The unique identifier of the moniker.
+     */
     identifier: string
 
     /**
@@ -122,10 +136,14 @@ export interface MonikerData {
  * Additional data about a non-local moniker.
  */
 export interface PackageInformationData {
-    // The name of the package the moniker describes.
+    /**
+     * The name of the package the moniker describes.
+     */
     name: string
 
-    // The version of the package the moniker describes.
+    /**
+     * The version of the package the moniker describes.
+     */
     version: string
 }
 
@@ -133,15 +151,23 @@ export interface PackageInformationData {
  * An LSP range that has been squashed into a single layer.
  */
 export interface FlattenedRange {
-    // The line on which the range starts (0-indexed, inclusive).
+    /**
+     * The line on which the range starts (0-indexed, inclusive).
+     */
     startLine: number
 
-    // The line on which the range ends (0-indexed, inclusive).
+    /**
+     * The line on which the range ends (0-indexed, inclusive).
+     */
     startCharacter: number
 
-    // The chracter on which the range starts (0-indexed, inclusive).
+    /**
+     * The character on which the range starts (0-indexed, inclusive).
+     */
     endLine: number
 
-    // The chracter on which the range ends (0-indexed, inclusive).
+    /**
+     * The character on which the range ends (0-indexed, inclusive).
+     */
     endCharacter: number
 }

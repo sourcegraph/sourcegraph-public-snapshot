@@ -13,7 +13,9 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
  * See https://www.sqlite.org/limits.html#max_variable_number.
  */
 export class TableInserter<T, M extends new () => T> {
-    // The set of entity values that will be inserted in the next invocation of `executeBatch`.
+    /**
+     * The set of entity values that will be inserted in the next invocation of `executeBatch`.
+     */
     private batch: QueryDeepPartialEntity<T>[] = []
 
     /**
@@ -63,7 +65,6 @@ export class TableInserter<T, M extends new () => T> {
             .into(this.model)
             .values(this.batch)
             .execute()
-            .then(() => {})
 
         this.batch = []
     }
