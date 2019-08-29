@@ -1760,6 +1760,11 @@ type PageInfo {
 type GitCommitConnection {
     # A list of Git commits.
     nodes: [GitCommit!]!
+    # The total number of Git commits in the connection. If the GitCommitConnection is paginated
+    # (e.g., because a "first" parameter was provided to the field that produced it), this field is
+    # null to avoid it taking unexpectedly long to compute the total count. Remove the pagination
+    # parameters to obtain a non-null value for this field.
+    totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
 }
