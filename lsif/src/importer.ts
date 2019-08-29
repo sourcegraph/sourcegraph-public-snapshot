@@ -983,7 +983,7 @@ function normalizeHover(hover: Hover): string {
 function flattenRange(range: Range): FlattenedRange {
     return {
         startLine: range.start.line,
-        startCharacter: range.end.line,
+        startCharacter: range.start.character,
         endLine: range.end.line,
         endCharacter: range.end.character,
     }
