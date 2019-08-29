@@ -3,8 +3,10 @@ import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import * as React from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings';
+import { DotStarButton } from '../DotStarButton'
 
-interface Props {
+interface Props extends SettingsCascadeProps {
     /** Hide the "help" icon and dropdown. */
     noHelp?: boolean
 }
@@ -24,6 +26,7 @@ export class SearchButton extends React.Component<Props, State> {
         const docsURLPrefix = window.context.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
         return (
             <div className="search-button d-flex">
+                <DotStarButton {...this.props} />
                 <button className="btn btn-primary search-button__btn" type="submit" aria-label="Search">
                     <SearchIcon className="icon-inline" aria-hidden="true" />
                 </button>

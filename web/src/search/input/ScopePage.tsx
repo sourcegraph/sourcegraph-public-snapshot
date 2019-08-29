@@ -18,6 +18,7 @@ import { fetchReposByQuery } from '../backend'
 import { submitSearch } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
+import { DotStarButton } from '../DotStarButton'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -165,7 +166,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 history={this.props.history}
                                 placeholder="Search in this scope..."
                             />
-                            <SearchButton />
+                            <SearchButton {...this.props} />
                         </Form>
                     </section>
                     <PageTitle title={this.state.name} />

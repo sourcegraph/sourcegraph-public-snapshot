@@ -5,8 +5,9 @@ import { Form } from '../../components/Form'
 import { submitSearch } from '../helpers'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 
-interface Props extends ActivationProps {
+interface Props extends ActivationProps, SettingsCascadeProps {
     location: H.Location
     history: H.History
     navbarSearchQuery: string
@@ -22,6 +23,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     activation,
     location,
     history,
+    settingsCascade,
 }) => {
     // Only autofocus the query input on search result pages (otherwise we
     // capture down-arrow keypresses that the user probably intends to scroll down
@@ -46,7 +48,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
                 location={location}
                 history={history}
             />
-            <SearchButton />
+            <SearchButton settingsCascade={settingsCascade} />
         </Form>
     )
 }
