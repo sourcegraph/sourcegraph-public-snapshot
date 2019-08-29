@@ -16,7 +16,7 @@ describe('GenericCache', () => {
         ]
 
         const factoryArgs: string[] = []
-        const cache = new GenericCache<string, string>(5, () => 1, () => { })
+        const cache = new GenericCache<string, string>(5, () => 1, () => {})
 
         for (const value of values) {
             const returnValue = await cache.withValue(
@@ -35,7 +35,7 @@ describe('GenericCache', () => {
     })
 
     it('should asynchronously resolve cache values', async () => {
-        const cache = new GenericCache<string, string>(5, () => 1, () => { })
+        const cache = new GenericCache<string, string>(5, () => 1, () => {})
 
         let innerCalls = 0
         const innerPromise = new Promise<string>(resolve => {
@@ -113,7 +113,7 @@ describe('GenericCache', () => {
         ]
 
         const factoryArgs: number[] = []
-        const cache = new GenericCache<number, number>(5, v => v, () => { })
+        const cache = new GenericCache<number, number>(5, v => v, () => {})
 
         for (const value of values) {
             await cache.withValue(
