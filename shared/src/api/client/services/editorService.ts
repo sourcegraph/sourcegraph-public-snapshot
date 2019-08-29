@@ -1,9 +1,10 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
-import { BehaviorSubject, combineLatest, from, Subscribable, throwError } from 'rxjs'
-import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { BehaviorSubject, combineLatest, from, Subscribable, throwError, of } from 'rxjs'
+import { distinctUntilChanged, map, switchMap, first, filter, takeWhile } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel } from './modelService'
+import { isDefined } from '../../../util/types'
 /**
  * EditorId exposes the unique ID of an editor.
  */
@@ -85,7 +86,7 @@ export interface EditorService {
      *
      * @param editor The editor to observe.
      * @returns An observable that emits when the editor or its model changes. If no such editor
-     * exists, or if the editor is removed, it emits an error.
+     * exists or if the editor is removed, the observable completes.
      */
     observeEditorAndModel(editor: EditorId): Subscribable<CodeEditorWithModel>
 
@@ -183,17 +184,12 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
             return { editorId }
         },
         observeEditorAndModel: ({ editorId }) =>
-            editors.pipe(
-                map(editors => editors.find(e => e.editorId === editorId)),
-                switchMap(editor =>
-                    editor
-                        ? from(modelService.models).pipe(
-                              map(models => findModelForEditor(models, editor)),
-                              distinctUntilChanged(),
-                              map(model => ({ ...editor, model }))
-                          )
-                        : throwError(new Error(`editor not found: ${editorId}`))
-                )
+            combineLatest([
+                editors.pipe(map(editors => editors.find(e => e.editorId === editorId))),
+                from(modelService.models),
+            ]).pipe(
+                takeWhile((data): data is [CodeEditor, readonly TextModel[]] => isDefined(data[0])),
+                map(([editor, models]) => ({ ...editor, model: findModelForEditor(models, editor) }))
             ),
         hasEditor: ({ editorId }) => exists(editorId),
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
