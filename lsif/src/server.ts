@@ -123,9 +123,6 @@ async function main(): Promise<void> {
     })
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  */
@@ -172,5 +169,5 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
 
 main().catch(e => {
     console.error(e)
-    setTimeout(() => process.exit(1), 0)
+    setTimeout(() => process.exit(1), 100)
 })

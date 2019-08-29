@@ -16,10 +16,14 @@ import {
  * A wrapper around a cache value promise.
  */
 interface CacheEntry<K, V> {
-    // The key that can retrieve this cache entry.
+    /**
+     * The key that can retrieve this cache entry.
+     */
     key: K
 
-    // The promise that will resolve the cache value.
+    /**
+     * The promise that will resolve the cache value.
+     */
     promise: Promise<V>
 
     /**
@@ -31,7 +35,7 @@ interface CacheEntry<K, V> {
 
     /**
      * The number of active withValue calls referencing this entry.
-     * If this value is non-zero, it should not be evictable from the
+     * If this value is non-zero, it should not be evict-able from the
      * cache.
      */
     readers: number
@@ -60,21 +64,27 @@ interface CacheMetrics {
 }
 
 /**
- * A generic LRU cache. We use this instead of the `lru-cache` apckage
+ * A generic LRU cache. We use this instead of the `lru-cache` package
  * available in NPM so that we can handle async payloads in a more
  * first-class way as well as shedding some of the cruft around evictions.
  * We need to ensure database handles are closed when they are no longer
  * accessible, and we also do not want to evict any database handle while
  * it is actively being used.
  */
-class GenericCache<K, V> {
-    // A map from from keys to nodes in `lruList`.
+export class GenericCache<K, V> {
+    /**
+     * A map from from keys to nodes in `lruList`.
+     */
     private cache = new Map<K, Yallist.Node<CacheEntry<K, V>>>()
 
-    // A linked list of cache entires ordered by last-touch.
+    /**
+     * A linked list of cache entires ordered by last-touch.
+     */
     private lruList = new Yallist<CacheEntry<K, V>>()
 
-    // The additive size of the items currently in the cache.
+    /**
+     * The additive size of the items currently in the cache.
+     */
     private size = 0
 
     /**
@@ -93,7 +103,7 @@ class GenericCache<K, V> {
         private sizeFunction: (value: V) => number,
         private disposeFunction: (value: V) => void,
         private metrics: CacheMetrics
-    ) {}
+    ) { }
 
     /**
      * Check if `key` exists in the cache. If it does not, create a value
@@ -106,7 +116,7 @@ class GenericCache<K, V> {
      * @param factory The function used to create a new value.
      * @param callback The function to invoke with the resolved cache value.
      */
-    protected async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
+    public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
         const entry = this.getEntry(key, factory)
         entry.readers++
 
@@ -138,7 +148,7 @@ class GenericCache<K, V> {
         this.metrics.hitCounter.labels('miss').inc()
         const promise = factory()
         const newEntry = { key, promise, size: 0, readers: 0 }
-        promise.then(value => this.resolved(newEntry, value), () => {})
+        promise.then(value => this.resolved(newEntry, value), () => { })
         this.lruList.unshift(newEntry)
         const head = this.lruList.head
         if (head) {
@@ -176,7 +186,7 @@ class GenericCache<K, V> {
                 this.metrics.sizeGauge.dec(size)
                 this.lruList.removeNode(node)
                 this.cache.delete(node.value.key)
-                promise.then(value => this.disposeFunction(value), () => {})
+                promise.then(value => this.disposeFunction(value), () => { })
             } else {
                 this.metrics.evictionCounter.labels('locked').inc()
             }
@@ -211,7 +221,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
 
     /**
      * Invoke `callback` with a SQLite connection object obtained from the
-     * cache or created on cache miss. This connection is guranteed not to
+     * cache or created on cache miss. This connection is guaranteed not to
      * be disposed by cache eviction while the callback is active.
      *
      * @param database The database filename.
@@ -268,7 +278,7 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
             // TODO - determine memory size
             () => 1,
             // Let GC handle the cleanup of the object on cache eviction.
-            (): void => {},
+            (): void => { },
             {
                 hitCounter: DocumentCacheHitCounter,
                 sizeGauge: DocumentCacheSizeGauge,
