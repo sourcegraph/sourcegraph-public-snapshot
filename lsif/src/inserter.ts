@@ -3,10 +3,10 @@ import { EntityManager } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 
 /**
- * `InserterMetrics` is a bag of prometheus metric objects that apply to
- * a particular instance of `Inserter`.
+ * A bag of prometheus metric objects that apply to a particular instance of
+ * `TableInserter`.
  */
-interface InserterMetrics {
+interface TableInserterMetrics {
     /**
      * `insertionCounter` increments on each insertion.
      */
@@ -48,7 +48,7 @@ export class TableInserter<T, M extends new () => T> {
         private entityManager: EntityManager,
         private model: M,
         private maxBatchSize: number,
-        private metrics: InserterMetrics
+        private metrics: TableInserterMetrics
     ) {}
 
     /**
