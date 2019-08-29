@@ -31,27 +31,27 @@ export class Database {
     /**
      * Determine if data exists for a particular document in this database.
      *
-     * @param uri The URI of the document.
+     * @param path The path of the document.
      */
-    public async exists(uri: string): Promise<boolean> {
-        return (await this.findDocument(uri)) !== undefined
+    public async exists(path: string): Promise<boolean> {
+        return (await this.findDocument(path)) !== undefined
     }
 
     /**
      * Return the location for the definition of the reference at the given position.
      *
-     * @param uri The document to which the position belongs.
+     * @param path The path fo the document to which the position belongs.
      * @param position The current hover position.
      */
-    public async definitions(uri: string, position: lsp.Position): Promise<lsp.Location | lsp.Location[] | undefined> {
-        const { document, range } = await this.findRange(uri, position)
+    public async definitions(path: string, position: lsp.Position): Promise<lsp.Location | lsp.Location[] | undefined> {
+        const { document, range } = await this.findRange(path, position)
         if (!document || !range) {
             return undefined
         }
 
         const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
         if (resultData) {
-            return asLocations(document.ranges, document.orderedRanges, uri, resultData)
+            return asLocations(document.ranges, document.orderedRanges, path, resultData)
         }
 
         // TODO - vet this logic of finding the first result
@@ -60,7 +60,7 @@ export class Database {
                 return await this.remoteDefinitions(document, moniker)
             }
 
-            const defs = await Database.monikerResults(this, DefModel, moniker, uri => uri)
+            const defs = await Database.monikerResults(this, DefModel, moniker, path => path)
             if (defs) {
                 return defs
             }
@@ -72,11 +72,11 @@ export class Database {
     /**
      * Return a list of locations which reference the definition at the given position.
      *
-     * @param uri The document to which the position belongs.
+     * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      */
-    public async references(uri: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
-        const { document, range } = await this.findRange(uri, position)
+    public async references(path: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
+        const { document, range } = await this.findRange(path, position)
         if (!document || !range) {
             return undefined
         }
@@ -87,10 +87,10 @@ export class Database {
 
         let result: lsp.Location[] = []
         if (resultData) {
-            result = result.concat(asLocations(document.ranges, document.orderedRanges, uri, resultData))
+            result = result.concat(asLocations(document.ranges, document.orderedRanges, path, resultData))
         } else {
             for (const moniker of monikers) {
-                result = result.concat(await Database.monikerResults(this, RefModel, moniker, uri => uri))
+                result = result.concat(await Database.monikerResults(this, RefModel, moniker, path => path))
             }
         }
 
@@ -108,11 +108,11 @@ export class Database {
     /**
      * Return the hover content for the definition or reference at the given position.
      *
-     * @param uri The document to which the position belongs.
+     * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      */
-    public async hover(uri: string, position: lsp.Position): Promise<lsp.Hover | null> {
-        const { document, range } = await this.findRange(uri, position)
+    public async hover(path: string, position: lsp.Position): Promise<lsp.Hover | null> {
+        const { document, range } = await this.findRange(path, position)
         if (!document || !range) {
             return null
         }
@@ -131,19 +131,19 @@ export class Database {
 
     /**
      * Query the defs or refs table of `db` for items that match the given moniker. Convert
-     * each result into an LSP location. The `uriTransformer` function is invoked on each result
-     * item to modify the resulting locations.
+     * each result into an LSP location. The `pathTransformer` function is invoked on each
+     * result item to modify the resulting locations.
      *
      * @param db The target database.
      * @param model The constructor for the model type.
      * @param moniker The target moniker.
-     * @param uriTransformer The function used to alter location uris.
+     * @param pathTransformer The function used to alter location paths.
      */
     private static async monikerResults(
         db: Database,
         model: typeof DefModel | typeof RefModel,
         moniker: MonikerData,
-        uriTransformer: (uri: string) => string
+        pathTransformer: (path: string) => string
     ): Promise<lsp.Location[]> {
         const results = await db.withConnection(connection =>
             connection.getRepository<DefModel | RefModel>(model).find({
@@ -154,7 +154,7 @@ export class Database {
             })
         )
 
-        return results.map(result => lsp.Location.create(uriTransformer(result.documentUri), makeRange(result)))
+        return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), makeRange(result)))
     }
 
     /**
@@ -196,8 +196,8 @@ export class Database {
             makeFilename(packageEntity.repository, packageEntity.commit)
         )
 
-        const uriTransformer = (uri: string): string => makeRemoteUri(packageEntity, uri)
-        return await Database.monikerResults(db, DefModel, moniker, uriTransformer)
+        const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
+        return await Database.monikerResults(db, DefModel, moniker, pathTransformer)
     }
 
     /**
@@ -235,8 +235,8 @@ export class Database {
                 makeFilename(reference.repository, reference.commit)
             )
 
-            const uriTransformer = (uri: string): string => makeRemoteUri(reference, uri)
-            const references = await Database.monikerResults(db, RefModel, moniker, uriTransformer)
+            const pathTransformer = (path: string): string => makeRemoteUri(reference, path)
+            const references = await Database.monikerResults(db, RefModel, moniker, pathTransformer)
             allReferences = allReferences.concat(references)
         }
 
@@ -244,38 +244,38 @@ export class Database {
     }
 
     /**
-     * Return a parsed document that describes the given URI. The result of this
+     * Return a parsed document that describes the given path. The result of this
      * method is cached across all database instances.
      *
-     * @param uri The uri of the document.
+     * @param path The path of the document.
      */
-    private async findDocument(uri: string): Promise<DocumentData | undefined> {
+    private async findDocument(path: string): Promise<DocumentData | undefined> {
         const factory = async (): Promise<DocumentData> => {
             const document = await this.withConnection(connection =>
-                connection.getRepository(DocumentModel).findOneOrFail(uri)
+                connection.getRepository(DocumentModel).findOneOrFail(path)
             )
 
             return await decodeJSON<DocumentData>(document.value)
         }
 
-        return await this.documentCache.withDocument(`${this.databasePath}::${uri}`, factory, document =>
+        return await this.documentCache.withDocument(`${this.databasePath}::${path}`, factory, document =>
             Promise.resolve(document)
         )
     }
 
     /**
-     * Return a parsed document that describes the given URI as well as the range
+     * Return a parsed document that describes the given path as well as the range
      * from that document that contains the given position. Returns undefined for
      * both values if one cannot be loaded.
      *
-     * @param uri The uri of the document.
-     * @param position The uri's hover position.
+     * @param path The path of the document.
+     * @param position The user's hover position.
      */
     private async findRange(
-        uri: string,
+        path: string,
         position: lsp.Position
     ): Promise<{ document: DocumentData | undefined; range: RangeData | undefined }> {
-        const document = await this.findDocument(uri)
+        const document = await this.findDocument(path)
         if (!document) {
             return { document: undefined, range: undefined }
         }

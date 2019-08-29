@@ -28,7 +28,7 @@ export class MetaModel {
 export class DocumentModel {
     // The root-relative path of the document.
     @PrimaryColumn()
-    public uri!: string
+    public path!: string
 
     // The JSON-encoded document data.
     @Column()
@@ -52,9 +52,9 @@ class Symbols {
     @Column()
     public identifier!: string
 
-    // The uri of the document to which this reference belongs.
+    // The path of the document to which this reference belongs.
     @Column()
-    public documentUri!: string
+    public documentPath!: string
 
     // The zero-indexed line describing the start of this range.
     @Column()

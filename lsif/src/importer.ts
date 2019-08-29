@@ -53,8 +53,8 @@ export interface DecoratedDocumentData extends DocumentData {
     // The identifier of the document.
     id: Id
 
-    // The URI of the document.
-    uri: string
+    // The root-relative path of the document.
+    path: string
 
     /**
      * The running set of identifiers that have a contains edge to this document
@@ -271,7 +271,7 @@ class LsifImporter {
 
     /**
      * This should be the first vertex seen. Extract the project root so we
-     * can create relative URIs for documnets. Insert a row in the meta
+     * can create relative paths for documnets. Insert a row in the meta
      * table with the LSIF protocol version.
      *
      * @param vertex The metadata vertex.
@@ -491,7 +491,7 @@ class LsifImporter {
 
         this.documentDatas.set(event.data, {
             id: event.data,
-            uri: path,
+            path,
             contains: [],
             definitions: [],
             references: [],
@@ -520,7 +520,7 @@ class LsifImporter {
         await this.finalizeDocument(document)
 
         // Insert document record
-        await this.documentInserter.insert({ uri: document.uri, value: await encodeJSON(document) })
+        await this.documentInserter.insert({ path: document.path, value: await encodeJSON(document) })
         // TODO - really prune everything that's no in the class
 
         // Insert all related definitions
@@ -529,7 +529,7 @@ class LsifImporter {
                 await this.defInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
-                    documentUri: document.uri,
+                    documentPath: document.path,
                     ...range,
                 })
             }
@@ -541,7 +541,7 @@ class LsifImporter {
                 await this.refInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
-                    documentUri: document.uri,
+                    documentPath: document.path,
                     ...range,
                 })
             }
