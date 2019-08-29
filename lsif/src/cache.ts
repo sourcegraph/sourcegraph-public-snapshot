@@ -40,7 +40,7 @@ interface CacheEntry<K, V> {
  * accessible, and we also do not want to evict any database handle while
  * it is actively being used.
  */
-class GenericCache<K, V> {
+export class GenericCache<K, V> {
     /**
      * A map from from keys to nodes in `lruList`.
      */
@@ -79,7 +79,7 @@ class GenericCache<K, V> {
      * @param factory The function used to create a new value.
      * @param callback The function to invoke with the resolved cache value.
      */
-    protected async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
+    public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
         const entry = this.getEntry(key, factory)
         entry.readers++
 
