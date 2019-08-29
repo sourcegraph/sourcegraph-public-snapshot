@@ -12,6 +12,7 @@ import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { submitSearch } from '../helpers'
+import { DotStarButton } from '../DotStarButton'
 import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
@@ -80,6 +81,7 @@ export class SearchPage extends React.Component<Props, State> {
                             autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
                         />
+                        <DotStarButton {...this.props} />
                         <SearchButton />
                     </div>
                     {hasScopes ? (
