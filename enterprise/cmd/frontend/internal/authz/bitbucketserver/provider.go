@@ -39,7 +39,7 @@ func NewProvider(cli *bitbucketserver.Client, db *sql.DB, ttl, hardTTL time.Dura
 		client:   cli,
 		codeHost: extsvc.NewCodeHost(cli.URL, bitbucketserver.ServiceType),
 		pageSize: 1000,
-		store:    newStore(db, ttl, hardTTL, clock, newCache()),
+		store:    newStore(db, ttl, hardTTL, clock),
 	}
 }
 

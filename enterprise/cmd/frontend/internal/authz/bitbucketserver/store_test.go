@@ -44,7 +44,7 @@ func BenchmarkStore(b *testing.B) {
 	ctx := context.Background()
 
 	b.Run("ttl=0", func(b *testing.B) {
-		s := newStore(db, 0, DefaultHardTTL, clock, newCache())
+		s := newStore(db, 0, DefaultHardTTL, clock)
 		s.block = true
 
 		ps := &Permissions{
@@ -61,30 +61,12 @@ func BenchmarkStore(b *testing.B) {
 		}
 	})
 
-	b.Run("ttl=60s/no-in-memory-cache", func(b *testing.B) {
-		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, nil)
+	b.Run("ttl=60s", func(b *testing.B) {
+		s := newStore(db, 60*time.Second, DefaultHardTTL, clock)
 		s.block = true
 
 		ps := &Permissions{
 			UserID: 100,
-			Perm:   authz.Read,
-			Type:   "repos",
-		}
-
-		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
-
-	b.Run("ttl=60s/in-memory-cache", func(b *testing.B) {
-		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, newCache())
-		s.block = true
-
-		ps := &Permissions{
-			UserID: 101,
 			Perm:   authz.Read,
 			Type:   "repos",
 		}
@@ -139,7 +121,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		s := newStore(db, ttl, hardTTL, clock, newCache())
+		s := newStore(db, ttl, hardTTL, clock)
 		s.updates = make(chan *Permissions)
 
 		ids := []uint32{1, 2, 3}
@@ -163,7 +145,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		{
-			// Not cached, nor stored.
+			// No permissions cached.
 			ps, err := load(s)
 			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
 			equal(t, "ids", array(ps.IDs), []uint32(nil))
@@ -181,18 +163,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		<-s.updates
-
-		{
-			// Not cached, but stored by the background update.
-			// After loading, stored permissions are cached in memory.
-			equal(t, "cache", s.cache.cache[newCacheKey(ps)], (*Permissions)(nil))
-
-			ps, err := load(s)
-
-			equal(t, "err", err, nil)
-			equal(t, "ids", array(ps.IDs), ids)
-			equal(t, "cache", s.cache.cache[newCacheKey(ps)], ps)
-		}
 
 		ids = append(ids, 4, 5, 6)
 
@@ -248,7 +218,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			for i := 0; i < cap(ch); i++ {
 				go func(i int) {
-					s := newStore(db, ttl, hardTTL, clock, newCache())
+					s := newStore(db, ttl, hardTTL, clock)
 					s.updates = updates
 					ps, err := load(s)
 					ch <- op{i, ps, err}
