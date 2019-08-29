@@ -109,14 +109,14 @@ class LsifImporter {
     private refInserter: TableInserter<RefModel, new () => RefModel>
 
     // Vertex data
-    private definitionDatas: Map<Id, Map<Id, Id[]>> = new Map()
-    private documents: Map<Id, string> = new Map()
-    private hoverDatas: Map<Id, string> = new Map()
-    private monikerDatas: Map<Id, MonikerData> = new Map()
-    private packageInformationDatas: Map<Id, PackageInformationData> = new Map()
-    private rangeDatas: Map<Id, RangeData> = new Map()
-    private referenceDatas: Map<Id, Map<Id, Id[]>> = new Map()
-    private resultSetDatas: Map<Id, ResultSetData> = new Map()
+    private definitionData: Map<Id, Map<Id, Id[]>> = new Map()
+    private documentUris: Map<Id, string> = new Map()
+    private hoverData: Map<Id, string> = new Map()
+    private monikerData: Map<Id, MonikerData> = new Map()
+    private packageInformationData: Map<Id, PackageInformationData> = new Map()
+    private rangeData: Map<Id, RangeData> = new Map()
+    private referenceData: Map<Id, Map<Id, Id[]>> = new Map()
+    private resultSetData: Map<Id, ResultSetData> = new Map()
 
     /**
      * The root of all document URIs. This is extracted from the metadata vertex at
@@ -134,7 +134,7 @@ class LsifImporter {
      * A map of decorated `DocumentData` objects that are created on document begin events
      * and are inserted into the databse on document end events.
      */
-    private documentDatas = new Map<Id, DecoratedDocumentData>()
+    private documentData = new Map<Id, DecoratedDocumentData>()
 
     /**
      * A mapping for the relation from moniker to the set of monikers that they are related
@@ -224,9 +224,9 @@ class LsifImporter {
     private getPackages(): Package[] {
         const packageHashes: Package[] = []
         for (const id of this.exportedMonikers) {
-            const source = assertDefined(id, 'moniker', this.monikerDatas)
+            const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
+            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
             packageHashes.push({
                 scheme: source.scheme,
                 name: packageInfo.name,
@@ -243,9 +243,9 @@ class LsifImporter {
     private getReferences(): SymbolReferences[] {
         const packageIdentifiers: Map<string, string[]> = new Map()
         for (const id of this.importedMonikers) {
-            const source = assertDefined(id, 'moniker', this.monikerDatas)
+            const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationDatas)
+            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
             const pkg = JSON.stringify({
                 scheme: source.scheme,
                 name: packageInfo.name,
@@ -300,14 +300,14 @@ class LsifImporter {
     // may be retrieved when an edge that references it is seen, or when a document
     // is finalized.
 
-    private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
-    private handleDocument = this.setById(this.documents, (e: Document) => e.uri)
-    private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => normalizeHover(e.result))
-    private handleMoniker = this.setById(this.monikerDatas, convertMoniker)
-    private handlePackageInformation = this.setById(this.packageInformationDatas, convertPackageInformation)
-    private handleRange = this.setById(this.rangeDatas, (e: Range) => convertRange(e))
-    private handleReferenceResult = this.setById(this.referenceDatas, () => new Map())
-    private handleResultSet = this.setById(this.resultSetDatas, () => ({ monikers: [] }))
+    private handleDefinitionResult = this.setById(this.definitionData, () => new Map())
+    private handleDocument = this.setById(this.documentUris, (e: Document) => e.uri)
+    private handleHover = this.setById(this.hoverData, (e: HoverResult) => normalizeHover(e.result))
+    private handleMoniker = this.setById(this.monikerData, convertMoniker)
+    private handlePackageInformation = this.setById(this.packageInformationData, convertPackageInformation)
+    private handleRange = this.setById(this.rangeData, (e: Range) => convertRange(e))
+    private handleReferenceResult = this.setById(this.referenceData, () => new Map())
+    private handleResultSet = this.setById(this.resultSetData, () => ({ monikers: [] }))
 
     //
     // Edge Handlers
@@ -319,9 +319,9 @@ class LsifImporter {
      * @param edge The contains edge.
      */
     private handleContains(edge: contains): void {
-        if (this.documentDatas.has(edge.outV)) {
-            const source = assertDefined(edge.outV, 'document', this.documentDatas)
-            mapAssertDefined(edge.inVs, 'range', this.rangeDatas)
+        if (this.documentData.has(edge.outV)) {
+            const source = assertDefined(edge.outV, 'document', this.documentData)
+            mapAssertDefined(edge.inVs, 'range', this.rangeData)
             source.contains = source.contains.concat(edge.inVs)
         }
     }
@@ -333,16 +333,15 @@ class LsifImporter {
      * @param edge The item edge.
      */
     private handleItemEdge(edge: item): void {
-        if (edge.property === undefined) {
-            this.handleGenericItemEdge(edge, 'definitionResult', this.definitionDatas)
-        }
+        switch (edge.property) {
+            case ItemEdgeProperties.definitions:
+            case ItemEdgeProperties.references:
+                this.handleGenericItemEdge(edge, 'referenceResult', this.referenceData)
+                break
 
-        if (edge.property === ItemEdgeProperties.definitions) {
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas)
-        }
-
-        if (edge.property === ItemEdgeProperties.references) {
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas)
+            case undefined:
+                this.handleGenericItemEdge(edge, 'definitionResult', this.definitionData)
+                break
         }
     }
 
@@ -356,10 +355,10 @@ class LsifImporter {
         const source = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'moniker', this.monikerDatas)
+        assertDefined(edge.inV, 'moniker', this.monikerData)
         source.monikers = [edge.inV]
     }
 
@@ -373,10 +372,10 @@ class LsifImporter {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'resultSet', this.resultSetDatas)
+        assertDefined(edge.inV, 'resultSet', this.resultSetData)
         outV.next = edge.inV
     }
 
@@ -387,8 +386,8 @@ class LsifImporter {
      * @param edge The nextMoniker edge.
      */
     private handleNextMonikerEdge(edge: nextMoniker): void {
-        assertDefined(edge.inV, 'moniker', this.monikerDatas)
-        assertDefined(edge.outV, 'moniker', this.monikerDatas)
+        assertDefined(edge.inV, 'moniker', this.monikerData)
+        assertDefined(edge.outV, 'moniker', this.monikerData)
         this.correlateMonikers(edge.inV, edge.outV) // Forward direction
         this.correlateMonikers(edge.outV, edge.inV) // Backwards direction
     }
@@ -401,8 +400,8 @@ class LsifImporter {
      * @param edge The packageInformation edge.
      */
     private handlePackageInformationEdge(edge: packageInformation): void {
-        const source = assertDefined(edge.outV, 'moniker', this.monikerDatas)
-        assertDefined(edge.inV, 'packageInformation', this.packageInformationDatas)
+        const source = assertDefined(edge.outV, 'moniker', this.monikerData)
+        assertDefined(edge.inV, 'packageInformation', this.packageInformationData)
         source.packageInformation = edge.inV
 
         if (source.kind === 'export') {
@@ -424,10 +423,10 @@ class LsifImporter {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'definitionResult', this.definitionDatas)
+        assertDefined(edge.inV, 'definitionResult', this.definitionData)
         outV.definitionResult = edge.inV
     }
 
@@ -441,10 +440,10 @@ class LsifImporter {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'hoverResult', this.hoverDatas)
+        assertDefined(edge.inV, 'hoverResult', this.hoverData)
         outV.hoverResult = edge.inV
     }
 
@@ -458,10 +457,10 @@ class LsifImporter {
         const outV = assertDefined<RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
-            this.rangeDatas,
-            this.resultSetDatas
+            this.rangeData,
+            this.resultSetData
         )
-        assertDefined(edge.inV, 'referenceResult', this.referenceDatas)
+        assertDefined(edge.inV, 'referenceResult', this.referenceData)
         outV.referenceResult = edge.inV
     }
 
@@ -481,7 +480,7 @@ class LsifImporter {
             throw new Error('No project root has been defined.')
         }
 
-        const uri = assertDefined(event.data, 'document', this.documents)
+        const uri = assertDefined(event.data, 'document', this.documentUris)
 
         const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(uri).href, {
             defaultPorts: {},
@@ -489,7 +488,7 @@ class LsifImporter {
             removeRootTrailingSlash: false,
         })
 
-        this.documentDatas.set(event.data, {
+        this.documentData.set(event.data, {
             id: event.data,
             path,
             contains: [],
@@ -514,7 +513,7 @@ class LsifImporter {
      * @param event The document end event.
      */
     private async handleDocumentEnd(event: DocumentEvent): Promise<void> {
-        const document = assertDefined(event.data, 'document', this.documentDatas)
+        const document = assertDefined(event.data, 'document', this.documentData)
 
         // Finalize document
         await this.finalizeDocument(document)
@@ -620,7 +619,7 @@ class LsifImporter {
     private async finalizeDocument(document: DecoratedDocumentData): Promise<void> {
         const orderedRanges: (RangeData & { id: Id })[] = []
         for (const id of document.contains) {
-            const range = assertDefined(id, 'range', this.rangeDatas)
+            const range = assertDefined(id, 'range', this.rangeData)
             orderedRanges.push({ id, ...range })
             await this.attachItemToDocument(document, id, range)
         }
@@ -659,14 +658,14 @@ class LsifImporter {
 
         // Add result set to document, if it doesn't exist
         if (item.next && !document.resultSets.has(item.next)) {
-            const resultSet = assertDefined(item.next, 'resultSet', this.resultSetDatas)
+            const resultSet = assertDefined(item.next, 'resultSet', this.resultSetData)
             document.resultSets.set(item.next, resultSet)
             await this.attachItemToDocument(document, item.next, resultSet)
         }
 
         // Add hover to document, if it doesn't exist
         if (item.hoverResult && !document.hovers.has(item.hoverResult)) {
-            const hoverResult = assertDefined(item.hoverResult, 'hoverResult', this.hoverDatas)
+            const hoverResult = assertDefined(item.hoverResult, 'hoverResult', this.hoverData)
             document.hovers.set(item.hoverResult, hoverResult)
         }
 
@@ -677,7 +676,7 @@ class LsifImporter {
 
         this.attachResultsToDocument(
             'definitionResult',
-            this.definitionDatas,
+            this.definitionData,
             document,
             document.definitions,
             document.definitionResults,
@@ -687,7 +686,7 @@ class LsifImporter {
 
         this.attachResultsToDocument(
             'referenceResult',
-            this.referenceDatas,
+            this.referenceData,
             document,
             document.references,
             document.referenceResults,
@@ -716,7 +715,7 @@ class LsifImporter {
 
         const monikers = []
         for (const id of reachableMonikers(this.monikerSets, item.monikers[0])) {
-            const moniker = assertDefined(id, 'moniker', this.monikerDatas)
+            const moniker = assertDefined(id, 'moniker', this.monikerData)
             monikers.push(moniker)
             item.monikers.push(id)
             document.monikers.set(id, moniker)
@@ -725,7 +724,7 @@ class LsifImporter {
                 const packageInformation = assertDefined(
                     moniker.packageInformation,
                     'packageInformation',
-                    this.packageInformationDatas
+                    this.packageInformationData
                 )
 
                 document.packageInformation.set(moniker.packageInformation, packageInformation)
