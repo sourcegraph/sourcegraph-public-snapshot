@@ -483,7 +483,7 @@ class LsifImporter {
 
         const uri = assertDefined(event.data, 'document', this.documents)
 
-        const path = RelateUrl.relate(this.projectRoot.href, new URL(uri).href, {
+        const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(uri).href, {
             defaultPorts: {},
             output: RelateUrl.PATH_RELATIVE,
             removeRootTrailingSlash: false,
