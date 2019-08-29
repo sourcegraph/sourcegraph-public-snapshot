@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -61,6 +62,32 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 		tvars := &templateVars{n, configureRepos(reposRoot), ln.Addr()}
 
 		handleConfig(tvars, w)
+	})
+
+	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
+		type Repo struct {
+			Name string
+			URI  string
+		}
+		var repos []Repo
+		for _, path := range configureRepos(reposRoot) {
+			uri := "/repos/" + path
+			repos = append(repos, Repo{
+				Name: path,
+				URI:  uri,
+			})
+		}
+
+		resp := struct {
+			Items []Repo
+		}{
+			Items: repos,
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		_ = enc.Encode(&resp)
 	})
 
 	if n == 1 {
