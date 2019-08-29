@@ -24,5 +24,5 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 # hadolint ignore=DL3018
 RUN apk add --no-cache tini nodejs-current=11.3.0-r0
 
-COPY --from=builder-worker /lsif /lsif
+COPY --from=builder /lsif /lsif
 ENTRYPOINT ["/sbin/tini", "--", "node", "/lsif/out/worker.js"]
