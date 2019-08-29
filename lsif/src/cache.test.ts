@@ -1,6 +1,30 @@
+import promClient from 'prom-client'
 import { GenericCache } from './cache'
 
 describe('GenericCache', () => {
+    const testCacheHitCounter = new promClient.Counter({
+        name: 'test_cache_hit',
+        help: 'test_cache_hit',
+        labelNames: ['type'],
+    })
+
+    const testCacheEvictionCounter = new promClient.Counter({
+        name: 'test_cache_eviction',
+        help: 'test_cache_eviction',
+        labelNames: ['type'],
+    })
+
+    const testCacheSizeGauge = new promClient.Gauge({
+        name: 'test_cache_size',
+        help: 'test_cache_size',
+    })
+
+    const testMetrics = {
+        hitCounter: testCacheHitCounter,
+        sizeGauge: testCacheSizeGauge,
+        evictionCounter: testCacheEvictionCounter,
+    }
+
     it('should evict items based by reverse recency', async () => {
         const values = [
             'foo', // foo*
@@ -16,7 +40,7 @@ describe('GenericCache', () => {
         ]
 
         const factoryArgs: string[] = []
-        const cache = new GenericCache<string, string>(5, () => 1, () => {})
+        const cache = new GenericCache<string, string>(5, () => 1, () => {}, testMetrics)
 
         for (const value of values) {
             const returnValue = await cache.withValue(
@@ -35,7 +59,7 @@ describe('GenericCache', () => {
     })
 
     it('should asynchronously resolve cache values', async () => {
-        const cache = new GenericCache<string, string>(5, () => 1, () => {})
+        const cache = new GenericCache<string, string>(5, () => 1, () => {}, testMetrics)
 
         let innerCalls = 0
         const innerPromise = new Promise<string>(resolve => {
@@ -83,13 +107,7 @@ describe('GenericCache', () => {
         ]
 
         const disposeArgs: string[] = []
-        const cache = new GenericCache<string, string>(
-            2,
-            () => 1,
-            v => {
-                disposeArgs.push(v)
-            }
-        )
+        const cache = new GenericCache<string, string>(2, () => 1, v => disposeArgs.push(v), testMetrics)
 
         for (const value of values) {
             await cache.withValue(value, () => Promise.resolve(value), v => Promise.resolve(v))
@@ -113,7 +131,7 @@ describe('GenericCache', () => {
         ]
 
         const factoryArgs: number[] = []
-        const cache = new GenericCache<number, number>(5, v => v, () => {})
+        const cache = new GenericCache<number, number>(5, v => v, () => {}, testMetrics)
 
         for (const value of values) {
             await cache.withValue(
@@ -131,13 +149,7 @@ describe('GenericCache', () => {
 
     it('should not evict referenced cache entries', async () => {
         const disposeArgs: string[] = []
-        const cache = new GenericCache<string, string>(
-            5,
-            () => 1,
-            v => {
-                disposeArgs.push(v)
-            }
-        )
+        const cache = new GenericCache<string, string>(5, () => 1, v => disposeArgs.push(v), testMetrics)
 
         await cache.withValue(
             'foo',

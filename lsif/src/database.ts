@@ -27,7 +27,7 @@ export class Database {
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
         private databasePath: string
-    ) {}
+    ) { }
 
     /**
      * Determine if data exists for a particular document in this database.

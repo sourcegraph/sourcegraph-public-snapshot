@@ -51,7 +51,7 @@ export class TableInserter<T, M extends new () => T> {
         private model: M,
         private maxBatchSize: number,
         private metrics: TableInserterMetrics
-    ) { }
+    ) {}
 
     /**
      * Submit a model for insertion. This may happen immediately, on a
