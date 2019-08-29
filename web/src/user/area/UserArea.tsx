@@ -30,6 +30,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
                 user(username: $username) {
                     __typename
                     id
+                    namespaceName
                     username
                     displayName
                     url
@@ -66,7 +67,10 @@ const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )
 
-export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
+export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
+    /** Do not wrap this route's fragment in a container. */
+    noContainer?: boolean
+}
 
 interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
@@ -199,7 +203,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     navItems={this.props.userAreaHeaderNavItems}
                     className="border-bottom mt-4"
                 />
-                <div className="container mt-3">
+                <div className="container h-100 flex-1 d-flex flex-column mt-3">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>

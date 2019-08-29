@@ -1,7 +1,7 @@
 $list-group-bg: transparent;
 $list-group-border-color: $color-border;
-$list-group-item-padding-y: 0.25rem;
-$list-group-item-padding-x: 0.5rem;
+$list-group-item-padding-y: map-get($spacers, 2);
+$list-group-item-padding-x: map-get($spacers, 3);
 $list-group-action-color: $color-text-1;
 $list-group-action-hover-color: $color-text;
 $list-group-hover-bg: $color-bg-2;

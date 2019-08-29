@@ -24,6 +24,10 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 	if err != nil {
 		return nil, err
 	}
+	return GetGitCommit(ctx, repo, commitID)
+}
+
+func GetGitCommit(ctx context.Context, repo *RepositoryResolver, commitID GitObjectID) (*GitCommitResolver, error) {
 	return repo.Commit(ctx, &repositoryCommitArgs{Rev: string(commitID)})
 }
 
@@ -268,4 +272,8 @@ func gitCommitBody(message string) string {
 		return ""
 	}
 	return strings.TrimSpace(message[i:])
+}
+
+func (r *GitCommitResolver) Status(ctx context.Context) (CommitStatus, error) {
+	return CommitStatuses.CommitStatusForCommit(ctx, r.repo.ID(), api.CommitID(r.oid))
 }

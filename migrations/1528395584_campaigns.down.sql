@@ -1,0 +1,9 @@
+BEGIN;
+
+DROP TABLE IF EXISTS rules;
+DROP TABLE IF EXISTS campaigns_threads;
+DROP TABLE IF EXISTS campaigns;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS threads;
+
+COMMIT;

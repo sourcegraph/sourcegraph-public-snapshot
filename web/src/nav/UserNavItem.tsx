@@ -76,7 +76,7 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                         Saved searches
                     </Link>
                     <DropdownItem divider={true} />
-                    <div className="px-2 py-1">
+                    <div className="dropdown-item-text">
                         <div className="d-flex align-items-center">
                             <div className="mr-2">Theme</div>
                             {/* <Select> doesn't support small version */}

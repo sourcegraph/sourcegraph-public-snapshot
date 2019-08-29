@@ -6,12 +6,8 @@ $card-cap-bg: var(--card-cap-bg);
 
 @import 'bootstrap/scss/card';
 
-.card-header {
-    font-weight: bold;
-}
-
 .theme-dark {
-    --card-cap-bg: #{$color-bg-3};
+    --card-cap-bg: #{$color-bg-2};
     --card-border-color: #{$color-border};
 }
 

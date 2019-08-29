@@ -473,7 +473,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 		return nil, err
 	}
 	currentPath := *r.t.Path
-	fileDiffs, err := comparison.FileDiffs(&struct{ First *int32 }{}).Nodes(ctx)
+	fileDiffs, err := comparison.FileDiffs(&graphqlutil.ConnectionArgs{}).Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
