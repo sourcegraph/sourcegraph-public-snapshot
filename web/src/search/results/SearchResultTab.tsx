@@ -14,8 +14,8 @@ export default class SearchResultTab extends React.Component<Props, {}> {
 
     public render(): JSX.Element | null {
         return (
-            <div>
-                <button className="search-result-type-tabs__tab" onClick={this.onClick}>
+            <div className="search-result-tab">
+                <button className="btn" onClick={this.onClick}>
                     {this.props.type}
                 </button>
             </div>

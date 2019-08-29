@@ -75,6 +75,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        console.log(this.props.settingsCascade.final)
         this.props.telemetryService.logViewEvent('SearchResults')
 
         this.subscriptions.add(
