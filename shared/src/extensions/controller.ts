@@ -8,8 +8,10 @@ import { ExtensionsService } from '../api/client/services/extensionsService'
 import { NotificationType } from '../api/client/services/notifications'
 import { InitData } from '../api/extension/extensionHost'
 import { registerBuiltinClientCommands } from '../commands/commands'
+import { registerFileSystemContributions } from '../fileSystem/contributions'
 import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
+import { registerSearchContributions } from '../search/contributions'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
 
@@ -76,6 +78,8 @@ export function createController(context: PlatformContext): Controller {
 
     subscriptions.add(registerBuiltinClientCommands(services, context))
     subscriptions.add(registerExtensionContributions(services.contribution, services.extensions))
+    subscriptions.add(registerSearchContributions(services, context))
+    subscriptions.add(registerFileSystemContributions(services, context))
 
     // Show messages (that don't need user input) as global notifications.
     subscriptions.add(

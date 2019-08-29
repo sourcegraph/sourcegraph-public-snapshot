@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS labels_objects;
+DROP TABLE IF EXISTS labels;
+
+COMMIT;

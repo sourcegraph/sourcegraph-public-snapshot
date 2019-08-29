@@ -3,6 +3,7 @@ import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {
+    CodeActionProvider,
     CompletionItemProvider,
     DefinitionProvider,
     DocumentSelector,
@@ -10,6 +11,7 @@ import {
     Location,
     LocationProvider,
     ReferenceProvider,
+    Action,
 } from 'sourcegraph'
 import { ClientLanguageFeaturesAPI } from '../../client/api/languageFeatures'
 import { ReferenceParams, TextDocumentPositionParams } from '../../protocol'
@@ -17,6 +19,7 @@ import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
+import { fromAction, PlainCodeActionsParams, toCodeActionsParams } from '../../types/action'
 
 /** @internal */
 export class ExtLanguageFeatures {
@@ -91,6 +94,20 @@ export class ExtLanguageFeatures {
             )
         )
         return syncSubscription(this.proxy.$registerCompletionItemProvider(selector, providerFunction))
+    }
+
+    public registerCodeActionProvider(selector: DocumentSelector, provider: CodeActionProvider): Unsubscribable {
+        const providerFunction: ProxyInput<
+            Parameters<ClientLanguageFeaturesAPI['$registerCodeActionProvider']>[1]
+        > = proxyValue(async (params: PlainCodeActionsParams) => {
+            const { textDocument, range: rangeOrSelection, context } = toCodeActionsParams(params)
+
+            return toProxyableSubscribable(
+                provider.provideCodeActions(await this.documents.getSync(textDocument.uri), rangeOrSelection, context),
+                (items: null | undefined | Action[]): clientType.Action[] => (items ? items.map(fromAction) : [])
+            )
+        })
+        return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))
     }
 }
 

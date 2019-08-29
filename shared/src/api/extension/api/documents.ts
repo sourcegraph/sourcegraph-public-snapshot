@@ -1,6 +1,7 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
+import { ClientDocumentsAPI } from '../../client/api/documents'
 import { TextModel } from '../../client/services/modelService'
 import { ExtDocument } from './textDocument'
 
@@ -15,7 +16,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
 
     private documents = new Map<string, ExtDocument>()
 
-    constructor(private sync: () => Promise<void>) {}
+    constructor(private proxy: ProxyResult<ClientDocumentsAPI>, private sync: () => Promise<void>) {}
 
     /**
      * Returns the known document with the given URI.
@@ -60,11 +61,26 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public $acceptDocumentData(models: readonly TextModel[]): void {
         for (const model of models) {
             const isNew = !this.documents.has(model.uri)
-            const doc = new ExtDocument(model)
-            this.documents.set(model.uri, doc)
+            const doc = this.addDocument(model)
             if (isNew) {
                 this.openedTextDocuments.next(doc)
             }
         }
+    }
+
+    public async openTextDocument(uri: URL): Promise<ExtDocument> {
+        const uriStr = uri.toString()
+        const doc = this.documents.get(uriStr)
+        if (doc) {
+            return doc
+        }
+        const model = await this.proxy.$openTextDocument(uri.toString())
+        return this.addDocument(model)
+    }
+
+    private addDocument(model: TextModel): ExtDocument {
+        const doc = new ExtDocument(model)
+        this.documents.set(model.uri, doc)
+        return doc
     }
 }
