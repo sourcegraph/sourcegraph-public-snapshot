@@ -38,25 +38,23 @@ interface CacheEntry<K, V> {
 }
 
 /**
- * `CacheMetrics` is a bag of prometheus metric objects that apply to a
- * particular instance `GenericCache`.
+ * A bag of prometheus metric objects that apply to a particular
+ * instance of `GenericCache`.
  */
 interface CacheMetrics {
-    /**
-     * `hitCounter` is incremented on each cache hit or cache miss.
-     */
+    // A metric incremented on each cache hit or cache miss.
     hitCounter: promClient.Counter
 
     /**
-     * `evictionCounter` is incremented on each cache eviction, and a
-     * special label is applied if an entry cannot be evicted because
-     * it is currently being used.
+     * A metric  incremented on each cache eviction, and a special label
+     * is applied if an entry cannot be evicted because it is currently
+     * being used.
      */
     evictionCounter: promClient.Counter
 
     /**
-     * `sizeGauge` is incremented on each cache insertion and decremented
-     * on each cache eviction.
+     * A metric incremented on each cache insertion and decremented on
+     * each cache eviction.
      */
     sizeGauge: promClient.Gauge
 }
@@ -78,8 +76,7 @@ class GenericCache<K, V> {
 
     // The additive size of the items currently in the cache.
     private size = 0
-    /**
- *
+
     /**
      * Create a new `GenericCache` with the given maximum (soft) size for
      * all items in the cache, a function that determine the size of a
