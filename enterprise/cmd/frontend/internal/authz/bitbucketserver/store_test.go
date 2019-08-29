@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -12,7 +13,11 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 )
 
 func BenchmarkStore(b *testing.B) {
@@ -27,9 +32,13 @@ func BenchmarkStore(b *testing.B) {
 		ids[i] = uint32(i)
 	}
 
-	update := func(context.Context) ([]uint32, error) {
-		time.Sleep(2 * time.Second) // Emulate slow code host
-		return ids, nil
+	c := extsvc.CodeHost{
+		ServiceID:   "https://bitbucketserver.example.com",
+		ServiceType: bitbucketserver.ServiceType,
+	}
+
+	update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
+		return ids, &c, nil
 	}
 
 	ctx := context.Background()
@@ -57,7 +66,7 @@ func BenchmarkStore(b *testing.B) {
 		s.block = true
 
 		ps := &Permissions{
-			UserID: 99,
+			UserID: 100,
 			Perm:   authz.Read,
 			Type:   "repos",
 		}
@@ -75,7 +84,7 @@ func BenchmarkStore(b *testing.B) {
 		s.block = true
 
 		ps := &Permissions{
-			UserID: 99,
+			UserID: 101,
 			Perm:   authz.Read,
 			Type:   "repos",
 		}
@@ -106,16 +115,38 @@ func testStore(db *sql.DB) func(*testing.T) {
 			return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
 		}
 
+		codeHost := extsvc.CodeHost{
+			ServiceID:   "https://bitbucketserver.example.com",
+			ServiceType: bitbucketserver.ServiceType,
+		}
+
+		rs := make([]*repos.Repo, 0, 7)
+		for i := 1; i <= 7; i++ {
+			rs = append(rs, &repos.Repo{
+				Name: fmt.Sprintf("bitbucketserver.example.com/PROJ/%d", i),
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          strconv.Itoa(i),
+					ServiceType: codeHost.ServiceType,
+					ServiceID:   codeHost.ServiceID,
+				},
+				Sources: map[string]*repos.SourceInfo{},
+			})
+		}
+
+		ctx := context.Background()
+		err := repos.NewDBStore(db, sql.TxOptions{}).UpsertRepos(ctx, rs...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		s := newStore(db, ttl, hardTTL, clock, newCache())
 		s.updates = make(chan *Permissions)
 
 		ids := []uint32{1, 2, 3}
 		e := error(nil)
-		update := func(context.Context) ([]uint32, error) {
-			return ids, e
+		update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
+			return ids, &codeHost, e
 		}
-
-		ctx := context.Background()
 
 		ps := &Permissions{UserID: 42, Perm: authz.Read, Type: "repos"}
 		load := func(s *store) (*Permissions, error) {
@@ -201,9 +232,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 			atomic.AddInt64(&now, int64(2*ttl))
 
 			delay := make(chan struct{})
-			update = func(context.Context) ([]uint32, error) {
+			update = func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
 				<-delay
-				return ids, e
+				return ids, &codeHost, e
 			}
 
 			type op struct {
