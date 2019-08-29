@@ -39,6 +39,21 @@ var (
 	defaultDataSource = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 )
 
+// DBH is an interface shared by a DB connection and transaction.
+type DBH interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}
+
+// TxOrGlobal is a helper that returns tx if it is non-nil, and otherwise returns the Global
+// database connection.
+func TxOrGlobal(tx *sql.Tx) DBH {
+	if tx != nil {
+		return tx
+	}
+	return Global
+}
+
 // ConnectToDB connects to the given DB and stores the handle globally.
 //
 // Note: github.com/lib/pq parses the environment as well. This function will

@@ -85,6 +85,9 @@ $warning: $yellow;
 $danger: $red;
 $secondary-light: darken($gray-01, 5%);
 
+$theme-colors: (
+    'purple': $oc-violet-6,
+);
 $theme-colors-light: (
     'secondary': $secondary-light,
 );

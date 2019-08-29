@@ -305,7 +305,7 @@ func (c *Client) getRepositoryByNodeIDFromAPI(ctx context.Context, token, id str
 	var result struct {
 		Node *Repository `json:"node"`
 	}
-	if err := c.requestGraphQL(ctx, token, `
+	if err := c.RequestGraphQL(ctx, token, `
 query Repository($id: ID!) {
 	node(id: $id) {
 		... on Repository {
@@ -351,7 +351,7 @@ func (c *Client) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token strin
 	var result struct {
 		Nodes []*Repository
 	}
-	err := c.requestGraphQL(ctx, token, `
+	err := c.RequestGraphQL(ctx, token, `
 query Repositories($ids: [ID!]!) {
 	nodes(ids: $ids) {
 		... on Repository {
@@ -409,7 +409,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 	}
 
 	var result map[string]*Repository
-	err = c.requestGraphQL(ctx, "", query, map[string]interface{}{}, &result)
+	err = c.RequestGraphQL(ctx, "", query, map[string]interface{}{}, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok {
 			for _, err2 := range gqlErrs {

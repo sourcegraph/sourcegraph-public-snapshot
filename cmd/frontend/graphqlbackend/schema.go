@@ -25,6 +25,9 @@ interface Node {
 # A valid JSON value.
 scalar JSONValue
 
+# A valid JSONC value, encoded as a string, with comments and trailing commas allowed.
+scalar JSONCString
+
 # A mutation.
 type Mutation {
     # Updates the user profile information for the user with the given ID.
@@ -341,6 +344,117 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+
+    # Create a label. Returns the newly created label.
+    createLabel(input: CreateLabelInput!): Label!
+
+    # Update a label. Returns the updated label.
+    updateLabel(input: UpdateLabelInput!): Label!
+
+    # Delete a label. All objects that were labeled with this label remain (and are not deleted when
+    # the label is deleted).
+    deleteLabel(label: ID!): EmptyResponse
+
+    # Add labels to a labelable object. Returns the object.
+    addLabelsToLabelable(labelable: ID!, labels: [ID!]!): Labelable!
+
+    # Remove labels from a labelable object. Returns the object.
+    removeLabelsFromLabelable(labelable: ID!, labels: [ID!]!): Labelable!
+
+    # Create a comment on an object. The newly created comment is returned.
+    addCommentReply(input: AddCommentReplyInput!): Comment!
+
+    # Edit a comment. The edited comment is returned.
+    editComment(input: EditCommentInput!): Comment!
+
+    # Delete a comment.
+    deleteComment(comment: ID!): EmptyResponse
+
+    # Create a thread in a repository. Returns the newly created thread.
+    createThread(input: CreateThreadInput!): Thread!
+
+    # Update a thread. Returns the updated thread.
+    updateThread(input: UpdateThreadInput!): Thread!
+
+    # Publish a draft thread. This results in the thread's branch, issue/changeset, and notifications
+    # being created immediately. The updated thread is returned.
+    publishDraftThread(thread: ID!): Thread!
+
+    # Delete a thread.
+    deleteThread(thread: ID!): EmptyResponse
+
+    # Add diagnostics to a thread. A list of the just-added diagnostics is returned.
+    #
+    # TODO!(sqs): improve rawDiagnostics API
+    addDiagnosticsToThread(thread: ID!, rawDiagnostics: [String!]!): ThreadDiagnosticConnection!
+
+    # Remove diagnostics from a thread.
+    removeDiagnosticsFromThread(thread: ID!, threadDiagnosticEdges: [ID!]!): EmptyResponse
+
+    # Force-refresh a repository's threads from external services. Threads are automatically
+    # refreshed on a regular basis, and this mutation should not usually be necessary.
+    forceRefreshRepositoryThreads(repository: ID!): Repository!
+
+    # Create a campaign in a namespace. The newly created campaign is returned.
+    createCampaign(input: CreateCampaignInput!): Campaign!
+
+    # Update a campaign. The updated campaign is returned.
+    updateCampaign(input: UpdateCampaignInput!): Campaign!
+
+    # Publish a draft campaign. This results in branches, issues, changesets, and notifications
+    # being created immediately (or, for scheduled campaigns, after the start date). The updated
+    # campaign is returned.
+    publishDraftCampaign(campaign: ID!): Campaign!
+
+    # Force-refresh a campaign, including the external states of all of the campaign's threads.
+    # Campaigns are automatically refreshed on a regular basis, and this mutation should not usually
+    # be necessary.
+    forceRefreshCampaign(campaign: ID!, extensionData: CampaignExtensionData!): Campaign!
+
+    # Delete a campaign. All threads that were associated with or created by this campaign remain
+    # (and are not deleted when the campaign is deleted).
+    deleteCampaign(campaign: ID!): EmptyResponse
+
+    # Add threads to a campaign.
+    addThreadsToCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
+
+    # Remove threads from a campaign.
+    removeThreadsFromCampaign(campaign: ID!, threads: [ID!]!): EmptyResponse
+
+    # Create a rule. Returns the newly created rule.
+    createRule(input: CreateRuleInput!): Rule!
+
+    # Update a rule. Returns the updated rule.
+    updateRule(input: UpdateRuleInput!): Rule!
+
+    # Delete a rule. All objects that were associated with or created by this rule remain (and are
+    # not deleted when the rule is deleted).
+    deleteRule(rule: ID!): EmptyResponse
+}
+
+# Input arguments for creating a label.
+input CreateLabelInput {
+    # The ID of the repository where this label is defined.
+    repository: ID!
+    # The name of the label.
+    name: String!
+    # The (optional) description of the label.
+    description: String
+    # The hex color code for the label, without the '#' prefix. For example, "cdf6ee".
+    color: String!
+}
+
+# Input arguments for updating a label.
+input UpdateLabelInput {
+    # The ID of the label to update.
+    id: ID!
+    # The new name of the label (if non-null).
+    name: String
+    # The new description of the label. If it is the non-null empty string, the description is set
+    # to null.
+    description: String
+    # The new hex color code for the label (if non-null).
+    color: String
 }
 
 # A new external service.
@@ -831,6 +945,63 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+
+    # A list of namespaces affiliated with the viewer.
+    viewerNamespaces: [Namespace!]!
+
+    # A commentable by ID.
+    commentable(id: ID!): Commentable
+
+    # A list of comments.
+    comments(
+        # Returns the first n comments from the list.
+        first: Int
+    ): CommentConnection!
+
+    # A list of threads. TODO!(sqs)
+    threads(
+        # Returns the first n threads from the list.
+        first: Int
+
+        # Only include threads matching these filters.
+        filters: ThreadFilters
+    ): ThreadConnection!
+
+    # A list of diagnostics in threads.
+    threadDiagnostics(
+        # Return the first n results.
+        first: Int
+        # Only include diagnostics in the specified thread.
+        thread: ID
+        # Only include diagnostics in threads in the specified campaign.
+        campaign: ID
+    ): ThreadDiagnosticConnection!
+
+    # A list of campaigns. TODO!(sqs)
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        # Returns campaigns that contain this object (such as a thread).
+        object: ID
+    ): CampaignConnection!
+
+    # A preview of a campaign. The campaign is not created, only previewed.
+    campaignPreview(input: CampaignPreviewInput!): CampaignPreview!
+
+    # A preview of an update to a campaign. The update is not applied, only previewed.
+    campaignUpdatePreview(input: CampaignUpdatePreviewInput!): CampaignUpdatePreview!
+
+    # A rule container by ID.
+    ruleContainer(id: ID!): RuleContainer
+}
+
+# An object that can be labeled.
+interface Labelable {
+    # A list of labels associated with this object.
+    labels(
+        # Returns the first n labels from the list.
+        first: Int
+    ): LabelConnection!
 }
 
 # A query and an associated number of times it occurred.
@@ -1265,6 +1436,19 @@ type Repository implements Node & GenericSearchResultInterface {
         # Return Git tags whose names match the query.
         query: String
     ): GitRefConnection!
+
+    # The specified thread in this repository.
+    thread(number: String!): Thread
+
+    # A list of threads in this repository.
+    threads(
+        # Returns the first n threads from the list.
+        first: Int
+
+        # Only include threads matching these filters.
+        filters: ThreadFilters
+    ): ThreadConnection!
+
     # A Git comparison in this repository between a base and head commit.
     comparison(
         # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
@@ -1295,6 +1479,13 @@ type Repository implements Node & GenericSearchResultInterface {
     detail: Markdown!
     # The result previews of the result.
     matches: [SearchResultMatch!]!
+
+    # The labels defined by this repository. This is the set of labels that may be applied to the
+    # repository's labelable resources.
+    labels(
+        # Return the first n labels from the list.
+        first: Int
+    ): LabelConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -1836,6 +2027,9 @@ type GitCommit implements Node {
         # file paths returned in the list.
         includePatterns: [String!]
     ): SymbolConnection!
+
+    # The status of the commit, if any.
+    status: CommitStatus
 }
 
 # A set of Git behind/ahead counts for one commit relative to another.
@@ -2152,6 +2346,12 @@ interface Namespace {
 
     # The URL to this namespace.
     url: String!
+
+    # The campaigns in this namespace.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # A list of users.
@@ -2262,6 +2462,12 @@ type User implements Node & SettingsSubject & Namespace {
 
     # The name of this user namespace's component. For users, this is the username.
     namespaceName: String!
+
+    # The campaigns owned by this user.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2454,6 +2660,12 @@ type Org implements Node & SettingsSubject & Namespace {
 
     # The name of this user namespace's component. For organizations, this is the organization's name.
     namespaceName: String!
+
+    # The campaigns owned by this organization.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -3769,4 +3981,1469 @@ union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 # Date#toISOString.
 scalar DateTime
+
+# A label that can be applied to other objects.
+type Label implements Node {
+    # The globally unique ID of this label.
+    id: ID!
+
+    # The name of this label.
+    name: String!
+
+    # The (optional) description of this label.
+    description: String
+
+    # The hex color code for the label, without the '#' prefix. For example, "cdf6ee".
+    color: String!
+
+    # The repository where this label is defined.
+    repository: Repository!
+}
+
+# A list of labels.
+type LabelConnection {
+    # A list of labels.
+    nodes: [Label!]!
+
+    # The total number of labels in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# An object that can perform actions.
+union Actor = User | Org | ExternalActor
+
+# A list of actors.
+type ActorConnection {
+    # A list of actors.
+    nodes: [Actor!]!
+
+    # The total number of actors in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# An actor on an external service that was not mapped to a Sourcegraph actor.
+type ExternalActor {
+    username: String!
+    displayName: String
+    url: String!
+}
+
+# Objects that can be updated.
+interface Updatable {
+    # Whether the viewer can update this object.
+    viewerCanUpdate: Boolean!
+}
+
+# A comment is a comment on an object, or an object that itself resembles a comment.
+interface Comment {
+    # The node ID of the object.
+    id: ID!
+
+    # The actor who authored the comment.
+    author: Actor
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The date and time when the object was created.
+    createdAt: DateTime!
+
+    # The date and time when the object was updated.
+    updatedAt: DateTime!
+}
+
+# The possible reasons that prevent an actor from commenting.
+enum CannotCommentReason {
+    AUTHENTICATION_REQUIRED
+}
+
+# A commentable is an object that can have comments and be commented on.
+interface Commentable {
+    # Whether the viewer can comment on this object.
+    viewerCanComment: Boolean!
+
+    # Reasons why the viewer cannot comment on this commentable.
+    viewerCannotCommentReasons: [CannotCommentReason!]!
+
+    # A list of comments on the object.
+    comments(
+        # Return the first n comments in the list.
+        first: Int
+    ): CommentConnection!
+}
+
+# A comment that is a reply to another comment.
+type CommentReply implements Node & Comment & Updatable {
+    # The node ID of the comment.
+    id: ID!
+
+    # The actor who authored the comment.
+    author: Actor
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The date and time when the comment was created.
+    createdAt: DateTime!
+
+    # The date and time when the comment was updated.
+    updatedAt: DateTime!
+
+    # Whether the viewer can update this comment.
+    viewerCanUpdate: Boolean!
+
+    # The comment that this comment is in reply to.
+    parent: Comment
+}
+
+# Input arguments for adding a reply to a comment.
+input AddCommentReplyInput {
+    # The comment to reply to.
+    parentComment: ID!
+
+    # The Markdown body of the comment.
+    body: String!
+}
+
+# Input arguments for editing a comment.
+input EditCommentInput {
+    # The ID of the comment to edit.
+    id: ID!
+
+    # The new body of the comment (if non-null).
+    body: String!
+}
+
+# A list of comments.
+type CommentConnection {
+    # A list of comments.
+    nodes: [Comment!]!
+
+    # The total number of comments in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A node that is associated with a repository.
+interface RepositoryNode {
+    # The repository associated with this node.
+    repository: Repository!
+}
+
+# A node associated with a repository and addressable by the combination of (repository, number).
+interface RepositoryAndNumberAddressable {
+    # An ID for the node that is only unique within the node's repository. For a globally unique
+    # identifier, use Node.id.
+    number: String!
+}
+
+# An object that can be a member of a campaign.
+interface CampaignNode {
+    # A list of campaigns that contain this object.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
+}
+
+# The states of threads.
+enum ThreadState {
+    # Open.
+    OPEN
+    # Merged.
+    MERGED
+    # Closed.
+    CLOSED
+}
+
+# Input arguments for creating a thread.
+input CreateThreadInput {
+    # The ID of this thread's repository.
+    repository: ID!
+
+    # The title of the thread.
+    title: String!
+
+    # The body of the thread.
+    body: String
+
+    # Whether the thread should be created as a draft.
+    draft: Boolean
+
+    # The base ref of the thread.
+    baseRef: String
+
+    # The head ref of the thread.
+    headRef: String
+
+    # Diagnostics to associate with the thread.
+    rawDiagnostics: [String!]
+}
+
+# Input arguments for updating a thread.
+input UpdateThreadInput {
+    # The ID of the thread to update.
+    id: ID!
+
+    # The new title of the thread.
+    title: String
+
+    # The new body of the thread.
+    body: String
+
+    # The new base ref of the thread.
+    baseRef: String
+
+    # The new head ref of the thread.
+    headRef: String
+}
+
+# The possible kinds of threads.
+enum ThreadKind {
+    # A thread with discussion only (no diagnostics or changes).
+    DISCUSSION
+
+    # A thread with diagnostics (but no changes).
+    ISSUE
+
+    # A thread with changes.
+    CHANGESET
+}
+
+union ThreadOrThreadPreview = Thread | ThreadPreview
+
+# A list of threads and thread previews.
+type ThreadOrThreadPreviewConnection {
+    # A list of threads and thread previews.
+    nodes: [ThreadOrThreadPreview!]!
+
+    # The total number of results in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+
+    # Information about filters that can be applied to the list.
+    filters: ThreadConnectionFilters!
+}
+
+# A thread preview is a preview of a thread that is not persisted.
+type ThreadPreview {
+    # The repository that contains this thread.
+    repository: Repository!
+
+    # The title of the thread.
+    title: String!
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # Whether this thread is a draft. A draft thread has not been created on the external service
+    # yet.
+    isDraft: Boolean!
+
+    # The actor who authored the thread.
+    author: Actor
+
+    # A list of diagnostics in this thread.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): DiagnosticConnection!
+
+    # The kind of this thread, determined based on the thread's contents.
+    kind: ThreadKind!
+
+    # The comparison between this thread's base and head, or null if there is none.
+    repositoryComparison: RepositoryComparison
+
+    # A list of users assigned to the thread.
+    assignees(
+        # Return only the first n results.
+        first: Int
+    ): ActorConnection!
+
+    # A list of labels applied to this thread.
+    labels(
+        # Returns the first n labels from the list.
+        first: Int
+    ): LabelConnection!
+
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the thread preview that is unique among all other thread previews in the
+    # list that contains it.
+    internalID: String!
+}
+
+# An object that can have users assigned to it.
+interface Assignable {
+    # A list of users assigned to the object.
+    assignees(
+        # Return only the first n results.
+        first: Int
+    ): ActorConnection!
+}
+
+# A thread is collection of comments, diagnostics, and changes.
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Comment & Commentable & CampaignNode & Assignable & Labelable & RuleContainer {
+    # The unique ID for the thread.
+    id: ID!
+
+    # The repository that contains this thread.
+    repository: Repository!
+
+    # The thread ID that is only unique within the thread's repository. For a globally unique
+    # identifier, use Thread.id.
+    number: String!
+
+    # The title of the thread.
+    title: String!
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # Whether this thread is a draft. A draft thread has not been created on the external service
+    # yet.
+    isDraft: Boolean!
+
+    # The state of this thread.
+    state: ThreadState!
+
+    # The base ref of the thread.
+    baseRef: String
+
+    # The head ref of the thread.
+    headRef: String
+
+    # The URL to this thread on Sourcegraph.
+    url: String!
+
+    # The URLs to this thread on external services associated with it.
+    externalURLs: [ExternalLink!]!
+
+    # The actor who authored the thread.
+    author: Actor
+
+    # A list of diagnostics in this thread.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): ThreadDiagnosticConnection!
+
+    # The date and time when the thread was created.
+    createdAt: DateTime!
+
+    # The date and time when the thread was updated.
+    updatedAt: DateTime!
+
+    # The kind of this thread, determined based on the thread's contents.
+    kind: ThreadKind!
+
+    # Whether the viewer can update this thread.
+    viewerCanUpdate: Boolean!
+
+    # Whether the viewer can comment on this thread.
+    viewerCanComment: Boolean!
+
+    # Reasons why the viewer cannot comment on this thread.
+    viewerCannotCommentReasons: [CannotCommentReason!]!
+
+    # A list of comments on the thread.
+    comments(
+        # Return the first n comments in the list.
+        first: Int
+    ): CommentConnection!
+
+    # The comparison between this thread's base and head, or null if there is none.
+    repositoryComparison: RepositoryComparison
+
+    # A list of campaigns that contain this thread.
+    campaigns(
+        # Return the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
+
+    # A list of events related to the thread.
+    timelineItems(
+        # Returns the first n events from the list.
+        first: Int
+        # Only include events after (or on) the specified date.
+        afterDate: DateTime
+        # Only include events before (or on) the specified date.
+        beforeDate: DateTime
+        # Only include the specified event types. TODO!(sqs): make this an enum?
+        types: [String!]
+    ): ThreadTimelineItemConnection!
+
+    # A list of users assigned to this thread.
+    assignees(
+        # Return only the first n results.
+        first: Int
+    ): ActorConnection!
+
+    # A list of labels applied to this thread.
+    labels(
+        # Returns the first n labels from the list.
+        first: Int
+    ): LabelConnection!
+
+    # A list of rules that are defined in this campaign.
+    rules(
+        # Return the first n results.
+        first: Int
+    ): RuleConnection!
+}
+
+# A list of threads.
+type ThreadConnection {
+    # A list of threads.
+    nodes: [Thread!]!
+
+    # The total number of threads in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+
+    # Information about filters that can be applied to the list.
+    filters: ThreadConnectionFilters!
+}
+
+# Filters that can be applied to a list of threads.
+type ThreadConnectionFilters {
+    # Repository filters.
+    repository: [RepositoryFilter!]!
+
+    # Label filters.
+    label: [LabelFilter!]!
+
+    # The number of threads in the connection (ignoring pagination) that are open.
+    openCount: Int!
+
+    # The number of threads in the connection (ignoring pagination) that are closed or merged.
+    closedCount: Int!
+}
+
+# A repository filter that can be applied to a list.
+type RepositoryFilter {
+    # The repository.
+    repository: Repository!
+
+    # The item count for this filter.
+    count: Int
+
+    # Whether this filter is currently applied to the list.
+    isApplied: Boolean!
+}
+
+# A label filter that can be applied to a list.
+type LabelFilter {
+    # The label. If the list contains items labeled with labels of the same name from different
+    # repositories, this field is null.
+    label: Label
+
+    # The label name.
+    labelName: String!
+
+    # The item count for this filter.
+    count: Int
+
+    # Whether this filter is currently applied to the list.
+    isApplied: Boolean!
+}
+
+# A diagnostic is information about a specific location in code.
+type Diagnostic {
+    # The type, as set when the diagnostic provider was registered.
+    type: String!
+
+    # The diagnostic data (which conforms to the sourcegraph.Diagnostic extension API type).
+    data: JSONValue!
+
+    # The code location. TODO!(sqs)
+    # location: TreeEntry
+}
+
+# A list of diagnostics.
+type DiagnosticConnection {
+    # A list of diagnostics.
+    nodes: [Diagnostic!]!
+
+    # The total number of diagnostics in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A diagnostic that has been added to a thread.
+type ThreadDiagnosticEdge implements Updatable {
+    # The globally unique ID of the thread diagnostic edge, or null if this diagnostic is connected
+    # to a thread preview.
+    id: ID
+
+    # The thread that contains the diagnostic.
+    thread: ThreadOrThreadPreview!
+
+    # The diagnostic.
+    diagnostic: Diagnostic!
+
+    # Whether the viewer can update this thread diagnostic edge.
+    viewerCanUpdate: Boolean!
+}
+
+# A list of diagnostics in a thread.
+type ThreadDiagnosticConnection {
+    # The edges connecting the thread with its diagnostics.
+    edges: [ThreadDiagnosticEdge!]!
+
+    # A list of diagnostics in the thread.
+    nodes: [Diagnostic!]!
+
+    # The total number of diagnostics in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Information needed by the campaign that comes from extensions (and therefore must be sent by the
+# client to the backend because it is not currently possible to run extensions on the backend).
+input CampaignExtensionData {
+    rawDiagnostics: [String!]!
+    rawFileDiffs: [String!]!
+}
+
+# Input argument for evaluating a template to generate a campaign's rules.
+input CampaignTemplateInput {
+    # The ID of the template to evaluate.
+    template: String!
+
+    # The context data for evaluating the template, as a JSON value.
+    context: JSONValue
+
+    # The context data for evaluating the template, as a JSONC string. At most 1 of the
+    # CampaignTemplateInput.context and CampaignTemplateInput.contextAsJSONCString fields may be
+    # set.
+    contextAsJSONCString: JSONCString
+}
+
+# Description of a template used to generate a campaign's rules.
+type CampaignTemplateInstance {
+    # The ID of the template.
+    template: String!
+
+    # The context data for evaluating the template, as JSONC.
+    context: JSONC!
+}
+
+# Input arguments for creating a campaign.
+input CreateCampaignInput {
+    # The ID of the namespace where this campaign is defined.
+    namespace: ID!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description of the campaign as Markdown.
+    body: String
+
+    # The template for the campaign (if non-null).
+    template: CampaignTemplateInput
+
+    # Whether the campaign should be created as a draft.
+    draft: Boolean
+
+    # The start date of the campaign (used to schedule campaigns).
+    startDate: DateTime
+
+    # The due date of the campaign.
+    dueDate: DateTime
+
+    # Rules to create in the campaign.
+    rules: [NewRuleInput!]
+
+    # Extension data for the campaign.
+    extensionData: CampaignExtensionData!
+}
+
+# Input arguments for updating a campaign.
+input UpdateCampaignInput {
+    # The ID of the campaign to update.
+    id: ID!
+
+    # The new name of the campaign (if non-null).
+    name: String
+
+    # The new description of the campaign as Markdown. If it is the non-null empty string, the
+    # description is set to null.
+    body: String
+
+    # The new template for the campaign (if non-null).
+    template: CampaignTemplateInput
+
+    # Clear the campaign's template.
+    clearTemplate: Boolean
+
+    # The new start date of the campaign (if non-null). To clear the start date, use the
+    # clearStartDate field.
+    startDate: DateTime
+
+    # Clear the start date.
+    clearStartDate: Boolean
+
+    # The new due date of the campaign (if non-null). To clear the start date, use the clearDueDate
+    # field.
+    dueDate: DateTime
+
+    # Clear the due date.
+    clearDueDate: Boolean
+
+    # The new rules for the campaign (if non-null). These rules replace all existing rules for the
+    # campaign.
+    rules: [NewRuleInput!]
+
+    # Extension data for the campaign. Only required for updates to the campaign rules.
+    extensionData: CampaignExtensionData
+}
+
+# Input arguments for previewing a campaign.
+input CampaignPreviewInput {
+    # The description of the campaign to preview.
+    campaign: CreateCampaignInput!
+}
+
+# Input arguments for previewing an update to a campaign.
+input CampaignUpdatePreviewInput {
+    # The campaign to preview an update of.
+    campaign: ID!
+
+    # The update to preview.
+    update: UpdateCampaignInput!
+}
+
+# Filters for a list of threads.
+input ThreadFilters {
+    # List threads matching this query.
+    query: String
+
+    # List threads in any of these repositories.
+    repositories: [ID!]
+
+    # List threads in any of these states.
+    states: [ThreadState!]
+}
+
+# A campaign preview is a preview of a campaign. It is not persisted.
+type CampaignPreview {
+    # The name of the campaign.
+    name: String!
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The actor who authored the campaign.
+    author: Actor
+
+    # Whether this campaign is a draft.
+    isDraft: Boolean!
+
+    # The start date of this campaign (used for scheduled campaigns).
+    startDate: DateTime
+
+    # The due date of this campaign.
+    dueDate: DateTime
+
+    # A list of threads in this campaign.
+    threads(
+        # Returns the first n results from the list.
+        first: Int
+
+        # Only include threads matching these filters.
+        filters: ThreadFilters
+    ): ThreadOrThreadPreviewConnection!
+
+    # The list of repositories affected by this campaign's threads.
+    repositories: [Repository!]!
+
+    # The list of commits (from one or more repositories) in this campaign's threads.
+    commits: [GitCommit!]!
+
+    # The comparisons of before and after this campaign's thread's changes are applied (on all
+    # affected repositories).
+    repositoryComparisons: [RepositoryComparison!]!
+
+    # A list of diagnostics in this campaigns' threads.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): DiagnosticConnection!
+
+    # A burndown chart of the states of the campaign's threads over time.
+    burndownChart: CampaignBurndownChart!
+
+    # People involved in or affected by the campaign.
+    participants(
+        # Return the first n results.
+        first: Int
+    ): ParticipantConnection!
+}
+
+# A campaign update preview is a preview of an update to a campaign. It is not persisted.
+type CampaignUpdatePreview {
+    # The old name (if updated).
+    oldName: String
+
+    # The new name (if updated).
+    newName: String
+
+    # The old start date (if updated).
+    oldStartDate: DateTime
+
+    # The new start date (if updated).
+    newStartDate: DateTime
+
+    # The old due date (if updated).
+    oldDueDate: DateTime
+
+    # The new due date (if updated).
+    newDueDate: DateTime
+
+    # TODO!(sqs): add description
+
+    # A list of updates to threads in this campaign.
+    #
+    # TODO!(sqs): make this a connection
+    threads: [ThreadUpdatePreview!]
+
+    # The updates to the repository comparisons (if any).
+    repositoryComparisons: [RepositoryComparisonUpdatePreview!]
+}
+
+# The types of update operations for a thread.
+enum ThreadUpdateOperation {
+    CREATION
+    UPDATE
+    DELETION
+}
+
+# A preview of an update to a thread.
+type ThreadUpdatePreview {
+    # The old thread (before applying the update), or null if this preview represents the creation
+    # of a new thread.
+    oldThread: Thread
+
+    # The preview of the new thread after applying the update, or null if this preview represents
+    # the deletion of an existing thread.
+    newThread: ThreadPreview
+
+    # The type of operation (creation/update/deletion) that this preview represents.
+    operation: ThreadUpdateOperation!
+
+    # The old title (if updated).
+    oldTitle: String
+
+    # The new title (if updated).
+    newTitle: String
+}
+
+# A preview of an update to the diff for a repository.
+type RepositoryComparisonUpdatePreview {
+    # The repository.
+    repository: Repository!
+
+    # The old changes (if any).
+    old: RepositoryComparison
+
+    # The new changes (if any).
+    new: RepositoryComparison
+}
+
+# A list of participants (people involved or affected by something).
+type ParticipantConnection {
+    # The edges that describe how each participant is affected.
+    edges: [ParticipantEdge!]!
+
+    # A list of participants.
+    nodes: [Actor!]!
+
+    # The total number of participants in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Reasons why someone is considered a participant.
+enum ParticipantReason {
+    # They are a code owner of affected code.
+    CODE_OWNER
+
+    # They are an assignee.
+    ASSIGNEE
+
+    # They are the author.
+    AUTHOR
+}
+
+# A description of how a participant is involved in or affected by something.
+type ParticipantEdge {
+    # The participant.
+    actor: Actor!
+
+    # Reasons why the actor is considered to be a participant.
+    reasons: [ParticipantReason!]!
+}
+
+# A campaign is a collection of threads.
+type Campaign implements Node & Comment & Commentable & RuleContainer {
+    # The unique ID for the campaign.
+    id: ID!
+
+    # The namespace where this campaign is defined.
+    namespace: Namespace!
+
+    # The name of the campaign.
+    name: String!
+
+    # The body as Markdown.
+    body: String!
+
+    # The body as plain text.
+    bodyText: String!
+
+    # The body as HTML.
+    bodyHTML: String!
+
+    # The actor who authored the campaign.
+    author: Actor
+
+    # The template (if any) used to generate the campaign's rules.
+    template: CampaignTemplateInstance
+
+    # Whether this campaign is a draft.
+    isDraft: Boolean!
+
+    # The start date of this campaign (used for scheduled campaigns).
+    startDate: DateTime
+
+    # The due date of this campaign.
+    dueDate: DateTime
+
+    # The URL to this campaign.
+    url: String!
+
+    # The date and time when the campaign was created.
+    createdAt: DateTime!
+
+    # The date and time when the campaign was updated.
+    updatedAt: DateTime!
+
+    # Whether the viewer can update this campaign.
+    viewerCanUpdate: Boolean!
+
+    # Whether the viewer can comment on this campaign.
+    viewerCanComment: Boolean!
+
+    # Reasons why the viewer cannot comment on this campaign.
+    viewerCannotCommentReasons: [CannotCommentReason!]!
+
+    # A list of comments on the campaign.
+    comments(
+        # Return the first n comments in the list.
+        first: Int
+    ): CommentConnection!
+
+    # A list of threads in this campaign.
+    threads(
+        # Returns the first n results from the list.
+        first: Int
+
+        # Only include threads matching these filters.
+        filters: ThreadFilters
+    ): ThreadOrThreadPreviewConnection!
+
+    # The list of repositories affected by this campaign's threads.
+    repositories: [Repository!]!
+
+    # The list of commits (from one or more repositories) in this campaign's threads.
+    commits: [GitCommit!]!
+
+    # The comparisons of before and after this campaign's thread's changes are applied (on all
+    # affected repositories).
+    repositoryComparisons: [RepositoryComparison!]!
+
+    # A list of diagnostics in this campaign's threads.
+    diagnostics(
+        # Return the first n results.
+        first: Int
+    ): ThreadDiagnosticConnection!
+
+    # A burndown chart of the states of the campaign's threads over time.
+    burndownChart: CampaignBurndownChart!
+
+    # A list of events related to the campaign.
+    timelineItems(
+        # Returns the first n events from the list.
+        first: Int
+        # Only include events after (or on) the specified date.
+        afterDate: DateTime
+        # Only include events before (or on) the specified date.
+        beforeDate: DateTime
+        # Only include the specified event types. TODO!(sqs): make this an enum?
+        types: [String!]
+    ): CampaignTimelineItemConnection!
+
+    # A list of rules that are defined in this campaign.
+    rules(
+        # Return the first n results.
+        first: Int
+    ): RuleConnection!
+
+    # People involved in or affected by the campaign.
+    participants(
+        # Return the first n results.
+        first: Int
+    ): ParticipantConnection!
+}
+
+# A burndown chart of the states of the campaign's threads  over time.
+type CampaignBurndownChart {
+    # The dates that correspond to the same-index element of the data series.
+    dates: [DateTime!]!
+
+    # The count of open threads at each date.
+    openThreads: [Int!]!
+
+    # The count of merged threads at each date.
+    mergedThreads: [Int!]!
+
+    # The count of closed threads at each date.
+    closedThreads: [Int!]!
+
+    # The count of total threads (open + merged + closed) at each date.
+    totalThreads: [Int!]!
+
+    # The count of open approved threads at each date.
+    openApprovedThreads: [Int!]!
+}
+
+# A list of campaigns.
+type CampaignConnection {
+    # A list of campaigns.
+    nodes: [Campaign!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Input argument for a new rule.
+input NewRuleInput {
+    # The name of the rule.
+    name: String!
+
+    # The (optional) description of the rule.
+    description: String
+
+    # The definition of the rule as JSONC.
+    definition: JSONCString!
+}
+
+# Input arguments for creating a rule.
+input CreateRuleInput {
+    # The object where the rule is defined.
+    container: ID!
+
+    # The new rule.
+    rule: NewRuleInput!
+}
+
+# Input arguments for updating a rule.
+input UpdateRuleInput {
+    # The ID of the rule to update.
+    id: ID!
+
+    # The new name of the rule (if non-null).
+    name: String
+
+    # The new description of the rule. If it is the non-null empty string, the description is set to
+    # null.
+    description: String
+
+    # The new definition of the rule (if non-null) as JSONC.
+    definition: JSONCString
+}
+
+# A JSONC document.
+type JSONC {
+    # The original JSONC input.
+    raw: JSONCString!
+
+    # The formatted JSONC document, with whitespace formatted but comments and trailing commas
+    # preserved.
+    formatted: String!
+
+    # The JSON value parsed from the JSONC input.
+    parsed: JSONValue
+}
+
+interface RuleContainer {
+    # A list of rules that are defined in this container object.
+    rules(
+        # Return the first n results.
+        first: Int
+    ): RuleConnection!
+}
+
+# A rule describes a condition and an action that should be taken when the condition is true.
+type Rule implements Node & Updatable {
+    # The unique ID for the rule.
+    id: ID!
+
+    # The object where this rule is defined.
+    container: RuleContainer
+
+    # The name of the rule.
+    name: String!
+
+    # The (optional) description of the rule.
+    description: String
+
+    # The definition of the rule.
+    definition: JSONC!
+
+    # The date and time when the rule was created.
+    createdAt: DateTime!
+
+    # The date and time when the rule was updated.
+    updatedAt: DateTime!
+
+    # The URL to the rule.
+    url: String!
+
+    # Whether the viewer can update this rule.
+    viewerCanUpdate: Boolean!
+}
+
+# A list of rules.
+type RuleConnection {
+    # A list of rules.
+    nodes: [Rule!]!
+
+    # The total number of rules in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+## EVENTS TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
+union Event =
+      CreateThreadEvent
+    | CommentEvent
+    | AddThreadToCampaignEvent
+    | RemoveThreadFromCampaignEvent
+    | ReviewEvent
+    | RequestReviewEvent
+    | MergeThreadEvent
+    | CloseThreadEvent
+    | ReopenThreadEvent
+    | CommentOnThreadEvent
+    | AddDiagnosticToThreadEvent
+    | RemoveDiagnosticFromThreadEvent
+
+# A list of events.
+## TODO!(sqs): is it helpful to have a single union? or just have ThreadEvent, CampaignEvent, etc.?
+type EventConnection {
+    # A list of events.
+    nodes: [Event!]!
+
+    # The total number of events in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+union ThreadTimelineItem =
+      CreateThreadEvent
+    | CommentEvent
+    | AddThreadToCampaignEvent
+    | RemoveThreadFromCampaignEvent
+    | ReviewEvent
+    | RequestReviewEvent
+    | MergeThreadEvent
+    | CloseThreadEvent
+    | ReopenThreadEvent
+    | CommentOnThreadEvent
+    | AddDiagnosticToThreadEvent
+    | RemoveDiagnosticFromThreadEvent
+
+# A list of thread timeline items.
+type ThreadTimelineItemConnection {
+    # A list of timeline items.
+    nodes: [ThreadTimelineItem!]!
+
+    # The total number of items in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+union CampaignTimelineItem =
+      AddThreadToCampaignEvent
+    | CommentEvent
+    | RemoveThreadFromCampaignEvent
+    | ReviewEvent
+    | RequestReviewEvent
+    | MergeThreadEvent
+    | CloseThreadEvent
+    | ReopenThreadEvent
+    | CommentOnThreadEvent
+    | AddDiagnosticToThreadEvent
+    | RemoveDiagnosticFromThreadEvent
+
+# A list of campaign timeline items.
+type CampaignTimelineItemConnection {
+    # A list of timeline items.
+    nodes: [CampaignTimelineItem!]!
+
+    # The total number of items in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The common interface implemented by all events.
+interface EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+}
+
+# The creation of a thread.
+type CreateThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread.
+    thread: Thread!
+}
+
+# The creation of a comment.
+type CommentEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The comment.
+    comment: Comment!
+}
+
+# The addition of a thread to a campaign.
+type AddThreadToCampaignEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was added.
+    thread: Thread!
+
+    # The campaign that the thread was added to.
+    campaign: Campaign!
+}
+
+# The removal of a thread to a campaign.
+type RemoveThreadFromCampaignEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was removed.
+    thread: Thread!
+
+    # The campaign that the thread was removed from.
+    campaign: Campaign!
+}
+
+# The possible states for a review.
+enum ReviewState {
+    COMMENTED
+    APPROVED
+    CHANGES_REQUESTED
+}
+
+# A review that was performed.
+type ReviewEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was reviewed.
+    thread: Thread!
+
+    # The state of the review.
+    state: ReviewState!
+}
+
+# A request to review that was sent.
+type RequestReviewEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread on which review was requested.
+    thread: Thread!
+
+    # TODO!(sqs): add reference to external user
+}
+
+# A thread was closed.
+type CloseThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was closed.
+    thread: Thread!
+}
+
+# A thread was reopened.
+type ReopenThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was reopened.
+    thread: Thread!
+}
+
+# A thread was merged.
+type MergeThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was merged.
+    thread: Thread!
+}
+
+# A thread was commented on.
+type CommentOnThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that was commented on.
+    thread: Thread!
+
+    # TODO!(sqs): add back
+    #
+    ## The comment that was posted.
+    #comment: CommentReply!
+}
+
+# The addition of a diagnostic to a thread.
+type AddDiagnosticToThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The edge between the thread and the newly added diagnostic. If the diagnostic has since been
+    # removed, this field is null.
+    edge: ThreadDiagnosticEdge
+
+    # The thread that the diagnostic was added to.
+    thread: Thread!
+
+    # The diagnostic that was added.
+    diagnostic: Diagnostic!
+}
+
+# The removal of a diagnostic to a thread.
+type RemoveDiagnosticFromThreadEvent implements EventCommon {
+    # The unique ID of the event.
+    id: ID!
+
+    # The actor whose action this event represents.
+    actor: Actor!
+
+    # The date and time that the event occurred.
+    createdAt: DateTime!
+
+    # The thread that the diagnostic was removed from.
+    thread: Thread!
+
+    # The diagnostic that was removed.
+    diagnostic: Diagnostic!
+}
+
+# All possible commit status states.
+enum CommitStatusState {
+    # The status is expected but not yet present.
+    EXPECTED
+
+    # An error occurred while trying to determine the status.
+    ERROR
+
+    # The status is failing.
+    FAILURE
+
+    # The status is pending.
+    PENDING
+
+    # The status is successful.
+    SUCCESS
+}
+
+# The status of a commit, combined from all of its status contexts.
+type CommitStatus {
+    # The commit's repository.
+    repository: Repository!
+
+    # The commit.
+    commit: GitCommit!
+
+    # The individual status contexts for the commit.
+    contexts: [CommitStatusContext!]!
+
+    # The combined status state.
+    state: CommitStatusState!
+}
+
+# The status of a commit for a single context.
+type CommitStatusContext implements Node {
+    # The unique ID of the status.
+    id: ID!
+
+    # The commit's repository.
+    repository: Repository!
+
+    # The commit.
+    commit: GitCommit!
+
+    # The context of the status, which identifies the source or tool that produced this status and
+    # distinguishes this status from others on the same commit.
+    context: String!
+
+    # The status state.
+    state: CommitStatusState!
+
+    # The description of the status.
+    description: String
+
+    # A URL with more information related to the status.
+    targetURL: String
+
+    # The actor who created the status.
+    actor: Actor!
+
+    # The time when the status was created.
+    createdAt: DateTime!
+}
 `

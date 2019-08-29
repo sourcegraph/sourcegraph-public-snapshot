@@ -1,0 +1,14 @@
+.create-campaign-button {
+    &__dropdown {
+        width: 20rem;
+        overflow: hidden;
+    }
+
+    &__dropdown-item {
+        white-space: normal;
+    }
+
+    &__dropdown-toggle {
+        border-left: solid 1px darken(map-get($theme-colors, 'success'), 8);
+    }
+}

@@ -3,9 +3,12 @@
 @import './SourcegraphWebApp';
 
 // Enterprise styles
+@import './enterprise/campaigns/index';
+@import './enterprise/comments/index';
 @import './enterprise/extensions/registry/RegistryArea';
 @import './enterprise/extensions/registry/RegistryNewExtensionPage';
 @import './enterprise/extensions/extension/RegistryExtensionManagePage';
 @import './enterprise/productSubscription/ProductCertificate';
 @import './enterprise/productSubscription/TrueUpStatusSummary';
 @import './enterprise/user/productSubscriptions/PaymentTokenFormControl';
+@import './enterprise/timeline/index';

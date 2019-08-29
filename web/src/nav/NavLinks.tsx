@@ -9,6 +9,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
 import {
@@ -16,10 +17,12 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KeyboardShortcutsProps,
 } from '../keyboardShortcuts/keyboardShortcuts'
+import { ThreadsIcon } from '../enterprise/threads/icons'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
+import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 
 interface Props
     extends SettingsCascadeProps,
@@ -36,6 +39,7 @@ interface Props
     showDotComMarketing: boolean
     isSourcegraphDotCom: boolean
     showStatusIndicator: boolean
+    className?: string
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -47,7 +51,7 @@ export class NavLinks extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <ul className="nav-links nav align-items-center pl-2 pr-1">
+            <ul className={`nav-links nav align-items-center pl-2 pr-1 ${this.props.className || ''}`}>
                 {/* Show "Search" link on small screens when GlobalNavbar hides the SearchNavbarItem. */}
                 {this.props.location.pathname !== '/search' && (
                     <li className="nav-item d-sm-none">
@@ -63,11 +67,20 @@ export class NavLinks extends React.PureComponent<Props> {
                     </li>
                 )}
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
-                    <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            Explore
-                        </Link>
-                    </li>
+                    // TODO!(sqs): only show these on enterprise
+                    <>
+                        <li className="nav-item">
+                            <CampaignsNavItem className="px-3" />
+                        </li>
+                        <li className="nav-item">
+                            <LinkWithIconOnlyTooltip
+                                to="/threads"
+                                text="Threads"
+                                icon={ThreadsIcon}
+                                className="nav-link btn btn-link px-3 text-decoration-none"
+                            />
+                        </li>
+                    </>
                 )}
                 {!this.props.authenticatedUser && (
                     <>

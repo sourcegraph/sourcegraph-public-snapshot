@@ -1,9 +1,11 @@
-$modal-inner-padding: 0.5rem;
-$modal-content-bg: var(--input-bg);
-$modal-content-color: var(--body-color);
+$modal-backdrop-bg: #000000;
+$modal-backdrop-opacity: 0.9;
+$modal-content-bg: var(--body-bg);
 $modal-content-border-color: var(--border-color);
-$modal-header-border-color: var(--border-color);
+$modal-content-color: var(--body-color);
 $modal-footer-border-color: var(--border-color);
-$modal-header-padding: 0.5rem;
+$modal-header-border-color: var(--border-color);
+$modal-header-padding: map-get($spacers, 3);
+$modal-inner-padding: map-get($spacers, 3);
 
 @import 'bootstrap/scss/modal';

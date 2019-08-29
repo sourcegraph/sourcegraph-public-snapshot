@@ -5,7 +5,8 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import { switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -24,7 +25,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<any>, RepoHeaderContributionsLifecycleProps {
+interface Props extends RouteComponentProps<any>, RepoHeaderContributionsLifecycleProps, ExtensionsControllerProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
@@ -92,6 +93,7 @@ export class RepoSettingsArea extends React.Component<Props> {
 
         const transferProps = {
             repo: this.state.repo,
+            extensionsController: this.props.extensionsController,
         }
 
         return (
