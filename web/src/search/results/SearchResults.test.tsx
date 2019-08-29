@@ -38,7 +38,6 @@ describe('SearchResults', () => {
         platformContext: { forceUpdateTooltip: sinon.spy() },
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
-        searchVersion: 'V0',
     }
 
     it('calls the search request once', () => {
