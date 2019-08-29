@@ -26,7 +26,7 @@ export class Database {
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
         private databasePath: string
-    ) { }
+    ) {}
 
     /**
      * Determine if data exists for a particular document in this database.
@@ -444,7 +444,12 @@ export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-export function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: string, ids: Id[]): lsp.Location[] {
+export function asLocations(
+    ranges: Map<Id, number>,
+    orderedRanges: RangeData[],
+    uri: string,
+    ids: Id[]
+): lsp.Location[] {
     const locations = []
     for (const id of ids) {
         const rangeIndex = ranges.get(id)

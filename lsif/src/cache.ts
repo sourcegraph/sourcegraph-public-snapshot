@@ -66,7 +66,7 @@ export class GenericCache<K, V> {
         private max: number,
         private sizeFunction: (value: V) => number,
         private disposeFunction: (value: V) => void
-    ) { }
+    ) {}
 
     /**
      * Check if `key` exists in the cache. If it does not, create a value
@@ -109,7 +109,7 @@ export class GenericCache<K, V> {
 
         const promise = factory()
         const newEntry = { key, promise, size: 0, readers: 0 }
-        promise.then(value => this.resolved(newEntry, value), () => { })
+        promise.then(value => this.resolved(newEntry, value), () => {})
         this.lruList.unshift(newEntry)
         const head = this.lruList.head
         if (head) {
@@ -144,7 +144,7 @@ export class GenericCache<K, V> {
                 this.size -= size
                 this.lruList.removeNode(node)
                 this.cache.delete(node.value.key)
-                promise.then(value => this.disposeFunction(value), () => { })
+                promise.then(value => this.disposeFunction(value), () => {})
             }
 
             node = prev
@@ -228,7 +228,7 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
             // TODO - determine memory size
             () => 1,
             // Let GC handle the cleanup of the object on cache eviction.
-            (): void => { }
+            (): void => {}
         )
     }
 

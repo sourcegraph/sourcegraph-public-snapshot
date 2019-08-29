@@ -106,7 +106,7 @@ class Symbols {
  */
 @Entity({ name: 'defs' })
 @Index(['scheme', 'identifier'])
-export class DefModel extends Symbols { }
+export class DefModel extends Symbols {}
 
 /**
  * An entity within the database describing LSIF data for a single repository and commit
@@ -115,7 +115,7 @@ export class DefModel extends Symbols { }
  */
 @Entity({ name: 'refs' })
 @Index(['scheme', 'identifier'])
-export class RefModel extends Symbols { }
+export class RefModel extends Symbols {}
 
 /**
  * An entity within the xrepo database. This maps a given repository and

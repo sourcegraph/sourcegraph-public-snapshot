@@ -97,13 +97,13 @@ interface ResultObjectData {
  * An internal representation of a range vertex from an LSIF dump. It contains the same
  * relevant edge data, which can be subsequently queried in the containing document.
  */
-export interface RangeData extends ResultObjectData, FlattenedRange { }
+export interface RangeData extends ResultObjectData, FlattenedRange {}
 
 /**
  * An internal representation of a result set vertex from an LSIF dump. It contains the
  * same relevant edge data, which can be subsequently queried in the containing document.
  */
-export interface ResultSetData extends ResultObjectData { }
+export interface ResultSetData extends ResultObjectData {}
 
 /**
  * Data about a moniker attached to a range or a result set.

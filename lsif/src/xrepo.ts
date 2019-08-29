@@ -53,7 +53,7 @@ export class XrepoDatabase {
      * @param connectionCache The cache of SQLite connections.
      * @param database The filename of the database.
      */
-    constructor(private connectionCache: ConnectionCache, private database: string) { }
+    constructor(private connectionCache: ConnectionCache, private database: string) {}
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
