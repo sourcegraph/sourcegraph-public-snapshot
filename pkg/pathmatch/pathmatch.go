@@ -26,6 +26,15 @@ type PathMatcher interface {
 	String() string
 }
 
+// All matches all paths.
+var All PathMatcher = allMatcher{}
+
+type allMatcher struct{}
+
+func (allMatcher) MatchPath(path string) bool { return true }
+func (m allMatcher) Copy() PathMatcher        { return m }
+func (allMatcher) String() string             { return "all" }
+
 type pathMatcherFunc struct {
 	matcher func(path string) bool
 	pattern string
