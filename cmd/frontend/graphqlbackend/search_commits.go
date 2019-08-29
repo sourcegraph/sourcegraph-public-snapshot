@@ -35,6 +35,8 @@ type commitSearchResultResolver struct {
 	url            string
 	detail         string
 	matches        []*searchResultMatchResolver
+
+	raw *git.LogCommitSearchResult
 }
 
 func (r *commitSearchResultResolver) Commit() *GitCommitResolver         { return r.commit }
@@ -333,6 +335,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		results[i].detail = fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(rawResult.Commit.Author.Date), url)
 		results[i].url = url
 		results[i].icon = commitIcon
+		results[i].raw = rawResult
 		match := &searchResultMatchResolver{body: matchBody, highlights: matchHighlights, url: url}
 		matches := []*searchResultMatchResolver{match}
 		results[i].matches = matches

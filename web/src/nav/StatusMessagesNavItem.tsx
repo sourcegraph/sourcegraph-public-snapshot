@@ -104,7 +104,7 @@ interface State {
     isOpen: boolean
 }
 
-const REFRESH_INTERVAL_MS = 3000
+const REFRESH_INTERVAL_MS = 300000 // TODO!(sqs): disabled to avoid polluting devtools network tab while developing
 
 /**
  * Displays a status icon in the navbar reflecting the completion of backend

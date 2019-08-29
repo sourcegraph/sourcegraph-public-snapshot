@@ -18,6 +18,7 @@ keycloak: ./dev/auth-provider/keycloak.sh
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest
 docsite: .bin/docsite -config doc/docsite.json serve -http=localhost:5080
 lsif-server: yarn --cwd lsif/server run serve
+builtin-extensions: cd ./extensions/enterprise/sandbox && yarn -s && yarn -s serve --port 1235
 # prometheus: ./dev/prometheus.sh
 # grafana: ./dev/grafana.sh
 

@@ -11,6 +11,8 @@
  * Check out the [extension authoring documentation](https://docs.sourcegraph.com/extensions/authoring) to get started.
  */
 declare module 'sourcegraph' {
+    /* eslint-disable no-irregular-whitespace */
+
     export interface Unsubscribable {
         unsubscribe(): void
     }
@@ -376,6 +378,164 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A text edit represents edits to apply to a document.
+     */
+    export class TextEdit {
+        /**
+         * Utility to create a replace edit.
+         *
+         * @param range A range.
+         * @param newText A string.
+         * @returns A new text edit object.
+         */
+        static replace(range: Range, newText: string): TextEdit
+
+        /**
+         * Utility to create an insert edit.
+         *
+         * @param position The insertion position.
+         * @param newText A string.
+         * @returns A new text edit object.
+         */
+        static insert(position: Position, newText: string): TextEdit
+
+        /**
+         * Utility to create a delete edit.
+         *
+         * @param range A range.
+         * @returns A new text edit object.
+         */
+        static delete(range: Range): TextEdit
+
+        /**
+         * The range this edit applies to.
+         */
+        readonly range: Range
+
+        /**
+         * The string this edit will insert.
+         */
+        readonly newText: string
+
+        /**
+         * Create a new TextEdit.
+         *
+         * @param range A range.
+         * @param newText A string.
+         */
+        constructor(range: Range, newText: string)
+    }
+
+    /**
+     * A workspace edit is a collection of textual and files changes for multiple resources and
+     * documents.
+     */
+    export class WorkspaceEdit {
+        /**
+         * Get all text edits grouped by resource.
+         *
+         * @returns A shallow copy of `[URL, TextEdit[]]`-tuples.
+         */
+        textEdits(): IterableIterator<[URL, TextEdit[]]>
+
+        /**
+         * Get the text edits for a resource.
+         *
+         * @param uri A resource identifier.
+         * @returns An array of text edits.
+         */
+        get(uri: URL): TextEdit[]
+
+        /**
+         * Check if a text edit for a resource exists.
+         *
+         * @param uri A resource identifier.
+         * @returns `true` if the given resource will be touched by this edit.
+         */
+        has(uri: URL): boolean
+
+        /**
+         * Set (and replace) text edits for a resource.
+         *
+         * @param uri A resource identifier.
+         * @param edits An array of text edits.
+         */
+        set(uri: URL, edits: TextEdit[]): void
+
+        /**
+         * Replace the given range with given text for the given resource.
+         *
+         * @param uri A resource identifier.
+         * @param range A range.
+         * @param newText A string.
+         */
+        replace(uri: URL, range: Range, newText: string): void
+
+        /**
+         * Insert the given text at the given position.
+         *
+         * @param uri A resource identifier.
+         * @param position A position.
+         * @param newText A string.
+         */
+        insert(uri: URL, position: Position, newText: string): void
+
+        /**
+         * Delete the text at the given range.
+         *
+         * @param uri A resource identifier.
+         * @param range A range.
+         */
+        delete(uri: URL, range: Range): void
+
+        /**
+         * Create a regular file.
+         *
+         * @param uri URL of the new file..
+         * @param options Defines if an existing file should be overwritten or be
+         * ignored. When overwrite and ignoreIfExists are both set overwrite wins.
+         */
+        createFile(uri: URL, options?: { overwrite?: boolean; ignoreIfExists?: boolean }): void
+
+        /**
+         * Delete a file or folder.
+         *
+         * @param uri The uri of the file that is to be deleted.
+         */
+        deleteFile(uri: URL, options?: { recursive?: boolean; ignoreIfNotExists?: boolean }): void
+
+        /**
+         * Rename a file or folder.
+         *
+         * @param oldUrl The existing file.
+         * @param newUrl The new location.
+         * @param options Defines if existing files should be overwritten or be ignored. When
+         * overwrite and ignoreIfExists are both set overwrite wins.
+         */
+        renameFile(oldUrl: URL, newUrl: URL, options?: { overwrite?: boolean; ignoreIfExists?: boolean }): void
+    }
+
+    /**
+     * A file glob pattern to match file paths against. This can either be a glob pattern string
+     * (like `**​/*.{ts,js}` or `*.{ts,js}`) or a [relative pattern](#RelativePattern).
+     *
+     * Glob patterns can have the following syntax:
+     *
+     * - `*` to match one or more characters in a path segment
+     * - `?` to match on one character in a path segment
+     * - `**` to match any number of path segments, including none
+     * - `{}` to group conditions (e.g. `**​/*.{ts,js}` matches all TypeScript and JavaScript files)
+     * - `[]` to declare a range of characters to match in a path segment (e.g., `example.[0-9]` to
+     *   match on `example.0`, `example.1`, …)
+     * - `[!...]` to negate a range of characters to match in a path segment (e.g., `example.[!0-9]`
+     *   to match on `example.a`, `example.b`, but not `example.0`)
+     *
+     * @todo Introduce support for VS Code's `RelativePattern`, to make it easy to define globs
+     * relative to other globs (and handle things like backslashes correctly).
+     */
+    export type GlobPattern = string
+
+    /**
      * A document filter denotes a document by different properties like the
      * [language](#TextDocument.languageId), the scheme of its resource, or a glob-pattern that is
      * applied to the [path](#TextDocument.fileName).
@@ -478,6 +638,8 @@ declare module 'sourcegraph' {
 
         /**
          * Show a notification message to the user that does not require interaction or steal focus.
+         * *
+         * TODO!(sqs): avoid name conflict with the other Notification)
          *
          * @param message The message to show. Markdown is supported.
          * @param type a {@link NotificationType} affecting the display of the notification.
@@ -687,7 +849,7 @@ declare module 'sourcegraph' {
          * Display the results of the location provider (with the given ID) in this panel below the
          * {@link PanelView#contents}.
          *
-         * @internal Experimental. Subject to change or removal without notice.
+         * Experimental. Subject to change or removal without notice.
          */
         component: { locationProvider: string } | null
     }
@@ -748,6 +910,147 @@ declare module 'sourcegraph' {
          * @example git://github.com/sourcegraph/sourcegraph?sha#mydir1/mydir2
          */
         readonly uri: URL
+
+        /**
+         * The base URI, used when the workspace is opened for comparison.
+         *
+         * TODO!(sqs)
+         */
+        readonly baseUri?: URL
+    }
+
+    /**
+     * The severity level of a [diagnostic](#Diagnostic).
+     */
+    export enum DiagnosticSeverity {
+        /**
+         * Something not allowed by the rules of a language or other means.
+         */
+        Error = 0,
+
+        /**
+         * Something suspicious but allowed.
+         */
+        Warning = 1,
+
+        /**
+         * Something to inform about but not a problem.
+         */
+        Information = 2,
+
+        /**
+         * Something to hint to a better way of doing it, like proposing
+         * a refactoring.
+         */
+        Hint = 3,
+    }
+
+    /**
+     * Information about another location related to a diagnostic.
+     */
+    export interface DiagnosticRelatedInformation {
+        /**
+         * The location of the related diagnostic information.
+         */
+        readonly location: Location
+
+        /**
+         * The human-readable message about the related diagnostic information.
+         */
+        readonly message: string
+    }
+
+    /**
+     * Represents a diagnostic, such as a compiler error or warning. Diagnostic objects are only
+     * valid in the scope of a file.
+     */
+    export interface Diagnostic {
+        /**
+         * The resource to which this diagnostic applies.
+         */
+        readonly resource: URL
+
+        /**
+         * The range to which this diagnostic applies.
+         */
+        readonly range: Range
+
+        /**
+         * The human-readable message.
+         */
+        readonly message: string
+
+        /**
+         * Additional human-readable detail.
+         */
+        readonly detail?: string
+
+        /**
+         * The severity, default is [error](#DiagnosticSeverity.Error).
+         */
+        readonly severity: DiagnosticSeverity
+
+        /**
+         * Information about other locations that are related to this diagnostic.
+         */
+        readonly relatedInformation?: DiagnosticRelatedInformation[]
+
+        /**
+         * Opaque data for this diagnostic. This data can be used by other consumers of the
+         * diagnostic, such as [code action providers](#CodeActionProvider), to avoid duplicating
+         * effort.
+         */
+        readonly data?: string
+
+        /**
+         * A set of tags for this diagnostic, used in querying and filtering.
+         */
+        readonly tags?: string[]
+    }
+
+    /**
+     * A query that matches a set of [diagnostics](#Diagnostic).
+     */
+    export interface DiagnosticQuery {
+        /**
+         * Match only diagnostics with the given type.
+         */
+        readonly type?: string
+
+        /**
+         * Match only diagnostics on documents that satisfy any of the document filters.
+         */
+        readonly document?: DocumentFilter[]
+
+        /**
+         * Match only diagnostics with a specific range in the document. The start and end positions
+         * of the range must both match exactly. If the range is specified, the document must also
+         * be specified.
+         */
+        readonly range?: Range
+
+        /**
+         * Match only diagnostics whose message contains this substring (case-insensitive).
+         */
+        readonly message?: string
+
+        /**
+         * Match only diagnostics that have all of the given tags.
+         */
+        readonly tag?: string[]
+    }
+
+    export interface DiagnosticProvider {
+        /**
+         * TODO!(sqs) there should be a way to send partial updates, eg per file, instead of always
+         * sending the full thing.
+         */
+        provideDiagnostics(
+            scope: {
+                /* TODO!(sqs) */
+            },
+            context: ContextValues
+        ): Subscribable<Diagnostic[]>
     }
 
     /**
@@ -794,6 +1097,20 @@ declare module 'sourcegraph' {
          * An event that is fired when a workspace root is added or removed from the workspace.
          */
         export const rootChanges: Subscribable<void>
+
+        /**
+         * Opens a document. If this document is not already open when called, the
+         * {@link workspace.openedTextDocuments} subscribable will emit this document.
+         *
+         * @param uri The identifier of the resource to open.
+         * @returns A promise that resolves to the opened [document](#TextDocument).
+         */
+        export function openTextDocument(uri: URL): Promise<TextDocument>
+
+        /**
+         * Register a diagnostic provider.
+         */
+        export function registerDiagnosticProvider(type: string, provider: DiagnosticProvider): Unsubscribable
     }
 
     /**
@@ -1061,10 +1378,107 @@ declare module 'sourcegraph' {
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          *
-         * @returns An array of completions, a [completion list](#CompletionList), or a thenable that resolves to either.
+         * @returns An array of completions, a [completion list](#CompletionList), or an observable that resolves to either.
          * The lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideCompletionItems(document: TextDocument, position: Position): ProviderResult<CompletionList>
+    }
+
+    /**
+     * Contains additional information about the context in which a [code
+     * action](#CodeActionProvider.provideCodeActions) is run.
+     */
+    export interface CodeActionContext {
+        /**
+         * An array of diagnostics.
+         */
+        readonly diagnostics: Diagnostic[]
+    }
+
+    /**
+     * Represents a reference to a command. Provides a title which will be used to represent a
+     * command in the UI and, optionally, an array of arguments which will be passed to the command
+     * handler function when invoked.
+     */
+    export interface Command {
+        /**
+         * Title of the command, such as `Save`.
+         */
+        title: string
+
+        /**
+         * The identifier of the actual command handler.
+         *
+         * @see [commands.registerCommand](#commands.registerCommand).
+         */
+        command: string
+
+        /**
+         * A tooltip for the command, when represented in the UI.
+         */
+        tooltip?: string
+
+        /**
+         * Arguments that the command handler should be invoked with.
+         */
+        arguments?: any[]
+    }
+
+    /**
+     * A code action represents a change that can be performed in code, such as a refactor or a lint
+     * fix.
+     *
+     * TODO!(sqs): update this paragraph -- A CodeAction must set either [`edit`](#CodeAction.edit)
+     * and/or a [`command`](#CodeAction.command). If both are supplied, the `edit` is applied first,
+     * then the command is executed.
+     */
+    export interface Action {
+        /**
+         * A short, human-readable, title for this code action.
+         */
+        readonly title: string
+
+        /**
+         * A {@link WorkspaceEdit} that this code action performs.
+         */
+        readonly edit?: WorkspaceEdit
+
+        /**
+         * A [command](#Command) that is executed to compute the {@link WorkspaceEdit} that this
+         * action performs.
+         */
+        readonly computeEdit?: Command
+
+        /**
+         * A [command](#Command) that this code action executes.
+         */
+        readonly command?: Command
+
+        /**
+         * The [diagnostics](#Diagnostic) that this code action resolves.
+         */
+        readonly diagnostics?: Diagnostic[]
+    }
+
+    /**
+     * A code action is an action that can be taken on code.
+     */
+    export interface CodeActionProvider {
+        /**
+         * Provide code actions for the given document and range.
+         *
+         * @param document The document to provide code actions for.
+         * @param range The selector or range to provide code actions for. This will always be a
+         * selection if there is a currently active editor.
+         * @param context Context carrying additional information.
+         * @returns An array of commands, quick fixes, or refactorings or an observable of such. The
+         * lack of a result can be signaled by returning `undefined`, `null`, or an empty array.
+         */
+        provideCodeActions(
+            document: TextDocument,
+            range: Range | Selection,
+            context: CodeActionContext
+        ): ProviderResult<Action[]>
     }
 
     export namespace languages {
@@ -1149,6 +1563,166 @@ declare module 'sourcegraph' {
             selector: DocumentSelector,
             provider: CompletionItemProvider
         ): Unsubscribable
+
+        /**
+         * Register a code action provider.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried
+         * in parallel and the results are merged. A failing provider (rejected promise or
+         * exception) will not cause a failure of the whole operation.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A code action provider.
+         * @returns An unsubscribable to unregister this provider.
+         */
+        export function registerCodeActionProvider(
+            selector: DocumentSelector,
+            provider: CodeActionProvider
+        ): Unsubscribable
+    }
+
+    /**
+     * The parameters for a search query.
+     */
+    export interface SearchQuery {
+        /**
+         * The text pattern to search for.
+         */
+        pattern: string
+
+        /**
+         * The pattern type.
+         *
+         * @todo Support structural search.
+         */
+        type: 'regexp'
+    }
+
+    /**
+     * Include and exclude patterns for searches.
+     */
+    export interface IncludeExcludePatterns {
+        /**
+         * Include results whose paths or names match any of these patterns.
+         *
+         * @todo Allow multiple patterns when globs are supported.
+         */
+        includes?: [] | [string]
+
+        /**
+         * Exclude results whose paths or names match any of these patterns.
+         *
+         * @todo Allow multiple patterns when globs are supported.
+         */
+        excludes?: [] | [string]
+
+        /**
+         * The pattern type.
+         *
+         * @todo Support globs.
+         */
+        type: 'regexp'
+    }
+
+    /**
+     * Options for searches.
+     */
+    export interface SearchOptions {
+        /**
+         * Limit the search to repositories that match these patterns.
+         *
+         * @todo Support searching one or more repositories at specific non-default-branch revisions
+         * (currently only searching repositories' default branch is supported by this API).
+         */
+        repositories?: IncludeExcludePatterns
+
+        /**
+         * Limit the search to files that match these patterns.
+         */
+        files?: IncludeExcludePatterns
+
+        /** The maximum number of results to return. */
+        maxResults?: number
+    }
+
+    /**
+     * A text search result from {@link search.findTextInFiles}.
+     */
+    export interface TextSearchResult {
+        /** The URI of the matching document. */
+        uri: string
+
+        /**
+         * The ranges of the match in the document, or undefined if the document was matched based
+         * on criteria other than its contents (e.g., based on its filename).
+         */
+        ranges?: Range[]
+    }
+
+    /**
+     * A match in a {@link SearchResult} from a {@link SearchResultProvider}.
+     */
+    export interface SearchResultMatch {
+        /**
+         * URL to the matched item.
+         */
+        url: string
+        /**
+         * A string containing the preview text of the result match, including any context to be displayed.
+         * The preview can be any length, and is displayed in its entirety. Can be plain text or Markdown.
+         */
+        preview: MarkupContent
+        /**
+         * Highlights are currently only applied if the body is a code block. The highlights
+         * are applied after the markdown is rendered; therefore, the line and character count
+         * should exclude the markdown code fences.
+         */
+        highlights: Range[]
+    }
+
+    /**
+     * A search result from a {@link SearchResultProvider}. A search result may contain multiple matches.
+     */
+    export interface SearchResult {
+        /**
+         * URL to an icon to be displayed with each search result.
+         * Can be a URL to an image or base-64 encoded data uri.
+         */
+        iconUrl: string
+        /**
+         * A prominently-displayed string describing the result. Can be plain text or Markdown.
+         */
+        label: MarkupContent
+        /**
+         * URL to the search result. This is a URL to the containing corpus of the {@link SearchResult#matches} (e.g.
+         * a file), whereas {@link SearchResultMatch#url} will link to the specific match (e.g. a line in the file).
+         * For SearchResults with a single match, this value is often the same as {@link SearchResultMatch#url}.
+         *
+         * This is used to display a URL associated with search results in text-based clients such as the src-cli.
+         */
+        url: string
+        /**
+         * A less prominently-displayed string with secondary information about the result. Can
+         * be plain text or Markdown.
+         */
+        detail: MarkupContent
+        /**
+         * A list of matches in this search result.
+         */
+        matches: SearchResultMatch[]
+    }
+
+    /**
+     * A search result provider accepts a query and returns a list of results.
+     * Experimental. Subject to change or removal without notice.
+     */
+    export interface SearchResultProvider {
+        /**
+         * Provide results for a search query.
+         *
+         * @param query A search query.
+         */
+        provideSearchResults(query: string): ProviderResult<SearchResult[]>
     }
 
     /**
@@ -1168,9 +1742,34 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A provider of text search results.
+     */
+    export interface TextSearchProvider {
+        /**
+         * Provide results that match the given query.
+         *
+         * @param query The query parameters.
+         * @param options The search options.
+         * @returns A subscribable that emits batches of search results and then completes.
+         */
+        provideTextSearchResults(query: SearchQuery, options: SearchOptions): Subscribable<TextSearchResult[]>
+    }
+
+    /**
      * API for extensions to augment search functionality.
      */
     export namespace search {
+        /**
+         * Search text in files across all known repositories (including repositories that are not
+         * currently open as [workspace roots](#workspace.roots)).
+         *
+         * @param query The query parameters for the search.
+         * @param options The options for the search.
+         * @returns A subscribable that emits batches of results and completes when all results have
+         * been emitted.
+         */
+        export function findTextInFiles(query: SearchQuery, options?: SearchOptions): Subscribable<TextSearchResult[]>
+
         /**
          * Registers a query transformer.
          *
@@ -1181,6 +1780,17 @@ declare module 'sourcegraph' {
          * @param provider A query transformer.
          */
         export function registerQueryTransformer(provider: QueryTransformer): Unsubscribable
+
+        /**
+         * Register a text search provider.
+         *
+         * Multiple providers can be registered. In that case, results will be returned grouped by
+         * provider. The order in which results from providers are grouped is not defined.
+         *
+         * @param provider A search result provider.
+         * @returns An unsubscribable to unregister the provider.
+         */
+        export function registerTextSearchProvider(provider: TextSearchProvider): Unsubscribable
     }
 
     /**
@@ -1200,6 +1810,24 @@ declare module 'sourcegraph' {
          * @throws Registering a command with an existing command identifier throws an error.
          */
         export function registerCommand(command: string, callback: (...args: any[]) => any): Unsubscribable
+
+        /**
+         * Registers a command that is used as an [action's](#Action) edit command to compute a
+         * [workspace edit](#WorkspaceEdit) when the action is performed.
+         *
+         * The command is invoked once per diagnostic that matches the action's
+         * {@link DiagnosticQuery} (or once overall if the action is not associated with any
+         * {@link DiagnosticQuery}, in which case the first argument is `null`).
+         *
+         * @param command A unique identifier for the command.
+         * @param callback A command function.
+         * @returns Unsubscribable to unregister this command.
+         * @throws Registering a command with an existing command identifier throws an error.
+         */
+        export function registerActionEditCommand(
+            command: string,
+            callback: (diagnostic: Diagnostic | null, ...args: any[]) => WorkspaceEdit | Promise<WorkspaceEdit>
+        ): Unsubscribable
 
         /**
          * Executes the command with the given command identifier.

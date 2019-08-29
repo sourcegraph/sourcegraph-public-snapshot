@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable } from 'rxjs'
+import { Observable, Subscription } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
@@ -14,6 +14,7 @@ import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
+import { registerCodemodContributions } from './enterprise/codemod/contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
@@ -103,6 +104,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
     useScrollToLocationHash(props.location)
+
+    useEffect(() => {
+        const subscription = new Subscription()
+        subscription.add(registerCodemodContributions(props))
+        return () => subscription.unsubscribe()
+    }, [props])
+
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -124,7 +132,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
-                <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <Suspense fallback={<LoadingSpinner className="icon-inline m-4" />}>
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(({ render, ...route }) => {
@@ -138,9 +146,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                         <div
                                             className={[
                                                 'layout__app-router-container',
-                                                `layout__app-router-container--${
-                                                    isFullWidth ? 'full-width' : 'restricted'
-                                                }`,
+                                                isFullWidth ? 'w-100' : 'container',
                                             ].join(' ')}
                                         >
                                             {render({ ...props, ...routeComponentProps })}
