@@ -105,7 +105,6 @@ export interface MonikerData {
     kind: MonikerKind
 
     // The name of the package type (e.g. npm, pip).
-
     scheme: string
 
     // The unique identifier of the moniker.

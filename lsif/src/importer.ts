@@ -305,7 +305,7 @@ class LsifImporter {
     private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => normalizeHover(e.result))
     private handleMoniker = this.setById(this.monikerDatas, convertMoniker)
     private handlePackageInformation = this.setById(this.packageInformationDatas, convertPackageInformation)
-    private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...flattenRange(e), monikers: [] }))
+    private handleRange = this.setById(this.rangeDatas, (e: Range) => convertRange(e))
     private handleReferenceResult = this.setById(this.referenceDatas, () => new Map())
     private handleResultSet = this.setById(this.resultSetDatas, () => ({ monikers: [] }))
 
@@ -520,8 +520,19 @@ class LsifImporter {
         await this.finalizeDocument(document)
 
         // Insert document record
-        await this.documentInserter.insert({ path: document.path, value: await encodeJSON(document) })
-        // TODO - really prune everything that's no in the class
+        await this.documentInserter.insert({
+            path: document.path,
+            value: await encodeJSON({
+                ranges: document.ranges,
+                orderedRanges: document.orderedRanges,
+                resultSets: document.resultSets,
+                definitionResults: document.definitionResults,
+                referenceResults: document.referenceResults,
+                hovers: document.hovers,
+                monikers: document.monikers,
+                packageInformation: document.packageInformation,
+            }),
+        })
 
         // Insert all related definitions
         for (const { ids, moniker } of document.definitions) {
@@ -825,6 +836,11 @@ function convertMetadata(meta: MetaData): { lsifVersion: string; sourcegraphVers
     }
 }
 
+/**
+ * Convert a protocol `Moniker` object into a `MonikerData` object.
+ *
+ * @param moniker The moniker object.
+ */
 function convertMoniker(moniker: Moniker): MonikerData {
     return { kind: moniker.kind || MonikerKind.local, scheme: moniker.scheme, identifier: moniker.identifier }
 }
@@ -836,6 +852,15 @@ function convertMoniker(moniker: Moniker): MonikerData {
  */
 function convertPackageInformation(info: PackageInformation): PackageInformationData {
     return { name: info.name, version: info.version || '$missing' }
+}
+
+/**
+ * Convert a protocol `Range` object into a `RangeData` object.
+ *
+ * @param range The range object.
+ */
+function convertRange(range: Range): RangeData {
+    return { ...flattenRange(range), monikers: [] }
 }
 
 /**
