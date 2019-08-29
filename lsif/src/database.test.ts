@@ -5,7 +5,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 
 describe('database', () => {
     describe('helpers', () => {
-        test('findRange', async () => {
+        test('findRange', () => {
             const ranges: RangeData[] = []
             for (let i = 1; i <= 1000; i++) {
                 const j1 = Math.floor(Math.random() * 20)
@@ -46,7 +46,7 @@ describe('database', () => {
         })
     })
 
-    test('findResult', async () => {
+    test('findResult', () => {
         const resultSets = new Map<Id, ResultSetData>()
         resultSets.set(1, { monikers: [42], next: 3 })
         resultSets.set(2, { monikers: [43], definitionResult: 25 })
@@ -71,7 +71,7 @@ describe('database', () => {
         expect(findResult(resultSets, map, resultSets.get(4)!, 'definitionResult')).toBeUndefined()
     })
 
-    test('findMonikers', async () => {
+    test('findMonikers', () => {
         const resultSets = new Map<Id, ResultSetData>()
         resultSets.set(1, { monikers: [42], next: 3 })
         resultSets.set(2, { monikers: [43, 50] })
@@ -102,7 +102,7 @@ describe('database', () => {
         ])
     })
 
-    test('walkChain', async () => {
+    test('walkChain', () => {
         const resultSets = new Map<Id, ResultSetData>()
         resultSets.set(1, { monikers: [42], next: 3 })
         resultSets.set(2, { monikers: [43, 50] })
@@ -125,7 +125,7 @@ describe('database', () => {
         ])
     })
 
-    test('asLocations', async () => {
+    test('asLocations', () => {
         const ranges = new Map<Id, number>()
         ranges.set(1, 0)
         ranges.set(2, 2)
@@ -153,7 +153,7 @@ describe('database', () => {
         ])
     })
 
-    test('makeRemoteUri', async () => {
+    test('makeRemoteUri', () => {
         const pkg = {
             id: 0,
             scheme: '',
@@ -167,7 +167,7 @@ describe('database', () => {
         expect(uri).toEqual('git://github.com/sourcegraph/codeintellify?deadbeef#src/position.ts')
     })
 
-    test('comparePosition', async () => {
+    test('comparePosition', () => {
         const range = {
             startLine: 5,
             startCharacter: 11,

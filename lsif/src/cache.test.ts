@@ -21,11 +21,11 @@ describe('GenericCache', () => {
         for (const value of values) {
             const returnValue = await cache.withValue(
                 value,
-                async () => {
+                () => {
                     factoryArgs.push(value)
-                    return value
+                    return Promise.resolve(value)
                 },
-                async v => v
+                v => Promise.resolve(v)
             )
 
             expect(returnValue).toBe(value)
@@ -50,7 +50,7 @@ describe('GenericCache', () => {
                 outerCalls++
                 return innerPromise
             },
-            async v => v
+            v => Promise.resolve(v)
         )
         const p2 = cache.withValue(
             'foo',
@@ -58,7 +58,7 @@ describe('GenericCache', () => {
                 outerCalls++
                 return innerPromise
             },
-            async v => v
+            v => Promise.resolve(v)
         )
         const p3 = cache.withValue(
             'foo',
@@ -66,7 +66,7 @@ describe('GenericCache', () => {
                 outerCalls++
                 return innerPromise
             },
-            async v => v
+            v => Promise.resolve(v)
         )
 
         expect(await Promise.all([p1, p2, p3])).toEqual(['bar', 'bar', 'bar'])
@@ -92,7 +92,7 @@ describe('GenericCache', () => {
         )
 
         for (const value of values) {
-            await cache.withValue(value, async () => value, async v => v)
+            await cache.withValue(value, () => Promise.resolve(value), v => Promise.resolve(v))
         }
 
         // allow disposal to run asynchronously
@@ -118,11 +118,11 @@ describe('GenericCache', () => {
         for (const value of values) {
             await cache.withValue(
                 value,
-                async () => {
+                () => {
                     factoryArgs.push(value)
-                    return value
+                    return Promise.resolve(value)
                 },
-                async v => v
+                v => Promise.resolve(v)
             )
         }
 
@@ -141,30 +141,31 @@ describe('GenericCache', () => {
 
         await cache.withValue(
             'foo',
-            async () => 'foo',
+            () => Promise.resolve('foo'),
             async () => {
                 await cache.withValue(
                     'bar',
-                    async () => 'bar',
+                    () => Promise.resolve('bar'),
                     async () => {
                         await cache.withValue(
                             'baz',
-                            async () => 'baz',
+                            () => Promise.resolve('baz'),
                             async () => {
                                 await cache.withValue(
                                     'bonk',
-                                    async () => 'bonk',
+                                    () => Promise.resolve('bonk'),
                                     async () => {
                                         await cache.withValue(
                                             'quux',
-                                            async () => 'quux',
+                                            () => Promise.resolve('quux'),
                                             async () => {
                                                 // Sixth entry, but nothing to evict (all held)
                                                 await cache.withValue(
                                                     'honk',
-                                                    async () => 'honk',
-                                                    async () => {
+                                                    () => Promise.resolve('honk'),
+                                                    () => {
                                                         expect(disposeArgs).toEqual([])
+                                                        return Promise.resolve()
                                                     }
                                                 )
 
@@ -172,7 +173,7 @@ describe('GenericCache', () => {
                                                 // recently used value that's not currently under a read lock.
                                                 await cache.withValue(
                                                     'ronk',
-                                                    async () => 'ronk',
+                                                    () => Promise.resolve('ronk'),
                                                     async () => {
                                                         // allow disposal to run asynchronously
                                                         await new Promise(resolve =>
@@ -197,7 +198,7 @@ describe('GenericCache', () => {
         // Release and remove the least recently used
         await cache.withValue(
             'honk',
-            async () => 'honk',
+            () => Promise.resolve('honk'),
             async () => {
                 // allow disposal to run asynchronously
                 await new Promise(resolve =>

@@ -181,7 +181,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      */
     public withConnection<T>(
         database: string,
-        entities: Function[],
+        entities: Function[], // eslint-disable-line @typescript-eslint/ban-types
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
         const factory = (): Promise<Connection> =>
@@ -207,7 +207,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      */
     public withTransactionalEntityManager<T>(
         database: string,
-        entities: Function[],
+        entities: Function[], // eslint-disable-line @typescript-eslint/ban-types
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
         return this.withConnection(database, entities, connection => connection.transaction(em => callback(em)))

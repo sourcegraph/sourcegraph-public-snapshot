@@ -3,7 +3,7 @@ import { Id } from 'lsif-protocol'
 
 describe('database', () => {
     describe('helpers', () => {
-        test('lookupRanges', async () => {
+        test('lookupRanges', () => {
             const ranges = new Map<Id, number>()
             ranges.set(1, 0)
             ranges.set(2, 2)
@@ -34,7 +34,7 @@ describe('database', () => {
             expect(lookupRanges(document, [1, 2, 3, 4])).toEqual([orderedRanges[0], orderedRanges[2], orderedRanges[1]])
         })
 
-        test('normalizeHover', async () => {
+        test('normalizeHover', () => {
             expect(normalizeHover({ contents: 'foo' })).toEqual('foo')
             expect(normalizeHover({ contents: { language: 'typescript', value: 'bar' } })).toEqual(
                 '```typescript\nbar\n```'
@@ -47,7 +47,7 @@ describe('database', () => {
             ).toEqual('foo\n\n---\n\n```typescript\nbar\n```')
         })
 
-        test('reachableMonikers', async () => {
+        test('reachableMonikers', () => {
             const monikerSets = new Map<Id, Set<Id>>()
             monikerSets.set(1, new Set<Id>([2]))
             monikerSets.set(2, new Set<Id>([1, 4]))
