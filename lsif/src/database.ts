@@ -2,7 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, ResultSetData, DocumentData } from './entities'
+import { MonikerData, RangeData, ResultSetData, DocumentData, FlattenedRange } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
@@ -51,7 +51,7 @@ export class Database {
 
         const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
         if (resultData) {
-            return asLocations(document.ranges, document.orderedRanges, uri, resultData.values)
+            return asLocations(document.ranges, document.orderedRanges, uri, resultData)
         }
 
         // TODO - vet this logic of finding the first result
@@ -87,8 +87,7 @@ export class Database {
 
         let result: lsp.Location[] = []
         if (resultData) {
-            result = result.concat(asLocations(document.ranges, document.orderedRanges, uri, resultData.definitions))
-            result = result.concat(asLocations(document.ranges, document.orderedRanges, uri, resultData.references))
+            result = result.concat(asLocations(document.ranges, document.orderedRanges, uri, resultData))
         } else {
             for (const moniker of monikers) {
                 result = result.concat(await Database.monikerResults(this, RefModel, moniker, uri => uri))
@@ -119,7 +118,12 @@ export class Database {
         }
 
         // All hover contents should be contained in the document.
-        return findResult(document.resultSets, document.hovers, range, 'hoverResult') || null
+        const contents = findResult(document.resultSets, document.hovers, range, 'hoverResult')
+        if (!contents) {
+            return null
+        }
+
+        return { contents }
     }
 
     //
@@ -454,8 +458,8 @@ function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: s
         const range = orderedRanges[rangeIndex]
         locations.push(
             lsp.Location.create(uri, {
-                start: range.start,
-                end: range.end,
+                start: { line: range.startLine, character: range.startCharacter },
+                end: { line: range.endLine, character: range.endCharacter },
             })
         )
     }
@@ -499,20 +503,20 @@ function makeRange(result: {
  * @param range The range.
  * @param position The position.
  */
-function comparePosition(range: lsp.Range, position: lsp.Position): number {
-    if (position.line < range.start.line) {
+function comparePosition(range: FlattenedRange, position: lsp.Position): number {
+    if (position.line < range.startLine) {
         return +1
     }
 
-    if (position.line > range.end.line) {
+    if (position.line > range.endLine) {
         return -1
     }
 
-    if (position.line === range.start.line && position.character < range.start.character) {
+    if (position.line === range.startLine && position.character < range.startCharacter) {
         return +1
     }
 
-    if (position.line === range.end.line && position.character > range.end.character) {
+    if (position.line === range.endLine && position.character > range.endCharacter) {
         return -1
     }
 

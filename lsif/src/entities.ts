@@ -1,5 +1,4 @@
 import { Id, MonikerKind } from 'lsif-protocol'
-import * as lsp from 'vscode-languageserver-protocol'
 
 /**
  * Data for a single document within an LSIF dump. The data here can answer definitions,
@@ -22,14 +21,20 @@ export interface DocumentData {
     // A map of identifiers to a result set.
     resultSets: Map<Id, ResultSetData>
 
-    // A map of identifiers to a definition result.
-    definitionResults: Map<Id, DefinitionResultData>
+    /**
+     * A map of identifiers to a set of identifiers that compose the definition
+     * result.
+     */
+    definitionResults: Map<Id, Id[]>
 
-    // A map of identifiers to a reference result.
-    referenceResults: Map<Id, ReferenceResultData>
+    /**
+     * A map of identifiers to a set of identifiers that compose the reference
+     * result.
+     */
+    referenceResults: Map<Id, Id[]>
 
     // A map of identifiers to a hover result.
-    hovers: Map<Id, HoverData>
+    hovers: Map<Id, string>
 
     // A map of identifiers to a moniker.
     monikers: Map<Id, MonikerData>
@@ -84,60 +89,13 @@ interface ResultObjectData {
  * An internal representation of a range vertex from an LSIF dump. It contains the same
  * relevant edge data, which can be subsequently queried in the containing document.
  */
-export interface RangeData extends ResultObjectData {
-    // The start position of the range.
-    start: lsp.Position
-
-    // The end position of the range.
-    end: lsp.Position
-}
+export interface RangeData extends ResultObjectData, FlattenedRange {}
 
 /**
  * An internal representation of a result set vertex from an LSIF dump. It contains the
  * same relevant edge data, which can be subsequently queried in the containing document.
  */
 export interface ResultSetData extends ResultObjectData {}
-
-/**
- * Data used to answer a definitions query.
- */
-export interface DefinitionResultData {
-    /**
-     * A list of range identifiers that specify the definition. The range objects can be
-     * queried by their identifier within the containing document.
-     */
-    values: Id[]
-}
-
-/**
- * Data used to answer a references query.
- */
-export interface ReferenceResultData {
-    // TODO - these can be collapsed, they're always merged in the API
-
-    /**
-     * A list of range identifiers that specify the definition of a target reference. The
-     * range objects can be queried by their identifier within the containing document.
-     */
-    definitions: Id[]
-
-    /**
-     * A list of range identifiers that specify the references of a target definition. The
-     * range objects can be queried by their identifier within the containing document.
-     */
-    references: Id[]
-}
-
-/**
- * Data used to answer a hover query.
- */
-export interface HoverData {
-    // TODO - normalize content
-    // TODO - used MarkupContent, MarkedString is deprecated
-
-    // The raw hover payload from the LSIf dump.
-    contents: lsp.MarkupContent | lsp.MarkedString | lsp.MarkedString[]
-}
 
 /**
  * Data about a moniker attached to a range or a result set.

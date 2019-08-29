@@ -4,17 +4,7 @@ import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import RelateUrl from 'relateurl'
 import { encodeJSON } from './encoding'
 import { TableInserter } from './inserter'
-import {
-    MonikerData,
-    RangeData,
-    ResultSetData,
-    DefinitionResultData,
-    ReferenceResultData,
-    HoverData,
-    PackageInformationData,
-    DocumentData,
-    FlattenedRange,
-} from './entities'
+import { MonikerData, RangeData, ResultSetData, PackageInformationData, DocumentData, FlattenedRange } from './entities'
 import {
     Id,
     VertexLabels,
@@ -45,6 +35,7 @@ import {
     Moniker,
 } from 'lsif-protocol'
 import { Package, SymbolReferences } from './xrepo'
+import { Hover, MarkupContent } from 'vscode-languageserver-types'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -77,7 +68,7 @@ export interface DecoratedDocumentData extends DocumentData {
      * the definition result data would be stored in `definitionResults` in the
      * superclass.
      */
-    definitions: { data: DefinitionResultData; moniker: MonikerData }[]
+    definitions: { ids: Id[]; moniker: MonikerData }[]
 
     /**
      * A field that carries the data of referenceResult edges attached within
@@ -85,7 +76,7 @@ export interface DecoratedDocumentData extends DocumentData {
      * the reference result data would be stored in `referenceResults` in the
      * superclass.
      */
-    references: { data: ReferenceResultData; moniker: MonikerData }[]
+    references: { ids: Id[]; moniker: MonikerData }[]
 }
 
 /**
@@ -118,13 +109,13 @@ class LsifImporter {
     private refInserter: TableInserter<RefModel, new () => RefModel>
 
     // Vertex data
-    private definitionDatas: Map<Id, Map<Id, DefinitionResultData>> = new Map()
+    private definitionDatas: Map<Id, Map<Id, Id[]>> = new Map()
     private documents: Map<Id, string> = new Map()
-    private hoverDatas: Map<Id, HoverData> = new Map()
+    private hoverDatas: Map<Id, string> = new Map()
     private monikerDatas: Map<Id, MonikerData> = new Map()
     private packageInformationDatas: Map<Id, PackageInformationData> = new Map()
     private rangeDatas: Map<Id, RangeData> = new Map()
-    private referenceDatas: Map<Id, Map<Id, ReferenceResultData>> = new Map()
+    private referenceDatas: Map<Id, Map<Id, Id[]>> = new Map()
     private resultSetDatas: Map<Id, ResultSetData> = new Map()
 
     /**
@@ -311,10 +302,10 @@ class LsifImporter {
 
     private handleDefinitionResult = this.setById(this.definitionDatas, () => new Map())
     private handleDocument = this.setById(this.documents, (e: Document) => e.uri)
-    private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => e.result)
+    private handleHover = this.setById(this.hoverDatas, (e: HoverResult) => normalizeHover(e.result))
     private handleMoniker = this.setById(this.monikerDatas, convertMoniker)
     private handlePackageInformation = this.setById(this.packageInformationDatas, convertPackageInformation)
-    private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...e, monikers: [] }))
+    private handleRange = this.setById(this.rangeDatas, (e: Range) => ({ ...flattenRange(e), monikers: [] }))
     private handleReferenceResult = this.setById(this.referenceDatas, () => new Map())
     private handleResultSet = this.setById(this.resultSetDatas, () => ({ monikers: [] }))
 
@@ -343,18 +334,15 @@ class LsifImporter {
      */
     private handleItemEdge(edge: item): void {
         if (edge.property === undefined) {
-            const defaultValue = { values: [] }
-            this.handleGenericItemEdge(edge, 'definitionResult', this.definitionDatas, defaultValue, 'values')
+            this.handleGenericItemEdge(edge, 'definitionResult', this.definitionDatas)
         }
 
         if (edge.property === ItemEdgeProperties.definitions) {
-            const defaultValue = { definitions: [], references: [] }
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas, defaultValue, 'definitions')
+            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas)
         }
 
         if (edge.property === ItemEdgeProperties.references) {
-            const defaultValue = { definitions: [], references: [] }
-            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas, defaultValue, 'references')
+            this.handleGenericItemEdge(edge, 'referenceResult', this.referenceDatas)
         }
     }
 
@@ -536,8 +524,8 @@ class LsifImporter {
         // TODO - really prune everything that's no in the class
 
         // Insert all related definitions
-        for (const { data, moniker } of document.definitions) {
-            for (const range of flattenRanges(document, data.values)) {
+        for (const { ids, moniker } of document.definitions) {
+            for (const range of lookupRanges(document, ids)) {
                 await this.defInserter.insert({
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -548,16 +536,14 @@ class LsifImporter {
         }
 
         // Insert all related references
-        for (const { data, moniker } of document.references) {
-            for (const ids of [data.definitions, data.references]) {
-                for (const range of flattenRanges(document, ids)) {
-                    await this.refInserter.insert({
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                        documentUri: document.uri,
-                        ...range,
-                    })
-                }
+        for (const { ids, moniker } of document.references) {
+            for (const range of lookupRanges(document, ids)) {
+                await this.refInserter.insert({
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                    documentUri: document.uri,
+                    ...range,
+                })
             }
         }
     }
@@ -577,31 +563,23 @@ class LsifImporter {
     }
 
     /**
-     * Concatenate `edge.inVs` to the array at `map[edge.outV][edge.document][field]`.
+     * Concatenate `edge.inVs` to the array at `map[edge.outV][edge.document]`.
      * If any field is undefined, it is created on the fly.
      *
      * @param edge The edge.
      * @param name The type of map (used for exception message).
      * @param map The map to populate.
-     * @param defaultValue The value to use if inner map is not populated.
-     * @param field The field containing the target array.
      */
-    private handleGenericItemEdge<T extends { [K in F]: Id[] }, F extends string>(
-        edge: item,
-        name: string,
-        map: Map<Id, Map<Id, T>>,
-        defaultValue: T,
-        field: F
-    ): void {
+    private handleGenericItemEdge(edge: item, name: string, map: Map<Id, Map<Id, Id[]>>): void {
         const innerMap = assertDefined(edge.outV, name, map)
-        let data = innerMap.get(edge.document)
+        const data = innerMap.get(edge.document)
         if (!data) {
-            data = defaultValue
-            innerMap.set(edge.document, data)
+            innerMap.set(edge.document, edge.inVs)
+        } else {
+            for (const inV of edge.inVs) {
+                data.push(inV)
+            }
         }
-
-        // TODO - use concat instead
-        data[field].push(...edge.inVs)
     }
 
     /**
@@ -637,7 +615,7 @@ class LsifImporter {
         }
 
         // Sort ranges by their starting position
-        orderedRanges.sort((a, b) => a.start.line - b.start.line || a.start.character - b.start.character)
+        orderedRanges.sort((a, b) => a.startLine - b.startLine || a.startCharacter - b.startCharacter)
 
         // Populate a reverse lookup so ranges can be queried by id
         // via `orderedRanges[range[id]]`.
@@ -765,7 +743,7 @@ class LsifImporter {
         name: string,
         sourceMap: Map<Id, Map<Id, T>>,
         document: DecoratedDocumentData,
-        documentArray: { data: T; moniker: MonikerData }[],
+        documentArray: { ids: T; moniker: MonikerData }[],
         documentMap: Map<Id, T>,
         id: Id | undefined,
         monikers: MonikerData[]
@@ -782,7 +760,7 @@ class LsifImporter {
 
         const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
         for (const moniker of nonlocalMonikers) {
-            documentArray.push({ moniker, data })
+            documentArray.push({ ids: data, moniker })
         }
 
         if (nonlocalMonikers.length === 0) {
@@ -861,13 +839,14 @@ function convertPackageInformation(info: PackageInformation): PackageInformation
 }
 
 /**
- * Convert a set of range identifiers into flattened range objects. This requires
- * the document's `ranges` and `orderedRanges` fields to be completely populated.
- *k
+ * Convert a set of range identifers into the flattened range objects stored by
+ * identifier in the given document. This requires that the document's `ranges`
+ * and `orderedRanges` fields to be completely populated.
+ *
  * @param document The document object.
  * @param ids The list of ids.
  */
-function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
+function lookupRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
     const ranges = []
     for (const id of ids) {
         const rangeIndex = document.ranges.get(id)
@@ -876,12 +855,7 @@ function flattenRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRan
         }
 
         const range = document.orderedRanges[rangeIndex]
-        ranges.push({
-            startLine: range.start.line,
-            startCharacter: range.start.character,
-            endLine: range.end.line,
-            endCharacter: range.end.character,
-        })
+        ranges.push(range)
     }
 
     return ranges
@@ -947,4 +921,45 @@ export async function importLsif(
     }
 
     return await importer.finalize()
+}
+
+/**
+ * Normalize an LSP hover object into a string.
+ *
+ * @param hover The hover object.
+ */
+function normalizeHover(hover: Hover): string {
+    const normalizeContent = (content: string | MarkupContent | { language: string; value: string }): string => {
+        if (typeof content === 'string') {
+            return content
+        }
+
+        if (MarkupContent.is(content)) {
+            return content.value
+        }
+
+        const tick = '```'
+        return `${tick}${content.language}\n${content.value}\n${tick}`
+    }
+
+    const separator = '\n\n---\n\n'
+    const contents = Array.isArray(hover.contents) ? hover.contents : [hover.contents]
+    return contents
+        .map(c => normalizeContent(c).trim())
+        .filter(s => s)
+        .join(separator)
+}
+
+/**
+ * Construct a flattened four-tuple of numbers from an LSP range.
+ *
+ * @param range The LSP range.
+ */
+function flattenRange(range: Range): FlattenedRange {
+    return {
+        startLine: range.start.line,
+        startCharacter: range.end.line,
+        endLine: range.end.line,
+        endCharacter: range.end.character,
+    }
 }
