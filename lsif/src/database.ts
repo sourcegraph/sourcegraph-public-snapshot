@@ -296,10 +296,10 @@ export class Database {
         return await this.connectionCache.withConnection(
             this.databasePath,
             [DefModel, DocumentModel, MetaModel, RefModel],
-            connection => {
+            async connection => {
                 const end = databaseQueryDurationHistogram.startTimer()
                 try {
-                    return callback(connection)
+                    return await callback(connection)
                 } finally {
                     end()
                 }

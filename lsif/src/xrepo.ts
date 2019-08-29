@@ -165,14 +165,18 @@ export class XrepoDatabase {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], connection => {
-            const end = xrepoQueryDurationHistogram.startTimer()
-            try {
-                return callback(connection)
-            } finally {
-                end()
+        return await this.connectionCache.withConnection(
+            this.database,
+            [PackageModel, ReferenceModel],
+            async connection => {
+                const end = xrepoQueryDurationHistogram.startTimer()
+                try {
+                    return await callback(connection)
+                } finally {
+                    end()
+                }
             }
-        })
+        )
     }
 
     /**
