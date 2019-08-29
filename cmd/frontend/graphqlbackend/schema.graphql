@@ -2153,6 +2153,10 @@ interface Namespace {
     # The globally unique ID of this namespace.
     id: ID!
 
+    # The name of this namespace's component. For a user, this is the username. For an organization,
+    # this is the organization name.
+    namespaceName: String!
+
     # The URL to this namespace.
     url: String!
 }
@@ -2262,6 +2266,9 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # FOR INTERNAL USE ONLY.
     databaseID: Int!
+
+    # The name of this user namespace's component. For users, this is the username.
+    namespaceName: String!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2451,6 +2458,9 @@ type Org implements Node & SettingsSubject & Namespace {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
+
+    # The name of this user namespace's component. For organizations, this is the organization's name.
+    namespaceName: String!
 }
 
 # The result of Mutation.inviteUserToOrganization.
