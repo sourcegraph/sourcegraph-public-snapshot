@@ -111,7 +111,7 @@ export class XrepoDatabase {
         version: string,
         value: string
     ): Promise<ReferenceModel[]> {
-        return await this.withConnection(connection =>
+        const results = await this.withConnection(connection =>
             connection.getRepository(ReferenceModel).find({
                 where: {
                     scheme,
@@ -119,7 +119,16 @@ export class XrepoDatabase {
                     version,
                 },
             })
-        ).then((results: ReferenceModel[]) => results.filter(async result => await testFilter(result.filter, value)))
+        )
+
+        // Test the bloom filter of each reference model concurrently
+        const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, value)))
+
+        // Zip reference model results and the result of the bloom filter test together
+        const zip: { result: ReferenceModel, keep: boolean }[] = results.map((result, i) => ({ result, keep: keepFlags[i] }))
+
+        // Return the reference models that passed the bloom filter test
+        return zip.filter(({ keep }) => keep).map(({ result }) => result)
     }
 
     /**
