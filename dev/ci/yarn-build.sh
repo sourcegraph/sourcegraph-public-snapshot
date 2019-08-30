@@ -10,8 +10,11 @@ echo "--- yarn in root"
 NODE_ENV= yarn --frozen-lockfile --network-timeout 60000
 
 cd $1
-echo "--- browserslist"
-NODE_ENV= yarn -s run browserslist
+
+if jq -e '.browserslist' package.json > /dev/null; then
+    echo "--- browserslist"
+    NODE_ENV= yarn -s run browserslist
+fi
 
 echo "--- build"
 yarn -s run build --color
