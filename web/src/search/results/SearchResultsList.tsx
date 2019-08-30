@@ -301,6 +301,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         const searchParams = new URLSearchParams(this.props.location.search)
         const dotStar = searchParams.get('v') === '0'
 
+        console.log('rendering SearchResultsList. dotStar is ' + dotStar)
+
         return (
             <>
                 {this.state.didScrollToItem && (
@@ -330,6 +332,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                     {this.props.resultsOrError === undefined ? (
                         <div className="text-center mt-2" data-testid="loading-container">
+                            We've got a loading spinner here.
                             <LoadingSpinner className="icon-inline" />
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
