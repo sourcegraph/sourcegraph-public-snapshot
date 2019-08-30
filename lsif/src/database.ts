@@ -143,9 +143,9 @@ export class Database {
                 continue
             }
 
-            const { remoteResults, nextPage } = await this.remoteReferences(document, moniker,page)
+            const { remoteResults, nextPage } = await this.remoteReferences(document, moniker, page)
             if (remoteResults) {
-                return {data:result.concat(remoteResults), nextPage}
+                return { data: result.concat(remoteResults), nextPage }
             }
         }
 
