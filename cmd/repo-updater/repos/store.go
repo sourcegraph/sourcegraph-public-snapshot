@@ -88,7 +88,7 @@ type DBStore struct {
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db dbutil.DB, txOpts sql.TxOptions) *DBStore {
+func NewDBStore(db dbutil.DB, txOpts sql.TxOptions) *DBStore {
 	return &DBStore{db: db, txOpts: txOpts}
 }
 

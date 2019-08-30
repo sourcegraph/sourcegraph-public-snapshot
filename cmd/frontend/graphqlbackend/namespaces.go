@@ -12,6 +12,7 @@ import (
 type Namespace interface {
 	ID() graphql.ID
 	URL() string
+	NamespaceName() string
 }
 
 func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql.ID }) (*namespaceResolver, error) {

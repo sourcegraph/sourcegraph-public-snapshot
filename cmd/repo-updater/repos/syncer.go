@@ -23,11 +23,11 @@ type Syncer struct {
 	// Sourcegraph.com
 	FailFullSync bool
 
-	// multiSourceErr contains the last error returned by the Sourcer in each
-	// Sync. It's reset with each Sync and if the Sourcer produced no error,
-	// it's set to nil.
-	multiSourceErr   *MultiSourceError
-	multiSourceErrMu sync.Mutex
+	// lastSyncErr contains the last error returned by the Sourcer in each
+	// Sync. It's reset with each Sync and if the sync produced no error, it's
+	// set to nil.
+	lastSyncErr   error
+	lastSyncErrMu sync.Mutex
 
 	store   Store
 	sourcer Sourcer
@@ -84,6 +84,7 @@ func (s *Syncer) TriggerSync() {
 func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")
 	defer save(&diff, &err)
+	defer s.setOrResetLastSyncErr(&err)
 
 	if s.FailFullSync {
 		return Diff{}, errors.New("Syncer is not enabled")
@@ -318,47 +319,33 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 
 	srcs, err := s.sourcer(svcs...)
 	if err != nil {
-		// Only reset source error if it was non-nil. Because if `ListRepos`
-		// produces an error through multiple syncs, the state of
-		// multiSourceErr would flip-flop between here and the `ListRepos` call
-		// further down.
-		s.setOrResetMultiSourceErr(err)
 		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 
-	repos, err := srcs.ListRepos(ctx)
-	s.setOrResetMultiSourceErr(err)
-
-	return repos, err
+	return srcs.ListRepos(ctx)
 }
 
-func (s *Syncer) setOrResetMultiSourceErr(err error) {
-	s.multiSourceErrMu.Lock()
-
-	if multiSourceErr, ok := err.(*MultiSourceError); ok {
-		s.multiSourceErr = multiSourceErr
-	} else {
-		s.multiSourceErr = nil
+func (s *Syncer) setOrResetLastSyncErr(perr *error) {
+	var err error
+	if perr != nil {
+		err = *perr
 	}
 
-	s.multiSourceErrMu.Unlock()
+	s.lastSyncErrMu.Lock()
+	s.lastSyncErr = err
+	s.lastSyncErrMu.Unlock()
 }
 
-// LastSyncErrors returns the SourceErrors that were produced in the last Sync
-// run. If the slice is empty, the last sync run didn't produce any errors.
-func (s *Syncer) LastSyncErrors() []*SourceError {
-	s.multiSourceErrMu.Lock()
-	defer s.multiSourceErrMu.Unlock()
+// LastSyncError returns the error that was produced in the last Sync run. If
+// no error was produced, this returns nil.
+func (s *Syncer) LastSyncError() error {
+	s.lastSyncErrMu.Lock()
+	defer s.lastSyncErrMu.Unlock()
 
-	var errors []*SourceError
-	if s.multiSourceErr != nil {
-		errors = s.multiSourceErr.Errors
-	}
-
-	return errors
+	return s.lastSyncErr
 }
 
 func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
