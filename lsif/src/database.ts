@@ -1,7 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
+import { groupBy, isEqual, uniqWith } from 'lodash'
 import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
-import { groupBy } from 'lodash'
 import { decodeJSON } from './encoding'
 import { MonikerData, RangeData, ResultSetData, DocumentData, FlattenedRange } from './entities'
 import { Id } from 'lsif-protocol'
@@ -140,11 +140,13 @@ export class Database {
 
             const remoteResults = await this.remoteReferences(document, moniker)
             if (remoteResults) {
-                return result.concat(remoteResults)
+                // TODO - see why we need to deduplicate
+                return uniqWith(result.concat(remoteResults), isEqual)
             }
         }
 
-        return result
+        // TODO - see why we need to deduplicate
+        return uniqWith(result, isEqual)
     }
 
     /**
