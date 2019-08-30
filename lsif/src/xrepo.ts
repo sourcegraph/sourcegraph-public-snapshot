@@ -105,10 +105,15 @@ export class XrepoDatabase {
      * @param version The package version.
      * @param value The value to test.
      */
-    public async getReferences({ scheme, name, version, value }: {
-        scheme: string,
-        name: string,
-        version: string,
+    public async getReferences({
+        scheme,
+        name,
+        version,
+        value,
+    }: {
+        scheme: string
+        name: string
+        version: string
         value: string
     }): Promise<ReferenceModel[]> {
         const results = await this.withConnection(connection =>
@@ -125,7 +130,10 @@ export class XrepoDatabase {
         const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, value)))
 
         // Zip reference model results and the result of the bloom filter test together
-        const zip: { result: ReferenceModel, keep: boolean }[] = results.map((result, i) => ({ result, keep: keepFlags[i] }))
+        const zip: { result: ReferenceModel; keep: boolean }[] = results.map((result, i) => ({
+            result,
+            keep: keepFlags[i],
+        }))
 
         // Return the reference models that passed the bloom filter test
         return zip.filter(({ keep }) => keep).map(({ result }) => result)

@@ -310,7 +310,7 @@ export class Database {
             scheme: moniker.scheme,
             name: packageInformation.name,
             version: packageInformation.version,
-            value: moniker.identifier
+            value: moniker.identifier,
         })
 
         let allReferences: lsp.Location[] = []
