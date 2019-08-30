@@ -6,8 +6,10 @@ import { Id, MonikerKind } from 'lsif-protocol'
  */
 export interface DocumentData {
     /**
-     * A mapping from range ID to the index of the range in the `orderedRanges`
-     * array.
+     * A mapping from range identifiers to the index of the range in the
+     * `orderedRanges` array. We keep a mapping so we can look range data by
+     * identifier quickly, and keep them sorted so we can find the range that
+     * encloses a position quickly.
      */
     ranges: Map<Id, number>
 
@@ -18,28 +20,39 @@ export interface DocumentData {
      */
     orderedRanges: RangeData[]
 
-    // A map of identifiers to a result set.
+    /**
+     * A map of result set identifiers to result set data. Result sets are like
+     * ranges, but do  not have extents in the document.
+     */
     resultSets: Map<Id, ResultSetData>
 
     /**
-     * A map of identifiers to a set of identifiers that compose the definition
-     * result.
+     * A map of definition result identifiers to a list of ids that compose the
+     * definition result. Each id is paired with a document path, as result sets
+     * can be shared between documents (necessitating cross-document queries).
      */
-    definitionResults: Map<Id, Id[]>
+    definitionResults: Map<Id, { documentPath: string; id: Id }[]>
 
     /**
-     * A map of identifiers to a set of identifiers that compose the reference
-     * result.
+     ** A map of reference result identifiers to a list of ids that compose the
+     * reference result. Each id is paired with a document path, as result sets
+     * can be shared between documents (necessitating cross-document queries).
      */
-    referenceResults: Map<Id, Id[]>
+    referenceResults: Map<Id, { documentPath: string; id: Id }[]>
 
-    // A map of identifiers to a hover result.
+    /**
+     * A map of hover identifiers to hover results normalized as a single string.
+     */
     hovers: Map<Id, string>
 
-    // A map of identifiers to a moniker.
+    /**
+     * A map of moniker identifiers to moniker data.
+     */
     monikers: Map<Id, MonikerData>
 
-    // A map of identifiers to package information.
+    /**
+     * A map of package information identifiers to package information data.
+     */
     packageInformation: Map<Id, PackageInformationData>
 }
 
@@ -101,13 +114,19 @@ export interface ResultSetData extends ResultObjectData {}
  * Data about a moniker attached to a range or a result set.
  */
 export interface MonikerData {
-    // The kind of moniker (e.g. local, import, export).
+    /**
+     * The kind of moniker (e.g. local, import, export).
+     */
     kind: MonikerKind
 
-    // The name of the package type (e.g. npm, pip).
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
     scheme: string
 
-    // The unique identifier of the moniker.
+    /**
+     * The unique identifier of the moniker.
+     */
     identifier: string
 
     /**
@@ -122,10 +141,14 @@ export interface MonikerData {
  * Additional data about a non-local moniker.
  */
 export interface PackageInformationData {
-    // The name of the package the moniker describes.
+    /**
+     * The name of the package the moniker describes.
+     */
     name: string
 
-    // The version of the package the moniker describes.
+    /**
+     * The version of the package the moniker describes.
+     */
     version: string
 }
 
@@ -133,15 +156,23 @@ export interface PackageInformationData {
  * An LSP range that has been squashed into a single layer.
  */
 export interface FlattenedRange {
-    // The line on which the range starts (0-indexed, inclusive).
+    /**
+     * The line on which the range starts (0-indexed, inclusive).
+     */
     startLine: number
 
-    // The line on which the range ends (0-indexed, inclusive).
+    /**
+     * The line on which the range ends (0-indexed, inclusive).
+     */
     startCharacter: number
 
-    // The chracter on which the range starts (0-indexed, inclusive).
+    /**
+     * The character on which the range starts (0-indexed, inclusive).
+     */
     endLine: number
 
-    // The chracter on which the range ends (0-indexed, inclusive).
+    /**
+     * The character on which the range ends (0-indexed, inclusive).
+     */
     endCharacter: number
 }

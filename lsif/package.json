@@ -29,23 +29,27 @@
     "@types/body-parser": "1.17.0",
     "@types/express": "4.17.0",
     "@types/ioredis": "^4.0.15",
+    "@types/jest": "24.0.17",
     "@types/lodash": "^4.14.138",
     "@types/mz": "0.0.32",
     "@types/node-resque": "^5.4.1",
     "@types/relateurl": "^0.2.28",
     "@types/temp": "^0.8.34",
     "@types/yallist": "^3.0.1",
+    "babel-jest": "^24.8.0",
+    "jest": "^24.8.0",
+    "source-map-support": "^0.5.13",
     "tsc-watch": "^2.2.1",
     "tslint": "^5.18.0",
     "typescript": "^3.5.3"
   },
   "scripts": {
     "typecheck": "tsc -p .",
-    "serve:server": "tsc-watch --onSuccess \"node --inspect out/server.js\" --noClear",
-    "serve:worker": "tsc-watch --onSuccess \"node --inspect out/worker.js\" --noClear",
     "build:server": "tsc",
     "build:worker": "tsc",
-    "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
-    "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
+    "test": "jest --testPathIgnorePatterns e2e",
+    "serve:server": "tsc-watch --onSuccess \"node --inspect -r source-map-support/register out/server.js\" --noClear",
+    "serve:worker": "tsc-watch --onSuccess \"node --inspect -r source-map-support/register out/worker.js\" --noClear",
+    "build": "tsc"
   }
 }

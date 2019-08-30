@@ -11,8 +11,6 @@ export function readEnvInt(key: string, defaultValue: number): number {
     return (process.env[key] && parseInt(process.env[key] || '', 10)) || defaultValue
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * Determine if an exception value has the given error code.
  *

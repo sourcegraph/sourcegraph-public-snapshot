@@ -6,16 +6,22 @@ import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index } from 'ty
  */
 @Entity({ name: 'meta' })
 export class MetaModel {
-    // A unique ID required by typeorm entities.
-    @PrimaryGeneratedColumn()
+    /**
+     * A unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
-    // The version string of the input LSIF that created this database.
-    @Column()
+    /**
+     * The version string of the input LSIF that created this database.
+     */
+    @Column('text')
     public lsifVersion!: string
 
-    // The internal version of the LSIF server that created this database.
-    @Column()
+    /**
+     * The internal version of the LSIF server that created this database.
+     */
+    @Column('text')
     public sourcegraphVersion!: string
 }
 
@@ -26,12 +32,16 @@ export class MetaModel {
  */
 @Entity({ name: 'documents' })
 export class DocumentModel {
-    // The root-relative path of the document.
-    @PrimaryColumn()
+    /**
+     * The root-relative path of the document.
+     */
+    @PrimaryColumn('text')
     public path!: string
 
-    // The JSON-encoded document data.
-    @Column()
+    /**
+     * The JSON-encoded document data.
+     */
+    @Column('text')
     public value!: string
 }
 
@@ -40,36 +50,52 @@ export class DocumentModel {
  * descriptions.
  */
 class Symbols {
-    // A unique ID required by typeorm entities.
-    @PrimaryColumn()
+    /**
+     * A unique ID required by typeorm entities.
+     */
+    @PrimaryColumn('int')
     public id!: number
 
-    // The name of the package type (e.g. npm, pip).
-    @Column()
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
+    @Column('text')
     public scheme!: string
 
-    // The unique identifier of the moniker.
-    @Column()
+    /**
+     * The unique identifier of the moniker.
+     */
+    @Column('text')
     public identifier!: string
 
-    // The path of the document to which this reference belongs.
-    @Column()
+    /**
+     * The path of the document to which this reference belongs.
+     */
+    @Column('text')
     public documentPath!: string
 
-    // The zero-indexed line describing the start of this range.
-    @Column()
+    /**
+     * The zero-indexed line describing the start of this range.
+     */
+    @Column('int')
     public startLine!: number
 
-    // The zero-indexed line describing the end of this range.
-    @Column()
+    /**
+     * The zero-indexed line describing the end of this range.
+     */
+    @Column('int')
     public endLine!: number
 
-    // The zero-indexed line describing the start of this range.
-    @Column()
+    /**
+     * The zero-indexed line describing the start of this range.
+     */
+    @Column('int')
     public startCharacter!: number
 
-    // The zero-indexed line describing the end of this range.
-    @Column()
+    /**
+     * The zero-indexed line describing the end of this range.
+     */
+    @Column('int')
     public endCharacter!: number
 }
 
@@ -98,28 +124,40 @@ export class RefModel extends Symbols {}
 @Entity({ name: 'packages' })
 @Index(['scheme', 'name', 'version'])
 export class PackageModel {
-    // A unique ID required by typeorm entities.
-    @PrimaryGeneratedColumn()
+    /**
+     * A unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
-    // The name of the package type (e.g. npm, pip).
-    @Column()
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
+    @Column('text')
     public scheme!: string
 
-    // The name of the package this repository and commit provides.
-    @Column()
+    /**
+     * The name of the package this repository and commit provides.
+     */
+    @Column('text')
     public name!: string
 
-    // The version of the package this repository and commit provides.
-    @Column()
+    /**
+     * The version of the package this repository and commit provides.
+     */
+    @Column('text')
     public version!: string
 
-    // The name of the source repository.
-    @Column()
+    /**
+     * The name of the source repository.
+     */
+    @Column('text')
     public repository!: string
 
-    // The source commit.
-    @Column()
+    /**
+     * The source commit.
+     */
+    @Column('text')
     public commit!: string
 }
 
@@ -130,35 +168,47 @@ export class PackageModel {
 @Entity({ name: 'references' })
 @Index(['scheme', 'name', 'version'])
 export class ReferenceModel {
-    // A unique ID required by typeorm entities.
-    @PrimaryGeneratedColumn()
+    /**
+     * A unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
-    // The name of the package type (e.g. npm, pip).
-    @Column()
+    /**
+     * The name of the package type (e.g. npm, pip).
+     */
+    @Column('text')
     public scheme!: string
 
-    // The name of the package this repository and commit depends on.
-    @Column()
+    /**
+     * The name of the package this repository and commit depends on.
+     */
+    @Column('text')
     public name!: string
 
-    // The version of the package this repository and commit depends on.
-    @Column()
+    /**
+     * The version of the package this repository and commit depends on.
+     */
+    @Column('text')
     public version!: string
 
-    // The name of the source repository.
-    @Column()
+    /**
+     * The name of the source repository.
+     */
+    @Column('text')
     public repository!: string
 
-    // The source commit (revision hash).
-    @Column()
+    /**
+     * The source commit (revision hash).
+     */
+    @Column('text')
     public commit!: string
 
     /**
      * A serialized bloom filter that encodes the set of symbols that this repository
-     * and commcit imports from the given package. Testing this filter will prevent the
+     * and commit imports from the given package. Testing this filter will prevent the
      * backend from opening databases that will yield no results for a particular symbol.
      */
-    @Column()
+    @Column('text')
     public filter!: string
 }
