@@ -31,14 +31,14 @@ export interface DocumentData {
      * definition result. Each id is paired with a document path, as result sets
      * can be shared between documents (necessitating cross-document queries).
      */
-    definitionResults: Map<Id, {documentPath: string, id: Id}[]>
+    definitionResults: Map<Id, { documentPath: string; id: Id }[]>
 
     /**
      ** A map of reference result identifiers to a list of ids that compose the
      * reference result. Each id is paired with a document path, as result sets
      * can be shared between documents (necessitating cross-document queries).
      */
-    referenceResults: Map<Id, {documentPath: string, id: Id}[]>
+    referenceResults: Map<Id, { documentPath: string; id: Id }[]>
 
     /**
      * A map of hover identifiers to hover results normalized as a single string.
