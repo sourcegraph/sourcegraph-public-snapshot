@@ -8,45 +8,16 @@ interface Props {
     onTabClicked: (query: SEARCH_TYPES) => void
 }
 
-export default class SearchResultTypeTabs extends React.Component<Props> {
-    constructor(props: Props) {
-        super(props)
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className="search-result-type-tabs">
-                <SearchResultTab
-                    active={this.props.activeType === ''}
-                    type=""
-                    onClick={this.props.onTabClicked}
-                    query={this.props.query}
-                />
-                <SearchResultTab
-                    active={this.props.activeType === 'diff'}
-                    type="diff"
-                    onClick={this.props.onTabClicked}
-                    query={this.props.query}
-                />
-                <SearchResultTab
-                    active={this.props.activeType === 'commit'}
-                    type="commit"
-                    onClick={this.props.onTabClicked}
-                    query={this.props.query}
-                />
-                <SearchResultTab
-                    active={this.props.activeType === 'symbol'}
-                    type="symbol"
-                    onClick={this.props.onTabClicked}
-                    query={this.props.query}
-                />
-                <SearchResultTab
-                    active={this.props.activeType === 'repo'}
-                    type="repo"
-                    onClick={this.props.onTabClicked}
-                    query={this.props.query}
-                />
-            </div>
-        )
-    }
-}
+export const SearchResultTypeTabs: React.FunctionComponent<{
+    activeType: SEARCH_TYPES
+    query: string
+    onTabClicked: (query: SEARCH_TYPES) => void
+}> = ({ activeType, query, onTabClicked }) => (
+    <div className="search-result-type-tabs">
+        <SearchResultTab active={activeType === ''} type="" onClick={onTabClicked} query={query} />
+        <SearchResultTab active={activeType === 'diff'} type="diff" onClick={onTabClicked} query={query} />
+        <SearchResultTab active={activeType === 'commit'} type="commit" onClick={onTabClicked} query={query} />
+        <SearchResultTab active={activeType === 'symbol'} type="symbol" onClick={onTabClicked} query={query} />
+        <SearchResultTab active={activeType === 'repo'} type="repo" onClick={onTabClicked} query={query} />
+    </div>
+)

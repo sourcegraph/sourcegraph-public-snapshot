@@ -24,6 +24,7 @@ export default class SearchResultTab extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <button
+                type="button"
                 className={`btn search-result-tab ${this.props.active && 'search-result-tab--active'}`}
                 onClick={this.onClick}
             >
