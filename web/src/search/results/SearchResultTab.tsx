@@ -10,7 +10,7 @@ interface Props {
 }
 
 const typeToProse: Record<SEARCH_TYPES, string> = {
-    code: 'Code',
+    '': 'Code',
     diff: 'Diffs',
     commit: 'Commits',
     symbol: 'Symbols',

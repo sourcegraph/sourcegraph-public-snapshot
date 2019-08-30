@@ -87,11 +87,11 @@ export function getSearchTypeFromQuery(query: string): SEARCH_TYPES {
         }
     }
 
-    return 'code'
+    return ''
 }
 
 export function toggleSearchType(query: string, searchType: SEARCH_TYPES): string {
-    if (searchType === 'code') {
+    if (searchType === '') {
         const replaceSearchType = /(\b|^)type:\w*(\s|$)/
         // RegExp to match `repogroup:sample` in any part of a query.
         const matchSearchType = /(\b|^)type:\w*(\s*|$)/

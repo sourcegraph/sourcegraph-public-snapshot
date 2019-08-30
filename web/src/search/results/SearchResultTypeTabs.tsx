@@ -17,8 +17,8 @@ export default class SearchResultTypeTabs extends React.Component<Props> {
         return (
             <div className="search-result-type-tabs">
                 <SearchResultTab
-                    active={this.props.activeType === 'code'}
-                    type={'code'}
+                    active={this.props.activeType === ''}
+                    type={''}
                     onClick={this.props.onTabClicked}
                     query={this.props.query}
                 />

@@ -63,7 +63,8 @@ interface SearchResultsState {
     activeType: SEARCH_TYPES
 }
 
-export type SEARCH_TYPES = 'code' | 'diff' | 'commit' | 'symbol' | 'repo'
+// All values that are valid for the `type:` filter. Empty string represents default code search.
+export type SEARCH_TYPES = '' | 'diff' | 'commit' | 'symbol' | 'repo'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
