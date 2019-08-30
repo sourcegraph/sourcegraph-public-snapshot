@@ -14,8 +14,8 @@ alerting:
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:
-  - "*.rules"
-  # - "add_ons/*.rules"
+  - "*_rules.yml"
+  - "/sg_add_ons/*_rules.yml"
 
 # A scrape configuration containing exactly one endpoint to scrape for metrics:
 scrape_configs:
@@ -39,5 +39,4 @@ scrape_configs:
   - job_name: "sg"
     file_sd_configs:
       - files:
-          - "/sg_config/add_ons/prometheus_targets.yml"
-
+          - "/sg_add_ons/*_targets.yml"
