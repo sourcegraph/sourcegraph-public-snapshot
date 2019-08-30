@@ -467,8 +467,6 @@
   integrity sha512-oLa9c5LHXgS6UimpEVp08De7QvZ+Dfu5bMQuWyMhf92Z26Q10ubEMOWy9OEfUdzW7Y/sDWVHmUaLFtmnX/2j0w==
   dependencies:
     "@types/node" "*"
-<<<<<<< HEAD
-=======
 
 "@types/uuid@^3.4.5":
   version "3.4.5"
@@ -476,7 +474,6 @@
   integrity sha512-MNL15wC3EKyw1VLF+RoVO4hJJdk9t/Hlv3rt1OL65Qvuadm4BYo6g9ZJQqoq7X8NBFSsQXgAujWciovh2lpVjA==
   dependencies:
     "@types/node" "*"
->>>>>>> c55e78f24d87fb89125cc9acaab834aa6a9258c0
 
 "@types/yallist@^3.0.1":
   version "3.0.1"
