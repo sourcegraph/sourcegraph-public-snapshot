@@ -18,31 +18,31 @@ export default class SearchResultTypeTabs extends React.Component<Props> {
             <div className="search-result-type-tabs">
                 <SearchResultTab
                     active={this.props.activeType === ''}
-                    type={''}
+                    type=""
                     onClick={this.props.onTabClicked}
                     query={this.props.query}
                 />
                 <SearchResultTab
                     active={this.props.activeType === 'diff'}
-                    type={'diff'}
+                    type="diff"
                     onClick={this.props.onTabClicked}
                     query={this.props.query}
                 />
                 <SearchResultTab
                     active={this.props.activeType === 'commit'}
-                    type={'commit'}
+                    type="commit"
                     onClick={this.props.onTabClicked}
                     query={this.props.query}
                 />
                 <SearchResultTab
                     active={this.props.activeType === 'symbol'}
-                    type={'symbol'}
+                    type="symbol"
                     onClick={this.props.onTabClicked}
                     query={this.props.query}
                 />
                 <SearchResultTab
                     active={this.props.activeType === 'repo'}
-                    type={'repo'}
+                    type="repo"
                     onClick={this.props.onTabClicked}
                     query={this.props.query}
                 />

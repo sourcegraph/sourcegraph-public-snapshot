@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { SEARCH_TYPES } from './SearchResults'
-import { startCase } from 'lodash'
 
 interface Props {
     active: boolean
