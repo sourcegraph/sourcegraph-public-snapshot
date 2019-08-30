@@ -11,7 +11,7 @@ import { DefModel, MetaModel, RefModel, DocumentModel } from './models'
 import { Edge, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 
-export const ERRNOLSIFDATA = 'NoLSIFData'
+export const ERRNOLSIFDATA = 'NoLSIFDataError'
 
 /**
  * An error thrown when no LSIF database can be found on disk.
