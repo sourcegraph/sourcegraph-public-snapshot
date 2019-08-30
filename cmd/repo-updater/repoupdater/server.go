@@ -323,6 +323,12 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		for res := range results {
 			if res.Err != nil {
 				err = res.Err
+				// Send error to user before waiting for all results, but drain
+				// the rest of the results to not leak a blocked goroutine
+				go func() {
+					for res = range results {
+					}
+				}()
 				break
 			}
 		}
