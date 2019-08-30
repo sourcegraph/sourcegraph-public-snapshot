@@ -351,11 +351,13 @@ class LsifImporter {
      */
     private handleItemEdge(edge: item): void {
         switch (edge.property) {
+            // `item` edges with a `property` refer to a referenceResult
             case ItemEdgeProperties.definitions:
             case ItemEdgeProperties.references:
                 this.handleGenericItemEdge(edge, 'referenceResult', this.referenceData)
                 break
 
+            // `item` edges without a `property` refer to a definitionResult
             case undefined:
                 this.handleGenericItemEdge(edge, 'definitionResult', this.definitionData)
                 break
