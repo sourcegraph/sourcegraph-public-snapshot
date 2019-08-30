@@ -6,42 +6,30 @@ import * as lsp from 'vscode-languageserver-protocol'
 describe('database', () => {
     describe('helpers', () => {
         test('findRange', () => {
+            // Generate starting characters for each range. Thse neds to be
+            // spread wide enough so that the ranges on each line don't touch.
+            const characters = Array.from(Array(2000).keys()).map(i => i * 5)
+
             const ranges: RangeData[] = []
             for (let i = 1; i <= 1000; i++) {
-                const j1 = Math.floor(Math.random() * 20)
-                const k1 = Math.floor(Math.random() * 10) + j1
-                ranges.push({
-                    startLine: i,
-                    startCharacter: j1,
-                    endLine: i,
-                    endCharacter: k1,
-                    monikers: [],
-                })
+                const c1 = characters[(i - 1) * 2]
+                const c2 = characters[(i - 1) * 2 + 1]
 
-                const j2 = Math.floor(Math.random() * 20) + 40
-                const k2 = Math.floor(Math.random() * 10) + j2
-                ranges.push({
-                    startLine: i,
-                    startCharacter: j2,
-                    endLine: i,
-                    endCharacter: k2,
-                    monikers: [],
-                })
+                // Generate two ranges on each line
+                ranges.push({ startLine: i, startCharacter: c1, endLine: i, endCharacter: c1 + 3, monikers: [] })
+                ranges.push({ startLine: i, startCharacter: c2, endLine: i, endCharacter: c2 + 3, monikers: [] })
             }
 
             for (const range of ranges) {
-                const position = {
-                    line: range.startLine,
-                    character: (range.startCharacter + range.endCharacter) / 2,
-                }
-
                 // search for midpoint of each range
-                expect(findRange(ranges, position)).toEqual(range)
+                const c = (range.startCharacter + range.endCharacter) / 2
+                expect(findRange(ranges, { line: range.startLine, character: c })).toEqual(range)
             }
 
             for (let i = 1; i <= 1000; i++) {
-                // search between ranges on each line
-                expect(findRange(ranges, { line: i, character: 30 })).toBeUndefined()
+                // search for the empty space between ranges on a line
+                const c = characters[(i - 1) * 2 + 1] - 1
+                expect(findRange(ranges, { line: i, character: c })).toBeUndefined()
             }
         })
     })
