@@ -44,13 +44,15 @@ export class SearchCommand {
         })
 
     public action = async (query: string, disposition?: string): Promise<void> => {
+        // TODO(ijt): Decide dotStar from a flag or config.
+        const dotStar = true
         const sourcegraphURL = await observeSourcegraphURL(true) // isExtension=true, this feature is only supported in the browser extension
             .pipe(take(1))
             .toPromise()
         const props = {
             url: isURL.test(query)
                 ? query
-                : `${sourcegraphURL}/search?${buildSearchURLQuery(query)}&utm_source=omnibox`,
+                : `${sourcegraphURL}/search?${buildSearchURLQuery(query, dotStar)}&utm_source=omnibox`,
         }
 
         switch (disposition) {

@@ -3,6 +3,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
+import { isErrorLike } from '../../shared/src/util/errors'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -30,6 +31,13 @@ export const repoRevRoute: LayoutRouteProps = {
     render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
 }
 
+function dotStarFromSettings(props: any): boolean {
+    // The initial setting for the .* toggle button is based on search.version setting, defaulting to V0.
+    const psf = props.settingsCascade.final
+    const searchVersion = (psf && !isErrorLike(psf) && psf['search.version']) || 'V0'
+    return searchVersion == 'V0'
+}
+
 /**
  * Holds all top-level routes for the app because both the navbar and the main content area need to
  * switch over matched path.
@@ -51,9 +59,9 @@ export const routes: readonly LayoutRouteProps[] = [
         path: '/search',
         render: (props: any) =>
             parseSearchURLQuery(props.location.search) ? (
-                <SearchResults {...props} deployType={window.context.deployType} />
+                <SearchResults {...props} deployType={window.context.deployType} dotStar={dotStarFromSettings(props)} />
             ) : (
-                <SearchPage {...props} />
+                <SearchPage {...props} dotStar={dotStarFromSettings(props)} />
             ),
         exact: true,
     },

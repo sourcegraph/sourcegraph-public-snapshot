@@ -7,10 +7,12 @@ import { eventLogger } from '../tracking/eventLogger'
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
  * flow.
+ * @param version V0 (regex default) or V1 (literal default)
  */
 export function submitSearch(
     history: H.History,
     query: string,
+    version: 'V0' | 'V1',
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter',
     activation?: ActivationProps['activation']
 ): void {

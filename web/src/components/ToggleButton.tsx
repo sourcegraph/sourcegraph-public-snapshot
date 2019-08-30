@@ -3,6 +3,7 @@ import * as React from 'react'
 interface Props {
     label: string
     enabled: boolean
+    onChange: (state: boolean) => void
 }
 
 export class ToggleButton extends React.PureComponent<Props> {
@@ -37,5 +38,6 @@ export class ToggleButton extends React.PureComponent<Props> {
     private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
         event.preventDefault()
         this.setState({ enabled: !this.state.enabled })
+        this.props.onChange(this.state.enabled)
     }
 }

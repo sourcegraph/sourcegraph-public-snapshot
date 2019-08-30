@@ -15,6 +15,7 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
+
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
@@ -30,6 +31,7 @@ interface Props
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     isSourcegraphDotCom: boolean
+    dotStar: boolean
 
     /**
      * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search
@@ -40,15 +42,22 @@ interface Props
 
 interface State {
     authRequired?: boolean
+    dotStar: boolean
 }
 
 export class GlobalNavbar extends React.PureComponent<Props, State> {
-    public state: State = {}
+    public state: State = {
+        dotStar: true,
+    }
 
     private subscriptions = new Subscription()
 
     constructor(props: Props) {
         super(props)
+
+        this.state = {
+            dotStar: this.props.dotStar,
+        }
 
         /**
          * Reads initial state from the props (i.e. URL parameters).
@@ -118,6 +127,10 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     {...this.props}
                                     navbarSearchQuery={this.props.navbarSearchQuery}
                                     onChange={this.props.onNavbarQueryChange}
+                                    onDotStarChange={(ds: boolean) => {
+                                        this.onDotStarChange(ds)
+                                    }}
+                                    dotStar={this.state.dotStar}
                                 />
                             </div>
                         )}
@@ -132,5 +145,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                 )}
             </div>
         )
+    }
+
+    private onDotStarChange(dotStar: boolean) {
+        this.setState({ dotStar })
     }
 }

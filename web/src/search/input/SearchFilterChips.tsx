@@ -25,6 +25,8 @@ interface Props extends SettingsCascadeProps {
      * The current query.
      */
     query: string
+
+    dotStar: boolean
 }
 
 export interface ISearchScope {
@@ -165,7 +167,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
             ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.query, value)
             : toggleSearchFilter(this.props.query, value)
 
-        submitSearch(this.props.history, newQuery, 'filter')
+        submitSearch(this.props.history, newQuery, this.props.dotStar, 'filter')
     }
 }
 

@@ -3,6 +3,7 @@ import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { isErrorLike } from '../../../../shared/src/util/errors'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
@@ -12,7 +13,6 @@ import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { submitSearch } from '../helpers'
-import { DotStarButton } from '../DotStarButton'
 import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
@@ -24,6 +24,7 @@ interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, 
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    dotStar: boolean
 }
 
 interface State {
@@ -31,6 +32,8 @@ interface State {
     userQuery: string
     /** The query that results from combining all values in the query builder form. */
     builderQuery: string
+    /** The setting of the .* button. */
+    dotStar: boolean
 }
 
 /**
@@ -39,11 +42,11 @@ interface State {
 export class SearchPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-
         const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
             userQuery: queryFromUrl,
             builderQuery: '',
+            dotStar: this.props.dotStar,
         }
     }
 
@@ -81,7 +84,13 @@ export class SearchPage extends React.Component<Props, State> {
                             autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
                         />
-                        <SearchButton {...this.props} />
+                        <SearchButton
+                            {...this.props}
+                            onDotStarChange={(ds: boolean) => {
+                                this.onDotStarChange(ds)
+                            }}
+                            dotStar={this.state.dotStar}
+                        />
                     </div>
                     {hasScopes ? (
                         <>
@@ -93,6 +102,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                    dotStar={this.state.dotStar}
                                 />
                             </div>
                             {quickLinks.length > 0 && (
@@ -124,6 +134,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                    dotStar={this.state.dotStar}
                                 />
                             </div>
                         </>
@@ -138,6 +149,10 @@ export class SearchPage extends React.Component<Props, State> {
         this.setState({ userQuery })
     }
 
+    private onDotStarChange = (dotStar: boolean) => {
+        this.setState({ dotStar })
+    }
+
     private onBuilderQueryChange = (builderQuery: string) => {
         this.setState({ builderQuery })
     }
@@ -145,7 +160,7 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, query, 'home', this.props.activation)
+        submitSearch(this.props.history, query, this.state.dotStar, 'home', this.props.activation)
     }
 
     private getPageTitle(): string | undefined {

@@ -298,6 +298,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     public render(): React.ReactNode {
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
+        const searchParams = new URLSearchParams(this.props.location.search)
+        const version = (searchParams.get('q') || 'V0')
 
         return (
             <>
@@ -409,7 +411,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                     className="btn btn-secondary btn-sm"
                                                                     to={
                                                                         '/search?' +
-                                                                        buildSearchURLQuery(proposedQuery.query)
+                                                                        buildSearchURLQuery(
+                                                                            proposedQuery.query,
+                                                                            version
+                                                                        )
                                                                     }
                                                                 >
                                                                     {proposedQuery.query || proposedQuery.description}

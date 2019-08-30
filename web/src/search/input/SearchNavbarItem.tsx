@@ -12,6 +12,8 @@ interface Props extends ActivationProps, SettingsCascadeProps {
     history: H.History
     navbarSearchQuery: string
     onChange: (newValue: string) => void
+    onDotStarChange: (state: boolean) => void
+    dotStar: boolean
 }
 
 /**
@@ -24,6 +26,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     location,
     history,
     settingsCascade,
+    onDotStarChange,
+    dotStar,
 }) => {
     // Only autofocus the query input on search result pages (otherwise we
     // capture down-arrow keypresses that the user probably intends to scroll down
@@ -33,9 +37,9 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback(
         (e: React.FormEvent<HTMLFormElement>): void => {
             e.preventDefault()
-            submitSearch(history, navbarSearchQuery, 'nav', activation)
+            submitSearch(history, navbarSearchQuery, dotStar, 'nav', activation)
         },
-        [history, navbarSearchQuery, activation]
+        [history, navbarSearchQuery, dotStar, activation]
     )
 
     return (
@@ -48,7 +52,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
                 location={location}
                 history={history}
             />
-            <SearchButton settingsCascade={settingsCascade} />
+            <SearchButton settingsCascade={settingsCascade} onDotStarChange={onDotStarChange} dotStar={dotStar} />
         </Form>
     )
 }

@@ -3,12 +3,16 @@ import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import * as React from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings';
-import { DotStarButton } from '../DotStarButton'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { ToggleButton } from '../../components/ToggleButton'
 
 interface Props extends SettingsCascadeProps {
     /** Hide the "help" icon and dropdown. */
     noHelp?: boolean
+    /** Function to call when the [.*] button changes state. */
+    onDotStarChange: (state: boolean) => void
+    /** Initial state of the [.*] button. */
+    dotStar: boolean
 }
 
 interface State {
@@ -26,7 +30,7 @@ export class SearchButton extends React.Component<Props, State> {
         const docsURLPrefix = window.context.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
         return (
             <div className="search-button d-flex">
-                <DotStarButton {...this.props} />
+                <ToggleButton onChange={this.props.onDotStarChange} label=".*" enabled={this.props.dotStar} />
                 <button className="btn btn-primary search-button__btn" type="submit" aria-label="Search">
                     <SearchIcon className="icon-inline" aria-hidden="true" />
                 </button>

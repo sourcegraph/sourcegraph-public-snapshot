@@ -40,9 +40,9 @@ export interface SearchResultsProps
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: string,
-        version: string,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+    dotStar: boolean
     isSourcegraphDotCom: boolean
     deployType: DeployType
 }
@@ -74,9 +74,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public componentDidMount(): void {
         this.props.telemetryService.logViewEvent('SearchResults')
 
-        const tpsf = this.props.settingsCascade.final
-        const searchVersion = (tpsf && !isErrorLike(tpsf) && tpsf['search.version']) || 'V0'
-
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -103,7 +100,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            this.props.searchRequest(query, searchVersion, this.props).pipe(
+                            this.props.searchRequest(query, this.props).pipe(
                                 // Log telemetry
                                 tap(
                                     results =>
@@ -282,6 +279,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQuery, value)
             : toggleSearchFilter(this.props.navbarSearchQuery, value)
 
-        submitSearch(this.props.history, newQuery, 'filter')
+        const version = this.props.dotStar ? 'V0' : 'V1'
+        submitSearch(this.props.history, newQuery, version, 'filter')
     }
 }
