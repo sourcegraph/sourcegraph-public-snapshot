@@ -13,7 +13,7 @@ describe('ImportQuery', () => {
     const backend = await createBackend(connectionCache, documentCache)
     const inputs: { input: Readable, repository: string, commit: string }[] = []
 
-    for (const repository of ["a", "b1", "b2", "b3", "c1", "c2", "c3"]) {
+    for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
       const input = fs.createReadStream(`./test-data/typescript/${repository}.lsif.gz`).pipe(zlib.createGunzip())
       const commit = makeCommit(repository)
       inputs.push({ input, repository, commit, })
