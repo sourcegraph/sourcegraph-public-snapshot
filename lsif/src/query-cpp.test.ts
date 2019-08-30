@@ -10,7 +10,7 @@ describe('C++ Queries', () => {
 
     beforeAll(async () => {
         const backend = await createBackend(connectionCache, documentCache)
-        const input = fs.createReadStream(`./test-data/cpp/data/data.lsif.gz`).pipe(zlib.createGunzip())
+        const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
         await backend.insertDump(input, 'five', makeCommit('five'))
     })
 
