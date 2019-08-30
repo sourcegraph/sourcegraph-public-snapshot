@@ -279,7 +279,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQuery, value)
             : toggleSearchFilter(this.props.navbarSearchQuery, value)
 
-        const version = this.props.dotStar ? 'V0' : 'V1'
-        submitSearch(this.props.history, newQuery, version, 'filter')
+        submitSearch(this.props.history, newQuery, this.props.dotStar, 'filter')
     }
 }
