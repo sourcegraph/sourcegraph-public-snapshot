@@ -191,9 +191,9 @@ func group(srcs []Source) map[string]Sources {
 	return groups
 }
 
-// ListAll calls ListRepos on the given Source and collects the SourceResults
+// listAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *Repo and a single error
-func ListAll(ctx context.Context, src Source) ([]*Repo, error) {
+func listAll(ctx context.Context, src Source) ([]*Repo, error) {
 	results := make(chan SourceResult)
 
 	go func() {
