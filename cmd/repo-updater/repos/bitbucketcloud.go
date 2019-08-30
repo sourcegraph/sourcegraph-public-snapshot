@@ -57,7 +57,7 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 
 // ListRepos returns all Bitbucket Cloud repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s BitbucketCloudSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+func (s BitbucketCloudSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listAllRepos(ctx, results)
 }
 
@@ -132,7 +132,7 @@ func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo)
 	return u.String()
 }
 
-func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan *SourceResult) {
+func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan SourceResult) {
 	type batch struct {
 		repos []*bitbucketcloud.Repo
 		err   error
@@ -188,7 +188,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan *S
 	seen := make(map[string]bool)
 	for r := range ch {
 		if r.err != nil {
-			results <- &SourceResult{Source: s, Err: r.err}
+			results <- SourceResult{Source: s, Err: r.err}
 			continue
 		}
 
@@ -199,7 +199,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan *S
 			}
 
 			if !seen[repo.UUID] {
-				results <- &SourceResult{Source: s, Repo: s.makeRepo(repo)}
+				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
 				seen[repo.UUID] = true
 			}
 		}

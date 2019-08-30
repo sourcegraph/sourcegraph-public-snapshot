@@ -84,7 +84,7 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 
 // ListRepos returns all GitLab repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GitLabSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listAllProjects(ctx, results)
 }
 
@@ -144,7 +144,7 @@ func (s *GitLabSource) excludes(p *gitlab.Project) bool {
 	return s.exclude[p.PathWithNamespace] || s.exclude[strconv.Itoa(p.ID)]
 }
 
-func (s *GitLabSource) listAllProjects(ctx context.Context, results chan *SourceResult) {
+func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {
 	type batch struct {
 		projs []*gitlab.Project
 		err   error
@@ -242,13 +242,13 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan *Source
 	seen := make(map[int]bool)
 	for b := range ch {
 		if b.err != nil {
-			results <- &SourceResult{Source: s, Err: b.err}
+			results <- SourceResult{Source: s, Err: b.err}
 			continue
 		}
 
 		for _, proj := range b.projs {
 			if !seen[proj.ID] && !s.excludes(proj) {
-				results <- &SourceResult{Source: s, Repo: s.makeRepo(proj)}
+				results <- SourceResult{Source: s, Repo: s.makeRepo(proj)}
 				seen[proj.ID] = true
 			}
 		}

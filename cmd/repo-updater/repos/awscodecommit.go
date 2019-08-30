@@ -106,7 +106,7 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 // ListRepos returns all AWS Code Commit repositories accessible to all
 // connections configured in Sourcegraph via the external services
 // configuration.
-func (s *AWSCodeCommitSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+func (s *AWSCodeCommitSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listAllRepositories(ctx, results)
 }
 
@@ -153,12 +153,12 @@ func (s *AWSCodeCommitSource) authenticatedRemoteURL(repo *awscodecommit.Reposit
 	return u.String()
 }
 
-func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results chan *SourceResult) {
+func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results chan SourceResult) {
 	var nextToken string
 	for {
 		batch, token, err := s.client.ListRepositories(ctx, nextToken)
 		if err != nil {
-			results <- &SourceResult{Source: s, Err: err}
+			results <- SourceResult{Source: s, Err: err}
 			return
 		}
 
@@ -166,10 +166,10 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 			if !s.excludes(r) {
 				repo, err := s.makeRepo(r)
 				if err != nil {
-					results <- &SourceResult{Source: s, Err: err}
+					results <- SourceResult{Source: s, Err: err}
 					return
 				}
-				results <- &SourceResult{Source: s, Repo: repo}
+				results <- SourceResult{Source: s, Repo: repo}
 			}
 		}
 

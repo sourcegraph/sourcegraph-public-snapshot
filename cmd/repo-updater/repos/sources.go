@@ -82,7 +82,7 @@ const sourceTimeout = 30 * time.Minute
 type Source interface {
 	// ListRepos sends all the repos a source yields over the passed in channel
 	// as SourceResults
-	ListRepos(context.Context, chan *SourceResult)
+	ListRepos(context.Context, chan SourceResult)
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() ExternalServices
 }
@@ -131,7 +131,7 @@ type Sources []Source
 
 // ListRepos lists all the repos of all the sources and returns the
 // aggregate result.
-func (srcs Sources) ListRepos(ctx context.Context, results chan *SourceResult) {
+func (srcs Sources) ListRepos(ctx context.Context, results chan SourceResult) {
 	if len(srcs) == 0 {
 		return
 	}
@@ -194,7 +194,7 @@ func group(srcs []Source) map[string]Sources {
 // ListAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *Repo and a single error
 func ListAll(ctx context.Context, src Source) ([]*Repo, error) {
-	results := make(chan *SourceResult)
+	results := make(chan SourceResult)
 
 	go func() {
 		src.ListRepos(ctx, results)

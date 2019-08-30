@@ -100,7 +100,7 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listAllRepos(ctx, results)
 }
 
@@ -209,7 +209,7 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 	return false
 }
 
-func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan *SourceResult) {
+func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
 	type batch struct {
 		repos []*bitbucketserver.Repo
 		err   error
@@ -287,13 +287,13 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan *
 	seen := make(map[int]bool)
 	for r := range ch {
 		if r.err != nil {
-			results <- &SourceResult{Source: s, Err: r.err}
+			results <- SourceResult{Source: s, Err: r.err}
 			continue
 		}
 
 		for _, repo := range r.repos {
 			if !seen[repo.ID] && !s.excludes(repo) {
-				results <- &SourceResult{Source: s, Repo: s.makeRepo(repo)}
+				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
 				seen[repo.ID] = true
 			}
 		}

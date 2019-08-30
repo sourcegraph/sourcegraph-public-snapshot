@@ -37,10 +37,10 @@ func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*Phabricat
 
 // ListRepos returns all Phabricator repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	cli, err := s.client(ctx)
 	if err != nil {
-		results <- &SourceResult{Source: s, Err: err}
+		results <- SourceResult{Source: s, Err: err}
 		return
 	}
 
@@ -49,7 +49,7 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan *SourceR
 		var page []*phabricator.Repo
 		page, cursor, err = cli.ListRepos(ctx, phabricator.ListReposArgs{Cursor: cursor})
 		if err != nil {
-			results <- &SourceResult{Source: s, Err: err}
+			results <- SourceResult{Source: s, Err: err}
 			return
 		}
 
@@ -60,10 +60,10 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan *SourceR
 
 			repo, err := s.makeRepo(r)
 			if err != nil {
-				results <- &SourceResult{Source: s, Err: err}
+				results <- SourceResult{Source: s, Err: err}
 				return
 			}
-			results <- &SourceResult{Source: s, Repo: repo}
+			results <- SourceResult{Source: s, Repo: repo}
 		}
 
 		if cursor.After == "" {

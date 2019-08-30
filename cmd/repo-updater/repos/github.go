@@ -120,7 +120,7 @@ type githubResult struct {
 
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GithubSource) ListRepos(ctx context.Context, results chan *SourceResult) {
+func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	unfiltered := make(chan *githubResult)
 	go func() {
 		s.listAllRepositories(ctx, unfiltered)
@@ -130,11 +130,11 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan *SourceResult)
 	seen := make(map[int64]bool)
 	for res := range unfiltered {
 		if res.err != nil {
-			results <- &SourceResult{Source: s, Err: res.err}
+			results <- SourceResult{Source: s, Err: res.err}
 			continue
 		}
 		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
-			results <- &SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
 			seen[res.repo.DatabaseID] = true
 		}
 	}
