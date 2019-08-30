@@ -11,6 +11,9 @@ NODE_ENV= yarn --frozen-lockfile --network-timeout 60000
 
 cd $1
 
+echo "--- yarn in dir"
+NODE_ENV= yarn --frozen-lockfile --network-timeout 60000
+
 if jq -e '.browserslist' package.json > /dev/null; then
     echo "--- browserslist"
     NODE_ENV= yarn -s run browserslist
