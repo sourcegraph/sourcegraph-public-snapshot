@@ -53,10 +53,7 @@ into the text box for adding single repos in sourcegraph Site Admin.
 }
 
 func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
-	gitDirs, err := configureRepos(reposRoot)
-	if err != nil {
-		return nil, errors.Wrapf(err, "configuring repos under %s", reposRoot)
-	}
+	gitDirs := configureRepos(reposRoot)
 
 	// Set up the template vars for pages.
 	var relDirs []string
@@ -114,7 +111,7 @@ func (d httpDir) Open(name string) (http.File, error) {
 
 // configureRepos finds all .git directories and configures them to be served.
 // It returns a slice of all the git directories it finds.
-func configureRepos(root string) ([]string, error) {
+func configureRepos(root string) []string {
 	var gitDirs []string
 	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
@@ -137,9 +134,10 @@ func configureRepos(root string) ([]string, error) {
 		return filepath.SkipDir
 	})
 	if err != nil {
-		return gitDirs, errors.Wrap(err, "configuring repos and gathering git dirs")
+		// Our WalkFunc doesn't return any errors, so neither should filepath.Walk
+		panic(err)
 	}
-	return gitDirs, err
+	return gitDirs
 }
 
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
