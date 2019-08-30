@@ -81,7 +81,7 @@ func addLSIFServer(pipeline *bk.Pipeline) {
 
 	// LSIF server tests
 	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test.sh lsif"),
+		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
 		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
 }
 
