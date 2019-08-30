@@ -137,5 +137,5 @@ export async function createBackend(
         }
     }
 
-    return new SQLiteBackend(new XrepoDatabase(connectionCache, filename), connectionCache, documentCache)
+    return new SQLiteBackend(new XrepoDatabase(connectionCache), connectionCache, documentCache)
 }
