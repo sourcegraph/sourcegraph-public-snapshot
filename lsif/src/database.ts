@@ -304,12 +304,12 @@ export class Database {
             return []
         }
 
-        const references = await this.xrepoDatabase.getReferences(
-            moniker.scheme,
-            packageInformation.name,
-            packageInformation.version,
-            moniker.identifier
-        )
+        const references = await this.xrepoDatabase.getReferences({
+            scheme: moniker.scheme,
+            name: packageInformation.name,
+            version: packageInformation.version,
+            value: moniker.identifier
+        })
 
         let allReferences: lsp.Location[] = []
         for (const reference of references) {

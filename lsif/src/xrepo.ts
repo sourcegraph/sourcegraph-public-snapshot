@@ -105,12 +105,12 @@ export class XrepoDatabase {
      * @param version The package version.
      * @param value The value to test.
      */
-    public async getReferences(
+    public async getReferences({ scheme, name, version, value }: {
         scheme: string,
         name: string,
         version: string,
         value: string
-    ): Promise<ReferenceModel[]> {
+    }): Promise<ReferenceModel[]> {
         const results = await this.withConnection(connection =>
             connection.getRepository(ReferenceModel).find({
                 where: {
