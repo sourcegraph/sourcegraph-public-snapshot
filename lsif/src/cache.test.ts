@@ -1,4 +1,5 @@
 import { GenericCache } from './cache'
+import * as sinon from 'sinon'
 
 describe('GenericCache', () => {
     it('should evict items based by reverse recency', async () => {
@@ -15,63 +16,41 @@ describe('GenericCache', () => {
             'baz', // baz* foo honk bar quux
         ]
 
-        const factoryArgs: string[] = []
+        // These are the cache values that need to be created, in-order
+        const expectedInstantiations = ['foo', 'bar', 'baz', 'bonk', 'quux', 'honk', 'baz']
+
+        let i = 0
+        const factory = sinon.stub()
+        for (const value of expectedInstantiations) {
+            // Log the value arg and resolve the cache data immediately
+            factory.onCall(i++).returns(Promise.resolve(value))
+        }
+
         const cache = new GenericCache<string, string>(5, () => 1, () => {})
-
         for (const value of values) {
-            const returnValue = await cache.withValue(
-                value,
-                () => {
-                    factoryArgs.push(value)
-                    return Promise.resolve(value)
-                },
-                v => Promise.resolve(v)
-            )
-
+            const returnValue = await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
             expect(returnValue).toBe(value)
         }
 
-        expect(factoryArgs).toEqual(['foo', 'bar', 'baz', 'bonk', 'quux', 'honk', 'baz'])
+        // Expect the args of the factory to equal the resolved values
+        expect(factory.args).toEqual(expectedInstantiations.map(v => [v]))
     })
 
     it('should asynchronously resolve cache values', async () => {
+        const factory = sinon.stub()
+        factory.returns(
+            new Promise<string>(resolve => {
+                setTimeout(() => resolve('bar'), 10)
+            })
+        )
+
         const cache = new GenericCache<string, string>(5, () => 1, () => {})
-
-        let innerCalls = 0
-        const innerPromise = new Promise<string>(resolve => {
-            innerCalls++
-            setTimeout(() => resolve('bar'), 10)
-        })
-
-        let outerCalls = 0
-        const p1 = cache.withValue(
-            'foo',
-            () => {
-                outerCalls++
-                return innerPromise
-            },
-            v => Promise.resolve(v)
-        )
-        const p2 = cache.withValue(
-            'foo',
-            () => {
-                outerCalls++
-                return innerPromise
-            },
-            v => Promise.resolve(v)
-        )
-        const p3 = cache.withValue(
-            'foo',
-            () => {
-                outerCalls++
-                return innerPromise
-            },
-            v => Promise.resolve(v)
-        )
+        const p1 = cache.withValue('foo', factory, v => Promise.resolve(v))
+        const p2 = cache.withValue('foo', factory, v => Promise.resolve(v))
+        const p3 = cache.withValue('foo', factory, v => Promise.resolve(v))
 
         expect(await Promise.all([p1, p2, p3])).toEqual(['bar', 'bar', 'bar'])
-        expect(innerCalls).toEqual(1)
-        expect(outerCalls).toEqual(1)
+        expect(factory.callCount).toEqual(1)
     })
 
     it('should call dispose function on eviction', async () => {
@@ -82,14 +61,8 @@ describe('GenericCache', () => {
             'foo', // foo baz (drops bar)
         ]
 
-        const disposeArgs: string[] = []
-        const cache = new GenericCache<string, string>(
-            2,
-            () => 1,
-            v => {
-                disposeArgs.push(v)
-            }
-        )
+        const disposer = sinon.spy()
+        const cache = new GenericCache<string, string>(2, () => 1, disposer)
 
         for (const value of values) {
             await cache.withValue(value, () => Promise.resolve(value), v => Promise.resolve(v))
@@ -98,7 +71,7 @@ describe('GenericCache', () => {
         // allow disposal to run asynchronously
         await new Promise(resolve =>
             setTimeout(() => {
-                expect(disposeArgs).toEqual(['foo', 'bar'])
+                expect(disposer.args).toEqual([['foo'], ['bar']])
                 resolve()
             }, 10)
         )
@@ -112,32 +85,34 @@ describe('GenericCache', () => {
             2, // 1 2, size = 3
         ]
 
-        const factoryArgs: number[] = []
-        const cache = new GenericCache<number, number>(5, v => v, () => {})
+        const expectedInstantiations = [2, 3, 1, 2]
 
-        for (const value of values) {
-            await cache.withValue(
-                value,
-                () => {
-                    factoryArgs.push(value)
-                    return Promise.resolve(value)
-                },
-                v => Promise.resolve(v)
-            )
+        let i = 0
+        const factory = sinon.stub()
+        for (const value of expectedInstantiations) {
+            factory.onCall(i++).returns(Promise.resolve(value))
         }
 
-        expect(factoryArgs).toEqual([2, 3, 1, 2])
+        const cache = new GenericCache<number, number>(5, v => v, () => {})
+        for (const value of values) {
+            await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
+        }
+
+        expect(factory.args).toEqual(expectedInstantiations.map(v => [v]))
     })
 
     it('should not evict referenced cache entries', async () => {
-        const disposeArgs: string[] = []
-        const cache = new GenericCache<string, string>(
-            5,
-            () => 1,
-            v => {
-                disposeArgs.push(v)
-            }
-        )
+        const disposer = sinon.spy()
+        const cache = new GenericCache<string, string>(5, () => 1, disposer)
+
+        const assertDisposeCalls = async (...expected: string[]) => {
+            await new Promise(resolve =>
+                setTimeout(() => {
+                    expect(disposer.args).toEqual(expected.map(v => [v]))
+                    resolve()
+                }, 10)
+            )
+        }
 
         await cache.withValue(
             'foo',
@@ -163,10 +138,7 @@ describe('GenericCache', () => {
                                                 await cache.withValue(
                                                     'honk',
                                                     () => Promise.resolve('honk'),
-                                                    () => {
-                                                        expect(disposeArgs).toEqual([])
-                                                        return Promise.resolve()
-                                                    }
+                                                    () => assertDisposeCalls()
                                                 )
 
                                                 // Seventh entry, honk can now be removed as it's the least
@@ -174,15 +146,7 @@ describe('GenericCache', () => {
                                                 await cache.withValue(
                                                     'ronk',
                                                     () => Promise.resolve('ronk'),
-                                                    async () => {
-                                                        // allow disposal to run asynchronously
-                                                        await new Promise(resolve =>
-                                                            setTimeout(() => {
-                                                                expect(disposeArgs).toEqual(['honk'])
-                                                                resolve()
-                                                            }, 10)
-                                                        )
-                                                    }
+                                                    () => assertDisposeCalls('honk')
                                                 )
                                             }
                                         )
@@ -196,18 +160,6 @@ describe('GenericCache', () => {
         )
 
         // Release and remove the least recently used
-        await cache.withValue(
-            'honk',
-            () => Promise.resolve('honk'),
-            async () => {
-                // allow disposal to run asynchronously
-                await new Promise(resolve =>
-                    setTimeout(() => {
-                        expect(disposeArgs).toEqual(['honk', 'foo', 'bar'])
-                        resolve()
-                    }, 10)
-                )
-            }
-        )
+        await cache.withValue('honk', () => Promise.resolve('honk'), () => assertDisposeCalls('honk', 'foo', 'bar'))
     })
 })
