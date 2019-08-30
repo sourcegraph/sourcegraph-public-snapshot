@@ -1,13 +1,23 @@
-# LSIF Typescript test data
+# LSIF test data for TypeScript
 
-Run `./generate.sh` to create LSIF dumps for a set of Typescript projects that reference each other. This will create gzipped dump files that are then used by `xrepo-typescript.test.ts`.
+The `./bin/generate.sh` to create LSIF dumps for a set of TypeScript projects that reference each other. This will create seven repositories and gzipped LSIF dump files which is used in the tests found in `query-typescript.test.ts`.
 
-**Note**: Microsoft's implementation of lsif-npm is currently broken (see [this issue](https://github.com/microsoft/lsif-node/pull/66)). Therefore, the generate script must be run with Sourcegraph's version of [lsif-npm](https://github.com/sourcegraph/lsif-node). The binary can be switched via `LSIF_NPM=~/path/to/lsif-npm ./generate.sh`.
+The dump files used for testing are under version control, but can be regenerated to test changes in the indexer utilities.
 
-### Project structure
+### Dump Layout
 
-The repository `a` defines the npm package `math-util` that provides an `add` and a `mul` function. Refer to `./generate-a.sh` for the source.
+The repository `a` defines the `math-util` package containing functions `add` and `mul`. The later function is defined in terms fo the former (and thus contains a eference to it).
 
-The repositories `b1`, `b2`, and `b3` are identical except for their name. They depend on the `math-util` package and use both the `add` and `mul` functions. Refer to `./generate-b.sh` for the source.
+The repositories `b{1,2,3}` have a dependency on `math-util` and import both `add` and `mul` functions. 
 
-The repositories `c1`, `c2`, and `c3` are identical except for their name. They depend on the `math-util` package and use only the `add` function. Refer to `./generate-c.sh` for the source.
+The repositories` c{1,2,3}` have a dependency on `math-util` and import only the `add` function.
+
+The TypeScript source for each project is contained in the script that generates the project, `./bin/generate-{a,b,c}.sh`.
+
+### Requirements
+
+This script requires you install [`lsif-tsc` and `lsif-npm`](https://github.com/microsoft/lsif-node). The `lsif-tsc` tool can be installed via npm. Unfortunately, Microsoft's implementation of `lsif-npm` is currently broken (but fixed with this [pull request](https://github.com/microsoft/lsif-node/pull/66)). The script must, for now, be run with Sourcegraph's fork of [lsif-npm](https://github.com/sourcegraph/lsif-node), which contains the update from the pull request. The location of the `lsif-npm` binary can be switched as follows.
+
+```bash
+LSIF_NPM=~/path/to/lsif-npm ./bin/generate.sh`
+```

@@ -5,7 +5,7 @@ import { lsp } from 'lsif-protocol'
 import * as fs from 'mz/fs'
 import * as zlib from 'mz/zlib'
 
-describe('ImportQuery', () => {
+describe('TypeScript Queries', () => {
     const connectionCache = new ConnectionCache(10)
     const documentCache = new DocumentCache(10)
 
@@ -14,7 +14,7 @@ describe('ImportQuery', () => {
         const inputs: { input: Readable; repository: string; commit: string }[] = []
 
         for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
-            const input = fs.createReadStream(`./test-data/typescript/${repository}.lsif.gz`).pipe(zlib.createGunzip())
+            const input = fs.createReadStream(`./test-data/typescript/data/${repository}.lsif.gz`).pipe(zlib.createGunzip())
             const commit = makeCommit(repository)
             inputs.push({ input, repository, commit })
         }
