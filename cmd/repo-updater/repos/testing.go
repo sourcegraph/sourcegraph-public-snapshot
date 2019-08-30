@@ -18,7 +18,7 @@ import (
 // ignoring the given external services.
 func NewFakeSourcer(err error, srcs ...Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
-		errs := new(multierror.Error)
+		var errs *multierror.Error
 
 		if err != nil {
 			for _, svc := range svcs {

@@ -117,7 +117,7 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 		close(uncounted)
 	}()
 
-	errs := new(multierror.Error)
+	var errs *multierror.Error
 	for res := range uncounted {
 		results <- res
 		if res.Err != nil {

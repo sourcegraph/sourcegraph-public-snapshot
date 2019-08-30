@@ -26,7 +26,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
-		errs := new(multierror.Error)
+		var errs *multierror.Error
 
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
@@ -201,8 +201,11 @@ func ListAll(ctx context.Context, src Source) ([]*Repo, error) {
 		close(results)
 	}()
 
-	var repos []*Repo
-	errs := new(multierror.Error)
+	var (
+		repos []*Repo
+		errs  *multierror.Error
+	)
+
 	for res := range results {
 		if res.Err != nil {
 			for _, extSvc := range res.Source.ExternalServices() {
