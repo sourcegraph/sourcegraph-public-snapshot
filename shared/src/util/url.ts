@@ -534,10 +534,9 @@ export function withWorkspaceRootInputRevision(
 /**
  * Builds a URL query for the given query (without leading `?`).
  */
-export function buildSearchURLQuery(query: string): string {
+export function buildSearchURLQuery(query: string, dotStar: boolean): string {
     const searchParams = new URLSearchParams()
-    const version = 'V1'
-    const v = version === 'V1' ? '1' : '0'
+    const v = dotStar ? '0' : '1'
     searchParams.set('q', query)
     searchParams.set('v', v)
     return searchParams

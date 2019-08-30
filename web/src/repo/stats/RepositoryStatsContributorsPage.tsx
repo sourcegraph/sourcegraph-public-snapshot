@@ -49,6 +49,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     ]
         .join(' ')
         .replace(/\s+/, ' ')
+    const dotStar = true
 
     return (
         <div className="repository-contributor-node list-group-item py-2">
@@ -73,7 +74,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className="repository-contributor-node__count">
                     <Link
-                        to={`/search?${buildSearchURLQuery(query)}`}
+                        to={`/search?${buildSearchURLQuery(query, dotStar)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange &&

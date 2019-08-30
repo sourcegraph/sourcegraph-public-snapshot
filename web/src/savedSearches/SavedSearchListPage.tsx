@@ -52,11 +52,13 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         )
     }
     public render(): JSX.Element | null {
+        // TODO(ijt): get this value from somewhere.
+        const dotStar = true
         return (
             <div className="saved-search-list-page__row list-group-item">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query)}>
+                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query, dotStar)}>
                         <div>{this.props.savedSearch.description}</div>
                     </Link>
                 </div>
