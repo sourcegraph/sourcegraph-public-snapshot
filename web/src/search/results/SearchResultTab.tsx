@@ -1,10 +1,20 @@
 import * as React from 'react'
 import { SEARCH_TYPES } from './SearchResults'
+import { startCase } from 'lodash'
 
 interface Props {
+    active: boolean
     type: SEARCH_TYPES
     onClick: (query: SEARCH_TYPES) => void
     query: string
+}
+
+const typeToProse: Record<SEARCH_TYPES, string> = {
+    code: 'Code',
+    diff: 'Diffs',
+    commit: 'Commits',
+    symbol: 'Symbols',
+    repo: 'Repos',
 }
 
 export default class SearchResultTab extends React.Component<Props, {}> {
@@ -14,11 +24,12 @@ export default class SearchResultTab extends React.Component<Props, {}> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="search-result-tab">
-                <button className="btn" onClick={this.onClick}>
-                    {this.props.type}
-                </button>
-            </div>
+            <button
+                className={`btn search-result-tab ${this.props.active && 'search-result-tab--active'}`}
+                onClick={this.onClick}
+            >
+                <div className="search-result-tab__inner">{typeToProse[this.props.type]}</div>
+            </button>
         )
     }
 

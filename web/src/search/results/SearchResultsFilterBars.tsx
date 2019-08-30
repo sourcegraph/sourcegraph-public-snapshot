@@ -91,7 +91,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             </div>
         )}
-        {quickLinks && (
+        {quickLinks && quickLinks.length > 0 && (
             <div className="search-results-filter-bars__row" data-testid="quicklinks-bar">
                 <div className="search-results-filter-bars__quicklinks">
                     <QuickLinks quickLinks={quickLinks} />

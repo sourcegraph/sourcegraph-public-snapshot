@@ -1,3 +1,46 @@
 .search-result-tab {
-    padding: 0 2rem;
+    border-right: 1px solid $color-border;
+    border-top: 1px solid $color-border;
+    border-radius: 0;
+    background-color: $color-bg-2;
+
+    &__inner {
+        padding: 0 2rem;
+    }
+
+    &--active {
+        background-color: $color-bg-3;
+        &:hover {
+            background-color: $color-bg-3;
+        }
+    }
+
+    &:hover {
+        .theme-dark & {
+            background: $color-bg-3;
+            border-color: $color-bg-3;
+            color: #ffffff;
+        }
+        .theme-light & {
+            background: $color-light-bg-4;
+            border-color: $color-light-bg-4;
+            color: $color-light-text-6;
+        }
+    }
+}
+
+.theme-light {
+    .search-result-tab {
+        border-right: 1px solid $color-light-border;
+        border-top: 1px solid $color-light-border;
+        background-color: $color-light-bg-2;
+
+        &--active {
+            background-color: $color-light-bg-3;
+            &:hover {
+                cursor: default;
+                background-color: $color-light-bg-3;
+            }
+        }
+    }
 }

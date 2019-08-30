@@ -75,6 +75,21 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
     return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
 }
 
+export function getSearchTypeFromQuery(query: string): SEARCH_TYPES {
+    // RegExp to match `type:$TYPE` in any part of a query.
+    const matchSearchType = /(\b|^)type:\w*(\s*|$)/
+    const getTypeName = /(\b|^)type:(?<type>\w*)(\s|$)/
+    // const m = query.match(getTypeName)
+    if (matchSearchType.test(query)) {
+        const matches = query.match(getTypeName)
+        if (matches && matches.groups && matches.groups.type) {
+            return matches.groups.type as SEARCH_TYPES
+        }
+    }
+
+    return 'code'
+}
+
 export function toggleSearchType(query: string, searchType: SEARCH_TYPES): string {
     if (searchType === 'code') {
         const replaceSearchType = /(\b|^)type:\w*(\s|$)/

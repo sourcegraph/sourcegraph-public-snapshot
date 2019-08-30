@@ -22,6 +22,7 @@ import {
     toggleSearchFilter,
     toggleSearchFilterAndReplaceSampleRepogroup,
     toggleSearchType,
+    getSearchTypeFromQuery,
 } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
@@ -59,15 +60,17 @@ interface SearchResultsState {
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
+    activeType: SEARCH_TYPES
 }
 
-export type SEARCH_TYPES = 'code' | 'diff' | 'commit' | 'symbol'
+export type SEARCH_TYPES = 'code' | 'diff' | 'commit' | 'symbol' | 'repo'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
+        activeType: getSearchTypeFromQuery(this.props.navbarSearchQuery),
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -75,7 +78,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        console.log(this.props.settingsCascade.final)
         this.props.telemetryService.logViewEvent('SearchResults')
 
         this.subscriptions.add(
@@ -102,7 +104,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     switchMap(query =>
                         concat(
                             // Reset view state
-                            [{ resultsOrError: undefined, didSave: false }],
+                            [
+                                {
+                                    resultsOrError: undefined,
+                                    didSave: false,
+                                    activeType: getSearchTypeFromQuery(query),
+                                },
+                            ],
                             // Do async search request
                             this.props.searchRequest(query, this.props).pipe(
                                 // Log telemetry
@@ -127,7 +135,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     }
                                 ),
                                 // Update view with results or error
-                                map(results => ({ resultsOrError: results })),
+                                map(results => ({
+                                    resultsOrError: results,
+                                })),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )
@@ -184,7 +194,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}
                 />
-                <SearchResultTypeTabs query={this.props.navbarSearchQuery} onTabClicked={this.onTypeTabClicked} />
+                <SearchResultTypeTabs
+                    activeType={this.state.activeType}
+                    query={this.props.navbarSearchQuery}
+                    onTabClicked={this.onTypeTabClicked}
+                />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}

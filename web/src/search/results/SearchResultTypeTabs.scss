@@ -2,4 +2,11 @@
     display: flex;
     justify-content: flex-start;
     border-bottom: 1px solid $color-border;
+    margin-top: 0.5rem;
+}
+
+.theme-light {
+    .search-result-type-tabs {
+        border-bottom: 1px solid $color-light-border;
+    }
 }
