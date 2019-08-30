@@ -8,9 +8,9 @@ The dump files used for testing are under version control, but can be regenerate
 
 The repository `a` defines the `math-util` package containing functions `add` and `mul`. The later function is defined in terms fo the former (and thus contains a eference to it).
 
-The repositories `b{1,2,3}` have a dependency on `math-util` and import both `add` and `mul` functions. 
+The repositories `b{1,2,3}` have a dependency on `math-util` and import both `add` and `mul` functions.
 
-The repositories` c{1,2,3}` have a dependency on `math-util` and import only the `add` function.
+The repositories `c{1,2,3}` have a dependency on `math-util` and import only the `add` function.
 
 The TypeScript source for each project is contained in the script that generates the project, `./bin/generate-{a,b,c}.sh`.
 
