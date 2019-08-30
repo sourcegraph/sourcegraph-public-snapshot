@@ -331,6 +331,7 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 func (s *Syncer) setOrResetLastSyncErr(perr *error) {
 	var err error
 	if perr != nil {
+		fmt.Printf("setOrResetLastSyncErr. *perr=%T, errors.Cause(*perr)=%T\n", *perr, errors.Cause(*perr))
 		err = *perr
 	}
 

@@ -26,7 +26,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
-		errs := new(MultiSourceError)
+		errs := new(multierror.Error)
 
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
@@ -35,7 +35,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 			src, err := NewSource(svc, cf)
 			if err != nil {
-				errs.Append(&SourceError{Err: err, ExtSvc: svc})
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
 				continue
 			}
 
@@ -126,32 +126,6 @@ func sourceErrorFormatFunc(es []error) string {
 		len(es), strings.Join(points, "\n\t"))
 }
 
-type MultiSourceError struct {
-	Errors []*SourceError
-}
-
-func (s *MultiSourceError) Error() string {
-	errs := new(multierror.Error)
-	for _, e := range s.Errors {
-		errs = multierror.Append(errs, e)
-	}
-	return errs.Error()
-}
-
-func (s *MultiSourceError) Append(errs ...*SourceError) {
-	s.Errors = append(s.Errors, errs...)
-}
-
-func (s *MultiSourceError) ErrorOrNil() error {
-	if s == nil {
-		return nil
-	}
-	if len(s.Errors) == 0 {
-		return nil
-	}
-	return s
-}
-
 // Sources is a list of Sources that implements the Source interface.
 type Sources []Source
 
@@ -228,11 +202,11 @@ func ListAll(ctx context.Context, src Source) ([]*Repo, error) {
 	}()
 
 	var repos []*Repo
-	errs := new(MultiSourceError)
+	errs := new(multierror.Error)
 	for res := range results {
 		if res.Err != nil {
 			for _, extSvc := range res.Source.ExternalServices() {
-				errs.Append(&SourceError{Err: res.Err, ExtSvc: extSvc})
+				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue
 		}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -17,14 +18,14 @@ import (
 // ignoring the given external services.
 func NewFakeSourcer(err error, srcs ...Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
-		errs := new(MultiSourceError)
+		errs := new(multierror.Error)
 
 		if err != nil {
 			for _, svc := range svcs {
-				errs.Append(&SourceError{Err: err, ExtSvc: svc})
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
 			}
 			if len(svcs) == 0 {
-				errs.Append(&SourceError{Err: err, ExtSvc: nil})
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: nil})
 			}
 		}
 
