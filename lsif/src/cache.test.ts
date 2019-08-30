@@ -114,50 +114,30 @@ describe('GenericCache', () => {
             )
         }
 
-        await cache.withValue(
-            'foo',
-            () => Promise.resolve('foo'),
-            async () => {
-                await cache.withValue(
-                    'bar',
-                    () => Promise.resolve('bar'),
-                    async () => {
-                        await cache.withValue(
-                            'baz',
-                            () => Promise.resolve('baz'),
-                            async () => {
-                                await cache.withValue(
-                                    'bonk',
-                                    () => Promise.resolve('bonk'),
-                                    async () => {
-                                        await cache.withValue(
-                                            'quux',
-                                            () => Promise.resolve('quux'),
-                                            async () => {
-                                                // Sixth entry, but nothing to evict (all held)
-                                                await cache.withValue(
-                                                    'honk',
-                                                    () => Promise.resolve('honk'),
-                                                    () => assertDisposeCalls()
-                                                )
+        const fooResolver = () => Promise.resolve('foo')
+        const barResolver = () => Promise.resolve('bar')
+        const bazResolver = () => Promise.resolve('baz')
+        const bonkResolver = () => Promise.resolve('bonk')
+        const quuxResolver = () => Promise.resolve('quux')
+        const honkResolver = () => Promise.resolve('honk')
+        const ronkResolver = () => Promise.resolve('ronk')
 
-                                                // Seventh entry, honk can now be removed as it's the least
-                                                // recently used value that's not currently under a read lock.
-                                                await cache.withValue(
-                                                    'ronk',
-                                                    () => Promise.resolve('ronk'),
-                                                    () => assertDisposeCalls('honk')
-                                                )
-                                            }
-                                        )
-                                    }
-                                )
-                            }
-                        )
-                    }
-                )
-            }
-        )
+        await cache.withValue('foo', fooResolver, async () => {
+            await cache.withValue('bar', barResolver, async () => {
+                await cache.withValue('baz', bazResolver, async () => {
+                    await cache.withValue('bonk', bonkResolver, async () => {
+                        await cache.withValue('quux', quuxResolver, async () => {
+                            // Sixth entry, but nothing to evict (all held)
+                            await cache.withValue('honk', honkResolver, () => assertDisposeCalls())
+
+                            // Seventh entry, honk can now be removed as it's the least
+                            // recently used value that's not currently under a read lock.
+                            await cache.withValue('ronk', ronkResolver, () => assertDisposeCalls('honk'))
+                        })
+                    })
+                })
+            })
+        })
 
         // Release and remove the least recently used
         await cache.withValue('honk', () => Promise.resolve('honk'), () => assertDisposeCalls('honk', 'foo', 'bar'))
