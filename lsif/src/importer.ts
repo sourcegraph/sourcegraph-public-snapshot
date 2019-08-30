@@ -662,6 +662,10 @@ class LsifImporter {
         // to the document.
         const monikers = this.attachItemMonikersToDocument(document, id, item)
 
+        // Get non-local monitors, which we will add to the Defs and Refs table
+        // for lookup from another project.
+        const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
+
         // Add result set to document, if it doesn't exist
         if (item.next && !document.resultSets.has(item.next)) {
             const resultSet = assertDefined(item.next, 'resultSet', this.resultSetData)
@@ -675,30 +679,59 @@ class LsifImporter {
             document.hovers.set(item.hoverResult, hoverResult)
         }
 
-        // Attach definition and reference results results to the document.
-        // This attaches some denormalized data on the `WrappedDocumentData`
-        // object which will also be used to populate the defs and refs
-        // tables.
+        // Attach definition and reference results results to the document. This attaches
+        // some denormalized data on the `WrappedDocumentData` object which will also be
+        // used to populate the defs and refs tables once the document is finalized.
 
-        this.attachResultsToDocument(
-            'definitionResult',
-            this.definitionData,
-            document,
-            document.definitions,
-            document.definitionResults,
-            item.definitionResult,
-            monikers
-        )
+        if (item.definitionResult) {
+            const values = []
+            for (const [key, ids] of assertDefined(item.definitionResult, 'definitionResult', this.definitionData)) {
+                // Resolve the "document" field from the "item" edge. This will correlate
+                // the referenced range identifier with the document in which it belongs.
+                const documentPath = assertDefined(key, 'document', this.documentData).path
 
-        this.attachResultsToDocument(
-            'referenceResult',
-            this.referenceData,
-            document,
-            document.references,
-            document.referenceResults,
-            item.referenceResult,
-            monikers
-        )
+                for (const id of ids) {
+                    values.push({ documentPath, id })
+                }
+
+                // If this is results for the current document, construct the data that
+                // will later be used to insert into the Defs table for this document.
+
+                if (key === document.id) {
+                    for (const moniker of nonlocalMonikers) {
+                        document.definitions.push({ ids, moniker })
+                    }
+                }
+            }
+
+            // Store the definition results
+            document.definitionResults.set(item.definitionResult, values)
+        }
+
+        if (item.referenceResult) {
+            const values = []
+            for (const [key, ids] of assertDefined(item.referenceResult, 'referenceResult', this.referenceData)) {
+                // Resolve the "document" field from the "item" edge. This will correlate
+                // the referenced range identifier with the document in which it belongs.
+                const documentPath = assertDefined(key, 'document', this.documentData).path
+
+                for (const id of ids) {
+                    values.push({ documentPath, id })
+                }
+
+                // If this is results for the current document, construct the data that
+                // will later be used to insert into the Refs table for this document.
+
+                if (key === document.id) {
+                    for (const moniker of nonlocalMonikers) {
+                        document.references.push({ ids, moniker })
+                    }
+                }
+            }
+
+            // Store the reference results
+            document.referenceResults.set(item.referenceResult, values)
+        }
     }
 
     /**
@@ -738,50 +771,6 @@ class LsifImporter {
         }
 
         return monikers
-    }
-
-    /**
-     * Attach definition or reference results to the document (with respect to a
-     * particular item). This method retrieves the result data from the `sourceMap`
-     * and assigns it to either the `documentArray` or the `documentMap`, depending
-     * on whether or not the list of monikers has contains a non-local item. This
-     * method will early-out if the given identifier is undefined.
-     *
-     * @param name The type of element (used for exception message).
-     * @param sourceMap The map in `this` that holds the source data.
-     * @param document The document object.
-     * @param documentArray The list object in `WrappedDocumentData` to modify.
-     * @param documentMap The set object in `DocumentData` to modify.
-     * @param id The identifier of the item's result.
-     * @param monikers The set of monikers attached to the item.
-     */
-    private attachResultsToDocument<T>(
-        name: string,
-        sourceMap: Map<Id, Map<Id, T>>,
-        document: DecoratedDocumentData,
-        documentArray: { ids: T; moniker: MonikerData }[],
-        documentMap: Map<Id, T>,
-        id: Id | undefined,
-        monikers: MonikerData[]
-    ): void {
-        if (!id) {
-            return
-        }
-
-        const innerMap = assertDefined(id, name, sourceMap)
-        const data = innerMap.get(document.id)
-        if (!data) {
-            return
-        }
-
-        const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
-        for (const moniker of nonlocalMonikers) {
-            documentArray.push({ ids: data, moniker })
-        }
-
-        if (nonlocalMonikers.length === 0) {
-            documentMap.set(id, data)
-        }
     }
 }
 

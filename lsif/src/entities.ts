@@ -6,8 +6,10 @@ import { Id, MonikerKind } from 'lsif-protocol'
  */
 export interface DocumentData {
     /**
-     * A mapping from range ID to the index of the range in the `orderedRanges`
-     * array.
+     * A mapping from range identifiers to the index of the range in the
+     * `orderedRanges` array. We keep a mapping so we can look range data by
+     * identifier quickly, and keep them sorted so we can find the range that
+     * encloses a position quickly.
      */
     ranges: Map<Id, number>
 
@@ -19,34 +21,37 @@ export interface DocumentData {
     orderedRanges: RangeData[]
 
     /**
-     * A map of identifiers to a result set.
+     * A map of result set identifiers to result set data. Result sets are like
+     * ranges, but do  not have extents in the document.
      */
     resultSets: Map<Id, ResultSetData>
 
     /**
-     * A map of identifiers to a set of identifiers that compose the definition
-     * result.
+     * A map of definition result identifiers to a list of ids that compose the
+     * definition result. Each id is paired with a document path, as result sets
+     * can be shared between documents (necessitating cross-document queries).
      */
-    definitionResults: Map<Id, Id[]>
+    definitionResults: Map<Id, {documentPath: string, id: Id}[]>
 
     /**
-     * A map of identifiers to a set of identifiers that compose the reference
-     * result.
+     ** A map of reference result identifiers to a list of ids that compose the
+     * reference result. Each id is paired with a document path, as result sets
+     * can be shared between documents (necessitating cross-document queries).
      */
-    referenceResults: Map<Id, Id[]>
+    referenceResults: Map<Id, {documentPath: string, id: Id}[]>
 
     /**
-     * A map of identifiers to a hover result.
+     * A map of hover identifiers to hover results normalized as a single string.
      */
     hovers: Map<Id, string>
 
     /**
-     * A map of identifiers to a moniker.
+     * A map of moniker identifiers to moniker data.
      */
     monikers: Map<Id, MonikerData>
 
     /**
-     * A map of identifiers to package information.
+     * A map of package information identifiers to package information data.
      */
     packageInformation: Map<Id, PackageInformationData>
 }
