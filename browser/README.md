@@ -123,16 +123,18 @@ Click reload for Sourcegraph at `about:debugging`
 ## Testing
 
 - Unit tests: `yarn test`
-- E2E tests: `yarn test:e2e`
+- E2E tests: `yarn test-e2e`
 
 ### e2e tests
 
-The test suite in e2e/e2e.test.ts runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
+The test suite in e2e/github.test.ts runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
 
 The test suite in e2e/phabricator.test.ts tests the Phabricator native integration.
 It assumes an existing Sourcegraph and Phabricator instance that has the Phabricator extension installed.
 There are automated scripts to set up the Phabricator instance, see https://docs.sourcegraph.com/dev/phabricator_gitolite.
 It currently does not run in CI and is intended to be run manually for release testing.
+
+e2e/bitbucket.test.ts tests the browser extension on a Bitbucket Server instance.
 
 ## Deploy
 
