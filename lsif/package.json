@@ -27,6 +27,7 @@
     "@types/jest": "24.0.17",
     "@types/lodash": "^4.14.138",
     "@types/mz": "0.0.32",
+    "@types/sinon": "^7.0.13",
     "@types/yallist": "^3.0.1",
     "babel-jest": "^24.8.0",
     "jest": "^24.8.0",
