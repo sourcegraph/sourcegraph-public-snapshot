@@ -145,11 +145,12 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("E2E_BROWSER", browser),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test-e2e"),
+			bk.Cmd("yarn -s jest --runInBand ./e2e/github.test"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}

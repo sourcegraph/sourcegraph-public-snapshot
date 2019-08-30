@@ -12,6 +12,7 @@ import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
 import MockDate from 'mockdate'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -48,7 +49,7 @@ describe('e2e test suite', () => {
         await driver.ensureLoggedIn()
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
-            kind: 'github',
+            kind: ExternalServiceKind.GITHUB,
             displayName: 'e2e-test-github',
             config: JSON.stringify({
                 url: 'https://github.com',
@@ -191,7 +192,7 @@ describe('e2e test suite', () => {
         test('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
             await driver.ensureHasExternalService({
-                kind: 'github',
+                kind: ExternalServiceKind.GITHUB,
                 displayName,
                 config:
                     '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}',
@@ -236,7 +237,7 @@ describe('e2e test suite', () => {
             const pathPatternSlug = `foobar/github.com/${repo}`
 
             const config = {
-                kind: 'github',
+                kind: ExternalServiceKind.GITHUB,
                 displayName: 'e2e-test-github-repoPathPattern',
                 config: JSON.stringify({
                     url: 'https://github.com',
@@ -266,7 +267,7 @@ describe('e2e test suite', () => {
 
         testIfAwsCredentialsSet('AWS CodeCommit', async () => {
             await driver.ensureHasExternalService({
-                kind: 'awscodecommit',
+                kind: ExternalServiceKind.AWSCODECOMMIT,
                 displayName: 'e2e-aws-code-commit',
                 config: JSON.stringify({
                     region: 'us-west-1',

@@ -107,13 +107,15 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                                         (this.isUpdating ? 'secondary' : statusClassNames[this.props.status])
                                     }
                                 />{' '}
-                                <span>{this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}</span>
+                                <span className="e2e-connection-status">
+                                    {this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}
+                                </span>
                             </span>
                         </span>
                     </div>
                     <input
                         type="text"
-                        className="form-control"
+                        className="form-control e2e-sourcegraph-url"
                         id="sourcegraph-url"
                         ref={this.inputElement}
                         value={this.props.value}
