@@ -222,7 +222,7 @@ export class Database {
         const groups = groupBy(resultData, v => v.documentPath)
 
         let results: lsp.Location[] = []
-        for (const documentPath in groups) {
+        for (const documentPath of Object.keys(groups)) {
             // Get all ids for the document path
             const ids = groups[documentPath].map(v => v.id)
 
