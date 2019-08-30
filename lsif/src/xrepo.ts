@@ -15,13 +15,19 @@ const GLOBAL_REFERENCE_CHUNK_SIZE = readEnvInt('LSIF_GLOBAL_REFERENCE_CHUNK_SIZE
  * of a project, depending on its use.
  */
 export interface Package {
-    // The scheme of the package (e.g. npm, pip).
+    /**
+     * The scheme of the package (e.g. npm, pip).
+     */
     scheme: string
 
-    // The name of the package.
+    /**
+     * The name of the package.
+     */
     name: string
 
-    // The version of the package.
+    /**
+     * The version of the package.
+     */
     version: string
 }
 
@@ -30,10 +36,14 @@ export interface Package {
  * a project.
  */
 export interface SymbolReferences {
-    // The package from which the symbols are imported.
+    /**
+     * The package from which the symbols are imported.
+     */
     package: Package
 
-    // The unique identifiers of the symbols imported from the package.
+    /**
+     * The unique identifiers of the symbols imported from the package.
+     */
     identifiers: string[]
 }
 
@@ -71,7 +81,7 @@ export class XrepoDatabase {
     }
 
     /**
-     * Correlate a `repository` and `commit` with a set of unqiue packages.
+     * Correlate a `repository` and `commit` with a set of unique packages.
      *
      * @param repository The repository that defines the given package.
      * @param commit The commit of the that defines the given package.
@@ -140,9 +150,9 @@ export class XrepoDatabase {
      * Correlate the given `repository` and `commit` with the the names referenced from a
      * particular remote package.
      *
-     * @param repository The repository that depends on the given pacakge.
-     * @param commit The commit that depends on the given pacakge.
-     * @param references The package data (scheme, name, and version) and the symbosl that the package references.
+     * @param repository The repository that depends on the given package.
+     * @param commit The commit that depends on the given package.
+     * @param references The package data (scheme, name, and version) and the symbols that the package references.
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
@@ -177,7 +187,7 @@ export class XrepoDatabase {
      *
      * @param callback The function invoke with the entity manager.
      */
-    private async withTransactionalEntityManager<T>(callback: (conenection: EntityManager) => Promise<T>): Promise<T> {
+    private async withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
         return await this.connectionCache.withTransactionalEntityManager(
             this.database,
             [PackageModel, ReferenceModel],
