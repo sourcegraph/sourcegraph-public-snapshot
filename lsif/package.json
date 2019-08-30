@@ -53,6 +53,6 @@
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "serve:server": "tsc-watch --onSuccess \"node --inspect -r source-map-support/register out/server.js\" --noClear",
-    "serve:worker": "tsc-watch --onSuccess \"node --inspect -r source-map-support/register out/worker.js\" --noClear",
+    "serve:worker": "tsc-watch --onSuccess \"node --inspect -r source-map-support/register out/worker.js\" --noClear"
   }
 }
