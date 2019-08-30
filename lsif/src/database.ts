@@ -53,10 +53,10 @@ export class Database {
         // First, we try to find the definition result attached to the range or one
         // of the result sets to which the range is attached.
 
-        const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
-        if (resultData) {
+        const localLocations = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
+        if (localLocations) {
             // We have a definition result in this database.
-            return await this.getLocations(path, document, resultData)
+            return await this.getLocations(path, document, localLocations)
         }
 
         // Otherwise, we fall back to a moniker search. We get all the monikers attached
@@ -69,9 +69,9 @@ export class Database {
                 // This symbol was imported from another database. See if we have xrepo
                 // definition for it.
 
-                const defs = await this.remoteDefinitions(document, moniker)
-                if (defs) {
-                    return defs
+                const remoteLocations = await this.remoteDefinitions(document, moniker)
+                if (remoteLocations) {
+                    return remoteLocations
                 }
 
                 continue
@@ -81,9 +81,9 @@ export class Database {
             // of our own database in case there was a definition that wasn't properly
             // attached to a result set but did have the correct monikers attached.
 
-            const defs = await Database.monikerResults(this, DefModel, moniker, path => path)
-            if (defs) {
-                return defs
+            const monikerLocations = await Database.locationsByMoniker(this, DefModel, moniker, path => path)
+            if (monikerLocations) {
+                return monikerLocations
             }
         }
 
@@ -107,15 +107,15 @@ export class Database {
             return { data: [], nextPage: null }
         }
 
-        let result: lsp.Location[] = []
+        let locations: lsp.Location[] = []
 
         // First, we try to find the reference result attached to the range or one
         // of the result sets to which the range is attached.
 
-        const resultData = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
-        if (resultData) {
+        const localLocations = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
+        if (localLocations) {
             // We have references in this database.
-            result = result.concat(await this.getLocations(path, document, resultData))
+            locations = locations.concat(await this.getLocations(path, document, localLocations))
         }
 
         // Next, we do a moniker search in two stages, described below. We process each
@@ -130,7 +130,8 @@ export class Database {
         // necessarily fully linked in the LSIF data.
 
         for (const moniker of monikers) {
-            result = result.concat(await Database.monikerResults(this, RefModel, moniker, path => path))
+            const monikerLocations = await Database.locationsByMoniker(this, RefModel, moniker, path => path)
+            locations = locations.concat(monikerLocations)
         }
 
         // Second, we perform an xrepo search for uses of each nonlocal moniker. We stop
@@ -143,9 +144,9 @@ export class Database {
                 continue
             }
 
-            const { remoteResults, nextPage } = await this.remoteReferences(document, moniker, page)
-            if (remoteResults) {
-                return { data: result.concat(remoteResults), nextPage }
+            const { remoteLocations, nextPage } = await this.remoteReferences(document, moniker, page)
+            if (remoteLocations) {
+                return { data: locations.concat(remoteLocations), nextPage }
             }
         }
 
@@ -189,7 +190,7 @@ export class Database {
      * @param moniker The target moniker.
      * @param pathTransformer The function used to alter location paths.
      */
-    private static async monikerResults(
+    private static async locationsByMoniker(
         db: Database,
         model: typeof DefModel | typeof RefModel,
         moniker: MonikerData,
@@ -287,7 +288,7 @@ export class Database {
         )
 
         const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
-        return await Database.monikerResults(db, DefModel, moniker, pathTransformer)
+        return await Database.locationsByMoniker(db, DefModel, moniker, pathTransformer)
     }
 
     /**
@@ -332,7 +333,7 @@ export class Database {
             )
 
             const pathTransformer = (path: string): string => makeRemoteUri(reference, path)
-            promises.push(Database.monikerResults(db, RefModel, moniker, pathTransformer))
+            promises.push(Database.locationsByMoniker(db, RefModel, moniker, pathTransformer))
         }
 
         const resolved = await Promise.all(promises)
