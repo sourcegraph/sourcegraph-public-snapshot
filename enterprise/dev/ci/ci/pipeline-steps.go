@@ -77,7 +77,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 func addLSIFServer(pipeline *bk.Pipeline) {
 	// LSIF server build
 	pipeline.AddStep(":typescript:",
-		bk.Cmd("dev/ci/yarn-build.sh lsif"))
+		bk.Cmd("dev/ci/yarn-build-separate.sh lsif"))
 
 	// LSIF server tests
 	pipeline.AddStep(":jest:",
