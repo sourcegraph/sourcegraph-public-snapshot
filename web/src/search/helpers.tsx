@@ -12,12 +12,12 @@ import { eventLogger } from '../tracking/eventLogger'
 export function submitSearch(
     history: H.History,
     query: string,
-    version: 'V0' | 'V1',
+    dotStar: boolean,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter',
     activation?: ActivationProps['activation']
 ): void {
     // Go to search results page
-    const path = '/search?' + buildSearchURLQuery(query)
+    const path = '/search?' + buildSearchURLQuery(query, dotStar)
     eventLogger.log('SearchSubmitted', {
         code_search: {
             pattern: query,
