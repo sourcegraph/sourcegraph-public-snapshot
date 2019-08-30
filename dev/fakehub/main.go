@@ -53,23 +53,24 @@ into the text box for adding single repos in sourcegraph Site Admin.
 }
 
 func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
-	gitDirs := configureRepos(reposRoot)
-
-	// Set up the template vars for pages.
-	var relDirs []string
-	for _, gd := range gitDirs {
-		rd, err := filepath.Rel(reposRoot, gd)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting relative path of git dir")
-		}
-		// Render template without "/.git" suffix.
-		relDirs = append(relDirs, strings.TrimSuffix(rd, "/.git"))
-	}
-	tvars := &templateVars{n, relDirs, ln.Addr()}
+	configureRepos(reposRoot)
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Set up the template vars for pages.
+		var relDirs []string
+		for _, gd := range configureRepos(reposRoot) {
+			rd, err := filepath.Rel(reposRoot, gd)
+			if err != nil {
+				http.Error(w, "error getting relative path of git dir: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			// Render template without "/.git" suffix.
+			relDirs = append(relDirs, strings.TrimSuffix(rd, "/.git"))
+		}
+		tvars := &templateVars{n, relDirs, ln.Addr()}
+
 		handleConfig(tvars, w)
 	})
 
