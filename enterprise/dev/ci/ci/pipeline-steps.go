@@ -73,6 +73,18 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
+// Builds and tests the LSIF server.
+func addLSIFServer(pipeline *bk.Pipeline) {
+	// LSIF server build
+	pipeline.AddStep(":webpack::chrome:",
+		bk.Cmd("dev/ci/yarn-build.sh browser"))
+
+	// LSIF server tests
+	pipeline.AddStep(":jest:",
+		bk.Cmd("dev/ci/yarn-test.sh lsif"),
+		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
+}
+
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
