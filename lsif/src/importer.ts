@@ -67,16 +67,16 @@ export interface DecoratedDocumentData extends DocumentData {
     /**
      * A field that carries the data of definitionResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
-     * the definition result data would be stored in `definitionResults` in the
-     * superclass.
+     * the definition result data would be stored in field `definitionResults`
+     * of `DocumentData`.
      */
     definitions: { ids: Id[]; moniker: MonikerData }[]
 
     /**
      * A field that carries the data of referenceResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
-     * the reference result data would be stored in `referenceResults` in the
-     * superclass.
+     * the reference result data would be stored infield  `referenceResults`
+     * of `DocumentData`.
      */
     references: { ids: Id[]; moniker: MonikerData }[]
 }
