@@ -108,7 +108,7 @@ async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex |
         try {
             yield JSON.parse(line) as Vertex | Edge
         } catch (e) {
-            throw new Error(`Parsing failed for line:\n${i}`)
+            throw new Error(`Parsing failed for line ${i}: ${e}`)
         }
 
         i++

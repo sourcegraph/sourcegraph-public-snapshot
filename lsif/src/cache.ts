@@ -16,10 +16,14 @@ import {
  * A wrapper around a cache value promise.
  */
 interface CacheEntry<K, V> {
-    // The key that can retrieve this cache entry.
+    /**
+     * The key that can retrieve this cache entry.
+     */
     key: K
 
-    // The promise that will resolve the cache value.
+    /**
+     * The promise that will resolve the cache value.
+     */
     promise: Promise<V>
 
     /**
@@ -31,7 +35,7 @@ interface CacheEntry<K, V> {
 
     /**
      * The number of active withValue calls referencing this entry.
-     * If this value is non-zero, it should not be evictable from the
+     * If this value is non-zero, it should not be evict-able from the
      * cache.
      */
     readers: number
@@ -60,21 +64,27 @@ interface CacheMetrics {
 }
 
 /**
- * A generic LRU cache. We use this instead of the `lru-cache` apckage
+ * A generic LRU cache. We use this instead of the `lru-cache` package
  * available in NPM so that we can handle async payloads in a more
  * first-class way as well as shedding some of the cruft around evictions.
  * We need to ensure database handles are closed when they are no longer
  * accessible, and we also do not want to evict any database handle while
  * it is actively being used.
  */
-class GenericCache<K, V> {
-    // A map from from keys to nodes in `lruList`.
+export class GenericCache<K, V> {
+    /**
+     * A map from from keys to nodes in `lruList`.
+     */
     private cache = new Map<K, Yallist.Node<CacheEntry<K, V>>>()
 
-    // A linked list of cache entires ordered by last-touch.
+    /**
+     * A linked list of cache entires ordered by last-touch.
+     */
     private lruList = new Yallist<CacheEntry<K, V>>()
 
-    // The additive size of the items currently in the cache.
+    /**
+     * The additive size of the items currently in the cache.
+     */
     private size = 0
 
     /**
@@ -106,7 +116,7 @@ class GenericCache<K, V> {
      * @param factory The function used to create a new value.
      * @param callback The function to invoke with the resolved cache value.
      */
-    protected async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
+    public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
         const entry = this.getEntry(key, factory)
         entry.readers++
 
@@ -211,7 +221,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
 
     /**
      * Invoke `callback` with a SQLite connection object obtained from the
-     * cache or created on cache miss. This connection is guranteed not to
+     * cache or created on cache miss. This connection is guaranteed not to
      * be disposed by cache eviction while the callback is active.
      *
      * @param database The database filename.
@@ -220,7 +230,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      */
     public withConnection<T>(
         database: string,
-        entities: Function[],
+        entities: Function[], // eslint-disable-line @typescript-eslint/ban-types
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
         const factory = (): Promise<Connection> =>
@@ -247,7 +257,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      */
     public withTransactionalEntityManager<T>(
         database: string,
-        entities: Function[],
+        entities: Function[], // eslint-disable-line @typescript-eslint/ban-types
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
         return this.withConnection(database, entities, connection => connection.transaction(em => callback(em)))

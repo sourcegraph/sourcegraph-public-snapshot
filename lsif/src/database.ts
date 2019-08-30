@@ -2,6 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache } from './cache'
 import { databaseQueryDurationHistogram } from './metrics'
+import { groupBy } from 'lodash'
 import { decodeJSON } from './encoding'
 import { DefModel, DocumentModel, MetaModel, PackageModel, RefModel } from './models'
 import { DocumentData, FlattenedRange, MonikerData, RangeData, ResultSetData } from './entities'
@@ -17,7 +18,7 @@ export class Database {
      * Create a new `Database` with the given cross-repo database instance and the
      * filename of the database that contains data for a particular repository/commit.
      *
-     * @param xrepoDatabase The cross-repo databse.
+     * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded document.
      * @param databasePath The path to the database file.
@@ -41,7 +42,7 @@ export class Database {
     /**
      * Return the location for the definition of the reference at the given position.
      *
-     * @param path The path fo the document to which the position belongs.
+     * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      */
     public async definitions(path: string, position: lsp.Position): Promise<lsp.Location[] | null> {
@@ -50,16 +51,36 @@ export class Database {
             return null
         }
 
+        // First, we try to find the definition result attached to the range or one
+        // of the result sets to which the range is attached.
+
         const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
         if (resultData) {
-            return asLocations(document.ranges, document.orderedRanges, path, resultData)
+            // We have a definition result in this database.
+            return await this.getLocations(path, document, resultData)
         }
 
-        // TODO - vet this logic of finding the first result
+        // Otherwise, we fall back to a moniker search. We get all the monikers attached
+        // to the range or a result set to which the range is attached. We process each
+        // moniker sequentially in order of priority, where import monikers, if any exist,
+        // will be processed first.
+
         for (const moniker of findMonikers(document.resultSets, document.monikers, range)) {
             if (moniker.kind === 'import') {
-                return await this.remoteDefinitions(document, moniker)
+                // This symbol was imported from another database. See if we have xrepo
+                // definition for it.
+
+                const defs = await this.remoteDefinitions(document, moniker)
+                if (defs) {
+                    return defs
+                }
+
+                continue
             }
+
+            // This symbol was not imported from another database. We search the Defs table
+            // of our own database in case there was a definition that wasn't properly
+            // attached to a result set but did have the correct monikers attached.
 
             const defs = await Database.monikerResults(this, DefModel, moniker, path => path)
             if (defs) {
@@ -82,24 +103,45 @@ export class Database {
             return undefined
         }
 
-        // TODO - vet logic - should xrepo search be explicitly enabled via query flag?
-        const resultData = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
-        const monikers = findMonikers(document.resultSets, document.monikers, range)
-
         let result: lsp.Location[] = []
+
+        // First, we try to find the reference result attached to the range or one
+        // of the result sets to which the range is attached.
+
+        const resultData = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
         if (resultData) {
-            result = result.concat(asLocations(document.ranges, document.orderedRanges, path, resultData))
-        } else {
-            for (const moniker of monikers) {
-                result = result.concat(await Database.monikerResults(this, RefModel, moniker, path => path))
-            }
+            // We have references in this database.
+            result = result.concat(await this.getLocations(path, document, resultData))
         }
 
+        // Next, we do a moniker search in two stages, described below. We process each
+        // moniker sequentially in order of priority for each stage, where import monikers,
+        // if any exist, will be processed first.
+
+        const monikers = findMonikers(document.resultSets, document.monikers, range)
+
+        // First, we search the Refs table of our own database - this search is necessary,
+        // but may be unintuitive, but remember that a 'Find References' operation on a
+        // reference should also return references to the definition - these are not
+        // necessarily fully linked in the LSIF data.
+
         for (const moniker of monikers) {
-            if (moniker.kind === 'import' || moniker.kind === 'export') {
-                const remoteResults = await this.remoteReferences(document, moniker)
-                result = result.concat(remoteResults)
-                break
+            result = result.concat(await Database.monikerResults(this, RefModel, moniker, path => path))
+        }
+
+        // Second, we perform an xrepo search for uses of each nonlocal moniker. We stop
+        // processing after the first moniker for which we received results. As we process
+        // monikers in an order that considers moniker schemes, the first one to get results
+        // should be the most desirable.
+
+        for (const moniker of monikers) {
+            if (moniker.kind === 'local') {
+                continue
+            }
+
+            const remoteResults = await this.remoteReferences(document, moniker)
+            if (remoteResults) {
+                return result.concat(remoteResults)
             }
         }
 
@@ -118,7 +160,10 @@ export class Database {
             return null
         }
 
-        // All hover contents should be contained in the document.
+        // Try to find the hover content attached to the range or one of the result sets to
+        // which the range is attached. There is no fall-back search via monikers for this
+        // operation.
+
         const contents = findResult(document.resultSets, document.hovers, range, 'hoverResult')
         if (!contents) {
             return null
@@ -156,6 +201,49 @@ export class Database {
         )
 
         return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), makeRange(result)))
+    }
+
+    /**
+     * Convert a set of range results (from a definition or reference query) into a set
+     * of LSP ranges. Each range result holds the range Id as well as the document path.
+     * For document paths matching the loaded document, find the range data locally. For
+     * all other paths, find the document in this database and find the range in that
+     * document.
+     *
+     * @param path The path of the document for this query.
+     * @param document The document object for this query.
+     * @param resultData A lsit of range ids and the document they belong to.
+     */
+    private async getLocations(
+        path: string,
+        document: DocumentData,
+        resultData: { documentPath: string; id: Id }[]
+    ): Promise<lsp.Location[]> {
+        // Group by document path so we only have to load each document once
+        const groups = groupBy(resultData, v => v.documentPath)
+
+        let results: lsp.Location[] = []
+        for (const documentPath of Object.keys(groups)) {
+            // Get all ids for the document path
+            const ids = groups[documentPath].map(v => v.id)
+
+            if (documentPath === path) {
+                // If the document path is this document, convert the locations directly
+                results = results.concat(asLocations(document.ranges, document.orderedRanges, path, ids))
+                continue
+            }
+
+            // Otherwise, we need to get the correct document
+            const sibling = await this.findDocument(documentPath)
+            if (!sibling) {
+                continue
+            }
+
+            // Then finally convert the locations in the sibling document
+            results = results.concat(asLocations(sibling.ranges, sibling.orderedRanges, documentPath, ids))
+        }
+
+        return results
     }
 
     /**
@@ -319,7 +407,7 @@ export class Database {
  * @param orderedRanges The ranges of the document, ordered by startLine/startCharacter.
  * @param position The user's hover position.
  */
-function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeData | undefined {
+export function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeData | undefined {
     let lo = 0
     let hi = orderedRanges.length - 1
 
@@ -355,7 +443,7 @@ function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeDat
  * @param data The range or result set object.
  * @param property The target property.
  */
-function findResult<T>(
+export function findResult<T>(
     resultSets: Map<Id, ResultSetData>,
     map: Map<Id, T>,
     data: RangeData | ResultSetData,
@@ -376,9 +464,9 @@ function findResult<T>(
  *
  * @param resultSets The map of results sets of the document.
  * @param monikers The map of monikers of the document.
- * @param data The range or restult set object.
+ * @param data The range or result set object.
  */
-function findMonikers(
+export function findMonikers(
     resultSets: Map<Id, ResultSetData>,
     monikers: Map<Id, MonikerData>,
     data: RangeData | ResultSetData
@@ -397,13 +485,13 @@ function findMonikers(
 }
 
 /**
- * Return an iterabel of the range and result set items that are attached
+ * Return an iterable of the range and result set items that are attached
  * to the given initial data. The initial data is yielded immediately.
  *
  * @param resultSets The map of results sets of the document.
  * @param data The range or result set object.
  */
-function* walkChain<T>(
+export function* walkChain<T>(
     resultSets: Map<Id, ResultSetData>,
     data: RangeData | ResultSetData
 ): Iterable<RangeData | ResultSetData> {
@@ -428,7 +516,7 @@ function* walkChain<T>(
  *
  * @param monikers The list of monikers.
  */
-function sortMonikers(monikers: MonikerData[]): MonikerData[] {
+export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
     const monikerKindPreferences = ['import', 'local', 'export']
     const monikerSchemePreferences = ['npm', 'tsc']
 
@@ -447,16 +535,21 @@ function sortMonikers(monikers: MonikerData[]): MonikerData[] {
 /**
  * Convert the given range identifiers into LSP location objects.
  *
- * @param ranges The map of ranges of the document (from identifier to the range's index inorderedRanges).
+ * @param ranges The map of ranges of the document (from identifier to the range's index in `orderedRanges`).
  * @param orderedRanges The ordered ranges of the document.
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: string, ids: Id[]): lsp.Location[] {
+export function asLocations(
+    ranges: Map<Id, number>,
+    orderedRanges: RangeData[],
+    uri: string,
+    ids: Id[]
+): lsp.Location[] {
     const locations = []
     for (const id of ids) {
         const rangeIndex = ranges.get(id)
-        if (!rangeIndex) {
+        if (rangeIndex === undefined) {
             continue
         }
 
@@ -479,7 +572,7 @@ function asLocations(ranges: Map<Id, number>, orderedRanges: RangeData[], uri: s
  * @param pkg The target package.
  * @param path The path relative to the project root.
  */
-function makeRemoteUri(pkg: PackageModel, path: string): string {
+export function makeRemoteUri(pkg: PackageModel, path: string): string {
     const url = new URL(`git://${pkg.repository}`)
     url.search = pkg.commit
     url.hash = path
@@ -508,7 +601,7 @@ function makeRange(result: {
  * @param range The range.
  * @param position The position.
  */
-function comparePosition(range: FlattenedRange, position: lsp.Position): number {
+export function comparePosition(range: FlattenedRange, position: lsp.Position): number {
     if (position.line < range.startLine) {
         return +1
     }
