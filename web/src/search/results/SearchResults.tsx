@@ -40,6 +40,7 @@ export interface SearchResultsProps
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: string,
+        version: string,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     dotStar: boolean
@@ -74,6 +75,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public componentDidMount(): void {
         this.props.telemetryService.logViewEvent('SearchResults')
 
+        // TODO(ijt): Get version from somewhere.
+        const version = 'V0'
+
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -100,7 +104,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            this.props.searchRequest(query, this.props).pipe(
+                            this.props.searchRequest(query, version, this.props).pipe(
                                 // Log telemetry
                                 tap(
                                     results =>

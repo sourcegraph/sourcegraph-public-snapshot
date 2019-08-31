@@ -33,7 +33,6 @@ import { DiscussionsList } from '../discussions/DiscussionsList'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
-import { DotStarButton } from '../search/DotStarButton'
 import { SearchButton } from '../search/input/SearchButton'
 import { ThemeProps } from '../theme'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
@@ -214,6 +213,10 @@ export class TreePage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        // TODO(ijt): fill out these stubs.
+        const dotStar = true
+        const onDotStarChange = (enabled: boolean) => {}
+
         return (
             <div className="tree-page">
                 <PageTitle title={this.getPageTitle()} />
@@ -288,7 +291,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         autoFocus={true}
                                         placeholder=""
                                     />
-                                    <SearchButton {...this.props} />
+                                    <SearchButton {...this.props} dotStar={dotStar} onDotStarChange={onDotStarChange} />
                                 </Form>
                             </section>
                             <TreeEntriesSection
@@ -367,10 +370,14 @@ export class TreePage extends React.PureComponent<Props, State> {
     private onQueryChange = (query: string) => this.setState({ query })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        // TODO(ijt): get this value
+        const dotStar = true
+
         event.preventDefault()
         submitSearch(
             this.props.history,
             this.getQueryPrefix() + this.state.query,
+            dotStar,
             this.props.filePath ? 'tree' : 'repo',
             this.props.activation
         )

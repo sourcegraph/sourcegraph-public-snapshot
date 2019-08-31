@@ -276,11 +276,11 @@ describe('withWorkspaceRootInputRevision', () => {
 })
 
 describe('buildSearchURLQuery', () => {
-    it('builds the URL query for a search', () => expect(buildSearchURLQuery('foo')).toBe('q=foo'))
-    it('handles an empty query', () => expect(buildSearchURLQuery('')).toBe('q='))
+    it('builds the URL query for a search', () => expect(buildSearchURLQuery('foo', true)).toBe('q=foo'))
+    it('handles an empty query', () => expect(buildSearchURLQuery('', true)).toBe('q='))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz')).toBe('q=foo+bar%25baz'))
-    it('preserves / and : for readability', () => expect(buildSearchURLQuery('repo:foo/bar')).toBe('q=repo:foo/bar'))
+        expect(buildSearchURLQuery('foo bar%baz', true)).toBe('q=foo+bar%25baz'))
+    it('preserves / and : for readability', () => expect(buildSearchURLQuery('repo:foo/bar', true)).toBe('q=repo:foo/bar'))
 })
 
 describe('lprToSelectionsZeroIndexed', () => {

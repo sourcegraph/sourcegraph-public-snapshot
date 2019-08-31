@@ -6,7 +6,11 @@ interface Props {
     onChange: (state: boolean) => void
 }
 
-export class ToggleButton extends React.PureComponent<Props> {
+interface State {
+    enabled: boolean
+}
+
+export class ToggleButton extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -37,7 +41,7 @@ export class ToggleButton extends React.PureComponent<Props> {
 
     private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
         event.preventDefault()
-        this.setState({ enabled: !this.state.enabled })
-        this.props.onChange(this.state.enabled)
+        const e = !this.state.enabled
+        this.setState({ enabled: e }, () => this.props.onChange(e))
     }
 }

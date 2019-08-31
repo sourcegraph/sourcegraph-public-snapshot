@@ -59,6 +59,7 @@ export const routes: readonly LayoutRouteProps[] = [
         path: '/search',
         render: (props: any) =>
             parseSearchURLQuery(props.location.search) ? (
+                // TODO(ijt): get dotStar from the v parameter in props.location.search (0 => true, 1 => false)
                 <SearchResults {...props} deployType={window.context.deployType} dotStar={dotStarFromSettings(props)} />
             ) : (
                 <SearchPage {...props} dotStar={dotStarFromSettings(props)} />
@@ -106,7 +107,9 @@ export const routes: readonly LayoutRouteProps[] = [
     },
     {
         path: '/search',
-        render: props => <SearchResults {...props} deployType={window.context.deployType} />,
+        render: (props: any) => (
+            <SearchResults {...props} deployType={window.context.deployType} dotStar={dotStarFromSettings(props)} />
+        ),
         exact: true,
     },
     {

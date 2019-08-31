@@ -104,7 +104,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                 </div>
                 {typeof totalCount === 'number' && totalCount > 0 && (
                     <div className="card-footer">
-                        <Link to={`/search?${buildSearchURLQuery('repo:')}`}>
+                        <Link to={`/search?${buildSearchURLQuery('repo:', true)}`}>
                             View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
                             <ChevronRightIcon className="icon-inline" />
                         </Link>

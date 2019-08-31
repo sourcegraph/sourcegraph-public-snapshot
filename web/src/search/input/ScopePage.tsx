@@ -18,7 +18,6 @@ import { fetchReposByQuery } from '../backend'
 import { submitSearch } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { DotStarButton } from '../DotStarButton'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -133,6 +132,10 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
     }
 
     public render(): JSX.Element | null {
+        // TODO(ijt): get these values.
+        const dotStar = true
+        const onDotStarChange = (enabled: boolean) => {}
+
         if (!this.state.searchScopes) {
             return null
         }
@@ -166,7 +169,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 history={this.props.history}
                                 placeholder="Search in this scope..."
                             />
-                            <SearchButton {...this.props} />
+                            <SearchButton {...this.props} dotStar={dotStar} onDotStarChange={onDotStarChange} />
                         </Form>
                     </section>
                     <PageTitle title={this.state.name} />
@@ -228,8 +231,11 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
     private onQueryChange = (query: string) => this.setState({ query })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+        // TODO(ijt): Get dotStar.
+        const dotStar = true
+
         event.preventDefault()
-        submitSearch(this.props.history, `${this.state.value} ${this.state.query}`, 'home')
+        submitSearch(this.props.history, `${this.state.value} ${this.state.query}`, dotStar, 'home')
     }
 
     private onShowMore = (event: React.MouseEvent<HTMLButtonElement>): void => {

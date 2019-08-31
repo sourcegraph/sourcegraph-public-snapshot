@@ -109,6 +109,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
 
+    // TODO(ijt): get dotStar from somewhere.
+    const dotStar = true
     return (
         <div className="layout">
             <KeyboardShortcutsHelp
@@ -122,7 +124,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
-            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
+            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} dotStar={dotStar} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
