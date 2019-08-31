@@ -209,7 +209,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 toggle={this.toggleIsOpen}
                 className="nav-link py-0 px-0 status-messages-nav-item__nav-link"
             >
-                <DropdownToggle caret={false} className="btn btn-icon" nav={true}>
+                <DropdownToggle caret={false} className="btn btn-link" nav={true}>
                     {this.renderIcon()}
                 </DropdownToggle>
 
