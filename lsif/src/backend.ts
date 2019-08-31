@@ -86,7 +86,7 @@ export class SQLiteBackend {
             throw e
         }
 
-        return new Database(this.xrepoDatabase, this.connectionCache, this.documentCache, file)
+        return new Database(this.xrepoDatabase, this.connectionCache, this.documentCache, repository, commit, file)
     }
 }
 

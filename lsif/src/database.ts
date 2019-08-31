@@ -20,12 +20,16 @@ export class Database {
      * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded document.
+     * @param repository The repository for which this database answers queries.
+     * @param commit The commit for which this database answers queries.
      * @param databasePath The path to the database file.
      */
     constructor(
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
+        private repository: string,
+        private commit: string,
         private databasePath: string
     ) {}
 
@@ -280,6 +284,8 @@ export class Database {
             this.xrepoDatabase,
             this.connectionCache,
             this.documentCache,
+            packageEntity.repository,
+            packageEntity.commit,
             makeFilename(packageEntity.repository, packageEntity.commit)
         )
 
@@ -315,10 +321,16 @@ export class Database {
 
         let allReferences: lsp.Location[] = []
         for (const reference of references) {
+            if (reference.repository === this.repository && reference.commit === this.commit) {
+                continue
+            }
+
             const db = new Database(
                 this.xrepoDatabase,
                 this.connectionCache,
                 this.documentCache,
+                reference.repository,
+                reference.commit,
                 makeFilename(reference.repository, reference.commit)
             )
 
