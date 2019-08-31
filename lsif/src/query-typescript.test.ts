@@ -6,13 +6,13 @@ import { createBackend } from './backend'
 import { lsp } from 'lsif-protocol'
 import { Readable } from 'stream'
 
-describe('TypeScript Queries', () => {
+describe('Database', () => {
     let storageRoot!: string
     const connectionCache = new ConnectionCache(10)
     const documentCache = new DocumentCache(10)
 
     beforeAll(async () => {
-        storageRoot = temp.mkdirSync('typescript')
+        storageRoot = temp.mkdirSync('typescript') // eslint-disable-line no-sync
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const inputs: { input: Readable; repository: string; commit: string }[] = []
 
@@ -29,28 +29,31 @@ describe('TypeScript Queries', () => {
         }
     })
 
-    test('definition of `add` from repo a', async () => {
+    it('should find all defs of `add` from repo a', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('a', makeCommit('a'))
         const definitions = await db.definitions('src/index.ts', { line: 11, character: 18 })
-        expect(definitions).toEqual([makeLocation('src/index.ts', 0, 16, 0, 19)])
+        expect(definitions).toContainEqual(makeLocation('src/index.ts', 0, 16, 0, 19))
+        expect(definitions && definitions.length).toEqual(1)
     })
 
-    test('definition of `add` from repo b1', async () => {
+    it('should find all defs of `add` from repo b1', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('b1', makeCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 })
-        expect(definitions).toEqual([makeRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19)])
+        expect(definitions).toContainEqual(makeRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19))
+        expect(definitions && definitions.length).toEqual(1)
     })
 
-    test('definition of `mul` from repo b1', async () => {
+    it('should find all defs of `mul` from repo b1', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('b1', makeCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 })
-        expect(definitions).toEqual([makeRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19)])
+        expect(definitions).toContainEqual(makeRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19))
+        expect(definitions && definitions.length).toEqual(1)
     })
 
-    test('references of `mul` from repo a', async () => {
+    it('should find all refs of `mul` from repo a', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('a', makeCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
@@ -74,7 +77,7 @@ describe('TypeScript Queries', () => {
         expect(references && references.length).toEqual(10)
     })
 
-    test('references of `mul` from repo b1', async () => {
+    it('should find all refs of `mul` from repo b1', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('b1', makeCommit('b1'))
         // TODO - (FIXME) why are these garbage results in the index
@@ -98,7 +101,7 @@ describe('TypeScript Queries', () => {
         expect(references && references.length).toEqual(10)
     })
 
-    test('references of `add` from repo a', async () => {
+    it('should find all refs of `add` from repo a', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('a', makeCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
@@ -132,7 +135,7 @@ describe('TypeScript Queries', () => {
         expect(references && references.length).toEqual(20)
     })
 
-    test('references of `add` from repo c1', async () => {
+    it('should find all refs of `add` from repo c1', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('c1', makeCommit('c1'))
         // TODO - (FIXME) why are these garbage results in the index

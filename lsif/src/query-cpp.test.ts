@@ -5,19 +5,19 @@ import { ConnectionCache, DocumentCache } from './cache'
 import { createBackend } from './backend'
 import { lsp } from 'lsif-protocol'
 
-describe('C++ Queries', () => {
+describe('Database', () => {
     let storageRoot!: string
     const connectionCache = new ConnectionCache(10)
     const documentCache = new DocumentCache(10)
 
     beforeAll(async () => {
-        storageRoot = temp.mkdirSync('cpp')
+        storageRoot = temp.mkdirSync('cpp') // eslint-disable-line no-sync
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
         await backend.insertDump(input, 'five', makeCommit('five'))
     })
 
-    test('definition of `four`', async () => {
+    it('should find all defs of `four` from main.cpp', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('five', makeCommit('five'))
         const definitions = await db.definitions('main.cpp', { line: 12, character: 3 })
@@ -25,7 +25,7 @@ describe('C++ Queries', () => {
         expect(definitions).toEqual([makeLocation('main.cpp', 6, 4, 6, 4)])
     })
 
-    test('definition of `five`', async () => {
+    it('should find all defs of `five` from main.cpp', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('five', makeCommit('five'))
         const definitions = await db.definitions('main.cpp', { line: 11, character: 3 })
@@ -33,7 +33,7 @@ describe('C++ Queries', () => {
         expect(definitions).toEqual([makeLocation('five.cpp', 2, 4, 2, 4)])
     })
 
-    test('references of `five`', async () => {
+    it('should find all refs of `five` from main.cpp', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache)
         const db = await backend.createDatabase('five', makeCommit('five'))
         const references = await db.references('main.cpp', { line: 11, character: 3 })
