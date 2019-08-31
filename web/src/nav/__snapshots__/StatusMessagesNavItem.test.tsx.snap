@@ -8,7 +8,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className="btn btn-icon nav-link"
+    className="btn btn-link nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -67,7 +67,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className="btn btn-icon nav-link"
+    className="btn btn-link nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -126,7 +126,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className="btn btn-icon nav-link"
+    className="btn btn-link nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -195,7 +195,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className="btn btn-icon nav-link"
+    className="btn btn-link nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -254,7 +254,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className="btn btn-icon nav-link"
+    className="btn btn-link nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -323,7 +323,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className="btn btn-icon nav-link"
+    className="btn btn-link nav-link"
     href="#"
     onClick={[Function]}
   >
@@ -382,7 +382,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
   <a
     aria-expanded={false}
     aria-haspopup={true}
-    className="btn btn-icon nav-link"
+    className="btn btn-link nav-link"
     href="#"
     onClick={[Function]}
   >
