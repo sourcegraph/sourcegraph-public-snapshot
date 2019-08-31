@@ -138,6 +138,35 @@ export class Database {
         // should be the most desirable.
 
         for (const moniker of monikers) {
+            if (moniker.kind === 'import') {
+                if (moniker.packageInformation) {
+                    const packageInformation = document.packageInformation.get(moniker.packageInformation)
+                    if (packageInformation) {
+                        const packageEntity = await this.xrepoDatabase.getPackage(
+                            moniker.scheme,
+                            packageInformation.name,
+                            packageInformation.version
+                        )
+
+                        if (packageEntity) {
+                            const db = new Database(
+                                this.xrepoDatabase,
+                                this.connectionCache,
+                                this.documentCache,
+                                packageEntity.repository,
+                                packageEntity.commit,
+                                makeFilename(packageEntity.repository, packageEntity.commit)
+                            )
+
+                            const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
+                            result = result.concat(
+                                await Database.monikerResults(db, RefModel, moniker, pathTransformer)
+                            )
+                        }
+                    }
+                }
+            }
+
             if (moniker.kind === 'local') {
                 continue
             }
