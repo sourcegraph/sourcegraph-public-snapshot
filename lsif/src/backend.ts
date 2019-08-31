@@ -25,15 +25,11 @@ export class NoLSIFDataError extends Error {
 }
 
 /**
- * Where on the file system to store LSIF files.
- */
-const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
-
-/**
  * Backend for LSIF dumps stored in SQLite.
  */
 export class SQLiteBackend {
     constructor(
+        private storageRoot: string,
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache
@@ -45,7 +41,7 @@ export class SQLiteBackend {
      * can be subsequently read by the `createRunner` method.
      */
     public async insertDump(input: Readable, repository: string, commit: string): Promise<void> {
-        const outFile = makeFilename(repository, commit)
+        const outFile = makeFilename(this.storageRoot, repository, commit)
 
         try {
             await fs.unlink(outFile)
@@ -74,7 +70,7 @@ export class SQLiteBackend {
      * `insertDump` (otherwise this method is expected to throw).
      */
     public async createDatabase(repository: string, commit: string): Promise<Database> {
-        const file = makeFilename(repository, commit)
+        const file = makeFilename(this.storageRoot, repository, commit)
 
         try {
             await fs.stat(file)
@@ -86,15 +82,27 @@ export class SQLiteBackend {
             throw e
         }
 
-        return new Database(this.xrepoDatabase, this.connectionCache, this.documentCache, repository, commit, file)
+        return new Database(
+            this.storageRoot,
+            this.xrepoDatabase,
+            this.connectionCache,
+            this.documentCache,
+            repository,
+            commit,
+            file
+        )
     }
 }
 
 /**
- *.Computes the filename of the LSIF dump from the given repository and commit hash.
+ * Create the path of the SQLite database file for the given repository and commit.
+ *
+ * @param storageRoot The path where SQLite databases are stored.
+ * @param repository The repository name.
+ * @param commit The repository commit.
  */
-export function makeFilename(repository: string, commit: string): string {
-    return path.join(STORAGE_ROOT, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+export function makeFilename(storageRoot: string, repository: string, commit: string): string {
+    return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
 /**
@@ -116,18 +124,19 @@ async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex |
 }
 
 export async function createBackend(
+    storageRoot: string,
     connectionCache: ConnectionCache,
     documentCache: DocumentCache
 ): Promise<SQLiteBackend> {
     try {
-        await fs.mkdir(STORAGE_ROOT)
+        await fs.mkdir(storageRoot)
     } catch (e) {
         if (!hasErrorCode(e, 'EEXIST')) {
             throw e
         }
     }
 
-    const filename = path.join(STORAGE_ROOT, 'correlation.db')
+    const filename = path.join(storageRoot, 'correlation.db')
 
     try {
         await fs.stat(filename)
@@ -137,5 +146,5 @@ export async function createBackend(
         }
     }
 
-    return new SQLiteBackend(new XrepoDatabase(connectionCache, filename), connectionCache, documentCache)
+    return new SQLiteBackend(storageRoot, new XrepoDatabase(connectionCache, filename), connectionCache, documentCache)
 }

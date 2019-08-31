@@ -29,12 +29,17 @@ const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
 const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
 
 /**
+ * Where on the file system to store LSIF files.
+ */
+const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
+
+/**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
-    const backend = await createBackend(connectionCache, documentCache)
+    const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache)
     const app = express()
     app.use(errorHandler)
 

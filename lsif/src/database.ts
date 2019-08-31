@@ -17,6 +17,7 @@ export class Database {
      * Create a new `Database` with the given cross-repo database instance and the
      * filename of the database that contains data for a particular repository/commit.
      *
+     * @param storageRoot The path where SQLite databases are stored.
      * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded document.
@@ -25,6 +26,7 @@ export class Database {
      * @param databasePath The path to the database file.
      */
     constructor(
+        private storageRoot: string,
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
@@ -150,12 +152,13 @@ export class Database {
 
                         if (packageEntity) {
                             const db = new Database(
+                                this.storageRoot,
                                 this.xrepoDatabase,
                                 this.connectionCache,
                                 this.documentCache,
                                 packageEntity.repository,
                                 packageEntity.commit,
-                                makeFilename(packageEntity.repository, packageEntity.commit)
+                                makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
                             )
 
                             const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
@@ -310,12 +313,13 @@ export class Database {
         }
 
         const db = new Database(
+            this.storageRoot,
             this.xrepoDatabase,
             this.connectionCache,
             this.documentCache,
             packageEntity.repository,
             packageEntity.commit,
-            makeFilename(packageEntity.repository, packageEntity.commit)
+            makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
         const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
@@ -355,12 +359,13 @@ export class Database {
             }
 
             const db = new Database(
+                this.storageRoot,
                 this.xrepoDatabase,
                 this.connectionCache,
                 this.documentCache,
                 reference.repository,
                 reference.commit,
-                makeFilename(reference.repository, reference.commit)
+                makeFilename(this.storageRoot, reference.repository, reference.commit)
             )
 
             const pathTransformer = (path: string): string => makeRemoteUri(reference, path)
