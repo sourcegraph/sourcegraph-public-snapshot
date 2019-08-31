@@ -481,6 +481,13 @@
   resolved "https://registry.npmjs.org/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
 
+"@types/temp@^0.8.34":
+  version "0.8.34"
+  resolved "https://registry.npmjs.org/@types/temp/-/temp-0.8.34.tgz#03e4b3cb67cbb48c425bbf54b12230fef85540ac"
+  integrity sha512-oLa9c5LHXgS6UimpEVp08De7QvZ+Dfu5bMQuWyMhf92Z26Q10ubEMOWy9OEfUdzW7Y/sDWVHmUaLFtmnX/2j0w==
+  dependencies:
+    "@types/node" "*"
+
 "@types/yallist@^3.0.1":
   version "3.0.1"
   resolved "https://registry.npmjs.org/@types/yallist/-/yallist-3.0.1.tgz#3f43dac55d779e3058ba10334659d9fbb373807c"
@@ -3512,6 +3519,13 @@ rimraf@^2.5.4, rimraf@^2.6.1, rimraf@^2.6.3:
   dependencies:
     glob "^7.1.3"
 
+rimraf@~2.6.2:
+  version "2.6.3"
+  resolved "https://registry.npmjs.org/rimraf/-/rimraf-2.6.3.tgz#b2d104fe0d8fb27cf9e0a1cda8262dd3833c6cab"
+  integrity sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==
+  dependencies:
+    glob "^7.1.3"
+
 rsvp@^4.8.4:
   version "4.8.5"
   resolved "https://registry.npmjs.org/rsvp/-/rsvp-4.8.5.tgz#c8f155311d167f68f21e168df71ec5b083113734"
@@ -3944,6 +3958,13 @@ tar@^4:
     mkdirp "^0.5.0"
     safe-buffer "^5.1.2"
     yallist "^3.0.3"
+
+temp@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.npmjs.org/temp/-/temp-0.9.0.tgz#61391795a11bd9738d4c4d7f55f012cb8f55edaa"
+  integrity sha512-YfUhPQCJoNQE5N+FJQcdPz63O3x3sdT4Xju69Gj4iZe0lBKOtnAMi0SLj9xKhGkcGhsxThvTJ/usxtFPo438zQ==
+  dependencies:
+    rimraf "~2.6.2"
 
 test-exclude@^5.2.3:
   version "5.2.3"
