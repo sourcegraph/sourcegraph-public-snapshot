@@ -32,7 +32,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     tabIndex="-1"
   >
     <h3>
-      External Service Status
+      External service status
     </h3>
     <div
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
@@ -91,7 +91,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     tabIndex="-1"
   >
     <h3>
-      External Service Status
+      External service status
     </h3>
     <div
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
@@ -150,7 +150,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     tabIndex="-1"
   >
     <h3>
-      External Service Status
+      External service status
     </h3>
     <div
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
@@ -219,7 +219,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     tabIndex="-1"
   >
     <h3>
-      External Service Status
+      External service status
     </h3>
     <div
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
@@ -278,7 +278,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
     tabIndex="-1"
   >
     <h3>
-      External Service Status
+      External service status
     </h3>
     <div
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
@@ -347,7 +347,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
     tabIndex="-1"
   >
     <h3>
-      External Service Status
+      External service status
     </h3>
     <div
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
@@ -406,7 +406,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
     tabIndex="-1"
   >
     <h3>
-      External Service Status
+      External service status
     </h3>
     <div
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
