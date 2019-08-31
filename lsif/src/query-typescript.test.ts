@@ -29,34 +29,35 @@ describe('TypeScript Queries', () => {
     test('definition of `add` from repo b1', async () => {
         const backend = await createBackend(connectionCache, documentCache)
         const db = await backend.createDatabase('b1', makeCommit('b1'))
-        const definitions = await db.definitions('src/index.ts', { line: 3, character: 10 })
+        const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 })
         expect(definitions).toEqual([makeRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19)])
     })
 
     test('definition of `mul` from repo b1', async () => {
         const backend = await createBackend(connectionCache, documentCache)
         const db = await backend.createDatabase('b1', makeCommit('b1'))
-        const definitions = await db.definitions('src/index.ts', { line: 3, character: 14 })
+        const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 })
         expect(definitions).toEqual([makeRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19)])
     })
 
     test('references of `mul` from repo a', async () => {
         const backend = await createBackend(connectionCache, documentCache)
         const db = await backend.createDatabase('a', makeCommit('a'))
-        const references = await db.references('src/index.ts', { line: 4, character: 17 })
-        // TODO - (FIXME) why are these garbage results in the index
+        const references = await db.references('src/index.ts', { line: 4, character: 19 })
+        // TODO - why are these garbage results in the index
         const testReferences = references!.filter(l => !l.uri.includes('node_modules'))
 
+        // TODO - should the definition be in this result set?
         expect(testReferences).toContainEqual(makeLocation('src/index.ts', 4, 16, 4, 19)) // def
         expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 0, 14, 0, 17)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 13, 3, 16)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 24, 3, 27)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 15, 3, 18)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 26, 3, 29)) // 2nd use
         expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 0, 14, 0, 17)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 13, 3, 16)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 24, 3, 27)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 15, 3, 18)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 26, 3, 29)) // 2nd use
         expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 0, 14, 0, 17)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 13, 3, 16)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 24, 3, 27)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 15, 3, 18)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 26, 3, 29)) // 2nd use
 
         // Ensure no additional references
         expect(testReferences.length).toEqual(10)
@@ -65,55 +66,54 @@ describe('TypeScript Queries', () => {
     test('references of `mul` from repo b1', async () => {
         const backend = await createBackend(connectionCache, documentCache)
         const db = await backend.createDatabase('b1', makeCommit('b1'))
-
-        const references = await db.references('src/index.ts', { line: 3, character: 14 })
-
-        // TODO - (FIXME)  why are these in the index?
+        const references = await db.references('src/index.ts', { line: 3, character: 16 })
+        // TODO - why are these garbage results in the index
         const testReferences = references!.filter(l => !l.uri.includes('node_modules'))
 
-        // TODO - (FIXME) oh no, doesn't contain its own references
-        // expect(references).toContainEqual(makeRemoteLocation('a', 'src/index.ts', 0, 16, 4, 19))   // def
-        // expect(references).toContainEqual(makeRemoteLocation('a', 'src/index.ts', 11, 15, 11, 18)) // 1st use
-
-        // TODO - (FIXME) need to make b1 a local reference, or make everything a remote reference
-        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 0, 14, 0, 17)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 13, 3, 16)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 24, 3, 27)) // 2nd use
+        // TODO - should the definition be in this result set?
+        expect(testReferences).toContainEqual(makeRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19)) // def
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 0, 14, 0, 17)) // import
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 3, 15, 3, 18)) // 1st use
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 3, 26, 3, 29)) // 2nd use
         expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 0, 14, 0, 17)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 13, 3, 16)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 24, 3, 27)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 15, 3, 18)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 26, 3, 29)) // 2nd use
         expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 0, 14, 0, 17)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 13, 3, 16)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 24, 3, 27)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 15, 3, 18)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 26, 3, 29)) // 2nd use
+
+        // Ensure no additional references
+        expect(testReferences.length).toEqual(10)
     })
 
     test('references of `add` from repo a', async () => {
         const backend = await createBackend(connectionCache, documentCache)
         const db = await backend.createDatabase('a', makeCommit('a'))
         const references = await db.references('src/index.ts', { line: 0, character: 17 })
-        // TODO - (FIXME) why are these garbage results in the index
+        // TODO - why are these garbage results in the index
         const testReferences = references!.filter(l => !l.uri.includes('node_modules'))
 
+        // TODO - should the definition be in this result set?
         expect(testReferences).toContainEqual(makeLocation('src/index.ts', 0, 16, 0, 19)) // def
-        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 11, 14, 11, 17)) // 1st use
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 11, 18, 11, 21)) // 1st use
         expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 9, 3, 12)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 11, 3, 14)) // 1st use
         expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 9, 3, 12)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 11, 3, 14)) // 1st use
         expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 9, 3, 12)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 11, 3, 14)) // 1st use
         expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 9, 3, 12)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 13, 3, 16)) // 2nd use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 24, 3, 27)) // 3rd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 11, 3, 14)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 15, 3, 18)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 26, 3, 29)) // 3rd use
         expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 9, 3, 12)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 13, 3, 16)) // 2nd use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 24, 3, 27)) // 3rd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 11, 3, 14)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 15, 3, 18)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 26, 3, 29)) // 3rd use
         expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 9, 3, 12)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 13, 3, 16)) // 2nd use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 24, 3, 27)) // 3rd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 11, 3, 14)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 15, 3, 18)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 26, 3, 29)) // 3rd use
 
         // Ensure no additional references
         expect(testReferences.length).toEqual(20)
@@ -122,36 +122,34 @@ describe('TypeScript Queries', () => {
     test('references of `add` from repo c1', async () => {
         const backend = await createBackend(connectionCache, documentCache)
         const db = await backend.createDatabase('c1', makeCommit('c1'))
-        const references = await db.references('src/index.ts', { line: 3, character: 14 })
-        // TODO - (FIXME) why are these garbage results in the index
+        const references = await db.references('src/index.ts', { line: 3, character: 16 })
+        // TODO - why are these garbage results in the index
         const testReferences = references!.filter(l => !l.uri.includes('node_modules'))
 
-        // TODO - (FIXME) oh no, doesn't contain its own references
-        // expect(testReferences).toContainEqual(makeLocation('src/index.ts', 0, 16, 0, 19))             // def
-        // expect(testReferences).toContainEqual(makeLocation('src/index.ts', 3, 14, 3, 17))           // 1st use
-
-        // TODO - (FIXME) the relative paths are wrong
+        // TODO - should the definition be in this result set?
+        expect(testReferences).toContainEqual(makeRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19)) // def
+        expect(testReferences).toContainEqual(makeRemoteLocation('a', 'src/index.ts', 11, 18, 11, 21)) // 1st use
         expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 9, 3, 12)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b1', 'src/index.ts', 3, 11, 3, 14)) // 1st use
         expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 9, 3, 12)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b2', 'src/index.ts', 3, 11, 3, 14)) // 1st use
         expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 9, 3, 12)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 9, 3, 12)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 13, 3, 16)) // 2nd use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c1', 'src/index.ts', 3, 24, 3, 27)) // 3rd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('b3', 'src/index.ts', 3, 11, 3, 14)) // 1st use
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 0, 9, 0, 12)) // import
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 3, 11, 3, 14)) // 1st use
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 3, 15, 3, 18)) // 2nd use
+        expect(testReferences).toContainEqual(makeLocation('src/index.ts', 3, 26, 3, 29)) // 3rd use
         expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 9, 3, 12)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 13, 3, 16)) // 2nd use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 24, 3, 27)) // 3rd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 11, 3, 14)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 15, 3, 18)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c2', 'src/index.ts', 3, 26, 3, 29)) // 3rd use
         expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 0, 9, 0, 12)) // import
-        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 9, 3, 12)) // 1st use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 13, 3, 16)) // 2nd use
-        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 24, 3, 27)) // 3rd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 11, 3, 14)) // 1st use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 15, 3, 18)) // 2nd use
+        expect(testReferences).toContainEqual(makeRemoteLocation('c3', 'src/index.ts', 3, 26, 3, 29)) // 3rd use
 
         // Ensure no additional references
-        expect(testReferences.length).toEqual(22)
+        expect(testReferences.length).toEqual(20)
     })
 })
 
