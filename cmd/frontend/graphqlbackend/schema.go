@@ -1468,14 +1468,14 @@ type FileDiff {
     # The old (original) path of the file, or null if the file was added.
     oldPath: String
     # The old file, or null if the file was created (oldFile.path == oldPath).
-    oldFile: File2
+    oldFile: File
     # The new (changed) path of the file, or null if the file was deleted.
     newPath: String
     # The new file, or null if the file was deleted (newFile.path == newPath).
-    newFile: File2
+    newFile: File
     # The old file (if the file was deleted) and otherwise the new file. This file field is typically used by
     # clients that want to show a "View" link to the file.
-    mostRelevantFile: File2!
+    mostRelevantFile: File!
     # Hunks that were changed from old to new.
     hunks: [FileDiffHunk!]!
     # The diff stat for the whole file.
@@ -1812,7 +1812,7 @@ type GitCommit implements Node {
     # The file at the given path for this commit.
     #
     # See "File" documentation for the difference between this field and the "blob" field.
-    file(path: String!): File2
+    file(path: String!): File
     # Lists the programming languages present in the tree at this commit.
     languages: [String!]!
     # The log of commits consisting of this commit and its ancestors.
@@ -1980,10 +1980,7 @@ type GitTree implements TreeEntry {
 # (for example, to support searching/browsing generated files that aren't committed and don't exist
 # as Git blobs). Clients should generally use the GitBlob concrete type and GitCommit.blobs (not
 # GitCommit.files), unless they explicitly want to opt-in to different behavior in the future.
-#
-# INTERNAL: This is temporarily named File2 during a migration. Do not refer to the name File2 in
-# any API clients as the name will change soon.
-interface File2 {
+interface File {
     # The full path (relative to the root) of this file.
     path: String!
     # The base name (i.e., file name only) of this file.
@@ -2031,7 +2028,7 @@ type File {
 }
 
 # A Git blob in a repository.
-type GitBlob implements TreeEntry & File2 {
+type GitBlob implements TreeEntry & File {
     # The full path (relative to the repository root) of this blob.
     path: String!
     # The base name (i.e., file name only) of this blob's path.
