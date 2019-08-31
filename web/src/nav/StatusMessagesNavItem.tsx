@@ -214,7 +214,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 </DropdownToggle>
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
-                    <h3>External Service Status</h3>
+                    <h3>External service status</h3>
                     {isErrorLike(this.state.messagesOrError) ? (
                         <div className="status-messages-nav-item__entry alert alert-danger mb-0">
                             <h4>Failed to load status messages:</h4>
