@@ -1108,4 +1108,33 @@ describe('e2e test suite', () => {
             })
         })
     })
+
+    describe('Search result type tabs', () => {
+        test('Search results type tabs appear', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await driver.page.waitForSelector('.e2e-search-result-type-tabs', { visible: true })
+            await driver.page.waitForSelector('.e2e-search-result-tab--active', { visible: true })
+            const tabs = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result-tab'), tab => tab)
+            )
+
+            expect(tabs.length).toEqual(5)
+
+            expect(tabs[0].textContent === 'Code')
+            expect(tabs[1].textContent === 'Diffs')
+            expect(tabs[2].textContent === 'Commits')
+            expect(tabs[3].textContent === 'Symbols')
+            expect(tabs[4].textContent === 'Repos')
+
+            const activeTab = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-search-result-tab--active').length
+            )
+            expect(activeTab).toEqual(1)
+
+            const label = await driver.page.evaluate(
+                () => document.querySelector('.e2e-search-result-tab--active')!.textContent || ''
+            )
+            expect(label).toEqual('Code')
+        })
+    })
 })

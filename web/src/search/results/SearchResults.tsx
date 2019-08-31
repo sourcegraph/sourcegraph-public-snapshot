@@ -27,7 +27,7 @@ import {
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
-import SearchResultTypeTabs from './SearchResultTypeTabs'
+import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,

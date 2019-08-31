@@ -25,7 +25,8 @@ export default class SearchResultTab extends React.Component<Props, {}> {
         return (
             <button
                 type="button"
-                className={`btn search-result-tab ${this.props.active && 'search-result-tab--active'}`}
+                className={`btn search-result-tab ${this.props.active &&
+                    'search-result-tab--active e2e-search-result-tab--active'} e2e-search-result-tab`}
                 onClick={this.onClick}
             >
                 <div className="search-result-tab__inner">{typeToProse[this.props.type]}</div>

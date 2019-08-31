@@ -13,7 +13,7 @@ export const SearchResultTypeTabs: React.FunctionComponent<{
     query: string
     onTabClicked: (query: SEARCH_TYPES) => void
 }> = ({ activeType, query, onTabClicked }) => (
-    <div className="search-result-type-tabs">
+    <div className="search-result-type-tabs e2e-search-result-type-tabs">
         <SearchResultTab active={activeType === ''} type="" onClick={onTabClicked} query={query} />
         <SearchResultTab active={activeType === 'diff'} type="diff" onClick={onTabClicked} query={query} />
         <SearchResultTab active={activeType === 'commit'} type="commit" onClick={onTabClicked} query={query} />
