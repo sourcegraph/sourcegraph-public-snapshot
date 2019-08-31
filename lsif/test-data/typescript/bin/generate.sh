@@ -13,6 +13,8 @@ DIR=./repos REPO=c1 DEP=`pwd`/repos/a ./bin/generate-c.sh
 DIR=./repos REPO=c2 DEP=`pwd`/repos/a ./bin/generate-c.sh
 DIR=./repos REPO=c3 DEP=`pwd`/repos/a ./bin/generate-c.sh
 
+mkdir -p data
+
 for repo in `ls repos`; do
     cd "./repos/${repo}"
     ${LSIF_TSC} -p tsconfig.json --noContents --stdout | ${LSIF_NPM} --stdin --out "../../data/${repo}.lsif"

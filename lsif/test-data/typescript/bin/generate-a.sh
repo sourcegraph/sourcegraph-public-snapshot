@@ -4,20 +4,20 @@ mkdir -p "${DIR}/${REPO}/src"
 
 cat << EOF > "${DIR}/${REPO}/src/index.ts"
 export function add(a: number, b: number): number {
-  return a + b
+    return a + b
 }
 
 export function mul(a: number, b: number): number {
-  if (b === 0) {
-    return 0
-  }
+    if (b === 0) {
+        return 0
+    }
 
-  let product = a
-  for (let i = 0; i < b; i++) {
-    product = add(product, a)
-  }
+    let product = a
+    for (let i = 0; i < b; i++) {
+        product = add(product, a)
+    }
 
-  return product
+    return product
 }
 EOF
 
@@ -35,8 +35,13 @@ EOF
 
 cat << EOF > "${DIR}/${REPO}/tsconfig.json"
 {
-    "compilerOptions": {},
-    "include": ["src"],
-    "exclude": ["node_modules"],
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "esnext",
+        "moduleResolution": "node",
+        "typeRoots": []
+    },
+    "include": ["src/*"],
+    "exclude": ["node_modules"]
 }
 EOF
