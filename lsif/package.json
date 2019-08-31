@@ -20,6 +20,7 @@
     "yallist": "^3.0.3"
   },
   "devDependencies": {
+    "@jest/fake-timers": "^24.9.0",
     "@sourcegraph/tsconfig": "^4.0.0",
     "@types/bloomfilter": "^0.0.0",
     "@types/body-parser": "1.17.0",
