@@ -22,7 +22,7 @@
     "vscode-uri": "^2.0.2"
   },
   "devDependencies": {
-    "@types/body-parser": "1.17.0",
+    "@types/body-parser": "1.17.1",
     "@types/express": "4.17.0",
     "@types/fs-extra": "8.0.0",
     "@types/lru-cache": "5.1.0",
