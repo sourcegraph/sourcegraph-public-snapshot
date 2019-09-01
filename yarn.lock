@@ -2201,10 +2201,10 @@
     "@types/connect" "*"
     "@types/node" "*"
 
-"@types/chai-as-promised@7.1.1":
-  version "7.1.1"
-  resolved "https://registry.npmjs.org/@types/chai-as-promised/-/chai-as-promised-7.1.1.tgz#004c27a4ac640e9590e25d8b0980cb0a6609bfd8"
-  integrity sha512-dberBxQW/XWv6BMj0su1lV9/C9AUx5Hqu2pisuS6S4YK/Qt6vurcj/BmcbEsobIWWCQzhesNY8k73kIxx4X7Mg==
+"@types/chai-as-promised@7.1.2":
+  version "7.1.2"
+  resolved "https://registry.npmjs.org/@types/chai-as-promised/-/chai-as-promised-7.1.2.tgz#2f564420e81eaf8650169e5a3a6b93e096e5068b"
+  integrity sha512-PO2gcfR3Oxa+u0QvECLe1xKXOqYTzCmWf0FhLhjREoW3fPAVamjihL7v1MOVLJLsnAMdLcjkfrs01yvDMwVK4Q==
   dependencies:
     "@types/chai" "*"
 
