@@ -24,7 +24,7 @@ initSentry('options')
 type State = Pick<
     FeatureFlags,
     'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion'
-> & { sourcegraphURL: string | null }
+> & { sourcegraphURL: string | null; isActivated: boolean }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
@@ -67,6 +67,7 @@ const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
+        isActivated: true,
         allowErrorReporting: false,
         experimentalLinkPreviews: false,
         experimentalTextFieldCompletion: false,
@@ -96,6 +97,14 @@ class Options extends React.Component<{}, State> {
                 }
             )
         )
+
+        this.subscriptions.add(
+            observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
+                this.setState({
+                    isActivated: !disableExtension,
+                })
+            })
+        )
     }
 
     public componentWillUnmount(): void {
@@ -109,6 +118,7 @@ class Options extends React.Component<{}, State> {
 
         const props: OptionsContainerProps = {
             sourcegraphURL: this.state.sourcegraphURL,
+            isActivated: this.state.isActivated,
 
             ensureValidSite,
             fetchCurrentTabStatus,
@@ -122,6 +132,7 @@ class Options extends React.Component<{}, State> {
                 }),
 
             setSourcegraphURL: (sourcegraphURL: string) => storage.sync.set({ sourcegraphURL }),
+            toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
             toggleFeatureFlag,
             featureFlags: [
                 { key: 'allowErrorReporting', value: this.state.allowErrorReporting },

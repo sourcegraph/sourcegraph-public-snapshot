@@ -6,15 +6,16 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 import { ConnectionErrors } from './ServerURLForm'
-import { observeStorageKey, storage } from '../../browser/storage'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
+    isActivated: boolean
     ensureValidSite: (url: string) => Observable<any>
     fetchCurrentTabStatus: () => Promise<OptionsMenuProps['currentTabStatus']>
     hasPermissions: (url: string) => Promise<boolean>
     requestPermissions: (url: string) => void
     setSourcegraphURL: (url: string) => Promise<void>
+    toggleExtensionDisabled: (isActivated: boolean) => Promise<void>
     toggleFeatureFlag: (key: string) => void
     featureFlags: { key: string; value: boolean }[]
 }
@@ -46,10 +47,10 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         this.state = {
             status: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
+            isActivated: props.isActivated,
             urlHasPermissions: false,
             connectionError: undefined,
             isSettingsOpen: false,
-            isActivated: true,
         }
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
@@ -110,19 +111,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
     public componentDidMount(): void {
         this.urlUpdates.next(this.state.sourcegraphURL)
-
-        observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
-            this.setState({
-                isActivated: !disableExtension,
-            })
-        })
-
-        this.subscriptions.add(
-            this.activationClicks
-                .pipe(concatMap(isActivated => storage.sync.set({ disableExtension: !isActivated })))
-                .subscribe()
-        )
-        this.subscriptions.add(this.activationClicks.subscribe(isActivated => this.setState({ isActivated })))
+        this.subscriptions.add(this.activationClicks.pipe(concatMap(this.props.toggleExtensionDisabled)).subscribe())
     }
 
     public componentDidUpdate(): void {
@@ -140,7 +129,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 version={this.version}
                 onURLChange={this.handleURLChange}
                 onURLSubmit={this.handleURLSubmit}
-                isActivated={this.state.isActivated}
+                isActivated={this.props.isActivated}
                 toggleFeatureFlag={this.props.toggleFeatureFlag}
                 featureFlags={this.props.featureFlags}
                 onSettingsClick={this.handleSettingsClick}
