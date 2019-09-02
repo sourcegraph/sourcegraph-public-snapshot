@@ -34,7 +34,7 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     constructor(
-        private editorService: Pick<EditorService, 'editors' | 'editorUpdates'>,
+        private editorService: Pick<EditorService, 'activeEditorUpdates'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}
@@ -110,11 +110,11 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            this.editorService.editorUpdates,
+            this.editorService.activeEditorUpdates,
             this.settingsService.data,
             this.context,
         ]).pipe(
-            map(([multiContributions, _, settings, context]) => {
+            map(([multiContributions, activeEditor, settings, context]) => {
                 // Merge in extra context.
                 if (extraContext) {
                     context = { ...context, ...extraContext }
@@ -122,14 +122,7 @@ export class ContributionRegistry {
 
                 // TODO(sqs): use {@link ContextService#observeValue}
                 const computedContext = {
-                    get: (key: string) =>
-                        getComputedContextProperty(
-                            [...this.editorService.editors.values()],
-                            settings,
-                            context,
-                            key,
-                            scope
-                        ),
+                    get: (key: string) => getComputedContextProperty(activeEditor, settings, context, key, scope),
                 }
                 return multiContributions.flat().map(contributions => {
                     try {

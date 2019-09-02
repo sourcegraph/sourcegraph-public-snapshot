@@ -31,7 +31,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    editors: readonly CodeEditorWithPartialModel[],
+    activeEditor: CodeEditorWithPartialModel | undefined,
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,
@@ -45,7 +45,7 @@ export function getComputedContextProperty(
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const component: ContributionScope | null = scope || editors.find(({ isActive }) => isActive) || null
+    const component: ContributionScope | null = scope || activeEditor || null
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
         return !!component
     }

@@ -66,6 +66,8 @@ export interface EditorService {
 
     readonly editorUpdates: Subscribable<EditorUpdate[]>
 
+    readonly activeEditorUpdates: Subscribable<CodeEditorWithPartialModel | undefined>
+
     /**
      * Add an editor.
      *
@@ -128,6 +130,7 @@ export function createEditorService(
     /** A map of editor ids to code editors. */
     const editors = new Map<string, CodeEditorWithPartialModel>()
     const editorUpdates = new BehaviorSubject<EditorUpdate[]>([])
+    const activeEditorUpdates = new BehaviorSubject<CodeEditorWithPartialModel | undefined>(undefined)
     /**
      * Returns the CodeEditor with the given editorId.
      * Throws if no editor exists with the given editorId.
@@ -142,6 +145,7 @@ export function createEditorService(
     return {
         editors,
         editorUpdates,
+        activeEditorUpdates,
         addEditor: data => {
             const editorId = nextId()
             const editor: CodeEditorWithPartialModel = {
@@ -153,6 +157,9 @@ export function createEditorService(
             }
             editors.set(editorId, editor)
             editorUpdates.next([{ type: 'added', editorId, data }])
+            if (data.isActive) {
+                activeEditorUpdates.next(editor)
+            }
             return { editorId }
         },
         observeEditorAndModel: ({ editorId }) => {
@@ -195,6 +202,10 @@ export function createEditorService(
             const editor = getEditor(editorId)
             editors.delete(editorId)
             editorUpdates.next([{ type: 'deleted', editorId }])
+            // Check if this was the active editor
+            if (activeEditorUpdates.value && activeEditorUpdates.value.editorId === editorId) {
+                activeEditorUpdates.next(undefined)
+            }
             // Check if any of the remaining editors points to the same resource.
             for (const e of editors.values()) {
                 if (e.resource === editor.resource) {
@@ -217,8 +228,9 @@ export function createEditorService(
  * {@link EditorService#editors}. If there is no active editor or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition(editors: readonly CodeEditorData[]): TextDocumentPositionParams | null {
-    const activeEditor = editors.find(({ isActive }) => isActive)
+export function getActiveCodeEditorPosition(
+    activeEditor: CodeEditorWithPartialModel | undefined
+): TextDocumentPositionParams | null {
     if (!activeEditor) {
         return null
     }
