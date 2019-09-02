@@ -1,16 +1,15 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { noop } from 'lodash'
-import { from, NEVER, of, Subscribable } from 'rxjs'
-import { first, map } from 'rxjs/operators'
+import { from, of, Subscribable } from 'rxjs'
+import { first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
-import * as sinon from 'sinon'
 import {
     CodeEditorWithPartialModel,
     createEditorService,
     EditorService,
     getActiveCodeEditorPosition,
+    CodeEditorData,
 } from './editorService'
-import { ModelService, TextModel } from './modelService'
+import { createTestModelService } from './modelService.test'
 
 export function createTestEditorService(
     editorsAndModels: Subscribable<readonly CodeEditorWithPartialModel[]> = of([])
@@ -23,83 +22,97 @@ const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toE
 describe('EditorService', () => {
     test('editors', () => {
         scheduler().run(({ expectObservable }) => {
-            const editorService = createEditorService({
-                models: NEVER,
-                removeModel: jest.fn(),
-            })
-            const { editorId } = editorService.addEditor({
+            const editorService = createEditorService(
+                createTestModelService({
+                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
+                })
+            )
+            const editor: CodeEditorData = {
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
                 isActive: true,
-            })
-            expectObservable(from(editorService.editors)).toBe('a', {
-                a: [{ editorId, type: 'CodeEditor', resource: 'u', selections: [], isActive: true }],
+            }
+            const { editorId } = editorService.addEditor(editor)
+            expectObservable(from(editorService.editorUpdates)).toBe('a', {
+                a: [{ type: 'added', editorId, data: editor }],
             })
         })
     })
 
-    describe('editorsAndModels', () => {
-        test('emits on model language change but not text change', () => {
-            scheduler().run(({ cold, expectObservable }) => {
-                const editorService = createEditorService({
-                    models: cold<TextModel[]>('abc', {
-                        a: [{ uri: 'u', text: 't', languageId: 'l' }],
-                        b: [{ uri: 'u', text: 't2', languageId: 'l' }],
-                        c: [{ uri: 'u', text: 't2', languageId: 'l2' }],
-                    }),
-                    removeModel: jest.fn(),
-                })
-                const { editorId } = editorService.addEditor({
-                    type: 'CodeEditor',
-                    resource: 'u',
-                    selections: [],
-                    isActive: true,
-                })
-                expectObservable(from(editorService.editorsAndModels)).toBe('a-c', {
-                    a: [
-                        {
-                            editorId,
-                            type: 'CodeEditor',
-                            resource: 'u',
-                            selections: [],
-                            isActive: true,
-                            model: { uri: 'u', text: 't', languageId: 'l' },
-                        },
-                    ],
-                    c: [
-                        {
-                            editorId,
-                            type: 'CodeEditor',
-                            resource: 'u',
-                            selections: [],
-                            isActive: true,
-                            model: { uri: 'u', text: 't2', languageId: 'l2' },
-                        },
-                    ],
-                })
-            })
-        })
-    })
+    // describe('editorsAndModels', () => {
+    //     test('emits on model language change but not text change', () => {
+    //         scheduler().run(({ cold, expectObservable }) => {
+    //             const editorService = createEditorService(
+    //                 createTestModelService({
+    //                     models: [{ uri: 'u', text: 't', languageId: 'l' }],
+    //                     updates: cold<TextModelUpdate[]>('-bc', {
+    //                         b: [{ type: 'updated', uri: 'u', text: 't2', languageId: 'l' }],
+    //                         c: [{ type: 'updated', uri: 'u', text: 't2', languageId: 'l2' }],
+    //                     }),
+    //                 })
+    //             )
+    //             const { editorId } = editorService.addEditor({
+    //                 type: 'CodeEditor',
+    //                 resource: 'u',
+    //                 selections: [],
+    //                 isActive: true,
+    //             })
+    //             expectObservable(from(editorService.editorUpdates)).toBe('a-c', {
+    //                 a: [
+    //                     {
+    //                         type: 'added',
+    //                         editorId,
+    //                         data: {
+    //                             type: 'CodeEditor',
+    //                             resource: 'u',
+    //                             selections: [],
+    //                             isActive: true,
+    //                             model: { uri: 'u', text: 't', languageId: 'l' },
+    //                         },
+    //                     },
+    //                 ],
+    //                 c: [
+    //                     {
+    //                         type: 'added',
+    //                         editorId,
+    //                         data: {
+    //                             type: 'CodeEditor',
+    //                             resource: 'u',
+    //                             selections: [],
+    //                             isActive: true,
+    //                             model: { uri: 'u', text: 't2', languageId: 'l2' },
+    //                         },
+    //                     },
+    //                 ],
+    //             })
+    //         })
+    //     })
+    // })
 
     test('addEditor', async () => {
-        const editorService = createEditorService({
-            models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
-            removeModel: jest.fn(),
-        })
-        const editor = editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
-        expect(editor.editorId).toEqual('editor#0')
+        const editorService = createEditorService(
+            createTestModelService({
+                models: [{ uri: 'u', text: 't', languageId: 'l' }],
+            })
+        )
+        const editorData: CodeEditorData = {
+            type: 'CodeEditor',
+            resource: 'u',
+            selections: [],
+            isActive: true,
+        }
+        const { editorId } = editorService.addEditor(editorData)
+        expect(editorId).toEqual('editor#0')
         expect(
-            await from(editorService.editors)
+            await from(editorService.editorUpdates)
                 .pipe(first())
                 .toPromise()
         ).toEqual([
             {
-                type: 'CodeEditor',
-                editorId: 'editor#0',
-                resource: 'u',
-                selections: [],
-                isActive: true,
+                type: 'added',
+                editorId,
+                data: editorData,
             },
         ])
     })
@@ -107,34 +120,30 @@ describe('EditorService', () => {
     describe('observeEditorAndModel', () => {
         test('merges in model', () => {
             scheduler().run(({ cold, expectObservable }) => {
-                const editorService = createEditorService({
-                    models: cold<TextModel[]>('ab', {
-                        a: [{ uri: 'u', text: 't', languageId: 'l' }],
-                        b: [{ uri: 'u', text: 't2', languageId: 'l' }],
-                    }),
-                    removeModel: jest.fn(),
-                })
-                const editor = editorService.addEditor({
+                const editorService = createEditorService(
+                    createTestModelService({
+                        models: [{ uri: 'u', text: 't', languageId: 'l' }],
+                        updates: cold('-b', {
+                            b: [{ type: 'updated', uri: 'u', text: 't2' }],
+                        }),
+                    })
+                )
+                const editor: CodeEditorData = {
                     type: 'CodeEditor',
                     resource: 'u',
                     selections: [],
                     isActive: true,
-                })
-                expectObservable(from(editorService.observeEditorAndModel(editor))).toBe('ab', {
+                }
+                const { editorId } = editorService.addEditor(editor)
+                expectObservable(from(editorService.observeEditorAndModel({ editorId }))).toBe('ab', {
                     a: {
+                        editorId,
                         ...editor,
-                        type: 'CodeEditor',
-                        resource: 'u',
-                        selections: [],
-                        isActive: true,
                         model: { uri: 'u', text: 't', languageId: 'l' },
                     },
                     b: {
+                        editorId,
                         ...editor,
-                        type: 'CodeEditor',
-                        resource: 'u',
-                        selections: [],
-                        isActive: true,
                         model: { uri: 'u', text: 't2', languageId: 'l' },
                     },
                 })
@@ -143,10 +152,7 @@ describe('EditorService', () => {
 
         test('emits error if editor does not exist', () => {
             scheduler().run(({ expectObservable }) => {
-                const editorService = createEditorService({
-                    models: of<TextModel[]>([]),
-                    removeModel: jest.fn(),
-                })
+                const editorService = createEditorService(createTestModelService({}))
                 expectObservable(from(editorService.observeEditorAndModel({ editorId: 'x' }))).toBe(
                     '#',
                     {},
@@ -157,48 +163,48 @@ describe('EditorService', () => {
     })
 
     describe('setSelections', () => {
-        test('ok', async () => {
-            const editorService = createEditorService({
-                models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
-                removeModel: jest.fn(),
+        test('ok', () => {
+            scheduler().run(({ expectObservable }) => {
+                const editorService = createEditorService(
+                    createTestModelService({
+                        models: [{ uri: 'u', text: 't', languageId: 'l' }],
+                    })
+                )
+                const editor: CodeEditorData = {
+                    type: 'CodeEditor',
+                    resource: 'u',
+                    selections: [],
+                    isActive: true,
+                }
+                const { editorId } = editorService.addEditor(editor)
+                const SELECTIONS: Selection[] = [
+                    {
+                        start: { line: 3, character: -1 },
+                        end: { line: 3, character: -1 },
+                        anchor: { line: 3, character: -1 },
+                        active: { line: 3, character: -1 },
+                        isReversed: false,
+                    },
+                ]
+                editorService.setSelections({ editorId }, SELECTIONS)
+                expectObservable(from(editorService.editorUpdates)).toBe('a', {
+                    a: [{ type: 'updated', editorId, data: { selections: SELECTIONS } }],
+                })
             })
-            const editor = editorService.addEditor({
-                type: 'CodeEditor',
-                resource: 'u',
-                selections: [],
-                isActive: true,
-            })
-            const SELECTIONS: Selection[] = [
-                {
-                    start: { line: 3, character: -1 },
-                    end: { line: 3, character: -1 },
-                    anchor: { line: 3, character: -1 },
-                    active: { line: 3, character: -1 },
-                    isReversed: false,
-                },
-            ]
-            editorService.setSelections(editor, SELECTIONS)
-            expect(
-                await from(editorService.editors)
-                    .pipe(
-                        first(),
-                        map(editors => editors.map(e => e.selections))
-                    )
-                    .toPromise()
-            ).toEqual([SELECTIONS])
         })
         test('not found', () => {
-            const editorService = createEditorService({ models: of([]), removeModel: jest.fn() })
+            const editorService = createEditorService(createTestModelService({}))
             expect(() => editorService.setSelections({ editorId: 'x' }, [])).toThrowError('editor not found: x')
         })
     })
 
     describe('removeEditor', () => {
-        test('ok', async () => {
-            const editorService = createEditorService({
-                models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
-                removeModel: noop,
-            })
+        test('ok', () => {
+            const editorService = createEditorService(
+                createTestModelService({
+                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
+                })
+            )
             const editor = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'u',
@@ -206,23 +212,18 @@ describe('EditorService', () => {
                 isActive: true,
             })
             editorService.removeEditor(editor)
-            expect(
-                await from(editorService.editors)
-                    .pipe(first())
-                    .toPromise()
-            ).toEqual([])
+            expect(editorService.editors.size).toBe(0)
         })
         test('not found', () => {
-            const editorService = createEditorService({ models: of([]), removeModel: noop })
+            const editorService = createEditorService(createTestModelService({}))
             expect(() => editorService.removeEditor({ editorId: 'x' })).toThrowError('editor not found: x')
         })
 
-        it('calls removeModel() when removing the last editor that references the model', async () => {
-            const removeModel = sinon.spy<ModelService['removeModel']>(noop)
-            const editorService = createEditorService({
-                models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
-                removeModel,
+        it('calls removeModel() when removing the last editor that references the model', () => {
+            const modelService = createTestModelService({
+                models: [{ uri: 'u', text: 't', languageId: 'l' }],
             })
+            const editorService = createEditorService(modelService)
             const editor1 = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'u',
@@ -236,30 +237,32 @@ describe('EditorService', () => {
                 isActive: true,
             })
             editorService.removeEditor(editor1)
-            sinon.assert.notCalled(removeModel)
+            expect(modelService.hasModel('u')).toBeTruthy()
             editorService.removeEditor(editor2)
-            expect(
-                await from(editorService.editors)
-                    .pipe(first())
-                    .toPromise()
-            ).toEqual([])
-            sinon.assert.calledOnce(removeModel)
-            sinon.assert.calledWith(removeModel, 'u')
+            expect(modelService.hasModel('u')).toBeFalsy()
         })
     })
 
-    test('removeAllEditors', async () => {
-        const editorService = createEditorService({
-            models: of([{ uri: 'u', text: 't', languageId: 'l' }]),
-            removeModel: noop,
+    test('removeAllEditors', () => {
+        scheduler().run(({ expectObservable }) => {
+            const editorService = createEditorService(
+                createTestModelService({
+                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
+                })
+            )
+            const editor: CodeEditorData = { type: 'CodeEditor', resource: 'u', selections: [], isActive: true }
+            editorService.addEditor(editor)
+            editorService.addEditor(editor)
+            editorService.addEditor(editor)
+            editorService.removeAllEditors()
+            expectObservable(from(editorService.editorUpdates)).toBe('a', {
+                a: [
+                    { type: 'deleted', editorId: 'editor#0' },
+                    { type: 'deleted', editorId: 'editor#1' },
+                    { type: 'deleted', editorId: 'editor#2' },
+                ],
+            })
         })
-        editorService.addEditor({ type: 'CodeEditor', resource: 'u', selections: [], isActive: true })
-        editorService.removeAllEditors()
-        expect(
-            await from(editorService.editors)
-                .pipe(first())
-                .toPromise()
-        ).toEqual([])
     })
 })
 

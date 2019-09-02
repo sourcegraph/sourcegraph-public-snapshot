@@ -71,6 +71,7 @@ export async function integrationTestContext(
     extensionAPI: typeof sourcegraph
     services: Services
 }> {
+    console.log(1)
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
     const clientAPIChannel = new MessageChannel()
@@ -92,14 +93,18 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
+    console.log(2)
 
     const extensionAPI = await extensionHost.extensionAPI
+    console.log(3)
     if (initModel.models) {
         for (const model of initModel.models) {
+            console.log(4)
             services.model.addModel(model)
         }
     }
     for (const editor of initModel.editors) {
+        console.log(5)
         services.editor.addEditor(editor)
     }
     services.workspace.roots.next(initModel.roots)
@@ -121,6 +126,7 @@ export async function integrationTestContext(
             )
             .toPromise(),
     ])
+    console.log(4)
 
     return {
         client,

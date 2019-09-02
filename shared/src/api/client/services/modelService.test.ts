@@ -1,17 +1,54 @@
-import { from } from 'rxjs'
-import { first } from 'rxjs/operators'
-import { createModelService } from './modelService'
+import { from, Observable } from 'rxjs'
+import { first, tap } from 'rxjs/operators'
+import { createModelService, ModelService, TextModelUpdate, TextModel } from './modelService'
+
+export function createTestModelService({
+    models,
+    updates,
+}: {
+    models?: TextModel[]
+    updates?: Observable<TextModelUpdate[]>
+}): ModelService {
+    const service = createModelService()
+    if (models) {
+        for (const m of models) {
+            service.addModel(m)
+        }
+    }
+    const modelUpdates = updates
+        ? updates.pipe(
+              tap(updates => {
+                  for (const update of updates) {
+                      switch (update.type) {
+                          case 'added':
+                              service.addModel(update)
+                              break
+                          case 'updated':
+                              service.updateModel(update.uri, update.text)
+                              break
+                          case 'deleted':
+                              service.removeModel(update.uri)
+                              break
+                      }
+                  }
+              })
+          )
+        : service.modelUpdates
+    return {
+        ...service,
+        modelUpdates,
+    }
+}
 
 describe('ModelService', () => {
     describe('addModel', () => {
         it('adds', async () => {
             const modelService = createModelService()
             modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
-            expect(
-                await from(modelService.models)
-                    .pipe(first())
-                    .toPromise()
-            ).toEqual([
+            await from(modelService.models)
+                .pipe(first())
+                .toPromise()
+            expect([...modelService.models.values()]).toEqual([
                 {
                     uri: 'u',
                     text: 't',
@@ -25,11 +62,10 @@ describe('ModelService', () => {
             expect(() => {
                 modelService.addModel({ uri: 'u', text: 't2', languageId: 'l2' })
             }).toThrowError('model already exists with URI u')
-            expect(
-                await from(modelService.models)
-                    .pipe(first())
-                    .toPromise()
-            ).toEqual([
+            await from(modelService.models)
+                .pipe(first())
+                .toPromise()
+            expect([...modelService.models.values()]).toEqual([
                 {
                     uri: 'u',
                     text: 't',
@@ -51,11 +87,10 @@ describe('ModelService', () => {
             const modelService = createModelService()
             modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
             modelService.updateModel('u', 't2')
-            expect(
-                await from(modelService.models)
-                    .pipe(first())
-                    .toPromise()
-            ).toEqual([{ uri: 'u', text: 't2', languageId: 'l' }])
+            await from(modelService.models)
+                .pipe(first())
+                .toPromise()
+            expect([...modelService.models.values()]).toEqual([{ uri: 'u', text: 't2', languageId: 'l' }])
         })
 
         test('nonexistent model', () => {
@@ -70,11 +105,10 @@ describe('ModelService', () => {
             modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
             modelService.addModel({ uri: 'u2', text: 't2', languageId: 'l2' })
             modelService.removeModel('u')
-            expect(
-                await from(modelService.models)
-                    .pipe(first())
-                    .toPromise()
-            ).toEqual([
+            await from(modelService.models)
+                .pipe(first())
+                .toPromise()
+            expect([...modelService.models.values()]).toEqual([
                 {
                     uri: 'u2',
                     text: 't2',

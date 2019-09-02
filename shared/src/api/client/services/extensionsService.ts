@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, switchMap, tap, mapTo } from 'rxjs/operators'
 import {
     ConfiguredExtension,
     getScriptURLFromExtensionManifest,
@@ -56,7 +56,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
 export class ExtensionsService {
     constructor(
         private platformContext: PartialContext,
-        private editorService: Pick<EditorService, 'editorsAndModels'>,
+        private editorService: Pick<EditorService, 'editors' | 'editorUpdates'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (
@@ -120,7 +120,10 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()
-        return combineLatest(from(this.editorService.editorsAndModels), this.enabledExtensions).pipe(
+        return combineLatest(
+            from(this.editorService.editorUpdates).pipe(map(() => [...this.editorService.editors.values()])),
+            this.enabledExtensions
+        ).pipe(
             tap(([editors, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, editors)
                 for (const x of activeExtensions) {

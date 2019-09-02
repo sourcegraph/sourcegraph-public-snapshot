@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subscribable } from 'rxjs'
+import { Subscribable, Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 
 /**
@@ -10,6 +10,11 @@ import { TextDocument } from 'sourcegraph'
  */
 export interface TextModel extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
 
+export type TextModelUpdate =
+    | { type: 'added' } & TextModel
+    | { type: 'updated'; text: string } & Pick<TextModel, 'uri'>
+    | { type: 'deleted' } & Pick<TextModel, 'uri'>
+
 /**
  * The model service manages document contents and metadata.
  *
@@ -17,7 +22,9 @@ export interface TextModel extends Pick<TextDocument, 'uri' | 'languageId' | 'te
  */
 export interface ModelService {
     /** All known models. */
-    models: Subscribable<readonly TextModel[]>
+    models: ReadonlyMap<string, TextModel>
+
+    modelUpdates: Subscribable<readonly TextModelUpdate[]>
 
     /**
      * Adds a model.
@@ -55,33 +62,37 @@ export interface ModelService {
  */
 export function createModelService(): ModelService {
     /** A map of URIs to TextModels */
-    const modelMap = new Map<string, TextModel>()
-    const models = new BehaviorSubject<readonly TextModel[]>([])
-    const hasModel = (uri: string): boolean => modelMap.has(uri)
+    const models = new Map<string, TextModel>()
+    const modelUpdates = new Subject<TextModelUpdate[]>()
+    const getModel = (uri: string): TextModel => {
+        const model = models.get(uri)
+        if (!model) {
+            throw new Error(`model does not exist with URI ${uri}`)
+        }
+        return model
+    }
     return {
         models,
+        modelUpdates,
         addModel: model => {
-            if (hasModel(model.uri)) {
+            if (models.has(model.uri)) {
                 throw new Error(`model already exists with URI ${model.uri}`)
             }
-            modelMap.set(model.uri, model)
-            models.next([...modelMap.values()])
+            models.set(model.uri, model)
+            modelUpdates.next([{ type: 'added', ...model }])
         },
         updateModel: (uri, text) => {
-            const existing = modelMap.get(uri)
-            if (!existing) {
-                throw new Error(`model does not exist with URI ${uri}`)
-            }
-            modelMap.set(uri, {
-                ...existing,
+            const model = getModel(uri)
+            models.set(uri, {
+                ...model,
                 text,
             })
-            models.next([...modelMap.values()])
+            modelUpdates.next([{ type: 'updated', uri, text }])
         },
-        hasModel,
+        hasModel: uri => models.has(uri),
         removeModel: uri => {
-            modelMap.delete(uri)
-            models.next([...modelMap.values()])
+            models.delete(uri)
+            modelUpdates.next([{ type: 'deleted', uri }])
         },
     }
 }
