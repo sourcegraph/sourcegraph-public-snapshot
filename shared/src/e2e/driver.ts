@@ -7,7 +7,8 @@ import { Key } from 'ts-key-enum'
 import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery } from '../graphql/schema'
-import { readEnvBoolean, readEnvString, retry } from './e2e-test-utils'
+import { readEnvBoolean, retry } from './e2e-test-utils'
+import { getConfig } from './config'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -22,12 +23,7 @@ export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue
 /**
  * Used in the external service configuration.
  */
-export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
-
-export const sourcegraphBaseUrl = readEnvString({
-    variable: 'SOURCEGRAPH_BASE_URL',
-    defaultValue: 'http://localhost:3080',
-})
+export const { gitHubToken, sourcegraphBaseUrl } = getConfig(['gitHubToken', 'sourcegraphBaseUrl'])
 
 /**
  * Specifies how to select the content of the element. No
