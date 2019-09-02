@@ -111,7 +111,11 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
     public componentDidMount(): void {
         this.urlUpdates.next(this.state.sourcegraphURL)
-        this.subscriptions.add(this.activationClicks.pipe(concatMap(this.props.toggleExtensionDisabled)).subscribe())
+        this.subscriptions.add(
+            this.activationClicks
+                .pipe(concatMap(isActivated => this.props.toggleExtensionDisabled(isActivated)))
+                .subscribe()
+        )
     }
 
     public componentDidUpdate(): void {
