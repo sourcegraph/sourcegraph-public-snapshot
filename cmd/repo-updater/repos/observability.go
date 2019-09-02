@@ -163,6 +163,7 @@ type StoreMetrics struct {
 	UpsertExternalServices *OperationMetrics
 	ListExternalServices   *OperationMetrics
 	ListAllRepoNames       *OperationMetrics
+	DeleteReposExcept      *OperationMetrics
 }
 
 // NewStoreMetrics returns StoreMetrics that need to be registered
@@ -307,6 +308,26 @@ func NewStoreMetrics() StoreMetrics {
 				Subsystem: "repoupdater",
 				Name:      "store_list_all_repo_names_errors_total",
 				Help:      "Total number of errors when listing repo names",
+			}, []string{}),
+		},
+		DeleteReposExcept: &OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Namespace: "src",
+				Subsystem: "repoupdater",
+				Name:      "store_delete_repos_except_duration_seconds",
+				Help:      "Time spent deleting repos except specified ones",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "src",
+				Subsystem: "repoupdater",
+				Name:      "store_delete_repos_except_total",
+				Help:      "Total number of repos not deleted",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Namespace: "src",
+				Subsystem: "repoupdater",
+				Name:      "store_delete_repos_except_errors_total",
+				Help:      "Total number of errors when deleting repos except specified ones",
 			}, []string{}),
 		},
 	}
@@ -490,6 +511,25 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 	}(time.Now())
 
 	return o.store.UpsertRepos(ctx, repos...)
+}
+
+// DeleteReposExcept calls into the inner Store and registers the observed results.
+func (o *ObservedStore) DeleteReposExcept(ctx context.Context, ids ...uint32) (err error) {
+	tr, ctx := o.trace(ctx, "Store.DeleteReposExcept")
+	tr.LogFields(otlog.Int("count", len(ids)))
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		count := float64(len(ids))
+
+		o.metrics.DeleteReposExcept.Observe(secs, count, &err)
+		log(o.log, "store.delete-repos-except", &err, "count", len(ids))
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	return o.store.DeleteReposExcept(ctx, ids...)
 }
 
 func (o *ObservedStore) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {

@@ -21,10 +21,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
 )
 
+func TestSyncer_StreamingSync(t *testing.T) {
+	t.Parallel()
+
+	testSyncerSync(new(repos.FakeStore), true)(t)
+}
+
 func TestSyncer_Sync(t *testing.T) {
 	t.Parallel()
 
-	testSyncerSync(new(repos.FakeStore))(t)
+	testSyncerSync(new(repos.FakeStore), false)(t)
 
 	github := repos.ExternalService{ID: 1, Kind: "github"}
 	gitlab := repos.ExternalService{ID: 2, Kind: "gitlab"}
@@ -83,7 +89,7 @@ func TestSyncer_Sync(t *testing.T) {
 	}
 }
 
-func testSyncerSync(s repos.Store) func(*testing.T) {
+func testSyncerSync(s repos.Store, useStreaming bool) func(*testing.T) {
 	githubService := &repos.ExternalService{
 		ID:   1,
 		Kind: "GITHUB",
@@ -212,14 +218,15 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	clock := repos.NewFakeClock(time.Now(), 0)
 
 	type testCase struct {
-		name    string
-		sourcer repos.Sourcer
-		store   repos.Store
-		stored  repos.Repos
-		ctx     context.Context
-		now     func() time.Time
-		diff    repos.Diff
-		err     string
+		name     string
+		syncMode string
+		sourcer  repos.Sourcer
+		store    repos.Store
+		stored   repos.Repos
+		ctx      context.Context
+		now      func() time.Time
+		diff     repos.Diff
+		err      string
 	}
 
 	var testCases []testCase
@@ -459,7 +466,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name: "repos have their names swapped",
+				name:     "repos have their names swapped - batch mode",
+				syncMode: "batch",
 				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
 					tc.repo.With(func(r *repos.Repo) {
 						r.Name = "foo"
@@ -493,6 +501,50 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 							r.Name = "bar"
 							r.ExternalRepo.ID = "2"
 							r.UpdatedAt = clock.Time(0)
+						}),
+					},
+				},
+				err: "<nil>",
+			},
+			testCase{
+				name:     "repos have their names swapped - streaming mode",
+				syncMode: "stream",
+				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "foo"
+						r.ExternalRepo.ID = "1"
+					}),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "bar"
+						r.ExternalRepo.ID = "2"
+					}),
+				)),
+				now:   clock.Now,
+				store: s,
+				stored: repos.Repos{
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "bar"
+						r.ExternalRepo.ID = "1"
+					}),
+					tc.repo.With(func(r *repos.Repo) {
+						r.Name = "foo"
+						r.ExternalRepo.ID = "2"
+					}),
+				},
+				diff: repos.Diff{
+					Modified: repos.Repos{
+						tc.repo.With(func(r *repos.Repo) {
+							r.Name = "foo"
+							r.ExternalRepo.ID = "1"
+							r.UpdatedAt = clock.Time(0)
+						}),
+						tc.repo.With(func(r *repos.Repo) {
+							r.Name = "bar"
+							r.ExternalRepo.ID = "2"
+							r.UpdatedAt = clock.Time(0)
+							// This is new: in streaming mode, this repo gets
+							// deleted and then re-inserted
+							r.CreatedAt = clock.Time(0)
 						}),
 					},
 				},
@@ -557,6 +609,15 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				continue
 			}
 
+			if tc.syncMode != "" {
+				if tc.syncMode == "stream" && !useStreaming {
+					continue
+				}
+				if tc.syncMode == "batch" && useStreaming {
+					continue
+				}
+			}
+
 			tc := tc
 			ctx := context.Background()
 
@@ -585,7 +646,15 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
-				diff, err := syncer.Sync(ctx)
+				var (
+					diff repos.Diff
+					err  error
+				)
+				if useStreaming {
+					err = syncer.StreamingSync(ctx)
+				} else {
+					diff, err = syncer.Sync(ctx)
+				}
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -595,25 +664,29 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					return
 				}
 
-				for _, d := range []struct {
-					name       string
-					have, want repos.Repos
-				}{
-					{"added", diff.Added, tc.diff.Added},
-					{"deleted", diff.Deleted, tc.diff.Deleted},
-					{"modified", diff.Modified, tc.diff.Modified},
-					{"unmodified", diff.Unmodified, tc.diff.Unmodified},
-				} {
-					t.Logf("diff.%s", d.name)
-					repos.Assert.ReposEqual(d.want...)(t, d.have)
+				if !useStreaming {
+					for _, d := range []struct {
+						name       string
+						have, want repos.Repos
+					}{
+						{"added", diff.Added, tc.diff.Added},
+						{"deleted", diff.Deleted, tc.diff.Deleted},
+						{"modified", diff.Modified, tc.diff.Modified},
+						{"unmodified", diff.Unmodified, tc.diff.Unmodified},
+					} {
+						t.Logf("diff.%s", d.name)
+						repos.Assert.ReposEqual(d.want...)(t, d.have)
+					}
 				}
 
 				if st != nil {
 					var want repos.Repos
-					want.Concat(diff.Added, diff.Modified, diff.Unmodified)
+					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
 					sort.Sort(want)
 
 					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
+					have = repos.Repos(have).With(repos.Opt.RepoID(0))
+					sort.Sort(repos.Repos(have))
 					repos.Assert.ReposEqual(want...)(t, have)
 				}
 			}))

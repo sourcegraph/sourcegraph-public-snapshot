@@ -190,6 +190,31 @@ func (s *FakeStore) UpsertExternalServices(ctx context.Context, svcs ...*Externa
 	return nil
 }
 
+// DeleteReposExcept updates or inserts the given ExternalServices.
+func (s *FakeStore) DeleteReposExcept(ctx context.Context, ids ...uint32) error {
+	if s.repoByID == nil {
+		s.repoByID = make(map[uint32]*Repo)
+	}
+
+	seen := make(map[uint32]bool)
+	for _, id := range ids {
+		seen[id] = true
+	}
+
+	deletes := []uint32{}
+	for id, _ := range s.repoByID {
+		if !seen[id] {
+			deletes = append(deletes, id)
+		}
+
+	}
+	for _, id := range deletes {
+		delete(s.repoByID, id)
+	}
+
+	return nil
+}
+
 // GetRepoByName looks a repo by its name, returning it if found.
 func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error) {
 	if s.GetRepoByNameError != nil {
@@ -253,7 +278,11 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		}
 
 		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
-			repos = append(repos, r)
+			// We return a clone of `r` to not have modifications to repo be
+			// reflected in the store. That is closer to the real store (i.e.
+			// when you load a record from a database & update a field in the
+			// struct, this change is not reflected in the database)
+			repos = append(repos, r.Clone())
 			set[r] = true
 		}
 
@@ -335,6 +364,11 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
 		}
 		repo.Update(r)
+		// We set these fields before updating a record in the database,
+		// so we need to reflect that here
+		repo.UpdatedAt = r.UpdatedAt
+		repo.CreatedAt = r.CreatedAt
+		repo.DeletedAt = r.DeletedAt
 	}
 
 	for _, r := range inserts {
@@ -394,7 +428,7 @@ var Assert = struct {
 			// Exclude auto-generated IDs from equality tests
 			have = append(Repos{}, have...).With(Opt.RepoID(0))
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("repos: %s", cmp.Diff(have, want))
+				t.Errorf("repos (len(have)=%d len(want)=%d): %s", len(have), len(want), cmp.Diff(have, want))
 			}
 		}
 	},
