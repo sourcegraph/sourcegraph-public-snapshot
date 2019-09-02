@@ -68,6 +68,8 @@ export interface EditorService {
 
     readonly activeEditorUpdates: Subscribable<CodeEditorWithPartialModel | undefined>
 
+    readonly activeLanguages: Subscribable<string[]>
+
     /**
      * Add an editor.
      *
@@ -131,6 +133,8 @@ export function createEditorService(
     const editors = new Map<string, CodeEditorWithPartialModel>()
     const editorUpdates = new BehaviorSubject<EditorUpdate[]>([])
     const activeEditorUpdates = new BehaviorSubject<CodeEditorWithPartialModel | undefined>(undefined)
+    const activeLanguagesSet = new Set<string>()
+    const activeLanguages = new BehaviorSubject<string[]>([])
     /**
      * Returns the CodeEditor with the given editorId.
      * Throws if no editor exists with the given editorId.
@@ -146,6 +150,7 @@ export function createEditorService(
         editors,
         editorUpdates,
         activeEditorUpdates,
+        activeLanguages,
         addEditor: data => {
             const editorId = nextId()
             const editor: CodeEditorWithPartialModel = {
@@ -159,6 +164,10 @@ export function createEditorService(
             editorUpdates.next([{ type: 'added', editorId, data }])
             if (data.isActive) {
                 activeEditorUpdates.next(editor)
+            }
+            if (!activeLanguagesSet.has(editor.model.languageId)) {
+                activeLanguagesSet.add(editor.model.languageId)
+                activeLanguages.next([...activeLanguagesSet])
             }
             return { editorId }
         },
@@ -206,14 +215,30 @@ export function createEditorService(
             if (activeEditorUpdates.value && activeEditorUpdates.value.editorId === editorId) {
                 activeEditorUpdates.next(undefined)
             }
-            // Check if any of the remaining editors points to the same resource.
+            // Check if any of the remaining editors points to the same resource
+            // or has the same language
+            let resourceMatch = false
+            let languageMatch = false
             for (const e of editors.values()) {
                 if (e.resource === editor.resource) {
+                    resourceMatch = true
+                }
+                if (e.model.languageId === editor.model.languageId) {
+                    languageMatch = true
+                }
+                if (resourceMatch && languageMatch) {
                     return
                 }
             }
             // If no other editor points to the same resource, remove the resource.
-            modelService.removeModel(editor.resource)
+            if (!resourceMatch) {
+                modelService.removeModel(editor.resource)
+            }
+            // If no other editor has the same language, update activeLanguages
+            if (!languageMatch) {
+                activeLanguagesSet.delete(editor.model.languageId)
+                activeLanguages.next([...activeLanguagesSet])
+            }
         },
         removeAllEditors(): void {
             const updates: EditorUpdate[] = [...editors.keys()].map(editorId => ({ type: 'deleted', editorId }))

@@ -56,7 +56,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
 export class ExtensionsService {
     constructor(
         private platformContext: PartialContext,
-        private editorService: Pick<EditorService, 'editors' | 'editorUpdates'>,
+        private editorService: Pick<EditorService, 'activeLanguages'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (
@@ -120,12 +120,9 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()
-        return combineLatest(
-            from(this.editorService.editorUpdates).pipe(map(() => [...this.editorService.editors.values()])),
-            this.enabledExtensions
-        ).pipe(
-            tap(([editors, enabledExtensions]) => {
-                const activeExtensions = this.extensionActivationFilter(enabledExtensions, editors)
+        return combineLatest(from(this.editorService.activeLanguages), this.enabledExtensions).pipe(
+            tap(([activeLanguages, enabledExtensions]) => {
+                const activeExtensions = this.extensionActivationFilter(enabledExtensions, activeLanguages)
                 for (const x of activeExtensions) {
                     if (!activatedExtensionIDs.has(x.id)) {
                         activatedExtensionIDs.add(x.id)
@@ -174,7 +171,7 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    editors: readonly CodeEditorWithPartialModel[]
+    visibleTextDocumentLanguages: string[]
 ): ConfiguredExtension[] {
     return enabledExtensions.filter(x => {
         try {
@@ -197,7 +194,6 @@ function extensionsWithMatchedActivationEvent(
                 console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                 return false
             }
-            const visibleTextDocumentLanguages = editors.map(({ model: { languageId } }) => languageId)
             return x.manifest.activationEvents.some(
                 e => e === '*' || visibleTextDocumentLanguages.some(l => e === `onLanguage:${l}`)
             )
