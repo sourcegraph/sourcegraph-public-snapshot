@@ -162,10 +162,21 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
         return model
     }
 
+    /** A map of editor ids to code editors. */
+    const editorMap = new Map<string, CodeEditor>()
     const editors = new BehaviorSubject<readonly CodeEditor[]>([])
-    const getEditor = (editorId: EditorId['editorId']): CodeEditor | undefined =>
-        editors.value.find(e => e.editorId === editorId)
-    const exists = (editorId: EditorId['editorId']): boolean => !!getEditor(editorId)
+    editors.next([])
+    /**
+     * Returns the CodeEditor with the given editorId.
+     * Throws if no editor exists with the given editorId.
+     */
+    const getEditor = (editorId: EditorId['editorId']): CodeEditor => {
+        const editor = editorMap.get(editorId)
+        if (!editor) {
+            throw new Error(`editor not found: ${editorId}`)
+        }
+        return editor
+    }
     return {
         editors,
         editorsAndModels: combineLatest([editors, modelService.models]).pipe(
@@ -179,7 +190,8 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
         addEditor: data => {
             const editorId = nextId()
             const editor: CodeEditor = { ...data, editorId }
-            editors.next([...editors.value, editor])
+            editorMap.set(editorId, editor)
+            editors.next([...editorMap.values()])
             return { editorId }
         },
         observeEditorAndModel: ({ editorId }) =>
@@ -195,29 +207,27 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
                         : throwError(new Error(`editor not found: ${editorId}`))
                 )
             ),
-        hasEditor: ({ editorId }) => exists(editorId),
+        hasEditor: ({ editorId }) => editorMap.has(editorId),
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
-            if (!exists(editorId)) {
-                throw new Error(`editor not found: ${editorId}`)
-            }
-            editors.next([
-                ...editors.value.filter(e => e.editorId !== editorId),
-                { ...editors.value.find(e => e.editorId === editorId)!, selections },
-            ])
+            const editor = getEditor(editorId)
+            editorMap.set(editorId, {
+                ...editor,
+                selections,
+            })
+            editors.next([...editorMap.values()])
         },
         removeEditor({ editorId }: EditorId): void {
             const editor = getEditor(editorId)
-            if (!editor) {
-                throw new Error(`editor not found: ${editorId}`)
-            }
-            const nextEditors = editors.value.filter(e => e.editorId !== editorId)
-            editors.next(editors.value.filter(e => e.editorId !== editorId))
+            editorMap.delete(editorId)
+            const nextEditors = [...editorMap.values()]
+            editors.next(nextEditors)
             // If no other editor points to the same resource, remove the resource.
             if (!nextEditors.some(e => e.resource === editor.resource)) {
                 modelService.removeModel(editor.resource)
             }
         },
         removeAllEditors(): void {
+            editorMap.clear()
             editors.next([])
         },
     }
