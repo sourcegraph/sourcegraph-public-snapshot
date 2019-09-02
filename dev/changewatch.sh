@@ -17,7 +17,7 @@ useChokidar() {
     # quotes, so it doesn't try to expand wildcards.
     eval exec chokidar --silent \
         $(dirs_starstar $GO_DIRS) \
-        cmd/frontend/graphqlbackend/schema.graphql \
+        "'cmd/frontend/graphqlbackend/*.graphql'" \
         "'schema/*.json'" \
         "'cmd/symbols/**/*'" \
         "'cmd/symbols/.ctags.d/*'" \
@@ -32,7 +32,7 @@ execInotifywrapper() {
     popd
     exec dev/inotifywrapper/inotifywrapper $(dirs_path $GO_DIRS) \
         -match '\.go$' \
-        -match 'cmd/frontend/graphqlbackend/schema\.graphql' \
+        -match 'cmd/frontend/graphqlbackend/*.graphql' \
         -match 'schema/.*.json' \
         -cmd './dev/handle-change.sh'
 }
@@ -48,7 +48,7 @@ execWatchman() {
   "expression": ["anyof",
     ["suffix", "go"],
     ["dirname", "cmd/symbols"],
-    ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
+    ["name", "cmd/frontend/graphqlbackend/*.graphql", "wholename"]
   ],
   "fields": ["name"]
 }]

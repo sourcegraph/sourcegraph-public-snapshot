@@ -113,6 +113,7 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/lightstep/lightstep-tracer-go v0.17.0
 	github.com/magiconair/properties v1.8.1 // indirect
+	github.com/mattdamon108/gqlmerge v0.2.3
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
@@ -220,3 +221,5 @@ replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.2
 replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
 
 replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
+
+replace github.com/mattdamon108/gqlmerge v0.2.3 => ../gqlmerge
