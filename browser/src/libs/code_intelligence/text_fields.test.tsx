@@ -2,7 +2,7 @@ import { uniqueId } from 'lodash'
 import { from, NEVER, Subject, Subscription } from 'rxjs'
 import { first, skip, take } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
-import { CodeEditor } from '../../../../shared/src/api/client/services/editorService'
+import { CodeEditor, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -62,13 +62,13 @@ describe('text_fields', () => {
 
             // Add text field.
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
-            const editors = await from(services.editor.editors)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(1),
                     take(1)
                 )
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
@@ -82,21 +82,23 @@ describe('text_fields', () => {
                             isReversed: false,
                         },
                     ],
+                    model: {
+                        languageId: 'plaintext',
+                    },
                     type: 'CodeEditor',
                 },
-            ] as CodeEditor[])
+            ] as CodeEditorWithPartialModel[])
 
             // Remove text field.
             textFieldElement.remove()
             mutations.next([{ addedNodes: [], removedNodes: [textFieldElement] }])
-            expect(
-                await from(services.editor.editors)
-                    .pipe(
-                        skip(1),
-                        first()
-                    )
-                    .toPromise()
-            ).toEqual([])
+            await from(services.editor.editorUpdates)
+                .pipe(
+                    skip(1),
+                    first()
+                )
+                .toPromise()
+            expect(services.editor.editors.size).toEqual(0)
         })
     })
 })
