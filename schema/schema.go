@@ -406,6 +406,7 @@ type OpenIDConnectAuthProvider struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
+	ExperimentalFakehub   bool     `json:"experimental.fakehub,omitempty"`
 	Repos                 []string `json:"repos"`
 	RepositoryPathPattern string   `json:"repositoryPathPattern,omitempty"`
 	Url                   string   `json:"url,omitempty"`
