@@ -20,8 +20,9 @@ rule_files:
 # A scrape configuration containing exactly one endpoint to scrape for metrics:
 scrape_configs:
   # Scrape prometheus itself for metrics.
-  #- job_name: "prometheus"
-  #   - targets: ["localhost:9090"]
+  - job_name: "prometheus"
+    static_configs:
+        - targets: ["localhost:9090"]
 
   # Scrape Docker for metrics.
   # You will need to configure docker for this to work: https://docs.docker.com/config/thirdparty/prometheus/#configure-docker
