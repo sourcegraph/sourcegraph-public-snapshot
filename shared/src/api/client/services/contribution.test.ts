@@ -13,8 +13,8 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './contribution'
-import { CodeEditorWithPartialModel } from './editorService'
 import { createTestEditorService } from './editorService.test'
+import { EditorUpdate } from './editorService'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -71,15 +71,15 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
 describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
-            new ContributionRegistry(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
-                .entries.value
+            new ContributionRegistry(createTestEditorService({}), { data: of(EMPTY_SETTINGS_CASCADE) }, of({})).entries
+                .value
         ).toEqual([])
     })
 
     test('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
         const registry = new ContributionRegistry(
-            createTestEditorService(of([])),
+            createTestEditorService({}),
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -101,7 +101,7 @@ describe('ContributionRegistry', () => {
 
     test('replaces contributions', () => {
         const registry = new ContributionRegistry(
-            createTestEditorService(of([])),
+            createTestEditorService({}),
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -123,14 +123,24 @@ describe('ContributionRegistry', () => {
 
     describe('contributions observable', () => {
         test('emits stream of results of registrations', () => {
-            const registry = new (class extends ContributionRegistry {
-                public getContributionsFromEntries(
-                    entries: Observable<ContributionsEntry[]>
-                ): Observable<Evaluated<Contributions>> {
-                    return super.getContributionsFromEntries(entries, undefined)
-                }
-            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) => {
+                const registry = new (class extends ContributionRegistry {
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Evaluated<Contributions>> {
+                        return super.getContributionsFromEntries(entries, undefined)
+                    }
+                })(
+                    createTestEditorService({
+                        updates: cold<EditorUpdate[]>('-a-b-c-|', {
+                            a: [],
+                            b: [],
+                            c: [],
+                        }),
+                    }),
+                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of({})
+                )
                 type Marble = 'a' | 'b' | 'c'
                 const values: Record<Marble, ContributionsEntry[]> = {
                     a: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }],
@@ -149,14 +159,22 @@ describe('ContributionRegistry', () => {
         })
 
         it('supports registration of an observable', () => {
-            const registry = new (class extends ContributionRegistry {
-                public getContributionsFromEntries(
-                    entries: Observable<ContributionsEntry[]>
-                ): Observable<Evaluated<Contributions>> {
-                    return super.getContributionsFromEntries(entries, undefined)
-                }
-            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) => {
+                const registry = new (class extends ContributionRegistry {
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Evaluated<Contributions>> {
+                        return super.getContributionsFromEntries(entries, undefined)
+                    }
+                })(
+                    createTestEditorService({
+                        updates: cold<EditorUpdate[]>('-a-----|', {
+                            a: [],
+                        }),
+                    }),
+                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of({})
+                )
                 type Marble = 'b' | 'c'
                 const values: Record<Marble, Contributions | Contributions[]> = {
                     b: FIXTURE_CONTRIBUTIONS_1,
@@ -182,12 +200,12 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     constructor() {
                         super(
-                            {
-                                editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('-a-b-|', {
+                            createTestEditorService({
+                                updates: cold<EditorUpdate[]>('-a-b-|', {
                                     a: [],
                                     b: [],
                                 }),
-                            },
+                            }),
                             {
                                 data: cold<SettingsCascadeOrError>('-a-b-|', {
                                     a: EMPTY_SETTINGS_CASCADE,
@@ -227,11 +245,7 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     constructor() {
                         super(
-                            {
-                                editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('a', {
-                                    a: [],
-                                }),
-                            },
+                            createTestEditorService({}),
                             { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
                             cold<Context>('a', {})
                         )

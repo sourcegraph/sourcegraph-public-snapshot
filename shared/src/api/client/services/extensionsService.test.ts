@@ -2,10 +2,11 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorWithPartialModel, EditorService } from './editorService'
+import { CodeEditorWithPartialModel, EditorService, EditorUpdate } from './editorService'
 import { createTestEditorService } from './editorService.test'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
+import { createTestModelService } from './modelService.test'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -45,11 +46,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('-a-|', {
+                        createTestEditorService({
+                            updates: cold<EditorUpdate[]>('-a-|', {
                                 a: [],
-                            })
-                        ),
+                            }),
+                        }),
                         { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
                         enabledExtensions => enabledExtensions,
                         cold('-a-|', { a: '' }),
@@ -68,30 +69,40 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('-a-b-|', {
+                        createTestEditorService({
+                            modelService: createTestModelService({
+                                models: [
+                                    { uri: 'u', languageId: 'x', text: 't' },
+                                    { uri: 'u2', languageId: 'y', text: 't' },
+                                ],
+                            }),
+                            updates: cold<EditorUpdate[]>('-a-b-|', {
                                 a: [
                                     {
-                                        type: 'CodeEditor',
+                                        type: 'added',
                                         editorId: 'editor#0',
-                                        resource: 'u',
-                                        model: { languageId: 'x' },
-                                        selections: [],
-                                        isActive: true,
+                                        data: {
+                                            type: 'CodeEditor',
+                                            resource: 'u',
+                                            selections: [],
+                                            isActive: true,
+                                        },
                                     },
                                 ],
                                 b: [
                                     {
-                                        type: 'CodeEditor',
+                                        type: 'added',
                                         editorId: 'editor#1',
-                                        resource: 'u2',
-                                        model: { languageId: 'y' },
-                                        selections: [],
-                                        isActive: true,
+                                        data: {
+                                            type: 'CodeEditor',
+                                            resource: 'u2',
+                                            selections: [],
+                                            isActive: true,
+                                        },
                                     },
                                 ],
-                            })
-                        ),
+                            }),
+                        }),
                         {
                             data: cold<SettingsCascadeOrError>('-a-b-|', {
                                 a: { final: { extensions: { x: true } }, subjects: [] },
@@ -118,11 +129,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('a-|', {
+                        createTestEditorService({
+                            updates: cold<EditorUpdate[]>('a-|', {
                                 a: [],
-                            })
-                        ),
+                            }),
+                        }),
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {
@@ -163,11 +174,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('a-|', {
+                        createTestEditorService({
+                            updates: cold<EditorUpdate[]>('a-|', {
                                 a: [],
-                            })
-                        ),
+                            }),
+                        }),
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {

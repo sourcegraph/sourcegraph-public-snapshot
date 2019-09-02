@@ -1,20 +1,52 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { from, of, Subscribable } from 'rxjs'
-import { first } from 'rxjs/operators'
+import { from, Observable } from 'rxjs'
+import { first, tap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import {
-    CodeEditorWithPartialModel,
     createEditorService,
     EditorService,
     getActiveCodeEditorPosition,
     CodeEditorData,
+    EditorUpdate,
 } from './editorService'
 import { createTestModelService } from './modelService.test'
+import { ModelService } from './modelService'
 
-export function createTestEditorService(
-    editorsAndModels: Subscribable<readonly CodeEditorWithPartialModel[]> = of([])
-): Pick<EditorService, 'editorsAndModels'> {
-    return { editorsAndModels }
+export function createTestEditorService({
+    modelService,
+    editors,
+    updates,
+}: {
+    modelService?: ModelService
+    editors?: CodeEditorData[]
+    updates?: Observable<EditorUpdate[]>
+}): EditorService {
+    const editorService = createEditorService(modelService || createTestModelService({}))
+    if (editors) {
+        for (const e of editors) {
+            editorService.addEditor(e)
+        }
+    }
+    const editorUpdates = updates
+        ? from(updates).pipe(
+              tap(updates => {
+                  for (const update of updates) {
+                      switch (update.type) {
+                          case 'added':
+                              editorService.addEditor(update.data)
+                              break
+                          case 'updated':
+                              editorService.setSelections(update, update.data.selections)
+                              break
+                          case 'deleted':
+                              editorService.removeEditor(update)
+                              break
+                      }
+                  }
+              })
+          )
+        : editorService.editorUpdates
+    return { ...editorService, editorUpdates }
 }
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))

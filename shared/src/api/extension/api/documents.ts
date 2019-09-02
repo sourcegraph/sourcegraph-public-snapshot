@@ -62,7 +62,8 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
             switch (update.type) {
                 case 'added':
                     {
-                        const doc = new ExtDocument(update)
+                        const { uri, languageId, text } = update
+                        const doc = new ExtDocument({ uri, languageId, text })
                         this.documents.set(update.uri, doc)
                         this.openedTextDocuments.next(doc)
                     }

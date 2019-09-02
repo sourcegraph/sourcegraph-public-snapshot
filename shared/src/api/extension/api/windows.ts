@@ -169,14 +169,17 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
     /** @internal */
     public $acceptWindowData(editorUpdates: EditorUpdate[]): void {
         if (!this.activeWindow) {
-            this.activeWindow = new ExtWindow(this.proxy, this.documents, editorUpdates)
-            this.activeWindowChanges.next(this.activeWindow)
+            const window = new ExtWindow(this.proxy, this.documents, editorUpdates)
+            if (window.visibleViewComponents.length) {
+                this.activeWindow = window
+                this.activeWindowChanges.next(this.activeWindow)
+            }
         } else {
             this.activeWindow.update(editorUpdates)
-        }
-        if (this.activeWindow!.visibleViewComponents.length === 0) {
-            this.activeWindow = undefined
-            this.activeWindowChanges.next(undefined)
+            if (this.activeWindow!.visibleViewComponents.length === 0) {
+                this.activeWindow = undefined
+                this.activeWindowChanges.next(undefined)
+            }
         }
     }
 }
