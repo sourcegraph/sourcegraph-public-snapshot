@@ -9,7 +9,7 @@ failed=false
 
 for i; do
 	case $i in
-	"cmd/frontend/graphqlbackend/schema.graphql")
+  cmd/frontend/graphqlbackend/*.graphql)
 		generate_graphql=true
 		;;
 	schema/*.json)

@@ -1,3 +1,5 @@
+# source: cmd/frontend/graphqlbackend/schema.graphql
+
 #! Run this before committing changes to this file
 #! go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
 #! This will happen automatically if you are running ./dev/launch.sh
