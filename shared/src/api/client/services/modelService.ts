@@ -54,33 +54,34 @@ export interface ModelService {
  * Creates a new instance of {@link ModelService}.
  */
 export function createModelService(): ModelService {
+    /** A map of URIs to TextModels */
+    const modelMap = new Map<string, TextModel>()
     const models = new BehaviorSubject<readonly TextModel[]>([])
-    const hasModel = (uri: string): boolean => models.value.some(m => m.uri === uri)
+    const hasModel = (uri: string): boolean => modelMap.has(uri)
     return {
         models,
         addModel: model => {
             if (hasModel(model.uri)) {
                 throw new Error(`model already exists with URI ${model.uri}`)
             }
-            models.next([...models.value, model])
+            modelMap.set(model.uri, model)
+            models.next([...modelMap.values()])
         },
         updateModel: (uri, text) => {
-            const existing = models.value.find(m => m.uri === uri)
+            const existing = modelMap.get(uri)
             if (!existing) {
                 throw new Error(`model does not exist with URI ${uri}`)
             }
-            models.next(
-                models.value.map(m => {
-                    if (m === existing) {
-                        return { ...existing, text }
-                    }
-                    return m
-                })
-            )
+            modelMap.set(uri, {
+                ...existing,
+                text,
+            })
+            models.next([...modelMap.values()])
         },
         hasModel,
         removeModel: uri => {
-            models.next(models.value.filter(m => m.uri !== uri))
+            modelMap.delete(uri)
+            models.next([...modelMap.values()])
         },
     }
 }
