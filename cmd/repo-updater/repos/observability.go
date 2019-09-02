@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -98,14 +99,32 @@ func NewSourceMetrics() SourceMetrics {
 }
 
 // ListRepos calls into the inner Source registers the observed results.
-func (o *observedSource) ListRepos(ctx context.Context) (rs []*Repo, err error) {
+func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	var (
+		err   error
+		count float64
+	)
+
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		count := float64(len(rs))
 		o.metrics.ListRepos.Observe(secs, count, &err)
 		log(o.log, "source.list-repos", &err)
 	}(time.Now())
-	return o.Source.ListRepos(ctx)
+
+	uncounted := make(chan SourceResult)
+	go func() {
+		o.Source.ListRepos(ctx, uncounted)
+		close(uncounted)
+	}()
+
+	var errs *multierror.Error
+	for res := range uncounted {
+		results <- res
+		if res.Err != nil {
+			errs = multierror.Append(errs, res.Err)
+		}
+		count++
+	}
 }
 
 // NewObservedStore wraps the given Store with error logging,

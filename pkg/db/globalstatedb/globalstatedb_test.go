@@ -44,6 +44,10 @@ func TestGenerateRandomPassword(t *testing.T) {
 }
 
 func TestBcryptHashTime(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	plaintext, err := generateRandomPassword()
 	if err != nil {
 		t.Fatal(err)

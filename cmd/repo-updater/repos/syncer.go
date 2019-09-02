@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -21,6 +22,12 @@ type Syncer struct {
 	// FailFullSync prevents Sync from running. This should only be true for
 	// Sourcegraph.com
 	FailFullSync bool
+
+	// lastSyncErr contains the last error returned by the Sourcer in each
+	// Sync. It's reset with each Sync and if the sync produced no error, it's
+	// set to nil.
+	lastSyncErr   error
+	lastSyncErrMu sync.Mutex
 
 	store   Store
 	sourcer Sourcer
@@ -77,6 +84,7 @@ func (s *Syncer) TriggerSync() {
 func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")
 	defer save(&diff, &err)
+	defer s.setOrResetLastSyncErr(&err)
 
 	if s.FailFullSync {
 		return Diff{}, errors.New("Syncer is not enabled")
@@ -317,7 +325,27 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 
-	return srcs.ListRepos(ctx)
+	return listAll(ctx, srcs)
+}
+
+func (s *Syncer) setOrResetLastSyncErr(perr *error) {
+	var err error
+	if perr != nil {
+		err = *perr
+	}
+
+	s.lastSyncErrMu.Lock()
+	s.lastSyncErr = err
+	s.lastSyncErrMu.Unlock()
+}
+
+// LastSyncError returns the error that was produced in the last Sync run. If
+// no error was produced, this returns nil.
+func (s *Syncer) LastSyncError() error {
+	s.lastSyncErrMu.Lock()
+	defer s.lastSyncErrMu.Unlock()
+
+	return s.lastSyncErr
 }
 
 func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {

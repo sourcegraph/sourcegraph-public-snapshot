@@ -13,23 +13,31 @@ interface LineDecorationAttachmentProps extends AbsoluteRepoFile, ThemeProps {
 }
 
 /** Displays text after a line in Blob. */
+// @lguychard 2019-08-16 using UNSAFE_componentWillMount and UNSAFE_componentWillReceiveProps because this.portal
+// needs to be updated *before* render, which componentDidMount and componentDidUpdate don't allow us to do.
+// Using componentDidMount and componentDidUpdate led to decorations only being displayed when clicking in the viewport
+// (thereby triggering a re-render after the initial componentDidMount/DidUpdate had been called).
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/5236
+//
+// eslint-disable-next-line react/no-unsafe
 export class LineDecorationAttachment extends React.PureComponent<LineDecorationAttachmentProps> {
     private portal: Element | null = null
 
-    public componentDidMount(): void {
+    public UNSAFE_componentWillMount(): void {
         this.portal = document.getElementById(this.props.portalID)
     }
 
-    public componentDidUpdate(prevProps: Readonly<LineDecorationAttachmentProps>): void {
+    public UNSAFE_componentWillReceiveProps(nextProps: Readonly<LineDecorationAttachmentProps>): void {
         if (
-            this.props.repoName !== prevProps.repoName ||
-            this.props.rev !== prevProps.rev ||
-            this.props.filePath !== prevProps.filePath ||
-            this.props.line !== prevProps.line ||
-            this.props.portalID !== prevProps.portalID ||
-            this.props.attachment !== prevProps.attachment
+            this.props.repoName !== nextProps.repoName ||
+            this.props.rev !== nextProps.rev ||
+            this.props.filePath !== nextProps.filePath ||
+            this.props.line !== nextProps.line ||
+            this.props.portalID !== nextProps.portalID ||
+            this.props.attachment !== nextProps.attachment
         ) {
-            this.portal = document.getElementById(this.props.portalID)
+            this.portal = document.getElementById(nextProps.portalID)
         }
     }
 

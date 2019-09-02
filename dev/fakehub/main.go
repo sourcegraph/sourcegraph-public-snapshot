@@ -53,26 +53,13 @@ into the text box for adding single repos in sourcegraph Site Admin.
 }
 
 func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
-	gitDirs, err := configureRepos(reposRoot)
-	if err != nil {
-		return nil, errors.Wrapf(err, "configuring repos under %s", reposRoot)
-	}
-
-	// Set up the template vars for pages.
-	var relDirs []string
-	for _, gd := range gitDirs {
-		rd, err := filepath.Rel(reposRoot, gd)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting relative path of git dir")
-		}
-		// Render template without "/.git" suffix.
-		relDirs = append(relDirs, strings.TrimSuffix(rd, "/.git"))
-	}
-	tvars := &templateVars{n, relDirs, ln.Addr()}
+	configureRepos(reposRoot)
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tvars := &templateVars{n, configureRepos(reposRoot), ln.Addr()}
+
 		handleConfig(tvars, w)
 	})
 
@@ -113,28 +100,42 @@ func (d httpDir) Open(name string) (http.File, error) {
 }
 
 // configureRepos finds all .git directories and configures them to be served.
-// It returns a slice of all the git directories it finds.
-func configureRepos(root string) ([]string, error) {
+// It returns a slice of all the git directories it finds. The paths are
+// relative to root.
+func configureRepos(root string) []string {
 	var gitDirs []string
 	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
-		if !(filepath.Base(path) == ".git" && fi.IsDir()) {
-			return nil
-		}
 		if fileErr != nil {
 			log.Printf("error encountered on %s: %v", path, fileErr)
 			return nil
 		}
-		if err := configureOneRepo(path); err != nil {
-			log.Printf("configuring repo at %s: %v", path, err)
+		if !fi.IsDir() {
 			return nil
 		}
-		gitDirs = append(gitDirs, path)
-		return nil
+		// stat now to avoid recursing into the rest of path
+		gitdir := filepath.Join(path, ".git")
+		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
+			return nil
+		}
+		if err := configureOneRepo(gitdir); err != nil {
+			log.Printf("configuring repo at %s: %v", gitdir, err)
+			return nil
+		}
+
+		subpath, err := filepath.Rel(root, path)
+		if err != nil {
+			// According to WalkFunc docs, path is always filepath.Join(root,
+			// subpath). So Rel should always work.
+			log.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
+		}
+		gitDirs = append(gitDirs, subpath)
+		return filepath.SkipDir
 	})
 	if err != nil {
-		return gitDirs, errors.Wrap(err, "configuring repos and gathering git dirs")
+		// Our WalkFunc doesn't return any errors, so neither should filepath.Walk
+		panic(err)
 	}
-	return gitDirs, err
+	return gitDirs
 }
 
 // configureOneRepos tweaks a .git repo such that it can be git cloned.

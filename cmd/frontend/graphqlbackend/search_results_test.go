@@ -41,7 +41,7 @@ func TestSearchResults(t *testing.T) {
 			// NOTE: Only supports one match per line. If we need to test other cases,
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
-			case *repositoryResolver:
+			case *RepositoryResolver:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
 			case *fileMatchResolver:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
@@ -461,7 +461,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{Name: "testRepo"}
 
-	repoMatch := &repositoryResolver{
+	repoMatch := &RepositoryResolver{
 		repo: repo,
 	}
 
@@ -682,10 +682,10 @@ func TestCompareSearchResults(t *testing.T) {
 
 	tests := []testCase{{
 		// Different repo matches
-		a: &repositoryResolver{
+		a: &RepositoryResolver{
 			repo: &types.Repo{Name: api.RepoName("a")},
 		},
-		b: &repositoryResolver{
+		b: &RepositoryResolver{
 			repo: &types.Repo{Name: api.RepoName("b")},
 		},
 		aIsLess: true,
@@ -696,7 +696,7 @@ func TestCompareSearchResults(t *testing.T) {
 
 			JPath: "a",
 		},
-		b: &repositoryResolver{
+		b: &RepositoryResolver{
 			repo: &types.Repo{Name: api.RepoName("a")},
 		},
 		aIsLess: false,
@@ -908,7 +908,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		case *fileMatchResolver:
 			assertRepoResolverHydrated(ctx, t, r.Repository(), hydratedRepo)
 
-		case *repositoryResolver:
+		case *RepositoryResolver:
 			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
 		}
 	}

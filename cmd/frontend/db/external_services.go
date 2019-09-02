@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -109,7 +110,11 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		},
 	}
 	for _, err := range res.Errors() {
-		errs = multierror.Append(errs, errors.New(err.String()))
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
 	}
 
 	// Extra validation not based on JSON Schema.

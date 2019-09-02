@@ -130,7 +130,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                               visibility: 'hidden',
                           }
                 }
-                className={`hover-overlay card ${className}`}
+                className={classNames('hover-overlay', className)}
                 ref={hoverRef}
             >
                 {showCloseButton && (

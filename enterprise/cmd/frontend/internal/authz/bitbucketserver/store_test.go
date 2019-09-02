@@ -3,16 +3,21 @@ package bitbucketserver
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"reflect"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 )
 
 func BenchmarkStore(b *testing.B) {
@@ -27,16 +32,21 @@ func BenchmarkStore(b *testing.B) {
 		ids[i] = uint32(i)
 	}
 
-	update := func() ([]uint32, error) {
-		time.Sleep(2 * time.Second) // Emulate slow code host
-		return ids, nil
+	c := extsvc.CodeHost{
+		ServiceID:   "https://bitbucketserver.example.com",
+		ServiceType: bitbucketserver.ServiceType,
+	}
+
+	update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
+		return ids, &c, nil
 	}
 
 	ctx := context.Background()
 
 	b.Run("ttl=0", func(b *testing.B) {
-		ttl := time.Duration(0)
-		s := newStore(db, ttl, clock, newCache(ttl, clock))
+		s := newStore(db, 0, DefaultHardTTL, clock)
+		s.block = true
+
 		ps := &Permissions{
 			UserID: 99,
 			Perm:   authz.Read,
@@ -44,41 +54,25 @@ func BenchmarkStore(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 
-	b.Run("ttl=60s/no-in-memory-cache", func(b *testing.B) {
-		ttl := 60 * time.Second
-		s := newStore(db, ttl, clock, nil)
+	b.Run("ttl=60s", func(b *testing.B) {
+		s := newStore(db, 60*time.Second, DefaultHardTTL, clock)
+		s.block = true
+
 		ps := &Permissions{
-			UserID: 99,
+			UserID: 100,
 			Perm:   authz.Read,
 			Type:   "repos",
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
-
-	b.Run("ttl=60s/in-memory-cache", func(b *testing.B) {
-		ttl := 60 * time.Second
-		s := newStore(db, ttl, clock, newCache(ttl, clock))
-		ps := &Permissions{
-			UserID: 99,
-			Perm:   authz.Read,
-			Type:   "repos",
-		}
-
-		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -95,90 +89,138 @@ func testStore(db *sql.DB) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		now := time.Now().UTC()
+		now := time.Now().UTC().UnixNano()
 		ttl := time.Second
-		clock := func() time.Time { return now.Truncate(time.Microsecond) }
+		hardTTL := 10 * time.Second
 
-		s := newStore(db, ttl, clock, newCache(ttl, clock))
+		clock := func() time.Time {
+			return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
+		}
 
-		ids := []uint32{1, 2, 3}
-		e := error(nil)
-		calls := uint64(0)
-		update := func() ([]uint32, error) {
-			atomic.AddUint64(&calls, 1)
-			return ids, e
+		codeHost := extsvc.CodeHost{
+			ServiceID:   "https://bitbucketserver.example.com",
+			ServiceType: bitbucketserver.ServiceType,
+		}
+
+		rs := make([]*repos.Repo, 0, 7)
+		for i := 1; i <= 7; i++ {
+			rs = append(rs, &repos.Repo{
+				Name: fmt.Sprintf("bitbucketserver.example.com/PROJ/%d", i),
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          strconv.Itoa(i),
+					ServiceType: codeHost.ServiceType,
+					ServiceID:   codeHost.ServiceID,
+				},
+				Sources: map[string]*repos.SourceInfo{},
+			})
 		}
 
 		ctx := context.Background()
-		load := func(s *store) (*Permissions, error) {
-			ps := &Permissions{
-				UserID: 42,
-				Perm:   authz.Read,
-				Type:   "repos",
-			}
+		err := repos.NewDBStore(db, sql.TxOptions{}).UpsertRepos(ctx, rs...)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			err := s.LoadPermissions(ctx, &ps, update)
-			return ps, err
+		s := newStore(db, ttl, hardTTL, clock)
+		s.updates = make(chan *Permissions)
+
+		ids := []uint32{1, 2, 3}
+		e := error(nil)
+		update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
+			return ids, &codeHost, e
+		}
+
+		ps := &Permissions{UserID: 42, Perm: authz.Read, Type: "repos"}
+		load := func(s *store) (*Permissions, error) {
+			ps := *ps
+			return &ps, s.LoadPermissions(ctx, &ps, update)
+		}
+
+		array := func(ids *roaring.Bitmap) []uint32 {
+			if ids == nil {
+				return nil
+			}
+			return ids.ToArray()
 		}
 
 		{
-			// not cached nor stored
+			// No permissions cached.
 			ps, err := load(s)
-			equal(t, "err", err, nil)
-			equal(t, "ids", ps.IDs.ToArray(), ids)
+			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
+			equal(t, "ids", array(ps.IDs), []uint32(nil))
 		}
+
+		<-s.updates
+
+		{
+			// Hard TTL elapsed
+			atomic.AddInt64(&now, int64(hardTTL))
+
+			ps, err := load(s)
+			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
+			equal(t, "ids", array(ps.IDs), ids)
+		}
+
+		<-s.updates
 
 		ids = append(ids, 4, 5, 6)
 
 		{
-			// Still cached, no update should have happened even
-			// if the permissions would have changed.
+			// Source of truth changed (i.e. ids variable), but
+			// cached permissions are not expired, so previous permissions
+			// version is returned and no background update is started.
 			ps, err := load(s)
 			equal(t, "err", err, nil)
-			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
+			equal(t, "ids", array(ps.IDs), ids[:3])
 		}
 
 		{
-			// Not cached but stored.  Clear in-memory cache, still
-			// no update should have happened, but permissions get
-			// loaded from the store.
-			s.cache.cache = map[cacheKey]*Permissions{}
+			// Cache expired, update called in the background, but stale
+			// permissions are returned immediatelly.
+			atomic.AddInt64(&now, int64(ttl))
 			ps, err := load(s)
 			equal(t, "err", err, nil)
-			equal(t, "ids", ps.IDs.ToArray(), ids[:3])
-			equal(t, "cache",
-				s.cache.cache[newCacheKey(ps)],
-				ps,
-			)
+			equal(t, "ids", array(ps.IDs), ids[:3])
 		}
 
+		// Wait for background update.
+		<-s.updates
+
 		{
-			// Cache expired, update called
-			now = now.Add(ttl)
+			// Update is done, so we now have fresh permissions returned.
 			ps, err := load(s)
 			equal(t, "err", err, nil)
-			equal(t, "ids", ps.IDs.ToArray(), ids)
+			equal(t, "ids", array(ps.IDs), ids)
 		}
 
-		ids = ids[:3]
+		ids = append(ids, 7)
 
 		{
-			// Cache expired, no concurrent updates
-			now = now.Add(2 * ttl)
+			// Cache expired, and source of truth changed. Here we test
+			// that no concurrent updates are performed.
+			atomic.AddInt64(&now, int64(2*ttl))
 
-			want := atomic.LoadUint64(&calls) + 1
+			delay := make(chan struct{})
+			update = func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
+				<-delay
+				return ids, &codeHost, e
+			}
 
 			type op struct {
+				id  int
 				ps  *Permissions
 				err error
 			}
 
 			ch := make(chan op, 30)
+			updates := make(chan *Permissions)
+
 			for i := 0; i < cap(ch); i++ {
 				go func(i int) {
-					s := newStore(db, ttl, clock, newCache(ttl, clock))
+					s := newStore(db, ttl, hardTTL, clock)
+					s.updates = updates
 					ps, err := load(s)
-					ch <- op{ps, err}
+					ch <- op{i, ps, err}
 				}(i)
 			}
 
@@ -188,20 +230,26 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			for _, r := range results {
-				equal(t, "err", r.err, nil)
-				equal(t, "ids", r.ps.IDs.ToArray(), ids)
+				equal(t, fmt.Sprintf("%d.err", r.id), r.err, nil)
+				equal(t, fmt.Sprintf("%d.ids", r.id), array(r.ps.IDs), ids[:6])
 			}
 
-			equal(t, "updates", atomic.LoadUint64(&calls), want)
-		}
+			close(delay)
+			calls := 0
+			timeout := time.After(500 * time.Millisecond)
 
-		{
-			// Cache expired, error updating
-			now = now.Add(ttl)
-			e = errors.New("boom")
-			ps, err := load(s)
-			equal(t, "err", err, e)
-			equal(t, "ids", ps.IDs, (*roaring.Bitmap)(nil))
+		wait:
+			for {
+				select {
+				case p := <-updates:
+					calls++
+					equal(t, "updated.ids", array(p.IDs), ids)
+				case <-timeout:
+					break wait
+				}
+			}
+
+			equal(t, "updates", calls, 1)
 		}
 	}
 }

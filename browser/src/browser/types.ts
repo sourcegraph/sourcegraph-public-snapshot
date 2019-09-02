@@ -7,7 +7,7 @@ interface RepoLocations {
     [key: string]: string
 }
 
-interface PhabricatorMapping {
+export interface PhabricatorMapping {
     callsign: string
     path: string
 }

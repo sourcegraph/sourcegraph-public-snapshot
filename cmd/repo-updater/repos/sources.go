@@ -26,7 +26,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
-		errs := new(multierror.Error)
+		var errs *multierror.Error
 
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
@@ -35,7 +35,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 			src, err := NewSource(svc, cf)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
 				continue
 			}
 
@@ -80,10 +80,50 @@ const sourceTimeout = 30 * time.Minute
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
-	// ListRepos returns all the repos a source yields.
-	ListRepos(context.Context) ([]*Repo, error)
+	// ListRepos sends all the repos a source yields over the passed in channel
+	// as SourceResults
+	ListRepos(context.Context, chan SourceResult)
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() ExternalServices
+}
+
+// A SourceResult is sent by a Source over a channel for each repository it
+// yields when listing repositories
+type SourceResult struct {
+	// Source points to the Source that produced this result
+	Source Source
+	// Repo is the repository that was listed by the Source
+	Repo *Repo
+	// Err is only set in case the Source ran into an error when listing repositories
+	Err error
+}
+
+type SourceError struct {
+	Err    error
+	ExtSvc *ExternalService
+}
+
+func (s *SourceError) Error() string {
+	if multiErr, ok := s.Err.(*multierror.Error); ok {
+		multiErr.ErrorFormat = sourceErrorFormatFunc
+		return multiErr.Error()
+	}
+	return s.Err.Error()
+}
+
+func sourceErrorFormatFunc(es []error) string {
+	if len(es) == 1 {
+		return es[0].Error()
+	}
+
+	points := make([]string, len(es))
+	for i, err := range es {
+		points[i] = fmt.Sprintf("* %s", err)
+	}
+
+	return fmt.Sprintf(
+		"%d errors occurred:\n\t%s\n\n",
+		len(es), strings.Join(points, "\n\t"))
 }
 
 // Sources is a list of Sources that implements the Source interface.
@@ -91,15 +131,9 @@ type Sources []Source
 
 // ListRepos lists all the repos of all the sources and returns the
 // aggregate result.
-func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (srcs Sources) ListRepos(ctx context.Context, results chan SourceResult) {
 	if len(srcs) == 0 {
-		return nil, nil
-	}
-
-	type result struct {
-		src   Source
-		repos []*Repo
-		err   error
+		return
 	}
 
 	// Group sources by external service kind so that we execute requests
@@ -108,38 +142,17 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 	// See https://developer.github.com/v3/guides/best-practices-for-integrators/#dealing-with-abuse-rate-limits)
 
 	var wg sync.WaitGroup
-	ch := make(chan result)
 	for _, sources := range group(srcs) {
 		wg.Add(1)
 		go func(sources Sources) {
 			defer wg.Done()
 			for _, src := range sources {
-				if repos, err := src.ListRepos(ctx); err != nil {
-					ch <- result{src: src, err: err}
-				} else {
-					ch <- result{src: src, repos: repos}
-				}
+				src.ListRepos(ctx, results)
 			}
 		}(sources)
 	}
 
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	var repos []*Repo
-	errs := new(multierror.Error)
-
-	for r := range ch {
-		if r.err != nil {
-			errs = multierror.Append(errs, r.err)
-		} else {
-			repos = append(repos, r.repos...)
-		}
-	}
-
-	return repos, errs.ErrorOrNil()
+	wg.Wait()
 }
 
 // ExternalServices returns the ExternalServices from the given Sources.
@@ -176,4 +189,32 @@ func group(srcs []Source) map[string]Sources {
 	}
 
 	return groups
+}
+
+// listAll calls ListRepos on the given Source and collects the SourceResults
+// the Source sends over a channel into a slice of *Repo and a single error
+func listAll(ctx context.Context, src Source) ([]*Repo, error) {
+	results := make(chan SourceResult)
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	var (
+		repos []*Repo
+		errs  *multierror.Error
+	)
+
+	for res := range results {
+		if res.Err != nil {
+			for _, extSvc := range res.Source.ExternalServices() {
+				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
+			}
+			continue
+		}
+		repos = append(repos, res.Repo)
+	}
+
+	return repos, errs.ErrorOrNil()
 }

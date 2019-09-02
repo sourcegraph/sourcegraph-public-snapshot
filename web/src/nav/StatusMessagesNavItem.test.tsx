@@ -10,20 +10,89 @@ describe('StatusMessagesNavItem', () => {
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
     test('no messages', () => {
-        const fetchMessages = (): Observable<GQL.IStatusMessage[]> => of([])
+        const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(
             renderer.create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />).toJSON()
         ).toMatchSnapshot()
     })
 
-    describe('one CLONING message', () => {
-        const message: GQL.IStatusMessage = {
-            __typename: 'StatusMessage',
-            type: GQL.StatusMessageType.CLONING,
+    describe('one CloningProgress message', () => {
+        const message: GQL.StatusMessage = {
+            __typename: 'CloningProgress',
             message: 'Currently cloning repositories...',
         }
 
-        const fetchMessages = (): Observable<GQL.IStatusMessage[]> => of([message])
+        const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([message])
+        test('as non-site admin', () => {
+            expect(
+                renderer
+                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+
+        test('as site admin', () => {
+            expect(
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            scheduler={queueScheduler}
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                        />
+                    )
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+    })
+
+    describe('one ExternalServiceSyncError message', () => {
+        const message: GQL.StatusMessage = {
+            __typename: 'ExternalServiceSyncError',
+            message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
+            externalService: {
+                __typename: 'ExternalService',
+                id: 'abcd',
+                displayName: 'GitHub.com',
+                kind: GQL.ExternalServiceKind.GITHUB,
+                config: '{}',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                warning: '',
+            },
+        }
+
+        const fetchMessages = () => of([message])
+        test('as non-site admin', () => {
+            expect(
+                renderer
+                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+
+        test('as site admin', () => {
+            expect(
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            scheduler={queueScheduler}
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                        />
+                    )
+                    .toJSON()
+            ).toMatchSnapshot()
+        })
+    })
+
+    describe('one SyncError message', () => {
+        const message: GQL.StatusMessage = {
+            __typename: 'SyncError',
+            message: 'syncer.sync.store.upsert-repos: pg: unique constraint foobar',
+        }
+
+        const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
                 renderer

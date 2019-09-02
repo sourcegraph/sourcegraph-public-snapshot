@@ -1,6 +1,7 @@
 import * as path from 'path'
-import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/util/screenshotReporter'
-import { baseURL, createDriverForTest, Driver, gitHubToken } from './util'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
+import { sourcegraphBaseUrl, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -125,7 +126,7 @@ describe('regression test suite', () => {
                 'freedomofdevelopers/fod',
             ]
             await driver.ensureHasExternalService({
-                kind: 'github',
+                kind: ExternalServiceKind.GITHUB,
                 displayName: 'GitHub (search regression test)',
                 config: JSON.stringify({
                     url: 'https://github.com',
@@ -140,7 +141,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=alksdjflaksjdflkasjdf')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
                 await driver.page.waitForSelector('.e2e-search-results')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-results').length >= 1)
                 await driver.page.evaluate(() => {
@@ -158,7 +159,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error type:", expect a few results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=%22error+type:%22')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=%22error+type:%22')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
             },
             5 * 1000
@@ -166,7 +167,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -174,7 +175,7 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=error')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
@@ -182,10 +183,55 @@ describe('regression test suite', () => {
         test(
             'Perform global text search for "error count:>1000", expect many results.',
             async () => {
-                await driver.page.goto(baseURL + '/search?q=error+count:1000')
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=error+count:1000')
                 await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             },
             5 * 1000
         )
+        test(
+            'Perform global text search for "repohasfile:copying", expect many results.',
+            async () => {
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=repohasfile:copying')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+            },
+            5 * 1000
+        )
+        test(
+            'Release test 5.1.2: Perform global text search for something with more than 1000 results and use count:1000',
+            async () => {
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=.+count:1000')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+            },
+            5 * 1000
+        )
+        test(
+            'Release test 5.2.2: Perform global text search for a regular expression without indexing: "index:no ^func.*$", expect many results.',
+            async () => {
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+            },
+            5 * 1000
+        )
+        test(
+            'Release test 5.8: Search for a repository by name.',
+            async () => {
+                await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:^auth0/go-jwt-middleware$')
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
+            },
+            5 * 1000
+        )
+        test(
+            'Release test 5.10: Perform a case-sensitive search.',
+            async () => {
+                await driver.page.goto(
+                    sourcegraphBaseUrl + '/search?repo:%5Egithub%5C.com/adjust/go-wrk%24+String+case:yes'
+                )
+                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
+            },
+            5 * 1000
+        )
+        test('Release test 5.11a: Search with fork:only')
+        test('Release test 5.11b: Search with fork:no')
+        test('Release test 5.15: Search for something on a non-master branch of a large repository')
     })
 })

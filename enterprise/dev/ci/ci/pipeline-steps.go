@@ -145,11 +145,12 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("E2E_BROWSER", browser),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test-e2e"),
+			bk.Cmd("yarn -s jest --runInBand ./e2e/github.test"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -256,14 +257,14 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			cmds = append(cmds, bk.Cmd(preBuildScript))
 		}
 
-		image := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + app
 
 		getBuildScript := func() string {
 			buildScriptByApp := map[string]string{
 				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
 
 				// The server image was built prior to e2e tests in a previous step.
-				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", image, c.version, image, c.version),
+				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", baseImage, c.version, baseImage, c.version),
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
@@ -272,30 +273,39 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		}
 
 		cmds = append(cmds,
-			bk.Env("IMAGE", image+":"+c.version),
+			bk.Env("IMAGE", baseImage+":"+c.version),
 			bk.Env("VERSION", c.version),
 			bk.Cmd(getBuildScript()),
 		)
 
-		if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
-			)
+		cmds = append(cmds, bk.Cmd("yes | gcloud auth configure-docker"))
+
+		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
+		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
+
+		for _, image := range []string{dockerHubImage, gcrImage} {
+			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
+				cmds = append(cmds,
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, image, c.version)),
+					bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
+				)
+			}
+
+			if app == "server" && c.releaseBranch {
+				cmds = append(cmds,
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", baseImage, c.version, image, c.branch)),
+					bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, c.branch)),
+				)
+			}
+
+			if insiders {
+				cmds = append(cmds,
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", baseImage, c.version, image)),
+					bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
+				)
+			}
 		}
 
-		if app == "server" && c.releaseBranch {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", image, c.version, image, c.branch)),
-				bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, c.branch)),
-			)
-		}
-
-		if insiders {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, c.version, image)),
-				bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
-			)
-		}
 		pipeline.AddStep(":docker:", cmds...)
 	}
 }

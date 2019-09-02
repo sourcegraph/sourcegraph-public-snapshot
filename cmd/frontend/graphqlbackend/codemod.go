@@ -42,14 +42,14 @@ type args struct {
 
 // codemodResultResolver is a resolver for the GraphQL type `CodemodResult`
 type codemodResultResolver struct {
-	commit  *gitCommitResolver
+	commit  *GitCommitResolver
 	path    string
 	fileURL string
 	diff    string
 	matches []*searchResultMatchResolver
 }
 
-func (r *codemodResultResolver) ToRepository() (*repositoryResolver, bool) { return nil, false }
+func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
 func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
@@ -81,7 +81,7 @@ func (r *codemodResultResolver) Label() (*markdownResolver, error) {
 }
 
 func (r *codemodResultResolver) URL() string {
-	return ""
+	return r.fileURL
 }
 
 func (r *codemodResultResolver) Detail() (*markdownResolver, error) {
@@ -96,6 +96,10 @@ func (r *codemodResultResolver) Detail() (*markdownResolver, error) {
 func (r *codemodResultResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
 }
+
+func (r *codemodResultResolver) Commit() *GitCommitResolver { return r.commit }
+
+func (r *codemodResultResolver) RawDiff() string { return r.diff }
 
 func validateQuery(q *query.Query) (*args, error) {
 	matchValues := q.Values(query.FieldDefault)
@@ -196,7 +200,8 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 	var results []searchResultResolver
 	for _, ur := range unflattened {
 		for _, resolver := range ur {
-			results = append(results, &resolver)
+			v := resolver
+			results = append(results, &v)
 		}
 	}
 
@@ -305,17 +310,17 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 		if err != nil {
 			return nil, err
 		}
-		result := codemodResultResolver{
-			commit: &gitCommitResolver{
-				repo:     &repositoryResolver{repo: repoRevs.Repo},
+		results = append(results, codemodResultResolver{
+			commit: &GitCommitResolver{
+				repo:     &RepositoryResolver{repo: repoRevs.Repo},
 				inputRev: &repoRevs.Revs[0].RevSpec,
+				oid:      GitObjectID(commit),
 			},
 			path:    raw.URI,
 			fileURL: fileURL,
 			diff:    raw.Diff,
 			matches: matches,
-		}
-		results = append(results, result)
+		})
 	}
 
 	return results, nil

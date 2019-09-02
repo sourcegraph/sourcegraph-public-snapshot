@@ -9,7 +9,8 @@ import '../sentry'
 
 import React from 'react'
 import { render } from 'react-dom'
-import { keybindings } from '../keybindings'
+import '../enterprise.scss'
+import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import { enterpriseExploreSections } from './explore/exploreSections'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
@@ -50,7 +51,7 @@ window.addEventListener('DOMContentLoaded', () => {
             repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
             repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
             routes={enterpriseRoutes}
-            keybindings={keybindings}
+            keyboardShortcuts={KEYBOARD_SHORTCUTS}
         />,
         document.querySelector('#root')
     )

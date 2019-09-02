@@ -78,7 +78,9 @@ exports[`ServerURLForm doesn't render the permissions alert on about://addons 1`
               className="server-url-form__status-indicator bg-success"
             />
              
-            <span>
+            <span
+              className="e2e-connection-status"
+            >
               Connected
             </span>
           </span>
@@ -87,7 +89,7 @@ exports[`ServerURLForm doesn't render the permissions alert on about://addons 1`
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control"
+        className="form-control e2e-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -177,7 +179,9 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://extensio
               className="server-url-form__status-indicator bg-success"
             />
              
-            <span>
+            <span
+              className="e2e-connection-status"
+            >
               Connected
             </span>
           </span>
@@ -186,7 +190,7 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://extensio
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control"
+        className="form-control e2e-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -276,7 +280,9 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://newtab 1
               className="server-url-form__status-indicator bg-success"
             />
              
-            <span>
+            <span
+              className="e2e-connection-status"
+            >
               Connected
             </span>
           </span>
@@ -285,7 +291,7 @@ exports[`ServerURLForm doesn't render the permissions alert on chrome://newtab 1
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control"
+        className="form-control e2e-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -375,7 +381,9 @@ exports[`ServerURLForm renders a default state 1`] = `
               className="server-url-form__status-indicator bg-success"
             />
              
-            <span>
+            <span
+              className="e2e-connection-status"
+            >
               Connected
             </span>
           </span>
@@ -384,7 +392,7 @@ exports[`ServerURLForm renders a default state 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control"
+        className="form-control e2e-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -474,7 +482,9 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
               className="server-url-form__status-indicator bg-success"
             />
              
-            <span>
+            <span
+              className="e2e-connection-status"
+            >
               Connected
             </span>
           </span>
@@ -483,7 +493,7 @@ exports[`ServerURLForm renders the current tab permissions alert 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control"
+        className="form-control e2e-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}
@@ -596,7 +606,9 @@ exports[`ServerURLForm renders the feature flags 1`] = `
               className="server-url-form__status-indicator bg-success"
             />
              
-            <span>
+            <span
+              className="e2e-connection-status"
+            >
               Connected
             </span>
           </span>
@@ -605,7 +617,7 @@ exports[`ServerURLForm renders the feature flags 1`] = `
       <input
         autoCapitalize="off"
         autoCorrect="off"
-        className="form-control"
+        className="form-control e2e-sourcegraph-url"
         id="sourcegraph-url"
         onChange={[Function]}
         spellCheck={false}

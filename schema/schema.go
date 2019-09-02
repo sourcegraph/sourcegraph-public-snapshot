@@ -103,6 +103,7 @@ type BitbucketCloudConnection struct {
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
+	HardTTL          string                          `json:"hardTTL,omitempty"`
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
 	Oauth            BitbucketServerOAuth            `json:"oauth"`
 	Ttl              string                          `json:"ttl,omitempty"`
@@ -501,6 +502,7 @@ type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
 	Branding                          *Branding                   `json:"branding,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
+	DebugSearchSymbolsParallelism     int                         `json:"debug.search.symbolsParallelism,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`
@@ -521,6 +523,7 @@ type SiteConfiguration struct {
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
+	SearchIndexSymbolsEnabled         *bool                       `json:"search.index.symbols.enabled,omitempty"`
 	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
 }
 type UsernameIdentity struct {

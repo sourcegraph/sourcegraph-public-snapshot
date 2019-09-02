@@ -9,12 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/net/http2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -57,8 +57,14 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 		cf = NewHTTPClientFactory()
 	}
 
-	cli, err := cf.Client(func(c *http.Client) error {
-		*c = *awsConfig.HTTPClient
+	cli, err := cf.Doer(func(c *http.Client) error {
+		tr := aws.NewBuildableHTTPClient().GetTransport()
+		if err := http2.ConfigureTransport(tr); err != nil {
+			return err
+		}
+		c.Transport = tr
+		wrapWithoutRedirect(c)
+
 		return nil
 	})
 	if err != nil {
@@ -100,16 +106,8 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 // ListRepos returns all AWS Code Commit repositories accessible to all
 // connections configured in Sourcegraph via the external services
 // configuration.
-func (s *AWSCodeCommitSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	rs, err := s.listAllRepositories(ctx)
-	for _, r := range rs {
-		awsRepo, err := s.makeRepo(r)
-		if err != nil {
-			return repos, err
-		}
-		repos = append(repos, awsRepo)
-	}
-	return repos, err
+func (s *AWSCodeCommitSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	s.listAllRepositories(ctx, results)
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -155,21 +153,23 @@ func (s *AWSCodeCommitSource) authenticatedRemoteURL(repo *awscodecommit.Reposit
 	return u.String()
 }
 
-func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context) ([]*awscodecommit.Repository, error) {
-	repos := []*awscodecommit.Repository{}
-	errs := new(multierror.Error)
-
+func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results chan SourceResult) {
 	var nextToken string
 	for {
 		batch, token, err := s.client.ListRepositories(ctx, nextToken)
 		if err != nil {
-			errs = multierror.Append(errs, err)
-			break
+			results <- SourceResult{Source: s, Err: err}
+			return
 		}
 
 		for _, r := range batch {
 			if !s.excludes(r) {
-				repos = append(repos, r)
+				repo, err := s.makeRepo(r)
+				if err != nil {
+					results <- SourceResult{Source: s, Err: err}
+					return
+				}
+				results <- SourceResult{Source: s, Repo: repo}
 			}
 		}
 
@@ -179,10 +179,67 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context) ([]*awsco
 
 		nextToken = token
 	}
-
-	return repos, errs.ErrorOrNil()
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
 	return s.exclude[r.Name] || s.exclude[r.ID]
+}
+
+// The code below is copied from
+// github.com/aws/aws-sdk-go-v2@v0.11.0/aws/client.go so we use the same HTTP
+// client that AWS wants to use, but fits into our HTTP factory
+// pattern. Additionally we change wrapWithoutRedirect to mutate c instead of
+// returning a copy.
+func wrapWithoutRedirect(c *http.Client) {
+	tr := c.Transport
+	if tr == nil {
+		tr = http.DefaultTransport
+	}
+
+	c.CheckRedirect = limitedRedirect
+	c.Transport = stubBadHTTPRedirectTransport{
+		tr: tr,
+	}
+}
+
+func limitedRedirect(r *http.Request, via []*http.Request) error {
+	// Request.Response, in CheckRedirect is the response that is triggering
+	// the redirect.
+	resp := r.Response
+	if r.URL.String() == stubBadHTTPRedirectLocation {
+		resp.Header.Del(stubBadHTTPRedirectLocation)
+		return http.ErrUseLastResponse
+	}
+
+	switch resp.StatusCode {
+	case 307, 308:
+		// Only allow 307 and 308 redirects as they preserve the method.
+		return nil
+	}
+
+	return http.ErrUseLastResponse
+}
+
+type stubBadHTTPRedirectTransport struct {
+	tr http.RoundTripper
+}
+
+const stubBadHTTPRedirectLocation = `https://amazonaws.com/badhttpredirectlocation`
+
+func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	resp, err := t.tr.RoundTrip(r)
+	if err != nil {
+		return resp, err
+	}
+
+	// TODO S3 is the only known service to return 301 without location header.
+	// consider moving this to a S3 customization.
+	switch resp.StatusCode {
+	case 301, 302:
+		if v := resp.Header.Get("Location"); len(v) == 0 {
+			resp.Header.Set("Location", stubBadHTTPRedirectLocation)
+		}
+	}
+
+	return resp, err
 }

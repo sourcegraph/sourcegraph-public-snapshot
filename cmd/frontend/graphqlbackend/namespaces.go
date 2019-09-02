@@ -12,6 +12,7 @@ import (
 type Namespace interface {
 	ID() graphql.ID
 	URL() string
+	NamespaceName() string
 }
 
 func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql.ID }) (*namespaceResolver, error) {
@@ -28,7 +29,7 @@ func NamespaceByID(ctx context.Context, id graphql.ID) (Namespace, error) {
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
-		return orgByID(ctx, id)
+		return OrgByID(ctx, id)
 	default:
 		return nil, errors.New("invalid ID for namespace")
 	}

@@ -21,7 +21,6 @@ import {
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { pluralize } from '../../../shared/src/util/strings'
-import { parseHash } from '../../../shared/src/util/url'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 
@@ -130,21 +129,6 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 }
 
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
-    public componentDidMount(): void {
-        // Scroll to hash. But if the hash is a line number in a blob (or any viewState), then do not scroll,
-        // because the hash is handled separately by the Blob component.
-        if (this.props.location.hash && !parseHash(this.props.location.hash).viewState) {
-            this.scrollToHash(this.props.location.hash)
-        }
-    }
-
-    public componentDidUpdate(prevProps: ConnectionNodesProps<C, N, NP>): void {
-        if (prevProps.connection !== this.props.connection || prevProps.location.hash !== this.props.location.hash) {
-            // Try scrolling when either the content or the hash changed.
-            this.scrollToHash(this.props.location.hash)
-        }
-    }
-
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
         const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
@@ -250,25 +234,6 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
     }
 
     private onClickShowMore = () => this.props.onShowMore()
-
-    /** Scroll to the anchor in the page identified by the location fragment (e.g., #my-section). */
-    private scrollToHash(hash: string): void {
-        if (!hash) {
-            return
-        }
-
-        // This does not cause a page navigation (because window.location.hash === hash already), but it does cause
-        // the page to scroll to the hash. This is simpler than using scrollTo, scrollIntoView, etc. Also assigning
-        // window.location.hash does not trigger a navigation when `window.location.hash === hash`, so we can't
-        // just use that.
-        //
-        // Finally, ensure that hash begins with a "#" so that this can't be used to redirect to arbitrary URLs (as
-        // an open redirect vulnerability). This should always be true, but just be safe and document this
-        // assertion in code.
-        if (hash.startsWith('#')) {
-            window.location.href = hash
-        }
-    }
 }
 
 /**

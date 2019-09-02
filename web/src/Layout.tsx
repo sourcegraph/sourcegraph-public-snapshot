@@ -12,6 +12,7 @@ import { SettingsCascadeProps } from '../../shared/src/settings/settings'
 import { ErrorLike } from '../../shared/src/util/errors'
 import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -20,7 +21,8 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { KeybindingsProps } from './keybindings'
+import { KEYBOARD_SHORTCUT_SHOW_HELP, KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -46,7 +48,7 @@ export interface LayoutProps
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeybindingsProps,
+        KeyboardShortcutsProps,
         ThemeProps,
         EventLoggerProps,
         ThemePreferenceProps,
@@ -100,6 +102,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
+    useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -107,6 +110,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     return (
         <div className="layout">
+            <KeyboardShortcutsHelp
+                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
+                keyboardShortcuts={props.keyboardShortcuts}
+            />
             <GlobalAlerts
                 isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
                 settingsCascade={props.settingsCascade}
