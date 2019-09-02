@@ -136,6 +136,8 @@ It currently does not run in CI and is intended to be run manually for release t
 
 e2e/bitbucket.test.ts tests the browser extension on a Bitbucket Server instance.
 
+e2e/gitlab.test.ts tests the browser extension on gitlab.com (or a private Gitlab instance).
+
 ## Deploy
 
 Deployment the Chrome web store happen automatically in CI when the `bext/release` branch is updated.

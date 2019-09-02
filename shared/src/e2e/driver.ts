@@ -280,7 +280,12 @@ export class Driver {
         variables: {}
     }): Promise<GraphQLResult<T>> {
         const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-        const xhrHeaders = await this.page.evaluate(() => (window as any).context.xhrHeaders)
+        const xhrHeaders =
+            (await this.page.evaluate(
+                sourcegraphBaseUrl =>
+                    location.href.startsWith(sourcegraphBaseUrl) && (window as any).context.xhrHeaders,
+                sourcegraphBaseUrl
+            )) || {}
         const response = await this.makeRequest<GraphQLResult<T>>({
             url: `${sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
             init: {
