@@ -72,12 +72,12 @@ export async function createExtensionHostClientConnection(
     // Sync models and editors to the extension host
     subscription.add(
         from(services.model.modelUpdates)
-            .pipe(concatMap(models => proxy.documents.$acceptDocumentData(models)))
+            .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
             .subscribe()
     )
     subscription.add(
         from(services.editor.editorUpdates)
-            .pipe(concatMap(editors => proxy.windows.$acceptWindowData({ editors })))
+            .pipe(concatMap(editorUpdates => proxy.windows.$acceptWindowData(editorUpdates)))
             .subscribe()
     )
 

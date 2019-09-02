@@ -96,9 +96,7 @@ describe('code_intelligence', () => {
         }
 
         test('renders the hover overlay mount', async () => {
-            console.log(1)
             const { services } = await integrationTestContext()
-            console.log(2)
             subscriptions.add(
                 handleCodeHost({
                     mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
@@ -227,18 +225,19 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editorUpdates)
-                .pipe(take(1))
+            await from(services.editor.editorUpdates)
+                .pipe(
+                    skip(1),
+                    take(1)
+                )
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
                     // The repo name exposed to extensions is affected by repositoryPathPattern
                     resource: 'git://github/foo?1#/bar.ts',
                     model: {
-                        uri: 'git://github/foo?1#/bar.ts',
-                        text: 'Hello World',
                         languageId: 'typescript',
                     },
                     selections: [],
@@ -552,20 +551,18 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            let editors = await from(services.editor.editorUpdates)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(2),
                     take(1)
                 )
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
@@ -576,8 +573,6 @@ describe('code_intelligence', () => {
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
@@ -588,20 +583,18 @@ describe('code_intelligence', () => {
             // Simulate codeView1 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
             // One editor should have been removed, model should still exist
-            editors = await from(services.editor.editorUpdates)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(1),
                     take(1)
                 )
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#1',
                     isActive: true,
                     model: {
                         languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
                     },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
@@ -612,13 +605,13 @@ describe('code_intelligence', () => {
             // Simulate codeView2 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
             // Second editor and model should have been removed
-            editors = await from(services.editor.editorUpdates)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(1),
                     take(1)
                 )
                 .toPromise()
-            expect(editors).toEqual([])
+            expect([...services.editor.editors.values()]).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
         })
 
@@ -662,13 +655,13 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(1),
                     take(1)
                 )
                 .toPromise()
-            expect(editors.length).toEqual(1)
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
         })
@@ -723,14 +716,14 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(1),
                     take(1)
                 )
                 .toPromise()
 
-            expect(editors.length).toEqual(1)
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.notCalled(dom.getCodeElementFromTarget)
         })
@@ -787,13 +780,13 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(1),
                     take(1)
                 )
                 .toPromise()
-            expect(editors.length).toEqual(1)
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
@@ -844,13 +837,13 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
+            await from(services.editor.editorUpdates)
                 .pipe(
                     skip(1),
                     take(1)
                 )
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
@@ -858,6 +851,9 @@ describe('code_intelligence', () => {
                     resource: 'git://github.com/foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
+                    model: {
+                        languageId: 'typescript',
+                    },
                 },
             ])
         })

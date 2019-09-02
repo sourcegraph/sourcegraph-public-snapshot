@@ -71,7 +71,6 @@ export async function integrationTestContext(
     extensionAPI: typeof sourcegraph
     services: Services
 }> {
-    console.log(1)
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
     const clientAPIChannel = new MessageChannel()
@@ -93,40 +92,37 @@ export async function integrationTestContext(
         clientApplication: 'sourcegraph',
     }
     const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
-    console.log(2)
 
     const extensionAPI = await extensionHost.extensionAPI
-    console.log(3)
     if (initModel.models) {
         for (const model of initModel.models) {
-            console.log(4)
             services.model.addModel(model)
         }
     }
     for (const editor of initModel.editors) {
-        console.log(5)
         services.editor.addEditor(editor)
     }
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
-    await Promise.all([
-        from(extensionAPI.workspace.openedTextDocuments)
-            .pipe(take(initModel.editors.length))
-            .toPromise(),
-        from(extensionAPI.app.activeWindowChanges)
-            .pipe(
-                first(isDefined),
-                switchMap(activeWindow =>
-                    from(activeWindow.activeViewComponentChanges).pipe(
-                        filter(isDefined),
-                        take(initModel.editors.length)
+    if (initModel.editors.length) {
+        await Promise.all([
+            from(extensionAPI.workspace.openedTextDocuments)
+                .pipe(take(initModel.editors.length))
+                .toPromise(),
+            from(extensionAPI.app.activeWindowChanges)
+                .pipe(
+                    first(isDefined),
+                    switchMap(activeWindow =>
+                        from(activeWindow.activeViewComponentChanges).pipe(
+                            filter(isDefined),
+                            take(initModel.editors.length)
+                        )
                     )
                 )
-            )
-            .toPromise(),
-    ])
-    console.log(4)
+                .toPromise(),
+        ])
+    }
 
     return {
         client,

@@ -12,7 +12,7 @@ const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toE
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        editorService: Pick<EditorService, 'editorsAndModels'>,
+        editorService: Pick<EditorService, 'editors' | 'editorUpdates'>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
