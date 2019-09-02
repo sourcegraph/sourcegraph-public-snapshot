@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -21,14 +20,10 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// A store of Permissions with in-memory caching, safe for concurrent use.
+// A store of Permissions safe for concurrent use.
 //
 // It leverages Postgres row locking for concurrency control of cache fill events,
 // so that many concurrent requests during an expiration don't overload the Bitbucket Server API.
-//
-// The second in-memory read-through layer avoids the round-trip and serialization
-// costs associated with talking to Postgres, further speeding up the steady state
-// operations.
 type store struct {
 	db dbutil.DB
 	// Duration after which a given user's cached permissions SHOULD be updated.
@@ -37,13 +32,12 @@ type store struct {
 	// Duration after which a given user's cached permissions MUST be updated.
 	// Previously cached permissions can no longer be used.
 	hardTTL time.Duration
-	cache   *cache
 	clock   func() time.Time
 	block   bool // Perform blocking updates if true.
 	updates chan *Permissions
 }
 
-func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time, cache *cache) *store {
+func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) *store {
 	if hardTTL < ttl {
 		hardTTL = ttl
 	}
@@ -52,7 +46,6 @@ func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time, 
 		db:      db,
 		ttl:     ttl,
 		hardTTL: hardTTL,
-		cache:   cache,
 		clock:   clock,
 	}
 }
@@ -120,38 +113,30 @@ type PermissionsUpdateFunc func(context.Context) (
 // to asynchronously fetch updated permissions when they expire. When there are no
 // valid permissions available (i.e. the first time a user needs them), an error is
 // returned.
-//
-// Callers must NOT mutate the resulting Permissions pointer. It's shared across go-routines
-// and it's meant to be read-only. Any write to it is not thread-safe.
 func (s *store) LoadPermissions(
 	ctx context.Context,
-	p **Permissions,
+	p *Permissions,
 	update PermissionsUpdateFunc,
 ) (err error) {
-	if s == nil || p == nil || *p == nil {
+	if s == nil || p == nil {
 		return nil
 	}
 
 	ctx, save := s.observe(ctx, "LoadPermissions", "")
-	defer func() { save(&err, (*p).tracingFields()...) }()
+	defer func() { save(&err, p.tracingFields()...) }()
 
 	now := s.clock()
 
-	// Do we have valid permissions cached in-memory?
-	if !s.cache.load(p) || (*p).Expired(s.ttl, now) {
-		// Try to load updated permissions from the database.
-		if err = s.load(ctx, *p); err != nil {
-			return err
-		} else if !(*p).Expired(s.ttl, now) { // Cache them if they're not expired.
-			s.cache.update(*p)
-		}
+	// Load updated permissions from the database.
+	if err = s.load(ctx, p); err != nil {
+		return err
 	}
 
-	if !(*p).Expired(s.ttl, now) { // Are these permissions still valid?
+	if !p.Expired(s.ttl, now) { // Are these permissions still valid?
 		return nil
 	}
 
-	return s.UpdatePermissions(ctx, *p, update)
+	return s.UpdatePermissions(ctx, p, update)
 }
 
 // UpdatePermissions updates the given Permissions, calling the update function
@@ -543,65 +528,5 @@ func (s *store) observe(ctx context.Context, family, title string) (context.Cont
 		}
 
 		tr.Finish()
-	}
-}
-
-// A store's in-memory read-through cache used in LoadPermissions.
-type cache struct {
-	mu    sync.RWMutex
-	cache map[cacheKey]*Permissions
-}
-
-func newCache() *cache {
-	return &cache{cache: map[cacheKey]*Permissions{}}
-}
-
-type cacheKey struct {
-	UserID int32
-	Perm   authz.Perms
-	Type   string
-}
-
-// load sets the given Permissions pointer with a matching cached
-// Permissions. If no cached Permissions are found or if they are
-// now expired,
-func (c *cache) load(p **Permissions) (hit bool) {
-	if c == nil {
-		return false
-	}
-
-	k := newCacheKey(*p)
-
-	c.mu.RLock()
-	e, hit := c.cache[k]
-	c.mu.RUnlock()
-
-	if hit {
-		*p = e
-	}
-
-	return hit
-}
-
-func (c *cache) update(p *Permissions) {
-	if c == nil {
-		return
-	}
-
-	k := newCacheKey(p)
-	c.mu.Lock()
-	c.cache[k] = p
-	c.mu.Unlock()
-}
-
-func newCacheKey(p *Permissions) cacheKey {
-	if p.Type == "" {
-		panic("empty Type")
-	}
-
-	return cacheKey{
-		UserID: p.UserID,
-		Perm:   p.Perm,
-		Type:   p.Type,
 	}
 }

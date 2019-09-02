@@ -9,6 +9,14 @@ import { Stats } from 'webpack'
 import extensionInfo from '../src/extension/manifest.spec.json'
 import schema from '../src/extension/schema.json'
 
+/**
+ * If true, add <all_urls> to the permissions in the manifest.
+ * This is needed for e2e tests because it is not possible to accept the permission prompt with puppeteer.
+ */
+const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
+    process.env.EXTENSION_PERMISSIONS_ALL_URLS && JSON.parse(process.env.EXTENSION_PERMISSIONS_ALL_URLS)
+)
+
 export type BuildEnv = 'dev' | 'prod'
 
 type Browser = 'firefox' | 'chrome'
@@ -88,6 +96,11 @@ function writeManifest(env: BuildEnv, browser: Browser, writeDir: string): void 
     const manifest = {
         ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLACKLIST[browser]]),
         ...omit(extensionInfo[env], BROWSER_BLACKLIST[browser]),
+    }
+
+    if (EXTENSION_PERMISSIONS_ALL_URLS) {
+        manifest.permissions.push('<all_urls>')
+        signale.info('Adding <all_urls> to permissions because of env var setting')
     }
 
     if (browser === 'firefox') {

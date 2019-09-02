@@ -1,6 +1,7 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { sourcegraphBaseUrl, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -125,7 +126,7 @@ describe('regression test suite', () => {
                 'freedomofdevelopers/fod',
             ]
             await driver.ensureHasExternalService({
-                kind: 'github',
+                kind: ExternalServiceKind.GITHUB,
                 displayName: 'GitHub (search regression test)',
                 config: JSON.stringify({
                     url: 'https://github.com',

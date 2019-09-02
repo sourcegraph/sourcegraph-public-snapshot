@@ -750,7 +750,7 @@ func TestSources_ListRepos(t *testing.T) {
 					ctx = context.Background()
 				}
 
-				repos, err := srcs.ListRepos(ctx)
+				repos, err := listAll(ctx, srcs)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 				}

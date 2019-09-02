@@ -306,7 +306,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			repos, err := githubSrc.ListRepos(context.Background())
+			repos, err := listAll(context.Background(), githubSrc)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
