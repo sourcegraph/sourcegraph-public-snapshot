@@ -9,7 +9,7 @@ import { readFile, writeFile } from 'mz/fs'
 import path from 'path'
 import { format, resolveConfig } from 'prettier'
 import { draftV7resolver } from './draftV7Resolver'
-import fg from 'fast-glob'
+import glob from 'fast-glob'
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend/*.graphql')
 
@@ -21,7 +21,8 @@ export async function watchGraphQLTypes(): Promise<void> {
 
 /** Generates the TypeScript types for the GraphQL schema */
 export async function graphQLTypes(): Promise<void> {
-    const schemaStr = (await Promise.all(fg.sync(GRAPHQL_SCHEMA_PATH).map(f => readFile(f)))).join('')
+    const files = await glob<string>(GRAPHQL_SCHEMA_PATH)
+    const schemaStr = (await Promise.all(files.map(file => readFile(file)))).join('\n')
     const schema = buildSchema(schemaStr)
     const result = (await graphql(schema, introspectionQuery)) as { data: IntrospectionQuery }
 
