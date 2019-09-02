@@ -1,23 +1,38 @@
 #!/usr/bin/env bash
-set -e
 
-# Description: Dashboards and graphs for Prometheus metrics.
+set -euf -o pipefail
+
+GRAFANA_DISK="${HOME}/sourcegraph-docker/grafana-disk"
+
+CID_FILE="${GRAFANA_DISK}/grafana.cid"
+
+mkdir -p ${GRAFANA_DISK}/logs
+rm -f ${CID_FILE}
+
+function finish {
+  if test -f ${CID_FILE}; then
+      echo 'trapped CTRL-C: stopping docker grafana container'
+      docker stop $(cat ${CID_FILE})
+      rm -f  ${CID_FILE}
+  fi
+}
+trap finish EXIT
+
+# Description: Dashboards and graphs for grafana metrics.
 #
-#
-docker run --detach \
+docker run --rm  --cidfile ${CID_FILE} \
     --name=grafana \
     --cpus=1 \
     --memory=1g \
     -p 0.0.0.0:3000:3000 \
-    -v ~/sourcegraph-docker/grafana-disk:/var/lib/grafana \
-    -v $(pwd)/grafana:/etc/grafana \
+    -v ${GRAFANA_DISK}:/var/lib/grafana \
     -e GF_AUTH_ANONYMOUS_ENABLED=true \
     -e GF_AUTH_ANONYMOUS_ORG_NAME=Sourcegraph \
     -e GF_AUTH_ANONYMOUS_ORG_ROLE=Editor \
     -e GF_USERS_ALLOW_SIGN_UP='false' \
     -e GF_USERS_AUTO_ASSIGN_ORG='true' \
     -e GF_USERS_AUTO_ASSIGN_ORG_ROLE=Editor \
-    grafana/grafana:6.1.1@sha256:e7a513bf7f33ef9681b2d35a799136e1ce9330f9055f75dfa2101d812946184b
+    sourcegraph/grafana:3.8 >> ${GRAFANA_DISK}/logs/grafana.log 2>&1 &
 
 # Add the following lines above if you wish to use an auth proxy with Grafana:
 #
