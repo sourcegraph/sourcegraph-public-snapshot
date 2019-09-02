@@ -8,6 +8,7 @@ export function testSingleFilePage({
     url,
     sourcegraphBaseUrl,
     repoName,
+    lineSelector,
 }: {
     /** Called to get the driver */
     getDriver: () => Driver
@@ -20,6 +21,9 @@ export function testSingleFilePage({
 
     /** The repo name of sourcgraph/jsonrpc2 on the Sourcegraph instance */
     repoName: string
+
+    /** The CSS selector for a line in the code view */
+    lineSelector: string
 }): void {
     it('adds "View on Sourcegraph" buttons to files', async () => {
         await getDriver().page.goto(url)
@@ -44,7 +48,9 @@ export function testSingleFilePage({
 
         // Trigger tokenization of the line.
         const lineNumber = 16
-        const line = await getDriver().page.waitForSelector(`.line:nth-child(${lineNumber})`, { timeout: 10000 })
+        const line = await getDriver().page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
+            timeout: 10000,
+        })
         const [token] = await line.$x('//span[text()="CallOption"]')
         await token.hover()
         await getDriver().page.waitForSelector('.e2e-tooltip-go-to-definition')
