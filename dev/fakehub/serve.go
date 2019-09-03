@@ -15,23 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func serve(n int, addr string, args []string) error {
-	var repoDir string
-	switch len(args) {
-	case 0:
-		h, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		repoDir = filepath.Join(h, ".sourcegraph", "snapshots")
-
-	case 1:
-		repoDir = args[0]
-
-	default:
-		return errors.New("too many arguments")
-	}
-
+func serve(n int, addr string, repoDir string) error {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrap(err, "listen")

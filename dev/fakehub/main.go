@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/peterbourgon/ff/ffcli"
 	"github.com/pkg/errors"
@@ -14,7 +15,17 @@ import (
 func main() {
 	log.SetPrefix("")
 
+	var defaultSnapshotDir string
+	if h, err := os.UserHomeDir(); err != nil {
+		log.Fatal(err)
+	} else {
+		defaultSnapshotDir = filepath.Join(h, ".sourcegraph", "snapshots")
+	}
+
 	var (
+		globalFlags       = flag.NewFlagSet("fakehub", flag.ExitOnError)
+		globalSnapshotDir = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
+
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
 		serveN     = serveFlags.Int("n", 1, "number of instances of each repo to make")
 		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
@@ -34,7 +45,19 @@ fakehub will default to serving ~/.sourcegraph/snapshots
 `,
 		FlagSet: serveFlags,
 		Exec: func(args []string) error {
-			return serve(*serveN, *serveAddr, args)
+			var repoDir string
+			switch len(args) {
+			case 0:
+				repoDir = *globalSnapshotDir
+
+			case 1:
+				repoDir = args[0]
+
+			default:
+				return errors.New("too many arguments")
+			}
+
+			return serve(*serveN, *serveAddr, repoDir)
 		},
 	}
 
@@ -46,7 +69,9 @@ fakehub will default to serving ~/.sourcegraph/snapshots
 			if len(args) == 0 {
 				return errors.New("requires atleast 1 argument")
 			}
-			var s Snapshotter
+			s := Snapshotter{
+				Destination: *globalSnapshotDir,
+			}
 			for _, dir := range args {
 				s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
 			}
