@@ -757,7 +757,7 @@ class LsifImporter {
  * @param id The identifier.
  */
 function assertId(id: Id | undefined): Id {
-    if (id) {
+    if (id !== undefined) {
         return id
     }
 
@@ -773,10 +773,10 @@ function assertId(id: Id | undefined): Id {
  * @param name The type of element (used for exception message).
  * @param maps The set of maps to query.
  */
-export function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T | null>[]): T {
+export function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T>[]): T {
     for (const map of maps) {
         const value = map.get(id)
-        if (value) {
+        if (value !== undefined) {
             return value
         }
     }
