@@ -24,21 +24,36 @@ func main() {
 	addr := flag.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	flag.Parse()
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] path/to/dir/containing/git/dirs
+		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] [path/to/dir/containing/git/dirs]
 
 fakehub will serve any number (controlled with -n) of copies of the repo over
 HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
 be used as test data for sourcegraph. The easiest way to get them into
 sourcegraph is to visit the URL printed out on startup and paste the contents
 into the text box for adding single repos in sourcegraph Site Admin.
+
+fakehub will default to serving ~/.sourcegraph/snapshots
 `)
 		flag.PrintDefaults()
 	}
-	if flag.NArg() != 1 {
+
+	var repoDir string
+	switch flag.NArg() {
+	case 0:
+		h, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		repoDir = filepath.Join(h, ".sourcegraph", "snapshots")
+
+	case 1:
+		repoDir = flag.Arg(0)
+
+	default:
 		flag.Usage()
 		os.Exit(1)
 	}
-	repoDir := flag.Arg(0)
+
 	ln, err := net.Listen("tcp", *addr)
 	if err != nil {
 		log.Fatalf("fakehub: listening: %v", err)
