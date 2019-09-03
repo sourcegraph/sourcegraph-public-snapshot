@@ -3,11 +3,12 @@ import { groupBy, isEqual, uniqWith } from 'lodash'
 import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, ResultSetData, DocumentData, FlattenedRange } from './entities'
+import { MonikerData, RangeData, DocumentData, FlattenedRange } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache, DocumentCache } from './cache'
+import { assertDefined } from './importer'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -59,10 +60,13 @@ export class Database {
         // First, we try to find the definition result attached to the range or one
         // of the result sets to which the range is attached.
 
-        const resultData = findResult(document.resultSets, document.definitionResults, range, 'definitionResult')
-        if (resultData) {
+        if (range.definitionResult) {
             // We have a definition result in this database.
-            return await this.getLocations(path, document, resultData)
+            return await this.getLocations(
+                path,
+                document,
+                assertDefined(range.definitionResult, 'definitionResult', document.definitionResults)
+            )
         }
 
         // Otherwise, we fall back to a moniker search. We get all the monikers attached
@@ -70,7 +74,7 @@ export class Database {
         // moniker sequentially in order of priority, where import monikers, if any exist,
         // will be processed first.
 
-        for (const moniker of findMonikers(document.resultSets, document.monikers, range)) {
+        for (const moniker of sortMonikers(range.monikers.map(id => document.monikers.get(id)!))) {
             if (moniker.kind === 'import') {
                 // This symbol was imported from another database. See if we have xrepo
                 // definition for it.
@@ -113,17 +117,22 @@ export class Database {
         // First, we try to find the reference result attached to the range or one
         // of the result sets to which the range is attached.
 
-        const resultData = findResult(document.resultSets, document.referenceResults, range, 'referenceResult')
-        if (resultData) {
+        if (range.referenceResult) {
             // We have references in this database.
-            result = result.concat(await this.getLocations(path, document, resultData))
+            result = result.concat(
+                await this.getLocations(
+                    path,
+                    document,
+                    assertDefined(range.referenceResult, 'referenceResult', document.referenceResults)
+                )
+            )
         }
 
         // Next, we do a moniker search in two stages, described below. We process each
         // moniker sequentially in order of priority for each stage, where import monikers,
         // if any exist, will be processed first.
 
-        const monikers = findMonikers(document.resultSets, document.monikers, range)
+        const monikers = sortMonikers(range.monikers.map(id => document.monikers.get(id)!))
 
         // First, we search the Refs table of our own database - this search is necessary,
         // but may be unintuitive, but remember that a 'Find References' operation on a
@@ -201,12 +210,11 @@ export class Database {
         // which the range is attached. There is no fall-back search via monikers for this
         // operation.
 
-        const contents = findResult(document.resultSets, document.hovers, range, 'hoverResult')
-        if (!contents) {
-            return null
+        if (range.hoverResult) {
+            return { contents: assertDefined(range.hoverResult, 'hoverResult', document.hovers) }
         }
 
-        return { contents }
+        return null
     }
 
     //
@@ -468,83 +476,6 @@ export function findRange(orderedRanges: RangeData[], position: lsp.Position): R
     }
 
     return undefined
-}
-
-/**
- * Return the closest defined `property` related to the given range
- * or result set. This method will walk the `next` chains of the item
- * to find the property on an attached result set if it's not set
- * on the range itself. Note that the `property` on the range and
- * result set objects are simply identifiers, so the real value must
- * be looked up in a secondary data structure `map`.
- *
- * @param resultSets The map of results sets of the document.
- * @param map The map from which to return the property value.
- * @param data The range or result set object.
- * @param property The target property.
- */
-export function findResult<T>(
-    resultSets: Map<Id, ResultSetData>,
-    map: Map<Id, T>,
-    data: RangeData | ResultSetData,
-    property: 'definitionResult' | 'referenceResult' | 'hoverResult'
-): T | undefined {
-    for (const current of walkChain(resultSets, data)) {
-        const value = current[property]
-        if (value) {
-            return map.get(value)
-        }
-    }
-
-    return undefined
-}
-
-/**
- * Retrieve all monikers attached to a range or result set.
- *
- * @param resultSets The map of results sets of the document.
- * @param monikers The map of monikers of the document.
- * @param data The range or result set object.
- */
-export function findMonikers(
-    resultSets: Map<Id, ResultSetData>,
-    monikers: Map<Id, MonikerData>,
-    data: RangeData | ResultSetData
-): MonikerData[] {
-    const monikerSet: MonikerData[] = []
-    for (const current of walkChain(resultSets, data)) {
-        for (const id of current.monikers) {
-            const moniker = monikers.get(id)
-            if (moniker) {
-                monikerSet.push(moniker)
-            }
-        }
-    }
-
-    return sortMonikers(monikerSet)
-}
-
-/**
- * Return an iterable of the range and result set items that are attached
- * to the given initial data. The initial data is yielded immediately.
- *
- * @param resultSets The map of results sets of the document.
- * @param data The range or result set object.
- */
-export function* walkChain<T>(
-    resultSets: Map<Id, ResultSetData>,
-    data: RangeData | ResultSetData
-): Iterable<RangeData | ResultSetData> {
-    let current: RangeData | ResultSetData | undefined = data
-
-    while (current) {
-        yield current
-        if (!current.next) {
-            return
-        }
-
-        current = resultSets.get(current.next)
-    }
 }
 
 /**
