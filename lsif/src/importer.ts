@@ -25,12 +25,12 @@ import {
     packageInformation,
     PackageInformation,
     item,
-    contains,
     EventKind,
     EventScope,
     MetaData,
     ElementTypes,
     Moniker,
+    contains,
 } from 'lsif-protocol'
 import { Package, SymbolReferences } from './xrepo'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
@@ -383,10 +383,10 @@ class LsifImporter {
             return
         }
 
-        const contains = assertDefined(edge.outV, 'contains', this.containsData)
+        const set = assertDefined(edge.outV, 'contains', this.containsData)
         for (const inV of edge.inVs) {
             assertDefined(inV, 'range', this.rangeData)
-            contains.add(inV)
+            set.add(inV)
         }
     }
 
