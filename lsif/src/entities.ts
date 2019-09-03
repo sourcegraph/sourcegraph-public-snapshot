@@ -21,12 +21,6 @@ export interface DocumentData {
     orderedRanges: RangeData[]
 
     /**
-     * A map of result set identifiers to result set data. Result sets are like
-     * ranges, but do  not have extents in the document.
-     */
-    resultSets: Map<Id, ResultSetData>
-
-    /**
      * A map of definition result identifiers to a list of ids that compose the
      * definition result. Each id is paired with a document path, as result sets
      * can be shared between documents (necessitating cross-document queries).
@@ -41,9 +35,10 @@ export interface DocumentData {
     referenceResults: Map<Id, { documentPath: string; id: Id }[]>
 
     /**
-     * A map of hover identifiers to hover results normalized as a single string.
+     * A map of hover result identifiers to hover results normalized as a single
+     * string.
      */
-    hovers: Map<Id, string>
+    hoverResults: Map<Id, string>
 
     /**
      * A map of moniker identifiers to moniker data.
@@ -57,61 +52,63 @@ export interface DocumentData {
 }
 
 /**
- * The set of fields shared by a range or a result set vertex. It contains
- * the same relevant edge data, which can be subsequently queried in the
- * containing document.
+ * An internal representation of a range vertex from an LSIF dump. It contains the same
+ * relevant edge data, which can be subsequently queried in the containing document. The
+ * data that was reachable via a result set has been collapsed into this object during
+ * import.
  */
-interface ResultObjectData {
+export interface RangeData {
     /**
-     * The set of moniker identifiers directly attached to this range or result
-     * set. The moniker object can be queried by its identifier within the
-     * containing document.
+     * The line on which the range starts (0-indexed, inclusive).
      */
-    monikers: Id[]
+    startLine: number
 
     /**
-     * The identifier of the hover result attached to this range or result set,
-     * if one exists. The hover result object can be queried by its identifier
-     * within the containing document.
+     * The line on which the range ends (0-indexed, inclusive).
      */
-    hoverResult?: Id
+    startCharacter: number
 
     /**
-     * The identifier of the definition result attached to this range or result
-     * set, if one exists. The definition result object can be queried by its
+     * The character on which the range starts (0-indexed, inclusive).
+     */
+    endLine: number
+
+    /**
+     * The character on which the range ends (0-indexed, inclusive).
+     */
+    endCharacter: number
+
+    /**
+     * The identifier of the definition result attached to this range, if one exists.
+     * The definition result object can be queried by its
      * identifier within the containing document.
      */
     definitionResult?: Id
 
     /**
-     * The identifier of the reference result attached to this range or result
-     * set, if one exists. The reference result object can be queried by its
+     * The identifier of the reference result attached to this range, if one exists.
+     * The reference result object can be queried by its
      * identifier within the containing document.
      */
     referenceResult?: Id
 
     /**
-     * The identifier of a result set attached to this range or result set, if one
-     * exists. The result set object can be queried by its identifier within the
+     * The identifier of the hover result attached to this range, if one exists. The
+     * hover result object can be queried by its identifier within the containing
+     * document.
+     */
+    hoverResult?: Id
+
+    /**
+     * The set of moniker identifiers directly attached to this range. The moniker
+     * object can be queried by its identifier within the
      * containing document.
      */
-    next?: Id
+    monikers: Id[]
 }
 
 /**
- * An internal representation of a range vertex from an LSIF dump. It contains the same
- * relevant edge data, which can be subsequently queried in the containing document.
- */
-export interface RangeData extends ResultObjectData, FlattenedRange {}
-
-/**
- * An internal representation of a result set vertex from an LSIF dump. It contains the
- * same relevant edge data, which can be subsequently queried in the containing document.
- */
-export interface ResultSetData extends ResultObjectData {}
-
-/**
- * Data about a moniker attached to a range or a result set.
+ * Data about a moniker attached to a range.
  */
 export interface MonikerData {
     /**
@@ -150,29 +147,4 @@ export interface PackageInformationData {
      * The version of the package the moniker describes.
      */
     version: string
-}
-
-/**
- * An LSP range that has been squashed into a single layer.
- */
-export interface FlattenedRange {
-    /**
-     * The line on which the range starts (0-indexed, inclusive).
-     */
-    startLine: number
-
-    /**
-     * The line on which the range ends (0-indexed, inclusive).
-     */
-    startCharacter: number
-
-    /**
-     * The character on which the range starts (0-indexed, inclusive).
-     */
-    endLine: number
-
-    /**
-     * The character on which the range ends (0-indexed, inclusive).
-     */
-    endCharacter: number
 }

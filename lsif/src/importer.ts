@@ -4,7 +4,7 @@ import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel } from './mod
 import RelateUrl from 'relateurl'
 import { encodeJSON } from './encoding'
 import { TableInserter } from './inserter'
-import { MonikerData, RangeData, ResultSetData, PackageInformationData, DocumentData } from './entities'
+import { MonikerData, RangeData, PackageInformationData, DocumentData } from './entities'
 import {
     Id,
     VertexLabels,
@@ -77,6 +77,61 @@ export class DefaultMap<K, V> extends Map {
 }
 
 /**
+ * An internal representation of a result set vertex. This is only used during import
+ * as we flatten this data into the range vertices for faster queries.
+ */
+interface ResultSetData {
+    /**
+     * * The identifier of the definition result attached to this result set.
+     */
+    definitionResult?: Id
+
+    /**
+     * * The identifier of the reference result attached to this result set.
+     */
+    referenceResult?: Id
+
+    /**
+     * * The identifier of the hover result attached to this result set.
+     */
+    hoverResult?: Id
+
+    /**
+     * * The set of moniker identifiers directly attached to this result set.
+     */
+    monikers: Id[]
+}
+
+/**
+ * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
+ * a new importer, insert each vertex and edge in the given stream, then call the
+ * importer's finalize method.
+ *
+ * @param entityManager A transactional SQLite entity manager.
+ * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ */
+export async function importLsif(
+    entityManager: EntityManager,
+    elements: AsyncIterable<Vertex | Edge>
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    const importer = new LsifImporter(entityManager)
+
+    let i = 0
+    for await (const element of elements) {
+        try {
+            await importer.insert(element)
+        } catch (e) {
+            console.log(e)
+            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+        }
+
+        i++
+    }
+
+    return await importer.finalize()
+}
+
+/**
  * Common state around the conversion of a single LSIF dump upload. This class
  * receives the parsed vertex or edge, line by line, from the caller, and adds it
  * into a new database file on disk. Once finalized, the database is ready for use
@@ -98,6 +153,7 @@ class LsifImporter {
     private containsData = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
     private rangeData = new Map<Id, RangeData>()
     private resultSetData = new Map<Id, ResultSetData>()
+    private nextData = new Map<Id, Id>()
     private definitionData = new Map<Id, DefaultMap<Id, Id[]>>()
     private referenceData = new Map<Id, DefaultMap<Id, Id[]>>()
     private hoverData = new Map<Id, string>()
@@ -390,10 +446,9 @@ class LsifImporter {
         const data = await encodeJSON({
             ranges: document.ranges,
             orderedRanges: document.orderedRanges,
-            resultSets: document.resultSets,
             definitionResults: document.definitionResults,
             referenceResults: document.referenceResults,
-            hovers: document.hovers,
+            hoverResults: document.hoverResults,
             monikers: document.monikers,
             packageInformation: document.packageInformation,
         })
@@ -473,14 +528,9 @@ class LsifImporter {
      * @param edge The next edge.
      */
     private handleNextEdge(edge: next): void {
-        const outV = assertDefined<RangeData | ResultSetData>(
-            edge.outV,
-            'range/resultSet',
-            this.rangeData,
-            this.resultSetData
-        )
+        assertDefined<RangeData | ResultSetData>(edge.outV, 'range/resultSet', this.rangeData, this.resultSetData)
         assertDefined(edge.inV, 'resultSet', this.resultSetData)
-        outV.next = edge.inV
+        this.nextData.set(edge.outV, edge.inV)
     }
 
     /**
@@ -595,14 +645,14 @@ class LsifImporter {
             resultSets: new Map(), // TODO - remove
             definitionResults: new Map<Id, { documentPath: string; id: Id }[]>(),
             referenceResults: new Map<Id, { documentPath: string; id: Id }[]>(),
-            hovers: new Map<Id, string>(),
+            hoverResults: new Map<Id, string>(),
             monikers: new Map<Id, MonikerData>(),
             packageInformation: new Map<Id, PackageInformationData>(),
         }
 
         const addHover = (id: Id | undefined): void => {
-            if (id !== undefined && !document.hovers.has(id)) {
-                document.hovers.set(id, assertDefined(id, 'hoverResult', this.hoverData))
+            if (id !== undefined && !document.hoverResults.has(id)) {
+                document.hoverResults.set(id, assertDefined(id, 'hoverResult', this.hoverData))
             }
         }
 
@@ -667,7 +717,7 @@ class LsifImporter {
         const orderedRanges: (RangeData & { id: Id })[] = []
         for (const id of assertDefined(currentDocumentId, 'contains', this.containsData)) {
             const range = assertDefined(id, 'range', this.rangeData)
-            this.canonicalizeRange(range)
+            this.canonicalizeRange(id, range)
             orderedRanges.push({ id, ...range })
 
             addHover(range.hoverResult)
@@ -716,15 +766,18 @@ class LsifImporter {
      * all of the necessary data about a range in the range object itself so we do not
      * have to traverse the graph at query time.
      *
+     * @param id The identifier of the range.
      * @param range The range to canonicalize.
      */
-    private canonicalizeRange(range: RangeData): void {
+    private canonicalizeRange(id: Id, range: RangeData): void {
         let definitionResult: Id | undefined
         let referenceResult: Id | undefined
         let hoverResult: Id | undefined
         const monikers = new Set<Id>()
 
+        let itemId: Id = id
         let item: RangeData | ResultSetData | undefined = range
+
         while (item) {
             definitionResult = definitionResult === undefined ? item.definitionResult : definitionResult
             referenceResult = referenceResult === undefined ? item.referenceResult : referenceResult
@@ -738,18 +791,19 @@ class LsifImporter {
                 }
             }
 
-            if (item.next === undefined) {
+            const nextId = this.nextData.get(itemId)
+            if (nextId === undefined) {
                 break
             }
 
-            item = assertDefined(item.next, 'resultSet', this.resultSetData)
+            itemId = nextId
+            item = assertDefined(nextId, 'resultSet', this.resultSetData)
         }
 
         range.definitionResult = definitionResult
         range.referenceResult = referenceResult
         range.hoverResult = hoverResult
         range.monikers = Array.from(monikers)
-        range.next = undefined // TODO - just remove this
     }
 }
 
@@ -863,36 +917,6 @@ export function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id
     }
 
     return combined
-}
-
-/**
- * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
- * a new importer, insert each vertex and edge in the given stream, then call the
- * importer's finalize method.
- *
- * @param entityManager A transactional SQLite entity manager.
- * @param elements The stream of vertex and edge objects composing the LSIF dump.
- */
-export async function importLsif(
-    entityManager: EntityManager,
-    elements: AsyncIterable<Vertex | Edge>
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const importer = new LsifImporter(entityManager)
-
-    let i = 0
-
-    for await (const element of elements) {
-        try {
-            await importer.insert(element)
-        } catch (e) {
-            console.log(e)
-            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
-        }
-
-        i++
-    }
-
-    return await importer.finalize()
 }
 
 /**

@@ -2,7 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { groupBy, isEqual, uniqWith } from 'lodash'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, DocumentData, FlattenedRange } from './entities'
+import { MonikerData, RangeData, DocumentData } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
@@ -212,7 +212,7 @@ export class Database {
         // operation.
 
         if (range.hoverResult) {
-            return { contents: assertDefined(range.hoverResult, 'hoverResult', document.hovers) }
+            return { contents: assertDefined(range.hoverResult, 'hoverResult', document.hoverResults) }
         }
 
         return null
@@ -487,7 +487,7 @@ export function findRange(orderedRanges: RangeData[], position: lsp.Position): R
  * @param range The range.
  * @param position The position.
  */
-export function comparePosition(range: FlattenedRange, position: lsp.Position): number {
+export function comparePosition(range: RangeData, position: lsp.Position): number {
     if (position.line < range.startLine) {
         return +1
     }

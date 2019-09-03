@@ -40,6 +40,7 @@ describe('comparePosition', () => {
             startCharacter: 11,
             endLine: 5,
             endCharacter: 13,
+            monikers: [],
         }
 
         expect(comparePosition(range, { line: 5, character: 11 })).toEqual(0)
