@@ -5,9 +5,10 @@ package inventory
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
+	"github.com/src-d/enry/v2"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
@@ -25,12 +26,7 @@ type Lang struct {
 	// TotalBytes is the total number of bytes of code written in the
 	// programming language.
 	TotalBytes uint64 `json:"TotalBytes,omitempty"`
-	// Type is either "data", "programming", "markup", "prose", or
-	// empty.
-	Type string `json:"Type,omitempty"`
 }
-
-var byFilename = filelang.Langs.CompileByFilename()
 
 // Get performs an inventory of the files passed in.
 func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
@@ -44,9 +40,9 @@ func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 		// relative usage (TotalBytes) is not exposed or used. So
 		// including vendored files should be fine for the aggregate
 		// stats.
-		matchedLangs := byFilename(file.Name())
-		if len(matchedLangs) > 0 {
-			langs[matchedLangs[0].Name] += uint64(file.Size())
+		matchedLang := GetLanguageByFilename(file.Name())
+		if matchedLang != "" {
+			langs[matchedLang] += uint64(file.Size())
 		}
 	}
 
@@ -54,28 +50,18 @@ func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	for lang, totalBytes := range langs {
 		inv.Languages = append(inv.Languages, &Lang{Name: lang, TotalBytes: totalBytes})
 	}
-	sort.Sort(sort.Reverse(langsByTotalBytes(inv.Languages)))
-
-	// Set Type field.
-	for _, il := range inv.Languages {
-		for _, l := range filelang.Langs {
-			if il.Name == l.Name {
-				il.Type = l.Type
-				break
-			}
-		}
-	}
+	sort.SliceStable(inv.Languages, func(i, j int) bool {
+		return inv.Languages[i].TotalBytes > inv.Languages[j].TotalBytes || (inv.Languages[i].TotalBytes == inv.Languages[j].TotalBytes && inv.Languages[i].Name < inv.Languages[j].Name)
+	})
 
 	return &inv, nil
 }
 
-type langsByTotalBytes []*Lang
-
-func (v langsByTotalBytes) Len() int      { return len(v) }
-func (v langsByTotalBytes) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
-func (v langsByTotalBytes) Less(i, j int) bool {
-	if v[i].TotalBytes == v[j].TotalBytes {
-		return v[i].Name < v[j].Name
+// GetLanguageByFilename returns the most likely language for the named file.
+func GetLanguageByFilename(name string) string {
+	lang, _ := enry.GetLanguageByExtension(name)
+	if lang == "GCC Machine Description" && filepath.Ext(name) == ".md" {
+		lang = "Markdown" // override detection for .md
 	}
-	return v[i].TotalBytes < v[j].TotalBytes
+	return lang
 }
