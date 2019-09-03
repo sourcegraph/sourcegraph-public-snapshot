@@ -16,12 +16,14 @@ import (
 )
 
 func serve(n int, addr string, repoDir string) error {
+	logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
+
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrap(err, "listen")
 	}
-	log.Printf("listening on http://%s", ln.Addr())
-	s, err := fakehub(n, ln, repoDir)
+	logger.Printf("listening on http://%s", ln.Addr())
+	s, err := fakehub(logger, n, ln, repoDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
 	}
@@ -32,13 +34,13 @@ func serve(n int, addr string, repoDir string) error {
 	return nil
 }
 
-func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
-	configureRepos(reposRoot)
+func fakehub(logger *log.Logger, n int, ln net.Listener, reposRoot string) (*http.Server, error) {
+	configureRepos(logger, reposRoot)
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tvars := &templateVars{n, configureRepos(reposRoot), ln.Addr()}
+		tvars := &templateVars{n, configureRepos(logger, reposRoot), ln.Addr()}
 
 		handleConfig(tvars, w)
 	})
@@ -49,7 +51,7 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 			URI  string
 		}
 		var repos []Repo
-		for _, path := range configureRepos(reposRoot) {
+		for _, path := range configureRepos(logger, reposRoot) {
 			uri := "/repos/" + path
 			repos = append(repos, Repo{
 				Name: path,
@@ -79,7 +81,10 @@ func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 	}
 
 	s := &http.Server{
-		Handler: logger(mux),
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger.Printf("%s %s", r.Method, r.URL.Path)
+			mux.ServeHTTP(w, r)
+		}),
 	}
 	return s, nil
 }
@@ -108,11 +113,11 @@ func (d httpDir) Open(name string) (http.File, error) {
 // configureRepos finds all .git directories and configures them to be served.
 // It returns a slice of all the git directories it finds. The paths are
 // relative to root.
-func configureRepos(root string) []string {
+func configureRepos(logger *log.Logger, root string) []string {
 	var gitDirs []string
 	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
-			log.Printf("error encountered on %s: %v", path, fileErr)
+			logger.Printf("error encountered on %s: %v", path, fileErr)
 			return nil
 		}
 		if !fi.IsDir() {
@@ -123,8 +128,8 @@ func configureRepos(root string) []string {
 		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
 			return nil
 		}
-		if err := configureOneRepo(gitdir); err != nil {
-			log.Printf("configuring repo at %s: %v", gitdir, err)
+		if err := configureOneRepo(nil, gitdir); err != nil {
+			logger.Printf("configuring repo at %s: %v", gitdir, err)
 			return nil
 		}
 
@@ -132,7 +137,7 @@ func configureRepos(root string) []string {
 		if err != nil {
 			// According to WalkFunc docs, path is always filepath.Join(root,
 			// subpath). So Rel should always work.
-			log.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
+			logger.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
 		}
 		gitDirs = append(gitDirs, subpath)
 		return filepath.SkipDir
@@ -147,7 +152,7 @@ func configureRepos(root string) []string {
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html
 // for background.
-func configureOneRepo(gitDir string) error {
+func configureOneRepo(logger *log.Logger, gitDir string) error {
 	c := exec.Command("git", "update-server-info")
 	c.Dir = gitDir
 	out, err := c.CombinedOutput()
@@ -155,7 +160,7 @@ func configureOneRepo(gitDir string) error {
 		return errors.Wrapf(err, "updating server info: %s", out)
 	}
 	if _, err := os.Stat(filepath.Join(gitDir, "hooks", "post-update")); err != nil {
-		log.Printf("setting post-update hook on %s", gitDir)
+		logger.Printf("setting post-update hook on %s", gitDir)
 		c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
 		c.Dir = gitDir
 		out, err = c.CombinedOutput()
@@ -164,14 +169,6 @@ func configureOneRepo(gitDir string) error {
 		}
 	}
 	return nil
-}
-
-// logger converts the given handler to one that will first log every request.
-func logger(h http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s", r.Method, r.URL.Path)
-		h.ServeHTTP(w, r)
-	})
 }
 
 // handleDefault shows the root page with links to config and repos.

@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"testing"
 
@@ -17,6 +19,7 @@ import (
 )
 
 func Test_fakehub(t *testing.T) {
+	logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
 	t.Run("empty case", func(t *testing.T) {
 		// Start server.
 		d, err := ioutil.TempDir("", "fakehub_test")
@@ -27,7 +30,7 @@ func Test_fakehub(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		s, err := fakehub(1, ln, d)
+		s, err := fakehub(logger, 1, ln, d)
 		if err != nil {
 			t.Fatal(err)
 		}

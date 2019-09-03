@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func snapshot(src, dst string) error {
+func snapshot(logger *log.Logger, src, dst string) error {
 	name := filepath.Base(src)
 
 	dst = filepath.Join(dst, ".git")
@@ -21,7 +21,7 @@ func snapshot(src, dst string) error {
 
 	// create bare repo if missing
 	if _, err := os.Stat(filepath.Join(dst, "HEAD")); os.IsNotExist(err) {
-		if _, err := run(name, exec.Command("git", "init", "--bare", dst)); err != nil {
+		if _, err := run(logger, name, exec.Command("git", "init", "--bare", dst)); err != nil {
 			return err
 		}
 	} else if err != nil {
@@ -40,14 +40,14 @@ func snapshot(src, dst string) error {
 	cmd := exec.Command("git", "status", "--porcelain", "--no-renames")
 	cmd.Env = env
 	cmd.Dir = src
-	n, err := run(name, cmd)
+	n, err := run(logger, name, cmd)
 	if err != nil {
 		return err
 	}
 
 	// no lines in output of git status means nothing changed
 	if n == 0 {
-		log.Printf("%s: nothing changed", name)
+		logger.Printf("%s: nothing changed", name)
 		return nil
 	}
 
@@ -66,7 +66,7 @@ func snapshot(src, dst string) error {
 		cmd := exec.Command(a[0], a[1:]...)
 		cmd.Env = env
 		cmd.Dir = src
-		_, err := run(name, cmd)
+		_, err := run(logger, name, cmd)
 		if err != nil {
 			return err
 		}
@@ -75,14 +75,14 @@ func snapshot(src, dst string) error {
 	return nil
 }
 
-func run(name string, cmd *exec.Cmd) (int, error) {
+func run(logger *log.Logger, name string, cmd *exec.Cmd) (int, error) {
 	outW := &lineCountWriter{w: os.Stdout, prefix: []byte("> ")}
 	errW := &lineCountWriter{w: os.Stdout, prefix: []byte("! ")}
 
 	cmd.Stdout = outW
 	cmd.Stderr = errW
 
-	log.Printf("%s> %v", name, strings.Join(cmd.Args, " "))
+	logger.Printf("%s> %v", name, strings.Join(cmd.Args, " "))
 	err := cmd.Run()
 
 	_ = outW.Close()
@@ -217,6 +217,8 @@ func abs(root, dir string) (string, error) {
 }
 
 func (o *Snapshotter) Run() error {
+	logger := log.New(os.Stderr, "snapshot: ", log.LstdFlags)
+
 	if err := o.SetDefaults(); err != nil {
 		return err
 	}
@@ -224,7 +226,7 @@ func (o *Snapshotter) Run() error {
 	if o.PreCommand != "" {
 		cmd := exec.Command("sh", "-c", o.PreCommand)
 		cmd.Dir = o.Dir
-		if _, err := run("root", cmd); err != nil {
+		if _, err := run(logger, "root", cmd); err != nil {
 			return err
 		}
 	}
@@ -233,12 +235,12 @@ func (o *Snapshotter) Run() error {
 		if s.PreCommand != "" {
 			cmd := exec.Command("sh", "-c", s.PreCommand)
 			cmd.Dir = s.Dir
-			if _, err := run(filepath.Base(s.Dir), cmd); err != nil {
+			if _, err := run(logger, filepath.Base(s.Dir), cmd); err != nil {
 				return err
 			}
 		}
 
-		if err := snapshot(s.Dir, s.Destination); err != nil {
+		if err := snapshot(logger, s.Dir, s.Destination); err != nil {
 			return err
 		}
 	}
