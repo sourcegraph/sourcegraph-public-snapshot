@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func serve(n int, addr string, repoDir string) error {
+func serveRepos(n int, addr string, repoDir string) error {
 	logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
 
 	ln, err := net.Listen("tcp", addr)
@@ -82,7 +82,9 @@ func fakehub(logger *log.Logger, n int, ln net.Listener, reposRoot string) (*htt
 
 	s := &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Printf("%s %s", r.Method, r.URL.Path)
+			if !strings.Contains(r.URL.Path, "/.git/objects/") { // exclude noisy path
+				logger.Printf("%s %s", r.Method, r.URL.Path)
+			}
 			mux.ServeHTTP(w, r)
 		}),
 	}
@@ -128,7 +130,7 @@ func configureRepos(logger *log.Logger, root string) []string {
 		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
 			return nil
 		}
-		if err := configureOneRepo(nil, gitdir); err != nil {
+		if err := configureOneRepo(logger, gitdir); err != nil {
 			logger.Printf("configuring repo at %s: %v", gitdir, err)
 			return nil
 		}

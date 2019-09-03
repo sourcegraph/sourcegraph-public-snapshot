@@ -188,7 +188,7 @@ func (o *Snapshotter) SetDefaults() error {
 		o.Destination = filepath.Join(h, ".sourcegraph", "snapshots")
 	}
 
-	for _, s := range o.Snapshots {
+	for i, s := range o.Snapshots {
 		if s.Destination == "" && !filepath.IsAbs(s.Dir) {
 			s.Destination = s.Dir
 		}
@@ -204,6 +204,8 @@ func (o *Snapshotter) SetDefaults() error {
 			return err
 		}
 		s.Destination = d
+
+		o.Snapshots[i] = s
 	}
 
 	return nil

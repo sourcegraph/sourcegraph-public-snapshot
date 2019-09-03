@@ -4,9 +4,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/peterbourgon/ff/ffcli"
 	"github.com/pkg/errors"
@@ -41,8 +44,7 @@ be used as test data for sourcegraph. The easiest way to get them into
 sourcegraph is to visit the URL printed out on startup and paste the contents
 into the text box for adding single repos in sourcegraph Site Admin.
 
-fakehub will default to serving ~/.sourcegraph/snapshots
-`,
+fakehub will default to serving ~/.sourcegraph/snapshots`,
 		FlagSet: serveFlags,
 		Exec: func(args []string) error {
 			var repoDir string
@@ -57,7 +59,7 @@ fakehub will default to serving ~/.sourcegraph/snapshots
 				return errors.New("too many arguments")
 			}
 
-			return serve(*serveN, *serveAddr, repoDir)
+			return serveRepos(*serveN, *serveAddr, repoDir)
 		},
 	}
 
@@ -81,9 +83,46 @@ fakehub will default to serving ~/.sourcegraph/snapshots
 
 	root := &ffcli.Command{
 		Name:        "fakehub",
+		Usage:       "fakehub [flags] <precommand> <src1> [<src2> ...]",
+		ShortHelp:   "Periodically create snapshots of directories src1, src2, ... and serve them.",
 		Subcommands: []*ffcli.Command{serve, snapshot},
 		Exec: func(args []string) error {
-			return errors.New("specify a subcommand")
+			if len(args) < 2 {
+				return errors.New("requires atleast 2 argument")
+			}
+			s := Snapshotter{
+				Destination: *globalSnapshotDir,
+				PreCommand:  args[0],
+			}
+			for _, dir := range args[1:] {
+				s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
+			}
+
+			fmt.Printf(`Periodically snapshotting directories as git repositories to %s.
+- %s
+Serving the repositories at http://%s.
+Paste the following configuration as an Other External Service in Sourcegraph:
+
+  {
+    "url": "http://%s",
+    "repos": ["hack-ignore-me"],
+    "experimental.fakehub": true
+  }
+
+`, *globalSnapshotDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr)
+
+			go func() {
+				if err := serveRepos(*serveN, *serveAddr, *globalSnapshotDir); err != nil {
+					log.Fatal(err)
+				}
+			}()
+
+			for {
+				if err := s.Run(); err != nil {
+					log.Fatalf("error: %v", err)
+				}
+				time.Sleep(10 * time.Second)
+			}
 		},
 	}
 
