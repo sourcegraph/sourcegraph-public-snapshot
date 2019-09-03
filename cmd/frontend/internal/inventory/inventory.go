@@ -17,12 +17,6 @@ type Inventory struct {
 	Languages []*Lang `json:"Languages,omitempty"`
 }
 
-// Constants that can be values in the Inventory.Languages slice.
-const (
-	LangGo   = "Go"
-	LangJava = "Java"
-)
-
 // Lang represents a programming language used in a directory tree.
 type Lang struct {
 	// Name is the name of a programming language (e.g., "Go" or
@@ -75,18 +69,6 @@ func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	return &inv, nil
 }
 
-// PrimaryProgrammingLanguage returns the primary programming language
-// discovered in the inventory (the language with the most
-// non-vendored/non-skipped bytes of code). If there is none, the
-// empty string is returned.
-func (inv *Inventory) PrimaryProgrammingLanguage() string {
-	langs := ProgrammingLangsOnly(inv.Languages)
-	if len(langs) == 0 {
-		return ""
-	}
-	return langs[0].Name
-}
-
 type langsByTotalBytes []*Lang
 
 func (v langsByTotalBytes) Len() int      { return len(v) }
@@ -96,22 +78,4 @@ func (v langsByTotalBytes) Less(i, j int) bool {
 		return v[i].Name < v[j].Name
 	}
 	return v[i].TotalBytes < v[j].TotalBytes
-}
-
-// LangsOfType returns only langs of the given type (matching the Type
-// field).
-func LangsOfType(langs []*Lang, typ string) []*Lang {
-	var langs2 []*Lang
-	for _, l := range langs {
-		if l.Type == typ {
-			langs2 = append(langs2, l)
-		}
-	}
-	return langs2
-}
-
-// ProgrammingLangsOnly returns the subset of langs whose Type is
-// "programming" (e.g., not "prose", "markup", etc.).
-func ProgrammingLangsOnly(langs []*Lang) []*Lang {
-	return LangsOfType(langs, "programming")
 }
