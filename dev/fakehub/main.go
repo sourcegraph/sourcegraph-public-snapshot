@@ -15,57 +15,85 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/peterbourgon/ff/ffcli"
 	"github.com/pkg/errors"
 )
 
-func main() {
-	log.SetPrefix("")
-	n := flag.Int("n", 1, "number of instances of each repo to make")
-	addr := flag.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
-	flag.Parse()
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `usage: fakehub [opts] [path/to/dir/containing/git/dirs]
+func ServeCommand() *ffcli.Command {
+	fs := flag.NewFlagSet("serve", flag.ExitOnError)
+	n := fs.Int("n", 1, "number of instances of each repo to make")
+	addr := fs.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 
-fakehub will serve any number (controlled with -n) of copies of the repo over
+	exec := func(args []string) error {
+		return serve(*n, *addr, args)
+	}
+	return &ffcli.Command{
+		Name:      "serve",
+		Usage:     "fakehub [flags] serve [flags] [path/to/dir/containing/git/dirs]",
+		ShortHelp: "Serve git repos for Sourcegraph to list and clone.",
+		LongHelp: `fakehub will serve any number (controlled with -n) of copies of the repo over
 HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
 be used as test data for sourcegraph. The easiest way to get them into
 sourcegraph is to visit the URL printed out on startup and paste the contents
 into the text box for adding single repos in sourcegraph Site Admin.
 
 fakehub will default to serving ~/.sourcegraph/snapshots
-`)
-		flag.PrintDefaults()
+`,
+		FlagSet: fs,
+		Exec:    exec,
 	}
+}
 
+func main() {
+	log.SetPrefix("")
+
+	cmd := &ffcli.Command{
+		Name: "fakehub",
+		Subcommands: []*ffcli.Command{
+			ServeCommand(),
+			SnapshotCommand(),
+		},
+		Exec: func(args []string) error {
+			fmt.Println("hello world", args)
+			return nil
+		},
+	}
+	if err := cmd.Run(os.Args[1:]); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func serve(n int, addr string, args []string) error {
 	var repoDir string
-	switch flag.NArg() {
+	switch len(args) {
 	case 0:
 		h, err := os.UserHomeDir()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		repoDir = filepath.Join(h, ".sourcegraph", "snapshots")
 
 	case 1:
-		repoDir = flag.Arg(0)
+		repoDir = args[0]
 
 	default:
-		flag.Usage()
-		os.Exit(1)
+		return errors.Errorf("too many arguments")
 	}
 
-	ln, err := net.Listen("tcp", *addr)
+	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("fakehub: listening: %v", err)
+		return errors.Wrap(err, "listen")
 	}
 	log.Printf("listening on http://%s", ln.Addr())
-	s, err := fakehub(*n, ln, repoDir)
+	s, err := fakehub(n, ln, repoDir)
 	if err != nil {
-		log.Fatalf("fakehub: configuring server :%v", err)
+		return errors.Wrap(err, "configuring server")
 	}
 	if err := s.Serve(ln); err != nil {
-		log.Fatalf("fakehub: serving: %v", err)
+		return errors.Wrap(err, "serving")
 	}
+
+	return nil
 }
 
 func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {

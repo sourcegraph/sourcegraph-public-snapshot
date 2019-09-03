@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -11,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"github.com/peterbourgon/ff/ffcli"
 )
 
 func snapshot(src, dst string) error {
@@ -249,26 +248,21 @@ func (o *Snapshotter) Run() error {
 	return nil
 }
 
-func main() {
-	var config struct {
-		Snapshotter `yaml:",inline"`
-		Period      time.Duration `yaml:",omitempty"`
+func SnapshotCommand() *ffcli.Command {
+	exec := func(args []string) error {
+		if len(args) == 0 {
+			log.Println("requires atleast 1 argument")
+		}
+		var s Snapshotter
+		for _, dir := range args {
+			s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
+		}
+		return s.Run()
 	}
-
-	err := yaml.Unmarshal([]byte(`
-dir: foo
-period: 10s
-snapshots:
-- dir: bar
-  destination: baz
-`), &config)
-	if err != nil {
-		log.Fatal(err)
+	return &ffcli.Command{
+		Name:      "snapshot",
+		Usage:     "fakehub [flags] snapshot [flags] <src1> [<src2> ...]",
+		ShortHelp: "Create a git snapshot of directories",
+		Exec:      exec,
 	}
-
-	fmt.Printf("%+v\n", config)
-
-	config.Snapshotter.SetDefaults()
-	b, _ := yaml.Marshal(&config)
-	fmt.Println(string(b))
 }
