@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func TestScan(t *testing.T) {
+func TestGet_noReadFile(t *testing.T) {
 	tests := map[string]struct {
 		files   []fi
 		want    *Inventory
@@ -69,7 +69,7 @@ func TestScan(t *testing.T) {
 		for _, file := range test.files {
 			fi = append(fi, file)
 		}
-		inv, err := Get(context.Background(), fi)
+		inv, err := Get(context.Background(), fi, nil)
 		if err != nil && (test.wantErr == nil || err.Error() != test.wantErr.Error()) {
 			t.Errorf("%s: Scan: %s (want error %v)", label, err, test.wantErr)
 			continue
@@ -114,6 +114,48 @@ func (f fi) Sys() interface{} {
 	return interface{}(nil)
 }
 
+func TestGet_readFile(t *testing.T) {
+	files := []os.FileInfo{
+		fi{"a.java", "aaaaaaaaa"},
+		fi{"b.md", "# Hello"},
+
+		// The .m extension is used by many languages, but this code is obviously Objective-C. This
+		// test checks that this file is detected correctly as Objective-C.
+		fi{"c.m", "@interface X:NSObject { double x; } @property(nonatomic, readwrite) double foo;"},
+	}
+	inv, err := Get(context.Background(), files, func(_ context.Context, path string, maxFileBytes int64) ([]byte, error) {
+		for _, f := range files {
+			if f.Name() == path {
+				return []byte(f.(fi).Contents), nil
+			}
+		}
+		panic("no file: " + path)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &Inventory{
+		Languages: []*Lang{
+			{
+				Name:       "Objective-C",
+				TotalBytes: 79,
+			},
+			{
+				Name:       "Java",
+				TotalBytes: 9,
+			},
+			{
+				Name:       "Markdown",
+				TotalBytes: 7,
+			},
+		},
+	}
+	if !reflect.DeepEqual(inv, want) {
+		t.Errorf("got  %+v\nwant %+v", mustMarshal(inv), mustMarshal(want))
+	}
+}
+
 func BenchmarkGet(b *testing.B) {
 	files, err := readFileTree("prom-repo-tree.txt")
 	if err != nil {
@@ -122,7 +164,7 @@ func BenchmarkGet(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err = Get(context.Background(), files)
+		_, err = Get(context.Background(), files, nil)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -130,21 +172,13 @@ func BenchmarkGet(b *testing.B) {
 }
 
 func TestGetGolden(t *testing.T) {
-	mustMarshal := func(v interface{}) string {
-		b, err := json.Marshal(v)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(b)
-	}
-
 	files, err := readFileTree("prom-repo-tree.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := `{"Languages":[{"Name":"Go","TotalBytes":1505},{"Name":"Markdown","TotalBytes":38},{"Name":"YAML","TotalBytes":29},{"Name":"HTML","TotalBytes":28},{"Name":"Unix Assembly","TotalBytes":26},{"Name":"Protocol Buffer","TotalBytes":25},{"Name":"JavaScript","TotalBytes":16},{"Name":"CSS","TotalBytes":10},{"Name":"Perl","TotalBytes":9},{"Name":"JSON","TotalBytes":5},{"Name":"Shell","TotalBytes":4},{"Name":"Text","TotalBytes":3},{"Name":"INI","TotalBytes":2},{"Name":"SVG","TotalBytes":2},{"Name":"C","TotalBytes":1},{"Name":"Ignore List","TotalBytes":1},{"Name":"Python","TotalBytes":1},{"Name":"XML","TotalBytes":1}]}`
-	got, err := Get(context.Background(), files)
+	want := `{"Languages":[{"Name":"Go","TotalBytes":140},{"Name":"HTML","TotalBytes":28},{"Name":"Markdown","TotalBytes":10},{"Name":"YAML","TotalBytes":8},{"Name":"CSS","TotalBytes":4},{"Name":"JavaScript","TotalBytes":3},{"Name":"JSON","TotalBytes":1},{"Name":"Protocol Buffer","TotalBytes":1},{"Name":"SVG","TotalBytes":1},{"Name":"Shell","TotalBytes":1},{"Name":"XML","TotalBytes":1}]}`
+	got, err := Get(context.Background(), files, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,4 +202,12 @@ func readFileTree(name string) ([]os.FileInfo, error) {
 		return nil, err
 	}
 	return files, nil
+}
+
+func mustMarshal(v interface{}) string {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }

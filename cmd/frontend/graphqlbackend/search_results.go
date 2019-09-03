@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
@@ -238,7 +239,8 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 
 	addLangFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
 		extensionToLanguageLookup := func(path string) string {
-			return strings.ToLower(inventory.GetLanguageByFilename(path))
+			language, _ := inventory.GetLanguageByFilename(path)
+			return strings.ToLower(language)
 		}
 		if ext := path.Ext(fileMatchPath); ext != "" {
 			language := extensionToLanguageLookup(fileMatchPath)

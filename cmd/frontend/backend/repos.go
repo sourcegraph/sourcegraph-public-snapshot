@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -167,6 +169,10 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 
 var inventoryCache = rcache.New("inv")
 
+// Feature flag for enhanced (but much slower) language detection that uses file contents, not just
+// filenames.
+var useEnhancedLanguageDetection, _ = strconv.ParseBool(os.Getenv("USE_ENHANCED_LANGUAGE_DETECTION"))
+
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
@@ -183,8 +189,18 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetInventory: %v", commitID)
 	}
 
-	// Try cache first
+	cacheVersion := 1 // increment this when the cached data format or definition changes
+	if useEnhancedLanguageDetection {
+		cacheVersion = 2
+	}
 	cacheKey := fmt.Sprintf("%s:%s", repo.Name, commitID)
+	if cacheVersion > 1 {
+		// Only append cache version if the long-standing version 1 data is not useful, to avoid
+		// mass cache evictions upon upgrading.
+		cacheKey += ":" + strconv.Itoa(cacheVersion)
+	}
+
+	// Try cache first
 	if b, ok := inventoryCache.Get(cacheKey); ok {
 		var inv inventory.Inventory
 		if err := json.Unmarshal(b, &inv); err == nil {
@@ -226,5 +242,11 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 	if err != nil {
 		return nil, err
 	}
-	return inventory.Get(ctx, files)
+	var readFile func(ctx context.Context, path string, maxBytes int64) ([]byte, error)
+	if useEnhancedLanguageDetection {
+		readFile = func(ctx context.Context, path string, maxBytes int64) ([]byte, error) {
+			return git.ReadFile(ctx, *cachedRepo, commitID, path, maxBytes)
+		}
+	}
+	return inventory.Get(ctx, files, readFile)
 }

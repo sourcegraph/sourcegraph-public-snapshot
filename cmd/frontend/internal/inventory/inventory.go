@@ -28,19 +28,31 @@ type Lang struct {
 	TotalBytes uint64 `json:"TotalBytes,omitempty"`
 }
 
-// Get performs an inventory of the files passed in.
-func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
+// maxFileBytes is the maximum byte size prefix for each file to read when using file contents for
+// language detection.
+const maxFileBytes = 16 * 1024
+
+// Get performs an inventory of the files passed in. If readFile is provided, the language detection
+// uses heuristics based on the file content for greater accuracy.
+func Get(ctx context.Context, files []os.FileInfo, readFile func(ctx context.Context, path string, maxBytes int64) ([]byte, error)) (*Inventory, error) {
 	langs := map[string]uint64{}
 
 	for _, file := range files {
-		// NOTE: We used to skip vendored files, but the
-		// filelang.IsVendored function is slow (benchmark goes from
-		// 160ms to 0.5ms without the check). Currently Inventory is
-		// just used to determine which languages are in a repo, the
-		// relative usage (TotalBytes) is not exposed or used. So
-		// including vendored files should be fine for the aggregate
-		// stats.
-		matchedLang := GetLanguageByFilename(file.Name())
+		if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
+			continue
+		}
+
+		// In many cases, GetLanguageByFilename can detect the language conclusively just from the
+		// filename. Only try to read the file (which is much slower) if needed.
+		matchedLang, safe := GetLanguageByFilename(file.Name())
+		if !safe && readFile != nil {
+			data, err := readFile(ctx, file.Name(), maxFileBytes)
+			if err != nil {
+				return nil, err
+			}
+			matchedLang = enry.GetLanguage(file.Name(), data)
+		}
+
 		if matchedLang != "" {
 			langs[matchedLang] += uint64(file.Size())
 		}
@@ -57,11 +69,12 @@ func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	return &inv, nil
 }
 
-// GetLanguageByFilename returns the most likely language for the named file.
-func GetLanguageByFilename(name string) string {
-	lang, _ := enry.GetLanguageByExtension(name)
-	if lang == "GCC Machine Description" && filepath.Ext(name) == ".md" {
-		lang = "Markdown" // override detection for .md
+// GetLanguageByFilename returns the guessed language for the named file (and safe == true if this
+// is very likely to be correct).
+func GetLanguageByFilename(name string) (language string, safe bool) {
+	language, safe = enry.GetLanguageByExtension(name)
+	if language == "GCC Machine Description" && filepath.Ext(name) == ".md" {
+		language = "Markdown" // override detection for .md
 	}
-	return lang
+	return language, safe
 }

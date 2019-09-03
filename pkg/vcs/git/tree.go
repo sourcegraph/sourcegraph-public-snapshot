@@ -76,7 +76,7 @@ func Stat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path st
 
 	if fi.Mode()&os.ModeSymlink != 0 {
 		// Deref symlink.
-		b, err := readFileBytes(ctx, repo, commit, path)
+		b, err := readFileBytes(ctx, repo, commit, path, 0)
 		if err != nil {
 			return nil, err
 		}

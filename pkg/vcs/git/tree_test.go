@@ -204,7 +204,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
-		file1Data, err := git.ReadFile(ctx, test.repo, test.first, "dir1/file1")
+		file1Data, err := git.ReadFile(ctx, test.repo, test.first, "dir1/file1", 0)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadFile(dir1/file1): %s", label, err)
 			continue
@@ -228,13 +228,13 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
-		_, err = git.ReadFile(ctx, test.repo, test.first, "file 2")
+		_, err = git.ReadFile(ctx, test.repo, test.first, "file 2", 0)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
 		// file 2 should exist in the 2nd commit.
-		_, err = git.ReadFile(ctx, test.repo, test.second, "file 2")
+		_, err = git.ReadFile(ctx, test.repo, test.second, "file 2", 0)
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
@@ -245,7 +245,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		if _, err := git.ReadFile(ctx, test.repo, test.second, "dir1/file1"); err != nil {
+		if _, err := git.ReadFile(ctx, test.repo, test.second, "dir1/file1", 0); err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
@@ -445,7 +445,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		_, err = git.ReadFile(ctx, test.repo, commitID, "submod")
+		_, err = git.ReadFile(ctx, test.repo, commitID, "submod", 0)
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue
