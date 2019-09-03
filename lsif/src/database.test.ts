@@ -33,33 +33,22 @@ describe('findRange', () => {
     })
 })
 
-describe('asLocations', () => {
-    it('should convert valid locations', () => {
-        const ranges = new Map<Id, number>()
-        ranges.set(1, 0)
-        ranges.set(2, 2)
-        ranges.set(4, 1)
+describe('comparePosition', () => {
+    it('should return the relative order to a range', () => {
+        const range = {
+            startLine: 5,
+            startCharacter: 11,
+            endLine: 5,
+            endCharacter: 13,
+        }
 
-        const orderedRanges = [
-            { startLine: 1, startCharacter: 1, endLine: 1, endCharacter: 2, monikers: [] },
-            { startLine: 2, startCharacter: 1, endLine: 2, endCharacter: 2, monikers: [] },
-            { startLine: 3, startCharacter: 1, endLine: 3, endCharacter: 2, monikers: [] },
-        ]
-
-        expect(asLocations(ranges, orderedRanges, 'src/position.ts', [1, 2, 3, 4])).toEqual([
-            lsp.Location.create('src/position.ts', {
-                start: { line: 1, character: 1 },
-                end: { line: 1, character: 2 },
-            }),
-            lsp.Location.create('src/position.ts', {
-                start: { line: 3, character: 1 },
-                end: { line: 3, character: 2 },
-            }),
-            lsp.Location.create('src/position.ts', {
-                start: { line: 2, character: 1 },
-                end: { line: 2, character: 2 },
-            }),
-        ])
+        expect(comparePosition(range, { line: 5, character: 11 })).toEqual(0)
+        expect(comparePosition(range, { line: 5, character: 12 })).toEqual(0)
+        expect(comparePosition(range, { line: 5, character: 13 })).toEqual(0)
+        expect(comparePosition(range, { line: 4, character: 12 })).toEqual(+1)
+        expect(comparePosition(range, { line: 5, character: 10 })).toEqual(+1)
+        expect(comparePosition(range, { line: 5, character: 14 })).toEqual(-1)
+        expect(comparePosition(range, { line: 6, character: 12 })).toEqual(-1)
     })
 })
 
@@ -79,21 +68,32 @@ describe('makeRemoteUri', () => {
     })
 })
 
-describe('comparePosition', () => {
-    it('should return the relative order to a range', () => {
-        const range = {
-            startLine: 5,
-            startCharacter: 11,
-            endLine: 5,
-            endCharacter: 13,
-        }
+describe('asLocations', () => {
+    it('should convert ranges to locations', () => {
+        const ranges = new Map<Id, number>()
+        ranges.set(1, 0)
+        ranges.set(2, 2)
+        ranges.set(4, 1)
 
-        expect(comparePosition(range, { line: 5, character: 11 })).toEqual(0)
-        expect(comparePosition(range, { line: 5, character: 12 })).toEqual(0)
-        expect(comparePosition(range, { line: 5, character: 13 })).toEqual(0)
-        expect(comparePosition(range, { line: 4, character: 12 })).toEqual(+1)
-        expect(comparePosition(range, { line: 5, character: 10 })).toEqual(+1)
-        expect(comparePosition(range, { line: 5, character: 14 })).toEqual(-1)
-        expect(comparePosition(range, { line: 6, character: 12 })).toEqual(-1)
+        const orderedRanges = [
+            { startLine: 1, startCharacter: 1, endLine: 1, endCharacter: 2, monikers: [] },
+            { startLine: 2, startCharacter: 1, endLine: 2, endCharacter: 2, monikers: [] },
+            { startLine: 3, startCharacter: 1, endLine: 3, endCharacter: 2, monikers: [] },
+        ]
+
+        expect(asLocations(ranges, orderedRanges, 'src/position.ts', [1, 2, 4])).toEqual([
+            lsp.Location.create('src/position.ts', {
+                start: { line: 1, character: 1 },
+                end: { line: 1, character: 2 },
+            }),
+            lsp.Location.create('src/position.ts', {
+                start: { line: 3, character: 1 },
+                end: { line: 3, character: 2 },
+            }),
+            lsp.Location.create('src/position.ts', {
+                start: { line: 2, character: 1 },
+                end: { line: 2, character: 2 },
+            }),
+        ])
     })
 })

@@ -74,7 +74,7 @@ export class Database {
         // moniker sequentially in order of priority, where import monikers, if any exist,
         // will be processed first.
 
-        for (const moniker of sortMonikers(range.monikers.map(id => document.monikers.get(id)!))) {
+        for (const moniker of sortMonikers(range.monikers.map(id => assertDefined(id, 'moniker', document.monikers)))) {
             if (moniker.kind === 'import') {
                 // This symbol was imported from another database. See if we have xrepo
                 // definition for it.
@@ -132,7 +132,7 @@ export class Database {
         // moniker sequentially in order of priority for each stage, where import monikers,
         // if any exist, will be processed first.
 
-        const monikers = sortMonikers(range.monikers.map(id => document.monikers.get(id)!))
+        const monikers = sortMonikers(range.monikers.map(id => assertDefined(id, 'monikers', document.monikers)))
 
         // First, we search the Refs table of our own database - this search is necessary,
         // but may be unintuitive, but remember that a 'Find References' operation on a
@@ -479,6 +479,34 @@ export function findRange(orderedRanges: RangeData[], position: lsp.Position): R
 }
 
 /**
+ * Compare a position against a range. Returns 0 if the position occurs
+ * within the range (inclusive bounds), -1 if the position occurs after
+ * it, and +1 if the position occurs before it.
+ *
+ * @param range The range.
+ * @param position The position.
+ */
+export function comparePosition(range: FlattenedRange, position: lsp.Position): number {
+    if (position.line < range.startLine) {
+        return +1
+    }
+
+    if (position.line > range.endLine) {
+        return -1
+    }
+
+    if (position.line === range.startLine && position.character < range.startCharacter) {
+        return +1
+    }
+
+    if (position.line === range.endLine && position.character > range.endCharacter) {
+        return -1
+    }
+
+    return 0
+}
+
+/**
  * Sort the monikers by kind, then scheme in order of the following
  * preferences.
  *
@@ -501,39 +529,6 @@ export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
     })
 
     return monikers
-}
-
-/**
- * Convert the given range identifiers into LSP location objects.
- *
- * @param ranges The map of ranges of the document (from identifier to the range's index in `orderedRanges`).
- * @param orderedRanges The ordered ranges of the document.
- * @param uri The location URI.
- * @param ids The set of range identifiers for each resulting location.
- */
-export function asLocations(
-    ranges: Map<Id, number>,
-    orderedRanges: RangeData[],
-    uri: string,
-    ids: Id[]
-): lsp.Location[] {
-    const locations = []
-    for (const id of ids) {
-        const rangeIndex = ranges.get(id)
-        if (rangeIndex === undefined) {
-            continue
-        }
-
-        const range = orderedRanges[rangeIndex]
-        locations.push(
-            lsp.Location.create(uri, {
-                start: { line: range.startLine, character: range.startCharacter },
-                end: { line: range.endLine, character: range.endCharacter },
-            })
-        )
-    }
-
-    return locations
 }
 
 /**
@@ -565,29 +560,18 @@ function makeRange(result: {
 }
 
 /**
- * Compare a position against a range. Returns 0 if the position occurs
- * within the range (inclusive bounds), -1 if the position occurs after
- * it, and +1 if the position occurs before it.
+ * Convert the given range identifiers into LSP location objects.
  *
- * @param range The range.
- * @param position The position.
+ * @param ranges The map of ranges of the document (from identifier to the range's index in `orderedRanges`).
+ * @param orderedRanges The ordered ranges of the document.
+ * @param uri The location URI.
+ * @param ids The set of range identifiers for each resulting location.
  */
-export function comparePosition(range: FlattenedRange, position: lsp.Position): number {
-    if (position.line < range.startLine) {
-        return +1
-    }
-
-    if (position.line > range.endLine) {
-        return -1
-    }
-
-    if (position.line === range.startLine && position.character < range.startCharacter) {
-        return +1
-    }
-
-    if (position.line === range.endLine && position.character > range.endCharacter) {
-        return -1
-    }
-
-    return 0
+export function asLocations(
+    ranges: Map<Id, number>,
+    orderedRanges: RangeData[],
+    uri: string,
+    ids: Id[]
+): lsp.Location[] {
+    return ids.map(id => lsp.Location.create(uri, makeRange(orderedRanges[assertDefined(id, 'range', ranges)])))
 }

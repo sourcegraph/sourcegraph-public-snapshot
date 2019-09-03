@@ -4,7 +4,7 @@ import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import RelateUrl from 'relateurl'
 import { encodeJSON } from './encoding'
 import { TableInserter } from './inserter'
-import { MonikerData, RangeData, ResultSetData, PackageInformationData, FlattenedRange, DocumentData } from './entities'
+import { MonikerData, RangeData, ResultSetData, PackageInformationData, DocumentData } from './entities'
 import {
     Id,
     VertexLabels,
