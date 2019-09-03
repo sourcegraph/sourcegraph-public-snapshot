@@ -1,6 +1,7 @@
-import { Subscribable, Subject, BehaviorSubject } from 'rxjs'
+import { Subscribable, Subject, BehaviorSubject, Observable, throwError } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { RefCount } from '../../../util/RefCount'
+import { filter, takeWhile, map, startWith } from 'rxjs/operators'
 
 /**
  * A text model is a text document and associated metadata.
@@ -10,6 +11,12 @@ import { RefCount } from '../../../util/RefCount'
  * model; things like decorations and the selection ranges are properties of the editor.
  */
 export interface TextModel extends Pick<TextDocument, 'uri' | 'languageId' | 'text'> {}
+
+/**
+ * A partial {@link TextModel}, containing only the fields that are
+ * guaranteed to never be updated.
+ */
+export interface PartialModel extends Pick<TextModel, 'languageId'> {}
 
 export type TextModelUpdate =
     | { type: 'added' } & TextModel
@@ -24,6 +31,9 @@ export type TextModelUpdate =
 export interface ModelService {
     /**
      * A map of all known models, indexed by URI.
+     *
+     * This is mostly used for testing, most consumers should use
+     * {@link ModelService#modelUpdates}, {@link ModelService#activeLanguages} or {@link ModelService#observeModel} instead.
      */
     models: ReadonlyMap<string, TextModel>
 
@@ -38,6 +48,18 @@ export interface ModelService {
      * An observable of unique languageIds across all models.
      */
     activeLanguages: Subscribable<readonly string[]>
+
+    /**
+     * Returns an Observable that emits every time the model
+     * with the given uri is updated.
+     */
+    observeModel(uri: string): Observable<TextModel>
+
+    /**
+     * Returns the {@link PartialModel} for the given uri.
+     *
+     */
+    getPartialModel(uri: string): PartialModel
 
     /**
      * Adds a model.
@@ -100,6 +122,25 @@ export function createModelService(): ModelService {
         models,
         modelUpdates,
         activeLanguages,
+        getPartialModel: uri => {
+            const { languageId } = getModel(uri)
+            return {
+                languageId,
+            }
+        },
+        observeModel: uri => {
+            try {
+                const model = getModel(uri)
+                return modelUpdates.pipe(
+                    filter(updates => updates.some(u => u.uri === uri)),
+                    takeWhile(updates => updates.every(u => u.uri !== uri || u.type !== 'deleted')),
+                    map(() => getModel(uri)),
+                    startWith(model)
+                )
+            } catch (err) {
+                return throwError(err)
+            }
+        },
         addModel: model => {
             if (models.has(model.uri)) {
                 throw new Error(`model already exists with URI ${model.uri}`)
@@ -120,10 +161,7 @@ export function createModelService(): ModelService {
         },
         hasModel: uri => models.has(uri),
         removeModel: uri => {
-            const model = models.get(uri)
-            if (!model) {
-                throw new Error(`removeModel(): model not found ${uri}`)
-            }
+            const model = getModel(uri)
             models.delete(uri)
             modelRefs.delete(uri)
             modelUpdates.next([{ type: 'deleted', uri }])
@@ -135,10 +173,7 @@ export function createModelService(): ModelService {
             modelRefs.increment(uri)
         },
         removeModelRef: uri => {
-            const model = models.get(uri)
-            if (!model) {
-                throw new Error(`removeModelRef(): model not found ${uri}`)
-            }
+            const model = getModel(uri)
             if (modelRefs.decrement(uri)) {
                 models.delete(uri)
                 modelUpdates.next([{ type: 'deleted', uri }])

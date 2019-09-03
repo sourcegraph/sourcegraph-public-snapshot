@@ -150,35 +150,38 @@ describe('EditorService', () => {
     })
 
     describe('observeEditorAndModel', () => {
-        test('merges in model', () => {
-            scheduler().run(({ cold, expectObservable }) => {
-                const editorService = createEditorService(
-                    createTestModelService({
-                        models: [{ uri: 'u', text: 't', languageId: 'l' }],
-                        updates: cold('-b', {
-                            b: [{ type: 'updated', uri: 'u', text: 't2' }],
-                        }),
-                    })
-                )
-                const editor: CodeEditorData = {
-                    type: 'CodeEditor',
-                    resource: 'u',
-                    selections: [],
-                    isActive: true,
-                }
-                const { editorId } = editorService.addEditor(editor)
-                expectObservable(from(editorService.observeEditorAndModel({ editorId }))).toBe('ab', {
-                    a: {
-                        editorId,
-                        ...editor,
-                        model: { uri: 'u', text: 't', languageId: 'l' },
-                    },
-                    b: {
-                        editorId,
-                        ...editor,
-                        model: { uri: 'u', text: 't2', languageId: 'l' },
-                    },
-                })
+        test('merges in model', async () => {
+            const modelService = createTestModelService({
+                models: [{ uri: 'u', text: 't', languageId: 'l' }],
+            })
+            const editorService = createEditorService(modelService)
+            const editor: CodeEditorData = {
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            }
+            const { editorId } = editorService.addEditor(editor)
+            expect(
+                await editorService
+                    .observeEditorAndModel({ editorId })
+                    .pipe(first())
+                    .toPromise()
+            ).toMatchObject({
+                editorId,
+                ...editor,
+                model: { uri: 'u', text: 't', languageId: 'l' },
+            })
+            modelService.updateModel('u', 't2')
+            expect(
+                await editorService
+                    .observeEditorAndModel({ editorId })
+                    .pipe(first())
+                    .toPromise()
+            ).toMatchObject({
+                editorId,
+                ...editor,
+                model: { uri: 'u', text: 't2', languageId: 'l' },
             })
         })
 

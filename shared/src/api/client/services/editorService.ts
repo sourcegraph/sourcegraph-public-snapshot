@@ -1,5 +1,5 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { BehaviorSubject, combineLatest, from, Subscribable, throwError } from 'rxjs'
+import { BehaviorSubject, combineLatest, Subscribable, throwError, Observable } from 'rxjs'
 import { map, filter, takeWhile, startWith } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel } from './modelService'
@@ -92,7 +92,7 @@ export interface EditorService {
      * @returns An observable that emits when the editor or its model changes. If no such editor
      * exists, or if the editor is removed, it emits an error.
      */
-    observeEditorAndModel(editor: EditorId): Subscribable<CodeEditorWithModel>
+    observeEditorAndModel(editor: EditorId): Observable<CodeEditorWithModel>
 
     /**
      * Sets the selections for an editor.
@@ -121,7 +121,7 @@ export interface EditorService {
  * Creates a {@link EditorService} instance.
  */
 export function createEditorService(
-    modelService: Pick<ModelService, 'models' | 'modelUpdates' | 'removeModelRef' | 'addModelRef'>
+    modelService: Pick<ModelService, 'observeModel' | 'getPartialModel' | 'removeModelRef' | 'addModelRef'>
 ): EditorService {
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
     // test code (because the IDs change depending on test execution order).
@@ -150,12 +150,11 @@ export function createEditorService(
         addEditor: data => {
             const editorId = nextId()
             modelService.addModelRef(data.resource)
+            const partialModel = modelService.getPartialModel(data.resource)
             const editor: CodeEditorWithPartialModel = {
                 ...data,
                 editorId,
-                model: {
-                    languageId: modelService.models.get(data.resource)!.languageId,
-                },
+                model: partialModel,
             }
             editors.set(editorId, editor)
             editorUpdates.next([{ type: 'added', editorId, data }])
@@ -165,31 +164,25 @@ export function createEditorService(
             return { editorId }
         },
         observeEditorAndModel: ({ editorId }) => {
-            let resource: string
             try {
-                resource = getEditor(editorId).resource
+                const editor = getEditor(editorId)
+                return combineLatest(
+                    editorUpdates.pipe(
+                        filter(updates => updates.some(u => u.editorId === editorId)),
+                        takeWhile(updates => updates.every(u => u.editorId !== editorId || u.type !== 'deleted')),
+                        map(() => getEditor(editorId)),
+                        startWith(editor)
+                    ),
+                    modelService.observeModel(editor.resource)
+                ).pipe(
+                    map(([editor, model]) => ({
+                        ...editor,
+                        model,
+                    }))
+                )
             } catch (err) {
                 return throwError(err)
             }
-            return combineLatest(
-                editorUpdates.pipe(
-                    filter(updates => updates.some(u => u.editorId === editorId)),
-                    takeWhile(updates => updates.every(u => u.editorId !== editorId || u.type !== 'deleted')),
-                    map(() => getEditor(editorId)),
-                    startWith(getEditor(editorId))
-                ),
-                from(modelService.modelUpdates).pipe(
-                    filter(updates => updates.some(u => u.uri === resource)),
-                    takeWhile(updates => updates.every(u => u.uri !== resource || u.type !== 'deleted')),
-                    map(() => modelService.models.get(resource)!),
-                    startWith(modelService.models.get(resource)!)
-                )
-            ).pipe(
-                map(([editor, model]) => ({
-                    ...editor,
-                    model,
-                }))
-            )
         },
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
             const editor = getEditor(editorId)

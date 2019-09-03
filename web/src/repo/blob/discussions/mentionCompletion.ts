@@ -1,5 +1,5 @@
 import { Position } from '@sourcegraph/extension-api-types'
-import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import { Observable, of, Subscription, Unsubscribable } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
 import { CompletionList } from 'sourcegraph'
 import { COMMENT_URI_SCHEME, positionToOffset } from '../../../../../shared/src/api/client/types/textDocument'
@@ -21,7 +21,7 @@ export function registerDiscussionsMentionCompletionContributions({
                   completionItems: {
                       registerProvider: ExtensionsControllerProps['extensionsController']['services']['completionItems']['registerProvider']
                   }
-                  model: Pick<ModelService, 'modelUpdates' | 'models'>
+                  model: Pick<ModelService, 'observeModel'>
               }
           }
       }): Unsubscribable {
@@ -32,17 +32,8 @@ export function registerDiscussionsMentionCompletionContributions({
                 documentSelector: [{ scheme: COMMENT_URI_SCHEME }],
             },
             params =>
-                from(extensionsController.services.model.modelUpdates).pipe(
-                    switchMap(() => {
-                        const model = extensionsController.services.model.models.get(params.textDocument.uri)
-                        if (!model) {
-                            throw new Error(`model not found: ${params.textDocument.uri}`)
-                        }
-                        if (model.text === undefined) {
-                            return of(null)
-                        }
-                        return provideMentionCompletions(model.text, params.position)
-                    }),
+                extensionsController.services.model.observeModel(params.textDocument.uri).pipe(
+                    switchMap(({ text }) => (text ? provideMentionCompletions(text, params.position) : of(null))),
                     first()
                 )
         )
