@@ -9,22 +9,22 @@ failed=false
 
 for i; do
 	case $i in
-  cmd/frontend/graphqlbackend/*.graphql)
+	cmd/frontend/graphqlbackend/*.graphql)
 		generate_graphql=true
 		;;
 	schema/*.json)
 		generate_schema=true
 		;;
-    cmd/symbols/*)
-        [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
-        exit
-        ;;
+	cmd/symbols/*)
+		[ -n "$GOREMAN" ] && $GOREMAN run restart symbols
+		exit
+		;;
 	cmd/*)
 		cmd=${i#cmd/}
 		cmd=${cmd%%/*}
 		case " $cmdlist " in
-		" $cmd ")
-			;;
+		" $cmd ") ;;
+
 		*)
 			cmdlist="$cmdlist $cmd"
 			;;
