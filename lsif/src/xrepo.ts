@@ -1,7 +1,7 @@
 import { Connection, EntityManager } from 'typeorm'
 import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
-import { ReferenceModel, PackageModel } from './models'
+import { ReferenceModel, PackageModel } from './models.xrepo'
 import { TableInserter } from './inserter'
 
 /**

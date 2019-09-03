@@ -1,6 +1,6 @@
 import { EntityManager } from 'typeorm'
 import { isEqual, uniqWith } from 'lodash'
-import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
+import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel } from './models.database'
 import RelateUrl from 'relateurl'
 import { encodeJSON } from './encoding'
 import { TableInserter } from './inserter'
@@ -89,8 +89,8 @@ class LsifImporter {
     // Bulk database inserters
     private metaInserter: TableInserter<MetaModel, new () => MetaModel>
     private documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
-    private defInserter: TableInserter<DefModel, new () => DefModel>
-    private refInserter: TableInserter<RefModel, new () => RefModel>
+    private defInserter: TableInserter<DefinitionModel, new () => DefinitionModel>
+    private refInserter: TableInserter<ReferenceModel, new () => ReferenceModel>
 
     // Vertex data
 
@@ -130,7 +130,7 @@ class LsifImporter {
     /**
      * A map from document identifiers to range identifiers to the set of nonlocal
      * monikers attached to that range. These values will be used to populate the
-     * Defs table.
+     * definitions table.
      */
     private definitions = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
         () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
@@ -139,7 +139,7 @@ class LsifImporter {
     /**
      * A map from document identifiers to range identifiers to the set of nonlocal
      * monikers attached to that range. These values will be used to populate the
-     * Refs table.
+     * references table.
      */
     private references = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
         () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
@@ -159,8 +159,8 @@ class LsifImporter {
 
         this.metaInserter = new TableInserter(this.entityManager, MetaModel, Math.floor(999 / 3))
         this.documentInserter = new TableInserter(this.entityManager, DocumentModel, Math.floor(999 / 2))
-        this.defInserter = new TableInserter(this.entityManager, DefModel, Math.floor(999 / 8))
-        this.refInserter = new TableInserter(this.entityManager, RefModel, Math.floor(999 / 8))
+        this.defInserter = new TableInserter(this.entityManager, DefinitionModel, Math.floor(999 / 8))
+        this.refInserter = new TableInserter(this.entityManager, ReferenceModel, Math.floor(999 / 8))
     }
 
     /**
@@ -387,20 +387,19 @@ class LsifImporter {
         // Finalize document
         const document = this.finalizeDocument(event.data, path)
 
-        // Insert document record
-        await this.documentInserter.insert({
-            path,
-            value: await encodeJSON({
-                ranges: document.ranges,
-                orderedRanges: document.orderedRanges,
-                resultSets: document.resultSets,
-                definitionResults: document.definitionResults,
-                referenceResults: document.referenceResults,
-                hovers: document.hovers,
-                monikers: document.monikers,
-                packageInformation: document.packageInformation,
-            }),
+        const data = await encodeJSON({
+            ranges: document.ranges,
+            orderedRanges: document.orderedRanges,
+            resultSets: document.resultSets,
+            definitionResults: document.definitionResults,
+            referenceResults: document.referenceResults,
+            hovers: document.hovers,
+            monikers: document.monikers,
+            packageInformation: document.packageInformation,
         })
+
+        // Insert document record
+        await this.documentInserter.insert({ path, data })
     }
 
     //
@@ -636,7 +635,7 @@ class LsifImporter {
                 return
             }
 
-            let m = monikerResults.getOrDefault(currentDocumentId)
+            const m = monikerResults.getOrDefault(currentDocumentId)
 
             const values = []
             for (const [documentId, ids] of assertDefined(id, name, datas)) {
@@ -650,11 +649,11 @@ class LsifImporter {
 
                 if (documentId === currentDocumentId) {
                     // If this is results for the current document, construct the data that
-                    // will later be used to insert into the Defs table for this document.
+                    // will later be used to insert into the definitions table for this
+                    // document.
 
                     for (const id of ids) {
-                        let n = m.getOrDefault(id)
-
+                        const n = m.getOrDefault(id)
                         for (const moniker of monikers) {
                             n.add(moniker)
                         }

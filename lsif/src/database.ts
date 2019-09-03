@@ -1,6 +1,5 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { groupBy, isEqual, uniqWith } from 'lodash'
-import { DocumentModel, DefModel, MetaModel, RefModel, PackageModel } from './models'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
 import { MonikerData, RangeData, DocumentData, FlattenedRange } from './entities'
@@ -9,6 +8,8 @@ import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache, DocumentCache } from './cache'
 import { assertDefined } from './importer'
+import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel } from './models.database'
+import { PackageModel } from './models.xrepo'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -91,7 +92,7 @@ export class Database {
             // of our own database in case there was a definition that wasn't properly
             // attached to a result set but did have the correct monikers attached.
 
-            const defs = await Database.monikerResults(this, DefModel, moniker, path => path)
+            const defs = await Database.monikerResults(this, DefinitionModel, moniker, path => path)
             if (defs) {
                 return defs
             }
@@ -140,7 +141,7 @@ export class Database {
         // necessarily fully linked in the LSIF data.
 
         for (const moniker of monikers) {
-            result = result.concat(await Database.monikerResults(this, RefModel, moniker, path => path))
+            result = result.concat(await Database.monikerResults(this, ReferenceModel, moniker, path => path))
         }
 
         // Second, we perform an xrepo search for uses of each nonlocal moniker. We stop
@@ -172,7 +173,7 @@ export class Database {
 
                             const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
                             result = result.concat(
-                                await Database.monikerResults(db, RefModel, moniker, pathTransformer)
+                                await Database.monikerResults(db, ReferenceModel, moniker, pathTransformer)
                             )
                         }
                     }
@@ -232,12 +233,12 @@ export class Database {
      */
     private static async monikerResults(
         db: Database,
-        model: typeof DefModel | typeof RefModel,
+        model: typeof DefinitionModel | typeof ReferenceModel,
         moniker: MonikerData,
         pathTransformer: (path: string) => string
     ): Promise<lsp.Location[]> {
         const results = await db.withConnection(connection =>
-            connection.getRepository<DefModel | RefModel>(model).find({
+            connection.getRepository<DefinitionModel | ReferenceModel>(model).find({
                 where: {
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -331,7 +332,7 @@ export class Database {
         )
 
         const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
-        return await Database.monikerResults(db, DefModel, moniker, pathTransformer)
+        return await Database.monikerResults(db, DefinitionModel, moniker, pathTransformer)
     }
 
     /**
@@ -377,7 +378,7 @@ export class Database {
             )
 
             const pathTransformer = (path: string): string => makeRemoteUri(reference, path)
-            const references = await Database.monikerResults(db, RefModel, moniker, pathTransformer)
+            const references = await Database.monikerResults(db, ReferenceModel, moniker, pathTransformer)
             allReferences = allReferences.concat(references)
         }
 
@@ -396,7 +397,7 @@ export class Database {
                 connection.getRepository(DocumentModel).findOneOrFail(path)
             )
 
-            return await decodeJSON<DocumentData>(document.value)
+            return await decodeJSON<DocumentData>(document.data)
         }
 
         return await this.documentCache.withDocument(`${this.databasePath}::${path}`, factory, document =>
@@ -438,7 +439,7 @@ export class Database {
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return await this.connectionCache.withConnection(
             this.databasePath,
-            [DefModel, DocumentModel, MetaModel, RefModel],
+            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel],
             callback
         )
     }

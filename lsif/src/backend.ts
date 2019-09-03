@@ -7,7 +7,7 @@ import { importLsif } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
 import { ConnectionCache, DocumentCache } from './cache'
-import { DefModel, MetaModel, RefModel, DocumentModel } from './models'
+import { DefinitionModel, MetaModel, ReferenceModel, DocumentModel } from './models.database'
 import { Edge, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 
@@ -53,7 +53,7 @@ export class SQLiteBackend {
 
         const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
-            [DefModel, DocumentModel, MetaModel, RefModel],
+            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel],
             (entityManager: EntityManager) => importLsif(entityManager, parseLines(readline.createInterface({ input })))
         )
 
