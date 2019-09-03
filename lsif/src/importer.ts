@@ -381,31 +381,26 @@ class LsifImporter {
             return
         }
 
-        // console.time('doc end')
-        try {
-            const event = vertex as DocumentEvent
-            const path = assertDefined(event.data, 'documentPath', this.documentPaths)
+        const event = vertex as DocumentEvent
+        const path = assertDefined(event.data, 'documentPath', this.documentPaths)
 
-            // Finalize document
-            const document = this.finalizeDocument(event.data, path)
+        // Finalize document
+        const document = this.finalizeDocument(event.data, path)
 
-            // Insert document record
-            await this.documentInserter.insert({
-                path,
-                value: await encodeJSON({
-                    ranges: document.ranges,
-                    orderedRanges: document.orderedRanges,
-                    resultSets: document.resultSets,
-                    definitionResults: document.definitionResults,
-                    referenceResults: document.referenceResults,
-                    hovers: document.hovers,
-                    monikers: document.monikers,
-                    packageInformation: document.packageInformation,
-                }),
-            })
-        } finally {
-            // console.timeEnd('doc end')
-        }
+        // Insert document record
+        await this.documentInserter.insert({
+            path,
+            value: await encodeJSON({
+                ranges: document.ranges,
+                orderedRanges: document.orderedRanges,
+                resultSets: document.resultSets,
+                definitionResults: document.definitionResults,
+                referenceResults: document.referenceResults,
+                hovers: document.hovers,
+                monikers: document.monikers,
+                packageInformation: document.packageInformation,
+            }),
+        })
     }
 
     //
@@ -885,36 +880,20 @@ export async function importLsif(
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const importer = new LsifImporter(entityManager)
 
-    // console.time('upload')
-    try {
-        let i = 0
+    let i = 0
 
-        // console.time('inserts')
-        for await (const element of elements) {
-            if (i % 1000 == 0) {
-                // console.log(`inserted ${i} items`)
-            }
-
-            try {
-                await importer.insert(element)
-            } catch (e) {
-                console.log(e)
-                throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
-            }
-
-            i++
-        }
-
-        // console.timeEnd('inserts')
-        // console.time('finalize')
+    for await (const element of elements) {
         try {
-            return await importer.finalize()
-        } finally {
-            // console.timeEnd('finalize')
+            await importer.insert(element)
+        } catch (e) {
+            console.log(e)
+            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
         }
-    } finally {
-        // console.timeEnd('upload')
+
+        i++
     }
+
+    return await importer.finalize()
 }
 
 /**
