@@ -3,6 +3,7 @@ import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e
 import { sourcegraphBaseUrl, createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { testSingleFilePage } from './shared'
 
 // By default, these tests run against a local Bitbucket instance and a local Sourcegraph instance.
 // You can run them against other instances by setting the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -96,42 +97,11 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
         () => driver.page
     )
 
-    it('adds "View on Sourcegraph" buttons to files', async () => {
-        await driver.page.goto(
-            BITBUCKET_BASE_URL +
-                '/projects/SOURCEGRAPH/repos/jsonrpc2/browse/call_opt.go?until=4fb7cd90793ee6ab445f466b900e6bffb9b63d78&untilPath=call_opt.go'
-        )
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
-        expect(await driver.page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
-        await Promise.all([
-            driver.page.waitForNavigation(),
-            driver.page.click('.code-view-toolbar .open-on-sourcegraph'),
-        ])
-        expect(driver.page.url()).toBe(
-            `${sourcegraphBaseUrl}/${REPO_PATH_PREFIX}/SOURCEGRAPH/jsonrpc2@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
-        )
-    })
-
-    it('shows hover tooltips when hovering a token', async () => {
-        await driver.page.goto(
-            BITBUCKET_BASE_URL +
-                '/projects/SOURCEGRAPH/repos/jsonrpc2/browse/call_opt.go?until=4fb7cd90793ee6ab445f466b900e6bffb9b63d78&untilPath=call_opt.go'
-        )
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
-
-        // Pause to give codeintellify time to register listeners for
-        // tokenization (only necessary in CI, not sure why).
-        await driver.page.waitFor(1000)
-
-        // Trigger tokenization of the line.
-        const lineNumber = 16
-        const line = await driver.page.waitForSelector(`.line:nth-child(${lineNumber})`, { timeout: 10000 })
-        const [token] = await line.$x('//span[text()="CallOption"]')
-        await token.hover()
-        await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
-        await Promise.all([driver.page.waitForNavigation(), driver.page.click('.e2e-tooltip-go-to-definition')])
-        expect(await driver.page.evaluate(() => location.href)).toBe(
-            `${sourcegraphBaseUrl}/${REPO_PATH_PREFIX}/SOURCEGRAPH/jsonrpc2@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
-        )
+    testSingleFilePage({
+        getDriver: () => driver,
+        url: `${BITBUCKET_BASE_URL}/projects/SOURCEGRAPH/repos/jsonrpc2/browse/call_opt.go?until=4fb7cd90793ee6ab445f466b900e6bffb9b63d78&untilPath=call_opt.go`,
+        repoName: `${REPO_PATH_PREFIX}/SOURCEGRAPH/jsonrpc2`,
+        sourcegraphBaseUrl,
+        lineSelector: '.line',
     })
 })
