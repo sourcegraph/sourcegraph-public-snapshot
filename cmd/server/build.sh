@@ -63,6 +63,7 @@ cp dev/prometheus/local/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
 
 echo "--- grafana config"
 cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
+cp -r dev/grafana/local "$OUTPUT/sg_config_grafana/provisioning/datasources"
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
