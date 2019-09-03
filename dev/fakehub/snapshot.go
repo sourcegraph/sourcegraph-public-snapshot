@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/peterbourgon/ff/ffcli"
 )
 
 func snapshot(src, dst string) error {
@@ -246,23 +244,4 @@ func (o *Snapshotter) Run() error {
 	}
 
 	return nil
-}
-
-func SnapshotCommand() *ffcli.Command {
-	exec := func(args []string) error {
-		if len(args) == 0 {
-			log.Println("requires atleast 1 argument")
-		}
-		var s Snapshotter
-		for _, dir := range args {
-			s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
-		}
-		return s.Run()
-	}
-	return &ffcli.Command{
-		Name:      "snapshot",
-		Usage:     "fakehub [flags] snapshot [flags] <src1> [<src2> ...]",
-		ShortHelp: "Create a git snapshot of directories",
-		Exec:      exec,
-	}
 }

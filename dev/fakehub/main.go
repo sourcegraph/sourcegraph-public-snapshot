@@ -3,31 +3,24 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
-	"net"
-	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"text/template"
 
 	"github.com/peterbourgon/ff/ffcli"
 	"github.com/pkg/errors"
 )
 
-func ServeCommand() *ffcli.Command {
-	fs := flag.NewFlagSet("serve", flag.ExitOnError)
-	n := fs.Int("n", 1, "number of instances of each repo to make")
-	addr := fs.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
+func main() {
+	log.SetPrefix("")
 
-	exec := func(args []string) error {
-		return serve(*n, *addr, args)
-	}
-	return &ffcli.Command{
+	var (
+		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
+		serveN     = serveFlags.Int("n", 1, "number of instances of each repo to make")
+		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
+	)
+
+	serve := &ffcli.Command{
 		Name:      "serve",
 		Usage:     "fakehub [flags] serve [flags] [path/to/dir/containing/git/dirs]",
 		ShortHelp: "Serve git repos for Sourcegraph to list and clone.",
@@ -39,250 +32,37 @@ into the text box for adding single repos in sourcegraph Site Admin.
 
 fakehub will default to serving ~/.sourcegraph/snapshots
 `,
-		FlagSet: fs,
-		Exec:    exec,
-	}
-}
-
-func main() {
-	log.SetPrefix("")
-
-	cmd := &ffcli.Command{
-		Name: "fakehub",
-		Subcommands: []*ffcli.Command{
-			ServeCommand(),
-			SnapshotCommand(),
-		},
+		FlagSet: serveFlags,
 		Exec: func(args []string) error {
-			fmt.Println("hello world", args)
-			return nil
+			return serve(*serveN, *serveAddr, args)
 		},
 	}
-	if err := cmd.Run(os.Args[1:]); err != nil {
-		log.Fatal(err)
-	}
-}
 
-func serve(n int, addr string, args []string) error {
-	var repoDir string
-	switch len(args) {
-	case 0:
-		h, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		repoDir = filepath.Join(h, ".sourcegraph", "snapshots")
-
-	case 1:
-		repoDir = args[0]
-
-	default:
-		return errors.Errorf("too many arguments")
-	}
-
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		return errors.Wrap(err, "listen")
-	}
-	log.Printf("listening on http://%s", ln.Addr())
-	s, err := fakehub(n, ln, repoDir)
-	if err != nil {
-		return errors.Wrap(err, "configuring server")
-	}
-	if err := s.Serve(ln); err != nil {
-		return errors.Wrap(err, "serving")
-	}
-
-	return nil
-}
-
-func fakehub(n int, ln net.Listener, reposRoot string) (*http.Server, error) {
-	configureRepos(reposRoot)
-
-	// Start the HTTP server.
-	mux := &http.ServeMux{}
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tvars := &templateVars{n, configureRepos(reposRoot), ln.Addr()}
-
-		handleConfig(tvars, w)
-	})
-
-	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
-		type Repo struct {
-			Name string
-			URI  string
-		}
-		var repos []Repo
-		for _, path := range configureRepos(reposRoot) {
-			uri := "/repos/" + path
-			repos = append(repos, Repo{
-				Name: path,
-				URI:  uri,
-			})
-		}
-
-		resp := struct {
-			Items []Repo
-		}{
-			Items: repos,
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		_ = enc.Encode(&resp)
-	})
-
-	if n == 1 {
-		mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(reposRoot)})))
-	} else {
-		for i := 1; i <= n; i++ {
-			pfx := fmt.Sprintf("/repos/%d/", i)
-			mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(httpDir{http.Dir(reposRoot)})))
-		}
-	}
-
-	s := &http.Server{
-		Handler: logger(mux),
-	}
-	return s, nil
-}
-
-type httpDir struct {
-	http.Dir
-}
-
-// Wraps the http.Dir to inject subdir "/.git" to the path.
-func (d httpDir) Open(name string) (http.File, error) {
-	// Backwards compatibility for old config, skip if name already contains "/.git/".
-	if !strings.Contains(name, "/.git/") {
-		// Loops over subpaths that are requested by Git client to find the insert point.
-		// The order of slice matters, must try to match "/objects/" before "/info/"
-		// because there is a path "/objects/info/" exists.
-		for _, sp := range []string{"/objects/", "/info/", "/HEAD"} {
-			if i := strings.LastIndex(name, sp); i > 0 {
-				name = name[:i] + "/.git" + name[i:]
-				break
+	snapshot := &ffcli.Command{
+		Name:      "snapshot",
+		Usage:     "fakehub [flags] snapshot [flags] <src1> [<src2> ...]",
+		ShortHelp: "Create a git snapshot of directories",
+		Exec: func(args []string) error {
+			if len(args) == 0 {
+				return errors.New("requires atleast 1 argument")
 			}
-		}
-	}
-	return d.Dir.Open(name)
-}
-
-// configureRepos finds all .git directories and configures them to be served.
-// It returns a slice of all the git directories it finds. The paths are
-// relative to root.
-func configureRepos(root string) []string {
-	var gitDirs []string
-	err := filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
-		if fileErr != nil {
-			log.Printf("error encountered on %s: %v", path, fileErr)
-			return nil
-		}
-		if !fi.IsDir() {
-			return nil
-		}
-		// stat now to avoid recursing into the rest of path
-		gitdir := filepath.Join(path, ".git")
-		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
-			return nil
-		}
-		if err := configureOneRepo(gitdir); err != nil {
-			log.Printf("configuring repo at %s: %v", gitdir, err)
-			return nil
-		}
-
-		subpath, err := filepath.Rel(root, path)
-		if err != nil {
-			// According to WalkFunc docs, path is always filepath.Join(root,
-			// subpath). So Rel should always work.
-			log.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
-		}
-		gitDirs = append(gitDirs, subpath)
-		return filepath.SkipDir
-	})
-	if err != nil {
-		// Our WalkFunc doesn't return any errors, so neither should filepath.Walk
-		panic(err)
-	}
-	return gitDirs
-}
-
-// configureOneRepos tweaks a .git repo such that it can be git cloned.
-// See https://theartofmachinery.com/2016/07/02/git_over_http.html
-// for background.
-func configureOneRepo(gitDir string) error {
-	c := exec.Command("git", "update-server-info")
-	c.Dir = gitDir
-	out, err := c.CombinedOutput()
-	if err != nil {
-		return errors.Wrapf(err, "updating server info: %s", out)
-	}
-	if _, err := os.Stat(filepath.Join(gitDir, "hooks", "post-update")); err != nil {
-		log.Printf("setting post-update hook on %s", gitDir)
-		c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
-		c.Dir = gitDir
-		out, err = c.CombinedOutput()
-		if err != nil {
-			return errors.Wrapf(err, "setting post-update hook: %s", out)
-		}
-	}
-	return nil
-}
-
-// logger converts the given handler to one that will first log every request.
-func logger(h http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s", r.Method, r.URL.Path)
-		h.ServeHTTP(w, r)
-	})
-}
-
-// handleConfig shows the config for pasting into sourcegraph.
-func handleConfig(tvars *templateVars, w http.ResponseWriter) {
-	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
-{
-  "url": "http://{{.Addr}}",
-  "repos": [{{range .Repos}}
-      "{{.}}",{{end}}
-  ]
-}
-`
-	err := func() error {
-		t2, err := template.New("config").Parse(t1)
-		if err != nil {
-			return errors.Wrap(err, "parsing config template")
-		}
-		if err := t2.Execute(w, tvars); err != nil {
-			return errors.Wrap(err, "executing config template")
-		}
-		return nil
-	}()
-	if err != nil {
-		log.Println(err)
-		_, _ = w.Write([]byte(err.Error()))
-	}
-}
-
-type templateVars struct {
-	n       int
-	RelDirs []string
-	Addr    net.Addr
-}
-
-// Repos returns a slice of URL paths for all the repos, including any copies.
-func (tv *templateVars) Repos() []string {
-	var paths []string
-	if tv.n == 1 {
-		for _, rd := range tv.RelDirs {
-			paths = append(paths, "/repos/"+rd)
-		}
-	} else {
-		for i := 1; i <= tv.n; i++ {
-			for _, rd := range tv.RelDirs {
-				paths = append(paths, fmt.Sprint("/repos/", i, "/", rd))
+			var s Snapshotter
+			for _, dir := range args {
+				s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
 			}
-		}
+			return s.Run()
+		},
 	}
-	return paths
+
+	root := &ffcli.Command{
+		Name:        "fakehub",
+		Subcommands: []*ffcli.Command{serve, snapshot},
+		Exec: func(args []string) error {
+			return errors.New("specify a subcommand")
+		},
+	}
+
+	if err := root.Run(os.Args[1:]); err != nil {
+		log.Fatalf("error: %v", err)
+	}
 }
