@@ -6,4 +6,4 @@ providers:
     folder: ""
     type: file
     options:
-      path: /sg_config/provisioning/dashboards
+      path: /sg_config_grafana/provisioning/dashboards

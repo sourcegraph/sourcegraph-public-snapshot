@@ -4,7 +4,7 @@ global:
 
 rule_files:
   - '*_rules.yml'
-  - "/sg_add_ons/*_rules.yml"
+  - "/sg_prometheus_add_ons/*_rules.yml"
 
 # A scrape configuration for running Prometheus on a Kubernetes cluster.
 # This uses separate scrape configs for cluster components (i.e. API server, node)
