@@ -797,6 +797,21 @@ function convertMetadata(meta: MetaData): { lsifVersion: string; sourcegraphVers
 }
 
 /**
+ * Convert a protocol `Range` object into a `RangeData` object.
+ *
+ * @param range The range object.
+ */
+function convertRange(range: Range): RangeData {
+    return {
+        startLine: range.start.line,
+        startCharacter: range.start.character,
+        endLine: range.end.line,
+        endCharacter: range.end.character,
+        monikers: [],
+    }
+}
+
+/**
  * Convert a protocol `Moniker` object into a `MonikerData` object.
  *
  * @param moniker The moniker object.
@@ -812,15 +827,6 @@ function convertMoniker(moniker: Moniker): MonikerData {
  */
 function convertPackageInformation(info: PackageInformation): PackageInformationData {
     return { name: info.name, version: info.version || '$missing' }
-}
-
-/**
- * Convert a protocol `Range` object into a `RangeData` object.
- *
- * @param range The range object.
- */
-function convertRange(range: Range): RangeData {
-    return { ...flattenRange(range), monikers: [] }
 }
 
 /**
@@ -910,18 +916,4 @@ export function normalizeHover(hover: Hover): string {
         .map(c => normalizeContent(c).trim())
         .filter(s => s)
         .join(separator)
-}
-
-/**
- * Construct a flattened four-tuple of numbers from an LSP range.
- *
- * @param range The LSP range.
- */
-function flattenRange(range: Range): FlattenedRange {
-    return {
-        startLine: range.start.line,
-        startCharacter: range.start.character,
-        endLine: range.end.line,
-        endCharacter: range.end.character,
-    }
 }
