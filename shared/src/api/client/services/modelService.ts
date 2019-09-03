@@ -135,7 +135,6 @@ export function createModelService(): ModelService {
             modelRefs.increment(uri)
         },
         removeModelRef: uri => {
-            console.log('removeModelRef', uri)
             const model = models.get(uri)
             if (!model) {
                 throw new Error(`removeModelRef(): model not found ${uri}`)
