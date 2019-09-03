@@ -59,12 +59,19 @@ export class TableInserter<T, M extends new () => T> {
             return
         }
 
-        await this.entityManager
-            .createQueryBuilder()
-            .insert()
-            .into(this.model)
-            .values(this.batch)
-            .execute()
+        const name = `${new Date()}: ${this.batch.length} records`
+        console.time(name)
+
+        try {
+            await this.entityManager
+                .createQueryBuilder()
+                .insert()
+                .into(this.model)
+                .values(this.batch)
+                .execute()
+        } finally {
+            console.timeEnd(name)
+        }
 
         this.batch = []
     }

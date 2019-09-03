@@ -44,6 +44,39 @@ import { Hover, MarkupContent } from 'vscode-languageserver-types'
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
 /**
+ * An extension of `Map` that defines `getOrDefault` for a type of stunted
+ * autovivification. This saves a bunch of code that needs to check if a
+ * nested type within a map is undefined on first access.
+ */
+export class DefaultMap<K, V> extends Map {
+    /**
+     * Returns a new `DefaultMap`.
+     *
+     * @param defaultFactory The factory invoked when an undefined value is accessed.
+     */
+    constructor(private defaultFactory: () => V) {
+        super()
+    }
+
+    /**
+     * Get a key from the map. If the key does not exist, the default factory produces
+     * a value and inserted into the map before being returned.
+     *
+     * @param key The key to retrieve.
+     */
+    public getOrDefault(key: K): V {
+        let value = super.get(key)
+        if (value !== undefined) {
+            return value
+        }
+
+        value = this.defaultFactory()
+        this.set(key, value)
+        return value
+    }
+}
+
+/**
  * Common state around the conversion of a single LSIF dump upload. This class
  * receives the parsed vertex or edge, line by line, from the caller, and adds it
  * into a new database file on disk. Once finalized, the database is ready for use
@@ -60,15 +93,16 @@ class LsifImporter {
     private refInserter: TableInserter<RefModel, new () => RefModel>
 
     // Vertex data
-    private definitionData: Map<Id, Map<Id, Id[]>> = new Map()
-    private documentPaths: Map<Id, string> = new Map()
-    private containsData = new Map<Id, Set<Id>>()
-    private hoverData: Map<Id, string> = new Map()
-    private monikerData: Map<Id, MonikerData> = new Map()
-    private packageInformationData: Map<Id, PackageInformationData> = new Map()
-    private rangeData: Map<Id, RangeData> = new Map()
-    private referenceData: Map<Id, Map<Id, Id[]>> = new Map()
-    private resultSetData: Map<Id, ResultSetData> = new Map()
+
+    private documentPaths = new Map<Id, string>()
+    private containsData = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    private rangeData = new Map<Id, RangeData>()
+    private resultSetData = new Map<Id, ResultSetData>()
+    private definitionData = new Map<Id, DefaultMap<Id, Id[]>>()
+    private referenceData = new Map<Id, DefaultMap<Id, Id[]>>()
+    private hoverData = new Map<Id, string>()
+    private monikerData = new Map<Id, MonikerData>()
+    private packageInformationData = new Map<Id, PackageInformationData>()
 
     /**
      * The root of all document URIs. This is extracted from the metadata vertex at
@@ -81,7 +115,7 @@ class LsifImporter {
      * to via nextMoniker edges. This relation is symmetric (if `a` is in `MonikerSets[b]`,
      * then `b` is in `monikerSets[a]`).
      */
-    private monikerSets = new Map<Id, Set<Id>>()
+    private monikerSets = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
 
     /**
      * The set of exported moniker identifiers that have package information attached.
@@ -98,14 +132,18 @@ class LsifImporter {
      * monikers attached to that range. These values will be used to populate the
      * Defs table.
      */
-    private definitions = new Map<Id, Map<Id, Set<Id>>>()
+    private definitions = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
+        () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    )
 
     /**
      * A map from document identifiers to range identifiers to the set of nonlocal
      * monikers attached to that range. These values will be used to populate the
      * Refs table.
      */
-    private references = new Map<Id, Map<Id, Set<Id>>>()
+    private references = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
+        () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    )
 
     /**
      * Create a new `LsifImporter` with the given entity manager.
@@ -140,13 +178,6 @@ class LsifImporter {
                     await this.handleEvent(element)
                     break
 
-                // The remaining vertex handlers stash data into an appropriate map. This data
-                // may be retrieved when an edge that references it is seen, or when a document
-                // is finalized.
-
-                case VertexLabels.definitionResult:
-                    this.definitionData.set(element.id, new Map())
-                    break
                 case VertexLabels.document: {
                     if (!this.projectRoot) {
                         throw new Error('No project root has been defined.')
@@ -163,6 +194,22 @@ class LsifImporter {
                     break
                 }
 
+                // The remaining vertex handlers stash data into an appropriate map. This data
+                // may be retrieved when an edge that references it is seen, or when a document
+                // is finalized.
+
+                case VertexLabels.range:
+                    this.rangeData.set(element.id, convertRange(element))
+                    break
+                case VertexLabels.resultSet:
+                    this.resultSetData.set(element.id, { monikers: [] })
+                    break
+                case VertexLabels.definitionResult:
+                    this.definitionData.set(element.id, new DefaultMap<Id, Id[]>(() => []))
+                    break
+                case VertexLabels.referenceResult:
+                    this.referenceData.set(element.id, new DefaultMap<Id, Id[]>(() => []))
+                    break
                 case VertexLabels.hoverResult:
                     this.hoverData.set(element.id, normalizeHover(element.result))
                     break
@@ -172,15 +219,6 @@ class LsifImporter {
                 case VertexLabels.packageInformation:
                     this.packageInformationData.set(element.id, convertPackageInformation(element))
                     break
-                case VertexLabels.range:
-                    this.rangeData.set(element.id, convertRange(element))
-                    break
-                case VertexLabels.referenceResult:
-                    this.referenceData.set(element.id, new Map())
-                    break
-                case VertexLabels.resultSet:
-                    this.resultSetData.set(element.id, { monikers: [] })
-                    break
             }
         }
 
@@ -189,29 +227,29 @@ class LsifImporter {
                 case EdgeLabels.contains:
                     this.handleContains(element)
                     break
+                case EdgeLabels.next:
+                    this.handleNextEdge(element)
+                    break
                 case EdgeLabels.item:
                     this.handleItemEdge(element)
                     break
+                case EdgeLabels.textDocument_definition:
+                    this.handleDefinitionEdge(element)
+                    break
+                case EdgeLabels.textDocument_references:
+                    this.handleReferenceEdge(element)
+                    break
+                case EdgeLabels.textDocument_hover:
+                    this.handleHoverEdge(element)
+                    break
                 case EdgeLabels.moniker:
                     this.handleMonikerEdge(element)
-                    break
-                case EdgeLabels.next:
-                    this.handleNextEdge(element)
                     break
                 case EdgeLabels.nextMoniker:
                     this.handleNextMonikerEdge(element)
                     break
                 case EdgeLabels.packageInformation:
                     this.handlePackageInformationEdge(element)
-                    break
-                case EdgeLabels.textDocument_definition:
-                    this.handleDefinitionEdge(element)
-                    break
-                case EdgeLabels.textDocument_hover:
-                    this.handleHoverEdge(element)
-                    break
-                case EdgeLabels.textDocument_references:
-                    this.handleReferenceEdge(element)
                     break
             }
         }
@@ -293,23 +331,20 @@ class LsifImporter {
      * Return the symbols imported into the LSIF dump from external packages.
      */
     private getReferences(): SymbolReferences[] {
-        const packageIdentifiers: Map<string, string[]> = new Map()
+        const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
         for (const id of this.importedMonikers) {
             const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
             const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
+
+            // TODO - same issue as the lodash thing above?
             const pkg = JSON.stringify({
                 scheme: source.scheme,
                 name: packageInfo.name,
                 version: packageInfo.version,
             })
 
-            const list = packageIdentifiers.get(pkg)
-            if (list) {
-                list.push(source.identifier)
-            } else {
-                packageIdentifiers.set(pkg, [source.identifier])
-            }
+            packageIdentifiers.getOrDefault(pkg).push(source.identifier)
         }
 
         return Array.from(packageIdentifiers).map(([key, identifiers]) => ({
@@ -346,26 +381,31 @@ class LsifImporter {
             return
         }
 
-        const event = vertex as DocumentEvent
-        const path = assertDefined(event.data, 'documentPath', this.documentPaths)
+        // console.time('doc end')
+        try {
+            const event = vertex as DocumentEvent
+            const path = assertDefined(event.data, 'documentPath', this.documentPaths)
 
-        // Finalize document
-        const document = this.finalizeDocument(event.data, path)
+            // Finalize document
+            const document = this.finalizeDocument(event.data, path)
 
-        // Insert document record
-        await this.documentInserter.insert({
-            path,
-            value: await encodeJSON({
-                ranges: document.ranges,
-                orderedRanges: document.orderedRanges,
-                resultSets: document.resultSets,
-                definitionResults: document.definitionResults,
-                referenceResults: document.referenceResults,
-                hovers: document.hovers,
-                monikers: document.monikers,
-                packageInformation: document.packageInformation,
-            }),
-        })
+            // Insert document record
+            await this.documentInserter.insert({
+                path,
+                value: await encodeJSON({
+                    ranges: document.ranges,
+                    orderedRanges: document.orderedRanges,
+                    resultSets: document.resultSets,
+                    definitionResults: document.definitionResults,
+                    referenceResults: document.referenceResults,
+                    hovers: document.hovers,
+                    monikers: document.monikers,
+                    packageInformation: document.packageInformation,
+                }),
+            })
+        } finally {
+            // console.timeEnd('doc end')
+        }
     }
 
     //
@@ -379,11 +419,11 @@ class LsifImporter {
      */
     private handleContains(edge: contains): void {
         // Do not track project contains
-        if (!this.containsData.has(edge.outV)) {
+        if (!this.documentPaths.has(edge.outV)) {
             return
         }
 
-        const set = assertDefined(edge.outV, 'contains', this.containsData)
+        const set = this.containsData.getOrDefault(edge.outV)
         for (const inV of edge.inVs) {
             assertDefined(inV, 'range', this.rangeData)
             set.add(inV)
@@ -401,12 +441,16 @@ class LsifImporter {
             // `item` edges with a `property` refer to a referenceResult
             case ItemEdgeProperties.definitions:
             case ItemEdgeProperties.references:
-                this.handleGenericItemEdge(edge, 'referenceResult', this.referenceData)
+                assertDefined(edge.outV, 'referenceResult', this.referenceData)
+                    .getOrDefault(edge.document)
+                    .push(...edge.inVs)
                 break
 
             // `item` edges without a `property` refer to a definitionResult
             case undefined:
-                this.handleGenericItemEdge(edge, 'definitionResult', this.definitionData)
+                assertDefined(edge.outV, 'definitionResult', this.definitionData)
+                    .getOrDefault(edge.document)
+                    .push(...edge.inVs)
                 break
         }
     }
@@ -534,38 +578,13 @@ class LsifImporter {
     // Helper Functions
 
     /**
-     * Concatenate `edge.inVs` to the array at `map[edge.outV][edge.document]`.
-     * If any field is undefined, it is created on the fly.
-     *
-     * @param edge The edge.
-     * @param name The type of map (used for exception message).
-     * @param map The map to populate.
-     */
-    private handleGenericItemEdge(edge: item, name: string, map: Map<Id, Map<Id, Id[]>>): void {
-        const innerMap = assertDefined(edge.outV, name, map)
-        const data = innerMap.get(edge.document)
-        if (!data) {
-            innerMap.set(edge.document, edge.inVs)
-        } else {
-            for (const inV of edge.inVs) {
-                data.push(inV)
-            }
-        }
-    }
-
-    /**
      * Add `b` as a neighbor of `a` in `monikerSets`.
      *
      * @param a A moniker.
      * @param b A second moniker.
      */
     private correlateMonikers(a: Id, b: Id): void {
-        const neighbors = this.monikerSets.get(a)
-        if (neighbors) {
-            neighbors.add(b)
-        } else {
-            this.monikerSets.set(a, new Set<Id>([b]))
-        }
+        this.monikerSets.getOrDefault(a).add(b)
     }
 
     /**
@@ -610,30 +629,10 @@ class LsifImporter {
             }
         }
 
-        const addMonikerIds = (map: Map<Id, Map<Id, Set<Id>>>, ids: Id[], monikers: Id[]): void => {
-            for (const moniker of monikers) {
-                for (const id of ids) {
-                    let m = map.get(currentDocumentId)
-                    if (!m) {
-                        m = new Map<Id, Set<Id>>()
-                        map.set(currentDocumentId, m)
-                    }
-
-                    let n = m.get(id)
-                    if (!n) {
-                        n = new Set<Id>()
-                        m.set(id, n)
-                    }
-
-                    n.add(moniker)
-                }
-            }
-        }
-
         const addGenericResult = (
             name: string,
             datas: Map<Id, Map<Id, Id[]>>,
-            monikerResults: Map<Id, Map<Id, Set<Id>>>,
+            monikerResults: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
             results: Map<Id, { documentPath: string; id: Id }[]>,
             id: Id | undefined,
             monikers: Id[]
@@ -641,6 +640,8 @@ class LsifImporter {
             if (!id) {
                 return
             }
+
+            let m = monikerResults.getOrDefault(currentDocumentId)
 
             const values = []
             for (const [documentId, ids] of assertDefined(id, name, datas)) {
@@ -655,7 +656,14 @@ class LsifImporter {
                 if (documentId === currentDocumentId) {
                     // If this is results for the current document, construct the data that
                     // will later be used to insert into the Defs table for this document.
-                    addMonikerIds(monikerResults, ids, monikers)
+
+                    for (const id of ids) {
+                        let n = m.getOrDefault(id)
+
+                        for (const moniker of monikers) {
+                            n.add(moniker)
+                        }
+                    }
                 }
             }
 
@@ -877,18 +885,36 @@ export async function importLsif(
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const importer = new LsifImporter(entityManager)
 
-    let i = 0
-    for await (const element of elements) {
-        try {
-            await importer.insert(element)
-        } catch (e) {
-            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+    // console.time('upload')
+    try {
+        let i = 0
+
+        // console.time('inserts')
+        for await (const element of elements) {
+            if (i % 1000 == 0) {
+                // console.log(`inserted ${i} items`)
+            }
+
+            try {
+                await importer.insert(element)
+            } catch (e) {
+                console.log(e)
+                throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+            }
+
+            i++
         }
 
-        i++
+        // console.timeEnd('inserts')
+        // console.time('finalize')
+        try {
+            return await importer.finalize()
+        } finally {
+            // console.timeEnd('finalize')
+        }
+    } finally {
+        // console.timeEnd('upload')
     }
-
-    return await importer.finalize()
 }
 
 /**
