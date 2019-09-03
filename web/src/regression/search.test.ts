@@ -137,15 +137,15 @@ describe('Search regression test suite', () => {
             async () => {
                 await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
                 await driver.page.waitForSelector('.e2e-search-results')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-results').length >= 1)
-                await driver.page.evaluate(() => {
+                await driver.page.waitForFunction(() => {
                     const resultsElem = document.querySelector('.e2e-search-results')
                     if (!resultsElem) {
-                        throw new Error('No .e2e-search-results element found')
+                        return false
                     }
                     if (!(resultsElem as HTMLElement).innerText.includes('No results')) {
                         throw new Error('Expected "No results" message, but didn\'t find it')
                     }
+                    return true
                 })
             },
             standardSearchTimeout
