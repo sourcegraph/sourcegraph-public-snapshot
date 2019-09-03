@@ -1,38 +1,5 @@
-import { reachableMonikers, normalizeHover, lookupRanges } from './importer'
+import { reachableMonikers, normalizeHover } from './importer'
 import { Id } from 'lsif-protocol'
-
-describe('lookupRanges', () => {
-    it('should correlate ids with correct index', () => {
-        const ranges = new Map<Id, number>()
-        ranges.set(1, 0)
-        ranges.set(2, 2)
-        ranges.set(3, 1)
-
-        const orderedRanges = [
-            { startLine: 1, startCharacter: 1, endLine: 1, endCharacter: 2, monikers: [] },
-            { startLine: 2, startCharacter: 1, endLine: 2, endCharacter: 2, monikers: [] },
-            { startLine: 3, startCharacter: 1, endLine: 3, endCharacter: 2, monikers: [] },
-        ]
-
-        const document = {
-            id: '',
-            path: '',
-            contains: [],
-            definitions: [],
-            references: [],
-            ranges,
-            orderedRanges,
-            resultSets: new Map(),
-            definitionResults: new Map(),
-            referenceResults: new Map(),
-            hovers: new Map(),
-            monikers: new Map(),
-            packageInformation: new Map(),
-        }
-
-        expect(lookupRanges(document, [1, 2, 3, 4])).toEqual([orderedRanges[0], orderedRanges[2], orderedRanges[1]])
-    })
-})
 
 describe('normalizeHover', () => {
     it('should handle all lsp.Hover types', () => {

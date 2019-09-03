@@ -4,7 +4,7 @@ import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import RelateUrl from 'relateurl'
 import { encodeJSON } from './encoding'
 import { TableInserter } from './inserter'
-import { MonikerData, RangeData, ResultSetData, PackageInformationData, DocumentData, FlattenedRange } from './entities'
+import { MonikerData, RangeData, ResultSetData, PackageInformationData, FlattenedRange, DocumentData } from './entities'
 import {
     Id,
     VertexLabels,
@@ -44,44 +44,6 @@ import { Hover, MarkupContent } from 'vscode-languageserver-types'
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
 /**
- * A wrapper around `DocumentData` with additional context required during the
- * importing of an LSIF dump.
- */
-export interface DecoratedDocumentData extends DocumentData {
-    /**
-     * The identifier of the document.
-     */
-    id: Id
-
-    /**
-     * The root-relative path of the document.
-     */
-    path: string
-
-    /**
-     * The running set of identifiers that have a contains edge to this document
-     * in the LSIF dump.
-     */
-    contains: Id[]
-
-    /**
-     * A field that carries the data of definitionResult edges attached within
-     * the document if there is a non-local moniker attached to it; otherwise,
-     * the definition result data would be stored in field `definitionResults`
-     * of `DocumentData`.
-     */
-    definitions: { ids: Id[]; moniker: MonikerData }[]
-
-    /**
-     * A field that carries the data of referenceResult edges attached within
-     * the document if there is a non-local moniker attached to it; otherwise,
-     * the reference result data would be stored infield  `referenceResults`
-     * of `DocumentData`.
-     */
-    references: { ids: Id[]; moniker: MonikerData }[]
-}
-
-/**
  * Common state around the conversion of a single LSIF dump upload. This class
  * receives the parsed vertex or edge, line by line, from the caller, and adds it
  * into a new database file on disk. Once finalized, the database is ready for use
@@ -99,7 +61,8 @@ class LsifImporter {
 
     // Vertex data
     private definitionData: Map<Id, Map<Id, Id[]>> = new Map()
-    private documentUris: Map<Id, string> = new Map()
+    private documentPaths: Map<Id, string> = new Map()
+    private containsData = new Map<Id, Set<Id>>()
     private hoverData: Map<Id, string> = new Map()
     private monikerData: Map<Id, MonikerData> = new Map()
     private packageInformationData: Map<Id, PackageInformationData> = new Map()
@@ -112,12 +75,6 @@ class LsifImporter {
      * the beginning of processing.
      */
     private projectRoot?: URL
-
-    /**
-     * A map of decorated `DocumentData` objects that are created on document begin events
-     * and are inserted into the databse on document end events.
-     */
-    private documentData = new Map<Id, DecoratedDocumentData>()
 
     /**
      * A mapping for the relation from moniker to the set of monikers that they are related
@@ -135,6 +92,20 @@ class LsifImporter {
      * The set of exported moniker identifiers that have package information attached.
      */
     private exportedMonikers = new Set<Id>()
+
+    /**
+     * A map from document identifiers to range identifiers to the set of nonlocal
+     * monikers attached to that range. These values will be used to populate the
+     * Defs table.
+     */
+    private definitions = new Map<Id, Map<Id, Set<Id>>>()
+
+    /**
+     * A map from document identifiers to range identifiers to the set of nonlocal
+     * monikers attached to that range. These values will be used to populate the
+     * Refs table.
+     */
+    private references = new Map<Id, Map<Id, Set<Id>>>()
 
     /**
      * Create a new `LsifImporter` with the given entity manager.
@@ -176,9 +147,22 @@ class LsifImporter {
                 case VertexLabels.definitionResult:
                     this.definitionData.set(element.id, new Map())
                     break
-                case VertexLabels.document:
-                    this.documentUris.set(element.id, element.uri)
+                case VertexLabels.document: {
+                    if (!this.projectRoot) {
+                        throw new Error('No project root has been defined.')
+                    }
+
+                    const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(element.uri).href, {
+                        defaultPorts: {},
+                        output: RelateUrl.PATH_RELATIVE,
+                        removeRootTrailingSlash: false,
+                    })
+
+                    this.documentPaths.set(element.id, path)
+                    this.containsData.set(element.id, new Set<Id>())
                     break
+                }
+
                 case VertexLabels.hoverResult:
                     this.hoverData.set(element.id, normalizeHover(element.result))
                     break
@@ -240,6 +224,43 @@ class LsifImporter {
      * external packages.
      */
     public async finalize(): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+        // Insert all related definitions
+        for (const [documentId, m] of this.definitions) {
+            for (const [rangeId, monikerIds] of m) {
+                for (const monikerId of monikerIds) {
+                    // TODO - clean this up
+                    const range = assertDefined(rangeId, 'range', this.rangeData)
+                    const moniker = assertDefined(monikerId, 'moniker', this.monikerData)
+                    const documentPath = assertDefined(documentId, 'documentPath', this.documentPaths)
+
+                    await this.defInserter.insert({
+                        scheme: moniker.scheme,
+                        identifier: moniker.identifier,
+                        documentPath,
+                        ...range,
+                    })
+                }
+            }
+        }
+
+        // Insert all related references
+        for (const [documentId, m] of this.references) {
+            for (const [rangeId, monikerIds] of m) {
+                for (const monikerId of monikerIds) {
+                    const range = assertDefined(rangeId, 'range', this.rangeData)
+                    const moniker = assertDefined(monikerId, 'moniker', this.monikerData)
+                    const documentPath = assertDefined(documentId, 'documentPath', this.documentPaths)
+
+                    await this.refInserter.insert({
+                        scheme: moniker.scheme,
+                        identifier: moniker.identifier,
+                        documentPath,
+                        ...range,
+                    })
+                }
+            }
+        }
+
         await this.metaInserter.finalize()
         await this.documentInserter.finalize()
         await this.defInserter.finalize()
@@ -257,6 +278,7 @@ class LsifImporter {
             const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
             const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
+
             packageHashes.push({
                 scheme: source.scheme,
                 name: packageInfo.name,
@@ -312,18 +334,38 @@ class LsifImporter {
     }
 
     /**
-     * Delegate document-scoped begin and end events.
+     * Insert documents when we see a document-scoped end event. This constructs
+     * a `DocumentData` object that correlates data related to a range contained
+     * in the document and inserts its encoded, compressed representation into
+     * the database.
      *
      * @param vertex The event vertex.
      */
     private async handleEvent(vertex: Event): Promise<void> {
-        if (vertex.scope === EventScope.document && vertex.kind === EventKind.begin) {
-            this.handleDocumentBegin(vertex as DocumentEvent)
+        if (vertex.scope !== EventScope.document || vertex.kind !== EventKind.end) {
+            return
         }
 
-        if (vertex.scope === EventScope.document && vertex.kind === EventKind.end) {
-            await this.handleDocumentEnd(vertex as DocumentEvent)
-        }
+        const event = vertex as DocumentEvent
+        const path = assertDefined(event.data, 'documentPath', this.documentPaths)
+
+        // Finalize document
+        const document = this.finalizeDocument(event.data, path)
+
+        // Insert document record
+        await this.documentInserter.insert({
+            path,
+            value: await encodeJSON({
+                ranges: document.ranges,
+                orderedRanges: document.orderedRanges,
+                resultSets: document.resultSets,
+                definitionResults: document.definitionResults,
+                referenceResults: document.referenceResults,
+                hovers: document.hovers,
+                monikers: document.monikers,
+                packageInformation: document.packageInformation,
+            }),
+        })
     }
 
     //
@@ -336,10 +378,15 @@ class LsifImporter {
      * @param edge The contains edge.
      */
     private handleContains(edge: contains): void {
-        if (this.documentData.has(edge.outV)) {
-            const source = assertDefined(edge.outV, 'document', this.documentData)
-            mapAssertDefined(edge.inVs, 'range', this.rangeData)
-            source.contains = source.contains.concat(edge.inVs)
+        // Do not track project contains
+        if (!this.containsData.has(edge.outV)) {
+            return
+        }
+
+        const contains = assertDefined(edge.outV, 'contains', this.containsData)
+        for (const inV of edge.inVs) {
+            assertDefined(inV, 'range', this.rangeData)
+            contains.add(inV)
         }
     }
 
@@ -484,100 +531,6 @@ class LsifImporter {
     }
 
     //
-    // Event Handlers
-
-    /**
-     * Initialize a blank document which will be fully populated on the invocation of
-     * `handleDocumentEnd`. This document is created now so that we can stash the ids
-     * of ranges referred to by `contains` edges we see before the document end event
-     * occurs.
-     *
-     * @param event The document begin event.
-     */
-    private handleDocumentBegin(event: DocumentEvent): void {
-        if (!this.projectRoot) {
-            throw new Error('No project root has been defined.')
-        }
-
-        const uri = assertDefined(event.data, 'document', this.documentUris)
-
-        const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(uri).href, {
-            defaultPorts: {},
-            output: RelateUrl.PATH_RELATIVE,
-            removeRootTrailingSlash: false,
-        })
-
-        this.documentData.set(event.data, {
-            id: event.data,
-            path,
-            contains: [],
-            definitions: [],
-            references: [],
-            ranges: new Map(),
-            orderedRanges: [],
-            resultSets: new Map(),
-            definitionResults: new Map(),
-            referenceResults: new Map(),
-            hovers: new Map(),
-            monikers: new Map(),
-            packageInformation: new Map(),
-        })
-    }
-
-    /**
-     * Finalize the document by correlating and compressing any data reachable from a
-     * range that it contains. This document, as well as its definitions and references,
-     * will be submitted to the database for insertion.
-     *
-     * @param event The document end event.
-     */
-    private async handleDocumentEnd(event: DocumentEvent): Promise<void> {
-        const document = assertDefined(event.data, 'document', this.documentData)
-
-        // Finalize document
-        await this.finalizeDocument(document)
-
-        // Insert document record
-        await this.documentInserter.insert({
-            path: document.path,
-            value: await encodeJSON({
-                ranges: document.ranges,
-                orderedRanges: document.orderedRanges,
-                resultSets: document.resultSets,
-                definitionResults: document.definitionResults,
-                referenceResults: document.referenceResults,
-                hovers: document.hovers,
-                monikers: document.monikers,
-                packageInformation: document.packageInformation,
-            }),
-        })
-
-        // Insert all related definitions
-        for (const { ids, moniker } of document.definitions) {
-            for (const range of lookupRanges(document, ids)) {
-                await this.defInserter.insert({
-                    scheme: moniker.scheme,
-                    identifier: moniker.identifier,
-                    documentPath: document.path,
-                    ...range,
-                })
-            }
-        }
-
-        // Insert all related references
-        for (const { ids, moniker } of document.references) {
-            for (const range of lookupRanges(document, ids)) {
-                await this.refInserter.insert({
-                    scheme: moniker.scheme,
-                    identifier: moniker.identifier,
-                    documentPath: document.path,
-                    ...range,
-                })
-            }
-        }
-    }
-
-    //
     // Helper Functions
 
     /**
@@ -616,20 +569,128 @@ class LsifImporter {
     }
 
     /**
-     * Populate a document object (whose only populated value should be its `contains` array).
-     * Each range that is contained in this document will be added to this object, as well as
-     * any item reachable from that range. This lazily populates the document with the minimal
-     * data, and keeps it self-contained within the document so that multiple queries are not
-     * needed when asking about (non-xrepo) LSIF data.
+     * Create a self-contained document object.
      *
-     * @param document The document object.
+     * @param currentDocumentId The identifier of the document.
+     * @param path The path of the document.
      */
-    private async finalizeDocument(document: DecoratedDocumentData): Promise<void> {
+    private finalizeDocument(currentDocumentId: Id, path: string): DocumentData {
+        const document = {
+            path,
+            ranges: new Map<Id, number>(),
+            orderedRanges: [] as RangeData[],
+            resultSets: new Map(), // TODO - remove
+            definitionResults: new Map<Id, { documentPath: string; id: Id }[]>(),
+            referenceResults: new Map<Id, { documentPath: string; id: Id }[]>(),
+            hovers: new Map<Id, string>(),
+            monikers: new Map<Id, MonikerData>(),
+            packageInformation: new Map<Id, PackageInformationData>(),
+        }
+
+        const addHover = (id: Id | undefined): void => {
+            if (id !== undefined && !document.hovers.has(id)) {
+                document.hovers.set(id, assertDefined(id, 'hoverResult', this.hoverData))
+            }
+        }
+
+        const addPackageInformation = (id: Id | undefined): void => {
+            if (id !== undefined && !document.packageInformation.has(id)) {
+                document.packageInformation.set(
+                    id,
+                    assertDefined(id, 'packageInformation', this.packageInformationData)
+                )
+            }
+        }
+
+        const addMoniker = (id: Id | undefined): void => {
+            if (id !== undefined && !document.monikers.has(id)) {
+                const moniker = assertDefined(id, 'moniker', this.monikerData)
+                document.monikers.set(id, moniker)
+                addPackageInformation(moniker.packageInformation)
+            }
+        }
+
+        const addMonikerIds = (map: Map<Id, Map<Id, Set<Id>>>, ids: Id[], monikers: Id[]): void => {
+            for (const moniker of monikers) {
+                for (const id of ids) {
+                    let m = map.get(currentDocumentId)
+                    if (!m) {
+                        m = new Map<Id, Set<Id>>()
+                        map.set(currentDocumentId, m)
+                    }
+
+                    let n = m.get(id)
+                    if (!n) {
+                        n = new Set<Id>()
+                        m.set(id, n)
+                    }
+
+                    n.add(moniker)
+                }
+            }
+        }
+
+        const addGenericResult = (
+            name: string,
+            datas: Map<Id, Map<Id, Id[]>>,
+            monikerResults: Map<Id, Map<Id, Set<Id>>>,
+            results: Map<Id, { documentPath: string; id: Id }[]>,
+            id: Id | undefined,
+            monikers: Id[]
+        ): void => {
+            if (!id) {
+                return
+            }
+
+            const values = []
+            for (const [documentId, ids] of assertDefined(id, name, datas)) {
+                // Resolve the "document" field from the "item" edge. This will correlate
+                // the referenced range identifier with the document in which it belongs.
+                const documentPath = assertDefined(documentId, 'documentPath', this.documentPaths)
+
+                for (const id of ids) {
+                    values.push({ documentPath, id })
+                }
+
+                if (documentId === currentDocumentId) {
+                    // If this is results for the current document, construct the data that
+                    // will later be used to insert into the Defs table for this document.
+                    addMonikerIds(monikerResults, ids, monikers)
+                }
+            }
+
+            results.set(id, values)
+        }
+
         const orderedRanges: (RangeData & { id: Id })[] = []
-        for (const id of document.contains) {
+        for (const id of assertDefined(currentDocumentId, 'contains', this.containsData)) {
             const range = assertDefined(id, 'range', this.rangeData)
+            this.canonicalizeRange(range)
             orderedRanges.push({ id, ...range })
-            await this.attachItemToDocument(document, id, range)
+
+            addHover(range.hoverResult)
+
+            for (const id of range.monikers) {
+                addMoniker(id)
+            }
+
+            addGenericResult(
+                'definitionResult',
+                this.definitionData,
+                this.definitions,
+                document.definitionResults,
+                range.definitionResult,
+                range.monikers
+            )
+
+            addGenericResult(
+                'referenceResult',
+                this.referenceData,
+                this.references,
+                document.referenceResults,
+                range.referenceResult,
+                range.monikers
+            )
         }
 
         // Sort ranges by their starting position
@@ -643,136 +704,50 @@ class LsifImporter {
 
         // eslint-disable-next-line require-atomic-updates
         document.orderedRanges = orderedRanges.map(({ id, ...range }) => range)
+
+        return document
     }
 
     /**
-     * Moves the data reachable from the given range or result set into the
-     * given document. This walks the edges of next/item edges as seen in
-     * one of the handler functions above.
+     * Update the definition result, reference result, hover result, and monikers of the
+     * given range with respect to the result sets reachable from the range. This puts
+     * all of the necessary data about a range in the range object itself so we do not
+     * have to traverse the graph at query time.
      *
-     * @param document The document object.
-     * @param id The identifier of the range or result set.
-     * @param item The range or result set.
+     * @param range The range to canonicalize.
      */
-    private async attachItemToDocument(
-        document: DecoratedDocumentData,
-        id: Id,
-        item: RangeData | ResultSetData
-    ): Promise<void> {
-        // Find monikers for an item and add them to the item and document.
-        // This will also add any package information attached to a moniker
-        // to the document.
-        const monikers = this.attachItemMonikersToDocument(document, id, item)
+    private canonicalizeRange(range: RangeData): void {
+        let definitionResult: Id | undefined
+        let referenceResult: Id | undefined
+        let hoverResult: Id | undefined
+        const monikers = new Set<Id>()
 
-        // Get non-local monitors, which we will add to the Defs and Refs table
-        // for lookup from another project.
-        const nonlocalMonikers = monikers.filter(m => m.kind !== MonikerKind.local)
+        let item: RangeData | ResultSetData | undefined = range
+        while (item) {
+            definitionResult = definitionResult === undefined ? item.definitionResult : definitionResult
+            referenceResult = referenceResult === undefined ? item.referenceResult : referenceResult
+            hoverResult = hoverResult === undefined ? item.hoverResult : hoverResult
 
-        // Add result set to document, if it doesn't exist
-        if (item.next && !document.resultSets.has(item.next)) {
-            const resultSet = assertDefined(item.next, 'resultSet', this.resultSetData)
-            document.resultSets.set(item.next, resultSet)
-            await this.attachItemToDocument(document, item.next, resultSet)
-        }
-
-        // Add hover to document, if it doesn't exist
-        if (item.hoverResult && !document.hovers.has(item.hoverResult)) {
-            const hoverResult = assertDefined(item.hoverResult, 'hoverResult', this.hoverData)
-            document.hovers.set(item.hoverResult, hoverResult)
-        }
-
-        // Attach definition and reference results results to the document. This attaches
-        // some denormalized data on the `WrappedDocumentData` object which will also be
-        // used to populate the defs and refs tables once the document is finalized.
-
-        if (item.definitionResult) {
-            const values = []
-            for (const [key, ids] of assertDefined(item.definitionResult, 'definitionResult', this.definitionData)) {
-                // Resolve the "document" field from the "item" edge. This will correlate
-                // the referenced range identifier with the document in which it belongs.
-                const documentPath = assertDefined(key, 'document', this.documentData).path
-
-                for (const id of ids) {
-                    values.push({ documentPath, id })
-                }
-
-                // If this is results for the current document, construct the data that
-                // will later be used to insert into the Defs table for this document.
-
-                if (key === document.id) {
-                    for (const moniker of nonlocalMonikers) {
-                        document.definitions.push({ ids, moniker })
+            if (item.monikers.length > 0) {
+                for (const mon of reachableMonikers(this.monikerSets, item.monikers[0])) {
+                    if (assertDefined(mon, 'moniker', this.monikerData).kind !== MonikerKind.local) {
+                        monikers.add(mon)
                     }
                 }
             }
 
-            // Store the definition results
-            document.definitionResults.set(item.definitionResult, values)
-        }
-
-        if (item.referenceResult) {
-            const values = []
-            for (const [key, ids] of assertDefined(item.referenceResult, 'referenceResult', this.referenceData)) {
-                // Resolve the "document" field from the "item" edge. This will correlate
-                // the referenced range identifier with the document in which it belongs.
-                const documentPath = assertDefined(key, 'document', this.documentData).path
-
-                for (const id of ids) {
-                    values.push({ documentPath, id })
-                }
-
-                // If this is results for the current document, construct the data that
-                // will later be used to insert into the Refs table for this document.
-
-                if (key === document.id) {
-                    for (const moniker of nonlocalMonikers) {
-                        document.references.push({ ids, moniker })
-                    }
-                }
+            if (item.next === undefined) {
+                break
             }
 
-            // Store the reference results
-            document.referenceResults.set(item.referenceResult, values)
-        }
-    }
-
-    /**
-     * Find all monikers reachable from the given range or result set, and
-     * add them to the item, and the document. If package information is
-     * also attached, it is also attached to the document.
-     *
-     * @param document The document object.
-     * @param id The identifier of the range or result set.
-     * @param item The range or result set.
-     */
-    private attachItemMonikersToDocument(
-        document: DecoratedDocumentData,
-        id: Id,
-        item: RangeData | ResultSetData
-    ): MonikerData[] {
-        if (item.monikers.length === 0) {
-            return []
+            item = assertDefined(item.next, 'resultSet', this.resultSetData)
         }
 
-        const monikers = []
-        for (const id of reachableMonikers(this.monikerSets, item.monikers[0])) {
-            const moniker = assertDefined(id, 'moniker', this.monikerData)
-            monikers.push(moniker)
-            item.monikers.push(id)
-            document.monikers.set(id, moniker)
-
-            if (moniker.packageInformation) {
-                const packageInformation = assertDefined(
-                    moniker.packageInformation,
-                    'packageInformation',
-                    this.packageInformationData
-                )
-
-                document.packageInformation.set(moniker.packageInformation, packageInformation)
-            }
-        }
-
-        return monikers
+        range.definitionResult = definitionResult
+        range.referenceResult = referenceResult
+        range.hoverResult = hoverResult
+        range.monikers = Array.from(monikers)
+        range.next = undefined // TODO - just remove this
     }
 }
 
@@ -807,17 +782,6 @@ function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T | null>[]): T
     }
 
     throw new Error(`Unknown ${name} '${id}'.`)
-}
-
-/**
- * Call `assertDefined` over the given ids.
- *
- * @param ids The ids to map over.
- * @param name The type of element (used for exception message).
- * @param maps The set of maps to query.
- */
-function mapAssertDefined<T>(ids: Id[], name: string, ...maps: Map<Id, T | null>[]): T[] {
-    return ids.map(id => assertDefined(id, name, ...maps))
 }
 
 /**
@@ -857,29 +821,6 @@ function convertPackageInformation(info: PackageInformation): PackageInformation
  */
 function convertRange(range: Range): RangeData {
     return { ...flattenRange(range), monikers: [] }
-}
-
-/**
- * Convert a set of range identifers into the flattened range objects stored by
- * identifier in the given document. This requires that the document's `ranges`
- * and `orderedRanges` fields to be completely populated.
- *
- * @param document The document object.
- * @param ids The list of ids.
- */
-export function lookupRanges(document: DecoratedDocumentData, ids: Id[]): FlattenedRange[] {
-    const ranges = []
-    for (const id of ids) {
-        const rangeIndex = document.ranges.get(id)
-        if (rangeIndex === undefined) {
-            continue
-        }
-
-        const range = document.orderedRanges[rangeIndex]
-        ranges.push(range)
-    }
-
-    return ranges
 }
 
 /**
