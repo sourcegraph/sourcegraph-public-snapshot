@@ -1,5 +1,5 @@
 import { from, of } from 'rxjs'
-import { distinctUntilChanged, filter, map, switchMap, take, toArray, first, skip, takeLast } from 'rxjs/operators'
+import { filter, map, switchMap, take, toArray, first } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'

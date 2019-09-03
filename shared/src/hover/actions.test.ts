@@ -23,7 +23,6 @@ import { resetAllMemoizationCaches } from '../util/memoizeObservable'
 import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
-import { createTestModelService } from '../api/client/services/modelService.test'
 
 const FIXTURE_PARAMS: TextDocumentPositionParams = {
     textDocument: { uri: 'git://r?c#f' },
@@ -383,7 +382,7 @@ describe('getDefinitionURL', () => {
 describe('registerHoverContributions()', () => {
     beforeEach(() => resetAllMemoizationCaches())
     const contribution = new ContributionRegistry(
-        createTestEditorService(createTestModelService({})),
+        createTestEditorService({}),
         { data: of(EMPTY_SETTINGS_CASCADE) },
         of({})
     )

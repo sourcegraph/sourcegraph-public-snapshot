@@ -14,7 +14,6 @@ import {
     parseContributionExpressions,
 } from './contribution'
 import { createTestEditorService } from './editorService.test'
-import { EditorUpdate } from './editorService'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -131,13 +130,9 @@ describe('ContributionRegistry', () => {
                         return super.getContributionsFromEntries(entries, undefined)
                     }
                 })(
-                    createTestEditorService({
-                        updates: cold<EditorUpdate[]>('-a-b-c-|', {
-                            a: [],
-                            b: [],
-                            c: [],
-                        }),
-                    }),
+                    {
+                        activeEditorUpdates: of(undefined),
+                    },
                     { data: of(EMPTY_SETTINGS_CASCADE) },
                     of({})
                 )
@@ -167,11 +162,9 @@ describe('ContributionRegistry', () => {
                         return super.getContributionsFromEntries(entries, undefined)
                     }
                 })(
-                    createTestEditorService({
-                        updates: cold<EditorUpdate[]>('-a-----|', {
-                            a: [],
-                        }),
-                    }),
+                    {
+                        activeEditorUpdates: of(undefined),
+                    },
                     { data: of(EMPTY_SETTINGS_CASCADE) },
                     of({})
                 )
@@ -200,12 +193,9 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     constructor() {
                         super(
-                            createTestEditorService({
-                                updates: cold<EditorUpdate[]>('-a-b-|', {
-                                    a: [],
-                                    b: [],
-                                }),
-                            }),
+                            {
+                                activeEditorUpdates: of(undefined),
+                            },
                             {
                                 data: cold<SettingsCascadeOrError>('-a-b-|', {
                                     a: EMPTY_SETTINGS_CASCADE,

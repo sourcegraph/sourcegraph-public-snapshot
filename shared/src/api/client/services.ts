@@ -42,7 +42,7 @@ export class Services {
     public readonly notifications = new NotificationsService()
     public readonly settings = createSettingsService(this.platformContext)
     public readonly contribution = new ContributionRegistry(this.editor, this.settings, this.context.data)
-    public readonly extensions = new ExtensionsService(this.platformContext, this.editor, this.settings)
+    public readonly extensions = new ExtensionsService(this.platformContext, this.model, this.settings)
     public readonly linkPreviews = new LinkPreviewProviderRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()

@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { catchError, distinctUntilChanged, map, switchMap, tap, mapTo } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
     getScriptURLFromExtensionManifest,
@@ -13,8 +13,8 @@ import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../util/types'
-import { CodeEditorWithPartialModel, EditorService } from './editorService'
 import { SettingsService } from './settings'
+import { ModelService } from './modelService'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -56,7 +56,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
 export class ExtensionsService {
     constructor(
         private platformContext: PartialContext,
-        private editorService: Pick<EditorService, 'activeLanguages'>,
+        private modelService: Pick<ModelService, 'activeLanguages'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (
@@ -120,7 +120,7 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()
-        return combineLatest(from(this.editorService.activeLanguages), this.enabledExtensions).pipe(
+        return combineLatest(from(this.modelService.activeLanguages), this.enabledExtensions).pipe(
             tap(([activeLanguages, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, activeLanguages)
                 for (const x of activeExtensions) {
@@ -171,7 +171,7 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    visibleTextDocumentLanguages: string[]
+    visibleTextDocumentLanguages: readonly string[]
 ): ConfiguredExtension[] {
     return enabledExtensions.filter(x => {
         try {

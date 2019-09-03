@@ -1,9 +1,9 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { isEqual } from 'lodash'
-import { BehaviorSubject, combineLatest, from, Subscribable, throwError, zip, Subject, NEVER } from 'rxjs'
-import { distinctUntilChanged, map, switchMap, filter, takeUntil, takeWhile, startWith } from 'rxjs/operators'
+import { BehaviorSubject, combineLatest, from, Subscribable, throwError } from 'rxjs'
+import { map, filter, takeWhile, startWith } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
-import { ModelService, TextModel, PartialModel } from './modelService'
+import { ModelService, TextModel } from './modelService'
+
 /**
  * EditorId exposes the unique ID of an editor.
  */
@@ -26,33 +26,28 @@ export interface CodeEditorData {
 }
 
 /**
- * Describes a code editor that has been added to the {@link EditorService}. To get the editor's
- * model, use {@link EditorService#observeEditorAndModel} or look up the model in the
- * {@link ModelService}.
+ * Describes a code editor that has been added to the {@link EditorService}.
+ * Includes the fields from the editor's model that are guaranteed to never be updated
+ * (eg. the languageId, needed to compute context properties).
+ *
+ * To get the editor's full model, use {@link EditorService#observeEditorAndModel},
+ * or look up the model in the {@link ModelService}.
  */
-export interface CodeEditor extends EditorId, CodeEditorData {}
-
-/**
- * A code editor with some fields from its model.
- */
-export interface CodeEditorWithPartialModel extends CodeEditor {
-    /**
-     * The code editor's immutable model data.
-     */
-    model: PartialModel
+export interface CodeEditorWithPartialModel extends EditorId, CodeEditorData {
+    model: Pick<TextModel, 'languageId'>
 }
 
 /**
  * A code editor with its full model, including the model text.
  */
-export interface CodeEditorWithModel extends CodeEditor {
+export interface CodeEditorWithModel extends EditorId, CodeEditorData {
     /** The code editor's model. */
     model: TextModel
 }
 
 export type EditorUpdate =
     | { type: 'added'; data: CodeEditorData } & EditorId
-    | { type: 'updated'; data: Pick<CodeEditor, 'selections'> } & EditorId
+    | { type: 'updated'; data: Pick<CodeEditorData, 'selections'> } & EditorId
     | { type: 'deleted' } & EditorId
 
 /**
@@ -60,15 +55,26 @@ export type EditorUpdate =
  */
 export interface EditorService {
     /**
-     * All code editors.
+     * A map of all known editors, indexed by editorId.
+     *
+     * This is mostly used for testing, most consumers should use
+     * {@link EditorService#editorUpdates} or {@link EditorService#activeEditorUpdates}
      */
     readonly editors: ReadonlyMap<string, CodeEditorWithPartialModel>
 
+    /**
+     * An observable of all editor updates.
+     *
+     * Emits when an editor is added, updated or removed.
+     */
     readonly editorUpdates: Subscribable<EditorUpdate[]>
 
+    /**
+     * An observable of updates to the active editor.
+     *
+     * Emits the active editor if there is one, or `undefined` otherwise.
+     */
     readonly activeEditorUpdates: Subscribable<CodeEditorWithPartialModel | undefined>
-
-    readonly activeLanguages: Subscribable<string[]>
 
     /**
      * Add an editor.
@@ -87,13 +93,6 @@ export interface EditorService {
      * exists, or if the editor is removed, it emits an error.
      */
     observeEditorAndModel(editor: EditorId): Subscribable<CodeEditorWithModel>
-
-    /**
-     * Reports whether an editor with the given URI has been added.
-     *
-     * @param editor the {@link EditorId} to check
-     */
-    hasEditor(editor: EditorId): boolean
 
     /**
      * Sets the selections for an editor.
@@ -122,7 +121,7 @@ export interface EditorService {
  * Creates a {@link EditorService} instance.
  */
 export function createEditorService(
-    modelService: Pick<ModelService, 'models' | 'modelUpdates' | 'removeModel'>
+    modelService: Pick<ModelService, 'models' | 'modelUpdates' | 'removeModelRef' | 'addModelRef'>
 ): EditorService {
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
     // test code (because the IDs change depending on test execution order).
@@ -133,8 +132,6 @@ export function createEditorService(
     const editors = new Map<string, CodeEditorWithPartialModel>()
     const editorUpdates = new BehaviorSubject<EditorUpdate[]>([])
     const activeEditorUpdates = new BehaviorSubject<CodeEditorWithPartialModel | undefined>(undefined)
-    const activeLanguagesSet = new Set<string>()
-    const activeLanguages = new BehaviorSubject<string[]>([])
     /**
      * Returns the CodeEditor with the given editorId.
      * Throws if no editor exists with the given editorId.
@@ -150,9 +147,9 @@ export function createEditorService(
         editors,
         editorUpdates,
         activeEditorUpdates,
-        activeLanguages,
         addEditor: data => {
             const editorId = nextId()
+            modelService.addModelRef(data.resource)
             const editor: CodeEditorWithPartialModel = {
                 ...data,
                 editorId,
@@ -164,10 +161,6 @@ export function createEditorService(
             editorUpdates.next([{ type: 'added', editorId, data }])
             if (data.isActive) {
                 activeEditorUpdates.next(editor)
-            }
-            if (!activeLanguagesSet.has(editor.model.languageId)) {
-                activeLanguagesSet.add(editor.model.languageId)
-                activeLanguages.next([...activeLanguagesSet])
             }
             return { editorId }
         },
@@ -198,7 +191,6 @@ export function createEditorService(
                 }))
             )
         },
-        hasEditor: ({ editorId }) => editors.has(editorId),
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
             const editor = getEditor(editorId)
             editors.set(editorId, {
@@ -215,30 +207,7 @@ export function createEditorService(
             if (activeEditorUpdates.value && activeEditorUpdates.value.editorId === editorId) {
                 activeEditorUpdates.next(undefined)
             }
-            // Check if any of the remaining editors points to the same resource
-            // or has the same language
-            let resourceMatch = false
-            let languageMatch = false
-            for (const e of editors.values()) {
-                if (e.resource === editor.resource) {
-                    resourceMatch = true
-                }
-                if (e.model.languageId === editor.model.languageId) {
-                    languageMatch = true
-                }
-                if (resourceMatch && languageMatch) {
-                    return
-                }
-            }
-            // If no other editor points to the same resource, remove the resource.
-            if (!resourceMatch) {
-                modelService.removeModel(editor.resource)
-            }
-            // If no other editor has the same language, update activeLanguages
-            if (!languageMatch) {
-                activeLanguagesSet.delete(editor.model.languageId)
-                activeLanguages.next([...activeLanguagesSet])
-            }
+            modelService.removeModelRef(editor.resource)
         },
         removeAllEditors(): void {
             const updates: EditorUpdate[] = [...editors.keys()].map(editorId => ({ type: 'deleted', editorId }))

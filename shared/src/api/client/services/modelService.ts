@@ -1,5 +1,6 @@
-import { Subscribable, Subject } from 'rxjs'
+import { Subscribable, Subject, BehaviorSubject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
+import { RefCount } from '../../../util/RefCount'
 
 /**
  * A text model is a text document and associated metadata.
@@ -21,10 +22,22 @@ export type TextModelUpdate =
  * See {@link Model} for an explanation of the difference between a model and an editor.
  */
 export interface ModelService {
-    /** All known models. */
+    /**
+     * A map of all known models, indexed by URI.
+     */
     models: ReadonlyMap<string, TextModel>
 
+    /**
+     * An observable of all model updates.
+     *
+     * Emits when a model is added, updated or removed.
+     */
     modelUpdates: Subscribable<readonly TextModelUpdate[]>
+
+    /**
+     * An observable of unique languageIds across all models.
+     */
+    activeLanguages: Subscribable<readonly string[]>
 
     /**
      * Adds a model.
@@ -50,11 +63,20 @@ export interface ModelService {
     hasModel(uri: string): boolean
 
     /**
-     * Removes a model.
-     *
-     * @param uri The URI of the model to remove.
+     * Removes a model
      */
     removeModel(uri: string): void
+
+    /**
+     * Adds a reference from an editor to the model with the given URI.
+     */
+    addModelRef(uri: string): void
+
+    /**
+     * Removes a reference from an editor to the model with the given URI.
+     * A model with zero references will be removed.
+     */
+    removeModelRef(uri: string): void
 }
 
 /**
@@ -64,6 +86,9 @@ export function createModelService(): ModelService {
     /** A map of URIs to TextModels */
     const models = new Map<string, TextModel>()
     const modelUpdates = new Subject<TextModelUpdate[]>()
+    const activeLanguages = new BehaviorSubject<string[]>([])
+    const modelRefs = new RefCount()
+    const languageRefs = new RefCount()
     const getModel = (uri: string): TextModel => {
         const model = models.get(uri)
         if (!model) {
@@ -74,12 +99,16 @@ export function createModelService(): ModelService {
     return {
         models,
         modelUpdates,
+        activeLanguages,
         addModel: model => {
             if (models.has(model.uri)) {
                 throw new Error(`model already exists with URI ${model.uri}`)
             }
             models.set(model.uri, model)
             modelUpdates.next([{ type: 'added', ...model }])
+            if (languageRefs.increment(model.languageId)) {
+                activeLanguages.next([...languageRefs.keys()])
+            }
         },
         updateModel: (uri, text) => {
             const model = getModel(uri)
@@ -91,8 +120,33 @@ export function createModelService(): ModelService {
         },
         hasModel: uri => models.has(uri),
         removeModel: uri => {
+            const model = models.get(uri)
+            if (!model) {
+                throw new Error(`removeModel(): model not found ${uri}`)
+            }
             models.delete(uri)
+            modelRefs.delete(uri)
             modelUpdates.next([{ type: 'deleted', uri }])
+            if (languageRefs.decrement(model.languageId)) {
+                activeLanguages.next([...languageRefs.keys()])
+            }
+        },
+        addModelRef: uri => {
+            modelRefs.increment(uri)
+        },
+        removeModelRef: uri => {
+            console.log('removeModelRef', uri)
+            const model = models.get(uri)
+            if (!model) {
+                throw new Error(`removeModelRef(): model not found ${uri}`)
+            }
+            if (modelRefs.decrement(uri)) {
+                models.delete(uri)
+                modelUpdates.next([{ type: 'deleted', uri }])
+                if (languageRefs.decrement(model.languageId)) {
+                    activeLanguages.next([...languageRefs.keys()])
+                }
+            }
         },
     }
 }

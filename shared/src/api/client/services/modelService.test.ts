@@ -1,5 +1,5 @@
-import { from, Observable } from 'rxjs'
-import { first, tap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { tap } from 'rxjs/operators'
 import { createModelService, ModelService, TextModelUpdate, TextModel } from './modelService'
 
 export function createTestModelService({
@@ -42,12 +42,9 @@ export function createTestModelService({
 
 describe('ModelService', () => {
     describe('addModel', () => {
-        it('adds', async () => {
+        it('adds', () => {
             const modelService = createModelService()
             modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
-            await from(modelService.models)
-                .pipe(first())
-                .toPromise()
             expect([...modelService.models.values()]).toEqual([
                 {
                     uri: 'u',
@@ -56,15 +53,12 @@ describe('ModelService', () => {
                 },
             ])
         })
-        it('refuses to add model with duplicate URI', async () => {
+        it('refuses to add model with duplicate URI', () => {
             const modelService = createModelService()
             modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
             expect(() => {
                 modelService.addModel({ uri: 'u', text: 't2', languageId: 'l2' })
             }).toThrowError('model already exists with URI u')
-            await from(modelService.models)
-                .pipe(first())
-                .toPromise()
             expect([...modelService.models.values()]).toEqual([
                 {
                     uri: 'u',
@@ -83,13 +77,10 @@ describe('ModelService', () => {
     })
 
     describe('updateModel', () => {
-        test('existing model', async () => {
+        test('existing model', () => {
             const modelService = createModelService()
             modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
             modelService.updateModel('u', 't2')
-            await from(modelService.models)
-                .pipe(first())
-                .toPromise()
             expect([...modelService.models.values()]).toEqual([{ uri: 'u', text: 't2', languageId: 'l' }])
         })
 
@@ -100,14 +91,11 @@ describe('ModelService', () => {
     })
 
     describe('removeModel', () => {
-        test('removes', async () => {
+        test('removes', () => {
             const modelService = createModelService()
             modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
             modelService.addModel({ uri: 'u2', text: 't2', languageId: 'l2' })
             modelService.removeModel('u')
-            await from(modelService.models)
-                .pipe(first())
-                .toPromise()
             expect([...modelService.models.values()]).toEqual([
                 {
                     uri: 'u2',
@@ -115,10 +103,6 @@ describe('ModelService', () => {
                     languageId: 'l2',
                 },
             ])
-        })
-        test('noop if model not found', () => {
-            const modelService = createModelService()
-            modelService.removeModel('x')
         })
     })
 })

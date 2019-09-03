@@ -60,7 +60,6 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensi
         setEditorId(editor)
         return () => {
             extensionsController.services.editor.removeEditor(editor)
-            extensionsController.services.model.removeModel(model.uri)
         }
     }, [
         initialModelUriScheme,

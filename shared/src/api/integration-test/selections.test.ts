@@ -1,5 +1,5 @@
 import { from } from 'rxjs'
-import { distinctUntilChanged, filter, first, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import { isDefined } from '../../util/types'
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 

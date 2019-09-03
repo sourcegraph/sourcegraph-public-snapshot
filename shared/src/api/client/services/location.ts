@@ -52,16 +52,15 @@ export class TextDocumentLocationProviderRegistry<
             return of(false)
         }
         return this.entries.pipe(
-            map(entries => {
-                return (
+            map(
+                entries =>
                     entries.filter(({ registrationOptions }) =>
                         match(registrationOptions.documentSelector, {
                             uri: activeEditor.resource,
                             languageId: activeEditor.model.languageId,
                         })
                     ).length > 0
-                )
-            })
+            )
         )
     }
 }

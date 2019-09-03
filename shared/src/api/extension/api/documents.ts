@@ -1,7 +1,7 @@
 import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
-import { TextModel, TextModelUpdate } from '../../client/services/modelService'
+import { TextModelUpdate } from '../../client/services/modelService'
 import { ExtDocument } from './textDocument'
 
 /** @internal */

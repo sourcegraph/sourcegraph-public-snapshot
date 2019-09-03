@@ -6,6 +6,7 @@ import { COMMENT_URI_SCHEME, positionToOffset } from '../../../../../shared/src/
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getWordAtText } from '../../../../../shared/src/util/wordHelpers'
 import { fetchAllUsers } from '../../../site-admin/backend'
+import { ModelService } from '../../../../../shared/src/api/client/services/modelService'
 
 /**
  * Registers contributions for username mention completion in discussion comments.
@@ -20,9 +21,7 @@ export function registerDiscussionsMentionCompletionContributions({
                   completionItems: {
                       registerProvider: ExtensionsControllerProps['extensionsController']['services']['completionItems']['registerProvider']
                   }
-                  model: {
-                      models: ExtensionsControllerProps['extensionsController']['services']['model']['models']
-                  }
+                  model: Pick<ModelService, 'modelUpdates' | 'models'>
               }
           }
       }): Unsubscribable {
@@ -33,9 +32,9 @@ export function registerDiscussionsMentionCompletionContributions({
                 documentSelector: [{ scheme: COMMENT_URI_SCHEME }],
             },
             params =>
-                from(extensionsController.services.model.models).pipe(
-                    switchMap(models => {
-                        const model = models.find(m => m.uri === params.textDocument.uri)
+                from(extensionsController.services.model.modelUpdates).pipe(
+                    switchMap(() => {
+                        const model = extensionsController.services.model.models.get(params.textDocument.uri)
                         if (!model) {
                             throw new Error(`model not found: ${params.textDocument.uri}`)
                         }

@@ -251,7 +251,7 @@ describe('EditorService', () => {
             expect(() => editorService.removeEditor({ editorId: 'x' })).toThrowError('editor not found: x')
         })
 
-        it('calls removeModel() when removing the last editor that references the model', () => {
+        it('calls removeModelRef() when removing an editor', () => {
             const modelService = createTestModelService({
                 models: [{ uri: 'u', text: 't', languageId: 'l' }],
             })
@@ -300,74 +300,67 @@ describe('EditorService', () => {
 
 describe('getActiveCodeEditorPosition', () => {
     test('null if code editor is empty', () => {
-        expect(getActiveCodeEditorPosition([])).toBeNull()
-    })
-
-    test('null if no code editors are active', () => {
-        expect(
-            getActiveCodeEditorPosition([
-                {
-                    type: 'CodeEditor',
-                    isActive: false,
-                    selections: [],
-                    resource: 'u',
-                },
-            ])
-        ).toBeNull()
+        expect(getActiveCodeEditorPosition(undefined)).toBeNull()
     })
 
     test('null if active code editor has no selection', () => {
         expect(
-            getActiveCodeEditorPosition([
-                {
-                    type: 'CodeEditor',
-                    isActive: true,
-                    selections: [],
-                    resource: 'u',
+            getActiveCodeEditorPosition({
+                editorId: '1',
+                model: {
+                    languageId: 'x',
                 },
-            ])
+                type: 'CodeEditor',
+                isActive: true,
+                selections: [],
+                resource: 'u',
+            })
         ).toBeNull()
     })
 
     test('null if active code editor has empty selection', () => {
         expect(
-            getActiveCodeEditorPosition([
-                {
-                    type: 'CodeEditor',
-                    isActive: true,
-                    selections: [
-                        {
-                            start: { line: 3, character: -1 },
-                            end: { line: 3, character: -1 },
-                            anchor: { line: 3, character: -1 },
-                            active: { line: 3, character: -1 },
-                            isReversed: false,
-                        },
-                    ],
-                    resource: 'u',
+            getActiveCodeEditorPosition({
+                editorId: '1',
+                model: {
+                    languageId: 'x',
                 },
-            ])
+                type: 'CodeEditor',
+                isActive: true,
+                selections: [
+                    {
+                        start: { line: 3, character: -1 },
+                        end: { line: 3, character: -1 },
+                        anchor: { line: 3, character: -1 },
+                        active: { line: 3, character: -1 },
+                        isReversed: false,
+                    },
+                ],
+                resource: 'u',
+            })
         ).toBeNull()
     })
 
     test('equivalent params', () => {
         expect(
-            getActiveCodeEditorPosition([
-                {
-                    type: 'CodeEditor',
-                    isActive: true,
-                    selections: [
-                        {
-                            start: { line: 3, character: 2 },
-                            end: { line: 3, character: 5 },
-                            anchor: { line: 3, character: 2 },
-                            active: { line: 3, character: 5 },
-                            isReversed: false,
-                        },
-                    ],
-                    resource: 'u',
+            getActiveCodeEditorPosition({
+                editorId: '1',
+                model: {
+                    languageId: 'x',
                 },
-            ])
+                type: 'CodeEditor',
+                isActive: true,
+                selections: [
+                    {
+                        start: { line: 3, character: 2 },
+                        end: { line: 3, character: 5 },
+                        anchor: { line: 3, character: 2 },
+                        active: { line: 3, character: 5 },
+                        isReversed: false,
+                    },
+                ],
+                resource: 'u',
+            })
         ).toEqual({ textDocument: { uri: 'u' }, position: { line: 3, character: 2 } })
     })
 })
