@@ -17,22 +17,20 @@ const typeToProse: Record<SEARCH_TYPES, string> = {
     repo: 'Repos',
 }
 
-export default class SearchResultTab extends React.Component<Props> {
-    public render(): JSX.Element | null {
-        const q = toggleSearchType(this.props.query, this.props.type)
-        const newURLSearchParam = buildSearchURLQuery(q)
+export const SearchResultTab: React.FunctionComponent<Props> = props => {
+    const q = toggleSearchType(props.query, props.type)
+    const newURLSearchParam = buildSearchURLQuery(q)
 
-        return (
-            <li className="nav-item">
-                <NavLink
-                    to={{ pathname: '/search', search: newURLSearchParam }}
-                    className={`nav-link`}
-                    activeClassName={'active'}
-                    isActive={(_, location) => location.search === '?' + newURLSearchParam}
-                >
-                    {typeToProse[this.props.type]}
-                </NavLink>
-            </li>
-        )
-    }
+    return (
+        <li className="nav-item">
+            <NavLink
+                to={{ pathname: '/search', search: newURLSearchParam }}
+                className="nav-link"
+                activeClassName="active"
+                isActive={(_, location) => location.search === '?' + newURLSearchParam}
+            >
+                {typeToProse[props.type]}
+            </NavLink>
+        </li>
+    )
 }
