@@ -37,12 +37,13 @@ const configFields: { [K in keyof Config]: ConfigField } = {
 /**
  * Reads e2e config from appropriate inputs: the config file defined by $CONFIG_FILE
  * and environment variables. The caller should specify the config fields that it
- * depends on.
+ * depends on. This method reads the config synchronously from disk.
  */
 export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
-    const configFile = process.env['CONFIG_FILE']
+    const configFile = process.env.CONFIG_FILE
     let config
     if (configFile) {
+        // eslint-disable-next-line no-sync
         config = JSON.parse(fs.readFileSync(configFile).toString())
     } else {
         config = {}
