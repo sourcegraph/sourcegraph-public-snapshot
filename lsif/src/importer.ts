@@ -142,27 +142,23 @@ export async function importLsif(
         })
     }
 
+    const packages = new Map<string, Package>()
     const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
     for (const id of correlator.importedMonikers) {
         const source = assertDefined(id, 'moniker', correlator.monikerData)
         const packageInformationId = assertId(source.packageInformation)
         const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
 
-        // TODO - same issue as the lodash thing above?
-        const pkg = JSON.stringify({
-            scheme: source.scheme,
-            name: packageInfo.name,
-            version: packageInfo.version,
-        })
-
-        packageIdentifiers.getOrDefault(pkg).push(source.identifier)
+        const key = `${source.scheme}::${packageInfo.name}::${packageInfo.version}`
+        packages.set(key, { scheme: source.scheme, name: packageInfo.name, version: packageInfo.version })
+        packageIdentifiers.getOrDefault(key).push(source.identifier)
     }
 
     return {
         packages: uniqWith(packageHashes, isEqual),
-        references: Array.from(packageIdentifiers).map(([key, identifiers]) => ({
-            package: JSON.parse(key) as Package,
-            identifiers,
+        references: Array.from(packages.keys()).map(key => ({
+            package: assertDefined(key, 'package', packages),
+            identifiers: assertDefined(key, 'packageIdentifier', packageIdentifiers),
         })),
     }
 }
