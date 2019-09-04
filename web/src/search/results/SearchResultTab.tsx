@@ -1,44 +1,40 @@
 import * as React from 'react'
 import * as H from 'history'
-import { SEARCH_TYPES } from './SearchResults'
+import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
-import { toggleSearchType } from '../helpers'
+import { appendOrReplaceSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { constant } from 'lodash'
 
 interface Props {
     location: H.Location
     history: H.History
-    type: SEARCH_TYPES
+    type: SearchType
     query: string
 }
 
-const typeToProse: Record<SEARCH_TYPES, string> = {
-    '': 'Code',
+const typeToProse: Record<Exclude<SearchType, null>, string> = {
     diff: 'Diffs',
     commit: 'Commits',
     symbol: 'Symbols',
     repo: 'Repos',
 }
 
-const tabIsActive = (builtQuery: string, location: H.Location): boolean => location.search === '?' + builtQuery
+export const SearchResultTabHeader: React.FunctionComponent<Props> = props => {
+    const q = appendOrReplaceSearchType(props.query, props.type)
+    const builtURLQuery = buildSearchURLQuery(q)
 
-const tabIsActiveTrue = (): boolean => true
-const tabIsActiveFalse = (): boolean => false
-
-export const SearchResultTab: React.FunctionComponent<Props> = props => {
-    const q = toggleSearchType(props.query, props.type)
-    const newURLSearchParam = buildSearchURLQuery(q)
-
-    const isActiveFunc = tabIsActive(newURLSearchParam, props.location) ? tabIsActiveTrue : tabIsActiveFalse
+    const isActiveFunc = constant(location.search === `?${builtURLQuery}`)
+    const type = props.type
     return (
         <li className="nav-item e2e-search-result-tab">
             <NavLink
-                to={{ pathname: '/search', search: newURLSearchParam }}
+                to={{ pathname: '/search', search: builtURLQuery }}
                 className={`nav-link e2e-search-result-tab-${props.type}`}
                 activeClassName="active e2e-search-result-tab--active"
                 isActive={isActiveFunc}
             >
-                {typeToProse[props.type]}
+                {type ? typeToProse[type] : 'Code'}
             </NavLink>
         </li>
     )

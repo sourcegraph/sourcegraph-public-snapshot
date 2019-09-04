@@ -61,7 +61,7 @@ interface SearchResultsState {
     contributions?: Evaluated<Contributions>
 }
 
-// All values that are valid for the `type:` filter. Empty string represents default code search.
+// All values that are valid for the `type:` filter. Null represents default code search.
 export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | null
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
@@ -134,8 +134,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 ),
                                 // Update view with results or error
                                 map(resultsOrError => ({ resultsOrError })),
-                                    resultsOrError: results,
-                                })),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )

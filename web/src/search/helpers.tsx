@@ -3,7 +3,7 @@ import { ActivationProps } from '../../../shared/src/components/activation/Activ
 import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
-import { SEARCH_TYPES } from './results/SearchResults'
+import { SearchType } from './results/SearchResults'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -75,52 +75,32 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
     return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
 }
 
-export function getSearchTypeFromQuery(query: string): SEARCH_TYPES {
+export function getSearchTypeFromQuery(query: string): SearchType {
     // RegExp to match `type:$TYPE` in any part of a query.
-    const matchSearchType = /(\b|^)type:\w*(\s*|$)/
-    const getTypeName = /(\b|^)type:(?<type>\w*)(\s|$)/
-    // const m = query.match(getTypeName)
-    if (matchSearchType.test(query)) {
-        const matches = query.match(getTypeName)
-        if (matches && matches.groups && matches.groups.type) {
-            return matches.groups.type as SEARCH_TYPES
-        }
+    const getTypeName = /\btype:(?<type>\w*)(\s|$)/
+    const matches = query.match(getTypeName)
+
+    if (matches && matches.groups && matches.groups.type) {
+        return matches.groups.type as SearchType
     }
 
-    return ''
+    return null
 }
 
-export function toggleSearchType(query: string, searchType: SEARCH_TYPES): string {
-    if (searchType === '') {
-        const replaceSearchType = /(\b|^)type:\w*(\s|$)/
-        // RegExp to match `repogroup:sample` in any part of a query.
-        const matchSearchType = /(\b|^)type:\w*(\s*|$)/
-
-        if (matchSearchType.test(query)) {
-            query = query.replace(replaceSearchType, '')
-        }
-
+export function appendOrReplaceSearchType(query: string, searchType: SearchType): string {
+    const match = query.match(/(\b|^)type:\w*\b/)
+    if (!match) {
+        return searchType ? `${query} type:${searchType}` : query
+    }
+    console.log(match[0], `type:${searchType}`)
+    if (match[0] === `type:${searchType}`) {
+        // Query already contains correct search type
         return query
     }
 
-    const idx = queryIndexOfScope(query, 'type:' + searchType)
-    if (idx >= 0) {
-        return query
-    }
-
-    // RegExp to replace `type:$TYPE` in any part of a query.
-    const replaceSearchType = /(\b|^)type:\w*(\b|$)/
-    // RegExp to match `type:$TYPE` in any part of a query.
-    const matchSearchType = /(\b|^)type:\w*(\s*|$)/
-
-    if (matchSearchType.test(query)) {
-        query = query.replace(replaceSearchType, `type:${searchType}`)
-    } else {
-        query = query + ` type:${searchType}`
-    }
-
-    return query
+    return query.replace(match[0], searchType ? `type:${searchType}` : '')
 }
+
 /** Returns true if the given value is of the GraphQL SearchResults type */
 export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'

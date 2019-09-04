@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as H from 'history'
-import { SearchResultTab } from './SearchResultTab'
+import { SearchResultTabHeader } from './SearchResultTab'
 
 interface Props {
     location: H.Location
@@ -10,11 +10,11 @@ interface Props {
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
     <div className="search-result-type-tabs e2e-search-result-type-tabs border-bottom">
         <ul className="nav nav-tabs border-bottom-0">
-            <SearchResultTab {...props} type="" />
-            <SearchResultTab {...props} type="diff" />
-            <SearchResultTab {...props} type="commit" />
-            <SearchResultTab {...props} type="symbol" />
-            <SearchResultTab {...props} type="repo" />
+            <SearchResultTabHeader {...props} type={null} />
+            <SearchResultTabHeader {...props} type="diff" />
+            <SearchResultTabHeader {...props} type="commit" />
+            <SearchResultTabHeader {...props} type="symbol" />
+            <SearchResultTabHeader {...props} type="repo" />
         </ul>
     </div>
 )
