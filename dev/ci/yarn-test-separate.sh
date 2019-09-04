@@ -2,6 +2,9 @@
 
 set -e
 
+echo "--- yarn in root"
+yarn --frozen-lockfile --network-timeout 60000
+
 cd $1
 echo "--- yarn"
 yarn --frozen-lockfile --network-timeout 60000
