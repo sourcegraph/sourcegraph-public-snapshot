@@ -1,5 +1,5 @@
-import { Observable } from 'rxjs'
-import { tap } from 'rxjs/operators'
+import { Observable, from } from 'rxjs'
+import { tap, first, takeWhile, take, bufferCount } from 'rxjs/operators'
 import { createModelService, ModelService, TextModelUpdate, TextModel } from './modelService'
 
 export function createTestModelService({
@@ -90,19 +90,78 @@ describe('ModelService', () => {
         })
     })
 
-    describe('removeModel', () => {
-        test('removes', () => {
+    describe('modelUpdates', () => {
+        it('emits when a model is added', async () => {
             const modelService = createModelService()
-            modelService.addModel({ uri: 'u', text: 't', languageId: 'l' })
-            modelService.addModel({ uri: 'u2', text: 't2', languageId: 'l2' })
+            const modelAdded = from(modelService.modelUpdates)
+                .pipe(first())
+                .toPromise()
+            modelService.addModel({ uri: 'u', languageId: 'x', text: 't' })
+            expect(await modelAdded).toMatchObject([{ uri: 'u', languageId: 'x', text: 't' }])
+        })
+
+        it('emits when a model is removed with removeModel no more editors reference it', async () => {
+            const modelService = createModelService()
+            const modelRemoved = from(modelService.modelUpdates)
+                .pipe(takeWhile(updates => updates.every(({ uri, type }) => uri !== 'u' || type !== 'deleted')))
+                .toPromise()
+            modelService.addModel({ uri: 'u', languageId: 'x', text: 't' })
             modelService.removeModel('u')
-            expect([...modelService.models.values()]).toEqual([
-                {
-                    uri: 'u2',
-                    text: 't2',
-                    languageId: 'l2',
-                },
-            ])
+            await modelRemoved
+        })
+
+        it('emits when a model is removed because no more editors reference it', async () => {
+            const modelService = createModelService()
+            const updates = from(modelService.modelUpdates)
+                .pipe(take(2))
+                .toPromise()
+            modelService.addModel({ uri: 'u', languageId: 'x', text: 't' })
+            modelService.addModelRef('u')
+            modelService.addModelRef('u')
+            modelService.addModelRef('u')
+            modelService.removeModelRef('u')
+            modelService.removeModelRef('u')
+            modelService.removeModelRef('u')
+            expect(await updates).toMatchObject([{ type: 'deleted', uri: 'u' }])
+        })
+    })
+
+    describe('activeLanguages', () => {
+        it('emits when a model with a previously unseen language is added', async () => {
+            const modelService = createModelService()
+            const values = from(modelService.activeLanguages)
+                .pipe(
+                    bufferCount(3),
+                    first()
+                )
+                .toPromise()
+            modelService.addModel({ uri: 'u', languageId: 'l1', text: 't' })
+            modelService.addModel({ uri: 'u2', languageId: 'l1', text: 't' })
+            modelService.addModel({ uri: 'u3', languageId: 'l1', text: 't' })
+            modelService.addModel({ uri: 'u4', languageId: 'l1', text: 't' })
+            modelService.addModel({ uri: 'u5', languageId: 'l2', text: 't' })
+            expect(await values).toMatchObject([[], ['l1'], ['l1', 'l2']])
+        })
+
+        it('emits when the last model referencing a language is removed', async () => {
+            const modelService = createModelService()
+            const values = from(modelService.activeLanguages)
+                .pipe(
+                    bufferCount(5),
+                    first()
+                )
+                .toPromise()
+            modelService.addModel({ uri: 'u', languageId: 'l1', text: 't' })
+            modelService.addModel({ uri: 'u2', languageId: 'l1', text: 't' })
+            modelService.addModel({ uri: 'u3', languageId: 'l2', text: 't' })
+            modelService.addModel({ uri: 'u4', languageId: 'l2', text: 't' })
+            modelService.addModel({ uri: 'u5', languageId: 'l1', text: 't' })
+            modelService.removeModel('u3')
+            modelService.removeModel('u4')
+            modelService.removeModel('u')
+            modelService.removeModel('u2')
+            modelService.removeModel('u5')
+            expect(await values).toMatchObject([[], ['l1'], ['l1', 'l2'], ['l1'], []])
         })
     })
 })

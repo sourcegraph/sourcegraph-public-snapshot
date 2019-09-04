@@ -1,12 +1,12 @@
-export class RefCount<Key = string> {
-    private refCount = new Map<Key, number>()
+export class RefCount<T = string> {
+    private refCount = new Map<T, number>()
 
     /**
      * Increment the refCount for the given key.
      *
      * @returns true if the given key is new.
      */
-    public increment(key: Key): boolean {
+    public increment(key: T): boolean {
         const current = this.refCount.get(key)
         if (current === undefined) {
             this.refCount.set(key, 1)
@@ -21,7 +21,7 @@ export class RefCount<Key = string> {
      *
      * @returns true if this was the given key's last reference.
      */
-    public decrement(key: Key): boolean {
+    public decrement(key: T): boolean {
         const current = this.refCount.get(key)
         if (current === undefined) {
             throw new Error(`No refCount for key: ${key}`)
@@ -37,11 +37,11 @@ export class RefCount<Key = string> {
     /**
      * Returns an iterable of registered keys.
      */
-    public keys(): Iterable<Key> {
+    public keys(): Iterable<T> {
         return this.refCount.keys()
     }
 
-    public delete(key: Key): void {
+    public delete(key: T): void {
         this.refCount.delete(key)
     }
 }

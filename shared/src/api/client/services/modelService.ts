@@ -85,18 +85,27 @@ export interface ModelService {
     hasModel(uri: string): boolean
 
     /**
-     * Removes a model
+     * Removes a model.
+     *
+     * This is used for testing, consumers should use
+     * {@link ModelService#addModelRef} / {@link ModelService#removeModelRef} instead.
+     *
+     * @param uri The URI of the model to remove.
      */
     removeModel(uri: string): void
 
     /**
      * Adds a reference from an editor to the model with the given URI.
+     *
+     * @param uri The URI of the model.
      */
     addModelRef(uri: string): void
 
     /**
      * Removes a reference from an editor to the model with the given URI.
      * A model with zero references will be removed.
+     *
+     * @param uri the URI of the model.
      */
     removeModelRef(uri: string): void
 }
@@ -147,6 +156,7 @@ export function createModelService(): ModelService {
             }
             models.set(model.uri, model)
             modelUpdates.next([{ type: 'added', ...model }])
+            // Update activeLanguages if no other existing model has the same language.
             if (languageRefs.increment(model.languageId)) {
                 activeLanguages.next([...languageRefs.keys()])
             }
@@ -174,9 +184,11 @@ export function createModelService(): ModelService {
         },
         removeModelRef: uri => {
             const model = getModel(uri)
+            // Remove the model if no other editor references it.
             if (modelRefs.decrement(uri)) {
                 models.delete(uri)
                 modelUpdates.next([{ type: 'deleted', uri }])
+                // Update activeLanguages if no other model has the same language.
                 if (languageRefs.decrement(model.languageId)) {
                     activeLanguages.next([...languageRefs.keys()])
                 }

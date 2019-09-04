@@ -3,7 +3,7 @@ import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
-import { filter, skip, switchMap, take } from 'rxjs/operators'
+import { filter, skip, switchMap, take, first } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
@@ -226,10 +226,7 @@ describe('code_intelligence', () => {
                 })
             )
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(first())
                 .toPromise()
             expect([...services.editor.editors.values()]).toEqual([
                 {
@@ -550,7 +547,7 @@ describe('code_intelligence', () => {
             )
             await from(services.editor.editorUpdates)
                 .pipe(
-                    skip(2),
+                    skip(1),
                     take(1)
                 )
                 .toPromise()
@@ -575,10 +572,7 @@ describe('code_intelligence', () => {
             mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
             // One editor should have been removed, model should still exist
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(first())
                 .toPromise()
             expect([...services.editor.editors.values()]).toEqual([
                 {
@@ -594,10 +588,7 @@ describe('code_intelligence', () => {
             mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
             // Second editor and model should have been removed
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(first())
                 .toPromise()
             expect([...services.editor.editors.values()]).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
@@ -644,10 +635,7 @@ describe('code_intelligence', () => {
                 })
             )
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(first())
                 .toPromise()
             expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
@@ -705,10 +693,7 @@ describe('code_intelligence', () => {
                 })
             )
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(first())
                 .toPromise()
 
             expect(services.editor.editors.size).toEqual(1)
@@ -769,10 +754,7 @@ describe('code_intelligence', () => {
                 })
             )
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(first())
                 .toPromise()
             expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
@@ -826,10 +808,7 @@ describe('code_intelligence', () => {
                 })
             )
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(first())
                 .toPromise()
             expect([...services.editor.editors.values()]).toEqual([
                 {

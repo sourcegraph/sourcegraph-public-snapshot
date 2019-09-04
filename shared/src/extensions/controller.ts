@@ -115,7 +115,7 @@ export function createController(context: PlatformContext): Controller {
     // Debug helpers.
     const DEBUG = true
     if (DEBUG) {
-        // Debug helper: log model changes.
+        // Debug helper: log editor changes.
         const LOG_EDITORS = false
         if (LOG_EDITORS) {
             subscriptions.add(

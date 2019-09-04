@@ -52,26 +52,6 @@ export function createTestEditorService({
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('EditorService', () => {
-    test('editors', () => {
-        scheduler().run(({ expectObservable }) => {
-            const editorService = createEditorService(
-                createTestModelService({
-                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
-                })
-            )
-            const editor: CodeEditorData = {
-                type: 'CodeEditor',
-                resource: 'u',
-                selections: [],
-                isActive: true,
-            }
-            const { editorId } = editorService.addEditor(editor)
-            expectObservable(from(editorService.editorUpdates)).toBe('a', {
-                a: [{ type: 'added', editorId, data: editor }],
-            })
-        })
-    })
-
     test('addEditor', async () => {
         const editorService = createEditorService(
             createTestModelService({
@@ -84,13 +64,12 @@ describe('EditorService', () => {
             selections: [],
             isActive: true,
         }
+        const editorAdded = from(editorService.editorUpdates)
+            .pipe(first())
+            .toPromise()
         const { editorId } = editorService.addEditor(editorData)
         expect(editorId).toEqual('editor#0')
-        expect(
-            await from(editorService.editorUpdates)
-                .pipe(first())
-                .toPromise()
-        ).toEqual([
+        expect(await editorAdded).toEqual([
             {
                 type: 'added',
                 editorId,
@@ -148,34 +127,33 @@ describe('EditorService', () => {
     })
 
     describe('setSelections', () => {
-        test('ok', () => {
-            scheduler().run(({ expectObservable }) => {
-                const editorService = createEditorService(
-                    createTestModelService({
-                        models: [{ uri: 'u', text: 't', languageId: 'l' }],
-                    })
-                )
-                const editor: CodeEditorData = {
-                    type: 'CodeEditor',
-                    resource: 'u',
-                    selections: [],
-                    isActive: true,
-                }
-                const { editorId } = editorService.addEditor(editor)
-                const SELECTIONS: Selection[] = [
-                    {
-                        start: { line: 3, character: -1 },
-                        end: { line: 3, character: -1 },
-                        anchor: { line: 3, character: -1 },
-                        active: { line: 3, character: -1 },
-                        isReversed: false,
-                    },
-                ]
-                editorService.setSelections({ editorId }, SELECTIONS)
-                expectObservable(from(editorService.editorUpdates)).toBe('a', {
-                    a: [{ type: 'updated', editorId, data: { selections: SELECTIONS } }],
+        test('ok', async () => {
+            const editorService = createEditorService(
+                createTestModelService({
+                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
                 })
-            })
+            )
+            const editor: CodeEditorData = {
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            }
+            const { editorId } = editorService.addEditor(editor)
+            const SELECTIONS: Selection[] = [
+                {
+                    start: { line: 3, character: -1 },
+                    end: { line: 3, character: -1 },
+                    anchor: { line: 3, character: -1 },
+                    active: { line: 3, character: -1 },
+                    isReversed: false,
+                },
+            ]
+            const selectionsSet = from(editorService.editorUpdates)
+                .pipe(first())
+                .toPromise()
+            editorService.setSelections({ editorId }, SELECTIONS)
+            expect(await selectionsSet).toMatchObject([{ type: 'updated', editorId, data: { selections: SELECTIONS } }])
         })
         test('not found', () => {
             const editorService = createEditorService(createTestModelService({}))
@@ -228,26 +206,25 @@ describe('EditorService', () => {
         })
     })
 
-    test('removeAllEditors', () => {
-        scheduler().run(({ expectObservable }) => {
-            const editorService = createEditorService(
-                createTestModelService({
-                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
-                })
-            )
-            const editor: CodeEditorData = { type: 'CodeEditor', resource: 'u', selections: [], isActive: true }
-            editorService.addEditor(editor)
-            editorService.addEditor(editor)
-            editorService.addEditor(editor)
-            editorService.removeAllEditors()
-            expectObservable(from(editorService.editorUpdates)).toBe('a', {
-                a: [
-                    { type: 'deleted', editorId: 'editor#0' },
-                    { type: 'deleted', editorId: 'editor#1' },
-                    { type: 'deleted', editorId: 'editor#2' },
-                ],
+    test('removeAllEditors', async () => {
+        const editorService = createEditorService(
+            createTestModelService({
+                models: [{ uri: 'u', text: 't', languageId: 'l' }],
             })
-        })
+        )
+        const editor: CodeEditorData = { type: 'CodeEditor', resource: 'u', selections: [], isActive: true }
+        editorService.addEditor(editor)
+        editorService.addEditor(editor)
+        editorService.addEditor(editor)
+        const editorsRemoved = from(editorService.editorUpdates)
+            .pipe(first())
+            .toPromise()
+        editorService.removeAllEditors()
+        expect(await editorsRemoved).toMatchObject([
+            { type: 'deleted', editorId: 'editor#0' },
+            { type: 'deleted', editorId: 'editor#1' },
+            { type: 'deleted', editorId: 'editor#2' },
+        ])
     })
 })
 

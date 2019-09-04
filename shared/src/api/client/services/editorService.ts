@@ -1,5 +1,5 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { BehaviorSubject, combineLatest, Subscribable, throwError, Observable } from 'rxjs'
+import { BehaviorSubject, combineLatest, Subscribable, throwError, Observable, Subject } from 'rxjs'
 import { map, filter, takeWhile, startWith } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel, PartialModel } from './modelService'
@@ -133,7 +133,7 @@ export function createEditorService(
 
     /** A map of editor ids to code editors. */
     const editors = new Map<string, CodeEditor>()
-    const editorUpdates = new BehaviorSubject<EditorUpdate[]>([])
+    const editorUpdates = new Subject<EditorUpdate[]>()
     const activeEditorUpdates = new BehaviorSubject<CodeEditor | undefined>(undefined)
     /**
      * Returns the CodeEditor with the given editorId.
