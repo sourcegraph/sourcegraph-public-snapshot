@@ -73,6 +73,10 @@ export async function importLsif(
         () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
     )
 
+    for (const [id, range] of correlator.rangeData) {
+        canonicalizeItem(correlator, id, range)
+    }
+
     for (const [documentId, documentPath] of correlator.documentPaths) {
         // Create document record from the correlated information. This will also insert
         // external definitions and references into the maps initialized above, which are
@@ -186,6 +190,66 @@ export async function importLsif(
 }
 
 /**
+ * Flatten the definition result, reference result, hover results, and monikers of range
+ * and result set items by following next links in the graph. This needs to be run over
+ * each range before committing them to a document.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param id The item identifier.
+ * @param item The range or result set item.
+ */
+function canonicalizeItem(correlator: Correlator, id: Id, item: RangeData | ResultSetData): void {
+    const monikers = new Set<Id>()
+    if (item.monikers.length > 0) {
+        // If we have any monikers attached to this item, then we only need to look at the
+        // monikers reachable from any attached moniker. All other attached monikers are
+        // necessarily reachable.
+
+        for (const monikerId of reachableMonikers(correlator.monikerSets, item.monikers[0])) {
+            if (assertDefined(monikerId, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
+                monikers.add(monikerId)
+            }
+        }
+    }
+
+    const nextId = correlator.nextData.get(id)
+    if (nextId !== undefined) {
+        // If we have a next edge to a result set, get it and canonicalize it first. This
+        // will recursively look at any result that that it can reach that hasn't yet been
+        // canonicalized.
+
+        const nextItem = assertDefined(nextId, 'resultSet', correlator.resultSetData)
+        canonicalizeItem(correlator, nextId, nextItem)
+
+        // Add each moniker of the next set to this item
+        for (const monikerId of nextItem.monikers) {
+            monikers.add(monikerId)
+        }
+
+        // If we do not have a definition, reference, or hover result, take the result
+        // value from the next item.
+
+        if (item.definitionResult === undefined) {
+            item.definitionResult = nextItem.definitionResult
+        }
+
+        if (item.referenceResult === undefined) {
+            item.referenceResult = nextItem.referenceResult
+        }
+
+        if (item.hoverResult === undefined) {
+            item.hoverResult = nextItem.hoverResult
+        }
+    }
+
+    // Update our moniker sets (our normalized sets and any monikers of our next item)
+    item.monikers = Array.from(monikers)
+
+    // Remove the next edge so we don't traverse it a second time
+    correlator.nextData.delete(id)
+}
+
+/**
  * Create a self-contained document object from the data in the given correlator. This
  * method should also populate the definition and reference maps that are passed in.
  * They are initially empty.
@@ -288,7 +352,6 @@ function gatherDocument(
     const orderedRanges: (RangeData & { id: Id })[] = []
     for (const id of assertDefined(currentDocumentId, 'contains', correlator.containsData)) {
         const range = assertDefined(id, 'range', correlator.rangeData)
-        canonicalizeRange(correlator, id, range)
         orderedRanges.push({ id, ...range })
 
         addHover(range.hoverResult)
@@ -325,6 +388,7 @@ function gatherDocument(
 
     // Populate a reverse lookup so ranges can be queried by id
     // via `orderedRanges[range[id]]`.
+
     for (const [index, range] of orderedRanges.entries()) {
         document.ranges.set(range.id, index)
     }
@@ -333,55 +397,6 @@ function gatherDocument(
     document.orderedRanges = orderedRanges.map(({ id, ...range }) => range)
 
     return document
-}
-
-/**
- * Update the definition result, reference result, hover result, and monikers of the
- * given range with respect to the result sets reachable from the range. This puts
- * all of the necessary data about a range in the range object itself so we do not
- * have to traverse the graph at query time.
- *
- * @param correlator The correlator with all vertices and edges inserted.
- * @param id The identifier of the range.
- * @param range The range to canonicalize.
- */
-function canonicalizeRange(correlator: Correlator, rangeId: Id, range: RangeData): void {
-    let definitionResult: Id | undefined
-    let referenceResult: Id | undefined
-    let hoverResult: Id | undefined
-    const monikers = new Set<Id>()
-
-    let currentId = rangeId
-    let currentItem: RangeData | ResultSetData | undefined = range
-
-    while (currentItem) {
-        definitionResult = definitionResult === undefined ? currentItem.definitionResult : definitionResult
-        referenceResult = referenceResult === undefined ? currentItem.referenceResult : referenceResult
-        hoverResult = hoverResult === undefined ? currentItem.hoverResult : hoverResult
-
-        if (currentItem.monikers.length > 0) {
-            for (const mon of reachableMonikers(correlator.monikerSets, currentItem.monikers[0])) {
-                if (assertDefined(mon, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
-                    monikers.add(mon)
-                }
-            }
-        }
-
-        const nextId = correlator.nextData.get(currentId)
-        if (nextId === undefined) {
-            break
-        }
-
-        currentId = nextId
-        currentItem = assertDefined(nextId, 'resultSet', correlator.resultSetData)
-    }
-
-    range.definitionResult = definitionResult
-    range.referenceResult = referenceResult
-    range.hoverResult = hoverResult
-    range.monikers = Array.from(monikers)
-    // TODO - (efritz) cut the next link so we don't have to redo this. Also do this recursively
-    // for result sets so we memoize the work. We save things to the end now so that should be fine.
 }
 
 /**
