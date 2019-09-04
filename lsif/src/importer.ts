@@ -146,24 +146,6 @@ class LsifCorrelator {
     public exportedMonikers = new Set<Id>()
 
     /**
-     * A map from document identifiers to range identifiers to the set of nonlocal
-     * monikers attached to that range. These values will be used to populate the
-     * definitions table.
-     */
-    public definitions = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
-        () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
-    )
-
-    /**
-     * A map from document identifiers to range identifiers to the set of nonlocal
-     * monikers attached to that range. These values will be used to populate the
-     * references table.
-     */
-    public references = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
-        () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
-    )
-
-    /**
      * Process a single vertex or edge.
      *
      * @param element A vertex or edge element from the LSIF dump.
@@ -495,183 +477,17 @@ export async function importLsif(
 
     await metaInserter.insert({ lsifVersion: correlator.lsifVersion, sourcegraphVersion: INTERNAL_LSIF_VERSION })
 
-    /**
-     * Create a self-contained document object.
-     *
-     * @param currentDocumentId The identifier of the document.
-     * @param path The path of the document.
-     */
-    const finalizeDocument = (currentDocumentId: Id, path: string): DocumentData => {
-        const document = {
-            path,
-            ranges: new Map<Id, number>(),
-            orderedRanges: [] as RangeData[],
-            definitionResults: new Map<Id, { documentPath: string; id: Id }[]>(),
-            referenceResults: new Map<Id, { documentPath: string; id: Id }[]>(),
-            hoverResults: new Map<Id, string>(),
-            monikers: new Map<Id, MonikerData>(),
-            packageInformation: new Map<Id, PackageInformationData>(),
-        }
+    const definitions = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
+        () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    )
 
-        const addHover = (id: Id | undefined): void => {
-            if (id !== undefined && !document.hoverResults.has(id)) {
-                document.hoverResults.set(id, assertDefined(id, 'hoverResult', correlator.hoverData))
-            }
-        }
-
-        const addPackageInformation = (id: Id | undefined): void => {
-            if (id !== undefined && !document.packageInformation.has(id)) {
-                document.packageInformation.set(
-                    id,
-                    assertDefined(id, 'packageInformation', correlator.packageInformationData)
-                )
-            }
-        }
-
-        const addMoniker = (id: Id | undefined): void => {
-            if (id !== undefined && !document.monikers.has(id)) {
-                const moniker = assertDefined(id, 'moniker', correlator.monikerData)
-                document.monikers.set(id, moniker)
-                addPackageInformation(moniker.packageInformation)
-            }
-        }
-
-        const addGenericResult = (
-            name: string,
-            datas: Map<Id, Map<Id, Id[]>>,
-            monikerResults: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
-            results: Map<Id, { documentPath: string; id: Id }[]>,
-            id: Id | undefined,
-            monikers: Id[]
-        ): void => {
-            if (!id) {
-                return
-            }
-
-            const m = monikerResults.getOrDefault(currentDocumentId)
-
-            const values = []
-            for (const [documentId, ids] of assertDefined(id, name, datas)) {
-                // Resolve the "document" field from the "item" edge. This will correlate
-                // the referenced range identifier with the document in which it belongs.
-                const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
-
-                for (const id of ids) {
-                    values.push({ documentPath, id })
-                }
-
-                if (documentId === currentDocumentId) {
-                    // If this is results for the current document, construct the data that
-                    // will later be used to insert into the definitions table for this
-                    // document.
-
-                    for (const id of ids) {
-                        const n = m.getOrDefault(id)
-                        for (const moniker of monikers) {
-                            n.add(moniker)
-                        }
-                    }
-                }
-            }
-
-            results.set(id, values)
-        }
-
-        const orderedRanges: (RangeData & { id: Id })[] = []
-        for (const id of assertDefined(currentDocumentId, 'contains', correlator.containsData)) {
-            const range = assertDefined(id, 'range', correlator.rangeData)
-            canonicalizeRange(id, range)
-            orderedRanges.push({ id, ...range })
-
-            addHover(range.hoverResult)
-
-            for (const id of range.monikers) {
-                addMoniker(id)
-            }
-
-            addGenericResult(
-                'definitionResult',
-                correlator.definitionData,
-                correlator.definitions,
-                document.definitionResults,
-                range.definitionResult,
-                range.monikers
-            )
-
-            addGenericResult(
-                'referenceResult',
-                correlator.referenceData,
-                correlator.references,
-                document.referenceResults,
-                range.referenceResult,
-                range.monikers
-            )
-        }
-
-        // Sort ranges by their starting position
-        orderedRanges.sort((a, b) => a.startLine - b.startLine || a.startCharacter - b.startCharacter)
-
-        // Populate a reverse lookup so ranges can be queried by id
-        // via `orderedRanges[range[id]]`.
-        for (const [index, range] of orderedRanges.entries()) {
-            document.ranges.set(range.id, index)
-        }
-
-        // eslint-disable-next-line require-atomic-updates
-        document.orderedRanges = orderedRanges.map(({ id, ...range }) => range)
-
-        return document
-    }
-
-    /**
-     * Update the definition result, reference result, hover result, and monikers of the
-     * given range with respect to the result sets reachable from the range. This puts
-     * all of the necessary data about a range in the range object itself so we do not
-     * have to traverse the graph at query time.
-     *
-     * @param id The identifier of the range.
-     * @param range The range to canonicalize.
-     */
-    const canonicalizeRange = (id: Id, range: RangeData): void => {
-        let definitionResult: Id | undefined
-        let referenceResult: Id | undefined
-        let hoverResult: Id | undefined
-        const monikers = new Set<Id>()
-
-        let itemId: Id = id
-        let item: RangeData | ResultSetData | undefined = range
-
-        while (item) {
-            definitionResult = definitionResult === undefined ? item.definitionResult : definitionResult
-            referenceResult = referenceResult === undefined ? item.referenceResult : referenceResult
-            hoverResult = hoverResult === undefined ? item.hoverResult : hoverResult
-
-            if (item.monikers.length > 0) {
-                for (const mon of reachableMonikers(correlator.monikerSets, item.monikers[0])) {
-                    if (assertDefined(mon, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
-                        monikers.add(mon)
-                    }
-                }
-            }
-
-            const nextId = correlator.nextData.get(itemId)
-            if (nextId === undefined) {
-                break
-            }
-
-            itemId = nextId
-            item = assertDefined(nextId, 'resultSet', correlator.resultSetData)
-        }
-
-        range.definitionResult = definitionResult
-        range.referenceResult = referenceResult
-        range.hoverResult = hoverResult
-        range.monikers = Array.from(monikers)
-    }
+    const references = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
+        () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    )
 
     for (const [id, path] of correlator.documentPaths) {
         // Finalize document
-        const document = finalizeDocument(id, path)
+        const document = finalizeDocument(correlator, definitions, references, id, path)
 
         const data = await encodeJSON({
             ranges: document.ranges,
@@ -688,7 +504,7 @@ export async function importLsif(
     }
 
     // Insert all related definitions
-    for (const [documentId, m] of correlator.definitions) {
+    for (const [documentId, m] of definitions) {
         for (const [rangeId, monikerIds] of m) {
             for (const monikerId of monikerIds) {
                 // TODO - clean this up
@@ -707,7 +523,7 @@ export async function importLsif(
     }
 
     // Insert all related references
-    for (const [documentId, m] of correlator.references) {
+    for (const [documentId, m] of references) {
         for (const [rangeId, monikerIds] of m) {
             for (const monikerId of monikerIds) {
                 const range = assertDefined(rangeId, 'range', correlator.rangeData)
@@ -729,61 +545,224 @@ export async function importLsif(
     await defInserter.finalize()
     await refInserter.finalize()
 
-    /**
-     * Return the set of packages provided by the project analyzed by this LSIF dump.
-     */
-    const getPackages = (): Package[] => {
-        const packageHashes: Package[] = []
-        for (const id of correlator.exportedMonikers) {
-            const source = assertDefined(id, 'moniker', correlator.monikerData)
-            const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(
-                packageInformationId,
-                'packageInformation',
-                correlator.packageInformationData
-            )
+    const packageHashes: Package[] = []
+    for (const id of correlator.exportedMonikers) {
+        const source = assertDefined(id, 'moniker', correlator.monikerData)
+        const packageInformationId = assertId(source.packageInformation)
+        const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
 
-            packageHashes.push({
-                scheme: source.scheme,
-                name: packageInfo.name,
-                version: packageInfo.version,
-            })
-        }
-
-        return uniqWith(packageHashes, isEqual)
+        packageHashes.push({
+            scheme: source.scheme,
+            name: packageInfo.name,
+            version: packageInfo.version,
+        })
     }
 
-    /**
-     * Return the symbols imported into the LSIF dump from external packages.
-     */
-    const getReferences = (): SymbolReferences[] => {
-        const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
-        for (const id of correlator.importedMonikers) {
-            const source = assertDefined(id, 'moniker', correlator.monikerData)
-            const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(
-                packageInformationId,
-                'packageInformation',
-                correlator.packageInformationData
-            )
+    const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
+    for (const id of correlator.importedMonikers) {
+        const source = assertDefined(id, 'moniker', correlator.monikerData)
+        const packageInformationId = assertId(source.packageInformation)
+        const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
 
-            // TODO - same issue as the lodash thing above?
-            const pkg = JSON.stringify({
-                scheme: source.scheme,
-                name: packageInfo.name,
-                version: packageInfo.version,
-            })
+        // TODO - same issue as the lodash thing above?
+        const pkg = JSON.stringify({
+            scheme: source.scheme,
+            name: packageInfo.name,
+            version: packageInfo.version,
+        })
 
-            packageIdentifiers.getOrDefault(pkg).push(source.identifier)
-        }
+        packageIdentifiers.getOrDefault(pkg).push(source.identifier)
+    }
 
-        return Array.from(packageIdentifiers).map(([key, identifiers]) => ({
+    return {
+        packages: uniqWith(packageHashes, isEqual),
+        references: Array.from(packageIdentifiers).map(([key, identifiers]) => ({
             package: JSON.parse(key) as Package,
             identifiers,
-        }))
+        })),
+    }
+}
+
+/**
+ * Create a self-contained document object.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param currentDocumentId The identifier of the document.
+ * @param path The path of the document.
+ */
+function finalizeDocument(
+    correlator: LsifCorrelator,
+    definitions: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
+    references: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
+    currentDocumentId: Id,
+    path: string
+): DocumentData {
+    const document = {
+        path,
+        ranges: new Map<Id, number>(),
+        orderedRanges: [] as RangeData[],
+        definitionResults: new Map<Id, { documentPath: string; id: Id }[]>(),
+        referenceResults: new Map<Id, { documentPath: string; id: Id }[]>(),
+        hoverResults: new Map<Id, string>(),
+        monikers: new Map<Id, MonikerData>(),
+        packageInformation: new Map<Id, PackageInformationData>(),
     }
 
-    return { packages: getPackages(), references: getReferences() }
+    const addHover = (id: Id | undefined): void => {
+        if (id !== undefined && !document.hoverResults.has(id)) {
+            document.hoverResults.set(id, assertDefined(id, 'hoverResult', correlator.hoverData))
+        }
+    }
+
+    const addPackageInformation = (id: Id | undefined): void => {
+        if (id !== undefined && !document.packageInformation.has(id)) {
+            document.packageInformation.set(
+                id,
+                assertDefined(id, 'packageInformation', correlator.packageInformationData)
+            )
+        }
+    }
+
+    const addMoniker = (id: Id | undefined): void => {
+        if (id !== undefined && !document.monikers.has(id)) {
+            const moniker = assertDefined(id, 'moniker', correlator.monikerData)
+            document.monikers.set(id, moniker)
+            addPackageInformation(moniker.packageInformation)
+        }
+    }
+
+    const addGenericResult = (
+        name: string,
+        datas: Map<Id, Map<Id, Id[]>>,
+        monikerResults: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
+        results: Map<Id, { documentPath: string; id: Id }[]>,
+        id: Id | undefined,
+        monikers: Id[]
+    ): void => {
+        if (!id) {
+            return
+        }
+
+        const m = monikerResults.getOrDefault(currentDocumentId)
+
+        const values = []
+        for (const [documentId, ids] of assertDefined(id, name, datas)) {
+            // Resolve the "document" field from the "item" edge. This will correlate
+            // the referenced range identifier with the document in which it belongs.
+            const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
+
+            for (const id of ids) {
+                values.push({ documentPath, id })
+            }
+
+            if (documentId === currentDocumentId) {
+                // If this is results for the current document, construct the data that
+                // will later be used to insert into the definitions table for this
+                // document.
+
+                for (const id of ids) {
+                    const n = m.getOrDefault(id)
+                    for (const moniker of monikers) {
+                        n.add(moniker)
+                    }
+                }
+            }
+        }
+
+        results.set(id, values)
+    }
+
+    const orderedRanges: (RangeData & { id: Id })[] = []
+    for (const id of assertDefined(currentDocumentId, 'contains', correlator.containsData)) {
+        const range = assertDefined(id, 'range', correlator.rangeData)
+        canonicalizeRange(correlator, id, range)
+        orderedRanges.push({ id, ...range })
+
+        addHover(range.hoverResult)
+
+        for (const id of range.monikers) {
+            addMoniker(id)
+        }
+
+        addGenericResult(
+            'definitionResult',
+            correlator.definitionData,
+            definitions,
+            document.definitionResults,
+            range.definitionResult,
+            range.monikers
+        )
+
+        addGenericResult(
+            'referenceResult',
+            correlator.referenceData,
+            references,
+            document.referenceResults,
+            range.referenceResult,
+            range.monikers
+        )
+    }
+
+    // Sort ranges by their starting position
+    orderedRanges.sort((a, b) => a.startLine - b.startLine || a.startCharacter - b.startCharacter)
+
+    // Populate a reverse lookup so ranges can be queried by id
+    // via `orderedRanges[range[id]]`.
+    for (const [index, range] of orderedRanges.entries()) {
+        document.ranges.set(range.id, index)
+    }
+
+    // eslint-disable-next-line require-atomic-updates
+    document.orderedRanges = orderedRanges.map(({ id, ...range }) => range)
+
+    return document
+}
+
+/**
+ * Update the definition result, reference result, hover result, and monikers of the
+ * given range with respect to the result sets reachable from the range. This puts
+ * all of the necessary data about a range in the range object itself so we do not
+ * have to traverse the graph at query time.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param id The identifier of the range.
+ * @param range The range to canonicalize.
+ */
+function canonicalizeRange(correlator: LsifCorrelator, id: Id, range: RangeData): void {
+    let definitionResult: Id | undefined
+    let referenceResult: Id | undefined
+    let hoverResult: Id | undefined
+    const monikers = new Set<Id>()
+
+    let itemId: Id = id
+    let item: RangeData | ResultSetData | undefined = range
+
+    while (item) {
+        definitionResult = definitionResult === undefined ? item.definitionResult : definitionResult
+        referenceResult = referenceResult === undefined ? item.referenceResult : referenceResult
+        hoverResult = hoverResult === undefined ? item.hoverResult : hoverResult
+
+        if (item.monikers.length > 0) {
+            for (const mon of reachableMonikers(correlator.monikerSets, item.monikers[0])) {
+                if (assertDefined(mon, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
+                    monikers.add(mon)
+                }
+            }
+        }
+
+        const nextId = correlator.nextData.get(itemId)
+        if (nextId === undefined) {
+            break
+        }
+
+        itemId = nextId
+        item = assertDefined(nextId, 'resultSet', correlator.resultSetData)
+    }
+
+    range.definitionResult = definitionResult
+    range.referenceResult = referenceResult
+    range.hoverResult = hoverResult
+    range.monikers = Array.from(monikers)
 }
 
 /**
