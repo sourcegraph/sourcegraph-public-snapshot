@@ -7,9 +7,9 @@ import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache, DocumentCache } from './cache'
-import { assertDefined } from './importer'
 import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel } from './models.database'
 import { PackageModel } from './models.xrepo'
+import { assertDefined } from './util'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -63,11 +63,15 @@ export class Database {
 
         if (range.definitionResult) {
             // We have a definition result in this database.
-            return await this.getLocations(
-                path,
-                document,
-                assertDefined(range.definitionResult, 'definitionResult', document.definitionResults)
-            )
+            const temp = assertDefined(range.definitionResult, 'definitionResult', document.definitionResults)
+
+            // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
+            // Not sure of a better way to do this right now until we work thorugh how to patch
+            // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
+
+            if (!temp.some(v => v.documentPath.includes('node_modules'))) {
+                return await this.getLocations(path, document, temp)
+            }
         }
 
         // Otherwise, we fall back to a moniker search. We get all the monikers attached

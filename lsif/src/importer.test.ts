@@ -1,54 +1,5 @@
-import { reachableMonikers, normalizeHover, DefaultMap } from './importer'
+import { reachableMonikers } from './importer'
 import { Id } from 'lsif-protocol'
-
-describe('DefaultMap', () => {
-    it('should leave get unchanged', () => {
-        const map = new DefaultMap<string, string>(() => 'bar')
-        expect(map.get('foo')).toBeUndefined()
-    })
-
-    it('should create values on access', () => {
-        const map = new DefaultMap<string, string>(() => 'bar')
-        expect(map.getOrDefault('foo')).toEqual('bar')
-    })
-
-    it('should respect explicit set', () => {
-        const map = new DefaultMap<string, string>(() => 'bar')
-        map.set('foo', 'baz')
-        expect(map.getOrDefault('foo')).toEqual('baz')
-    })
-
-    it('should support nested gets', () => {
-        const map = new DefaultMap<string, DefaultMap<string, string[]>>(
-            () => new DefaultMap<string, string[]>(() => [])
-        )
-
-        map.getOrDefault('foo')
-            .getOrDefault('bar')
-            .push('baz')
-
-        map.getOrDefault('foo')
-            .getOrDefault('bar')
-            .push('bonk')
-
-        expect(map.get('foo').get('bar')).toEqual(['baz', 'bonk'])
-    })
-})
-
-describe('normalizeHover', () => {
-    it('should handle all lsp.Hover types', () => {
-        expect(normalizeHover({ contents: 'foo' })).toEqual('foo')
-        expect(normalizeHover({ contents: { language: 'typescript', value: 'bar' } })).toEqual(
-            '```typescript\nbar\n```'
-        )
-        expect(normalizeHover({ contents: { kind: 'markdown', value: 'baz' } })).toEqual('baz')
-        expect(
-            normalizeHover({
-                contents: ['foo', { language: 'typescript', value: 'bar' }],
-            })
-        ).toEqual('foo\n\n---\n\n```typescript\nbar\n```')
-    })
-})
 
 describe('reachableMonikers', () => {
     it('should traverse moniker relation graph', () => {

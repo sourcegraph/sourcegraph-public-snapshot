@@ -1,3 +1,5 @@
+import { Id } from 'lsif-protocol'
+
 /**
  * Reads an integer from an environment variable or defaults to the given value.
  *
@@ -16,4 +18,37 @@ export function readEnvInt(key: string, defaultValue: number): number {
  */
 export function hasErrorCode(e: any, expectedCode: string): boolean {
     return e && e.code === expectedCode
+}
+
+/**
+ * Return the value of the given key in one of the given maps. The first value
+ * to exist is returned. If the key does not exist in any map, an exception is
+ * thrown.
+ *
+ * @param key The key to search for.
+ * @param name The type of element (used for exception message).
+ * @param maps The set of maps to query.
+ */
+export function assertDefined<K, V>(key: K, name: string, ...maps: Map<K, V>[]): V {
+    for (const map of maps) {
+        const value = map.get(key)
+        if (value !== undefined) {
+            return value
+        }
+    }
+
+    throw new Error(`Unknown ${name} '${key}'.`)
+}
+
+/**
+ * Return the value of `id`, or throw an exception if it is undefined.
+ *
+ * @param id The identifier.
+ */
+export function assertId(id: Id | undefined): Id {
+    if (id !== undefined) {
+        return id
+    }
+
+    throw new Error('id is undefined')
 }

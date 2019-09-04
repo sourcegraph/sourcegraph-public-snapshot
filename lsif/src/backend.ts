@@ -27,7 +27,7 @@ export class NoLSIFDataError extends Error {
 /**
  * Backend for LSIF dumps stored in SQLite.
  */
-export class SQLiteBackend {
+export class Backend {
     constructor(
         private storageRoot: string,
         private xrepoDatabase: XrepoDatabase,
@@ -127,7 +127,7 @@ export async function createBackend(
     storageRoot: string,
     connectionCache: ConnectionCache,
     documentCache: DocumentCache
-): Promise<SQLiteBackend> {
+): Promise<Backend> {
     try {
         await fs.mkdir(storageRoot)
     } catch (e) {
@@ -146,5 +146,5 @@ export async function createBackend(
         }
     }
 
-    return new SQLiteBackend(storageRoot, new XrepoDatabase(connectionCache, filename), connectionCache, documentCache)
+    return new Backend(storageRoot, new XrepoDatabase(connectionCache, filename), connectionCache, documentCache)
 }

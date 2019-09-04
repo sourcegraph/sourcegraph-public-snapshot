@@ -210,7 +210,13 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[], // eslint-disable-line @typescript-eslint/ban-types
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, connection => connection.transaction(em => callback(em)))
+        return this.withConnection(database, entities, async connection => {
+            // TODO - enable with flag
+            await connection.query('PRAGMA synchronous = OFF')
+            await connection.query('PRAGMA journal_mode = OFF')
+
+            return await connection.transaction(em => callback(em))
+        })
     }
 }
 
