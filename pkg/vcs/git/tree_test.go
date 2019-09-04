@@ -177,6 +177,9 @@ func TestRepository_FileSystem(t *testing.T) {
 		if dir1Info.Size() != 0 {
 			t.Errorf("%s: got dir1 size %d, want 0", label, dir1Info.Size())
 		}
+		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(git.ObjectInfo).OID().String(); got != want {
+			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
+		}
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := git.ReadDir(ctx, test.repo, test.first, "dir1", false)
@@ -194,6 +197,9 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 		if want := int64(7); file1Info.Size() != want {
 			t.Errorf("%s: got dir1 entry size == %d, want %d", label, file1Info.Size(), want)
+		}
+		if got, want := "a20cc2fb45631b1dd262371a058b1bf31702abaa", file1Info.Sys().(git.ObjectInfo).OID().String(); got != want {
+			t.Errorf("%s: got dir1 entry OID %q, want %q", label, got, want)
 		}
 
 		// dir2 should not exist
