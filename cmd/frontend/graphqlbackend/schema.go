@@ -16,9 +16,7 @@ type EmptyResponse {
     alwaysNil: String
 }
 
-# An object with an ID.
 interface Node {
-    # The ID of the node.
     id: ID!
 }
 
@@ -657,9 +655,6 @@ input SurveySubmissionInput {
 
 # A query.
 type Query {
-    # The root of the query.
-    root: Query! @deprecated(reason: "this will be removed.")
-    # Looks up a node by ID.
     node(id: ID!): Node
     # Looks up a repository by either name or cloneURL.
     repository(
