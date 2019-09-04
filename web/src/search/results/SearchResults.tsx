@@ -21,7 +21,6 @@ import {
     submitSearch,
     toggleSearchFilter,
     toggleSearchFilterAndReplaceSampleRepogroup,
-    toggleSearchType,
     getSearchTypeFromQuery,
 } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
@@ -193,7 +192,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}
                 />
-                <SearchResultTypeTabs query={this.props.navbarSearchQuery} />
+                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQuery} />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
