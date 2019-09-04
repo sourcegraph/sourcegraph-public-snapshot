@@ -89,7 +89,7 @@ export class XrepoDatabase {
                 await inserter.insert({ repository, commit, ...pkg })
             }
 
-            await inserter.finalize()
+            await inserter.flush()
         })
     }
 
@@ -160,7 +160,7 @@ export class XrepoDatabase {
                 })
             }
 
-            await inserter.finalize()
+            await inserter.flush()
         })
     }
 

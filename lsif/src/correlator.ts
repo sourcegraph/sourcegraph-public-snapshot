@@ -141,18 +141,23 @@ export class Correlator {
                         monikers: [],
                     })
                     break
+
                 case VertexLabels.resultSet:
                     this.resultSetData.set(element.id, { monikers: [] })
                     break
+
                 case VertexLabels.definitionResult:
                     this.definitionData.set(element.id, new DefaultMap<Id, Id[]>(() => []))
                     break
+
                 case VertexLabels.referenceResult:
                     this.referenceData.set(element.id, new DefaultMap<Id, Id[]>(() => []))
                     break
+
                 case VertexLabels.hoverResult:
                     this.hoverData.set(element.id, normalizeHover(element.result))
                     break
+
                 case VertexLabels.moniker:
                     this.monikerData.set(element.id, {
                         kind: element.kind || MonikerKind.local,
@@ -160,6 +165,7 @@ export class Correlator {
                         identifier: element.identifier,
                     })
                     break
+
                 case VertexLabels.packageInformation:
                     this.packageInformationData.set(element.id, {
                         name: element.name,
@@ -174,27 +180,35 @@ export class Correlator {
                 case EdgeLabels.contains:
                     this.handleContains(element)
                     break
+
                 case EdgeLabels.next:
                     this.handleNextEdge(element)
                     break
+
                 case EdgeLabels.item:
                     this.handleItemEdge(element)
                     break
+
                 case EdgeLabels.textDocument_definition:
                     this.handleDefinitionEdge(element)
                     break
+
                 case EdgeLabels.textDocument_references:
                     this.handleReferenceEdge(element)
                     break
+
                 case EdgeLabels.textDocument_hover:
                     this.handleHoverEdge(element)
                     break
+
                 case EdgeLabels.moniker:
                     this.handleMonikerEdge(element)
                     break
+
                 case EdgeLabels.nextMoniker:
                     this.handleNextMonikerEdge(element)
                     break
+
                 case EdgeLabels.packageInformation:
                     this.handlePackageInformationEdge(element)
                     break
@@ -287,6 +301,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData
         )
+
         assertDefined(edge.inV, 'moniker', this.monikerData)
         source.monikers = [edge.inV]
     }
@@ -350,6 +365,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData
         )
+
         assertDefined(edge.inV, 'definitionResult', this.definitionData)
         outV.definitionResult = edge.inV
     }
@@ -367,6 +383,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData
         )
+
         assertDefined(edge.inV, 'hoverResult', this.hoverData)
         outV.hoverResult = edge.inV
     }
@@ -384,6 +401,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData
         )
+
         assertDefined(edge.inV, 'referenceResult', this.referenceData)
         outV.referenceResult = edge.inV
     }

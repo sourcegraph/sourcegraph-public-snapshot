@@ -2,7 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { groupBy, isEqual, uniqWith } from 'lodash'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, DocumentData } from './entities'
+import { MonikerData, RangeData, DocumentData, QualifiedRangeId } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
@@ -63,14 +63,18 @@ export class Database {
 
         if (range.definitionResult) {
             // We have a definition result in this database.
-            const temp = assertDefined(range.definitionResult, 'definitionResult', document.definitionResults)
+            const definitionResults = assertDefined(
+                range.definitionResult,
+                'definitionResult',
+                document.definitionResults
+            )
 
             // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
             // Not sure of a better way to do this right now until we work thorugh how to patch
             // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
 
-            if (!temp.some(v => v.documentPath.includes('node_modules'))) {
-                return await this.getLocations(path, document, temp)
+            if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
+                return await this.getLocations(path, document, definitionResults)
             }
         }
 
@@ -84,21 +88,19 @@ export class Database {
                 // This symbol was imported from another database. See if we have xrepo
                 // definition for it.
 
-                const defs = await this.remoteDefinitions(document, moniker)
-                if (defs) {
-                    return defs
+                const remoteDefinitions = await this.remoteDefinitions(document, moniker)
+                if (remoteDefinitions) {
+                    return remoteDefinitions
                 }
+            } else {
+                // This symbol was not imported from another database. We search the definitions
+                // table of our own database in case there was a definition that wasn't properly
+                // attached to a result set but did have the correct monikers attached.
 
-                continue
-            }
-
-            // This symbol was not imported from another database. We search the Defs table
-            // of our own database in case there was a definition that wasn't properly
-            // attached to a result set but did have the correct monikers attached.
-
-            const defs = await Database.monikerResults(this, DefinitionModel, moniker, path => path)
-            if (defs) {
-                return defs
+                const localDefinitions = await Database.monikerResults(this, DefinitionModel, moniker, path => path)
+                if (localDefinitions) {
+                    return localDefinitions
+                }
             }
         }
 
@@ -117,14 +119,14 @@ export class Database {
             return undefined
         }
 
-        let result: lsp.Location[] = []
+        let locations: lsp.Location[] = []
 
         // First, we try to find the reference result attached to the range or one
         // of the result sets to which the range is attached.
 
         if (range.referenceResult) {
             // We have references in this database.
-            result = result.concat(
+            locations = locations.concat(
                 await this.getLocations(
                     path,
                     document,
@@ -145,7 +147,7 @@ export class Database {
         // necessarily fully linked in the LSIF data.
 
         for (const moniker of monikers) {
-            result = result.concat(await Database.monikerResults(this, ReferenceModel, moniker, path => path))
+            locations = locations.concat(await Database.monikerResults(this, ReferenceModel, moniker, path => path))
         }
 
         // Second, we perform an xrepo search for uses of each nonlocal moniker. We stop
@@ -176,7 +178,7 @@ export class Database {
                             )
 
                             const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
-                            result = result.concat(
+                            locations = locations.concat(
                                 await Database.monikerResults(db, ReferenceModel, moniker, pathTransformer)
                             )
                         }
@@ -184,6 +186,7 @@ export class Database {
                 }
             }
 
+            // TODO - shouldn't occur
             if (moniker.kind === 'local') {
                 continue
             }
@@ -191,12 +194,12 @@ export class Database {
             const remoteResults = await this.remoteReferences(document, moniker)
             if (remoteResults) {
                 // TODO - see why we need to deduplicate
-                return uniqWith(result.concat(remoteResults), isEqual)
+                return uniqWith(locations.concat(remoteResults), isEqual)
             }
         }
 
         // TODO - see why we need to deduplicate
-        return uniqWith(result, isEqual)
+        return uniqWith(locations, isEqual)
     }
 
     /**
@@ -226,8 +229,8 @@ export class Database {
     // Helper Functions
 
     /**
-     * Query the defs or refs table of `db` for items that match the given moniker. Convert
-     * each result into an LSP location. The `pathTransformer` function is invoked on each
+     * Query the definitions or referencess table of `db` for items that match the given moniker.
+     * Convert each result into an LSP location. The `pathTransformer` function is invoked on each
      * result item to modify the resulting locations.
      *
      * @param db The target database.
@@ -267,7 +270,7 @@ export class Database {
     private async getLocations(
         path: string,
         document: DocumentData,
-        resultData: { documentPath: string; id: Id }[]
+        resultData: QualifiedRangeId[]
     ): Promise<lsp.Location[]> {
         // Group by document path so we only have to load each document once
         const groups = groupBy(resultData, v => v.documentPath)
@@ -298,7 +301,7 @@ export class Database {
 
     /**
      * Find the definition of the target moniker outside of the current database. If the
-     * moniker has attached package information, then the xrepo database is queried for
+     * moniker has attached package information, then the correlation database is queried for
      * the target package. That database is opened, and its def table is queried for the
      * target moniker.
      *
@@ -341,7 +344,7 @@ export class Database {
 
     /**
      * Find the references of the target moniker outside of the current database. If the moniker
-     * has attached package information, then the xrepo database is queried for the packages that
+     * has attached package information, then the correlation database is queried for the packages that
      * require this particular moniker identifier. These databases are opened, and their ref tables
      * are queried for the target moniker.
      *

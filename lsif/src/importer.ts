@@ -2,7 +2,7 @@ import { assertDefined, assertId } from './util'
 import { Correlator, ResultSetData } from './correlator'
 import { DefaultMap } from './default-map'
 import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel } from './models.database'
-import { DocumentData, MonikerData, PackageInformationData, RangeData } from './entities'
+import { DocumentData, MonikerData, PackageInformationData, RangeData, QualifiedRangeId } from './entities'
 import { Edge, Id, MonikerKind, Vertex } from 'lsif-protocol'
 import { encodeJSON } from './encoding'
 import { EntityManager } from 'typeorm'
@@ -19,9 +19,9 @@ import { TableInserter } from './inserter'
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
 /**
- * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
- * a new importer, insert each vertex and edge in the given stream, then call the
- * importer's finalize method.
+ * Correlate each vertex and edge together, then populate the provided entity manager
+ * with the document, definition, and reference information. Returns the package and
+ * external reference data needed to populate the correlation database.
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param elements The stream of vertex and edge objects composing the LSIF dump.
@@ -32,16 +32,20 @@ export async function importLsif(
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const correlator = new Correlator()
 
-    let i = 0
+    let line = 0
     for await (const element of elements) {
         try {
             correlator.insert(element)
         } catch (e) {
-            console.log(e)
-            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+            // TODO - more context
+            throw Object.assign(new Error(`Failed to process line:\n${line}`), { e })
         }
 
-        i++
+        line++
+    }
+
+    if (correlator.lsifVersion === undefined) {
+        throw new Error('No metadata defined.')
     }
 
     // Determine the max batch size of each model type. We cannot perform an
@@ -52,14 +56,14 @@ export async function importLsif(
 
     const metaInserter = new TableInserter(entityManager, MetaModel, Math.floor(999 / 3))
     const documentInserter = new TableInserter(entityManager, DocumentModel, Math.floor(999 / 2))
-    const defInserter = new TableInserter(entityManager, DefinitionModel, Math.floor(999 / 8))
-    const refInserter = new TableInserter(entityManager, ReferenceModel, Math.floor(999 / 8))
+    const definitionInserter = new TableInserter(entityManager, DefinitionModel, Math.floor(999 / 8))
+    const referenceInserter = new TableInserter(entityManager, ReferenceModel, Math.floor(999 / 8))
 
-    if (correlator.lsifVersion === undefined) {
-        throw new Error('No metadata defined.')
-    }
-
-    await metaInserter.insert({ lsifVersion: correlator.lsifVersion, sourcegraphVersion: INTERNAL_LSIF_VERSION })
+    // Insert uploaded LSIF and the current version of the importer
+    await metaInserter.insert({
+        lsifVersion: correlator.lsifVersion,
+        sourcegraphVersion: INTERNAL_LSIF_VERSION,
+    })
 
     const definitions = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
         () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
@@ -69,69 +73,77 @@ export async function importLsif(
         () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
     )
 
-    for (const [id, path] of correlator.documentPaths) {
-        // Finalize document
-        const document = finalizeDocument(correlator, definitions, references, id, path)
+    for (const [documentId, documentPath] of correlator.documentPaths) {
+        // Create document record from the correlated information. This will also insert
+        // external definitions and references into the maps initialized above, which are
+        // inserted into the definitions and references table, respectively, below.
 
-        const data = await encodeJSON({
-            ranges: document.ranges,
-            orderedRanges: document.orderedRanges,
-            definitionResults: document.definitionResults,
-            referenceResults: document.referenceResults,
-            hoverResults: document.hoverResults,
-            monikers: document.monikers,
-            packageInformation: document.packageInformation,
+        const document = gatherDocument(
+            correlator,
+            documentId,
+            documentPath,
+            definitions.getOrDefault(documentId),
+            references.getOrDefault(documentId)
+        )
+
+        // Encode and insert insert document
+        await documentInserter.insert({
+            path: documentPath,
+            data: await encodeJSON({
+                ranges: document.ranges,
+                orderedRanges: document.orderedRanges,
+                definitionResults: document.definitionResults,
+                referenceResults: document.referenceResults,
+                hoverResults: document.hoverResults,
+                monikers: document.monikers,
+                packageInformation: document.packageInformation,
+            }),
         })
-
-        // Insert document record
-        await documentInserter.insert({ path, data })
     }
 
-    // Insert all related definitions
-    for (const [documentId, m] of definitions) {
-        for (const [rangeId, monikerIds] of m) {
-            for (const monikerId of monikerIds) {
-                // TODO - clean this up
-                const range = assertDefined(rangeId, 'range', correlator.rangeData)
-                const moniker = assertDefined(monikerId, 'moniker', correlator.monikerData)
-                const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
+    const insertDefinitionsOrReferences = async (
+        map: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
+        inserter: TableInserter<DefinitionModel | ReferenceModel, new () => DefinitionModel | ReferenceModel>
+    ): Promise<void> => {
+        for (const [documentId, rangeMonikers] of map) {
+            for (const [rangeId, monikerIds] of rangeMonikers) {
+                for (const monikerId of monikerIds) {
+                    const range = assertDefined(rangeId, 'range', correlator.rangeData)
+                    const moniker = assertDefined(monikerId, 'moniker', correlator.monikerData)
+                    const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
 
-                await defInserter.insert({
-                    scheme: moniker.scheme,
-                    identifier: moniker.identifier,
-                    documentPath,
-                    ...range,
-                })
+                    await inserter.insert({
+                        scheme: moniker.scheme,
+                        identifier: moniker.identifier,
+                        documentPath,
+                        ...range,
+                    })
+                }
             }
         }
     }
 
-    // Insert all related references
-    for (const [documentId, m] of references) {
-        for (const [rangeId, monikerIds] of m) {
-            for (const monikerId of monikerIds) {
-                const range = assertDefined(rangeId, 'range', correlator.rangeData)
-                const moniker = assertDefined(monikerId, 'moniker', correlator.monikerData)
-                const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
+    // Insert definitions and references correlated by finalizing the
+    // documents in the loop above. This will be used to search for ranges
+    // by monikers.
 
-                await refInserter.insert({
-                    scheme: moniker.scheme,
-                    identifier: moniker.identifier,
-                    documentPath,
-                    ...range,
-                })
-            }
-        }
-    }
+    // TODO - can differentiate by a bool flag in same table? Save space?
+    await insertDefinitionsOrReferences(definitions, definitionInserter)
+    await insertDefinitionsOrReferences(references, referenceInserter)
 
-    await metaInserter.finalize()
-    await documentInserter.finalize()
-    await defInserter.finalize()
-    await refInserter.finalize()
+    // Ensure all records are written
+    await metaInserter.flush()
+    await documentInserter.flush()
+    await definitionInserter.flush()
+    await referenceInserter.flush()
+
+    // Gather all package information that is referenced by an exported
+    // moniker. These will be the packages that are provided by the repository
+    // represented by this LSIF dump.
 
     const packageHashes: Package[] = []
-    for (const id of correlator.exportedMonikers) {
-        const source = assertDefined(id, 'moniker', correlator.monikerData)
+    for (const monikerId of correlator.exportedMonikers) {
+        const source = assertDefined(monikerId, 'moniker', correlator.monikerData)
         const packageInformationId = assertId(source.packageInformation)
         const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
 
@@ -142,10 +154,17 @@ export async function importLsif(
         })
     }
 
+    // Ensure packages are unique
+    const exportedPackages = uniqWith(packageHashes, isEqual)
+
+    // Gather all imporpted moniker identifiers along with their package
+    // information. These will be the packages that are a dependency of the
+    // repository represented by this LSIF dump.
+
     const packages = new Map<string, Package>()
     const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
-    for (const id of correlator.importedMonikers) {
-        const source = assertDefined(id, 'moniker', correlator.monikerData)
+    for (const monikerId of correlator.importedMonikers) {
+        const source = assertDefined(monikerId, 'moniker', correlator.monikerData)
         const packageInformationId = assertId(source.packageInformation)
         const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
 
@@ -154,102 +173,116 @@ export async function importLsif(
         packageIdentifiers.getOrDefault(key).push(source.identifier)
     }
 
-    return {
-        packages: uniqWith(packageHashes, isEqual),
-        references: Array.from(packages.keys()).map(key => ({
-            package: assertDefined(key, 'package', packages),
-            identifiers: assertDefined(key, 'packageIdentifier', packageIdentifiers),
-        })),
-    }
+    // Create a unique list of package information and imported symbol pairs.
+    // Ensure that each pacakge is represented only once in the list.
+
+    const importedReferences = Array.from(packages.keys()).map(key => ({
+        package: assertDefined(key, 'package', packages),
+        identifiers: assertDefined(key, 'packageIdentifier', packageIdentifiers),
+    }))
+
+    // Kick back the xrepo data needed to be inserted into the correlation database
+    return { packages: exportedPackages, references: importedReferences }
 }
 
 /**
- * Create a self-contained document object.
+ * Create a self-contained document object from the data in the given correlator. This
+ * method should also populate the definition and reference maps that are passed in.
+ * They are initially empty.
  *
  * @param correlator The correlator with all vertices and edges inserted.
  * @param currentDocumentId The identifier of the document.
  * @param path The path of the document.
+ * @param definitions A map from range identiifers to a set of moniker identifiers.
+ * @param references A map from range identiifers to a set of moniker identifiers.
  */
-function finalizeDocument(
+function gatherDocument(
     correlator: Correlator,
-    definitions: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
-    references: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
     currentDocumentId: Id,
-    path: string
+    path: string,
+    definitions: DefaultMap<Id, Set<Id>>,
+    references: DefaultMap<Id, Set<Id>>
 ): DocumentData {
     const document = {
         path,
         ranges: new Map<Id, number>(),
         orderedRanges: [] as RangeData[],
-        definitionResults: new Map<Id, { documentPath: string; id: Id }[]>(),
-        referenceResults: new Map<Id, { documentPath: string; id: Id }[]>(),
+        definitionResults: new Map<Id, QualifiedRangeId[]>(),
+        referenceResults: new Map<Id, QualifiedRangeId[]>(),
         hoverResults: new Map<Id, string>(),
         monikers: new Map<Id, MonikerData>(),
         packageInformation: new Map<Id, PackageInformationData>(),
     }
 
     const addHover = (id: Id | undefined): void => {
-        if (id !== undefined && !document.hoverResults.has(id)) {
-            document.hoverResults.set(id, assertDefined(id, 'hoverResult', correlator.hoverData))
-        }
-    }
-
-    const addPackageInformation = (id: Id | undefined): void => {
-        if (id !== undefined && !document.packageInformation.has(id)) {
-            document.packageInformation.set(
-                id,
-                assertDefined(id, 'packageInformation', correlator.packageInformationData)
-            )
-        }
-    }
-
-    const addMoniker = (id: Id | undefined): void => {
-        if (id !== undefined && !document.monikers.has(id)) {
-            const moniker = assertDefined(id, 'moniker', correlator.monikerData)
-            document.monikers.set(id, moniker)
-            addPackageInformation(moniker.packageInformation)
-        }
-    }
-
-    const addGenericResult = (
-        name: string,
-        datas: Map<Id, Map<Id, Id[]>>,
-        monikerResults: DefaultMap<Id, DefaultMap<Id, Set<Id>>>,
-        results: Map<Id, { documentPath: string; id: Id }[]>,
-        id: Id | undefined,
-        monikers: Id[]
-    ): void => {
-        if (!id) {
+        if (id === undefined || document.hoverResults.has(id)) {
             return
         }
 
-        const m = monikerResults.getOrDefault(currentDocumentId)
+        // Add hover result to the document, if defined and not a duplicate
+        const data = assertDefined(id, 'hoverResult', correlator.hoverData)
+        document.hoverResults.set(id, data)
+    }
 
+    const addPackageInformation = (id: Id | undefined): void => {
+        if (id === undefined || document.packageInformation.has(id)) {
+            return
+        }
+
+        // Add package information to the document, if defined and not a duplicate
+        const data = assertDefined(id, 'packageInformation', correlator.packageInformationData)
+        document.packageInformation.set(id, data)
+    }
+
+    const addMoniker = (id: Id | undefined): void => {
+        if (id === undefined || document.monikers.has(id)) {
+            return
+        }
+
+        // Add moniker to the document, if defined and not a duplicate
+        const moniker = assertDefined(id, 'moniker', correlator.monikerData)
+        document.monikers.set(id, moniker)
+
+        // Add related package information to document
+        addPackageInformation(moniker.packageInformation)
+    }
+
+    const getQualifiedRanges = (
+        // map from docuemnt id to range ids
+        documentRanges: Map<Id, Id[]>,
+        // list of monikers on the current range
+        monikerIds: Id[],
+        // definition or references submap for the current document
+        rangeMonikerMap: DefaultMap<Id, Set<Id>>
+    ): QualifiedRangeId[] => {
         const values = []
-        for (const [documentId, ids] of assertDefined(id, name, datas)) {
+        for (const [documentId, rangeIds] of documentRanges) {
             // Resolve the "document" field from the "item" edge. This will correlate
             // the referenced range identifier with the document in which it belongs.
             const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
 
-            for (const id of ids) {
+            for (const id of rangeIds) {
                 values.push({ documentPath, id })
             }
 
-            if (documentId === currentDocumentId) {
-                // If this is results for the current document, construct the data that
-                // will later be used to insert into the definitions table for this
-                // document.
+            if (documentId !== currentDocumentId) {
+                continue
+            }
 
-                for (const id of ids) {
-                    const n = m.getOrDefault(id)
-                    for (const moniker of monikers) {
-                        n.add(moniker)
-                    }
+            // If this is results for the current document, construct the data that
+            // will later be used to insert into the definition or reference table for
+            // this document.
+
+            for (const id of rangeIds) {
+                const monikerSet = rangeMonikerMap.getOrDefault(id)
+
+                for (const monikerId of monikerIds) {
+                    monikerSet.add(monikerId)
                 }
             }
         }
 
-        results.set(id, values)
+        return values
     }
 
     const orderedRanges: (RangeData & { id: Id })[] = []
@@ -264,23 +297,27 @@ function finalizeDocument(
             addMoniker(id)
         }
 
-        addGenericResult(
-            'definitionResult',
-            correlator.definitionData,
-            definitions,
-            document.definitionResults,
-            range.definitionResult,
-            range.monikers
-        )
+        if (range.definitionResult !== undefined) {
+            document.definitionResults.set(
+                range.definitionResult,
+                getQualifiedRanges(
+                    assertDefined(range.definitionResult, 'definitionResult', correlator.definitionData),
+                    range.monikers,
+                    definitions
+                )
+            )
+        }
 
-        addGenericResult(
-            'referenceResult',
-            correlator.referenceData,
-            references,
-            document.referenceResults,
-            range.referenceResult,
-            range.monikers
-        )
+        if (range.referenceResult !== undefined) {
+            document.referenceResults.set(
+                range.referenceResult,
+                getQualifiedRanges(
+                    assertDefined(range.referenceResult, 'referenceResult', correlator.referenceData),
+                    range.monikers,
+                    references
+                )
+            )
+        }
     }
 
     // Sort ranges by their starting position
@@ -308,41 +345,43 @@ function finalizeDocument(
  * @param id The identifier of the range.
  * @param range The range to canonicalize.
  */
-function canonicalizeRange(correlator: Correlator, id: Id, range: RangeData): void {
+function canonicalizeRange(correlator: Correlator, rangeId: Id, range: RangeData): void {
     let definitionResult: Id | undefined
     let referenceResult: Id | undefined
     let hoverResult: Id | undefined
     const monikers = new Set<Id>()
 
-    let itemId: Id = id
-    let item: RangeData | ResultSetData | undefined = range
+    let currentId = rangeId
+    let currentItem: RangeData | ResultSetData | undefined = range
 
-    while (item) {
-        definitionResult = definitionResult === undefined ? item.definitionResult : definitionResult
-        referenceResult = referenceResult === undefined ? item.referenceResult : referenceResult
-        hoverResult = hoverResult === undefined ? item.hoverResult : hoverResult
+    while (currentItem) {
+        definitionResult = definitionResult === undefined ? currentItem.definitionResult : definitionResult
+        referenceResult = referenceResult === undefined ? currentItem.referenceResult : referenceResult
+        hoverResult = hoverResult === undefined ? currentItem.hoverResult : hoverResult
 
-        if (item.monikers.length > 0) {
-            for (const mon of reachableMonikers(correlator.monikerSets, item.monikers[0])) {
+        if (currentItem.monikers.length > 0) {
+            for (const mon of reachableMonikers(correlator.monikerSets, currentItem.monikers[0])) {
                 if (assertDefined(mon, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
                     monikers.add(mon)
                 }
             }
         }
 
-        const nextId = correlator.nextData.get(itemId)
+        const nextId = correlator.nextData.get(currentId)
         if (nextId === undefined) {
             break
         }
 
-        itemId = nextId
-        item = assertDefined(nextId, 'resultSet', correlator.resultSetData)
+        currentId = nextId
+        currentItem = assertDefined(nextId, 'resultSet', correlator.resultSetData)
     }
 
     range.definitionResult = definitionResult
     range.referenceResult = referenceResult
     range.hoverResult = hoverResult
     range.monikers = Array.from(monikers)
+    // TODO - (efritz) cut the next link so we don't have to redo this. Also do this recursively
+    // for result sets so we memoize the work. We save things to the end now so that should be fine.
 }
 
 /**
@@ -355,26 +394,23 @@ function canonicalizeRange(correlator: Correlator, id: Id, range: RangeData): vo
  * @param id The initial moniker id.
  */
 export function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
-    const combined = new Set<Id>()
+    const monikerIds = new Set<Id>()
     let frontier = [id]
 
-    while (true) {
-        const val = frontier.pop()
-        if (val === undefined) {
-            break
-        }
-
-        if (combined.has(val)) {
+    while (frontier.length > 0) {
+        const val = assertId(frontier.pop())
+        if (monikerIds.has(val)) {
             continue
         }
+
+        monikerIds.add(val)
 
         const nextValues = monikerSets.get(val)
         if (nextValues) {
             frontier = frontier.concat(Array.from(nextValues))
         }
-
-        combined.add(val)
     }
 
-    return combined
+    // TODO - (efritz) should we sort these ids here instead of at query time?
+    return monikerIds
 }

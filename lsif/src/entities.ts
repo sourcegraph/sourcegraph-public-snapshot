@@ -1,6 +1,28 @@
 import { Id, MonikerKind } from 'lsif-protocol'
 
 /**
+ * A range Identifier that also specifies the path of the document to which it
+ * belongs. This is sometimes necessary as we hold definition and refererence
+ * results between packages, but the identifier of the range must be looked up
+ * in a map of another encoded document.
+ */
+export interface QualifiedRangeId {
+    /**
+     * The path of the document.
+     */
+    documentPath: string
+
+    /**
+     * The identifier of the range in the referenced document.
+     */
+    id: Id
+}
+
+// TOOD - (efritz) can we use indices instead of maps in order to save space?
+// The keys are just getting in the way here and they're only used within a single
+// document.
+
+/**
  * Data for a single document within an LSIF dump. The data here can answer definitions,
  * references, and hover queries if the results are all contained within the same document.
  */
@@ -25,14 +47,14 @@ export interface DocumentData {
      * definition result. Each id is paired with a document path, as result sets
      * can be shared between documents (necessitating cross-document queries).
      */
-    definitionResults: Map<Id, { documentPath: string; id: Id }[]>
+    definitionResults: Map<Id, QualifiedRangeId[]>
 
     /**
      ** A map of reference result identifiers to a list of ids that compose the
      * reference result. Each id is paired with a document path, as result sets
      * can be shared between documents (necessitating cross-document queries).
      */
-    referenceResults: Map<Id, { documentPath: string; id: Id }[]>
+    referenceResults: Map<Id, QualifiedRangeId[]>
 
     /**
      * A map of hover result identifiers to hover results normalized as a single
