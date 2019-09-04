@@ -61,7 +61,7 @@ interface SearchResultsState {
     contributions?: Evaluated<Contributions>
 }
 
-// All values that are valid for the `type:` filter. Empty string represents default code search.
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | null
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
