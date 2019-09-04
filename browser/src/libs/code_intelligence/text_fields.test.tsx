@@ -1,6 +1,6 @@
 import { uniqueId } from 'lodash'
 import { from, NEVER, Subject, Subscription } from 'rxjs'
-import { first, skip } from 'rxjs/operators'
+import { first } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
 import { CodeEditor } from '../../../../shared/src/api/client/services/editorService'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
