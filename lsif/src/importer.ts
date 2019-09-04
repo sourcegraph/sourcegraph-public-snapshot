@@ -18,14 +18,11 @@ import {
     nextMoniker,
     textDocument_definition,
     textDocument_hover,
-    Range,
     textDocument_references,
     packageInformation,
-    PackageInformation,
     item,
     MetaData,
     ElementTypes,
-    Moniker,
     contains,
 } from 'lsif-protocol'
 import { Package, SymbolReferences } from './xrepo'
@@ -101,66 +98,59 @@ interface ResultSetData {
 /**
  * Common state around the conversion of a single LSIF dump upload. This class
  * receives the parsed vertex or edge, line by line, from the caller, and adds it
- * into a new database file on disk. Once finalized, the database is ready for use
- * and relevant cross-repository metadata is returned to the caller, which
- * is used to populate the xrepo database.
- *
- * This class should not be used directly - use the `importLsif` function instead.
+ * into an in-memory structure that is later processed and converted into a SQLite
+ * database on disk.
  */
-class LsifImporter {
-    // Bulk database inserters
-    private metaInserter: TableInserter<MetaModel, new () => MetaModel>
-    private documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
-    private defInserter: TableInserter<DefinitionModel, new () => DefinitionModel>
-    private refInserter: TableInserter<ReferenceModel, new () => ReferenceModel>
-
-    // Vertex data
-    private documentPaths = new Map<Id, string>()
-    private containsData = new Map<Id, Set<Id>>()
-    private rangeData = new Map<Id, RangeData>()
-    private resultSetData = new Map<Id, ResultSetData>()
-    private nextData = new Map<Id, Id>()
-    private definitionData = new Map<Id, DefaultMap<Id, Id[]>>()
-    private referenceData = new Map<Id, DefaultMap<Id, Id[]>>()
-    private hoverData = new Map<Id, string>()
-    private monikerData = new Map<Id, MonikerData>()
-    private packageInformationData = new Map<Id, PackageInformationData>()
-
+class LsifCorrelator {
     /**
      * The LSIF version of the input. This is extracted from the metadata vertex at
      * the beginning of processing.
      */
-    private lsifVersion?: string
+    public lsifVersion?: string
 
     /**
      * The root of all document URIs. This is extracted from the metadata vertex at
      * the beginning of processing.
      */
-    private projectRoot?: URL
+    public projectRoot?: URL
+
+    // Vertex data
+    public documentPaths = new Map<Id, string>()
+    public rangeData = new Map<Id, RangeData>()
+    public resultSetData = new Map<Id, ResultSetData>()
+    public hoverData = new Map<Id, string>()
+    public monikerData = new Map<Id, MonikerData>()
+    public packageInformationData = new Map<Id, PackageInformationData>()
+
+    // Edge data
+    public containsData = new Map<Id, Set<Id>>()
+    public nextData = new Map<Id, Id>()
+    public definitionData = new Map<Id, DefaultMap<Id, Id[]>>()
+    public referenceData = new Map<Id, DefaultMap<Id, Id[]>>()
 
     /**
      * A mapping for the relation from moniker to the set of monikers that they are related
      * to via nextMoniker edges. This relation is symmetric (if `a` is in `MonikerSets[b]`,
      * then `b` is in `monikerSets[a]`).
      */
-    private monikerSets = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    public monikerSets = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    private importedMonikers = new Set<Id>()
+    public importedMonikers = new Set<Id>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    private exportedMonikers = new Set<Id>()
+    public exportedMonikers = new Set<Id>()
 
     /**
      * A map from document identifiers to range identifiers to the set of nonlocal
      * monikers attached to that range. These values will be used to populate the
      * definitions table.
      */
-    private definitions = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
+    public definitions = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
         () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
     )
 
@@ -169,27 +159,9 @@ class LsifImporter {
      * monikers attached to that range. These values will be used to populate the
      * references table.
      */
-    private references = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
+    public references = new DefaultMap<Id, DefaultMap<Id, Set<Id>>>(
         () => new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
     )
-
-    /**
-     * Create a new `LsifImporter` with the given entity manager.
-     *
-     * @param entityManager A transactional SQLite entity manager.
-     */
-    constructor(private entityManager: EntityManager) {
-        // Determine the max batch size of each model type. We cannot perform an
-        // insert operation with more than 999 placeholder variables, so we need
-        // to flush our batch before we reach that amount. The batch size for each
-        // model is calculated based on the number of fields inserted. If fields
-        // are added to the models, these numbers will also need to change.
-
-        this.metaInserter = new TableInserter(this.entityManager, MetaModel, Math.floor(999 / 3))
-        this.documentInserter = new TableInserter(this.entityManager, DocumentModel, Math.floor(999 / 2))
-        this.defInserter = new TableInserter(this.entityManager, DefinitionModel, Math.floor(999 / 8))
-        this.refInserter = new TableInserter(this.entityManager, ReferenceModel, Math.floor(999 / 8))
-    }
 
     /**
      * Process a single vertex or edge.
@@ -224,7 +196,13 @@ class LsifImporter {
                 // is finalized.
 
                 case VertexLabels.range:
-                    this.rangeData.set(element.id, convertRange(element))
+                    this.rangeData.set(element.id, {
+                        startLine: element.start.line,
+                        startCharacter: element.start.character,
+                        endLine: element.end.line,
+                        endCharacter: element.end.character,
+                        monikers: [],
+                    })
                     break
                 case VertexLabels.resultSet:
                     this.resultSetData.set(element.id, { monikers: [] })
@@ -239,10 +217,17 @@ class LsifImporter {
                     this.hoverData.set(element.id, normalizeHover(element.result))
                     break
                 case VertexLabels.moniker:
-                    this.monikerData.set(element.id, convertMoniker(element))
+                    this.monikerData.set(element.id, {
+                        kind: element.kind || MonikerKind.local,
+                        scheme: element.scheme,
+                        identifier: element.identifier,
+                    })
                     break
                 case VertexLabels.packageInformation:
-                    this.packageInformationData.set(element.id, convertPackageInformation(element))
+                    this.packageInformationData.set(element.id, {
+                        name: element.name,
+                        version: element.version || '$missing',
+                    })
                     break
             }
         }
@@ -278,128 +263,6 @@ class LsifImporter {
                     break
             }
         }
-    }
-
-    /**
-     * Ensure that any outstanding records are flushed to the database. Also
-     * returns the set of packages provided by the project analyzed by this
-     * LSIF dump as well as the symbols imported into the LSIF dump from
-     * external packages.
-     */
-    public async finalize(): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-        if (this.lsifVersion === undefined) {
-            throw new Error('No metadata defined.')
-        }
-
-        await this.metaInserter.insert({ lsifVersion: this.lsifVersion, sourcegraphVersion: INTERNAL_LSIF_VERSION })
-
-        for (const [id, path] of this.documentPaths) {
-            // Finalize document
-            const document = this.finalizeDocument(id, path)
-
-            const data = await encodeJSON({
-                ranges: document.ranges,
-                orderedRanges: document.orderedRanges,
-                definitionResults: document.definitionResults,
-                referenceResults: document.referenceResults,
-                hoverResults: document.hoverResults,
-                monikers: document.monikers,
-                packageInformation: document.packageInformation,
-            })
-
-            // Insert document record
-            await this.documentInserter.insert({ path, data })
-        }
-
-        // Insert all related definitions
-        for (const [documentId, m] of this.definitions) {
-            for (const [rangeId, monikerIds] of m) {
-                for (const monikerId of monikerIds) {
-                    // TODO - clean this up
-                    const range = assertDefined(rangeId, 'range', this.rangeData)
-                    const moniker = assertDefined(monikerId, 'moniker', this.monikerData)
-                    const documentPath = assertDefined(documentId, 'documentPath', this.documentPaths)
-
-                    await this.defInserter.insert({
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                        documentPath,
-                        ...range,
-                    })
-                }
-            }
-        }
-
-        // Insert all related references
-        for (const [documentId, m] of this.references) {
-            for (const [rangeId, monikerIds] of m) {
-                for (const monikerId of monikerIds) {
-                    const range = assertDefined(rangeId, 'range', this.rangeData)
-                    const moniker = assertDefined(monikerId, 'moniker', this.monikerData)
-                    const documentPath = assertDefined(documentId, 'documentPath', this.documentPaths)
-
-                    await this.refInserter.insert({
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                        documentPath,
-                        ...range,
-                    })
-                }
-            }
-        }
-
-        await this.metaInserter.finalize()
-        await this.documentInserter.finalize()
-        await this.defInserter.finalize()
-        await this.refInserter.finalize()
-
-        return { packages: this.getPackages(), references: this.getReferences() }
-    }
-
-    /**
-     * Return the set of packages provided by the project analyzed by this LSIF dump.
-     */
-    private getPackages(): Package[] {
-        const packageHashes: Package[] = []
-        for (const id of this.exportedMonikers) {
-            const source = assertDefined(id, 'moniker', this.monikerData)
-            const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
-
-            packageHashes.push({
-                scheme: source.scheme,
-                name: packageInfo.name,
-                version: packageInfo.version,
-            })
-        }
-
-        return uniqWith(packageHashes, isEqual)
-    }
-
-    /**
-     * Return the symbols imported into the LSIF dump from external packages.
-     */
-    private getReferences(): SymbolReferences[] {
-        const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
-        for (const id of this.importedMonikers) {
-            const source = assertDefined(id, 'moniker', this.monikerData)
-            const packageInformationId = assertId(source.packageInformation)
-            const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
-
-            // TODO - same issue as the lodash thing above?
-            const pkg = JSON.stringify({
-                scheme: source.scheme,
-                name: packageInfo.name,
-                version: packageInfo.version,
-            })
-
-            packageIdentifiers.getOrDefault(pkg).push(source.identifier)
-        }
-
-        return Array.from(packageIdentifiers).map(([key, identifiers]) => ({
-            package: JSON.parse(key) as Package,
-            identifiers,
-        }))
     }
 
     //
@@ -512,8 +375,8 @@ class LsifImporter {
     private handleNextMonikerEdge(edge: nextMoniker): void {
         assertDefined(edge.inV, 'moniker', this.monikerData)
         assertDefined(edge.outV, 'moniker', this.monikerData)
-        this.correlateMonikers(edge.inV, edge.outV) // Forward direction
-        this.correlateMonikers(edge.outV, edge.inV) // Backwards direction
+        this.monikerSets.getOrDefault(edge.inV).add(edge.outV) // Forward direction
+        this.monikerSets.getOrDefault(edge.outV).add(edge.inV) // Backwards direction
     }
 
     /**
@@ -587,19 +450,50 @@ class LsifImporter {
         assertDefined(edge.inV, 'referenceResult', this.referenceData)
         outV.referenceResult = edge.inV
     }
+}
 
-    //
-    // Helper Functions
+/**
+ * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
+ * a new importer, insert each vertex and edge in the given stream, then call the
+ * importer's finalize method.
+ *
+ * @param entityManager A transactional SQLite entity manager.
+ * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ */
+export async function importLsif(
+    entityManager: EntityManager,
+    elements: AsyncIterable<Vertex | Edge>
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    const correlator = new LsifCorrelator()
 
-    /**
-     * Add `b` as a neighbor of `a` in `monikerSets`.
-     *
-     * @param a A moniker.
-     * @param b A second moniker.
-     */
-    private correlateMonikers(a: Id, b: Id): void {
-        this.monikerSets.getOrDefault(a).add(b)
+    let i = 0
+    for await (const element of elements) {
+        try {
+            correlator.insert(element)
+        } catch (e) {
+            console.log(e)
+            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+        }
+
+        i++
     }
+
+    // Determine the max batch size of each model type. We cannot perform an
+    // insert operation with more than 999 placeholder variables, so we need
+    // to flush our batch before we reach that amount. The batch size for each
+    // model is calculated based on the number of fields inserted. If fields
+    // are added to the models, these numbers will also need to change.
+
+    const metaInserter = new TableInserter(entityManager, MetaModel, Math.floor(999 / 3))
+    const documentInserter = new TableInserter(entityManager, DocumentModel, Math.floor(999 / 2))
+    const defInserter = new TableInserter(entityManager, DefinitionModel, Math.floor(999 / 8))
+    const refInserter = new TableInserter(entityManager, ReferenceModel, Math.floor(999 / 8))
+
+    if (correlator.lsifVersion === undefined) {
+        throw new Error('No metadata defined.')
+    }
+
+    await metaInserter.insert({ lsifVersion: correlator.lsifVersion, sourcegraphVersion: INTERNAL_LSIF_VERSION })
 
     /**
      * Create a self-contained document object.
@@ -607,7 +501,7 @@ class LsifImporter {
      * @param currentDocumentId The identifier of the document.
      * @param path The path of the document.
      */
-    private finalizeDocument(currentDocumentId: Id, path: string): DocumentData {
+    const finalizeDocument = (currentDocumentId: Id, path: string): DocumentData => {
         const document = {
             path,
             ranges: new Map<Id, number>(),
@@ -621,7 +515,7 @@ class LsifImporter {
 
         const addHover = (id: Id | undefined): void => {
             if (id !== undefined && !document.hoverResults.has(id)) {
-                document.hoverResults.set(id, assertDefined(id, 'hoverResult', this.hoverData))
+                document.hoverResults.set(id, assertDefined(id, 'hoverResult', correlator.hoverData))
             }
         }
 
@@ -629,14 +523,14 @@ class LsifImporter {
             if (id !== undefined && !document.packageInformation.has(id)) {
                 document.packageInformation.set(
                     id,
-                    assertDefined(id, 'packageInformation', this.packageInformationData)
+                    assertDefined(id, 'packageInformation', correlator.packageInformationData)
                 )
             }
         }
 
         const addMoniker = (id: Id | undefined): void => {
             if (id !== undefined && !document.monikers.has(id)) {
-                const moniker = assertDefined(id, 'moniker', this.monikerData)
+                const moniker = assertDefined(id, 'moniker', correlator.monikerData)
                 document.monikers.set(id, moniker)
                 addPackageInformation(moniker.packageInformation)
             }
@@ -660,7 +554,7 @@ class LsifImporter {
             for (const [documentId, ids] of assertDefined(id, name, datas)) {
                 // Resolve the "document" field from the "item" edge. This will correlate
                 // the referenced range identifier with the document in which it belongs.
-                const documentPath = assertDefined(documentId, 'documentPath', this.documentPaths)
+                const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
 
                 for (const id of ids) {
                     values.push({ documentPath, id })
@@ -684,9 +578,9 @@ class LsifImporter {
         }
 
         const orderedRanges: (RangeData & { id: Id })[] = []
-        for (const id of assertDefined(currentDocumentId, 'contains', this.containsData)) {
-            const range = assertDefined(id, 'range', this.rangeData)
-            this.canonicalizeRange(id, range)
+        for (const id of assertDefined(currentDocumentId, 'contains', correlator.containsData)) {
+            const range = assertDefined(id, 'range', correlator.rangeData)
+            canonicalizeRange(id, range)
             orderedRanges.push({ id, ...range })
 
             addHover(range.hoverResult)
@@ -697,8 +591,8 @@ class LsifImporter {
 
             addGenericResult(
                 'definitionResult',
-                this.definitionData,
-                this.definitions,
+                correlator.definitionData,
+                correlator.definitions,
                 document.definitionResults,
                 range.definitionResult,
                 range.monikers
@@ -706,8 +600,8 @@ class LsifImporter {
 
             addGenericResult(
                 'referenceResult',
-                this.referenceData,
-                this.references,
+                correlator.referenceData,
+                correlator.references,
                 document.referenceResults,
                 range.referenceResult,
                 range.monikers
@@ -738,7 +632,7 @@ class LsifImporter {
      * @param id The identifier of the range.
      * @param range The range to canonicalize.
      */
-    private canonicalizeRange(id: Id, range: RangeData): void {
+    const canonicalizeRange = (id: Id, range: RangeData): void => {
         let definitionResult: Id | undefined
         let referenceResult: Id | undefined
         let hoverResult: Id | undefined
@@ -753,20 +647,20 @@ class LsifImporter {
             hoverResult = hoverResult === undefined ? item.hoverResult : hoverResult
 
             if (item.monikers.length > 0) {
-                for (const mon of reachableMonikers(this.monikerSets, item.monikers[0])) {
-                    if (assertDefined(mon, 'moniker', this.monikerData).kind !== MonikerKind.local) {
+                for (const mon of reachableMonikers(correlator.monikerSets, item.monikers[0])) {
+                    if (assertDefined(mon, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
                         monikers.add(mon)
                     }
                 }
             }
 
-            const nextId = this.nextData.get(itemId)
+            const nextId = correlator.nextData.get(itemId)
             if (nextId === undefined) {
                 break
             }
 
             itemId = nextId
-            item = assertDefined(nextId, 'resultSet', this.resultSetData)
+            item = assertDefined(nextId, 'resultSet', correlator.resultSetData)
         }
 
         range.definitionResult = definitionResult
@@ -774,36 +668,122 @@ class LsifImporter {
         range.hoverResult = hoverResult
         range.monikers = Array.from(monikers)
     }
-}
 
-/**
- * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
- * a new importer, insert each vertex and edge in the given stream, then call the
- * importer's finalize method.
- *
- * @param entityManager A transactional SQLite entity manager.
- * @param elements The stream of vertex and edge objects composing the LSIF dump.
- */
-export async function importLsif(
-    entityManager: EntityManager,
-    elements: AsyncIterable<Vertex | Edge>
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const importer = new LsifImporter(entityManager)
+    for (const [id, path] of correlator.documentPaths) {
+        // Finalize document
+        const document = finalizeDocument(id, path)
 
-    let i = 0
-    for await (const element of elements) {
-        try {
-            importer.insert(element)
-        } catch (e) {
-            console.log(e)
-            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
-        }
+        const data = await encodeJSON({
+            ranges: document.ranges,
+            orderedRanges: document.orderedRanges,
+            definitionResults: document.definitionResults,
+            referenceResults: document.referenceResults,
+            hoverResults: document.hoverResults,
+            monikers: document.monikers,
+            packageInformation: document.packageInformation,
+        })
 
-        i++
+        // Insert document record
+        await documentInserter.insert({ path, data })
     }
 
-    // TODO - do finalization out here
-    return await importer.finalize()
+    // Insert all related definitions
+    for (const [documentId, m] of correlator.definitions) {
+        for (const [rangeId, monikerIds] of m) {
+            for (const monikerId of monikerIds) {
+                // TODO - clean this up
+                const range = assertDefined(rangeId, 'range', correlator.rangeData)
+                const moniker = assertDefined(monikerId, 'moniker', correlator.monikerData)
+                const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
+
+                await defInserter.insert({
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                    documentPath,
+                    ...range,
+                })
+            }
+        }
+    }
+
+    // Insert all related references
+    for (const [documentId, m] of correlator.references) {
+        for (const [rangeId, monikerIds] of m) {
+            for (const monikerId of monikerIds) {
+                const range = assertDefined(rangeId, 'range', correlator.rangeData)
+                const moniker = assertDefined(monikerId, 'moniker', correlator.monikerData)
+                const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
+
+                await refInserter.insert({
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                    documentPath,
+                    ...range,
+                })
+            }
+        }
+    }
+
+    await metaInserter.finalize()
+    await documentInserter.finalize()
+    await defInserter.finalize()
+    await refInserter.finalize()
+
+    /**
+     * Return the set of packages provided by the project analyzed by this LSIF dump.
+     */
+    const getPackages = (): Package[] => {
+        const packageHashes: Package[] = []
+        for (const id of correlator.exportedMonikers) {
+            const source = assertDefined(id, 'moniker', correlator.monikerData)
+            const packageInformationId = assertId(source.packageInformation)
+            const packageInfo = assertDefined(
+                packageInformationId,
+                'packageInformation',
+                correlator.packageInformationData
+            )
+
+            packageHashes.push({
+                scheme: source.scheme,
+                name: packageInfo.name,
+                version: packageInfo.version,
+            })
+        }
+
+        return uniqWith(packageHashes, isEqual)
+    }
+
+    /**
+     * Return the symbols imported into the LSIF dump from external packages.
+     */
+    const getReferences = (): SymbolReferences[] => {
+        const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
+        for (const id of correlator.importedMonikers) {
+            const source = assertDefined(id, 'moniker', correlator.monikerData)
+            const packageInformationId = assertId(source.packageInformation)
+            const packageInfo = assertDefined(
+                packageInformationId,
+                'packageInformation',
+                correlator.packageInformationData
+            )
+
+            // TODO - same issue as the lodash thing above?
+            const pkg = JSON.stringify({
+                scheme: source.scheme,
+                name: packageInfo.name,
+                version: packageInfo.version,
+            })
+
+            packageIdentifiers.getOrDefault(pkg).push(source.identifier)
+        }
+
+        return Array.from(packageIdentifiers).map(([key, identifiers]) => ({
+            package: JSON.parse(key) as Package,
+            identifiers,
+        }))
+    }
+
+    return { packages: getPackages(), references: getReferences() }
 }
 
 /**
@@ -837,39 +817,6 @@ export function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T>[]): T
     }
 
     throw new Error(`Unknown ${name} '${id}'.`)
-}
-
-/**
- * Convert a protocol `Range` object into a `RangeData` object.
- *
- * @param range The range object.
- */
-function convertRange(range: Range): RangeData {
-    return {
-        startLine: range.start.line,
-        startCharacter: range.start.character,
-        endLine: range.end.line,
-        endCharacter: range.end.character,
-        monikers: [],
-    }
-}
-
-/**
- * Convert a protocol `Moniker` object into a `MonikerData` object.
- *
- * @param moniker The moniker object.
- */
-function convertMoniker(moniker: Moniker): MonikerData {
-    return { kind: moniker.kind || MonikerKind.local, scheme: moniker.scheme, identifier: moniker.identifier }
-}
-
-/**
- * Convert a protocol `PackageInformation` object into a `PackgeInformationData` object.
- *
- * @param info The protocol object.
- */
-function convertPackageInformation(info: PackageInformation): PackageInformationData {
-    return { name: info.name, version: info.version || '$missing' }
 }
 
 /**
