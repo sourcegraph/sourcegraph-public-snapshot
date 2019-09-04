@@ -35,7 +35,7 @@ export const SearchResultTab: React.FunctionComponent<Props> = props => {
             <NavLink
                 to={{ pathname: '/search', search: newURLSearchParam }}
                 className="nav-link"
-                activeClassName="active"
+                activeClassName="active e2e-search-result-type-tabs--active"
                 isActive={isActiveFunc}
             >
                 {typeToProse[props.type]}
