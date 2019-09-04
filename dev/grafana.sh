@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Description: Dashboards and graphs for grafana metrics.
+#
+
 set -euf -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -26,8 +29,6 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
    CONFIG_SUB_DIR="local"
 fi
 
-# Description: Dashboards and graphs for grafana metrics.
-#
 docker run --rm  --cidfile ${CID_FILE} \
     --name=grafana \
     --cpus=1 \
