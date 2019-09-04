@@ -133,7 +133,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     }
                                 ),
                                 // Update view with results or error
-                                map(results => ({
+                                map(resultsOrError => ({ resultsOrError })),
                                     resultsOrError: results,
                                 })),
                                 catchError(error => [{ resultsOrError: error }])
