@@ -18,6 +18,10 @@ import (
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
 func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
+	if Mocks.ReadFile != nil {
+		return Mocks.ReadFile(commit, name)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
