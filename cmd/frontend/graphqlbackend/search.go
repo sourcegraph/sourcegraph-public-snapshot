@@ -746,7 +746,7 @@ func newSearchResultResolver(result interface{}, score int) *searchSuggestionRes
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
 	case *gitTreeEntryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
 	case *searchSymbolResult:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}

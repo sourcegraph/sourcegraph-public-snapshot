@@ -189,8 +189,8 @@ func TestRepository_FileSystem(t *testing.T) {
 			continue
 		}
 		file1Info := dir1Entries[0]
-		if file1Info.Name() != "file1" {
-			t.Errorf("%s: got dir1 entry name == %q, want 'file1'", label, file1Info.Name())
+		if got, want := file1Info.Name(), "dir1/file1"; got != want {
+			t.Errorf("%s: got dir1 entry name == %q, want %q", label, got, want)
 		}
 		if want := int64(7); file1Info.Size() != want {
 			t.Errorf("%s: got dir1 entry size == %d, want %d", label, file1Info.Size(), want)
@@ -220,8 +220,8 @@ func TestRepository_FileSystem(t *testing.T) {
 		if !file1Info.Mode().IsRegular() {
 			t.Errorf("%s: file1 stat !IsRegular", label)
 		}
-		if name := file1Info.Name(); name != "file1" {
-			t.Errorf("%s: got file1 name %q, want 'file1'", label, name)
+		if got, want := file1Info.Name(), "dir1/file1"; got != want {
+			t.Errorf("%s: got file1 name %q, want %q", label, got, want)
 		}
 		if want := int64(7); file1Info.Size() != want {
 			t.Errorf("%s: got file1 size == %d, want %d", label, file1Info.Size(), want)
@@ -287,8 +287,8 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: got %d dir1 entries, want 1", label, len(dir1Entries))
 			continue
 		}
-		if file1Info := dir1Entries[0]; file1Info.Name() != "file1" {
-			t.Errorf("%s: got dir1 entry name == %q, want 'file1'", label, file1Info.Name())
+		if got, want := dir1Entries[0].Name(), "dir1/file1"; got != want {
+			t.Errorf("%s: got dir1 entry name == %q, want %q", label, got, want)
 		}
 
 		// rootEntries should be empty for third commit
