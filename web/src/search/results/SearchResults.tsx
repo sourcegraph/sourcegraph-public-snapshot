@@ -60,7 +60,6 @@ interface SearchResultsState {
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
-    activeType: SEARCH_TYPES
 }
 
 // All values that are valid for the `type:` filter. Empty string represents default code search.
@@ -71,7 +70,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
-        activeType: getSearchTypeFromQuery(this.props.navbarSearchQuery),
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -195,11 +193,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}
                 />
-                <SearchResultTypeTabs
-                    activeType={this.state.activeType}
-                    query={this.props.navbarSearchQuery}
-                    onTabClicked={this.onTypeTabClicked}
-                />
+                <SearchResultTypeTabs query={this.props.navbarSearchQuery} />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
@@ -300,11 +294,5 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             : toggleSearchFilter(this.props.navbarSearchQuery, value)
 
         submitSearch(this.props.history, newQuery, 'filter')
-    }
-
-    private onTypeTabClicked = (value: SEARCH_TYPES) => {
-        const newQuery = toggleSearchType(this.props.navbarSearchQuery, value)
-
-        submitSearch(this.props.history, newQuery, 'type')
     }
 }

@@ -1,10 +1,11 @@
 import * as React from 'react'
 import { SEARCH_TYPES } from './SearchResults'
+import { NavLink } from 'react-router-dom'
+import { toggleSearchType } from '../helpers'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 
 interface Props {
-    active: boolean
     type: SEARCH_TYPES
-    onClick: (query: SEARCH_TYPES) => void
     query: string
 }
 
@@ -16,28 +17,22 @@ const typeToProse: Record<SEARCH_TYPES, string> = {
     repo: 'Repos',
 }
 
-export default class SearchResultTab extends React.Component<Props, {}> {
-    constructor(props: Props) {
-        super(props)
-    }
-
+export default class SearchResultTab extends React.Component<Props> {
     public render(): JSX.Element | null {
-        return (
-            <button
-                type="button"
-                className={`btn search-result-tab ${this.props.active &&
-                    'search-result-tab--active e2e-search-result-tab--active'} e2e-search-result-tab e2e-search-result-tab-${
-                    this.props.type
-                }`}
-                onClick={this.onClick}
-            >
-                <div className="search-result-tab__inner">{typeToProse[this.props.type]}</div>
-            </button>
-        )
-    }
+        const q = toggleSearchType(this.props.query, this.props.type)
+        const newURLSearchParam = buildSearchURLQuery(q)
 
-    private onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
-        event.preventDefault()
-        this.props.onClick(this.props.type)
+        return (
+            <li className="nav-item">
+                <NavLink
+                    to={{ pathname: '/search', search: newURLSearchParam }}
+                    className={`nav-link`}
+                    activeClassName={'active'}
+                    isActive={(_, location) => location.search === '?' + newURLSearchParam}
+                >
+                    {typeToProse[this.props.type]}
+                </NavLink>
+            </li>
+        )
     }
 }

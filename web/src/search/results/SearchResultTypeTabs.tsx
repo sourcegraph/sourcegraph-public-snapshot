@@ -1,23 +1,17 @@
 import * as React from 'react'
 import SearchResultTab from './SearchResultTab'
-import { SEARCH_TYPES } from './SearchResults'
 
 interface Props {
-    activeType: SEARCH_TYPES
     query: string
-    onTabClicked: (query: SEARCH_TYPES) => void
 }
-
-export const SearchResultTypeTabs: React.FunctionComponent<{
-    activeType: SEARCH_TYPES
-    query: string
-    onTabClicked: (query: SEARCH_TYPES) => void
-}> = ({ activeType, query, onTabClicked }) => (
-    <div className="search-result-type-tabs e2e-search-result-type-tabs">
-        <SearchResultTab active={activeType === ''} type="" onClick={onTabClicked} query={query} />
-        <SearchResultTab active={activeType === 'diff'} type="diff" onClick={onTabClicked} query={query} />
-        <SearchResultTab active={activeType === 'commit'} type="commit" onClick={onTabClicked} query={query} />
-        <SearchResultTab active={activeType === 'symbol'} type="symbol" onClick={onTabClicked} query={query} />
-        <SearchResultTab active={activeType === 'repo'} type="repo" onClick={onTabClicked} query={query} />
+export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
+    <div className="search-result-type-tabs e2e-search-result-type-tabs border-bottom">
+        <ul className="nav nav-tabs border-bottom-0">
+            <SearchResultTab type="" query={props.query} />
+            <SearchResultTab type="diff" query={props.query} />
+            <SearchResultTab type="commit" query={props.query} />
+            <SearchResultTab type="symbol" query={props.query} />
+            <SearchResultTab type="repo" query={props.query} />
+        </ul>
     </div>
 )
