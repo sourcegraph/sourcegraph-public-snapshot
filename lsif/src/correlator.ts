@@ -78,10 +78,10 @@ export class Correlator {
     public packageInformationData = new Map<Id, PackageInformationData>()
 
     // Edge data
-    public containsData = new Map<Id, Set<Id>>()
     public nextData = new Map<Id, Id>()
-    public definitionData = new Map<Id, DefaultMap<Id, Id[]>>()
-    public referenceData = new Map<Id, DefaultMap<Id, Id[]>>()
+    public containsData = new Map<Id, Set<Id>>() // document to ranges
+    public definitionData = new Map<Id, DefaultMap<Id, Id[]>>() // definition result to document to ranges
+    public referenceData = new Map<Id, DefaultMap<Id, Id[]>>() // reference result to document to ranges
 
     /**
      * A mapping for the relation from moniker to the set of monikers that they are related

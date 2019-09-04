@@ -319,15 +319,12 @@ function gatherDocument(
         // definition or references submap for the current document
         rangeMonikerMap: DefaultMap<Id, Set<Id>>
     ): QualifiedRangeId[] => {
-        const values = []
+        let values: QualifiedRangeId[] = []
         for (const [documentId, rangeIds] of documentRanges) {
             // Resolve the "document" field from the "item" edge. This will correlate
             // the referenced range identifier with the document in which it belongs.
             const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
-
-            for (const id of rangeIds) {
-                values.push({ documentPath, id })
-            }
+            values = values.concat(rangeIds.map(id => ({ documentPath, id })))
 
             if (documentId !== currentDocumentId) {
                 continue
@@ -361,25 +358,15 @@ function gatherDocument(
         }
 
         if (range.definitionResult !== undefined) {
-            document.definitionResults.set(
-                range.definitionResult,
-                getQualifiedRanges(
-                    assertDefined(range.definitionResult, 'definitionResult', correlator.definitionData),
-                    range.monikers,
-                    definitions
-                )
-            )
+            const documentRanges = assertDefined(range.definitionResult, 'definitionResult', correlator.definitionData)
+            const qualifiedRanges = getQualifiedRanges(documentRanges, range.monikers, definitions)
+            document.definitionResults.set(range.definitionResult, qualifiedRanges)
         }
 
         if (range.referenceResult !== undefined) {
-            document.referenceResults.set(
-                range.referenceResult,
-                getQualifiedRanges(
-                    assertDefined(range.referenceResult, 'referenceResult', correlator.referenceData),
-                    range.monikers,
-                    references
-                )
-            )
+            const documentRanges = assertDefined(range.referenceResult, 'referenceResult', correlator.referenceData)
+            const qualifiedRanges = getQualifiedRanges(documentRanges, range.monikers, references)
+            document.referenceResults.set(range.referenceResult, qualifiedRanges)
         }
     }
 
