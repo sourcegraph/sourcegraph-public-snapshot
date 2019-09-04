@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/nautilus/gateway"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -30,7 +31,7 @@ var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186",
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router) http.Handler {
+func NewHandler(m *mux.Router, gw *gateway.Gateway) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -47,7 +48,9 @@ func NewHandler(m *mux.Router) http.Handler {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
-	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
+	if gw != nil {
+		m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(http.HandlerFunc(gw.GraphQLHandler)))
+	}
 
 	lsifServerURL, err := url.Parse(lsifServerURLFromEnv)
 	if err != nil {

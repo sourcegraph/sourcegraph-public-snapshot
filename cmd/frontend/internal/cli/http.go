@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/nautilus/gateway"
+	"github.com/nautilus/graphql"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
@@ -28,13 +31,34 @@ import (
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
-func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
+func newExternalHTTPHandler(ctx context.Context, remoteGraphqlURLs ...string) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
 
+	// Setup GraphQL gateway
+	schemas, err := graphql.IntrospectRemoteSchemas(remoteGraphqlURLs...)
+	if err != nil {
+		return nil, err
+	}
+
+	gw, err := gateway.New(
+		schemas,
+		gateway.WithMiddlewares(
+			gateway.RequestMiddleware(func(r *http.Request) error {
+				if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
+					r.Header.Set("X-User-ID", a.UIDString())
+				}
+				return nil
+			}),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// HTTP API handler.
-	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))
+	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()), gw)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
@@ -94,24 +118,28 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler() http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		withInternalActor(
+		withActor(
 			httpapi.NewInternalHandler(
 				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
 			),
 		),
 	))
-	return gcontext.ClearHandler(internalMux)
+	return healthCheckMiddleware(gcontext.ClearHandler(internalMux))
 }
 
-// withInternalActor wraps an existing HTTP handler by setting an internal actor in the HTTP request
-// context.
+// withActor wraps an existing HTTP handler by setting an actor in the HTTP request
+// context: either an "internal" actor or a specifc user.
 //
 // 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e., only use
 // for the internal endpoint), because internal requests will bypass repository permissions checks.
-func withInternalActor(h http.Handler) http.Handler {
+// This assumes that the internal network Sourcegraph is deployed on is secure.
+func withActor(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rWithActor := r.WithContext(actor.WithActor(r.Context(), &actor.Actor{Internal: true}))
-		h.ServeHTTP(w, rWithActor)
+		uid, _ := strconv.ParseInt(r.Header.Get("X-User-ID"), 10, 32)
+		h.ServeHTTP(w, r.WithContext(actor.WithActor(r.Context(), &actor.Actor{
+			Internal: uid == 0,
+			UID:      int32(uid),
+		})))
 	})
 }
 

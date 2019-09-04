@@ -120,6 +120,8 @@ require (
 	github.com/mattn/goreman v0.2.1
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
+	github.com/nautilus/gateway v0.0.14
+	github.com/nautilus/graphql v0.0.7
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d // indirect
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/onsi/ginkgo v1.10.1 // indirect

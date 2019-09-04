@@ -159,31 +159,13 @@ func Main() error {
 		hooks.AfterDBInit()
 	}
 
-	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(context.Background())
-	if err != nil {
-		return err
-	}
-
-	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler()
-
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}
 
-	// Start HTTP server.
-	l, err := net.Listen("tcp", httpAddr)
-	if err != nil {
-		return err
-	}
-	log15.Debug("HTTP running", "on", httpAddr)
-	srv.GoServe(l, &http.Server{
-		Handler:      externalHandler,
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
-	})
+	{
+		// The internal HTTP handler does not include the auth handlers.
+		internalHandler := newInternalHTTPHandler()
 
-	if httpAddrInternal != "" {
 		l, err := net.Listen("tcp", httpAddrInternal)
 		if err != nil {
 			return err
@@ -197,6 +179,34 @@ func Main() error {
 			// (eg git archive). Should match the timeout used for git archive
 			// in gitserver.
 			WriteTimeout: time.Hour,
+		})
+	}
+
+	{
+		// The external handler needs the internal handler up and running to
+		// construct the GraphQL gateway via schema introspection.
+		waitUntilReady("http://" + httpAddrInternal + "/healthz")
+
+		remoteGraphqlURLs := []string{
+			"http://" + httpAddrInternal + "/.internal/graphql",
+		}
+
+		// Create the external HTTP handler.
+		externalHandler, err := newExternalHTTPHandler(context.Background(), remoteGraphqlURLs...)
+		if err != nil {
+			return err
+		}
+
+		// Start HTTP server.
+		l, err := net.Listen("tcp", httpAddr)
+		if err != nil {
+			return err
+		}
+		log15.Debug("HTTP running", "on", httpAddr)
+		srv.GoServe(l, &http.Server{
+			Handler:      externalHandler,
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 60 * time.Second,
 		})
 	}
 
@@ -281,4 +291,16 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 		}
 	}
 	return false
+}
+
+func waitUntilReady(url string) {
+	for {
+		resp, err := http.Get(url)
+		if err != nil || resp.StatusCode < 200 || resp.StatusCode >= 400 {
+			log15.Debug("HTTP " + url + " not ready yet")
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		break
+	}
 }
