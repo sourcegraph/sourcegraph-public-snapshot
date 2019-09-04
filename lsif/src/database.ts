@@ -2,15 +2,31 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { isEqual, uniqWith } from 'lodash'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, DocumentData, DefinitionReferenceChunk } from './entities'
+import { MonikerData, RangeData, DocumentData, ResultChunkData } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache, DocumentCache } from './cache'
-import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel, ChunkModel } from './models.database'
+import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel, ResultChunkModel } from './models.database'
 import { PackageModel } from './models.xrepo'
 import { assertDefined, hashKey } from './util'
 import { DefaultMap } from './default-map'
+import { NUM_RESULT_CHUNKS } from './importer'
+
+/**
+ * A partially-resolved qualified range.
+ */
+interface ResolvedQualifiedRange {
+    /**
+     * The resolved document path.
+     */
+    documentPath: string
+
+    /**
+     * The identifier of the range.
+     */
+    rangeId: Id
+}
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -134,64 +150,33 @@ export class Database {
 
         const monikers = sortMonikers(range.monikers.map(id => assertDefined(id, 'monikers', document.monikers)))
 
-        // First, we search the Refs table of our own database - this search is necessary,
-        // but may be unintuitive, but remember that a 'Find References' operation on a
-        // reference should also return references to the definition - these are not
-        // necessarily fully linked in the LSIF data.
+        // Next, we search the references table of our own database - this search is necessary,
+        // but may be unintuitive, but remember that a 'Find References' operation on a reference
+        // should also return references to the definition. These are not necessarily fully linked
+        // in the LSIF data.
 
         for (const moniker of monikers) {
             locations = locations.concat(await Database.monikerResults(this, ReferenceModel, moniker, path => path))
         }
 
-        // Second, we perform an xrepo search for uses of each nonlocal moniker. We stop
-        // processing after the first moniker for which we received results. As we process
-        // monikers in an order that considers moniker schemes, the first one to get results
-        // should be the most desirable.
+        // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
+        // the first moniker for which we received results. As we process monikers in an order that
+        // considers moniker schemes, the first one to get results should be the most desirable.
 
         for (const moniker of monikers) {
             if (moniker.kind === 'import') {
-                if (moniker.packageInformation) {
-                    const packageInformation = document.packageInformation.get(moniker.packageInformation)
-                    if (packageInformation) {
-                        const packageEntity = await this.xrepoDatabase.getPackage(
-                            moniker.scheme,
-                            packageInformation.name,
-                            packageInformation.version
-                        )
-
-                        if (packageEntity) {
-                            const db = new Database(
-                                this.storageRoot,
-                                this.xrepoDatabase,
-                                this.connectionCache,
-                                this.documentCache,
-                                packageEntity.repository,
-                                packageEntity.commit,
-                                makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
-                            )
-
-                            const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
-                            locations = locations.concat(
-                                await Database.monikerResults(db, ReferenceModel, moniker, pathTransformer)
-                            )
-                        }
-                    }
-                }
+                // Get locations in the defining package
+                locations = locations.concat(await this.remoteMoniker(document, moniker))
             }
 
-            // TODO - shouldn't occur
-            if (moniker.kind === 'local') {
-                continue
-            }
-
+            // Get locations in all packages
             const remoteResults = await this.remoteReferences(document, moniker)
             if (remoteResults) {
-                // TODO - see why we need to deduplicate
+                // TODO - determine source of duplication (and below)
                 return uniqWith(locations.concat(remoteResults), isEqual)
             }
         }
 
-        // TODO - see why we need to deduplicate
         return uniqWith(locations, isEqual)
     }
 
@@ -222,34 +207,6 @@ export class Database {
     // Helper Functions
 
     /**
-     * Query the definitions or referencess table of `db` for items that match the given moniker.
-     * Convert each result into an LSP location. The `pathTransformer` function is invoked on each
-     * result item to modify the resulting locations.
-     *
-     * @param db The target database.
-     * @param model The constructor for the model type.
-     * @param moniker The target moniker.
-     * @param pathTransformer The function used to alter location paths.
-     */
-    private static async monikerResults(
-        db: Database,
-        model: typeof DefinitionModel | typeof ReferenceModel,
-        moniker: MonikerData,
-        pathTransformer: (path: string) => string
-    ): Promise<lsp.Location[]> {
-        const results = await db.withConnection(connection =>
-            connection.getRepository<DefinitionModel | ReferenceModel>(model).find({
-                where: {
-                    scheme: moniker.scheme,
-                    identifier: moniker.identifier,
-                },
-            })
-        )
-
-        return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), makeRange(result)))
-    }
-
-    /**
      * Convert a set of range results (from a definition or reference query) into a set
      * of LSP ranges. Each range result holds the range Id as well as the document path.
      * For document paths matching the loaded document, find the range data locally. For
@@ -263,7 +220,7 @@ export class Database {
     private async findQualifiedRanges(
         path: string,
         document: DocumentData,
-        resultData: { documentPath: string; rangeId: Id }[] // TODO - make a type
+        resultData: ResolvedQualifiedRange[]
     ): Promise<lsp.Location[]> {
         // Group by document path so we only have to load each document once
         const groupedResults = new DefaultMap<string, Set<Id>>(() => new Set<Id>())
@@ -296,6 +253,34 @@ export class Database {
         }
 
         return results
+    }
+
+    /**
+     * Query the definitions or referencess table of `db` for items that match the given moniker.
+     * Convert each result into an LSP location. The `pathTransformer` function is invoked on each
+     * result item to modify the resulting locations.
+     *
+     * @param db The target database.
+     * @param model The constructor for the model type.
+     * @param moniker The target moniker.
+     * @param pathTransformer The function used to alter location paths.
+     */
+    private static async monikerResults(
+        db: Database,
+        model: typeof DefinitionModel | typeof ReferenceModel,
+        moniker: MonikerData,
+        pathTransformer: (path: string) => string
+    ): Promise<lsp.Location[]> {
+        const results = await db.withConnection(connection =>
+            connection.getRepository<DefinitionModel | ReferenceModel>(model).find({
+                where: {
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                },
+            })
+        )
+
+        return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), makeRange(result)))
     }
 
     /**
@@ -342,13 +327,53 @@ export class Database {
     }
 
     /**
+     * Find the references of of the target moniker inside the database where that moniker is defined.
+     *
+     * @param document The document containing the definition.
+     * @param moniker The target moniker.
+     */
+    private async remoteMoniker(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[]> {
+        if (!moniker.packageInformation) {
+            return []
+        }
+
+        const packageInformation = document.packageInformation.get(moniker.packageInformation)
+        if (!packageInformation) {
+            return []
+        }
+
+        const packageEntity = await this.xrepoDatabase.getPackage(
+            moniker.scheme,
+            packageInformation.name,
+            packageInformation.version
+        )
+
+        if (!packageEntity) {
+            return []
+        }
+
+        const db = new Database(
+            this.storageRoot,
+            this.xrepoDatabase,
+            this.connectionCache,
+            this.documentCache,
+            packageEntity.repository,
+            packageEntity.commit,
+            makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
+        )
+
+        const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
+        return await Database.monikerResults(db, ReferenceModel, moniker, pathTransformer)
+    }
+
+    /**
      * Find the references of the target moniker outside of the current database. If the moniker
      * has attached package information, then the correlation database is queried for the packages that
      * require this particular moniker identifier. These databases are opened, and their ref tables
      * are queried for the target moniker.
      *
      * @param document The document containing the definition.
-     * @param moniker THe target moniker.
+     * @param moniker The target moniker.
      */
     private async remoteReferences(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[]> {
         if (!moniker.packageInformation) {
@@ -369,6 +394,8 @@ export class Database {
 
         let allReferences: lsp.Location[] = []
         for (const reference of references) {
+            // Skip the remote reference that show up for ourselves - we've already gathered
+            // these in the previous step of the references query.
             if (reference.repository === this.repository && reference.commit === this.commit) {
                 continue
             }
@@ -436,25 +463,34 @@ export class Database {
         return { document, range }
     }
 
-    // TODO - cache these things as well
-    private async findResult(id: Id): Promise<{ documentPath: string; rangeId: Id }[]> {
-        // TODO - need to tune this somehow in the metadata
-        const key = hashKey(id, 50)
-        const chunk = await this.withConnection(connection => connection.getRepository(ChunkModel).findOneOrFail(key))
-        const realChunk = await decodeJSON<DefinitionReferenceChunk>(chunk.data)
-        try {
-            const a = assertDefined(id, 'qualifiedRange', realChunk.qualifiedRanges)
-            console.log('ok')
-            return a.map(qr => ({
-                documentPath: assertDefined(qr.documentId, 'documentPath', realChunk.paths),
-                rangeId: qr.rangeId,
-            }))
-        } catch (e) {
-            console.log('WHOOPS')
-            throw e
-        } finally {
-            console.log('huh')
-        }
+    /**
+     * Return a list of resolved qualified ranges by looking into the result
+     * chunks table and parsing the data associated with the given identifier.
+     *
+     * @param id The identifier of the definition or reference result.
+     */
+    private async findResult(id: Id): Promise<ResolvedQualifiedRange[]> {
+        const { paths, qualifiedRanges } = await this.findResultChunk(id)
+        const ranges = assertDefined(id, 'qualifiedRange', qualifiedRanges)
+
+        return ranges.map(range => ({
+            documentPath: assertDefined(range.documentId, 'documentPath', paths),
+            rangeId: range.rangeId,
+        }))
+    }
+
+    /**
+     * Return a parsed result chunk that contains the given identifier.
+     *
+     * @param id An identifier contained in the result chunk.
+     */
+    private async findResultChunk(id: Id): Promise<ResultChunkData> {
+        const resultChunk = await this.withConnection(connection =>
+            connection.getRepository(ResultChunkModel).findOneOrFail(hashKey(id, NUM_RESULT_CHUNKS))
+        )
+
+        // TODO - cache these results
+        return await decodeJSON<ResultChunkData>(resultChunk.data)
     }
 
     /**
@@ -466,7 +502,7 @@ export class Database {
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return await this.connectionCache.withConnection(
             this.databasePath,
-            [ChunkModel, DefinitionModel, DocumentModel, MetaModel, ReferenceModel],
+            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
             callback
         )
     }

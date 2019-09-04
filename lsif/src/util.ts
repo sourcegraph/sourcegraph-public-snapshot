@@ -53,9 +53,16 @@ export function assertId(id: Id | undefined): Id {
     throw new Error('id is undefined')
 }
 
-// TODO
+/**
+ * Hash a string or numeric identifier into the range [0, `maxIndex`). The
+ * hash algorithm here is similar to the one used in Java's String.hashCode.
+ *
+ * @param id The identifier to hash.
+ * @param maxIndex The maximum of the range.
+ */
 export function hashKey(id: Id, maxIndex: number): number {
     const s = `${id}`
+
     let hash = 0
     for (let i = 0; i < s.length; i++) {
         const chr = s.charCodeAt(i)
@@ -63,5 +70,6 @@ export function hashKey(id: Id, maxIndex: number): number {
         hash |= 0
     }
 
+    // Hash value may be negative - must unset sign bit before modulus
     return Math.abs(hash) % maxIndex
 }

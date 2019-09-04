@@ -20,20 +20,6 @@ export interface DocumentData {
      */
     orderedRanges: RangeData[]
 
-    // /**
-    //  * A map of definition result identifiers to a list of ids that compose the
-    //  * definition result. Each id is paired with a document identifier, as result
-    //  * sets can be shared between documents (necessitating cross-document queries).
-    //  */
-    // definitionResults: Map<Id, QualifiedRangeId[]>
-
-    // /**
-    //  ** A map of reference result identifiers to a list of ids that compose the
-    //  * reference result. Each id is paired with a document identifier, as result
-    //  * sets can be shared between documents (necessitating cross-document queries).
-    //  */
-    // referenceResults: Map<Id, QualifiedRangeId[]>
-
     /**
      * A map of hover result identifiers to hover results normalized as a single
      * string.
@@ -52,7 +38,7 @@ export interface DocumentData {
 }
 
 /**
- * A range Identifier that also specifies the path of the document to which it
+ * A range identifier that also specifies the path of the document to which it
  * belongs. This is sometimes necessary as we hold definition and refererence
  * results between packages, but the identifier of the range must be looked up
  * in a map of another encoded document.
@@ -71,20 +57,24 @@ export interface QualifiedRangeId {
 }
 
 /**
- * TODO
+ * A result chunk is a subset of the definition and reference result data for the
+ * LSIF dump. Results are inserted into chunks based on the hash code of their
+ * identifier (thus every chunk has a roughly proportional amount of data).
  */
-export interface DefinitionReferenceChunk {
+export interface ResultChunkData {
     /**
-     * TODO
+     * A map from document identifiers to document paths. The document identifiers
+     * in the qualified ranges map reference a concrete path stored here.
      */
     paths: Map<Id, string>
 
-    // TODO - suffix like things with Id
-
     /**
-     * TODO
+     * A map from definition or reference result identifiers to the qualified ranges
+     * that compose the result set.
      */
     qualifiedRanges: Map<Id, QualifiedRangeId[]>
+
+    // TODO - suffix like things with Id
 }
 
 /**

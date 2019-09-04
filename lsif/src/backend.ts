@@ -1,15 +1,15 @@
-import * as path from 'path'
 import * as fs from 'mz/fs'
+import * as path from 'path'
 import * as readline from 'mz/readline'
-import { Database } from './database'
-import { hasErrorCode } from './util'
-import { importLsif } from './importer'
-import { XrepoDatabase } from './xrepo'
-import { Readable } from 'stream'
 import { ConnectionCache, DocumentCache } from './cache'
-import { DefinitionModel, MetaModel, ReferenceModel, DocumentModel, ChunkModel } from './models.database'
+import { Database } from './database'
+import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
 import { Edge, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
+import { hasErrorCode } from './util'
+import { importLsif } from './importer'
+import { Readable } from 'stream'
+import { XrepoDatabase } from './xrepo'
 
 export const ERRNOLSIFDATA = 'NoLSIFDataError'
 
@@ -53,7 +53,7 @@ export class Backend {
 
         const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
-            [ChunkModel, DefinitionModel, DocumentModel, MetaModel, ReferenceModel],
+            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
             (entityManager: EntityManager) => importLsif(entityManager, parseLines(readline.createInterface({ input })))
         )
 

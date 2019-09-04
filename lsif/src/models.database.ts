@@ -28,7 +28,7 @@ export class MetaModel {
 /**
  * An entity within the database describing LSIF data for a single repository and
  * commit pair. This contains a JSON-encoded `DocumentData` object that describes
- * relations within a single file. of the dump.
+ * relations within a single file of the dump.
  */
 @Entity({ name: 'documents' })
 export class DocumentModel {
@@ -46,18 +46,22 @@ export class DocumentModel {
 }
 
 /**
- * TODO
+ * An entity within the database describing LSIF data for a single repository and
+ * commit pair. This contains a JSON-encoded `ResultChunk` object that describes
+ * a subset of the definition and reference results of the dump.
  */
-@Entity({ name: 'chunk' }) // TODO - rename
-export class ChunkModel {
+@Entity({ name: 'resultChunk' })
+export class ResultChunkModel {
     /**
-     * TODO
+     * The identifier of the chunk. This is also the index of the chunk during its
+     * construction, and the identifiers contained in this chunk hash to this index
+     * (modulo the total number of chunks for the dump).
      */
     @PrimaryColumn('int')
     public id!: number
 
     /**
-     * TODO
+     * The JSON-encoded chunk data.
      */
     @Column('text')
     public data!: string
