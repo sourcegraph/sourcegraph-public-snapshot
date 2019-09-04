@@ -13,8 +13,6 @@ import {
     Edge,
     MonikerKind,
     ItemEdgeProperties,
-    DocumentEvent,
-    Event,
     moniker,
     next,
     nextMoniker,
@@ -25,8 +23,6 @@ import {
     packageInformation,
     PackageInformation,
     item,
-    EventKind,
-    EventScope,
     MetaData,
     ElementTypes,
     Moniker,
@@ -103,35 +99,6 @@ interface ResultSetData {
 }
 
 /**
- * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
- * a new importer, insert each vertex and edge in the given stream, then call the
- * importer's finalize method.
- *
- * @param entityManager A transactional SQLite entity manager.
- * @param elements The stream of vertex and edge objects composing the LSIF dump.
- */
-export async function importLsif(
-    entityManager: EntityManager,
-    elements: AsyncIterable<Vertex | Edge>
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const importer = new LsifImporter(entityManager)
-
-    let i = 0
-    for await (const element of elements) {
-        try {
-            await importer.insert(element)
-        } catch (e) {
-            console.log(e)
-            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
-        }
-
-        i++
-    }
-
-    return await importer.finalize()
-}
-
-/**
  * Common state around the conversion of a single LSIF dump upload. This class
  * receives the parsed vertex or edge, line by line, from the caller, and adds it
  * into a new database file on disk. Once finalized, the database is ready for use
@@ -148,9 +115,8 @@ class LsifImporter {
     private refInserter: TableInserter<ReferenceModel, new () => ReferenceModel>
 
     // Vertex data
-
     private documentPaths = new Map<Id, string>()
-    private containsData = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    private containsData = new Map<Id, Set<Id>>()
     private rangeData = new Map<Id, RangeData>()
     private resultSetData = new Map<Id, ResultSetData>()
     private nextData = new Map<Id, Id>()
@@ -159,6 +125,12 @@ class LsifImporter {
     private hoverData = new Map<Id, string>()
     private monikerData = new Map<Id, MonikerData>()
     private packageInformationData = new Map<Id, PackageInformationData>()
+
+    /**
+     * The LSIF version of the input. This is extracted from the metadata vertex at
+     * the beginning of processing.
+     */
+    private lsifVersion?: string
 
     /**
      * The root of all document URIs. This is extracted from the metadata vertex at
@@ -224,19 +196,16 @@ class LsifImporter {
      *
      * @param element A vertex or edge element from the LSIF dump.
      */
-    public async insert(element: Vertex | Edge): Promise<void> {
+    public insert(element: Vertex | Edge): void {
         if (element.type === ElementTypes.vertex) {
             switch (element.label) {
                 case VertexLabels.metaData:
-                    await this.handleMetaData(element)
-                    break
-                case VertexLabels.event:
-                    await this.handleEvent(element)
+                    this.handleMetaData(element)
                     break
 
                 case VertexLabels.document: {
                     if (!this.projectRoot) {
-                        throw new Error('No project root has been defined.')
+                        throw new Error('No metadata defined.')
                     }
 
                     const path = RelateUrl.relate(this.projectRoot.href + '/', new URL(element.uri).href, {
@@ -318,6 +287,30 @@ class LsifImporter {
      * external packages.
      */
     public async finalize(): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+        if (this.lsifVersion === undefined) {
+            throw new Error('No metadata defined.')
+        }
+
+        await this.metaInserter.insert({ lsifVersion: this.lsifVersion, sourcegraphVersion: INTERNAL_LSIF_VERSION })
+
+        for (const [id, path] of this.documentPaths) {
+            // Finalize document
+            const document = this.finalizeDocument(id, path)
+
+            const data = await encodeJSON({
+                ranges: document.ranges,
+                orderedRanges: document.orderedRanges,
+                definitionResults: document.definitionResults,
+                referenceResults: document.referenceResults,
+                hoverResults: document.hoverResults,
+                monikers: document.monikers,
+                packageInformation: document.packageInformation,
+            })
+
+            // Insert document record
+            await this.documentInserter.insert({ path, data })
+        }
+
         // Insert all related definitions
         for (const [documentId, m] of this.definitions) {
             for (const [rangeId, monikerIds] of m) {
@@ -419,42 +412,9 @@ class LsifImporter {
      *
      * @param vertex The metadata vertex.
      */
-    private async handleMetaData(vertex: MetaData): Promise<void> {
+    private handleMetaData(vertex: MetaData): void {
+        this.lsifVersion = vertex.version
         this.projectRoot = new URL(vertex.projectRoot)
-        await this.metaInserter.insert(convertMetadata(vertex))
-    }
-
-    /**
-     * Insert documents when we see a document-scoped end event. This constructs
-     * a `DocumentData` object that correlates data related to a range contained
-     * in the document and inserts its encoded, compressed representation into
-     * the database.
-     *
-     * @param vertex The event vertex.
-     */
-    private async handleEvent(vertex: Event): Promise<void> {
-        if (vertex.scope !== EventScope.document || vertex.kind !== EventKind.end) {
-            return
-        }
-
-        const event = vertex as DocumentEvent
-        const path = assertDefined(event.data, 'documentPath', this.documentPaths)
-
-        // Finalize document
-        const document = this.finalizeDocument(event.data, path)
-
-        const data = await encodeJSON({
-            ranges: document.ranges,
-            orderedRanges: document.orderedRanges,
-            definitionResults: document.definitionResults,
-            referenceResults: document.referenceResults,
-            hoverResults: document.hoverResults,
-            monikers: document.monikers,
-            packageInformation: document.packageInformation,
-        })
-
-        // Insert document record
-        await this.documentInserter.insert({ path, data })
     }
 
     //
@@ -472,7 +432,7 @@ class LsifImporter {
             return
         }
 
-        const set = this.containsData.getOrDefault(edge.outV)
+        const set = assertDefined(edge.outV, 'contains', this.containsData)
         for (const inV of edge.inVs) {
             assertDefined(inV, 'range', this.rangeData)
             set.add(inV)
@@ -489,18 +449,28 @@ class LsifImporter {
         switch (edge.property) {
             // `item` edges with a `property` refer to a referenceResult
             case ItemEdgeProperties.definitions:
-            case ItemEdgeProperties.references:
-                assertDefined(edge.outV, 'referenceResult', this.referenceData)
-                    .getOrDefault(edge.document)
-                    .push(...edge.inVs)
+            case ItemEdgeProperties.references: {
+                const documentMap = assertDefined(edge.outV, 'referenceResult', this.referenceData)
+                const rangeIds = documentMap.getOrDefault(edge.document)
+                for (const inV of edge.inVs) {
+                    assertDefined(inV, 'range', this.rangeData)
+                    rangeIds.push(inV)
+                }
+
                 break
+            }
 
             // `item` edges without a `property` refer to a definitionResult
-            case undefined:
-                assertDefined(edge.outV, 'definitionResult', this.definitionData)
-                    .getOrDefault(edge.document)
-                    .push(...edge.inVs)
+            case undefined: {
+                const documentMap = assertDefined(edge.outV, 'definitionResult', this.definitionData)
+                const rangeIds = documentMap.getOrDefault(edge.document)
+                for (const inV of edge.inVs) {
+                    assertDefined(inV, 'range', this.rangeData)
+                    rangeIds.push(inV)
+                }
+
                 break
+            }
         }
     }
 
@@ -642,7 +612,6 @@ class LsifImporter {
             path,
             ranges: new Map<Id, number>(),
             orderedRanges: [] as RangeData[],
-            resultSets: new Map(), // TODO - remove
             definitionResults: new Map<Id, { documentPath: string; id: Id }[]>(),
             referenceResults: new Map<Id, { documentPath: string; id: Id }[]>(),
             hoverResults: new Map<Id, string>(),
@@ -808,6 +777,36 @@ class LsifImporter {
 }
 
 /**
+ * Handle the life-cycle of an importer. Creates an `LsifImporter`. This will create
+ * a new importer, insert each vertex and edge in the given stream, then call the
+ * importer's finalize method.
+ *
+ * @param entityManager A transactional SQLite entity manager.
+ * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ */
+export async function importLsif(
+    entityManager: EntityManager,
+    elements: AsyncIterable<Vertex | Edge>
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    const importer = new LsifImporter(entityManager)
+
+    let i = 0
+    for await (const element of elements) {
+        try {
+            importer.insert(element)
+        } catch (e) {
+            console.log(e)
+            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+        }
+
+        i++
+    }
+
+    // TODO - do finalization out here
+    return await importer.finalize()
+}
+
+/**
  * Return the value of `id`, or throw an exception if it is undefined.
  *
  * @param id The identifier.
@@ -838,18 +837,6 @@ export function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T>[]): T
     }
 
     throw new Error(`Unknown ${name} '${id}'.`)
-}
-
-/**
- * Extract the version from a protocol `MetaData` object.
- *
- * @param meta The protocol object.
- */
-function convertMetadata(meta: MetaData): { lsifVersion: string; sourcegraphVersion: string } {
-    return {
-        lsifVersion: meta.version,
-        sourcegraphVersion: INTERNAL_LSIF_VERSION,
-    }
 }
 
 /**
