@@ -31,11 +31,11 @@ export const SearchResultTab: React.FunctionComponent<Props> = props => {
 
     const isActiveFunc = tabIsActive(newURLSearchParam, props.location) ? tabIsActiveTrue : tabIsActiveFalse
     return (
-        <li className="nav-item">
+        <li className="nav-item e2e-search-result-tab">
             <NavLink
                 to={{ pathname: '/search', search: newURLSearchParam }}
-                className="nav-link"
-                activeClassName="active e2e-search-result-type-tabs--active"
+                className={`nav-link e2e-search-result-tab-${props.type}`}
+                activeClassName="active e2e-search-result-tab--active"
                 isActive={isActiveFunc}
             >
                 {typeToProse[props.type]}
