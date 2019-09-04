@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"github.com/src-d/enry/v2"
+	"github.com/src-d/enry/v2/data"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
@@ -77,4 +78,13 @@ func GetLanguageByFilename(name string) (language string, safe bool) {
 		language = "Markdown" // override detection for .md
 	}
 	return language, safe
+}
+
+func init() {
+	// Treat .tsx and .jsx as TypeScript and JavaScript, respectively, instead of distinct languages
+	// called "TSX" and "JSX". This is more consistent with user expectations.
+	data.ExtensionsByLanguage["TypeScript"] = append(data.ExtensionsByLanguage["TypeScript"], ".tsx")
+	data.LanguagesByExtension[".tsx"] = []string{"TypeScript"}
+	data.ExtensionsByLanguage["JavaScript"] = append(data.ExtensionsByLanguage["JavaScript"], ".jsx")
+	data.LanguagesByExtension[".jsx"] = []string{"JavaScript"}
 }

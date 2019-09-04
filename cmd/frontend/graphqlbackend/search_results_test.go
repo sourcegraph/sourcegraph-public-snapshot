@@ -537,7 +537,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			searchResults: []searchResultResolver{tsxFileMatch},
 			expectedDynamicFilterStrs: map[string]struct{}{
 				`repo:^testRepo$`: {},
-				`lang:tsx`:        {},
+				`lang:typescript`: {},
 				`case:yes`:        {},
 			},
 		},

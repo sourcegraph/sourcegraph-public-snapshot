@@ -4,10 +4,14 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/src-d/enry/v2"
 )
 
 func TestGet_noReadFile(t *testing.T) {
@@ -114,6 +118,20 @@ func (f fi) Sys() interface{} {
 	return interface{}(nil)
 }
 
+func newReadFile(files []os.FileInfo) func(_ context.Context, path string, maxFileBytes int64) ([]byte, error) {
+	m := make(map[string][]byte, len(files))
+	for _, f := range files {
+		m[f.Name()] = []byte(f.(fi).Contents)
+	}
+	return func(_ context.Context, path string, maxFileBytes int64) ([]byte, error) {
+		data, ok := m[path]
+		if !ok {
+			return nil, fmt.Errorf("no file: %s", path)
+		}
+		return data, nil
+	}
+}
+
 func TestGet_readFile(t *testing.T) {
 	files := []os.FileInfo{
 		fi{"a.java", "aaaaaaaaa"},
@@ -123,14 +141,7 @@ func TestGet_readFile(t *testing.T) {
 		// test checks that this file is detected correctly as Objective-C.
 		fi{"c.m", "@interface X:NSObject { double x; } @property(nonatomic, readwrite) double foo;"},
 	}
-	inv, err := Get(context.Background(), files, func(_ context.Context, path string, maxFileBytes int64) ([]byte, error) {
-		for _, f := range files {
-			if f.Name() == path {
-				return []byte(f.(fi).Contents), nil
-			}
-		}
-		panic("no file: " + path)
-	})
+	inv, err := Get(context.Background(), files, newReadFile(files))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,17 +167,62 @@ func TestGet_readFile(t *testing.T) {
 	}
 }
 
+func TestOverrideTSXAndJSX(t *testing.T) {
+	// Ensure that .tsx and .jsx are considered as valid extensions for TypeScript and JavaScript,
+	// respectively.
+	files := []os.FileInfo{
+		fi{"a.tsx", "xx"},
+		fi{"b.jsx", "x"},
+	}
+	inv, err := Get(context.Background(), files, newReadFile(files))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &Inventory{
+		Languages: []*Lang{
+			{
+				Name:       "TypeScript",
+				TotalBytes: 2,
+			},
+			{
+				Name:       "JavaScript",
+				TotalBytes: 1,
+			},
+		},
+	}
+	if !reflect.DeepEqual(inv, want) {
+		t.Errorf("got  %+v\nwant %+v", mustMarshal(inv), mustMarshal(want))
+	}
+}
+
 func BenchmarkGet(b *testing.B) {
 	files, err := readFileTree("prom-repo-tree.txt")
 	if err != nil {
 		b.Fatal(err)
 	}
+	b.Logf("Calling Get on %d files.", len(files))
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err = Get(context.Background(), files, nil)
+		_, err = Get(context.Background(), files, newReadFile(files))
 		if err != nil {
 			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkIsVendor(b *testing.B) {
+	files, err := readFileTree("prom-repo-tree.txt")
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Logf("Calling IsVendor on %d files.", len(files))
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		for _, f := range files {
+			_ = enry.IsVendor(f.Name())
 		}
 	}
 }
@@ -177,7 +233,7 @@ func TestGetGolden(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := `{"Languages":[{"Name":"Go","TotalBytes":140},{"Name":"HTML","TotalBytes":28},{"Name":"Markdown","TotalBytes":10},{"Name":"YAML","TotalBytes":8},{"Name":"CSS","TotalBytes":4},{"Name":"JavaScript","TotalBytes":3},{"Name":"JSON","TotalBytes":1},{"Name":"Protocol Buffer","TotalBytes":1},{"Name":"SVG","TotalBytes":1},{"Name":"Shell","TotalBytes":1},{"Name":"XML","TotalBytes":1}]}`
+	want := `{"Languages":[{"Name":"Go","TotalBytes":14980},{"Name":"Limbo","TotalBytes":11178},{"Name":"HTML","TotalBytes":2044},{"Name":"JavaScript","TotalBytes":273},{"Name":"CSS"},{"Name":"JSON"},{"Name":"Markdown"},{"Name":"Protocol Buffer"},{"Name":"SVG"},{"Name":"Shell"},{"Name":"XML"},{"Name":"YAML"}]}`
 	got, err := Get(context.Background(), files, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -196,12 +252,45 @@ func readFileTree(name string) ([]os.FileInfo, error) {
 	var files []os.FileInfo
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		files = append(files, fi{scanner.Text(), "a"})
+		path := scanner.Text()
+		files = append(files, fi{path, fakeContents(path)})
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
 	return files, nil
+}
+
+func fakeContents(path string) string {
+	switch filepath.Ext(path) {
+	case ".html":
+		return `<html><head><title>hello</title></head><body><h1>hello</h1></body></html>`
+	case ".go":
+		return `package foo
+
+import "fmt"
+
+// Foo gets foo.
+func Foo(x *string) (chan struct{}) {
+	panic("hello, world")
+}
+`
+	case ".js":
+		return `import { foo } from 'bar'
+
+export function baz(n) {
+	return document.getElementById('x')
+}
+`
+	case ".m":
+		return `@interface X:NSObject {
+	double x;
+}
+
+@property(nonatomic, readwrite) double foo;`
+	default:
+		return ""
+	}
 }
 
 func mustMarshal(v interface{}) string {
