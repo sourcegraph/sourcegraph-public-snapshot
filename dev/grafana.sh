@@ -2,6 +2,8 @@
 
 set -euf -o pipefail
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 GRAFANA_DISK="${HOME}/sourcegraph-docker/grafana-disk"
 
 CID_FILE="${GRAFANA_DISK}/grafana.cid"
@@ -18,6 +20,12 @@ function finish {
 }
 trap finish EXIT
 
+CONFIG_SUB_DIR="internal"
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+   CONFIG_SUB_DIR="local"
+fi
+
 # Description: Dashboards and graphs for grafana metrics.
 #
 docker run --rm  --cidfile ${CID_FILE} \
@@ -26,6 +34,7 @@ docker run --rm  --cidfile ${CID_FILE} \
     --memory=1g \
     -p 0.0.0.0:3000:3000 \
     -v ${GRAFANA_DISK}:/var/lib/grafana \
+    -v ${DIR}/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
     -e GF_AUTH_ANONYMOUS_ENABLED=true \
     -e GF_AUTH_ANONYMOUS_ORG_NAME=Sourcegraph \
     -e GF_AUTH_ANONYMOUS_ORG_ROLE=Editor \
