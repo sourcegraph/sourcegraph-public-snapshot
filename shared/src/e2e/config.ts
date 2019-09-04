@@ -67,9 +67,30 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
         }
     }
     if (missingKeys.length > 0) {
-        throw new Error(`Required config was not provided. The following keys were missing: ${missingKeys}
+        const fieldInfo = (k: T): string => {
+            const field = configFields[k]
+            if (!field) {
+                return ''
+            }
+            const info = []
+            if (field.envVar) {
+                info.push(`environment variable: ${field.envVar}`)
+            }
+            if (field.description) {
+                info.push(`description: ${field.description}`)
+            }
+            if (field.defaultValue) {
+                info.push(`default value: ${field.defaultValue}`)
+            }
+            return `(${info.join(', ')})`
+        }
+        // const fieldInfo = k => `- ${k}`
+        throw new Error(`FAIL: Required config was not provided. The following keys were missing:
+
+${missingKeys.map(k => `- ${k} ${fieldInfo(k)}`).join('\n')}
+
 Please set the appropriate environment variables or add these entries to the config file
-specified by the environment variable $CONFIG_FILE`)
+specified by the environment variable CONFIG_FILE`)
     }
 
     return _.pick(config, required)
