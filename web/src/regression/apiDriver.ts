@@ -1,10 +1,11 @@
+/**
+ * Provides convenience functions for interacting with the Sourcegraph API from tests.
+ */
+
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './api'
 
-/**
- * Provides convenience functions for interacting with the Sourcegraph API from tests.
- */
 export class APIDriver {
     constructor(public gqlClient: GraphQLClient) {}
 

@@ -36,6 +36,7 @@ export class GraphQLClient {
             headers: {
                 Authorization: `token-sudo user="${this.username}",token="${this.sudoToken}"`,
             },
+            baseUrl: this.baseURL,
         })
     }
 }

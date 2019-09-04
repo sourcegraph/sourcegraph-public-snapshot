@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import _ from 'lodash'
+import { string } from 'prop-types'
 
 /**
  * Defines configuration for e2e tests. This is as-yet incomplete as some config
@@ -41,7 +42,7 @@ const configFields: { [K in keyof Config]: ConfigField } = {
  */
 export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
     const configFile = process.env.CONFIG_FILE
-    let config
+    let config: Record<string, string | undefined>
     if (configFile) {
         // eslint-disable-next-line no-sync
         config = JSON.parse(fs.readFileSync(configFile).toString())
@@ -54,18 +55,13 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
         if (field.defaultValue && config[fieldName] === undefined) {
             config[fieldName] = field.defaultValue
         }
-        if (field.envVar) {
+        if (field.envVar && process.env[field.envVar]) {
             config[fieldName] = process.env[field.envVar]
         }
     }
 
     // Check required fields for type safety
-    const missingKeys = []
-    for (const requiredKey of required) {
-        if (!config[requiredKey]) {
-            missingKeys.push(requiredKey)
-        }
-    }
+    const missingKeys = required.filter(key => !config[key])
     if (missingKeys.length > 0) {
         const fieldInfo = (k: T): string => {
             const field = configFields[k]
