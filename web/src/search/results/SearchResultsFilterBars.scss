@@ -32,7 +32,8 @@
     }
 
     &__quicklinks {
-        margin: 0.25rem 0 0.25rem 0;
+        padding-top: map-get($spacers, 1);
+        padding-bottom: map-get($spacers, 1);
         display: flex;
         overflow-x: auto;
 
