@@ -101,21 +101,22 @@ export function toggleSearchType(query: string, searchType: SEARCH_TYPES): strin
         }
 
         return query
+    }
+
+    const idx = queryIndexOfScope(query, 'type:' + searchType)
+    if (idx >= 0) {
+        return query
+    }
+
+    // RegExp to replace `type:$TYPE` in any part of a query.
+    const replaceSearchType = /(\b|^)type:\w*(\b|$)/
+    // RegExp to match `type:$TYPE` in any part of a query.
+    const matchSearchType = /(\b|^)type:\w*(\s*|$)/
+
+    if (matchSearchType.test(query)) {
+        query = query.replace(replaceSearchType, `type:${searchType}`)
     } else {
-        const idx = queryIndexOfScope(query, 'type:' + searchType)
-        if (idx >= 0) {
-            return query
-        }
-
-        const replaceSearchType = /(\b|^)type:\w*(\b|$)/
-        // RegExp to match `type:$TYPE` in any part of a query.
-        const matchSearchType = /(\b|^)type:\w*(\s*|$)/
-
-        if (matchSearchType.test(query)) {
-            query = query.replace(replaceSearchType, `type:${searchType}`)
-        } else {
-            query = query + ` type:${searchType}`
-        }
+        query = query + ` type:${searchType}`
     }
 
     return query

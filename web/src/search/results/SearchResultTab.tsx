@@ -20,7 +20,7 @@ const typeToProse: Record<SEARCH_TYPES, string> = {
     repo: 'Repos',
 }
 
-const tabIsActive = (builtQuery: string, location: H.Location) => location.search === '?' + builtQuery
+const tabIsActive = (builtQuery: string, location: H.Location): boolean => location.search === '?' + builtQuery
 
 const tabIsActiveTrue = (): boolean => true
 const tabIsActiveFalse = (): boolean => false
