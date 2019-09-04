@@ -46,6 +46,24 @@ export class DocumentModel {
 }
 
 /**
+ * TODO
+ */
+@Entity({ name: 'chunk' }) // TODO - rename
+export class ChunkModel {
+    /**
+     * TODO
+     */
+    @PrimaryColumn('int')
+    public id!: number
+
+    /**
+     * TODO
+     */
+    @Column('text')
+    public data!: string
+}
+
+/**
  * The base class for `DefinitionModel` and `ReferenceModel` as they have identical
  * column descriptions.
  */

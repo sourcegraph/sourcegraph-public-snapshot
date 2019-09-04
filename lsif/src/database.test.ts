@@ -1,7 +1,7 @@
-import { findRange, asLocations, makeRemoteUri, comparePosition } from './database'
-import { RangeData } from './entities'
 import * as lsp from 'vscode-languageserver-protocol'
+import { comparePosition, findRange, makeRemoteUri, mapRangesToLocations } from './database'
 import { Id } from 'lsif-protocol'
+import { RangeData } from './entities'
 
 describe('findRange', () => {
     it('should find all ranges in list', () => {
@@ -69,8 +69,8 @@ describe('makeRemoteUri', () => {
     })
 })
 
-describe('asLocations', () => {
-    it('should convert ranges to locations', () => {
+describe('mapRangesToLocations', () => {
+    it('should map ranges to locations', () => {
         const ranges = new Map<Id, number>()
         ranges.set(1, 0)
         ranges.set(2, 2)
@@ -82,7 +82,7 @@ describe('asLocations', () => {
             { startLine: 3, startCharacter: 1, endLine: 3, endCharacter: 2, monikers: [] },
         ]
 
-        expect(asLocations(ranges, orderedRanges, 'src/position.ts', [1, 2, 4])).toEqual([
+        expect(mapRangesToLocations(ranges, orderedRanges, 'src/position.ts', [1, 2, 4])).toEqual([
             lsp.Location.create('src/position.ts', {
                 start: { line: 1, character: 1 },
                 end: { line: 1, character: 2 },

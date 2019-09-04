@@ -1,15 +1,16 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { groupBy, isEqual, uniqWith } from 'lodash'
+import { isEqual, uniqWith } from 'lodash'
 import { Connection } from 'typeorm'
 import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, DocumentData, QualifiedRangeId } from './entities'
+import { MonikerData, RangeData, DocumentData, DefinitionReferenceChunk } from './entities'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache, DocumentCache } from './cache'
-import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel } from './models.database'
+import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel, ChunkModel } from './models.database'
 import { PackageModel } from './models.xrepo'
-import { assertDefined } from './util'
+import { assertDefined, hashKey } from './util'
+import { DefaultMap } from './default-map'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -63,18 +64,14 @@ export class Database {
 
         if (range.definitionResult) {
             // We have a definition result in this database.
-            const definitionResults = assertDefined(
-                range.definitionResult,
-                'definitionResult',
-                document.definitionResults
-            )
+            const definitionResults = await this.findResult(range.definitionResult)
 
             // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
             // Not sure of a better way to do this right now until we work thorugh how to patch
             // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
 
             if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
-                return await this.getLocations(path, document, definitionResults)
+                return await this.findQualifiedRanges(path, document, definitionResults)
             }
         }
 
@@ -127,11 +124,7 @@ export class Database {
         if (range.referenceResult) {
             // We have references in this database.
             locations = locations.concat(
-                await this.getLocations(
-                    path,
-                    document,
-                    assertDefined(range.referenceResult, 'referenceResult', document.referenceResults)
-                )
+                await this.findQualifiedRanges(path, document, await this.findResult(range.referenceResult))
             )
         }
 
@@ -267,22 +260,26 @@ export class Database {
      * @param document The document object for this query.
      * @param resultData A lsit of range ids and the document they belong to.
      */
-    private async getLocations(
+    private async findQualifiedRanges(
         path: string,
         document: DocumentData,
-        resultData: QualifiedRangeId[]
+        resultData: { documentPath: string; rangeId: Id }[] // TODO - make a type
     ): Promise<lsp.Location[]> {
         // Group by document path so we only have to load each document once
-        const groups = groupBy(resultData, v => v.documentPath)
+        const groupedResults = new DefaultMap<string, Set<Id>>(() => new Set<Id>())
+
+        for (const { documentPath, rangeId } of resultData) {
+            groupedResults.getOrDefault(documentPath).add(rangeId)
+        }
 
         let results: lsp.Location[] = []
-        for (const documentPath of Object.keys(groups)) {
-            // Get all ids for the document path
-            const ids = groups[documentPath].map(v => v.id)
+        for (const [documentPath, rangeIdSet] of groupedResults) {
+            // Sets are not mappable, use array
+            const rangeIds = Array.from(rangeIdSet)
 
             if (documentPath === path) {
                 // If the document path is this document, convert the locations directly
-                results = results.concat(asLocations(document.ranges, document.orderedRanges, path, ids))
+                results = results.concat(mapRangesToLocations(document.ranges, document.orderedRanges, path, rangeIds))
                 continue
             }
 
@@ -293,7 +290,9 @@ export class Database {
             }
 
             // Then finally convert the locations in the sibling document
-            results = results.concat(asLocations(sibling.ranges, sibling.orderedRanges, documentPath, ids))
+            results = results.concat(
+                mapRangesToLocations(sibling.ranges, sibling.orderedRanges, documentPath, rangeIds)
+            )
         }
 
         return results
@@ -437,6 +436,27 @@ export class Database {
         return { document, range }
     }
 
+    // TODO - cache these things as well
+    private async findResult(id: Id): Promise<{ documentPath: string; rangeId: Id }[]> {
+        // TODO - need to tune this somehow in the metadata
+        const key = hashKey(id, 50)
+        const chunk = await this.withConnection(connection => connection.getRepository(ChunkModel).findOneOrFail(key))
+        const realChunk = await decodeJSON<DefinitionReferenceChunk>(chunk.data)
+        try {
+            const a = assertDefined(id, 'qualifiedRange', realChunk.qualifiedRanges)
+            console.log('ok')
+            return a.map(qr => ({
+                documentPath: assertDefined(qr.documentId, 'documentPath', realChunk.paths),
+                rangeId: qr.rangeId,
+            }))
+        } catch (e) {
+            console.log('WHOOPS')
+            throw e
+        } finally {
+            console.log('huh')
+        }
+    }
+
     /**
      * Invoke `callback` with a SQLite connection object obtained from the
      * cache or created on cache miss.
@@ -446,7 +466,7 @@ export class Database {
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return await this.connectionCache.withConnection(
             this.databasePath,
-            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel],
+            [ChunkModel, DefinitionModel, DocumentModel, MetaModel, ReferenceModel],
             callback
         )
     }
@@ -575,7 +595,7 @@ function makeRange(result: {
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-export function asLocations(
+export function mapRangesToLocations(
     ranges: Map<Id, number>,
     orderedRanges: RangeData[],
     uri: string,

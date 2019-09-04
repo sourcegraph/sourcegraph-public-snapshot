@@ -52,3 +52,16 @@ export function assertId(id: Id | undefined): Id {
 
     throw new Error('id is undefined')
 }
+
+// TODO
+export function hashKey(id: Id, maxIndex: number): number {
+    const s = `${id}`
+    let hash = 0
+    for (let i = 0; i < s.length; i++) {
+        const chr = s.charCodeAt(i)
+        hash = (hash << 5) - hash + chr
+        hash |= 0
+    }
+
+    return Math.abs(hash) % maxIndex
+}

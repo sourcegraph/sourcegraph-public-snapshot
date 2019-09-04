@@ -1,28 +1,6 @@
 import { Id, MonikerKind } from 'lsif-protocol'
 
 /**
- * A range Identifier that also specifies the path of the document to which it
- * belongs. This is sometimes necessary as we hold definition and refererence
- * results between packages, but the identifier of the range must be looked up
- * in a map of another encoded document.
- */
-export interface QualifiedRangeId {
-    /**
-     * The path of the document.
-     */
-    documentPath: string
-
-    /**
-     * The identifier of the range in the referenced document.
-     */
-    id: Id
-}
-
-// TOOD - (efritz) can we use indices instead of maps in order to save space?
-// The keys are just getting in the way here and they're only used within a single
-// document.
-
-/**
  * Data for a single document within an LSIF dump. The data here can answer definitions,
  * references, and hover queries if the results are all contained within the same document.
  */
@@ -42,19 +20,19 @@ export interface DocumentData {
      */
     orderedRanges: RangeData[]
 
-    /**
-     * A map of definition result identifiers to a list of ids that compose the
-     * definition result. Each id is paired with a document path, as result sets
-     * can be shared between documents (necessitating cross-document queries).
-     */
-    definitionResults: Map<Id, QualifiedRangeId[]>
+    // /**
+    //  * A map of definition result identifiers to a list of ids that compose the
+    //  * definition result. Each id is paired with a document identifier, as result
+    //  * sets can be shared between documents (necessitating cross-document queries).
+    //  */
+    // definitionResults: Map<Id, QualifiedRangeId[]>
 
-    /**
-     ** A map of reference result identifiers to a list of ids that compose the
-     * reference result. Each id is paired with a document path, as result sets
-     * can be shared between documents (necessitating cross-document queries).
-     */
-    referenceResults: Map<Id, QualifiedRangeId[]>
+    // /**
+    //  ** A map of reference result identifiers to a list of ids that compose the
+    //  * reference result. Each id is paired with a document identifier, as result
+    //  * sets can be shared between documents (necessitating cross-document queries).
+    //  */
+    // referenceResults: Map<Id, QualifiedRangeId[]>
 
     /**
      * A map of hover result identifiers to hover results normalized as a single
@@ -71,6 +49,42 @@ export interface DocumentData {
      * A map of package information identifiers to package information data.
      */
     packageInformation: Map<Id, PackageInformationData>
+}
+
+/**
+ * A range Identifier that also specifies the path of the document to which it
+ * belongs. This is sometimes necessary as we hold definition and refererence
+ * results between packages, but the identifier of the range must be looked up
+ * in a map of another encoded document.
+ */
+export interface QualifiedRangeId {
+    /**
+     * The identifier of the document. The path of the document can be queried
+     * by this identifier in the containing document.
+     */
+    documentId: Id
+
+    /**
+     * The identifier of the range in the referenced document.
+     */
+    rangeId: Id
+}
+
+/**
+ * TODO
+ */
+export interface DefinitionReferenceChunk {
+    /**
+     * TODO
+     */
+    paths: Map<Id, string>
+
+    // TODO - suffix like things with Id
+
+    /**
+     * TODO
+     */
+    qualifiedRanges: Map<Id, QualifiedRangeId[]>
 }
 
 /**
@@ -102,15 +116,15 @@ export interface RangeData {
 
     /**
      * The identifier of the definition result attached to this range, if one exists.
-     * The definition result object can be queried by its
-     * identifier within the containing document.
+     * The definition result object can be queried by its * identifier within the containing
+     * document.
      */
     definitionResult?: Id
 
     /**
      * The identifier of the reference result attached to this range, if one exists.
-     * The reference result object can be queried by its
-     * identifier within the containing document.
+     * The reference result object can be queried by its identifier within the containing
+     * document.
      */
     referenceResult?: Id
 

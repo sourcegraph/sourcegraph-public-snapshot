@@ -3,7 +3,7 @@
  * autovivification. This saves a bunch of code that needs to check if a
  * nested type within a map is undefined on first access.
  */
-export class DefaultMap<K, V> extends Map {
+export class DefaultMap<K, V> extends Map<K, V> {
     /**
      * Returns a new `DefaultMap`.
      *
