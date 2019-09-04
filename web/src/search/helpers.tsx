@@ -88,11 +88,11 @@ export function getSearchTypeFromQuery(query: string): SearchType {
 }
 
 export function appendOrReplaceSearchType(query: string, searchType: SearchType): string {
-    const match = query.match(/(\b|^)type:\w*\b/)
+    const match = query.match(/\btype:\w*\b/)
     if (!match) {
         return searchType ? `${query} type:${searchType}` : query
     }
-    console.log(match[0], `type:${searchType}`)
+
     if (match[0] === `type:${searchType}`) {
         // Query already contains correct search type
         return query
