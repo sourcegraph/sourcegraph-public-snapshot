@@ -50,8 +50,8 @@ export class ClientViews implements ClientViewsAPI {
                         }
 
                         return from(this.editorService.activeEditorUpdates).pipe(
-                            switchMap(adtiveEditor => {
-                                const params = getActiveCodeEditorPosition(adtiveEditor)
+                            map(getActiveCodeEditorPosition),
+                            switchMap(params => {
                                 if (!params) {
                                     return of(of(null))
                                 }

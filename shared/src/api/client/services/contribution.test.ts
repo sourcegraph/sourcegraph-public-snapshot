@@ -14,6 +14,7 @@ import {
     parseContributionExpressions,
 } from './contribution'
 import { createTestEditorService } from './editorService.test'
+import { ModelService } from './modelService'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -67,11 +68,19 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
     },
 }
 
+const TEST_MODEL_SERVICE: Pick<ModelService, 'getPartialModel'> = {
+    getPartialModel: () => ({ languageId: 'x' }),
+}
+
 describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
-            new ContributionRegistry(createTestEditorService({}), { data: of(EMPTY_SETTINGS_CASCADE) }, of({})).entries
-                .value
+            new ContributionRegistry(
+                createTestEditorService({}),
+                TEST_MODEL_SERVICE,
+                { data: of(EMPTY_SETTINGS_CASCADE) },
+                of({})
+            ).entries.value
         ).toEqual([])
     })
 
@@ -79,6 +88,7 @@ describe('ContributionRegistry', () => {
         const subscriptions = new Subscription()
         const registry = new ContributionRegistry(
             createTestEditorService({}),
+            TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -101,6 +111,7 @@ describe('ContributionRegistry', () => {
     test('replaces contributions', () => {
         const registry = new ContributionRegistry(
             createTestEditorService({}),
+            TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -133,6 +144,7 @@ describe('ContributionRegistry', () => {
                     {
                         activeEditorUpdates: of(undefined),
                     },
+                    TEST_MODEL_SERVICE,
                     { data: of(EMPTY_SETTINGS_CASCADE) },
                     of({})
                 )
@@ -165,6 +177,7 @@ describe('ContributionRegistry', () => {
                     {
                         activeEditorUpdates: of(undefined),
                     },
+                    TEST_MODEL_SERVICE,
                     { data: of(EMPTY_SETTINGS_CASCADE) },
                     of({})
                 )
@@ -196,6 +209,7 @@ describe('ContributionRegistry', () => {
                             {
                                 activeEditorUpdates: of(undefined),
                             },
+                            TEST_MODEL_SERVICE,
                             {
                                 data: cold<SettingsCascadeOrError>('-a-b-|', {
                                     a: EMPTY_SETTINGS_CASCADE,
@@ -236,6 +250,7 @@ describe('ContributionRegistry', () => {
                     constructor() {
                         super(
                             createTestEditorService({}),
+                            TEST_MODEL_SERVICE,
                             { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
                             cold<Context>('a', {})
                         )

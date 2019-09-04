@@ -2,7 +2,7 @@ import { uniqueId } from 'lodash'
 import { from, NEVER, Subject, Subscription } from 'rxjs'
 import { first, skip, take } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
-import { CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
+import { CodeEditor } from '../../../../shared/src/api/client/services/editorService'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { MutationRecordLike } from '../../shared/util/dom'
@@ -82,12 +82,9 @@ describe('text_fields', () => {
                             isReversed: false,
                         },
                     ],
-                    model: {
-                        languageId: 'plaintext',
-                    },
                     type: 'CodeEditor',
                 },
-            ] as CodeEditorWithPartialModel[])
+            ] as CodeEditor[])
 
             // Remove text field.
             textFieldElement.remove()

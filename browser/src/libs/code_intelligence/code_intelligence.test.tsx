@@ -237,9 +237,6 @@ describe('code_intelligence', () => {
                     isActive: true,
                     // The repo name exposed to extensions is affected by repositoryPathPattern
                     resource: 'git://github/foo?1#/bar.ts',
-                    model: {
-                        languageId: 'typescript',
-                    },
                     selections: [],
                     type: 'CodeEditor',
                 },
@@ -561,9 +558,6 @@ describe('code_intelligence', () => {
                 {
                     editorId: 'editor#0',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -571,9 +565,6 @@ describe('code_intelligence', () => {
                 {
                     editorId: 'editor#1',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -593,9 +584,6 @@ describe('code_intelligence', () => {
                 {
                     editorId: 'editor#1',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -851,9 +839,6 @@ describe('code_intelligence', () => {
                     resource: 'git://github.com/foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
-                    model: {
-                        languageId: 'typescript',
-                    },
                 },
             ])
         })

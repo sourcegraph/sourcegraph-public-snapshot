@@ -72,56 +72,6 @@ describe('EditorService', () => {
         })
     })
 
-    // describe('editorsAndModels', () => {
-    //     test('emits on model language change but not text change', () => {
-    //         scheduler().run(({ cold, expectObservable }) => {
-    //             const editorService = createEditorService(
-    //                 createTestModelService({
-    //                     models: [{ uri: 'u', text: 't', languageId: 'l' }],
-    //                     updates: cold<TextModelUpdate[]>('-bc', {
-    //                         b: [{ type: 'updated', uri: 'u', text: 't2', languageId: 'l' }],
-    //                         c: [{ type: 'updated', uri: 'u', text: 't2', languageId: 'l2' }],
-    //                     }),
-    //                 })
-    //             )
-    //             const { editorId } = editorService.addEditor({
-    //                 type: 'CodeEditor',
-    //                 resource: 'u',
-    //                 selections: [],
-    //                 isActive: true,
-    //             })
-    //             expectObservable(from(editorService.editorUpdates)).toBe('a-c', {
-    //                 a: [
-    //                     {
-    //                         type: 'added',
-    //                         editorId,
-    //                         data: {
-    //                             type: 'CodeEditor',
-    //                             resource: 'u',
-    //                             selections: [],
-    //                             isActive: true,
-    //                             model: { uri: 'u', text: 't', languageId: 'l' },
-    //                         },
-    //                     },
-    //                 ],
-    //                 c: [
-    //                     {
-    //                         type: 'added',
-    //                         editorId,
-    //                         data: {
-    //                             type: 'CodeEditor',
-    //                             resource: 'u',
-    //                             selections: [],
-    //                             isActive: true,
-    //                             model: { uri: 'u', text: 't2', languageId: 'l2' },
-    //                         },
-    //                     },
-    //                 ],
-    //             })
-    //         })
-    //     })
-    // })
-
     test('addEditor', async () => {
         const editorService = createEditorService(
             createTestModelService({
@@ -310,9 +260,6 @@ describe('getActiveCodeEditorPosition', () => {
         expect(
             getActiveCodeEditorPosition({
                 editorId: '1',
-                model: {
-                    languageId: 'x',
-                },
                 type: 'CodeEditor',
                 isActive: true,
                 selections: [],
@@ -325,9 +272,6 @@ describe('getActiveCodeEditorPosition', () => {
         expect(
             getActiveCodeEditorPosition({
                 editorId: '1',
-                model: {
-                    languageId: 'x',
-                },
                 type: 'CodeEditor',
                 isActive: true,
                 selections: [
@@ -348,9 +292,6 @@ describe('getActiveCodeEditorPosition', () => {
         expect(
             getActiveCodeEditorPosition({
                 editorId: '1',
-                model: {
-                    languageId: 'x',
-                },
                 type: 'CodeEditor',
                 isActive: true,
                 selections: [

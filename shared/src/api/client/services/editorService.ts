@@ -2,7 +2,7 @@ import { Selection } from '@sourcegraph/extension-api-types'
 import { BehaviorSubject, combineLatest, Subscribable, throwError, Observable } from 'rxjs'
 import { map, filter, takeWhile, startWith } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
-import { ModelService, TextModel } from './modelService'
+import { ModelService, TextModel, PartialModel } from './modelService'
 
 /**
  * EditorId exposes the unique ID of an editor.
@@ -27,20 +27,23 @@ export interface CodeEditorData {
 
 /**
  * Describes a code editor that has been added to the {@link EditorService}.
- * Includes the fields from the editor's model that are guaranteed to never be updated
- * (eg. the languageId, needed to compute context properties).
+ */
+export interface CodeEditor extends EditorId, CodeEditorData {}
+
+/**
+ * A code editor with a partial model.
  *
  * To get the editor's full model, use {@link EditorService#observeEditorAndModel},
  * or look up the model in the {@link ModelService}.
  */
-export interface CodeEditorWithPartialModel extends EditorId, CodeEditorData {
-    model: Pick<TextModel, 'languageId'>
+export interface CodeEditorWithPartialModel extends CodeEditor {
+    model: PartialModel
 }
 
 /**
  * A code editor with its full model, including the model text.
  */
-export interface CodeEditorWithModel extends EditorId, CodeEditorData {
+export interface CodeEditorWithModel extends CodeEditor {
     /** The code editor's model. */
     model: TextModel
 }
@@ -60,7 +63,7 @@ export interface EditorService {
      * This is mostly used for testing, most consumers should use
      * {@link EditorService#editorUpdates} or {@link EditorService#activeEditorUpdates}
      */
-    readonly editors: ReadonlyMap<string, CodeEditorWithPartialModel>
+    readonly editors: ReadonlyMap<string, CodeEditor>
 
     /**
      * An observable of all editor updates.
@@ -74,7 +77,7 @@ export interface EditorService {
      *
      * Emits the active editor if there is one, or `undefined` otherwise.
      */
-    readonly activeEditorUpdates: Subscribable<CodeEditorWithPartialModel | undefined>
+    readonly activeEditorUpdates: Subscribable<CodeEditor | undefined>
 
     /**
      * Add an editor.
@@ -129,14 +132,14 @@ export function createEditorService(
     const nextId = (): string => `editor#${id++}`
 
     /** A map of editor ids to code editors. */
-    const editors = new Map<string, CodeEditorWithPartialModel>()
+    const editors = new Map<string, CodeEditor>()
     const editorUpdates = new BehaviorSubject<EditorUpdate[]>([])
-    const activeEditorUpdates = new BehaviorSubject<CodeEditorWithPartialModel | undefined>(undefined)
+    const activeEditorUpdates = new BehaviorSubject<CodeEditor | undefined>(undefined)
     /**
      * Returns the CodeEditor with the given editorId.
      * Throws if no editor exists with the given editorId.
      */
-    const getEditor = (editorId: EditorId['editorId']): CodeEditorWithPartialModel => {
+    const getEditor = (editorId: EditorId['editorId']): CodeEditor => {
         const editor = editors.get(editorId)
         if (!editor) {
             throw new Error(`editor not found: ${editorId}`)
@@ -150,11 +153,9 @@ export function createEditorService(
         addEditor: data => {
             const editorId = nextId()
             modelService.addModelRef(data.resource)
-            const partialModel = modelService.getPartialModel(data.resource)
-            const editor: CodeEditorWithPartialModel = {
+            const editor: CodeEditor = {
                 ...data,
                 editorId,
-                model: partialModel,
             }
             editors.set(editorId, editor)
             editorUpdates.next([{ type: 'added', editorId, data }])
@@ -215,9 +216,7 @@ export function createEditorService(
  * {@link EditorService#editors}. If there is no active editor or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition(
-    activeEditor: CodeEditorWithPartialModel | undefined
-): TextDocumentPositionParams | null {
+export function getActiveCodeEditorPosition(activeEditor: CodeEditor | undefined): TextDocumentPositionParams | null {
     if (!activeEditor) {
         return null
     }

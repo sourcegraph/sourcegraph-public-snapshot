@@ -96,6 +96,16 @@ export class BlobPanel extends React.PureComponent<Props> {
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
             provider: from(this.props.extensionsController.services.editor.activeEditorUpdates).pipe(
+                map(activeEditor =>
+                    activeEditor
+                        ? {
+                              ...activeEditor,
+                              model: this.props.extensionsController.services.model.getPartialModel(
+                                  activeEditor.resource
+                              ),
+                          }
+                        : undefined
+                ),
                 switchMap(activeEditor =>
                     registry.hasProvidersForActiveTextDocument(activeEditor).pipe(
                         map(hasProviders => {
