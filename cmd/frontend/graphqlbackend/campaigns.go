@@ -144,11 +144,17 @@ func (r *campaignResolver) URL(ctx context.Context) (string, error) {
 	return path.Join(ns.URL(), "campaigns", string(r.ID())), nil
 }
 
-func (r *campaignResolver) Namespace(ctx context.Context) (Namespace, error) {
+func (r *campaignResolver) Namespace(ctx context.Context) (*namespaceResolver, error) {
+	var n Namespace
+	var err error
+
 	if r.NamespaceUserID != 0 {
-		return UserByIDInt32(ctx, r.NamespaceUserID)
+		n, err = UserByIDInt32(ctx, r.NamespaceUserID)
+	} else {
+		n, err = OrgByIDInt32(ctx, r.NamespaceOrgID)
 	}
-	return OrgByIDInt32(ctx, r.NamespaceOrgID)
+
+	return &namespaceResolver{n}, err
 }
 
 func (r *campaignResolver) CreatedAt() DateTime {
