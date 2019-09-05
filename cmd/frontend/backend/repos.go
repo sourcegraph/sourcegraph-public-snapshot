@@ -214,19 +214,19 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		ReadFile: func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
 			return git.ReadFile(ctx, *cachedRepo, commitID, path, minBytes)
 		},
-		CacheGet: func(tree os.FileInfo) *inventory.Inventory {
+		CacheGet: func(tree os.FileInfo) (inventory.Inventory, bool) {
 			if b, ok := inventoryCache.Get(cacheKey(tree)); ok {
 				var inv inventory.Inventory
 				if err := json.Unmarshal(b, &inv); err != nil {
 					log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.Name, "commitID", commitID, "tree", tree.Name(), "err", err)
-					return nil
+					return inventory.Inventory{}, false
 				}
-				return &inv
+				return inv, true
 			}
-			return nil
+			return inventory.Inventory{}, false
 		},
 		CacheSet: func(tree os.FileInfo, inv inventory.Inventory) {
-			b, err := json.Marshal(inv)
+			b, err := json.Marshal(&inv)
 			if err != nil {
 				log15.Warn("Repos.GetInventory failed to marshal JSON inventory for cache", "repo", repo.Name, "commitID", commitID, "tree", tree.Name(), "err", err)
 				return
@@ -235,7 +235,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		},
 	}
 
-	if !useEnhancedLanguageDetection && false {
+	if !useEnhancedLanguageDetection {
 		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
 		// the language.
 		invCtx.ReadFile = func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
@@ -243,5 +243,9 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		}
 	}
 
-	return invCtx.Tree(ctx, root)
+	inv, err := invCtx.Tree(ctx, root)
+	if err != nil {
+		return nil, err
+	}
+	return &inv, nil
 }

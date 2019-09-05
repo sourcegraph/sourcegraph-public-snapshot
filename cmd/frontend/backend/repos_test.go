@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -159,17 +161,44 @@ func TestReposGetInventory(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := (&inventory.Inventory{
-		Languages: []*inventory.Lang{
-			{Name: "Objective-C", TotalBytes: 24},
-			{Name: "Go", TotalBytes: 12},
+	tests := []struct {
+		useEnhancedLanguageDetection bool
+		want                         *inventory.Inventory
+	}{
+		{
+			useEnhancedLanguageDetection: false,
+			want: &inventory.Inventory{
+				Languages: []inventory.Lang{
+					{Name: "MATLAB", TotalBytes: 24}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
+					{Name: "Go", TotalBytes: 12},
+				},
+			},
 		},
-	}); !reflect.DeepEqual(inv, want) {
-		t.Errorf("got  %#v\nwant %#v", inv, want)
+		{
+			useEnhancedLanguageDetection: true,
+			want: &inventory.Inventory{
+				Languages: []inventory.Lang{
+					{Name: "Objective-C", TotalBytes: 24},
+					{Name: "Go", TotalBytes: 12},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("useEnhancedLanguageDetection=%v", test.useEnhancedLanguageDetection), func(t *testing.T) {
+			rcache.SetupForTest(t)
+			orig := useEnhancedLanguageDetection
+			useEnhancedLanguageDetection = test.useEnhancedLanguageDetection
+			defer func() { useEnhancedLanguageDetection = orig }() // reset
+
+			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(inv, test.want) {
+				t.Errorf("got  %#v\nwant %#v", inv, test.want)
+			}
+		})
 	}
 }
 

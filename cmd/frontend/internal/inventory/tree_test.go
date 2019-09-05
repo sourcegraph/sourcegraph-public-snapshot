@@ -42,9 +42,9 @@ func TestContext_Tree(t *testing.T) {
 				panic("unhandled mock ReadFile " + path)
 			}
 		},
-		CacheGet: func(e os.FileInfo) *Inventory {
+		CacheGet: func(e os.FileInfo) (Inventory, bool) {
 			cacheGetCalls = append(cacheGetCalls, e.Name())
-			return nil
+			return Inventory{}, false
 		},
 		CacheSet: func(e os.FileInfo, inv Inventory) {
 			if _, ok := cacheSetCalls[e.Name()]; ok {
@@ -58,8 +58,8 @@ func TestContext_Tree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (&Inventory{
-		Languages: []*Lang{
+	if want := (Inventory{
+		Languages: []Lang{
 			{Name: "Objective-C", TotalBytes: 24},
 			{Name: "Go", TotalBytes: 12},
 		},
@@ -82,13 +82,13 @@ func TestContext_Tree(t *testing.T) {
 	}
 	if want := map[string]Inventory{
 		"": {
-			Languages: []*Lang{
+			Languages: []Lang{
 				{Name: "Objective-C", TotalBytes: 24},
 				{Name: "Go", TotalBytes: 12},
 			},
 		},
 		"a": {
-			Languages: []*Lang{
+			Languages: []Lang{
 				{Name: "Objective-C", TotalBytes: 24},
 			},
 		},

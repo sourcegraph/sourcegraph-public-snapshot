@@ -19,32 +19,32 @@ type Context struct {
 	// number of bytes must be returned (or the entire file, if it is smaller).
 	ReadFile func(ctx context.Context, path string, minBytes int64) ([]byte, error)
 
-	// CacheGet, if set, returns the cached inventory for the given tree, or nil for a cache miss.
-	CacheGet func(os.FileInfo) *Inventory
+	// CacheGet, if set, returns the cached inventory and true for the given tree, or false for a cache miss.
+	CacheGet func(os.FileInfo) (Inventory, bool)
 
 	// CacheSet, if set, stores the inventory in the cache for the given tree.
 	CacheSet func(os.FileInfo, Inventory)
 }
 
 // Tree computes the inventory of languages for a tree. It caches the inventories of subtrees.
-func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv *Inventory, err error) {
+func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
-		if inv := c.CacheGet(tree); inv != nil {
+		if inv, ok := c.CacheGet(tree); ok {
 			return inv, nil // cache hit
 		}
 	}
 	if c.CacheSet != nil {
 		defer func() {
-			if inv != nil && err == nil {
-				c.CacheSet(tree, *inv) // store in cache
+			if err == nil {
+				c.CacheSet(tree, inv) // store in cache
 			}
 		}()
 	}
 
 	entries, err := c.ReadTree(ctx, tree.Name())
 	if err != nil {
-		return nil, err
+		return Inventory{}, err
 	}
 	langTotalBytes := map[string]uint64{} // language name -> total bytes
 	for _, e := range entries {
@@ -52,7 +52,7 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv *Inventory, e
 		case e.Mode().IsRegular(): // file
 			lang, err := detect(ctx, e, c.ReadFile)
 			if err != nil {
-				return nil, errors.Wrapf(err, "inventory file %q", e.Name())
+				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
 			if lang != "" {
 				langTotalBytes[lang] += uint64(e.Size())
@@ -61,7 +61,7 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv *Inventory, e
 		case e.Mode().IsDir(): // subtree
 			entryInv, err := c.Tree(ctx, e)
 			if err != nil {
-				return nil, errors.Wrapf(err, "inventory tree %q", e.Name())
+				return Inventory{}, errors.Wrapf(err, "inventory tree %q", e.Name())
 			}
 			for _, lang := range entryInv.Languages {
 				langTotalBytes[lang.Name] += lang.TotalBytes
@@ -74,13 +74,13 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv *Inventory, e
 	return sum(langTotalBytes), nil
 }
 
-func sum(langTotalBytes map[string]uint64) *Inventory {
-	var sum Inventory
+func sum(langTotalBytes map[string]uint64) Inventory {
+	sum := Inventory{Languages: make([]Lang, 0, len(langTotalBytes))}
 	for lang, totalBytes := range langTotalBytes {
-		sum.Languages = append(sum.Languages, &Lang{Name: lang, TotalBytes: totalBytes})
+		sum.Languages = append(sum.Languages, Lang{Name: lang, TotalBytes: totalBytes})
 	}
-	sort.SliceStable(sum.Languages, func(i, j int) bool {
+	sort.Slice(sum.Languages, func(i, j int) bool {
 		return sum.Languages[i].TotalBytes > sum.Languages[j].TotalBytes || (sum.Languages[i].TotalBytes == sum.Languages[j].TotalBytes && sum.Languages[i].Name < sum.Languages[j].Name)
 	})
-	return &sum
+	return sum
 }

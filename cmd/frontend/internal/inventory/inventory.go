@@ -15,7 +15,7 @@ import (
 // languages are used).
 type Inventory struct {
 	// Languages are the programming languages used in the tree.
-	Languages []*Lang `json:"Languages,omitempty"`
+	Languages []Lang `json:"Languages,omitempty"`
 }
 
 // Lang represents a programming language used in a directory tree.
