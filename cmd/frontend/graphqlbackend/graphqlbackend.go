@@ -57,7 +57,6 @@ func init() {
 			CampaignsStore: db.NewCampaignsStore(dbconn.Global),
 		},
 		graphql.Tracer(prometheusTracer{}),
-		graphql.UseFieldResolvers(),
 	)
 	if err != nil {
 		panic(err)

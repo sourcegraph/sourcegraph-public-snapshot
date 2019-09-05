@@ -30,7 +30,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	`
 
-	schema, err := graphql.ParseSchema(Schema, &sr, graphql.UseFieldResolvers())
+	schema, err := graphql.ParseSchema(Schema, &sr)
 	if err != nil {
 		t.Fatal(err)
 	}
