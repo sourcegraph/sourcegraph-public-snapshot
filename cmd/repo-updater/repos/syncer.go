@@ -156,8 +156,8 @@ func (s *Syncer) StreamingSync(ctx context.Context) (err error) {
 		seenID:   make(map[api.ExternalRepoSpec]bool),
 		seenName: make(map[string]bool),
 	}
-	var errs *multierror.Error
 
+	var errs *multierror.Error
 	for result := range sourced {
 		if result.Err != nil {
 			for _, extSvc := range result.Source.ExternalServices() {
@@ -169,6 +169,9 @@ func (s *Syncer) StreamingSync(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+	if err = errs.ErrorOrNil(); err != nil {
+		return errors.Wrap(err, "syncer.streaming-sync.sourcing")
 	}
 
 	// In `byID` are now all repositories that we want to keep in the database
@@ -189,7 +192,7 @@ func (s *Syncer) StreamingSync(ctx context.Context) (err error) {
 		return errors.Wrap(err, "syncer.streaming-sync.store.delete-repos-except")
 	}
 
-	return errs.ErrorOrNil()
+	return err
 }
 
 func (s *Syncer) syncSourcedRepo(ctx context.Context, state *syncRunState, r *Repo) (err error) {
