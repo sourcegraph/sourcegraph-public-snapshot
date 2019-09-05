@@ -11,7 +11,6 @@ import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel, ResultChunkM
 import { PackageModel } from './models.xrepo'
 import { assertDefined, hashKey } from './util'
 import { DefaultMap } from './default-map'
-import { NUM_RESULT_CHUNKS } from './importer'
 
 /**
  * A partially-resolved qualified range.
@@ -32,6 +31,12 @@ interface ResolvedQualifiedRange {
  * A wrapper around operations for single repository/commit pair.
  */
 export class Database {
+    /**
+     * A static map of database paths to the `numResultChunks` value of their
+     * metadata row. This map is populated lazily as the values are needed.
+     */
+    private static numResultChunks = new Map<string, number>()
+
     /**
      * Create a new `Database` with the given cross-repo database instance and the
      * filename of the database that contains data for a particular repository/commit.
@@ -478,7 +483,8 @@ export class Database {
      * @param id An identifier contained in the result chunk.
      */
     private async findResultChunk(id: Id): Promise<ResultChunkData> {
-        const index = hashKey(id, NUM_RESULT_CHUNKS)
+        // Find the result chunk index this id belongs to
+        const index = hashKey(id, await this.getNumResultChunks())
 
         const factory = async (): Promise<EncodedJsonCacheValue<ResultChunkData>> => {
             const resultChunk = await this.withConnection(connection =>
@@ -494,6 +500,21 @@ export class Database {
         return await this.resultChunkCache.withValue(`${this.databasePath}::${index}`, factory, resultChunk =>
             Promise.resolve(resultChunk.data)
         )
+    }
+
+    /**
+     * Get the `numResultChunks` value from this database's metadata row.
+     */
+    private async getNumResultChunks(): Promise<number> {
+        const numResultChunks = Database.numResultChunks.get(this.databasePath)
+        if (numResultChunks !== undefined) {
+            return numResultChunks
+        }
+
+        // Not in the shared map, need to query it
+        const meta = await this.withConnection(connection => connection.getRepository(MetaModel).findOneOrFail(1))
+        Database.numResultChunks.set(this.databasePath, meta.numResultChunks)
+        return meta.numResultChunks
     }
 
     /**

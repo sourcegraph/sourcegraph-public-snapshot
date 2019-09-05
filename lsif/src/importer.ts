@@ -1,4 +1,4 @@
-import { assertDefined, assertId, hashKey } from './util'
+import { assertDefined, assertId, hashKey, readEnvInt } from './util'
 import { Correlator, ResultSetData } from './correlator'
 import { DefaultMap } from './default-map'
 import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
@@ -18,7 +18,17 @@ import { TableInserter } from './inserter'
  */
 const INTERNAL_LSIF_VERSION = '0.1.0'
 
-export const NUM_RESULT_CHUNKS = 50 // TODO - calculate dynamically
+/**
+ * The target results per result chunk. This is used to determine the number of chunks
+ * created during conversion, but does not guarantee that the distribution of hash keys
+ * will wbe even. In practice, chunks are fairly evenly filled.
+ */
+const RESULTS_PER_RESULT_CHUNK = readEnvInt('RESULTS_PER_RESULT_CHUNK', 500)
+
+/**
+ * The maximum number of result chunks that will be created during conversion.
+ */
+const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 
 /**
  * Correlate each vertex and edge together, then populate the provided entity manager
@@ -62,19 +72,6 @@ export async function importLsif(
     const definitionInserter = new TableInserter(entityManager, DefinitionModel, Math.floor(999 / 8))
     const referenceInserter = new TableInserter(entityManager, ReferenceModel, Math.floor(999 / 8))
 
-    // Step 0: Insert metadata row. This isn't currently used, but gives us
-    // a future place to check the version of the software that was used to
-    // generate a database in the case that we need to perform a mgiration
-    // or opt-out of some backwards-incompatible change in the future.
-    //
-    // Escape-hatches are always good.
-
-    // Insert uploaded LSIF and the current version of the importer
-    await metaInserter.insert({
-        lsifVersion: correlator.lsifVersion,
-        sourcegraphVersion: INTERNAL_LSIF_VERSION,
-    })
-
     //
     // Step 1: Populate documents table.
     //
@@ -114,11 +111,15 @@ export async function importLsif(
     // Step 2: Populate result chunks table.
     //
 
+    // TODO - store this somewhere
+    const numResults = correlator.definitionData.size + correlator.referenceData.size
+    const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
+
     // Create all the result chunks we'll be populating and inserting up-front. Data will
     // be inserted into result chunks based on hash values (modulo the number of result chunks),
     // and we don't want to create them lazily.
 
-    const resultChunks = new Array(NUM_RESULT_CHUNKS).fill(null).map(() => ({
+    const resultChunks = new Array(numResultChunks).fill(null).map(() => ({
         paths: new Map<Id, string>(),
         qualifiedRanges: new Map<Id, QualifiedRangeId[]>(),
     }))
@@ -147,6 +148,11 @@ export async function importLsif(
     chunkResults(correlator.referenceData)
 
     for (let id = 0; id < resultChunks.length; id++) {
+        // Empty chunk, no need to serialize as it will never be queried
+        if (resultChunks[id].paths.size === 0 && resultChunks[id].qualifiedRanges.size === 0) {
+            continue
+        }
+
         const data = await encodeJSON({
             paths: resultChunks[id].paths,
             qualifiedRanges: resultChunks[id].qualifiedRanges,
@@ -229,6 +235,19 @@ export async function importLsif(
     await insertMonikerRanges(correlator.definitionData, definitionMonikers, definitionInserter)
     await insertMonikerRanges(correlator.referenceData, referenceMonikers, referenceInserter)
 
+    // Step 4: Insert metadata row. This gives us a place to store the version of
+    // the converter that created a database in case we have backwards-incompatible
+    // changes in the future that require historic version flagging. This also stores
+    // the number of result chunks determined above so that we can have stable hashes
+    // at query time.
+
+    await metaInserter.insert({
+        id: 1,
+        lsifVersion: correlator.lsifVersion,
+        sourcegraphVersion: INTERNAL_LSIF_VERSION,
+        numResultChunks: numResultChunks,
+    })
+
     // Ensure all records are written
     await metaInserter.flush()
     await documentInserter.flush()
@@ -237,7 +256,7 @@ export async function importLsif(
     await referenceInserter.flush()
 
     //
-    // Step 4: Prepare data for correlation database.
+    // Step 5: Prepare data for correlation database.
     //
 
     // Gather all package information that is referenced by an exported

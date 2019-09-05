@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index } from 'typeorm'
+import { Column, Entity, PrimaryColumn, Index } from 'typeorm'
 
 /**
  * An entity within the database describing LSIF data for a single repository
@@ -7,9 +7,9 @@ import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, Index } from 'ty
 @Entity({ name: 'meta' })
 export class MetaModel {
     /**
-     * A unique ID required by typeorm entities.
+     * A unique ID required by typeorm entities: always zero here.
      */
-    @PrimaryGeneratedColumn('increment', { type: 'int' })
+    @PrimaryColumn('int')
     public id!: number
 
     /**
@@ -23,6 +23,15 @@ export class MetaModel {
      */
     @Column('text')
     public sourcegraphVersion!: string
+
+    /**
+     * The number of result chunks allocated when converting the dump stored
+     * in this database. This is used as an upper bound for the hash into the
+     * `resultChunks` table and must be record to keep the hash generation
+     * stable.
+     */
+    @Column('int')
+    public numResultChunks!: number
 }
 
 /**
@@ -50,7 +59,7 @@ export class DocumentModel {
  * commit pair. This contains a JSON-encoded `ResultChunk` object that describes
  * a subset of the definition and reference results of the dump.
  */
-@Entity({ name: 'resultChunk' })
+@Entity({ name: 'resultChunks' })
 export class ResultChunkModel {
     /**
      * The identifier of the chunk. This is also the index of the chunk during its
