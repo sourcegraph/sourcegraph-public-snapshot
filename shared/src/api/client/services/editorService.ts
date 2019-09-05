@@ -49,8 +49,8 @@ export interface CodeEditorWithModel extends CodeEditor {
 }
 
 export type EditorUpdate =
-    | { type: 'added'; data: CodeEditorData } & EditorId
-    | { type: 'updated'; data: Pick<CodeEditorData, 'selections'> } & EditorId
+    | { type: 'added'; editorData: CodeEditorData } & EditorId
+    | { type: 'updated'; editorData: Pick<CodeEditorData, 'selections'> } & EditorId
     | { type: 'deleted' } & EditorId
 
 /**
@@ -150,16 +150,16 @@ export function createEditorService(
         editors,
         editorUpdates,
         activeEditorUpdates,
-        addEditor: data => {
+        addEditor: editorData => {
             const editorId = nextId()
-            modelService.addModelRef(data.resource)
+            modelService.addModelRef(editorData.resource)
             const editor: CodeEditor = {
-                ...data,
+                ...editorData,
                 editorId,
             }
             editors.set(editorId, editor)
-            editorUpdates.next([{ type: 'added', editorId, data }])
-            if (data.isActive) {
+            editorUpdates.next([{ type: 'added', editorId, editorData }])
+            if (editorData.isActive) {
                 activeEditorUpdates.next(editor)
             }
             return { editorId }
@@ -186,7 +186,7 @@ export function createEditorService(
                 ...editor,
                 selections,
             })
-            editorUpdates.next([{ type: 'updated', editorId, data: { selections } }])
+            editorUpdates.next([{ type: 'updated', editorId, editorData: { selections } }])
         },
         removeEditor({ editorId }: EditorId): void {
             const editor = getEditor(editorId)

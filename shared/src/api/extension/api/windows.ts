@@ -102,12 +102,12 @@ export class ExtWindow implements sourcegraph.Window {
                 case 'added':
                     {
                         const editor = new ExtCodeEditor(
-                            { editorId, ...update.data },
+                            { editorId, ...update.editorData },
                             this.proxy.codeEditor,
                             this.documents
                         )
                         this.viewComponents.set(editorId, editor)
-                        if (update.data.isActive) {
+                        if (update.editorData.isActive) {
                             this.activeViewComponentChanges.next(editor)
                         }
                     }
@@ -118,7 +118,7 @@ export class ExtWindow implements sourcegraph.Window {
                         if (!editor) {
                             throw new Error(`Could not perform update: editor ${editorId} not found`)
                         }
-                        editor.update(update.data)
+                        editor.update(update.editorData)
                     }
                     break
                 case 'deleted':

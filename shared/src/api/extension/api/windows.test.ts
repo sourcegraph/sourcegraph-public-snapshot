@@ -13,7 +13,7 @@ describe('ExtWindow', () => {
             {
                 type: 'added',
                 editorId: 'editor#0',
-                data: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         const origViewComponent = wins.activeViewComponent
@@ -23,7 +23,7 @@ describe('ExtWindow', () => {
             {
                 type: 'updated',
                 editorId: 'editor#0',
-                data: { selections: [new Selection(1, 2, 3, 4)] },
+                editorData: { selections: [new Selection(1, 2, 3, 4)] },
             },
         ])
         expect(wins.activeViewComponent).toBe(origViewComponent)
@@ -34,7 +34,7 @@ describe('ExtWindow', () => {
             {
                 type: 'added',
                 editorId: 'editor#0',
-                data: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         const origViewComponent = wins.activeViewComponent
@@ -44,7 +44,7 @@ describe('ExtWindow', () => {
             {
                 type: 'added',
                 editorId: 'editor#1',
-                data: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         expect(wins.activeViewComponent).not.toBe(origViewComponent)
@@ -63,7 +63,7 @@ describe('ExtWindows', () => {
             {
                 type: 'added',
                 editorId: 'editor#0',
-                data: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         const origWin = wins.activeWindow
@@ -73,7 +73,7 @@ describe('ExtWindows', () => {
             {
                 type: 'updated',
                 editorId: 'editor#0',
-                data: { selections: [] },
+                editorData: { selections: [] },
             },
         ])
         expect(wins.activeWindow).toBe(origWin)
@@ -82,7 +82,7 @@ describe('ExtWindows', () => {
             {
                 type: 'added',
                 editorId: 'editor#1',
-                data: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
+                editorData: { type: 'CodeEditor', resource: 'u', isActive: true, selections: [] },
             },
         ])
         expect(wins.activeWindow).toBe(origWin)

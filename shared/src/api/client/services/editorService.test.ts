@@ -33,10 +33,10 @@ export function createTestEditorService({
                   for (const update of updates) {
                       switch (update.type) {
                           case 'added':
-                              editorService.addEditor(update.data)
+                              editorService.addEditor(update.editorData)
                               break
                           case 'updated':
-                              editorService.setSelections(update, update.data.selections)
+                              editorService.setSelections(update, update.editorData.selections)
                               break
                           case 'deleted':
                               editorService.removeEditor(update)
