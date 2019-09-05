@@ -1,4 +1,4 @@
-export class RefCount<T = string> {
+export class RefCount<T = string> implements Pick<Set<T>, 'keys' | 'delete'> {
     private refCount = new Map<T, number>()
 
     /**
@@ -37,11 +37,11 @@ export class RefCount<T = string> {
     /**
      * Returns an iterable of registered keys.
      */
-    public keys(): Iterable<T> {
+    public keys(): IterableIterator<T> {
         return this.refCount.keys()
     }
 
-    public delete(key: T): void {
-        this.refCount.delete(key)
+    public delete(key: T): boolean {
+        return this.refCount.delete(key)
     }
 }
