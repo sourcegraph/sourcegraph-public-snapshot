@@ -197,6 +197,7 @@ type flushingResponseWriter struct {
 	// state.
 	mu      sync.Mutex
 	w       http.ResponseWriter
+	flusher http.Flusher
 	closed  bool
 	doFlush bool
 }
@@ -217,21 +218,8 @@ func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
 		return nil
 	}
 
-	f := &flushingResponseWriter{w: w}
-	go func() {
-		for {
-			time.Sleep(100 * time.Millisecond)
-			f.mu.Lock()
-			if f.closed {
-				f.mu.Unlock()
-				break
-			}
-			if f.doFlush {
-				flusher.Flush()
-			}
-			f.mu.Unlock()
-		}
-	}()
+	f := &flushingResponseWriter{w: w, flusher: flusher}
+	go f.periodicFlush()
 	return f
 }
 
@@ -276,6 +264,21 @@ func (f *flushingResponseWriter) Write(p []byte) (int, error) {
 	}
 	f.mu.Unlock()
 	return n, err
+}
+
+func (f *flushingResponseWriter) periodicFlush() {
+	for {
+		time.Sleep(100 * time.Millisecond)
+		f.mu.Lock()
+		if f.closed {
+			f.mu.Unlock()
+			break
+		}
+		if f.doFlush {
+			f.flusher.Flush()
+		}
+		f.mu.Unlock()
+	}
 }
 
 // Close signals to the flush goroutine to stop.
