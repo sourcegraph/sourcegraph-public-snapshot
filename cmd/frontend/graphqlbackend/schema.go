@@ -382,7 +382,6 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
-
 # A new external service.
 input AddExternalServiceInput {
     # The kind of the external service.
