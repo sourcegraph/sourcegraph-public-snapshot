@@ -3,6 +3,7 @@ import { BehaviorSubject, Subscribable, throwError, Observable, Subject } from '
 import { map, filter, takeWhile, startWith, switchMap } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel, PartialModel } from './modelService'
+import { RefCount } from '../../../util/RefCount'
 
 /**
  * EditorId exposes the unique ID of an editor.
@@ -123,7 +124,7 @@ export interface EditorService {
 /**
  * Creates a {@link EditorService} instance.
  */
-export function createEditorService(modelService: Pick<ModelService, 'removeModelRef' | 'addModelRef'>): EditorService {
+export function createEditorService({ removeModel }: Pick<ModelService, 'removeModel'>): EditorService {
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
     // test code (because the IDs change depending on test execution order).
     let id = 0
@@ -144,13 +145,15 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
         }
         return editor
     }
+
+    const modelRefs = new RefCount()
     return {
         editors,
         editorUpdates,
         activeEditorUpdates,
         addEditor: editorData => {
             const editorId = nextId()
-            modelService.addModelRef(editorData.resource)
+            modelRefs.increment(editorData.resource)
             const editor: CodeEditor = {
                 ...editorData,
                 editorId,
@@ -191,7 +194,9 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
             if (activeEditorUpdates.value && activeEditorUpdates.value.editorId === editorId) {
                 activeEditorUpdates.next(undefined)
             }
-            modelService.removeModelRef(editor.resource)
+            if (modelRefs.decrement(editor.resource)) {
+                removeModel(editor.resource)
+            }
         },
         removeAllEditors(): void {
             const updates: EditorUpdate[] = [...editors.keys()].map(editorId => ({ type: 'deleted', editorId }))

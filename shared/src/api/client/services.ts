@@ -10,13 +10,12 @@ import { ExtensionsService } from './services/extensionsService'
 import { TextDocumentHoverProviderRegistry } from './services/hover'
 import { LinkPreviewProviderRegistry } from './services/linkPreview'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from './services/location'
-import { createModelService, ModelService } from './services/modelService'
+import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
 import { createSettingsService } from './services/settings'
 import { ViewProviderRegistry } from './services/view'
 import { createWorkspaceService } from './services/workspaceService'
-import { Omit } from 'utility-types'
 
 /**
  * Services is a container for all services used by the client application.
@@ -38,7 +37,7 @@ export class Services {
     public readonly commands = new CommandRegistry()
     public readonly context = createContextService(this.platformContext)
     public readonly workspace = createWorkspaceService()
-    public readonly model: Omit<ModelService, 'removeModel'> = createModelService()
+    public readonly model = createModelService()
     public readonly editor = createEditorService(this.model)
     public readonly notifications = new NotificationsService()
     public readonly settings = createSettingsService(this.platformContext)

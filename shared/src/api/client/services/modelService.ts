@@ -91,27 +91,9 @@ export interface ModelService {
     /**
      * Removes a model.
      *
-     * This is used for testing, consumers should use
-     * {@link ModelService#addModelRef} / {@link ModelService#removeModelRef} instead.
-     *
      * @param uri The URI of the model to remove.
      */
     removeModel(uri: string): void
-
-    /**
-     * Adds a reference from an editor to the model with the given URI.
-     *
-     * @param uri The URI of the model.
-     */
-    addModelRef(uri: string): void
-
-    /**
-     * Removes a reference from an editor to the model with the given URI.
-     * A model with zero references will be removed.
-     *
-     * @param uri the URI of the model.
-     */
-    removeModelRef(uri: string): void
 }
 
 /**
@@ -122,7 +104,6 @@ export function createModelService(): ModelService {
     const models = new Map<string, TextModel>()
     const modelUpdates = new Subject<TextModelUpdate[]>()
     const activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
-    const modelRefs = new RefCount()
     const languageRefs = new RefCount()
     const getModel = (uri: string): TextModel => {
         const model = models.get(uri)
@@ -177,25 +158,9 @@ export function createModelService(): ModelService {
         removeModel: uri => {
             const model = getModel(uri)
             models.delete(uri)
-            modelRefs.delete(uri)
             modelUpdates.next([{ type: 'deleted', uri }])
             if (languageRefs.decrement(model.languageId)) {
                 activeLanguages.next(new Set(languageRefs.keys()))
-            }
-        },
-        addModelRef: uri => {
-            modelRefs.increment(uri)
-        },
-        removeModelRef: uri => {
-            const model = getModel(uri)
-            // Remove the model if no other editor references it.
-            if (modelRefs.decrement(uri)) {
-                models.delete(uri)
-                modelUpdates.next([{ type: 'deleted', uri }])
-                // Update activeLanguages if no other model has the same language.
-                if (languageRefs.decrement(model.languageId)) {
-                    activeLanguages.next(new Set(languageRefs.keys()))
-                }
             }
         },
     }

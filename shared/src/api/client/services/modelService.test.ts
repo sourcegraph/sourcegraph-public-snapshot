@@ -1,44 +1,6 @@
-import { Observable, from } from 'rxjs'
-import { tap, first, takeWhile, take, bufferCount, map } from 'rxjs/operators'
-import { createModelService, ModelService, TextModelUpdate, TextModel } from './modelService'
-
-export function createTestModelService({
-    models,
-    updates,
-}: {
-    models?: TextModel[]
-    updates?: Observable<TextModelUpdate[]>
-}): ModelService {
-    const service = createModelService()
-    if (models) {
-        for (const m of models) {
-            service.addModel(m)
-        }
-    }
-    const modelUpdates = updates
-        ? updates.pipe(
-              tap(updates => {
-                  for (const update of updates) {
-                      switch (update.type) {
-                          case 'added':
-                              service.addModel(update)
-                              break
-                          case 'updated':
-                              service.updateModel(update.uri, update.text)
-                              break
-                          case 'deleted':
-                              service.removeModel(update.uri)
-                              break
-                      }
-                  }
-              })
-          )
-        : service.modelUpdates
-    return {
-        ...service,
-        modelUpdates,
-    }
-}
+import { from } from 'rxjs'
+import { first, takeWhile, bufferCount, map } from 'rxjs/operators'
+import { createModelService } from './modelService'
 
 describe('ModelService', () => {
     describe('addModel', () => {
@@ -100,7 +62,7 @@ describe('ModelService', () => {
             expect(await modelAdded).toMatchObject([{ uri: 'u', languageId: 'x', text: 't' }])
         })
 
-        it('emits when a model is removed with removeModel no more editors reference it', async () => {
+        it('emits when a model is removed', async () => {
             const modelService = createModelService()
             const modelRemoved = from(modelService.modelUpdates)
                 .pipe(takeWhile(updates => updates.every(({ uri, type }) => uri !== 'u' || type !== 'deleted')))
@@ -108,21 +70,6 @@ describe('ModelService', () => {
             modelService.addModel({ uri: 'u', languageId: 'x', text: 't' })
             modelService.removeModel('u')
             await modelRemoved
-        })
-
-        it('emits when a model is removed because no more editors reference it', async () => {
-            const modelService = createModelService()
-            const updates = from(modelService.modelUpdates)
-                .pipe(take(2))
-                .toPromise()
-            modelService.addModel({ uri: 'u', languageId: 'x', text: 't' })
-            modelService.addModelRef('u')
-            modelService.addModelRef('u')
-            modelService.addModelRef('u')
-            modelService.removeModelRef('u')
-            modelService.removeModelRef('u')
-            modelService.removeModelRef('u')
-            expect(await updates).toMatchObject([{ type: 'deleted', uri: 'u' }])
         })
     })
 

@@ -1,4 +1,5 @@
 import { Selection } from '@sourcegraph/extension-api-types'
+import * as sinon from 'sinon'
 import { from, Observable } from 'rxjs'
 import { first, tap, bufferCount, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
@@ -9,8 +10,11 @@ import {
     CodeEditorData,
     EditorUpdate,
 } from './editorService'
-import { createTestModelService } from './modelService.test'
 import { ModelService } from './modelService'
+
+const FIXTURE_MODEL_SERVICE: Pick<ModelService, 'removeModel'> = {
+    removeModel: sinon.spy(),
+}
 
 export function createTestEditorService({
     modelService,
@@ -21,7 +25,7 @@ export function createTestEditorService({
     editors?: CodeEditorData[]
     updates?: Observable<EditorUpdate[]>
 }): EditorService {
-    const editorService = createEditorService(modelService || createTestModelService({}))
+    const editorService = createEditorService(modelService || FIXTURE_MODEL_SERVICE)
     if (editors) {
         for (const e of editors) {
             editorService.addEditor(e)
@@ -63,11 +67,7 @@ const SELECTIONS: Selection[] = [
 
 describe('EditorService', () => {
     test('addEditor', async () => {
-        const editorService = createEditorService(
-            createTestModelService({
-                models: [{ uri: 'u', text: 't', languageId: 'l' }],
-            })
-        )
+        const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
         const editorData: CodeEditorData = {
             type: 'CodeEditor',
             resource: 'u',
@@ -91,7 +91,7 @@ describe('EditorService', () => {
     describe('observeEditor', () => {
         test('emits error if editor does not exist', () => {
             scheduler().run(({ expectObservable }) => {
-                const editorService = createEditorService(createTestModelService({}))
+                const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
                 expectObservable(from(editorService.observeEditor({ editorId: 'x' }))).toBe(
                     '#',
                     {},
@@ -101,7 +101,7 @@ describe('EditorService', () => {
         })
 
         test('emits on selections changes', async () => {
-            const editorService = createEditorService(createTestModelService({}))
+            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
             const editorId = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'r',
@@ -121,17 +121,7 @@ describe('EditorService', () => {
         })
 
         test('completes when the editor is removed', async () => {
-            const editorService = createEditorService(
-                createTestModelService({
-                    models: [
-                        {
-                            uri: 'u',
-                            text: 't',
-                            languageId: 'l',
-                        },
-                    ],
-                })
-            )
+            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
             const editorId = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'u',
@@ -146,11 +136,7 @@ describe('EditorService', () => {
 
     describe('setSelections', () => {
         test('ok', async () => {
-            const editorService = createEditorService(
-                createTestModelService({
-                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
-                })
-            )
+            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
             const editor: CodeEditorData = {
                 type: 'CodeEditor',
                 resource: 'u',
@@ -167,18 +153,14 @@ describe('EditorService', () => {
             ] as EditorUpdate[])
         })
         test('not found', () => {
-            const editorService = createEditorService(createTestModelService({}))
+            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
             expect(() => editorService.setSelections({ editorId: 'x' }, [])).toThrowError('editor not found: x')
         })
     })
 
     describe('removeEditor', () => {
         test('ok', () => {
-            const editorService = createEditorService(
-                createTestModelService({
-                    models: [{ uri: 'u', text: 't', languageId: 'l' }],
-                })
-            )
+            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
             const editor = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'u',
@@ -189,15 +171,15 @@ describe('EditorService', () => {
             expect(editorService.editors.size).toBe(0)
         })
         test('not found', () => {
-            const editorService = createEditorService(createTestModelService({}))
+            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
             expect(() => editorService.removeEditor({ editorId: 'x' })).toThrowError('editor not found: x')
         })
 
-        it('calls removeModelRef() when removing an editor', () => {
-            const modelService = createTestModelService({
-                models: [{ uri: 'u', text: 't', languageId: 'l' }],
+        it('calls removeModel() when removing an editor', () => {
+            const removeModel = sinon.spy((uri: string) => {})
+            const editorService = createEditorService({
+                removeModel,
             })
-            const editorService = createEditorService(modelService)
             const editor1 = editorService.addEditor({
                 type: 'CodeEditor',
                 resource: 'u',
@@ -211,18 +193,14 @@ describe('EditorService', () => {
                 isActive: true,
             })
             editorService.removeEditor(editor1)
-            expect(modelService.hasModel('u')).toBeTruthy()
             editorService.removeEditor(editor2)
-            expect(modelService.hasModel('u')).toBeFalsy()
+            sinon.assert.calledOnce(removeModel)
+            sinon.assert.calledWith(removeModel, 'u')
         })
     })
 
     test('removeAllEditors', async () => {
-        const editorService = createEditorService(
-            createTestModelService({
-                models: [{ uri: 'u', text: 't', languageId: 'l' }],
-            })
-        )
+        const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
         const editor: CodeEditorData = { type: 'CodeEditor', resource: 'u', selections: [], isActive: true }
         editorService.addEditor(editor)
         editorService.addEditor(editor)
