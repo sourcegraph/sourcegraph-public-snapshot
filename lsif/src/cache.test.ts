@@ -94,17 +94,9 @@ describe('GenericCache', () => {
     })
 
     it('should not evict referenced cache entries', async () => {
-        const disposer = sinon.spy(() => undefined)
+        const { wait, done } = createBarrier()
+        const disposer = sinon.spy(done)
         const cache = new GenericCache<string, string>(5, () => 1, disposer)
-
-        const assertDisposeCalls = async (...expected: string[]) => {
-            await new Promise(resolve =>
-                setTimeout(() => {
-                    expect(disposer.args).toEqual(expected.map(v => [v]))
-                    resolve()
-                }, 10)
-            )
-        }
 
         const fooResolver = () => Promise.resolve('foo')
         const barResolver = () => Promise.resolve('bar')
@@ -120,11 +112,11 @@ describe('GenericCache', () => {
                     await cache.withValue('bonk', bonkResolver, async () => {
                         await cache.withValue('quux', quuxResolver, async () => {
                             // Sixth entry, but nothing to evict (all held)
-                            await cache.withValue('honk', honkResolver, () => assertDisposeCalls())
+                            await cache.withValue('honk', honkResolver, () => Promise.resolve(null))
 
                             // Seventh entry, honk can now be removed as it's the least
                             // recently used value that's not currently under a read lock.
-                            await cache.withValue('ronk', ronkResolver, () => assertDisposeCalls('honk'))
+                            await cache.withValue('ronk', ronkResolver, () => Promise.resolve(null))
                         })
                     })
                 })
@@ -132,7 +124,15 @@ describe('GenericCache', () => {
         })
 
         // Release and remove the least recently used
-        await cache.withValue('honk', () => Promise.resolve('honk'), () => assertDisposeCalls('honk', 'foo', 'bar'))
+
+        await cache.withValue(
+            'honk',
+            () => Promise.resolve('honk'),
+            async () => {
+                await wait
+                expect(disposer.args).toEqual([['honk'], ['foo'], ['bar']])
+            }
+        )
     })
 })
 
