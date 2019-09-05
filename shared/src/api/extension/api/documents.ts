@@ -60,20 +60,18 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void {
         for (const update of modelUpdates) {
             switch (update.type) {
-                case 'added':
-                    {
-                        const { uri, languageId, text } = update
-                        const doc = new ExtDocument({ uri, languageId, text })
-                        this.documents.set(update.uri, doc)
-                        this.openedTextDocuments.next(doc)
-                    }
+                case 'added': {
+                    const { uri, languageId, text } = update
+                    const doc = new ExtDocument({ uri, languageId, text })
+                    this.documents.set(update.uri, doc)
+                    this.openedTextDocuments.next(doc)
                     break
-                case 'updated':
-                    {
-                        const doc = this.get(update.uri)
-                        doc.update(update)
-                    }
+                }
+                case 'updated': {
+                    const doc = this.get(update.uri)
+                    doc.update(update)
                     break
+                }
                 case 'deleted':
                     this.documents.delete(update.uri)
                     break
