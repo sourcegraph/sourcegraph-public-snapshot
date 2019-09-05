@@ -6,7 +6,7 @@ import { MonikerData, RangeData, DocumentData, ResultChunkData } from './entitie
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
-import { ConnectionCache, DocumentCache } from './cache'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel, ResultChunkModel } from './models.database'
 import { PackageModel } from './models.xrepo'
 import { assertDefined, hashKey } from './util'
@@ -39,7 +39,8 @@ export class Database {
      * @param storageRoot The path where SQLite databases are stored.
      * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
-     * @param documentCache The cache of loaded document.
+     * @param documentCache The cache of loaded documents.
+     * @param resultChunkCache The cache of loaded result chunks.
      * @param repository The repository for which this database answers queries.
      * @param commit The commit for which this database answers queries.
      * @param databasePath The path to the database file.
@@ -49,6 +50,7 @@ export class Database {
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
+        private resultChunkCache: ResultChunkCache,
         private repository: string,
         private commit: string,
         private databasePath: string
@@ -312,11 +314,7 @@ export class Database {
             return null
         }
 
-        const db = new Database(
-            this.storageRoot,
-            this.xrepoDatabase,
-            this.connectionCache,
-            this.documentCache,
+        const db = this.createNewDatabase(
             packageEntity.repository,
             packageEntity.commit,
             makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
@@ -352,11 +350,7 @@ export class Database {
             return []
         }
 
-        const db = new Database(
-            this.storageRoot,
-            this.xrepoDatabase,
-            this.connectionCache,
-            this.documentCache,
+        const db = this.createNewDatabase(
             packageEntity.repository,
             packageEntity.commit,
             makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
@@ -400,11 +394,7 @@ export class Database {
                 continue
             }
 
-            const db = new Database(
-                this.storageRoot,
-                this.xrepoDatabase,
-                this.connectionCache,
-                this.documentCache,
+            const db = this.createNewDatabase(
                 reference.repository,
                 reference.commit,
                 makeFilename(this.storageRoot, reference.repository, reference.commit)
@@ -433,7 +423,7 @@ export class Database {
             return await decodeJSON<DocumentData>(document.data)
         }
 
-        return await this.documentCache.withDocument(`${this.databasePath}::${path}`, factory, document =>
+        return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
             Promise.resolve(document)
         )
     }
@@ -485,12 +475,41 @@ export class Database {
      * @param id An identifier contained in the result chunk.
      */
     private async findResultChunk(id: Id): Promise<ResultChunkData> {
-        const resultChunk = await this.withConnection(connection =>
-            connection.getRepository(ResultChunkModel).findOneOrFail(hashKey(id, NUM_RESULT_CHUNKS))
-        )
+        const index = hashKey(id, NUM_RESULT_CHUNKS)
 
-        // TODO - cache these results
-        return await decodeJSON<ResultChunkData>(resultChunk.data)
+        const factory = async (): Promise<DocumentData> => {
+            const resultChunk = await this.withConnection(connection =>
+                connection.getRepository(ResultChunkModel).findOneOrFail(index)
+            )
+
+            return await decodeJSON<DocumentData>(resultChunk.data)
+        }
+
+        return await this.resultChunkCache.withValue(`${this.databasePath}::${index}`, factory, resultChunk =>
+            Promise.resolve(resultChunk)
+        )
+    }
+
+    /**
+     * Create a new database with the same configuration but a different repository,
+     * commit, and databasePath.
+     *
+     *
+     * @param repository The repository for which this database answers queries.
+     * @param commit The commit for which this database answers queries.
+     * @param databasePath The path to the database file.
+     */
+    private createNewDatabase(repository: string, commit: string, databasePath: string): Database {
+        return new Database(
+            this.storageRoot,
+            this.xrepoDatabase,
+            this.connectionCache,
+            this.documentCache,
+            this.resultChunkCache,
+            repository,
+            commit,
+            databasePath
+        )
     }
 
     /**

@@ -221,11 +221,11 @@ export class ConnectionCache extends GenericCache<string, Connection> {
 }
 
 /**
- * A cache of deserialized `DocumentData` values indexed by their Identifer.
+ * A cache of decoded values encoded as JSON and gzipped in a SQLite database.
  */
-export class DocumentCache extends GenericCache<Id, DocumentData> {
+class EncodedJsonCache<K, V> extends GenericCache<K, V> {
     /**
-     * Create a new `DocumentCache` with the given maximum (soft) size for
+     * Create a new `EncodedJsonCache` with the given maximum (soft) size for
      * all items in the cache.
      */
     constructor(max: number) {
@@ -237,20 +237,32 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
             (): void => {}
         )
     }
+}
 
+/**
+ * A cache of deserialized `DocumentData` values indexed by a string containing
+ * the database path and the path of the document.
+ */
+export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
     /**
-     * Invoke `callback` with document value obtained from the cache
-     * cache or created on cache miss.
-     *
-     * @param documentId The identifier of the document.
-     * @param factory The function used to create a document.
-     * @param callback The function invoked with the document.
+     * Create a new `DocumentCache` with the given maximum (soft) size for
+     * all items in the cache.
      */
-    public withDocument<T>(
-        documentId: Id,
-        factory: () => Promise<DocumentData>,
-        callback: (document: DocumentData) => Promise<T>
-    ): Promise<T> {
-        return this.withValue(documentId, factory, callback)
+    constructor(max: number) {
+        super(max)
+    }
+}
+
+/**
+ * A cache of deserialized `ResultChunkData` values indexed by a string containing
+ * the database path and the chunk index.
+ */
+export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkCache> {
+    /**
+     * Create a new `ResultChunkCache` with the given maximum (soft) size for
+     * all items in the cache.
+     */
+    constructor(max: number) {
+        super(max)
     }
 }

@@ -307,7 +307,7 @@ export class Correlator {
     }
 
     /**
-     * Sets the next field fo the specified range or result set. Ensures all referenced vertices
+     * Sets the next field of the specified range or result set. Ensures all referenced vertices
      * are defined.
      *
      * @param edge The next edge.

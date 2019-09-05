@@ -1,7 +1,7 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as readline from 'mz/readline'
-import { ConnectionCache, DocumentCache } from './cache'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { Database } from './database'
 import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
 import { Edge, Vertex } from 'lsif-protocol'
@@ -32,7 +32,8 @@ export class Backend {
         private storageRoot: string,
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
-        private documentCache: DocumentCache
+        private documentCache: DocumentCache,
+        private resultChunkCache: ResultChunkCache
     ) {}
 
     /**
@@ -87,6 +88,7 @@ export class Backend {
             this.xrepoDatabase,
             this.connectionCache,
             this.documentCache,
+            this.resultChunkCache,
             repository,
             commit,
             file
@@ -126,7 +128,8 @@ async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex |
 export async function createBackend(
     storageRoot: string,
     connectionCache: ConnectionCache,
-    documentCache: DocumentCache
+    documentCache: DocumentCache,
+    resultChunkCache: ResultChunkCache
 ): Promise<Backend> {
     try {
         await fs.mkdir(storageRoot)
@@ -146,5 +149,11 @@ export async function createBackend(
         }
     }
 
-    return new Backend(storageRoot, new XrepoDatabase(connectionCache, filename), connectionCache, documentCache)
+    return new Backend(
+        storageRoot,
+        new XrepoDatabase(connectionCache, filename),
+        connectionCache,
+        documentCache,
+        resultChunkCache
+    )
 }
