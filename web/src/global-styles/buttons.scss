@@ -10,8 +10,8 @@
     }
 }
 
-// This class is meant for clickable icons
-// It is NOT meant for buttons with icons in it
+// This class is meant for clickable icons. It is NOT meant for buttons with icons in it or for nav
+// items.
 .btn-icon {
     margin: 0;
     padding: 0;
@@ -26,7 +26,7 @@
         @extend .icon-inline;
     }
 
-    &:focus:not(:disabled):not(.disabled) {
+    &:focus-visible:not(:disabled):not(.disabled) {
         box-shadow: 0 0 0 2px rgba($primary, 0.5);
     }
 

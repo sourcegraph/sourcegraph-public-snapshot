@@ -6,7 +6,7 @@ import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { KeybindingsProps } from '../keybindings'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
@@ -46,7 +46,7 @@ describe('NavLinks', () => {
         'executeCommand' | 'services'
     >['extensionsController'] = { executeCommand: () => Promise.resolve(), services: {} as any }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
-    const KEYBINDINGS: KeybindingsProps['keybindings'] = { commandPalette: [], switchTheme: [] }
+    const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
     // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
     const USER = { username: 'u' } as GQL.IUser
@@ -58,7 +58,7 @@ describe('NavLinks', () => {
         isLightTheme: true,
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: noop,
-        keybindings: KEYBINDINGS,
+        keyboardShortcuts: KEYBOARD_SHORTCUTS,
         settingsCascade: SETTINGS_CASCADE,
         history,
         isSourcegraphDotCom: false,

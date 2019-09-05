@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -12,7 +13,11 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 )
 
 func BenchmarkStore(b *testing.B) {
@@ -27,15 +32,19 @@ func BenchmarkStore(b *testing.B) {
 		ids[i] = uint32(i)
 	}
 
-	update := func(context.Context) ([]uint32, error) {
-		time.Sleep(2 * time.Second) // Emulate slow code host
-		return ids, nil
+	c := extsvc.CodeHost{
+		ServiceID:   "https://bitbucketserver.example.com",
+		ServiceType: bitbucketserver.ServiceType,
+	}
+
+	update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
+		return ids, &c, nil
 	}
 
 	ctx := context.Background()
 
 	b.Run("ttl=0", func(b *testing.B) {
-		s := newStore(db, 0, DefaultHardTTL, clock, newCache())
+		s := newStore(db, 0, DefaultHardTTL, clock)
 		s.block = true
 
 		ps := &Permissions{
@@ -45,43 +54,25 @@ func BenchmarkStore(b *testing.B) {
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 
-	b.Run("ttl=60s/no-in-memory-cache", func(b *testing.B) {
-		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, nil)
+	b.Run("ttl=60s", func(b *testing.B) {
+		s := newStore(db, 60*time.Second, DefaultHardTTL, clock)
 		s.block = true
 
 		ps := &Permissions{
-			UserID: 99,
+			UserID: 100,
 			Perm:   authz.Read,
 			Type:   "repos",
 		}
 
 		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
-			if err != nil {
-				b.Fatal(err)
-			}
-		}
-	})
-
-	b.Run("ttl=60s/in-memory-cache", func(b *testing.B) {
-		s := newStore(db, 60*time.Second, DefaultHardTTL, clock, newCache())
-		s.block = true
-
-		ps := &Permissions{
-			UserID: 99,
-			Perm:   authz.Read,
-			Type:   "repos",
-		}
-
-		for i := 0; i < b.N; i++ {
-			err := s.LoadPermissions(ctx, &ps, update)
+			err := s.LoadPermissions(ctx, ps, update)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -106,22 +97,43 @@ func testStore(db *sql.DB) func(*testing.T) {
 			return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
 		}
 
-		s := newStore(db, ttl, hardTTL, clock, newCache())
+		codeHost := extsvc.CodeHost{
+			ServiceID:   "https://bitbucketserver.example.com",
+			ServiceType: bitbucketserver.ServiceType,
+		}
+
+		rs := make([]*repos.Repo, 0, 7)
+		for i := 1; i <= 7; i++ {
+			rs = append(rs, &repos.Repo{
+				Name: fmt.Sprintf("bitbucketserver.example.com/PROJ/%d", i),
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          strconv.Itoa(i),
+					ServiceType: codeHost.ServiceType,
+					ServiceID:   codeHost.ServiceID,
+				},
+				Sources: map[string]*repos.SourceInfo{},
+			})
+		}
+
+		ctx := context.Background()
+		err := repos.NewDBStore(db, sql.TxOptions{}).UpsertRepos(ctx, rs...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		s := newStore(db, ttl, hardTTL, clock)
 		s.updates = make(chan *Permissions)
 
 		ids := []uint32{1, 2, 3}
 		e := error(nil)
-		update := func(context.Context) ([]uint32, error) {
-			return ids, e
+		update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
+			return ids, &codeHost, e
 		}
-
-		ctx := context.Background()
 
 		ps := &Permissions{UserID: 42, Perm: authz.Read, Type: "repos"}
 		load := func(s *store) (*Permissions, error) {
 			ps := *ps
-			p := &ps
-			return p, s.LoadPermissions(ctx, &p, update)
+			return &ps, s.LoadPermissions(ctx, &ps, update)
 		}
 
 		array := func(ids *roaring.Bitmap) []uint32 {
@@ -132,7 +144,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		{
-			// Not cached, nor stored.
+			// No permissions cached.
 			ps, err := load(s)
 			equal(t, "err", err, &StalePermissionsError{Permissions: ps})
 			equal(t, "ids", array(ps.IDs), []uint32(nil))
@@ -150,18 +162,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 		}
 
 		<-s.updates
-
-		{
-			// Not cached, but stored by the background update.
-			// After loading, stored permissions are cached in memory.
-			equal(t, "cache", s.cache.cache[newCacheKey(ps)], (*Permissions)(nil))
-
-			ps, err := load(s)
-
-			equal(t, "err", err, nil)
-			equal(t, "ids", array(ps.IDs), ids)
-			equal(t, "cache", s.cache.cache[newCacheKey(ps)], ps)
-		}
 
 		ids = append(ids, 4, 5, 6)
 
@@ -201,9 +201,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 			atomic.AddInt64(&now, int64(2*ttl))
 
 			delay := make(chan struct{})
-			update = func(context.Context) ([]uint32, error) {
+			update = func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
 				<-delay
-				return ids, e
+				return ids, &codeHost, e
 			}
 
 			type op struct {
@@ -217,7 +217,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			for i := 0; i < cap(ch); i++ {
 				go func(i int) {
-					s := newStore(db, ttl, hardTTL, clock, newCache())
+					s := newStore(db, ttl, hardTTL, clock)
 					s.updates = updates
 					ps, err := load(s)
 					ch <- op{i, ps, err}

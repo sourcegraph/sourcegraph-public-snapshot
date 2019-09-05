@@ -109,6 +109,7 @@ $code-bg: var(--body-bg);
 @import './global-styles/breadcrumb';
 @import './global-styles/card';
 @import './global-styles/dropdown';
+@import './global-styles/modal';
 @import './global-styles/nav';
 @import './global-styles/type';
 @import '../../shared/src/global-styles/icons';
@@ -192,6 +193,16 @@ body,
     background-color: var(--body-bg);
     border: solid 1px var(--border-color);
     border-radius: $border-radius;
+}
+
+// Show a focus ring when performing keyboard navigation. Uses the polyfill at
+// https://github.com/WICG/focus-visible because few browsers support :focus-visible.
+:focus:not(:focus-visible) {
+    outline: none;
+}
+:focus-visible {
+    outline: 0;
+    box-shadow: $btn-focus-box-shadow;
 }
 
 // Pages

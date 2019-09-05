@@ -60,6 +60,7 @@ export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
 export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
 export ZOEKT_HOST=localhost:3070
+export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
 # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to

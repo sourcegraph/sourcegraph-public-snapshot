@@ -8,7 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
-import { KeybindingsProps } from '../keybindings'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
@@ -19,7 +19,7 @@ interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeybindingsProps,
+        KeyboardShortcutsProps,
         EventLoggerProps,
         ThemeProps,
         ThemePreferenceProps,

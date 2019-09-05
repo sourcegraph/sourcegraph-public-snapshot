@@ -36,37 +36,3 @@ h5 {
 small {
     font-size: 12px;
 }
-
-// Apply the same focus outline to links as to buttons
-a {
-    &:focus,
-    &.focus {
-        border-radius: $border-radius;
-        outline: 0;
-        box-shadow: $btn-focus-box-shadow;
-    }
-
-    // Disabled comes first so active can properly restyle
-    &.disabled,
-    &:disabled {
-        opacity: $btn-disabled-opacity;
-
-        @include box-shadow(none);
-    }
-
-    // Opinionated: add "hand" cursor to non-disabled .btn elements
-    &:not(:disabled):not(.disabled) {
-        cursor: pointer;
-    }
-
-    &:not(:disabled):not(.disabled):active,
-    &:not(:disabled):not(.disabled).active {
-        background-image: none;
-
-        @include box-shadow($btn-active-box-shadow);
-
-        &:focus {
-            @include box-shadow($btn-focus-box-shadow, $btn-active-box-shadow);
-        }
-    }
-}

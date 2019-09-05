@@ -253,7 +253,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
 			// equal.
-			k.file = s.path
+			k.file = s.Path()
 		case *searchSymbolResult:
 			k.repoName = s.commit.repo.repo.Name
 			k.symbol = s.symbol.Name + s.symbol.Parent

@@ -1,4 +1,4 @@
-import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import H from 'history'
 import { isArray, sortBy, uniq, uniqueId } from 'lodash'
@@ -11,6 +11,7 @@ import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
+import { KeyboardShortcut } from '../../../web/src/keyboardShortcuts/keyboardShortcuts'
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
@@ -310,7 +311,7 @@ export interface CommandListPopoverButtonProps
     extends CommandListProps,
         CommandListPopoverButtonClassProps,
         CommandListClassProps {
-    toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
+    keyboardShortcutForShow?: KeyboardShortcut
 }
 
 export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
@@ -320,7 +321,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     showCaret = true,
     popoverClassName = '',
     popoverInnerClassName = '',
-    toggleVisibilityKeybinding,
+    keyboardShortcutForShow,
     ...props
 }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -352,8 +353,8 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             >
                 <CommandList {...props} onSelect={close} />
             </TooltipPopoverWrapper>
-            {toggleVisibilityKeybinding &&
-                toggleVisibilityKeybinding.map((keybinding, i) => (
+            {keyboardShortcutForShow &&
+                keyboardShortcutForShow.keybindings.map((keybinding, i) => (
                     <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
                 ))}
         </ButtonElement>
