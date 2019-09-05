@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
 	"sync"
@@ -13,6 +14,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
+
+func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
+	Input *struct {
+		Name        string
+		Description *string
+		Namespace   graphql.ID
+	}
+}) (*campaignResolver, error) {
+	// 🚨 SECURITY: Only site admins may add external services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (r *schemaResolver) UpdateCampaign(ctx context.Context, args *struct {
+	Input *struct {
+		ID          graphql.ID
+		Name        *string
+		Description *string
+	}
+}) (*campaignResolver, error) {
+	// 🚨 SECURITY: Only site admins may add external services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	return nil, errors.New("not implemented")
+}
 
 func (r *schemaResolver) Campaigns(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
