@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"sync"
 
@@ -79,15 +78,6 @@ const campaignIDKind = "Campaign"
 
 func marshalCampaignID(id int64) graphql.ID {
 	return relay.MarshalID(campaignIDKind, id)
-}
-
-func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
-	if kind := relay.UnmarshalKind(id); kind != campaignIDKind {
-		err = fmt.Errorf("expected graphql ID to have kind %q; got %q", campaignIDKind, kind)
-		return
-	}
-	err = relay.UnmarshalSpec(id, &campaignID)
-	return
 }
 
 func (r *campaignResolver) ID() graphql.ID {

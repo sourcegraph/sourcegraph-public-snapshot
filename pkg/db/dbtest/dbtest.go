@@ -36,7 +36,7 @@ func NewTx(t testing.TB, db *sql.DB) (*sql.Tx, func()) {
 
 	return tx, func() {
 		if !t.Failed() {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}
 }
