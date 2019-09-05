@@ -798,7 +798,7 @@ function assertId(id: Id | undefined): Id {
  * @param name The type of element (used for exception message).
  * @param maps The set of maps to query.
  */
-function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T | null>[]): T {
+function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T>[]): T {
     for (const map of maps) {
         const value = map.get(id)
         if (value !== undefined) {
@@ -816,7 +816,7 @@ function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T | null>[]): T
  * @param name The type of element (used for exception message).
  * @param maps The set of maps to query.
  */
-function mapAssertDefined<T>(ids: Id[], name: string, ...maps: Map<Id, T | null>[]): T[] {
+function mapAssertDefined<T>(ids: Id[], name: string, ...maps: Map<Id, T>[]): T[] {
     return ids.map(id => assertDefined(id, name, ...maps))
 }
 
