@@ -1,13 +1,14 @@
-import { findRange, findResult, findMonikers, walkChain, asLocations, makeRemoteUri, comparePosition } from './database'
-import { Id, MonikerKind } from 'lsif-protocol'
-import { ResultSetData, RangeData, MonikerData } from './entities'
 import * as lsp from 'vscode-languageserver-protocol'
+import { asLocations, comparePosition, findMonikers, findRange, findResult, makeRemoteUri, walkChain } from './database'
+import { Id, MonikerKind } from 'lsif-protocol'
+import { MonikerData, RangeData, ResultSetData } from './entities'
+import { range } from 'lodash'
 
 describe('findRange', () => {
     it('should find all ranges in list', () => {
         // Generate starting characters for each range. Thse neds to be
         // spread wide enough so that the ranges on each line don't touch.
-        const characters = Array.from(Array(2000).keys()).map(i => i * 5)
+        const characters = range(0, 10000, 5)
 
         const ranges: RangeData[] = []
         for (let i = 1; i <= 1000; i++) {
