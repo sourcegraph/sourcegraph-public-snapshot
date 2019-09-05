@@ -27,10 +27,6 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Create a campaign in a namespace. The newly created campaign is returned.
-    createCampaign(input: CreateCampaignInput!): Campaign!
-    # Update a campaign. The updated campaign is returned.
-    updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -345,31 +341,6 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
-}
-
-# Input arguments for creating a campaign.
-input CreateCampaignInput {
-    # The ID of the namespace where this campaign is defined.
-    namespace: ID!
-
-    # The name of the campaign.
-    name: String!
-
-    # The description of the campaign as Markdown.
-    description: String
-}
-
-# Input arguments for updating a campaign.
-input UpdateCampaignInput {
-    # The ID of the campaign to update.
-    id: ID!
-
-    # The new name of the campaign (if non-null).
-    name: String
-
-    # The new description of the campaign as Markdown. If it is the non-null empty string, the
-    # description is set to null.
-    description: String
 }
 
 # A campaign is a collection of threads.
