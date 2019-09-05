@@ -47,7 +47,7 @@ export interface ModelService {
     /**
      * An observable of unique languageIds across all models.
      */
-    activeLanguages: Subscribable<readonly string[]>
+    activeLanguages: Subscribable<ReadonlySet<string>>
 
     /**
      * Returns an Observable that emits every time the model
@@ -117,7 +117,7 @@ export function createModelService(): ModelService {
     /** A map of URIs to TextModels */
     const models = new Map<string, TextModel>()
     const modelUpdates = new Subject<TextModelUpdate[]>()
-    const activeLanguages = new BehaviorSubject<string[]>([])
+    const activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
     const modelRefs = new RefCount()
     const languageRefs = new RefCount()
     const getModel = (uri: string): TextModel => {
@@ -158,7 +158,7 @@ export function createModelService(): ModelService {
             modelUpdates.next([{ type: 'added', ...model }])
             // Update activeLanguages if no other existing model has the same language.
             if (languageRefs.increment(model.languageId)) {
-                activeLanguages.next([...languageRefs.keys()])
+                activeLanguages.next(new Set(languageRefs.keys()))
             }
         },
         updateModel: (uri, text) => {
@@ -176,7 +176,7 @@ export function createModelService(): ModelService {
             modelRefs.delete(uri)
             modelUpdates.next([{ type: 'deleted', uri }])
             if (languageRefs.decrement(model.languageId)) {
-                activeLanguages.next([...languageRefs.keys()])
+                activeLanguages.next(new Set(languageRefs.keys()))
             }
         },
         addModelRef: uri => {
@@ -190,7 +190,7 @@ export function createModelService(): ModelService {
                 modelUpdates.next([{ type: 'deleted', uri }])
                 // Update activeLanguages if no other model has the same language.
                 if (languageRefs.decrement(model.languageId)) {
-                    activeLanguages.next([...languageRefs.keys()])
+                    activeLanguages.next(new Set(languageRefs.keys()))
                 }
             }
         },

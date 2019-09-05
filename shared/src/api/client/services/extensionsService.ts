@@ -171,8 +171,9 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    visibleTextDocumentLanguages: readonly string[]
+    visibleTextDocumentLanguages: ReadonlySet<string>
 ): ConfiguredExtension[] {
+    const languageActivationEvents = new Set([...visibleTextDocumentLanguages].map(l => `onLanguage:${l}`))
     return enabledExtensions.filter(x => {
         try {
             if (!x.manifest) {
@@ -194,9 +195,7 @@ function extensionsWithMatchedActivationEvent(
                 console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                 return false
             }
-            return x.manifest.activationEvents.some(
-                e => e === '*' || visibleTextDocumentLanguages.some(l => e === `onLanguage:${l}`)
-            )
+            return x.manifest.activationEvents.some(e => e === '*' || languageActivationEvents.has(e))
         } catch (err) {
             console.error(err)
         }

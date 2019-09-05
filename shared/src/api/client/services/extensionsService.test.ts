@@ -15,7 +15,7 @@ class TestExtensionsService extends ExtensionsService {
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            activeLanguages: readonly string[]
+            activeLanguages: ReadonlySet<string>
         ) => ConfiguredExtension[],
         sideloadedExtensionURL: Subscribable<string | null>,
         fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
@@ -45,8 +45,8 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [],
                         {
-                            activeLanguages: cold<readonly string[]>('-a-|', {
-                                a: [],
+                            activeLanguages: cold<ReadonlySet<string>>('-a-|', {
+                                a: new Set(),
                             }),
                         },
                         { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
@@ -68,9 +68,9 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
                         {
-                            activeLanguages: cold<readonly string[]>('-a-b-|', {
-                                a: ['x'],
-                                b: ['y'],
+                            activeLanguages: cold<ReadonlySet<string>>('-a-b-|', {
+                                a: new Set(['x']),
+                                b: new Set(['y']),
                             }),
                         },
                         {
@@ -80,7 +80,7 @@ describe('activeExtensions', () => {
                             }),
                         },
                         (enabledExtensions, activeLanguages) =>
-                            enabledExtensions.filter(x => activeLanguages.some(languageId => x.id === languageId)),
+                            enabledExtensions.filter(x => activeLanguages.has(x.id)),
                         cold('-a--|', { a: '' }),
                         () => of(null)
                     ).activeExtensions
@@ -98,8 +98,8 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
                         {
-                            activeLanguages: cold<readonly string[]>('a-|', {
-                                a: [],
+                            activeLanguages: cold<ReadonlySet<string>>('a-|', {
+                                a: new Set([]),
                             }),
                         },
                         {
@@ -143,8 +143,8 @@ describe('activeExtensions', () => {
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
                         {
-                            activeLanguages: cold<readonly string[]>('a-|', {
-                                a: [],
+                            activeLanguages: cold<ReadonlySet<string>>('a-|', {
+                                a: new Set([]),
                             }),
                         },
                         {

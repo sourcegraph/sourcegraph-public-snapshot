@@ -1,5 +1,5 @@
 import { Observable, from } from 'rxjs'
-import { tap, first, takeWhile, take, bufferCount } from 'rxjs/operators'
+import { tap, first, takeWhile, take, bufferCount, map } from 'rxjs/operators'
 import { createModelService, ModelService, TextModelUpdate, TextModel } from './modelService'
 
 export function createTestModelService({
@@ -131,6 +131,7 @@ describe('ModelService', () => {
             const modelService = createModelService()
             const values = from(modelService.activeLanguages)
                 .pipe(
+                    map(activeLanguages => [...activeLanguages]),
                     bufferCount(3),
                     first()
                 )
@@ -147,6 +148,7 @@ describe('ModelService', () => {
             const modelService = createModelService()
             const values = from(modelService.activeLanguages)
                 .pipe(
+                    map(activeLanguages => [...activeLanguages]),
                     bufferCount(5),
                     first()
                 )
