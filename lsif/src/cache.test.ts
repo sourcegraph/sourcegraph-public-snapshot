@@ -19,11 +19,10 @@ describe('GenericCache', () => {
         // These are the cache values that need to be created, in-order
         const expectedInstantiations = ['foo', 'bar', 'baz', 'bonk', 'quux', 'honk', 'baz']
 
-        let i = 0
         const factory = sinon.stub()
-        for (const value of expectedInstantiations) {
+        for (const [i, value] of expectedInstantiations.entries()) {
             // Log the value arg and resolve the cache data immediately
-            factory.onCall(i++).returns(Promise.resolve(value))
+            factory.onCall(i).returns(Promise.resolve(value))
         }
 
         const cache = new GenericCache<string, string>(5, () => 1, () => {})
@@ -87,10 +86,9 @@ describe('GenericCache', () => {
 
         const expectedInstantiations = [2, 3, 1, 2]
 
-        let i = 0
         const factory = sinon.stub()
-        for (const value of expectedInstantiations) {
-            factory.onCall(i++).returns(Promise.resolve(value))
+        for (const [i, value] of expectedInstantiations.entries()) {
+            factory.onCall(i).returns(Promise.resolve(value))
         }
 
         const cache = new GenericCache<number, number>(5, v => v, () => {})
