@@ -2,7 +2,7 @@ import * as React from 'react'
 import * as H from 'history'
 import { SearchType } from './SearchResults'
 import { NavLink } from 'react-router-dom'
-import { appendOrReplaceSearchType } from '../helpers'
+import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 
@@ -21,7 +21,7 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = props => {
-    const q = appendOrReplaceSearchType(props.query, props.type)
+    const q = toggleSearchType(props.query, props.type)
     const builtURLQuery = buildSearchURLQuery(q)
 
     const isActiveFunc = constant(location.search === `?${builtURLQuery}`)

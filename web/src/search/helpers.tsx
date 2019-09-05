@@ -87,7 +87,7 @@ export function getSearchTypeFromQuery(query: string): SearchType {
     return null
 }
 
-export function appendOrReplaceSearchType(query: string, searchType: SearchType): string {
+export function toggleSearchType(query: string, searchType: SearchType): string {
     const match = query.match(/\btype:\w*\b/)
     if (!match) {
         return searchType ? `${query} type:${searchType}` : query
