@@ -12,9 +12,9 @@ type Campaign struct {
 	ID              int64
 	Name            string
 	Description     string
-	AuthorID        int64
-	NamespaceUserID int64
-	NamespaceOrgID  int64
+	AuthorID        int32
+	NamespaceUserID int32
+	NamespaceOrgID  int32
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

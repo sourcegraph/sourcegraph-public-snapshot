@@ -68,14 +68,14 @@ func createCampaignQuery(c *types.Campaign) *sqlf.Query {
 		c.Name,
 		c.Description,
 		c.AuthorID,
-		nullInt64Column(c.NamespaceUserID),
-		nullInt64Column(c.NamespaceOrgID),
+		nullInt32Column(c.NamespaceUserID),
+		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
 	)
 }
 
-func nullInt64Column(n int64) *int64 {
+func nullInt32Column(n int32) *int32 {
 	if n == 0 {
 		return nil
 	}
@@ -204,8 +204,8 @@ func scanCampaign(c *types.Campaign, s scanner) error {
 		&c.Name,
 		&c.Description,
 		&c.AuthorID,
-		&dbutil.NullInt64{N: &c.NamespaceUserID},
-		&dbutil.NullInt64{N: &c.NamespaceOrgID},
+		&dbutil.NullInt32{N: &c.NamespaceUserID},
+		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
