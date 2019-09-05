@@ -73,9 +73,9 @@ describe('EditorService', () => {
             {
                 type: 'added',
                 editorId,
-                data: editorData,
+                editorData,
             },
-        ])
+        ] as EditorUpdate[])
     })
 
     describe('observeEditorAndModel', () => {
@@ -153,7 +153,9 @@ describe('EditorService', () => {
                 .pipe(first())
                 .toPromise()
             editorService.setSelections({ editorId }, SELECTIONS)
-            expect(await selectionsSet).toMatchObject([{ type: 'updated', editorId, data: { selections: SELECTIONS } }])
+            expect(await selectionsSet).toMatchObject([
+                { type: 'updated', editorId, editorData: { selections: SELECTIONS } },
+            ] as EditorUpdate[])
         })
         test('not found', () => {
             const editorService = createEditorService(createTestModelService({}))
