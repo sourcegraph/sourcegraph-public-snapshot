@@ -1,6 +1,5 @@
 import { Connection, createConnection, EntityManager } from 'typeorm'
-import { DocumentData } from './entities'
-import { Id } from 'lsif-protocol'
+import { DocumentData, ResultChunkData } from './entities'
 import Yallist from 'yallist'
 
 /**
@@ -221,9 +220,27 @@ export class ConnectionCache extends GenericCache<string, Connection> {
 }
 
 /**
+ * A wrapper around a cache value that retains its encoded size. In order to keep
+ * the in-memory limit of these decoded items, we use this value as the cache entry
+ * size. This assumes that the size of the encoded text is a good proxy for the size
+ * of the in-memory representation.
+ */
+export interface EncodedJsonCacheValue<T> {
+    /**
+     * The size of the encoded value.
+     */
+    size: number
+
+    /**
+     * The decoded value.
+     */
+    data: T
+}
+
+/**
  * A cache of decoded values encoded as JSON and gzipped in a SQLite database.
  */
-class EncodedJsonCache<K, V> extends GenericCache<K, V> {
+class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
     /**
      * Create a new `EncodedJsonCache` with the given maximum (soft) size for
      * all items in the cache.
@@ -232,7 +249,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, V> {
         super(
             max,
             // TODO - determine memory size
-            () => 1,
+            v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
             (): void => {}
         )
@@ -257,7 +274,7 @@ export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
  * A cache of deserialized `ResultChunkData` values indexed by a string containing
  * the database path and the chunk index.
  */
-export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkCache> {
+export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> {
     /**
      * Create a new `ResultChunkCache` with the given maximum (soft) size for
      * all items in the cache.

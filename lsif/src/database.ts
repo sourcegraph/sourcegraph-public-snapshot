@@ -6,7 +6,7 @@ import { MonikerData, RangeData, DocumentData, ResultChunkData } from './entitie
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { ConnectionCache, DocumentCache, ResultChunkCache, EncodedJsonCacheValue } from './cache'
 import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel, ResultChunkModel } from './models.database'
 import { PackageModel } from './models.xrepo'
 import { assertDefined, hashKey } from './util'
@@ -415,16 +415,19 @@ export class Database {
      * @param path The path of the document.
      */
     private async findDocument(path: string): Promise<DocumentData | undefined> {
-        const factory = async (): Promise<DocumentData> => {
+        const factory = async (): Promise<EncodedJsonCacheValue<DocumentData>> => {
             const document = await this.withConnection(connection =>
                 connection.getRepository(DocumentModel).findOneOrFail(path)
             )
 
-            return await decodeJSON<DocumentData>(document.data)
+            return {
+                size: document.data.length,
+                data: await decodeJSON<DocumentData>(document.data),
+            }
         }
 
         return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
-            Promise.resolve(document)
+            Promise.resolve(document.data)
         )
     }
 
@@ -477,16 +480,19 @@ export class Database {
     private async findResultChunk(id: Id): Promise<ResultChunkData> {
         const index = hashKey(id, NUM_RESULT_CHUNKS)
 
-        const factory = async (): Promise<DocumentData> => {
+        const factory = async (): Promise<EncodedJsonCacheValue<ResultChunkData>> => {
             const resultChunk = await this.withConnection(connection =>
                 connection.getRepository(ResultChunkModel).findOneOrFail(index)
             )
 
-            return await decodeJSON<DocumentData>(resultChunk.data)
+            return {
+                size: resultChunk.data.length,
+                data: await decodeJSON<ResultChunkData>(resultChunk.data),
+            }
         }
 
         return await this.resultChunkCache.withValue(`${this.databasePath}::${index}`, factory, resultChunk =>
-            Promise.resolve(resultChunk)
+            Promise.resolve(resultChunk.data)
         )
     }
 
