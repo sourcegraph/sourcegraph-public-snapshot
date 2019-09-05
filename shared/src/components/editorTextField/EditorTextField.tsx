@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import React, { createRef, TextareaHTMLAttributes, useEffect, useState } from 'react'
-import { from, Subscription, Unsubscribable } from 'rxjs'
+import { Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { CodeEditorData, EditorId, EditorService, observeEditorAndModel } from '../../api/client/services/editorService'
 import { ModelService, TextModel } from '../../api/client/services/modelService'

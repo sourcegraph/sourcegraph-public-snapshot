@@ -1,7 +1,7 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { from, merge, of } from 'rxjs'
+import { merge, of } from 'rxjs'
 import {
     catchError,
     debounceTime,
