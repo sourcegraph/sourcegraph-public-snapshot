@@ -92,8 +92,7 @@ export function getSearchTypeFromQuery(query: string): SearchType {
         if (symbolMatches) {
             return 'symbol'
         }
-
-        return matches.groups.type[0] as SearchType
+        return matches.groups.type as SearchType
     }
 
     return null
