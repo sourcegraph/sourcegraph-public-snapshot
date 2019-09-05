@@ -801,7 +801,7 @@ function assertId(id: Id | undefined): Id {
 function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T | null>[]): T {
     for (const map of maps) {
         const value = map.get(id)
-        if (value) {
+        if (value !== undefined) {
             return value
         }
     }
