@@ -28,7 +28,7 @@ describe('search/helpers', () => {
         expect(getSearchTypeFromQuery('repo:^github.com/sourcegraph/sourcegraph type:diff test')).toEqual('diff')
         expect(getSearchTypeFromQuery('type:diff repo:^github.com/sourcegraph/sourcegraph test')).toEqual('diff')
         expect(getSearchTypeFromQuery('type:diff type:commit repo:^github.com/sourcegraph/sourcegraph test')).toEqual(
-            'commit'
+            'diff'
         )
         /** Edge case. If there are multiple type filters and `type:symbol` is one of them, symbol results always get returned. */
         expect(getSearchTypeFromQuery('type:diff type:symbol repo:^github.com/sourcegraph/sourcegraph test')).toEqual(
