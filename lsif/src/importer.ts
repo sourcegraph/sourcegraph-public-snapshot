@@ -252,19 +252,19 @@ class LsifImporter {
      * Return the set of packages provided by the project analyzed by this LSIF dump.
      */
     private getPackages(): Package[] {
-        const packageHashes: Package[] = []
+        const packages: Package[] = []
         for (const id of this.exportedMonikers) {
             const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
             const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
-            packageHashes.push({
+            packages.push({
                 scheme: source.scheme,
                 name: packageInfo.name,
                 version: packageInfo.version,
             })
         }
 
-        return uniqWith(packageHashes, isEqual)
+        return uniqWith(packages, isEqual)
     }
 
     /**
