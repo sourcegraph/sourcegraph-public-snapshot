@@ -50,8 +50,12 @@ export interface ModelService {
     activeLanguages: Subscribable<ReadonlySet<string>>
 
     /**
-     * Returns an Observable that emits every time the model
-     * with the given uri is updated.
+     * Observe a model for changes.
+     *
+     * @param uri The uri of the model to observe.
+     * @returns An observable that emits when the model changes,
+     * and completes when the model is removed.
+     * If no such model exists, it emits an error.
      */
     observeModel(uri: string): Observable<TextModel>
 

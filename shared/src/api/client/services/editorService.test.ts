@@ -1,6 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { from, Observable } from 'rxjs'
-import { first, tap } from 'rxjs/operators'
+import { first, tap, bufferCount, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import {
     createEditorService,
@@ -51,6 +51,16 @@ export function createTestEditorService({
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
+const SELECTIONS: Selection[] = [
+    {
+        start: { line: 3, character: -1 },
+        end: { line: 3, character: -1 },
+        anchor: { line: 3, character: -1 },
+        active: { line: 3, character: -1 },
+        isReversed: false,
+    },
+]
+
 describe('EditorService', () => {
     test('addEditor', async () => {
         const editorService = createEditorService(
@@ -78,51 +88,59 @@ describe('EditorService', () => {
         ] as EditorUpdate[])
     })
 
-    describe('observeEditorAndModel', () => {
-        test('merges in model', async () => {
-            const modelService = createTestModelService({
-                models: [{ uri: 'u', text: 't', languageId: 'l' }],
-            })
-            const editorService = createEditorService(modelService)
-            const editor: CodeEditorData = {
-                type: 'CodeEditor',
-                resource: 'u',
-                selections: [],
-                isActive: true,
-            }
-            const { editorId } = editorService.addEditor(editor)
-            expect(
-                await editorService
-                    .observeEditorAndModel({ editorId })
-                    .pipe(first())
-                    .toPromise()
-            ).toMatchObject({
-                editorId,
-                ...editor,
-                model: { uri: 'u', text: 't', languageId: 'l' },
-            })
-            modelService.updateModel('u', 't2')
-            expect(
-                await editorService
-                    .observeEditorAndModel({ editorId })
-                    .pipe(first())
-                    .toPromise()
-            ).toMatchObject({
-                editorId,
-                ...editor,
-                model: { uri: 'u', text: 't2', languageId: 'l' },
-            })
-        })
-
+    describe('observeEditor', () => {
         test('emits error if editor does not exist', () => {
             scheduler().run(({ expectObservable }) => {
                 const editorService = createEditorService(createTestModelService({}))
-                expectObservable(from(editorService.observeEditorAndModel({ editorId: 'x' }))).toBe(
+                expectObservable(from(editorService.observeEditor({ editorId: 'x' }))).toBe(
                     '#',
                     {},
                     new Error('editor not found: x')
                 )
             })
+        })
+
+        test('emits on selections changes', async () => {
+            const editorService = createEditorService(createTestModelService({}))
+            const editorId = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'r',
+                selections: [],
+                isActive: true,
+            })
+            const changes = editorService
+                .observeEditor(editorId)
+                .pipe(
+                    map(({ selections }) => selections),
+                    bufferCount(2),
+                    first()
+                )
+                .toPromise()
+            editorService.setSelections(editorId, SELECTIONS)
+            expect(await changes).toMatchObject([[], SELECTIONS])
+        })
+
+        test('completes when the editor is removed', async () => {
+            const editorService = createEditorService(
+                createTestModelService({
+                    models: [
+                        {
+                            uri: 'u',
+                            text: 't',
+                            languageId: 'l',
+                        },
+                    ],
+                })
+            )
+            const editorId = editorService.addEditor({
+                type: 'CodeEditor',
+                resource: 'u',
+                selections: [],
+                isActive: true,
+            })
+            const removed = editorService.observeEditor(editorId).toPromise()
+            editorService.removeEditor(editorId)
+            await removed
         })
     })
 
@@ -140,15 +158,6 @@ describe('EditorService', () => {
                 isActive: true,
             }
             const { editorId } = editorService.addEditor(editor)
-            const SELECTIONS: Selection[] = [
-                {
-                    start: { line: 3, character: -1 },
-                    end: { line: 3, character: -1 },
-                    anchor: { line: 3, character: -1 },
-                    active: { line: 3, character: -1 },
-                    isReversed: false,
-                },
-            ]
             const selectionsSet = from(editorService.editorUpdates)
                 .pipe(first())
                 .toPromise()

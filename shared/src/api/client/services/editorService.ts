@@ -1,6 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
-import { BehaviorSubject, combineLatest, Subscribable, throwError, Observable, Subject } from 'rxjs'
-import { map, filter, takeWhile, startWith } from 'rxjs/operators'
+import { BehaviorSubject, Subscribable, throwError, Observable, Subject } from 'rxjs'
+import { map, filter, takeWhile, startWith, switchMap } from 'rxjs/operators'
 import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel, PartialModel } from './modelService'
 
@@ -33,8 +33,7 @@ export interface CodeEditor extends EditorId, CodeEditorData {}
 /**
  * A code editor with a partial model.
  *
- * To get the editor's full model, use {@link EditorService#observeEditorAndModel},
- * or look up the model in the {@link ModelService}.
+ * To get the editor's full model, look up the model in the {@link ModelService}.
  */
 export interface CodeEditorWithPartialModel extends CodeEditor {
     model: PartialModel
@@ -89,13 +88,14 @@ export interface EditorService {
     addEditor(editor: CodeEditorData): EditorId
 
     /**
-     * Observe an editor and its model for changes, including changes to the model's content.
+     * Observe an editor for changes.
      *
      * @param editor The editor to observe.
-     * @returns An observable that emits when the editor or its model changes. If no such editor
-     * exists, or if the editor is removed, it emits an error.
+     * @returns An observable that emits when the editor changes,
+     * and completes when the editor is removed.
+     * If no such editor exists, it emits an error.
      */
-    observeEditorAndModel(editor: EditorId): Observable<CodeEditorWithModel>
+    observeEditor(editor: EditorId): Observable<CodeEditorData>
 
     /**
      * Sets the selections for an editor.
@@ -123,9 +123,7 @@ export interface EditorService {
 /**
  * Creates a {@link EditorService} instance.
  */
-export function createEditorService(
-    modelService: Pick<ModelService, 'observeModel' | 'getPartialModel' | 'removeModelRef' | 'addModelRef'>
-): EditorService {
+export function createEditorService(modelService: Pick<ModelService, 'removeModelRef' | 'addModelRef'>): EditorService {
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
     // test code (because the IDs change depending on test execution order).
     let id = 0
@@ -164,18 +162,15 @@ export function createEditorService(
             }
             return { editorId }
         },
-        observeEditorAndModel: ({ editorId }) => {
+        observeEditor: ({ editorId }) => {
             try {
                 const editor = getEditor(editorId)
-                return combineLatest(
-                    editorUpdates.pipe(
-                        filter(updates => updates.some(u => u.editorId === editorId)),
-                        takeWhile(updates => updates.every(u => u.editorId !== editorId || u.type !== 'deleted')),
-                        map(() => getEditor(editorId)),
-                        startWith(editor)
-                    ),
-                    modelService.observeModel(editor.resource)
-                ).pipe(map(([editor, model]) => ({ ...editor, model })))
+                return editorUpdates.pipe(
+                    filter(updates => updates.some(u => u.editorId === editorId)),
+                    takeWhile(updates => updates.every(u => u.editorId !== editorId || u.type !== 'deleted')),
+                    map(() => getEditor(editorId)),
+                    startWith(editor)
+                )
             } catch (err) {
                 return throwError(err)
             }
@@ -232,4 +227,17 @@ export function getActiveCodeEditorPosition(activeEditor: CodeEditor | undefined
         textDocument: { uri: activeEditor.resource },
         position: sel.start,
     }
+}
+
+/**
+ * Observe an editor and its model for changes.
+ */
+export function observeEditorAndModel(
+    { editorId }: EditorId,
+    { observeEditor }: Pick<EditorService, 'observeEditor'>,
+    { observeModel }: Pick<ModelService, 'observeModel'>
+): Observable<CodeEditorWithModel> {
+    return observeEditor({ editorId }).pipe(
+        switchMap(editor => observeModel(editor.resource).pipe(map(model => ({ editorId, ...editor, model }))))
+    )
 }
