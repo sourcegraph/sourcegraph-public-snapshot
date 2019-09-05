@@ -802,7 +802,7 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := ioutil.ReadAll(resp.Body)
-		log15.Warn("gitserver create-commit-from-patch error:", string(b))
+		log15.Warn("gitserver create-commit-from-patch error", "err", string(b))
 
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(b))}
 	}

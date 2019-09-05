@@ -1,52 +1,41 @@
-import { findRange, findResult, findMonikers, walkChain, asLocations, makeRemoteUri, comparePosition } from './database'
-import { Id, MonikerKind } from 'lsif-protocol'
-import { ResultSetData, RangeData, MonikerData } from './entities'
 import * as lsp from 'vscode-languageserver-protocol'
+import { asLocations, comparePosition, findMonikers, findRange, findResult, makeRemoteUri, walkChain } from './database'
+import { Id, MonikerKind } from 'lsif-protocol'
+import { MonikerData, RangeData, ResultSetData } from './entities'
+import { range } from 'lodash'
 
-describe('database', () => {
-    describe('helpers', () => {
-        test('findRange', () => {
-            const ranges: RangeData[] = []
-            for (let i = 1; i <= 1000; i++) {
-                const j1 = Math.floor(Math.random() * 20)
-                const k1 = Math.floor(Math.random() * 10) + j1
-                ranges.push({
-                    startLine: i,
-                    startCharacter: j1,
-                    endLine: i,
-                    endCharacter: k1,
-                    monikers: [],
-                })
+describe('findRange', () => {
+    it('should find all ranges in list', () => {
+        // Generate starting characters for each range. Thse neds to be
+        // spread wide enough so that the ranges on each line don't touch.
+        const characters = range(0, 10000, 5)
 
-                const j2 = Math.floor(Math.random() * 20) + 40
-                const k2 = Math.floor(Math.random() * 10) + j2
-                ranges.push({
-                    startLine: i,
-                    startCharacter: j2,
-                    endLine: i,
-                    endCharacter: k2,
-                    monikers: [],
-                })
-            }
+        const ranges: RangeData[] = []
+        for (let i = 1; i <= 1000; i++) {
+            const c1 = characters[(i - 1) * 2]
+            const c2 = characters[(i - 1) * 2 + 1]
 
-            for (const range of ranges) {
-                const position = {
-                    line: range.startLine,
-                    character: (range.startCharacter + range.endCharacter) / 2,
-                }
+            // Generate two ranges on each line
+            ranges.push({ startLine: i, startCharacter: c1, endLine: i, endCharacter: c1 + 3, monikers: [] })
+            ranges.push({ startLine: i, startCharacter: c2, endLine: i, endCharacter: c2 + 3, monikers: [] })
+        }
 
-                // search for midpoint of each range
-                expect(findRange(ranges, position)).toEqual(range)
-            }
+        for (const range of ranges) {
+            // search for midpoint of each range
+            const c = (range.startCharacter + range.endCharacter) / 2
+            expect(findRange(ranges, { line: range.startLine, character: c })).toEqual(range)
+        }
 
-            for (let i = 1; i <= 1000; i++) {
-                // search between ranges on each line
-                expect(findRange(ranges, { line: i, character: 30 })).toBeUndefined()
-            }
-        })
+        for (let i = 1; i <= 1000; i++) {
+            // search for the empty space between ranges on a line
+            const c = characters[(i - 1) * 2 + 1] - 1
+            expect(findRange(ranges, { line: i, character: c })).toBeUndefined()
+        }
     })
+})
 
-    test('findResult', () => {
+describe('findResult', () => {
+    it('should should find results via next chain', () => {
         const resultSets = new Map<Id, ResultSetData>()
         resultSets.set(1, { monikers: [42], next: 3 })
         resultSets.set(2, { monikers: [43], definitionResult: 25 })
@@ -70,8 +59,10 @@ describe('database', () => {
         expect(findResult(resultSets, map, resultSets.get(2)!, 'definitionResult')).toEqual('bar')
         expect(findResult(resultSets, map, resultSets.get(4)!, 'definitionResult')).toBeUndefined()
     })
+})
 
-    test('findMonikers', () => {
+describe('findMonikers', () => {
+    it('should should find monikers via next chain', () => {
         const resultSets = new Map<Id, ResultSetData>()
         resultSets.set(1, { monikers: [42], next: 3 })
         resultSets.set(2, { monikers: [43, 50] })
@@ -101,8 +92,10 @@ describe('database', () => {
             map.get(50),
         ])
     })
+})
 
-    test('walkChain', () => {
+describe('walkChain', () => {
+    it('should yield result sets in order', () => {
         const resultSets = new Map<Id, ResultSetData>()
         resultSets.set(1, { monikers: [42], next: 3 })
         resultSets.set(2, { monikers: [43, 50] })
@@ -124,8 +117,10 @@ describe('database', () => {
             resultSets.get(2),
         ])
     })
+})
 
-    test('asLocations', () => {
+describe('asLocations', () => {
+    it('should convert valid locations', () => {
         const ranges = new Map<Id, number>()
         ranges.set(1, 0)
         ranges.set(2, 2)
@@ -152,8 +147,10 @@ describe('database', () => {
             }),
         ])
     })
+})
 
-    test('makeRemoteUri', () => {
+describe('makeRemoteUri', () => {
+    it('should generate a URI to another project', () => {
         const pkg = {
             id: 0,
             scheme: '',
@@ -166,8 +163,10 @@ describe('database', () => {
         const uri = makeRemoteUri(pkg, 'src/position.ts')
         expect(uri).toEqual('git://github.com/sourcegraph/codeintellify?deadbeef#src/position.ts')
     })
+})
 
-    test('comparePosition', () => {
+describe('comparePosition', () => {
+    it('should return the relative order to a range', () => {
         const range = {
             startLine: 5,
             startCharacter: 11,

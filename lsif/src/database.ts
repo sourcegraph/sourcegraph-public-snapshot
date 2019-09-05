@@ -2,10 +2,10 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache } from './cache'
 import { databaseQueryDurationHistogram } from './metrics'
-import { groupBy } from 'lodash'
 import { decodeJSON } from './encoding'
 import { DefModel, DocumentModel, MetaModel, PackageModel, RefModel } from './models'
 import { DocumentData, FlattenedRange, MonikerData, RangeData, ResultSetData } from './entities'
+import { groupBy, isEqual, uniqWith } from 'lodash'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
@@ -18,15 +18,21 @@ export class Database {
      * Create a new `Database` with the given cross-repo database instance and the
      * filename of the database that contains data for a particular repository/commit.
      *
+     * @param storageRoot The path where SQLite databases are stored.
      * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded document.
+     * @param repository The repository for which this database answers queries.
+     * @param commit The commit for which this database answers queries.
      * @param databasePath The path to the database file.
      */
     constructor(
+        private storageRoot: string,
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
+        private repository: string,
+        private commit: string,
         private databasePath: string
     ) {}
 
@@ -135,17 +141,49 @@ export class Database {
         // should be the most desirable.
 
         for (const moniker of monikers) {
+            if (moniker.kind === 'import') {
+                if (moniker.packageInformation) {
+                    const packageInformation = document.packageInformation.get(moniker.packageInformation)
+                    if (packageInformation) {
+                        const packageEntity = await this.xrepoDatabase.getPackage(
+                            moniker.scheme,
+                            packageInformation.name,
+                            packageInformation.version
+                        )
+
+                        if (packageEntity) {
+                            const db = new Database(
+                                this.storageRoot,
+                                this.xrepoDatabase,
+                                this.connectionCache,
+                                this.documentCache,
+                                packageEntity.repository,
+                                packageEntity.commit,
+                                makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
+                            )
+
+                            const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
+                            result = result.concat(
+                                await Database.monikerResults(db, RefModel, moniker, pathTransformer)
+                            )
+                        }
+                    }
+                }
+            }
+
             if (moniker.kind === 'local') {
                 continue
             }
 
             const remoteResults = await this.remoteReferences(document, moniker)
             if (remoteResults) {
-                return result.concat(remoteResults)
+                // TODO - see why we need to deduplicate
+                return uniqWith(result.concat(remoteResults), isEqual)
             }
         }
 
-        return result
+        // TODO - see why we need to deduplicate
+        return uniqWith(result, isEqual)
     }
 
     /**
@@ -276,10 +314,13 @@ export class Database {
         }
 
         const db = new Database(
+            this.storageRoot,
             this.xrepoDatabase,
             this.connectionCache,
             this.documentCache,
-            makeFilename(packageEntity.repository, packageEntity.commit)
+            packageEntity.repository,
+            packageEntity.commit,
+            makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
         const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
@@ -305,20 +346,27 @@ export class Database {
             return []
         }
 
-        const references = await this.xrepoDatabase.getReferences(
-            moniker.scheme,
-            packageInformation.name,
-            packageInformation.version,
-            moniker.identifier
-        )
+        const references = await this.xrepoDatabase.getReferences({
+            scheme: moniker.scheme,
+            name: packageInformation.name,
+            version: packageInformation.version,
+            value: moniker.identifier,
+        })
 
         let allReferences: lsp.Location[] = []
         for (const reference of references) {
+            if (reference.repository === this.repository && reference.commit === this.commit) {
+                continue
+            }
+
             const db = new Database(
+                this.storageRoot,
                 this.xrepoDatabase,
                 this.connectionCache,
                 this.documentCache,
-                makeFilename(reference.repository, reference.commit)
+                reference.repository,
+                reference.commit,
+                makeFilename(this.storageRoot, reference.repository, reference.commit)
             )
 
             const pathTransformer = (path: string): string => makeRemoteUri(reference, path)

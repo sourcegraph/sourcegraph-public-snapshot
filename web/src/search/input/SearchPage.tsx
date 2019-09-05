@@ -94,11 +94,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
-                            {quickLinks.length > 0 && (
-                                <div className="search-page__input-sub-container">
-                                    <QuickLinks quickLinks={quickLinks} />
-                                </div>
-                            )}
+                            <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                             <QueryBuilder
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
@@ -110,11 +106,7 @@ export class SearchPage extends React.Component<Props, State> {
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             />
-                            {quickLinks.length > 0 && (
-                                <div className="search-page__input-sub-container">
-                                    <QuickLinks quickLinks={quickLinks} />
-                                </div>
-                            )}
+                            <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                             <div className="search-page__input-sub-container">
                                 <SearchFilterChips
                                     location={this.props.location}

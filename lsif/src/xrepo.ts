@@ -116,13 +116,18 @@ export class XrepoDatabase {
      * @param version The package version.
      * @param value The value to test.
      */
-    public async getReferences(
-        scheme: string,
-        name: string,
-        version: string,
+    public async getReferences({
+        scheme,
+        name,
+        version,
+        value,
+    }: {
+        scheme: string
+        name: string
+        version: string
         value: string
-    ): Promise<ReferenceModel[]> {
-        return await this.withConnection(connection =>
+    }): Promise<ReferenceModel[]> {
+        const results = await this.withConnection(connection =>
             connection.getRepository(ReferenceModel).find({
                 where: {
                     scheme,
@@ -130,17 +135,24 @@ export class XrepoDatabase {
                     version,
                 },
             })
-        ).then((results: ReferenceModel[]) =>
-            results.filter(async result => {
-                if (await testFilter(result.filter, value)) {
-                    bloomFilterHitCounter.labels('hit').inc()
-                    return true
-                }
-
-                bloomFilterHitCounter.labels('miss').inc()
-                return false
-            })
         )
+
+        // Test the bloom filter of each reference model concurrently
+        const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, value)))
+
+        for (const flag of keepFlags) {
+            // Record hit and miss counts
+            bloomFilterHitCounter.labels(flag ? 'hit' : 'miss').inc()
+        }
+
+        // Zip reference model results and the result of the bloom filter test together
+        const zip: { result: ReferenceModel; keep: boolean }[] = results.map((result, i) => ({
+            result,
+            keep: keepFlags[i],
+        }))
+
+        // Return the reference models that passed the bloom filter test
+        return zip.filter(({ keep }) => keep).map(({ result }) => result)
     }
 
     /**

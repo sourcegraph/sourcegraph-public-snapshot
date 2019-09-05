@@ -68,16 +68,16 @@ export interface DecoratedDocumentData extends DocumentData {
     /**
      * A field that carries the data of definitionResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
-     * the definition result data would be stored in `definitionResults` in the
-     * superclass.
+     * the definition result data would be stored in field `definitionResults`
+     * of `DocumentData`.
      */
     definitions: { ids: Id[]; moniker: MonikerData }[]
 
     /**
      * A field that carries the data of referenceResult edges attached within
      * the document if there is a non-local moniker attached to it; otherwise,
-     * the reference result data would be stored in `referenceResults` in the
-     * superclass.
+     * the reference result data would be stored infield  `referenceResults`
+     * of `DocumentData`.
      */
     references: { ids: Id[]; moniker: MonikerData }[]
 }
@@ -258,19 +258,19 @@ class LsifImporter {
      * Return the set of packages provided by the project analyzed by this LSIF dump.
      */
     private getPackages(): Package[] {
-        const packageHashes: Package[] = []
+        const packages: Package[] = []
         for (const id of this.exportedMonikers) {
             const source = assertDefined(id, 'moniker', this.monikerData)
             const packageInformationId = assertId(source.packageInformation)
             const packageInfo = assertDefined(packageInformationId, 'packageInformation', this.packageInformationData)
-            packageHashes.push({
+            packages.push({
                 scheme: source.scheme,
                 name: packageInfo.name,
                 version: packageInfo.version,
             })
         }
 
-        return uniqWith(packageHashes, isEqual)
+        return uniqWith(packages, isEqual)
     }
 
     /**
@@ -357,11 +357,13 @@ class LsifImporter {
      */
     private handleItemEdge(edge: item): void {
         switch (edge.property) {
+            // `item` edges with a `property` refer to a referenceResult
             case ItemEdgeProperties.definitions:
             case ItemEdgeProperties.references:
                 this.handleGenericItemEdge(edge, 'referenceResult', this.referenceData)
                 break
 
+            // `item` edges without a `property` refer to a definitionResult
             case undefined:
                 this.handleGenericItemEdge(edge, 'definitionResult', this.definitionData)
                 break
@@ -802,10 +804,10 @@ function assertId(id: Id | undefined): Id {
  * @param name The type of element (used for exception message).
  * @param maps The set of maps to query.
  */
-function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T | null>[]): T {
+function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T>[]): T {
     for (const map of maps) {
         const value = map.get(id)
-        if (value) {
+        if (value !== undefined) {
             return value
         }
     }
@@ -820,7 +822,7 @@ function assertDefined<T>(id: Id, name: string, ...maps: Map<Id, T | null>[]): T
  * @param name The type of element (used for exception message).
  * @param maps The set of maps to query.
  */
-function mapAssertDefined<T>(ids: Id[], name: string, ...maps: Map<Id, T | null>[]): T[] {
+function mapAssertDefined<T>(ids: Id[], name: string, ...maps: Map<Id, T>[]): T[] {
     return ids.map(id => assertDefined(id, name, ...maps))
 }
 
