@@ -202,7 +202,7 @@ func (s *FakeStore) DeleteReposExcept(ctx context.Context, ids ...uint32) error 
 	}
 
 	deletes := []uint32{}
-	for id, _ := range s.repoByID {
+	for id := range s.repoByID {
 		if !seen[id] {
 			deletes = append(deletes, id)
 		}
