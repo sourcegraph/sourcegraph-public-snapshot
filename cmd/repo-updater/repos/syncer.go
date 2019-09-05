@@ -57,10 +57,16 @@ func NewSyncer(
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
+func (s *Syncer) Run(ctx context.Context, interval time.Duration, useStreaming bool) error {
 	for ctx.Err() == nil {
-		if _, err := s.Sync(ctx); err != nil {
-			log15.Error("Syncer", "error", err)
+		if useStreaming {
+			if err := s.StreamingSync(ctx); err != nil {
+				log15.Error("Syncer", "error", err)
+			}
+		} else {
+			if _, err := s.Sync(ctx); err != nil {
+				log15.Error("Syncer", "error", err)
+			}
 		}
 
 		select {

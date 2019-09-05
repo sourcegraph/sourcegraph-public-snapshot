@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -33,6 +34,8 @@ import (
 const port = "3182"
 
 func main() {
+	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "false", "Use the new, streaming repo metadata syncer."))
+
 	ctx := context.Background()
 	env.Lock()
 	env.HandleHelpFlag()
@@ -129,7 +132,7 @@ func main() {
 	server.Syncer = syncer
 
 	if !envvar.SourcegraphDotComMode() {
-		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
+		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), streamingSyncer)) }()
 	}
 
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
