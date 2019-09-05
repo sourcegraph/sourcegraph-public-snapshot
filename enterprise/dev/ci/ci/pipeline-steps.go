@@ -73,13 +73,8 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
-// Builds and tests the LSIF server.
+// Tests the LSIF server.
 func addLSIFServer(pipeline *bk.Pipeline) {
-	// LSIF server build
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("dev/ci/yarn-build-separate.sh lsif"))
-
-	// LSIF server tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
 		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
