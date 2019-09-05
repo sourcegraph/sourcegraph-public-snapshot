@@ -190,3 +190,22 @@ func (nt NullString) Value() (driver.Value, error) {
 	}
 	return *nt.S, nil
 }
+
+// NullInt32 represents an int32 that may be null. NullInt32 implements the
+// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.NullString. When the scanned value is null, int32 is set to the zero value.
+type NullInt32 struct{ N *int32 }
+
+// Scan implements the Scanner interface.
+func (n *NullInt32) Scan(value interface{}) error {
+	*n.N, _ = value.(int32)
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (n NullInt32) Value() (driver.Value, error) {
+	if n.N == nil {
+		return nil, nil
+	}
+	return *n.N, nil
+}
