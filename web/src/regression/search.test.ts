@@ -5,7 +5,7 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { regressionTestInit, createAndInitializeDriver } from './util'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './api'
-import { APIDriver } from './apiDriver'
+import { ensureExternalService, waitForRepos } from './apiDriver'
 
 const standardSearchTimeout = 5 * 1000
 
@@ -89,7 +89,7 @@ describe('Search regression test suite', () => {
     regressionTestInit()
     const config = getConfig(['sudoToken', 'username', 'gitHubToken', 'sourcegraphBaseUrl'])
     let driver: Driver
-    let apiDriver: APIDriver
+    let gqlClient: GraphQLClient
 
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
@@ -108,10 +108,8 @@ describe('Search regression test suite', () => {
         beforeAll(
             async () => {
                 driver = await createAndInitializeDriver()
-                apiDriver = new APIDriver(
-                    new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.username)
-                )
-                await apiDriver.ensureExternalService({
+                gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.username)
+                await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
                     uniqueDisplayName: 'GitHub (search-regression-test)',
                     config: {
@@ -121,7 +119,7 @@ describe('Search regression test suite', () => {
                         repositoryQuery: ['none'],
                     },
                 })
-                await apiDriver.waitForRepos(['github.com/' + testRepoSlugs[testRepoSlugs.length - 1]])
+                await waitForRepos(gqlClient, ['github.com/' + testRepoSlugs[testRepoSlugs.length - 1]])
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2
             // minutes instead of 1 (which would be inherited from
