@@ -2,22 +2,30 @@
  * Provides convenience functions for interacting with the Sourcegraph API from tests.
  */
 
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './api'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { map, tap, retryWhen, delayWhen } from 'rxjs/operators'
+import { zip, timer } from 'rxjs'
+import { CloneInProgressError, ECLONEINPROGESS } from '../../../shared/src/backend/errors'
+import { isErrorLike } from '../../../shared/src/util/errors'
 
 /**
- * Block until all repositories in the list exist
+ * Wait until all repositories in the list exist.
  */
 export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string[]): Promise<void> {
-    for (const repoName of ensureRepos) {
-        await retry(async () => {
-            const res = await gqlClient
+    await zip(
+        // List of Observables that complete after each repository is successfully fetched.
+        ensureRepos.map(repoName => {
+            // Track number of retries for this repository.
+            let retries = 0
+            const maxRetries = 10
+
+            gqlClient
                 .queryGraphQL(
                     gql`
                         query ResolveRev($repoName: String!, $rev: String!) {
-                            repository(name: $repoName) {
+                            reposnnnnitory(name: $repoName) {
                                 mirrorInfo {
                                     cloned
                                 }
@@ -26,18 +34,36 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                     `,
                     { repoName, rev: '' }
                 )
-                .toPromise()
-            if (
-                res.data &&
-                res.data.repository &&
-                res.data.repository.mirrorInfo &&
-                res.data.repository.mirrorInfo.cloned
-            ) {
-                return
-            }
-            throw new Error(`Repository ${repoName} did not exist.`)
+                .pipe(
+                    map(dataOrThrowErrors),
+                    // Wait until the repository is cloned even if it doesn't yet exist.
+                    // waitForRepos might be called immediately after adding a new external service,
+                    // and we have no guarantee that all the repositories from that external service
+                    // will exist when the add-external-service endpoint returns.
+                    tap(({ repository }) => {
+                        if (!repository || !repository.mirrorInfo || !repository.mirrorInfo.cloned) {
+                            throw new CloneInProgressError(repoName)
+                        }
+                    }),
+                    retryWhen(errors =>
+                        errors.pipe(
+                            delayWhen(error => {
+                                if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
+                                    // Throw an error if we hit the retry limit.
+                                    if (retries++ === maxRetries) {
+                                        throw new Error(`Could not resolve repo ${repoName}: too many retries`)
+                                    }
+                                    // Otherwise, delay retry by 1s.
+                                    return timer(1000)
+                                }
+                                // Throw all errors  other than ECLONEINPROGRESS
+                                throw error
+                            })
+                        )
+                    )
+                )
         })
-    }
+    ).toPromise()
 }
 
 export async function ensureExternalService(
