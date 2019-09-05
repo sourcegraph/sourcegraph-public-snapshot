@@ -30,20 +30,29 @@ func TestGitTree(t *testing.T) {
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
 
 	git.Mocks.Stat = func(commit api.CommitID, path string) (os.FileInfo, error) {
-		if string(commit) != exampleCommitSHA1 || path != "foo bar" {
-			t.Error("wrong arguments to Stat")
+		if string(commit) != exampleCommitSHA1 {
+			t.Errorf("got commit %q, want %q", commit, exampleCommitSHA1)
 		}
-		return &util.FileInfo{Name_: "", Mode_: os.ModeDir}, nil
+		if want := "foo bar"; path != want {
+			t.Errorf("got path %q, want %q", path, want)
+		}
+		return &util.FileInfo{Name_: path, Mode_: os.ModeDir}, nil
 	}
 	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
-		if string(commit) != exampleCommitSHA1 || name != "foo bar" || recurse {
-			t.Error("wrong arguments to RepoTree.Get")
+		if string(commit) != exampleCommitSHA1 {
+			t.Errorf("got commit %q, want %q", commit, exampleCommitSHA1)
+		}
+		if want := "foo bar"; name != want {
+			t.Errorf("got name %q, want %q", name, want)
+		}
+		if recurse {
+			t.Error("got recurse == false, want true")
 		}
 		return []os.FileInfo{
-			&util.FileInfo{Name_: "testDirectory", Mode_: os.ModeDir},
-			&util.FileInfo{Name_: "Geoffrey's random queries.32r242442bf", Mode_: os.ModeDir},
-			&util.FileInfo{Name_: "testFile", Mode_: 0},
-			&util.FileInfo{Name_: "% token.4288249258.sql", Mode_: 0},
+			&util.FileInfo{Name_: name + "/testDirectory", Mode_: os.ModeDir},
+			&util.FileInfo{Name_: name + "/Geoffrey's random queries.32r242442bf", Mode_: os.ModeDir},
+			&util.FileInfo{Name_: name + "/testFile", Mode_: 0},
+			&util.FileInfo{Name_: name + "/% token.4288249258.sql", Mode_: 0},
 		}, nil
 	}
 	defer git.ResetMocks()

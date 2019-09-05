@@ -138,7 +138,6 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	}
 	return &gitTreeEntryResolver{
 		commit:      r,
-		path:        args.Path,
 		stat:        stat,
 		isRecursive: args.Recursive,
 	}, nil
@@ -160,7 +159,6 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	}
 	return &gitTreeEntryResolver{
 		commit: r,
-		path:   args.Path,
 		stat:   stat,
 	}, nil
 }

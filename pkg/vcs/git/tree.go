@@ -202,7 +202,6 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 	}
 
 	trimPath := strings.TrimPrefix(path, "./")
-	prefixLen := strings.LastIndexByte(trimPath, '/') + 1
 	lines := strings.Split(string(out), "\x00")
 	fis := make([]os.FileInfo, len(lines)-1)
 	for i, line := range lines {
@@ -280,10 +279,7 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 		}
 
 		fis[i] = &util.FileInfo{
-			// This returns the full relative path (e.g. "path/to/file.go") when the path arg is "./"
-			// This behavior is necessary to construct the file tree.
-			// In all other cases, it returns the basename (e.g. "file.go").
-			Name_: name[prefixLen:],
+			Name_: name, // full path relative to root (not just basename)
 			Mode_: os.FileMode(mode),
 			Size_: size,
 			Sys_:  sys,
