@@ -16,12 +16,12 @@ import (
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+	"github.com/src-d/enry/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
@@ -778,29 +778,15 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 // and -lang: filter values in a search query. For example, a query containing "lang:go" should
 // include files whose paths match /\.go$/.
 func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
-	lookup := func(value string) *filelang.Language {
-		value = strings.ToLower(value)
-		for _, lang := range filelang.Langs {
-			if strings.ToLower(lang.Name) == value {
-				return lang
-			}
-			for _, alias := range lang.Aliases {
-				if alias == value {
-					return lang
-				}
-			}
-		}
-		return nil
-	}
-
 	do := func(values []string, patterns *[]string) error {
 		for _, value := range values {
-			lang := lookup(value)
-			if lang == nil {
+			lang, ok := enry.GetLanguageByAlias(value)
+			if !ok {
 				return fmt.Errorf("unknown language: %q", value)
 			}
-			extPatterns := make([]string, len(lang.Extensions))
-			for i, ext := range lang.Extensions {
+			exts := enry.GetLanguageExtensions(lang)
+			extPatterns := make([]string, len(exts))
+			for i, ext := range exts {
 				// Add `\.ext$` pattern to match files with the given extension.
 				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
 			}

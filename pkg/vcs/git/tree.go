@@ -38,7 +38,11 @@ func Lstat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path s
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		return &util.FileInfo{Mode_: os.ModeDir}, nil
+		rootTree, _, err := GetObject(ctx, repo, string(commit)+"^{tree}")
+		if err != nil {
+			return nil, err
+		}
+		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(rootTree)}, nil
 	}
 
 	fis, err := lsTree(ctx, repo, commit, path, false)
@@ -76,7 +80,7 @@ func Stat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path st
 
 	if fi.Mode()&os.ModeSymlink != 0 {
 		// Deref symlink.
-		b, err := readFileBytes(ctx, repo, commit, path)
+		b, err := readFileBytes(ctx, repo, commit, path, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -226,9 +230,13 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 			return nil, fmt.Errorf("invalid `git ls-tree` output: %q", out)
 		}
 		typ := info[1]
-		oid := info[2]
-		if !IsAbsoluteRevision(oid) {
-			return nil, fmt.Errorf("invalid `git ls-tree` oid output: %q", oid)
+		sha := info[2]
+		if !IsAbsoluteRevision(sha) {
+			return nil, fmt.Errorf("invalid `git ls-tree` SHA output: %q", sha)
+		}
+		oid, err := decodeOID(sha)
+		if err != nil {
+			return nil, err
 		}
 
 		sizeStr := strings.TrimSpace(info[3])
@@ -272,10 +280,15 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 				submodule.Path = cfg.Section("submodule").Subsection(name).Option("path")
 				submodule.URL = cfg.Section("submodule").Subsection(name).Option("url")
 			}
-			submodule.CommitID = api.CommitID(oid)
+			submodule.CommitID = api.CommitID(oid.String())
 			sys = submodule
 		case "tree":
 			mode = mode | os.ModeDir
+		}
+
+		if sys == nil {
+			// Some callers might find it useful to know the object's OID.
+			sys = objectInfo(oid)
 		}
 
 		fis[i] = &util.FileInfo{

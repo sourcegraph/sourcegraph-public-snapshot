@@ -23,7 +23,7 @@ func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	contents, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path())
+	contents, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +105,7 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	content, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path())
+	content, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
 	if err != nil {
 		return nil, err
 	}
