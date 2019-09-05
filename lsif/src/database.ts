@@ -1,7 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache } from './cache'
-import { databaseQueryDurationHistogram } from './metrics'
 import { decodeJSON } from './encoding'
 import { DefModel, DocumentModel, MetaModel, PackageModel, RefModel } from './models'
 import { DocumentData, FlattenedRange, MonikerData, RangeData, ResultSetData } from './entities'
@@ -9,6 +8,7 @@ import { groupBy, isEqual, uniqWith } from 'lodash'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
+import { DATABASE_QUERY_DURATION_HISTOGRAM } from './metrics'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -433,7 +433,7 @@ export class Database {
             this.databasePath,
             [DefModel, DocumentModel, MetaModel, RefModel],
             async connection => {
-                const end = databaseQueryDurationHistogram.startTimer()
+                const end = DATABASE_QUERY_DURATION_HISTOGRAM.startTimer()
                 try {
                     return await callback(connection)
                 } finally {

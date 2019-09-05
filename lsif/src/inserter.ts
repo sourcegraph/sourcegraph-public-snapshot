@@ -8,13 +8,12 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
  */
 interface TableInserterMetrics {
     /**
-     * `insertionCounter` increments on each insertion.
+     * A counter that increments on each insertion.
      */
     insertionCounter: promClient.Counter
 
     /**
-     * `insertionDurationHistogram` is observed on each round-trip to the
-     * database.
+     * A histogram that is observed on each round-trip to the database.
      */
     insertionDurationHistogram: promClient.Histogram
 }

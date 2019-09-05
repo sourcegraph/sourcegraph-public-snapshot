@@ -4,12 +4,10 @@ import { Connection, createConnection, EntityManager } from 'typeorm'
 import { DocumentData } from './entities'
 import { Id } from 'lsif-protocol'
 import {
-    ConnectionCacheEvictionCounter,
-    ConnectionCacheHitCounter,
-    ConnectionCacheSizeGauge,
-    DocumentCacheEvictionCounter,
-    DocumentCacheHitCounter,
-    DocumentCacheSizeGauge,
+    CONNECTION_CACHE_EVENTS_COUNTER,
+    CONNECTION_CACHE_SIZE_GAUGE,
+    DOCUMENT_CACHE_SIZE_GAUGE,
+    DOCUMENT_CACHE_EVENTS_COUNTER,
 } from './metrics'
 
 /**
@@ -46,21 +44,17 @@ interface CacheEntry<K, V> {
  * instance of `GenericCache`.
  */
 interface CacheMetrics {
-    // A metric incremented on each cache hit or cache miss.
-    hitCounter: promClient.Counter
-
-    /**
-     * A metric  incremented on each cache eviction, and a special label
-     * is applied if an entry cannot be evicted because it is currently
-     * being used.
-     */
-    evictionCounter: promClient.Counter
-
     /**
      * A metric incremented on each cache insertion and decremented on
      * each cache eviction.
      */
     sizeGauge: promClient.Gauge
+
+    /**
+     * A metric incremented on each cache hit, miss, and eviction. A `type`
+     * label is applied to differentiate the events.
+     */
+    eventsCounter: promClient.Counter
 }
 
 /**
@@ -140,12 +134,12 @@ export class GenericCache<K, V> {
     private getEntry(key: K, factory: () => Promise<V>): CacheEntry<K, V> {
         const node = this.cache.get(key)
         if (node) {
-            this.metrics.hitCounter.labels('hit').inc()
+            this.metrics.eventsCounter.labels('hit').inc()
             this.lruList.unshiftNode(node)
             return node.value
         }
 
-        this.metrics.hitCounter.labels('miss').inc()
+        this.metrics.eventsCounter.labels('miss').inc()
         const promise = factory()
         const newEntry = { key, promise, size: 0, readers: 0 }
         promise.then(value => this.resolved(newEntry, value), () => {})
@@ -182,13 +176,13 @@ export class GenericCache<K, V> {
 
             if (readers === 0) {
                 this.size -= size
-                this.metrics.evictionCounter.labels('evict').inc()
+                this.metrics.eventsCounter.labels('eviction').inc()
                 this.metrics.sizeGauge.dec(size)
                 this.lruList.removeNode(node)
                 this.cache.delete(node.value.key)
                 promise.then(value => this.disposeFunction(value), () => {})
             } else {
-                this.metrics.evictionCounter.labels('locked').inc()
+                this.metrics.eventsCounter.labels('locked-eviction').inc()
             }
 
             node = prev
@@ -212,9 +206,8 @@ export class ConnectionCache extends GenericCache<string, Connection> {
             // Close the underlying file handle on cache eviction.
             (connection: Connection) => connection.close(),
             {
-                hitCounter: ConnectionCacheHitCounter,
-                sizeGauge: ConnectionCacheSizeGauge,
-                evictionCounter: ConnectionCacheEvictionCounter,
+                sizeGauge: CONNECTION_CACHE_SIZE_GAUGE,
+                eventsCounter: CONNECTION_CACHE_EVENTS_COUNTER,
             }
         )
     }
@@ -284,9 +277,8 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
             // Let GC handle the cleanup of the object on cache eviction.
             (): void => {},
             {
-                hitCounter: DocumentCacheHitCounter,
-                sizeGauge: DocumentCacheSizeGauge,
-                evictionCounter: DocumentCacheEvictionCounter,
+                sizeGauge: DOCUMENT_CACHE_SIZE_GAUGE,
+                eventsCounter: DOCUMENT_CACHE_EVENTS_COUNTER,
             }
         )
     }

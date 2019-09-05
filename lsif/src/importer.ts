@@ -1,5 +1,4 @@
 import RelateUrl from 'relateurl'
-import { databaseInsertionCounter, databaseInsertionDurationHistogram } from './metrics'
 import { DefModel, DocumentModel, MetaModel, RefModel } from './models'
 import { encodeJSON } from './encoding'
 import { EntityManager } from 'typeorm'
@@ -35,6 +34,7 @@ import {
     ElementTypes,
     Moniker,
 } from 'lsif-protocol'
+import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_COUNTER } from './metrics'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -144,8 +144,8 @@ class LsifImporter {
      */
     constructor(private entityManager: EntityManager) {
         const metrics = {
-            insertionCounter: databaseInsertionCounter,
-            insertionDurationHistogram: databaseInsertionDurationHistogram,
+            insertionCounter: DATABASE_INSERTION_COUNTER,
+            insertionDurationHistogram: DATABASE_INSERTION_DURATION_HISTOGRAM,
         }
 
         // Determine the max batch size of each model type. We cannot perform an

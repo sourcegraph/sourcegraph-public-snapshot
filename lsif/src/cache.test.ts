@@ -3,27 +3,20 @@ import { GenericCache } from './cache'
 import * as sinon from 'sinon'
 
 describe('GenericCache', () => {
-    const testCacheHitCounter = new promClient.Counter({
-        name: 'test_cache_hit',
-        help: 'test_cache_hit',
-        labelNames: ['type'],
-    })
-
-    const testCacheEvictionCounter = new promClient.Counter({
-        name: 'test_cache_eviction',
-        help: 'test_cache_eviction',
-        labelNames: ['type'],
-    })
-
     const testCacheSizeGauge = new promClient.Gauge({
         name: 'test_cache_size',
         help: 'test_cache_size',
     })
 
+    const testCacheEventsCounter = new promClient.Counter({
+        name: 'test_cache_events_total',
+        help: 'test_cache_events_total',
+        labelNames: ['type'],
+    })
+
     const testMetrics = {
-        hitCounter: testCacheHitCounter,
         sizeGauge: testCacheSizeGauge,
-        evictionCounter: testCacheEvictionCounter,
+        eventsCounter: testCacheEventsCounter,
     }
 
     it('should evict items based by reverse recency', async () => {

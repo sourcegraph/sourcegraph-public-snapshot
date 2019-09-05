@@ -1,18 +1,17 @@
 import { Connection, EntityManager } from 'typeorm'
-import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
-import { ReferenceModel, PackageModel } from './models'
+import { createFilter, testFilter } from './encoding'
+import { PackageModel, ReferenceModel } from './models'
 import { TableInserter } from './inserter'
 import {
-    xrepoQueryDurationHistogram,
-    xrepoInsertionCounter,
-    xrepoInsertionDurationHistogram,
-    bloomFilterHitCounter,
+    XREPO_DATABASE_INSERTION_COUNTER,
+    XREPO_DATABASE_INSERTION_DURATION_HISTOGRAM,
+    BLOOM_FILTER_EVENTS_COUNTER,
 } from './metrics'
 
 const insertionMetrics = {
-    insertionCounter: xrepoInsertionCounter,
-    insertionDurationHistogram: xrepoInsertionDurationHistogram,
+    insertionCounter: XREPO_DATABASE_INSERTION_COUNTER,
+    insertionDurationHistogram: XREPO_DATABASE_INSERTION_DURATION_HISTOGRAM,
 }
 
 /**
@@ -142,7 +141,7 @@ export class XrepoDatabase {
 
         for (const flag of keepFlags) {
             // Record hit and miss counts
-            bloomFilterHitCounter.labels(flag ? 'hit' : 'miss').inc()
+            BLOOM_FILTER_EVENTS_COUNTER.labels(flag ? 'hit' : 'miss').inc()
         }
 
         // Zip reference model results and the result of the bloom filter test together
@@ -191,7 +190,7 @@ export class XrepoDatabase {
             this.database,
             [PackageModel, ReferenceModel],
             async connection => {
-                const end = xrepoQueryDurationHistogram.startTimer()
+                const end = XREPO_DATABASE_INSERTION_DURATION_HISTOGRAM.startTimer()
                 try {
                     return await callback(connection)
                 } finally {
