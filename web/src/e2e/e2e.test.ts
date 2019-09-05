@@ -1119,7 +1119,7 @@ describe('e2e test suite', () => {
             )
 
             expect(tabs.length).toEqual(5)
-            expect(tabs).toBe(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos'])
+            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos'])
 
             const activeTab = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-search-result-tab--active').length
