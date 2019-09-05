@@ -19,7 +19,7 @@ describe('GenericCache', () => {
         // These are the cache values that need to be created, in-order
         const expectedInstantiations = ['foo', 'bar', 'baz', 'bonk', 'quux', 'honk', 'baz']
 
-        const factory = sinon.stub()
+        const factory = sinon.stub<string[], Promise<string>>()
         for (const [i, value] of expectedInstantiations.entries()) {
             // Log the value arg and resolve the cache data immediately
             factory.onCall(i).returns(Promise.resolve(value))
@@ -36,7 +36,7 @@ describe('GenericCache', () => {
     })
 
     it('should asynchronously resolve cache values', async () => {
-        const factory = sinon.stub()
+        const factory = sinon.stub<string[], Promise<string>>()
         factory.returns(
             new Promise<string>(resolve => {
                 setTimeout(() => resolve('bar'), 10)
@@ -60,7 +60,7 @@ describe('GenericCache', () => {
             'foo', // foo baz (drops bar)
         ]
 
-        const disposer = sinon.spy()
+        const disposer = sinon.spy(() => undefined)
         const cache = new GenericCache<string, string>(2, () => 1, disposer)
 
         for (const value of values) {
@@ -86,7 +86,7 @@ describe('GenericCache', () => {
 
         const expectedInstantiations = [2, 3, 1, 2]
 
-        const factory = sinon.stub()
+        const factory = sinon.stub<number[], Promise<number>>()
         for (const [i, value] of expectedInstantiations.entries()) {
             factory.onCall(i).returns(Promise.resolve(value))
         }
@@ -100,7 +100,7 @@ describe('GenericCache', () => {
     })
 
     it('should not evict referenced cache entries', async () => {
-        const disposer = sinon.spy()
+        const disposer = sinon.spy(() => undefined)
         const cache = new GenericCache<string, string>(5, () => 1, disposer)
 
         const assertDisposeCalls = async (...expected: string[]) => {
