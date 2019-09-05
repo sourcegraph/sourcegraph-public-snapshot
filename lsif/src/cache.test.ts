@@ -37,16 +37,14 @@ describe('GenericCache', () => {
 
     it('should asynchronously resolve cache values', async () => {
         const factory = sinon.stub<string[], Promise<string>>()
-        factory.returns(
-            new Promise<string>(resolve => {
-                setTimeout(() => resolve('bar'), 10)
-            })
-        )
+        const { wait, done } = createBarrier()
+        factory.returns(wait.then(() => 'bar'))
 
         const cache = new GenericCache<string, string>(5, () => 1, () => {})
         const p1 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p2 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p3 = cache.withValue('foo', factory, v => Promise.resolve(v))
+        done()
 
         expect(await Promise.all([p1, p2, p3])).toEqual(['bar', 'bar', 'bar'])
         expect(factory.callCount).toEqual(1)
@@ -60,20 +58,16 @@ describe('GenericCache', () => {
             'foo', // foo baz (drops bar)
         ]
 
-        const disposer = sinon.spy(() => undefined)
+        const { wait, done } = createBarrier()
+        const disposer = sinon.spy(done)
         const cache = new GenericCache<string, string>(2, () => 1, disposer)
 
         for (const value of values) {
             await cache.withValue(value, () => Promise.resolve(value), v => Promise.resolve(v))
         }
 
-        // allow disposal to run asynchronously
-        await new Promise(resolve =>
-            setTimeout(() => {
-                expect(disposer.args).toEqual([['foo'], ['bar']])
-                resolve()
-            }, 10)
-        )
+        await wait
+        expect(disposer.args).toEqual([['foo'], ['bar']])
     })
 
     it('should calculate size by resolved value', async () => {
@@ -141,3 +135,12 @@ describe('GenericCache', () => {
         await cache.withValue('honk', () => Promise.resolve('honk'), () => assertDisposeCalls('honk', 'foo', 'bar'))
     })
 })
+
+/**
+ * Return a barrier promise that blocks until the done function is called.
+ */
+function createBarrier(): { wait: Promise<void>; done: () => void } {
+    let done!: () => void
+    const wait = new Promise<void>(resolve => (done = resolve))
+    return { wait, done }
+}
