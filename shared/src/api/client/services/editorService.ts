@@ -175,12 +175,7 @@ export function createEditorService(
                         startWith(editor)
                     ),
                     modelService.observeModel(editor.resource)
-                ).pipe(
-                    map(([editor, model]) => ({
-                        ...editor,
-                        model,
-                    }))
-                )
+                ).pipe(map(([editor, model]) => ({ ...editor, model })))
             } catch (err) {
                 return throwError(err)
             }
