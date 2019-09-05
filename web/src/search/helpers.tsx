@@ -76,17 +76,36 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
 }
 
 export function getSearchTypeFromQuery(query: string): SearchType {
-    // RegExp to match `type:$TYPE` in any part of a query.
-    const getTypeName = /\btype:(?<type>\w*)(\s|$)/
+    /** RegExp to match `type:$TYPE` in any part of a query. */
+    const getTypeName = /\btype:(?<type>\w*)\b/
     const matches = query.match(getTypeName)
 
     if (matches && matches.groups && matches.groups.type) {
-        return matches.groups.type as SearchType
+        /**
+         * In an edge case where multiple `type:` filters are used, if
+         * `type:symbol` is included, symbol results be returned, regardless of order,
+         * so we must check for `type:symbol`. For other types,
+         * the first `type` filter appearing in the query is applied.
+         **/
+        const getSymbolType = /\btype:symbol\b/
+        const symbolMatches = query.match(getSymbolType)
+        if (symbolMatches) {
+            return 'symbol'
+        }
+
+        return matches.groups.type[0] as SearchType
     }
 
     return null
 }
 
+/**
+ * Adds the given search type (as a `type:` filter) into a query. This function replaces an existing `type:` filter,
+ * appends a `type:` filter, or returns the initial query, in order to apply the correct type
+ * to the query.
+ * @param query The search query to be mutated.
+ * @param searchType The search type to be applied.
+ */
 export function toggleSearchType(query: string, searchType: SearchType): string {
     const match = query.match(/\btype:\w*\b/)
     if (!match) {
@@ -94,7 +113,7 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
     }
 
     if (match[0] === `type:${searchType}`) {
-        // Query already contains correct search type
+        /** Query already contains correct search type */
         return query
     }
 
