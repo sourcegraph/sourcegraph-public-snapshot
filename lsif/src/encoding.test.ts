@@ -13,10 +13,7 @@ describe('testFilter', () => {
 
 describe('encodeJSON', () => {
     it('should preserve maps', async () => {
-        const m = new Map<string, number>()
-        m.set('a', 1)
-        m.set('b', 2)
-        m.set('c', 3)
+        const m = new Map<string, number>([['a', 1], ['b', 2], ['c', 3]])
 
         const value = {
             foo: [1, 2, 3],
