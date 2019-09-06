@@ -354,7 +354,7 @@ input CreateCampaignInput {
     name: String!
 
     # The description of the campaign as Markdown.
-    description: String
+    description: String!
 }
 
 # A collection of threads.

@@ -161,6 +161,7 @@ require (
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/sourcegraph/gosyntect v0.0.0-20190512033712-1205f5e776e1
+	github.com/sourcegraph/graphql-go v0.0.0-20180806175703-94da0f0031f9
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spf13/afero v1.2.2 // indirect
