@@ -49,8 +49,10 @@ export async function importLsif(
         try {
             correlator.insert(element)
         } catch (e) {
-            // TODO - more context
-            throw Object.assign(new Error(`Failed to process line:\n${line}`), { e })
+            throw Object.assign(
+                new Error(`Failed to process line #${line + 1} (${JSON.stringify(element)}): ${e && e.message}`),
+                { status: 422 }
+            )
         }
 
         line++
