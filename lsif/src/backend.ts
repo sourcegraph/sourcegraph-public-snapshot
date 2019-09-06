@@ -51,6 +51,9 @@ export class SQLiteBackend {
             }
         }
 
+        // Remove any connection in the cache to the file we just removed
+        await this.connectionCache.bustKey(outFile)
+
         const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
             [DefModel, DocumentModel, MetaModel, RefModel],
