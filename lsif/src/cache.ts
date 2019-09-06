@@ -73,7 +73,7 @@ export class GenericCache<K, V> {
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
-        private disposeFunction: (value: V) => void
+        private disposeFunction: (value: V) => Promise<void>
     ) {}
 
     /**
@@ -160,8 +160,7 @@ export class GenericCache<K, V> {
 
         // We have the resolved value, removed from the cache, which is no longer
         // used by any reader. It's safe to dispose now.
-
-        this.disposeFunction(value)
+        await this.disposeFunction(value)
     }
 
     /**
@@ -249,7 +248,7 @@ export class GenericCache<K, V> {
                 // those if we can help it.
 
                 this.removeNode(node, size)
-                this.disposeFunction(await promise)
+                await this.disposeFunction(await promise)
             }
 
             node = prev
@@ -349,7 +348,7 @@ export class DocumentCache extends GenericCache<Id, DocumentData> {
             // TODO - determine memory size
             () => 1,
             // Let GC handle the cleanup of the object on cache eviction.
-            (): void => {}
+            (): Promise<void> => Promise.resolve()
         )
     }
 
