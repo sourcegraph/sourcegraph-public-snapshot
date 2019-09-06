@@ -28,17 +28,3 @@ To set breakpoints and step through execution in your Sourcegraph extension:
    - Add a `console.log` to your extension code and reload. Look in the devtools console for the log message, and then click on the filename where the log line was emitted (which is usually shown on the far right).
    - Add a `debugger;` statement to your extension code and reload (with your browser devtools open). Execution will stop when your browser encounters that statement, and you'll be dropped into the source file.
 1. Set breakpoints and step through execution as you would for any other JavaScript file in your browser's devtools.
-
-## Enable trace logging
-
-A Sourcegraph page uses an internal RPC protocol to communicate with extensions (which run in a Web Worker). This protocol consists of request-response sequences, such as "get the hover contents for `$FILE` at `$POSITION`" and the corresponding response with the hover message.
-
-In rare cases, it helps to see the communication between Sourcegraph and your extension. This can help identify bugs in the Sourcegraph extension API itself.
-
-To enable trace logging:
-
-1. Reveal the **Ext ▲** debug menu by running the following JavaScript code in your browser's devtools console on a Sourcegraph page: `localStorage.debug=true;location.reload()`
-1. In the bottom right corner, click **Ext ▲**.
-1. Enable the **Log to devtools console** toggle.
-
-Trace log messages are logged via `console.log` and appear in your browser's devtools console.
