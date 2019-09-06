@@ -80,12 +80,23 @@ export class GenericCache<K, V> {
      * @param callback The function to invoke with the resolved cache value.
      */
     public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
-        const entry = this.getEntry(key, factory)
+        // Find or create the entry
+        const entry = await this.getEntry(key, factory)
+
+        // Increase the number of readers currently looking at this value.
+        // While this value is not equal to zero, it wll not be skipped over
+        // on the cache eviction pass.
+
         entry.readers++
 
         try {
+            // Re-resolve the promise. If this is already resolved it's a fast
+            // no-op. Otherwise, we got a cache entry that was under-construction
+            // and will resolve shortly.
+
             return await callback(await entry.promise)
         } finally {
+            // Unlock the cache entry
             entry.readers--
         }
     }
@@ -100,21 +111,47 @@ export class GenericCache<K, V> {
      * @param key The cache key.
      * @param factory The function used to create a new value.
      */
-    private getEntry(key: K, factory: () => Promise<V>): CacheEntry<K, V> {
+    private async getEntry(key: K, factory: () => Promise<V>): Promise<CacheEntry<K, V>> {
         const node = this.cache.get(key)
         if (node) {
+            // Found, move to head of list
             this.lruList.unshiftNode(node)
             return node.value
         }
 
+        // Create promise and the entry that wraps it. We don't know
+        // the effective size of the value until the promise resolves,
+        // so we put zero. We have a reader count of -1, which is the
+        // value that denotes that the cache entry is currently under
+        // construction. We don't want to block here while waiting for
+        // the promise value to resolve, otherwise a second request for
+        // the same key will create a duplicate cache entry.
+
         const promise = factory()
-        const newEntry = { key, promise, size: 0, readers: 0 }
-        promise.then(value => this.resolved(newEntry, value), () => {})
+        const newEntry = { key, promise, size: 0, readers: -1 }
+
+        // Add to head of list
         this.lruList.unshift(newEntry)
+
+        // Grab the head of the list we just pushed and store it
+        // in the map. We need the node that the unshift method
+        // creates so we can unlink it in constant time.
         const head = this.lruList.head
         if (head) {
             this.cache.set(key, head)
         }
+
+        // Now that another call to getEntry will find the cache entry
+        // and early-out, we can block here and wait to resolve the
+        // value, then update the entry and cache sizes.
+
+        const value = await promise
+        await this.resolved(newEntry, value)
+
+        // Remove the under-construction value from the reader count.
+        // Callers of this method end up incrementing this value again
+        // a second time before calling a user callback function.
+        newEntry.readers++
 
         return newEntry
     }
@@ -128,7 +165,7 @@ export class GenericCache<K, V> {
      * @param entry The cache entry.
      * @param value The cache entry's resolved value.
      */
-    private resolved(entry: CacheEntry<K, V>, value: V): void {
+    private async resolved(entry: CacheEntry<K, V>, value: V): Promise<void> {
         const size = this.sizeFunction(value)
         this.size += size
         entry.size = size
@@ -141,14 +178,32 @@ export class GenericCache<K, V> {
             } = node
 
             if (readers === 0) {
-                this.size -= size
-                this.lruList.removeNode(node)
-                this.cache.delete(node.value.key)
-                promise.then(value => this.disposeFunction(value), () => {})
+                // If readers < 0, then we're under construction and we
+                // don't have anything yet to discard. If readers > 0, then
+                // it may be actively used by another part of the code that
+                // hit a portion of their critical section that returned
+                // control to the event loop. We don't want to mess with
+                // those if we can help it.
+
+                await this.removeNode(node, promise, size)
             }
 
             node = prev
         }
+    }
+
+    /**
+     * Remove the given node from the list.
+     *
+     * @param node The node to remove.
+     * @param promise The promise of the cache entry.
+     * @param size The size of the promise value.
+     */
+    private async removeNode(node: Yallist.Node<CacheEntry<K, V>>, promise: Promise<V>, size: number): Promise<void> {
+        this.size -= size
+        this.lruList.removeNode(node)
+        this.cache.delete(node.value.key)
+        this.disposeFunction(await promise)
     }
 }
 
