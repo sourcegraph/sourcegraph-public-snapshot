@@ -628,7 +628,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 					offset := utf8.RuneCount(l.Line[:m.LineOffset])
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
-					if isSymbol && m.SymbolInfo != nil {
+					if isSymbol {
 						commit := &GitCommitResolver{
 							repo:     &RepositoryResolver{repo: repoRev.Repo},
 							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
