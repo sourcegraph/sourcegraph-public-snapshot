@@ -38,7 +38,7 @@ describe('search/helpers', () => {
         })
 
         test('returns symbol when multiple search types, including symbol, are specified', () => {
-            /** Edge case. If there are multiple type filters and `type:symbol` is one of them, symbol results always get returned. */
+            // Edge case. If there are multiple type filters and `type:symbol` is one of them, symbol results always get returned.
             expect(
                 getSearchTypeFromQuery('type:diff type:symbol repo:^github.com/sourcegraph/sourcegraph test')
             ).toEqual('symbol')
