@@ -71,6 +71,17 @@
         max-width: 100%;
     }
 
+    &--inline {
+        display: inline;
+        p,
+        table {
+            margin-bottom: 0;
+        }
+        p {
+            display: inline;
+        }
+    }
+
     &.search-result-match__markdown {
         &.markdown {
             table,
