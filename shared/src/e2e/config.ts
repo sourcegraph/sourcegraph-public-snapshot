@@ -1,6 +1,5 @@
 import * as fs from 'fs'
 import _ from 'lodash'
-import { string } from 'prop-types'
 
 /**
  * Defines configuration for e2e tests. This is as-yet incomplete as some config
