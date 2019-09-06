@@ -169,14 +169,24 @@ func TestCampaigns(t *testing.T) {
 		}
 	`)
 
-	if have, want := len(listed.First.Nodes), 1; have != want {
-		t.Fatalf("listed %d campaigns, want %d", have, want)
-	}
-
-	have := listed.All.Nodes
-	want := []Campaign{campaigns.Admin, campaigns.Org}
+	have := listed.First.Nodes
+	want := []Campaign{campaigns.Admin}
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
+	}
+
+	if !listed.First.PageInfo.HasNextPage {
+		t.Errorf("wrong page info: %+v", listed.First.PageInfo.HasNextPage)
+	}
+
+	have = listed.All.Nodes
+	want = []Campaign{campaigns.Admin, campaigns.Org}
+	if !reflect.DeepEqual(have, want) {
+		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
+	}
+
+	if listed.All.PageInfo.HasNextPage {
+		t.Errorf("wrong page info: %+v", listed.All.PageInfo.HasNextPage)
 	}
 }
 
