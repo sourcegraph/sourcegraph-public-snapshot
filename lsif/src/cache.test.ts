@@ -1,4 +1,4 @@
-import { GenericCache } from './cache'
+import { GenericCache, createBarrierPromise } from './cache'
 import * as sinon from 'sinon'
 
 describe('GenericCache', () => {
@@ -37,7 +37,7 @@ describe('GenericCache', () => {
 
     it('should asynchronously resolve cache values', async () => {
         const factory = sinon.stub<string[], Promise<string>>()
-        const { wait, done } = createBarrier()
+        const { wait, done } = createBarrierPromise()
         factory.returns(wait.then(() => 'bar'))
 
         const cache = new GenericCache<string, string>(5, () => 1, () => {})
@@ -58,7 +58,7 @@ describe('GenericCache', () => {
             'foo', // foo baz (drops bar)
         ]
 
-        const { wait, done } = createBarrier()
+        const { wait, done } = createBarrierPromise()
         const disposer = sinon.spy(done)
         const cache = new GenericCache<string, string>(2, () => 1, disposer)
 
@@ -94,7 +94,7 @@ describe('GenericCache', () => {
     })
 
     it('should not evict referenced cache entries', async () => {
-        const { wait, done } = createBarrier()
+        const { wait, done } = createBarrierPromise()
         const disposer = sinon.spy(done)
         const cache = new GenericCache<string, string>(5, () => 1, disposer)
 
@@ -134,13 +134,55 @@ describe('GenericCache', () => {
             }
         )
     })
-})
 
-/**
- * Return a barrier promise that blocks until the done function is called.
- */
-function createBarrier(): { wait: Promise<void>; done: () => void } {
-    let done!: () => void
-    const wait = new Promise<void>(resolve => (done = resolve))
-    return { wait, done }
-}
+    it('should dispose busted keys', async () => {
+        const { wait, done } = createBarrierPromise()
+        const disposer = sinon.spy(done)
+        const cache = new GenericCache<string, string>(5, () => 1, disposer)
+
+        const factory = sinon.stub<string[], Promise<string>>()
+        factory.returns(Promise.resolve('foo'))
+
+        // Construct then bust a same key
+        await cache.withValue('foo', factory, () => Promise.resolve(null))
+        await cache.bustKey('foo')
+        await wait
+
+        // Ensure value was disposed
+        expect(disposer.args).toEqual([['foo']])
+
+        // Ensure entry was removed
+        expect(cache.withValue('foo', factory, () => Promise.resolve(null)))
+        expect(factory.args).toHaveLength(2)
+    })
+
+    it('should wait to dispose busted keys that are in use', async () => {
+        const { wait: wait1, done: done1 } = createBarrierPromise()
+        const { wait: wait2, done: done2 } = createBarrierPromise()
+
+        const resolver = () => Promise.resolve('foo')
+        const disposer = sinon.spy(done1)
+        const cache = new GenericCache<string, string>(5, () => 1, disposer)
+
+        // Create a cache entry for 'foo' that blocks on done2
+        const p1 = cache.withValue('foo', resolver, () => wait2)
+
+        // Attempt to bust the cache key that's used in the blocking promise above
+        const p2 = cache.bustKey('foo')
+
+        // Ensure that p1 and p2 are blocked on each other
+        const timedResolver = new Promise(resolve => setTimeout(() => resolve('$'), 10))
+        const winner = await Promise.race([p1, p2, timedResolver])
+        expect(winner).toEqual('$')
+
+        // Ensure dispose hasn't been called
+        expect(disposer.args).toHaveLength(0)
+
+        // Unblock p1
+        done2()
+
+        // Show that all promises are unblocked and dispose was called
+        await Promise.all([p1, p2, wait1])
+        expect(disposer.args).toEqual([['foo']])
+    })
+})
