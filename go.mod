@@ -87,7 +87,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/goware/urlx v0.3.1
-	github.com/graph-gophers/graphql-go v0.0.0-20190902095048-c760ee3fa257
+	github.com/graph-gophers/graphql-go v0.0.0-20190902214650-641ae197eec7
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-retryablehttp v0.6.2 // indirect
@@ -213,7 +213,6 @@ require (
 
 replace (
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190821144538-4e4eef546d3e
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

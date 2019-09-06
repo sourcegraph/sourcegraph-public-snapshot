@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -50,7 +51,13 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func init() {
 	var err error
-	GraphQLSchema, err = graphql.ParseSchema(Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
+	GraphQLSchema, err = graphql.ParseSchema(
+		Schema,
+		&schemaResolver{
+			CampaignsStore: db.NewCampaignsStore(dbconn.Global),
+		},
+		graphql.Tracer(prometheusTracer{}),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -76,6 +83,11 @@ type NodeResolver struct {
 
 func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	n, ok := r.Node.(*accessTokenResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCampaign() (*campaignResolver, bool) {
+	n, ok := r.Node.(*campaignResolver)
 	return n, ok
 }
 
@@ -173,7 +185,9 @@ type stringLogger interface {
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
-type schemaResolver struct{}
+type schemaResolver struct {
+	*db.CampaignsStore
+}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
