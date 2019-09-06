@@ -1,6 +1,8 @@
 package db
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"reflect"
 	"testing"
@@ -8,10 +10,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
+
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestCampaignsStore(t *testing.T) {
 	if testing.Short() {
@@ -20,12 +22,14 @@ func TestCampaignsStore(t *testing.T) {
 
 	t.Parallel()
 
-	ctx := dbtesting.TestContext(t)
+	d, cleanup := dbtest.NewDB(t, *dsn)
+	defer cleanup()
 
-	tx, done := dbtest.NewTx(t, dbconn.Global)
+	tx, done := dbtest.NewTx(t, d)
 	defer done()
 
 	s := NewCampaignsStore(tx)
+	ctx := context.Background()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	campaigns := make([]*types.Campaign, 3)
