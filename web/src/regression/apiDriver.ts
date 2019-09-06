@@ -74,7 +74,7 @@ export async function ensureExternalService(
         config: Record<string, string | number | boolean>
     }
 ): Promise<void> {
-    const externalServicesRes = await gqlClient
+    const externalServices = await gqlClient
         .queryGraphQL(
             gql`
                 query ExternalServices($first: Int) {
@@ -87,12 +87,12 @@ export async function ensureExternalService(
             `,
             { first: 100 }
         )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ externalServices }) => externalServices)
+        )
         .toPromise()
-    if (!externalServicesRes.data) {
-        throw new Error('no `data` field found in GQL response')
-    }
-    const res = externalServicesRes.data.externalServices
-    const existingMatches = res.nodes.filter(
+    const existingMatches = externalServices.nodes.filter(
         externalService => externalService.displayName === options.uniqueDisplayName
     )
     if (existingMatches.length > 0) {
@@ -110,10 +110,6 @@ export async function ensureExternalService(
             gql`
                 mutation addExternalService($input: AddExternalServiceInput!) {
                     addExternalService(input: $input) {
-                        id
-                        kind
-                        displayName
-                        warning
                     }
                 }
             `,
