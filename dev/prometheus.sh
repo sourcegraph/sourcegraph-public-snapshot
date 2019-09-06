@@ -37,5 +37,5 @@ docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     -p 0.0.0.0:9090:9090 \
     -v ${PROMETHEUS_DISK}:/prometheus \
     -v ${DIR}/prometheus/${CONFIG_SUB_DIR}:/sg_prometheus_add_ons \
-    sourcegraph/prometheus:3.8 >> ${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
+    sourcegraph/prometheus:v2.12.0 >> ${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
 wait $!

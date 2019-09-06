@@ -42,7 +42,7 @@ docker run --rm  --cidfile ${CID_FILE} \
     -e GF_USERS_ALLOW_SIGN_UP='false' \
     -e GF_USERS_AUTO_ASSIGN_ORG='true' \
     -e GF_USERS_AUTO_ASSIGN_ORG_ROLE=Editor \
-    sourcegraph/grafana:3.8 >> ${GRAFANA_DISK}/logs/grafana.log 2>&1 &
+    sourcegraph/grafana:6.3.3 >> ${GRAFANA_DISK}/logs/grafana.log 2>&1 &
 
 # Add the following lines above if you wish to use an auth proxy with Grafana:
 #
