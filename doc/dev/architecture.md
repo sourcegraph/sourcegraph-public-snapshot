@@ -113,7 +113,7 @@ Our editor extensions provide lightweight hooks into Sourcegraph, currently.
 Sourcegraph is composed of several smaller services (gitserver, repo-updater, symbols, etc.) and a single monolithic service (the frontend). When thinking of adding a new service, it is important to think through the following questions carefully:
 
 - Does the code belong in an existing service?
-    - If yes, it most likely belongs in that service container. For example, don't introduce a seperate container to cleanup gitserver repositories if gitserver itself could reasonably perform that same work.
+    - If yes, it most likely belongs in that service container. For example, don't introduce a separate container to cleanup gitserver repositories if gitserver itself could reasonably perform that same work.
 - Instead of being a seperate service, could it reasonably live inside the frontend as a singleton background worker?
 - Does it rely heavily on the APIs that exist in another service?
 - If done in an existing container, would it substantially increase the complexity of the task?
