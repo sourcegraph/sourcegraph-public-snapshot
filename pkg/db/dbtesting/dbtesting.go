@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -76,7 +75,6 @@ func TestContext(t testing.TB) context.Context {
 	}
 
 	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	for _, f := range BeforeTest {
 		f()

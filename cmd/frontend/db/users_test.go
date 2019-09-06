@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
@@ -391,6 +392,7 @@ func TestUsers_Delete(t *testing.T) {
 				t.Skip()
 			}
 			ctx := dbtesting.TestContext(t)
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 			otherUser, err := Users.Create(ctx, NewUser{Username: "other"})
 			if err != nil {

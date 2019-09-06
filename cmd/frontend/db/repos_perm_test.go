@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
@@ -155,6 +156,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	defer func() { MockAuthzFilter = nil }()
 
 	ctx := dbtesting.TestContext(t)
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	allRepos := mustCreate(ctx, t,
 		&types.Repo{
