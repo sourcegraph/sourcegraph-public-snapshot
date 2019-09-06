@@ -14,25 +14,25 @@ import { isErrorLike } from '../../../shared/src/util/errors'
  * Wait until all repositories in the list exist.
  */
 export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string[]): Promise<void> {
-    await zip(
+    await Promise.all(
         // List of Observables that complete after each repository is successfully fetched.
         ensureRepos.map(repoName => {
             // Track number of retries for this repository.
             let retries = 0
             const maxRetries = 10
 
-            gqlClient
+            return gqlClient
                 .queryGraphQL(
                     gql`
-                        query ResolveRev($repoName: String!, $rev: String!) {
-                            reposnnnnitory(name: $repoName) {
+                        query ResolveRev($repoName: String!) {
+                            repository(name: $repoName) {
                                 mirrorInfo {
                                     cloned
                                 }
                             }
                         }
                     `,
-                    { repoName, rev: '' }
+                    { repoName }
                 )
                 .pipe(
                     map(dataOrThrowErrors),
@@ -62,8 +62,9 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                         )
                     )
                 )
+                .toPromise()
         })
-    ).toPromise()
+    )
 }
 
 export async function ensureExternalService(
@@ -71,7 +72,7 @@ export async function ensureExternalService(
     options: {
         kind: GQL.ExternalServiceKind
         uniqueDisplayName: string
-        config: Record<string, string | number | boolean>
+        config: Record<string, any>
     }
 ): Promise<void> {
     const externalServices = await gqlClient
