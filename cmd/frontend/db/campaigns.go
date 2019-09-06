@@ -91,13 +91,6 @@ func nullInt32Column(n int32) *int32 {
 	return &n
 }
 
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
 // UpdateCampaign updates the given Campaign.
 func (s *CampaignsStore) UpdateCampaign(ctx context.Context, c *types.Campaign) error {
 	panic("not implemented")
