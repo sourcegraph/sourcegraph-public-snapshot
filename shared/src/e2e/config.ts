@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import _ from 'lodash'
+import { pick } from 'lodash'
 
 /**
  * Defines configuration for e2e tests. This is as-yet incomplete as some config
@@ -41,7 +41,7 @@ const configFields: { [K in keyof Config]: ConfigField } = {
  */
 export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
     const configFile = process.env.CONFIG_FILE
-    let config: Record<string, string | undefined>
+    let config: any
     if (configFile) {
         // eslint-disable-next-line no-sync
         config = JSON.parse(fs.readFileSync(configFile).toString())
@@ -88,5 +88,5 @@ Please set the appropriate environment variables or add these entries to the con
 specified by the environment variable CONFIG_FILE`)
     }
 
-    return _.pick(config, required)
+    return pick(config, required)
 }
