@@ -56,7 +56,8 @@ func Test_serveReposList(t *testing.T) {
 	}
 
 	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
+		dbtesting.SetupGlobalTestDB(t)
+		ctx := context.Background()
 		qs := []string{
 			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/alice/rabbitmq', 'github.com/alice/rabbitmq', '2015-01-01', '2016-01-01', '', '')`,
 			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/bob/jabberd', 'github.com/bob/jabberd', '2001-01-01', '2019-01-01', '', '')`,
@@ -78,7 +79,8 @@ func Test_serveReposList(t *testing.T) {
 	})
 
 	t.Run("only default repos are returned for sourcegraph.com", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
+		dbtesting.SetupGlobalTestDB(t)
+		ctx := context.Background()
 		qs := []string{
 			`INSERT INTO repo(id, name) VALUES (1, 'github.com/vim/vim')`,
 			`INSERT INTO repo(id, name) VALUES (2, 'github.com/torvalds/linux')`,

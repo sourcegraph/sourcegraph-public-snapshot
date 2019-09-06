@@ -343,6 +343,45 @@ type Mutation {
     deleteSavedSearch(id: ID!): EmptyResponse
 }
 
+# A collection of threads.
+type Campaign implements Node {
+    # The unique ID for the campaign.
+    id: ID!
+
+    # The namespace where this campaign is defined.
+    namespace: Namespace!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description as Markdown.
+    description: String!
+
+    # The user who authored the campaign.
+    author: User!
+
+    # The URL to this campaign.
+    url: String!
+
+    # The date and time when the campaign was created.
+    createdAt: DateTime!
+
+    # The date and time when the campaign was updated.
+    updatedAt: DateTime!
+}
+
+# A list of campaigns.
+type CampaignConnection {
+    # A list of campaigns.
+    nodes: [Campaign!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # A new external service.
 input AddExternalServiceInput {
     # The kind of the external service.
@@ -661,6 +700,13 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
+
+    # A list of campaigns.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
+
     # Looks up a repository by either name or cloneURL.
     repository(
         # Query the repository by name, for example "github.com/gorilla/mux".
