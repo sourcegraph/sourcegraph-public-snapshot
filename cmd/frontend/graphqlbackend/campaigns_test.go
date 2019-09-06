@@ -3,9 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -78,6 +80,13 @@ func TestCampaigns(t *testing.T) {
 		}
 	`)
 
+	type UserOrg struct {
+		ID         string
+		DatabaseID int32
+		SiteAdmin  bool
+		Name       string
+	}
+
 	type Campaign struct {
 		ID          string
 		Name        string
@@ -85,18 +94,10 @@ func TestCampaigns(t *testing.T) {
 		Author      User
 		CreatedAt   string
 		UpdatedAt   string
+		Namespace   UserOrg
 	}
 
-	var campaigns struct {
-		Admin struct {
-			Campaign
-			Namespace User
-		}
-		Org struct {
-			Campaign
-			Namespace Org
-		}
-	}
+	var campaigns struct{ Admin, Org Campaign }
 
 	input := map[string]interface{}{
 		"admin": map[string]interface{}{
@@ -138,10 +139,7 @@ func TestCampaigns(t *testing.T) {
 
 	var listed struct {
 		First, All struct {
-			Nodes []struct {
-				Campaign
-				Namespace struct { ID string }
-			}
+			Nodes      []Campaign
 			TotalCount int
 			PageInfo   struct {
 				HasNextPage bool
@@ -175,11 +173,11 @@ func TestCampaigns(t *testing.T) {
 		t.Fatalf("listed %d campaigns, want %d", have, want)
 	}
 
-	for _, c := range listed.All.Nodes {
-	{
-		have := listed.First.Nodes[0].Namespace.ID
+	have := listed.All.Nodes
+	want := []Campaign{campaigns.Admin, campaigns.Org}
+	if !reflect.DeepEqual(have, want) {
+		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
 	}
-
 }
 
 func mustExec(
