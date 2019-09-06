@@ -2,12 +2,13 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { comparePosition, findRange, makeRemoteUri, mapRangesToLocations } from './database'
 import { Id } from 'lsif-protocol'
 import { RangeData } from './entities'
+import { range } from 'lodash'
 
 describe('findRange', () => {
     it('should find all ranges in list', () => {
         // Generate starting characters for each range. Thse neds to be
         // spread wide enough so that the ranges on each line don't touch.
-        const characters = Array.from(Array(2000).keys()).map(i => i * 5)
+        const characters = range(0, 10000, 5)
 
         const ranges: RangeData[] = []
         for (let i = 1; i <= 1000; i++) {

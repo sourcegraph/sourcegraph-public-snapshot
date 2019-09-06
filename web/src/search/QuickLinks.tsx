@@ -4,22 +4,21 @@ import { Link } from '../../../shared/src/components/Link'
 import { QuickLink } from '../schema/settings.schema'
 
 interface Props {
-    quickLinks: QuickLink[]
+    quickLinks: QuickLink[] | undefined
+
+    className?: string
 }
 
-export class QuickLinks extends React.PureComponent<Props> {
-    public render(): JSX.Element | null {
-        return this.props.quickLinks.length > 0 ? (
-            <>
-                {this.props.quickLinks.map((quickLink, i) => (
-                    <small className="quicklink text-nowrap mr-2" key={i}>
-                        <Link to={quickLink.url} data-tooltip={quickLink.description}>
-                            <LinkIcon className="icon-inline pr-1" />
-                            {quickLink.name}
-                        </Link>
-                    </small>
-                ))}
-            </>
-        ) : null
-    }
-}
+export const QuickLinks: React.FunctionComponent<Props> = ({ quickLinks, className = '' }) =>
+    quickLinks && quickLinks.length > 0 ? (
+        <div className={className}>
+            {quickLinks.map((quickLink, i) => (
+                <small className="quicklink text-nowrap mr-2" key={i}>
+                    <Link to={quickLink.url} data-tooltip={quickLink.description}>
+                        <LinkIcon className="icon-inline pr-1" />
+                        {quickLink.name}
+                    </Link>
+                </small>
+            ))}
+        </div>
+    ) : null

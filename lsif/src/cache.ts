@@ -29,6 +29,14 @@ interface CacheEntry<K, V> {
      * cache.
      */
     readers: number
+
+    /**
+     * A function reference that should be called, if present, when
+     * the reader count for an entry goes to zero. This will unblock a
+     * a promise created in `bustKey` to wait for all readers to finish
+     * using the cache value.
+     */
+    waiter: (() => void) | undefined
 }
 
 /**
@@ -64,7 +72,7 @@ export class GenericCache<K, V> {
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
-        private disposeFunction: (value: V) => void
+        private disposeFunction: (value: V) => Promise<void>
     ) {}
 
     /**
@@ -79,14 +87,79 @@ export class GenericCache<K, V> {
      * @param callback The function to invoke with the resolved cache value.
      */
     public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
-        const entry = this.getEntry(key, factory)
+        // Find or create the entry
+        const entry = await this.getEntry(key, factory)
+
+        // Increase the number of readers currently looking at this value.
+        // While this value is not equal to zero, it wll not be skipped over
+        // on the cache eviction pass.
+
         entry.readers++
 
         try {
+            // Re-resolve the promise. If this is already resolved it's a fast
+            // no-op. Otherwise, we got a cache entry that was under-construction
+            // and will resolve shortly.
+
             return await callback(await entry.promise)
         } finally {
+            // Unlock the cache entry
             entry.readers--
+
+            // If we were the last reader and there's a bustKey call waiting on
+            // us to finish, inform it that we're done using it. Bust away!
+
+            if (entry.readers === 0 && entry.waiter !== undefined) {
+                entry.waiter()
+            }
         }
+    }
+
+    /**
+     * Remove a key from the cache. This blocks until all current readers
+     * of the cached value have completed, then calls the dispose function.
+     *
+     * Do NOT call this function while holding the same: you will deadlock.
+     *
+     * @param key The cache key.
+     */
+    public async bustKey(key: K): Promise<void> {
+        const node = this.cache.get(key)
+        if (!node) {
+            return
+        }
+
+        const {
+            value: { promise, size, readers },
+        } = node
+
+        // Immediately remove from cache so that another reader cannot get
+        // ahold of the value, and so that another bust attempt cannot call
+        // dispose twice on the same value.
+
+        this.removeNode(node, size)
+
+        // Wait for the value to resolve. We do this first in case the value
+        // was still under construction. This simplifies the rest of the logic
+        // below, as readers can never be negative once the promise value has
+        // resolved.
+
+        const value = await promise
+
+        if (readers !== 0) {
+            // There's someone holding the cache value. Create a barrier promise
+            // and stash the function that can unlock it. When the reader count
+            // for an entry is decremented, the waiter function, if present, is
+            // invoked. This basically forms a condition variable.
+
+            const { wait, done } = createBarrierPromise()
+            node.value.waiter = done
+            await wait
+        }
+
+        // We have the resolved value, removed from the cache, which is no longer
+        // used by any reader. It's safe to dispose now.
+        await this.disposeFunction(value)
     }
 
     /**
@@ -99,21 +172,47 @@ export class GenericCache<K, V> {
      * @param key The cache key.
      * @param factory The function used to create a new value.
      */
-    private getEntry(key: K, factory: () => Promise<V>): CacheEntry<K, V> {
+    private async getEntry(key: K, factory: () => Promise<V>): Promise<CacheEntry<K, V>> {
         const node = this.cache.get(key)
         if (node) {
+            // Found, move to head of list
             this.lruList.unshiftNode(node)
             return node.value
         }
 
+        // Create promise and the entry that wraps it. We don't know
+        // the effective size of the value until the promise resolves,
+        // so we put zero. We have a reader count of -1, which is the
+        // value that denotes that the cache entry is currently under
+        // construction. We don't want to block here while waiting for
+        // the promise value to resolve, otherwise a second request for
+        // the same key will create a duplicate cache entry.
+
         const promise = factory()
-        const newEntry = { key, promise, size: 0, readers: 0 }
-        promise.then(value => this.resolved(newEntry, value), () => {})
+        const newEntry = { key, promise, size: 0, readers: -1, waiter: undefined }
+
+        // Add to head of list
         this.lruList.unshift(newEntry)
+
+        // Grab the head of the list we just pushed and store it
+        // in the map. We need the node that the unshift method
+        // creates so we can unlink it in constant time.
         const head = this.lruList.head
         if (head) {
             this.cache.set(key, head)
         }
+
+        // Now that another call to getEntry will find the cache entry
+        // and early-out, we can block here and wait to resolve the
+        // value, then update the entry and cache sizes.
+
+        const value = await promise
+        await this.resolved(newEntry, value)
+
+        // Remove the under-construction value from the reader count.
+        // Callers of this method end up incrementing this value again
+        // a second time before calling a user callback function.
+        newEntry.readers++
 
         return newEntry
     }
@@ -127,7 +226,7 @@ export class GenericCache<K, V> {
      * @param entry The cache entry.
      * @param value The cache entry's resolved value.
      */
-    private resolved(entry: CacheEntry<K, V>, value: V): void {
+    private async resolved(entry: CacheEntry<K, V>, value: V): Promise<void> {
         const size = this.sizeFunction(value)
         this.size += size
         entry.size = size
@@ -140,14 +239,31 @@ export class GenericCache<K, V> {
             } = node
 
             if (readers === 0) {
-                this.size -= size
-                this.lruList.removeNode(node)
-                this.cache.delete(node.value.key)
-                promise.then(value => this.disposeFunction(value), () => {})
+                // If readers < 0, then we're under construction and we
+                // don't have anything yet to discard. If readers > 0, then
+                // it may be actively used by another part of the code that
+                // hit a portion of their critical section that returned
+                // control to the event loop. We don't want to mess with
+                // those if we can help it.
+
+                this.removeNode(node, size)
+                await this.disposeFunction(await promise)
             }
 
             node = prev
         }
+    }
+
+    /**
+     * Remove the given node from the list and update the cache size.
+     *
+     * @param node The node to remove.
+     * @param size The size of the promise value.
+     */
+    private removeNode(node: Yallist.Node<CacheEntry<K, V>>, size: number): void {
+        this.size -= size
+        this.lruList.removeNode(node)
+        this.cache.delete(node.value.key)
     }
 }
 
@@ -180,7 +296,9 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      */
     public withConnection<T>(
         database: string,
-        entities: Function[], // eslint-disable-line @typescript-eslint/ban-types
+        // Decorators are not possible type check
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        entities: Function[],
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
         const factory = (): Promise<Connection> =>
@@ -206,7 +324,9 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      */
     public withTransactionalEntityManager<T>(
         database: string,
-        entities: Function[], // eslint-disable-line @typescript-eslint/ban-types
+        // Decorators are not possible type check
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        entities: Function[],
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
         return this.withConnection(database, entities, async connection => {
@@ -251,7 +371,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
             // TODO - determine memory size
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
-            (): void => {}
+            (): Promise<void> => Promise.resolve()
         )
     }
 }
@@ -282,4 +402,13 @@ export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> 
     constructor(max: number) {
         super(max)
     }
+}
+
+/**
+ * Return a promise and a function pair. The promise resolves once the function is called.
+ */
+export function createBarrierPromise(): { wait: Promise<void>; done: () => void } {
+    let done!: () => void
+    const wait = new Promise<void>(resolve => (done = resolve))
+    return { wait, done }
 }

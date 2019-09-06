@@ -52,6 +52,9 @@ export class Backend {
             }
         }
 
+        // Remove any connection in the cache to the file we just removed
+        await this.connectionCache.bustKey(outFile)
+
         const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
             [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
@@ -116,9 +119,12 @@ async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex |
     let i = 0
     for await (const line of lines) {
         try {
-            yield JSON.parse(line) as Vertex | Edge
+            yield JSON.parse(line)
         } catch (e) {
-            throw new Error(`Parsing failed for line ${i}: ${e}`)
+            throw Object.assign(
+                new Error(`Failed to process line #${i + 1} (${JSON.stringify(line)}): Invalid JSON.`),
+                { status: 422 }
+            )
         }
 
         i++
