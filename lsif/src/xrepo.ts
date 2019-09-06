@@ -4,14 +4,17 @@ import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel } from './models'
 import { TableInserter } from './inserter'
 import {
-    XREPO_DATABASE_INSERTION_COUNTER,
-    XREPO_DATABASE_INSERTION_DURATION_HISTOGRAM,
+    XREPO_INSERTION_ERRORS_COUNTER,
+    XREPO_INSERTION_DURATION_HISTOGRAM,
     BLOOM_FILTER_EVENTS_COUNTER,
+    XREPO_QUERY_DURATION_HISTOGRAM,
+    XREPO_QUERY_ERRORS_COUNTER,
+    instrument,
 } from './metrics'
 
 const insertionMetrics = {
-    insertionCounter: XREPO_DATABASE_INSERTION_COUNTER,
-    insertionDurationHistogram: XREPO_DATABASE_INSERTION_DURATION_HISTOGRAM,
+    durationHistogram: XREPO_INSERTION_DURATION_HISTOGRAM,
+    errorsCounter: XREPO_INSERTION_ERRORS_COUNTER,
 }
 
 /**
@@ -186,17 +189,8 @@ export class XrepoDatabase {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await this.connectionCache.withConnection(
-            this.database,
-            [PackageModel, ReferenceModel],
-            async connection => {
-                const end = XREPO_DATABASE_INSERTION_DURATION_HISTOGRAM.startTimer()
-                try {
-                    return await callback(connection)
-                } finally {
-                    end()
-                }
-            }
+        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], connection =>
+            instrument(XREPO_QUERY_DURATION_HISTOGRAM, XREPO_QUERY_ERRORS_COUNTER, () => callback(connection))
         )
     }
 

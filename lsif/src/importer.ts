@@ -34,7 +34,7 @@ import {
     ElementTypes,
     Moniker,
 } from 'lsif-protocol'
-import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_COUNTER } from './metrics'
+import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_ERRORS_COUNTER } from './metrics'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -144,8 +144,8 @@ class LsifImporter {
      */
     constructor(private entityManager: EntityManager) {
         const metrics = {
-            insertionCounter: DATABASE_INSERTION_COUNTER,
-            insertionDurationHistogram: DATABASE_INSERTION_DURATION_HISTOGRAM,
+            durationHistogram: DATABASE_INSERTION_DURATION_HISTOGRAM,
+            errorsCounter: DATABASE_INSERTION_ERRORS_COUNTER,
         }
 
         // Determine the max batch size of each model type. We cannot perform an

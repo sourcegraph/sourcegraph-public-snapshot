@@ -1,6 +1,7 @@
 import promClient from 'prom-client'
 import { EntityManager } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
+import { instrument } from './metrics'
 
 /**
  * A bag of prometheus metric objects that apply to a particular instance of
@@ -8,14 +9,14 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
  */
 interface TableInserterMetrics {
     /**
-     * A counter that increments on each insertion.
-     */
-    insertionCounter: promClient.Counter
-
-    /**
      * A histogram that is observed on each round-trip to the database.
      */
-    insertionDurationHistogram: promClient.Histogram
+    durationHistogram: promClient.Histogram
+
+    /**
+     * A counter that increments on each error that occurs during an insertion.
+     */
+    errorsCounter: promClient.Counter
 }
 
 /**
@@ -82,19 +83,14 @@ export class TableInserter<T, M extends new () => T> {
             return
         }
 
-        this.metrics.insertionCounter.inc(this.batch.length)
-        const end = this.metrics.insertionDurationHistogram.startTimer()
-
-        try {
-            await this.entityManager
+        await instrument(this.metrics.durationHistogram, this.metrics.errorsCounter, () =>
+            this.entityManager
                 .createQueryBuilder()
                 .insert()
                 .into(this.model)
                 .values(this.batch)
                 .execute()
-        } finally {
-            end()
-        }
+        )
 
         this.batch = []
     }

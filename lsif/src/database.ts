@@ -8,7 +8,7 @@ import { groupBy, isEqual, uniqWith } from 'lodash'
 import { Id } from 'lsif-protocol'
 import { makeFilename } from './backend'
 import { XrepoDatabase } from './xrepo'
-import { DATABASE_QUERY_DURATION_HISTOGRAM } from './metrics'
+import { DATABASE_QUERY_DURATION_HISTOGRAM, DATABASE_QUERY_ERRORS_COUNTER, instrument } from './metrics'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -432,14 +432,8 @@ export class Database {
         return await this.connectionCache.withConnection(
             this.databasePath,
             [DefModel, DocumentModel, MetaModel, RefModel],
-            async connection => {
-                const end = DATABASE_QUERY_DURATION_HISTOGRAM.startTimer()
-                try {
-                    return await callback(connection)
-                } finally {
-                    end()
-                }
-            }
+            connection =>
+                instrument(DATABASE_QUERY_DURATION_HISTOGRAM, DATABASE_QUERY_ERRORS_COUNTER, () => callback(connection))
         )
     }
 }
