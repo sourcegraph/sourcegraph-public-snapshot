@@ -7,11 +7,56 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
+
+func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
+	Input struct {
+		Namespace   graphql.ID
+		Name        string
+		Description string
+	}
+}) (*campaignResolver, error) {
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+
+	// 🚨 SECURITY: Only site admins may create a campaign for now.
+	if !user.SiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
+	}
+
+	campaign := &types.Campaign{
+		Name:        args.Input.Name,
+		Description: args.Input.Description,
+		AuthorID:    user.ID,
+	}
+
+	node, err := NodeByID(ctx, args.Input.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	switch ns := node.(type) {
+	case *UserResolver:
+		campaign.NamespaceUserID = ns.DatabaseID()
+	case *OrgResolver:
+		campaign.NamespaceOrgID = ns.OrgID()
+	default:
+		return nil, errors.Errorf("Invalid namespace of type %T", ns)
+	}
+
+	if err := r.CampaignsStore.CreateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{Campaign: campaign}, nil
+}
 
 func (r *schemaResolver) Campaigns(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs

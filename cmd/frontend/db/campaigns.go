@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"io"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -63,6 +64,14 @@ RETURNING
 `
 
 func createCampaignQuery(c *types.Campaign) *sqlf.Query {
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
 	return sqlf.Sprintf(
 		createCampaignQueryFmtstr,
 		c.Name,
