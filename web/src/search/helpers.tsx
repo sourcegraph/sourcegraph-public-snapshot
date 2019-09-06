@@ -87,7 +87,7 @@ export function getSearchTypeFromQuery(query: string): SearchType {
          * so we must check for `type:symbol`. For other types,
          * the first `type` filter appearing in the query is applied.
          **/
-        const getSymbolType = /\btype:symbol\b/
+        const symbolTypeRegex = /\btype:symbol\b/
         const symbolMatches = query.match(getSymbolType)
         if (symbolMatches) {
             return 'symbol'
