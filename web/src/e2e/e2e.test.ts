@@ -1134,17 +1134,10 @@ describe('e2e test suite', () => {
         })
 
         test('Clicking search results tabs updates query and URL', async () => {
-            await driver.page.click('.e2e-search-result-tab-diff')
-            await driver.assertWindowLocation('/search?q=repo:%5Egithub.com/gorilla/mux%24+type:diff')
-
-            await driver.page.click('.e2e-search-result-tab-commit')
-            await driver.assertWindowLocation('/search?q=repo:%5Egithub.com/gorilla/mux%24+type:commit')
-
-            await driver.page.click('.e2e-search-result-tab-symbol')
-            await driver.assertWindowLocation('/search?q=repo:%5Egithub.com/gorilla/mux%24+type:symbol')
-
-            await driver.page.click('.e2e-search-result-tab-repo')
-            await driver.assertWindowLocation('/search?q=repo:%5Egithub.com/gorilla/mux%24+type:repo')
+            for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
+                await driver.page.click(`.e2e-search-result-tab-${searchType}`)
+                await driver.assertWindowLocation(`/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}`)
+            }
         })
     })
 })
