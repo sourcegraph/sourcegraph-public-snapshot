@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"testing"
@@ -9,7 +8,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
 func TestCampaignsStore(t *testing.T) {
@@ -19,14 +20,12 @@ func TestCampaignsStore(t *testing.T) {
 
 	t.Parallel()
 
-	d, cleanup := dbtest.NewDB(t, *dsn)
-	defer cleanup()
+	ctx := dbtesting.TestContext(t)
 
-	tx, done := dbtest.NewTx(t, d)
+	tx, done := dbtest.NewTx(t, dbconn.Global)
 	defer done()
 
 	s := NewCampaignsStore(tx)
-	ctx := context.Background()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	campaigns := make([]*types.Campaign, 3)
