@@ -7,8 +7,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './api'
 import { ensureExternalService, waitForRepos } from './apiDriver'
 
-const standardSearchTimeout = 5 * 1000
-
 const testRepoSlugs = [
     'auth0/go-jwt-middleware',
     'kyoshidajp/ghkw',
@@ -121,117 +119,71 @@ describe('Search regression test suite', () => {
                 })
                 await waitForRepos(gqlClient, ['github.com/' + testRepoSlugs[testRepoSlugs.length - 1]])
             },
-            // Cloning the repositories takes ~1 minute, so give initialization 2
-            // minutes instead of 1 (which would be inherited from
-            // `jest.setTimeout(1 * 60 * 1000)` above).
+            // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
             2 * 60 * 1000
         )
 
         // Close browser.
         afterAll(async () => driver && (await driver.close()))
 
-        test(
-            'Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
-                await driver.page.waitForSelector('.e2e-search-results')
-                await driver.page.waitForFunction(() => {
-                    const resultsElem = document.querySelector('.e2e-search-results')
-                    if (!resultsElem) {
-                        return false
-                    }
-                    if (!(resultsElem as HTMLElement).innerText.includes('No results')) {
-                        throw new Error('Expected "No results" message, but didn\'t find it')
-                    }
-                    return true
-                })
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform global text search for "error type:", expect a few results.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=%22error+type:%22')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform global text search for "error", expect many results.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform global text search for "error", expect many results.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform global text search for "error count:>1000", expect many results.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error+count:1000')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform global text search for "repohasfile:copying", expect many results.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repohasfile:copying')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 2)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform global text search for something with more than 1000 results and use count:1000',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform global text search for a regular expression without indexing: "index:no ^func.*$", expect many results.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Search for a repository by name.',
-            async () => {
-                await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repo:auth0/go-jwt-middleware$')
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform a case-sensitive search.',
-            async () => {
-                await driver.page.goto(
-                    config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
-                )
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
-            },
-            standardSearchTimeout
-        )
-        test(
-            'Perform a case-sensitive search.',
-            async () => {
-                await driver.page.goto(
-                    config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
-                )
-                await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
-            },
-            standardSearchTimeout
-        )
+        test('Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
+            await driver.page.waitForSelector('.e2e-search-results')
+            await driver.page.waitForFunction(() => {
+                const resultsElem = document.querySelector('.e2e-search-results')
+                if (!resultsElem) {
+                    return false
+                }
+                if (!(resultsElem as HTMLElement).innerText.includes('No results')) {
+                    throw new Error('Expected "No results" message, but didn\'t find it')
+                }
+                return true
+            })
+        })
+        test('Perform global text search for "error type:", expect a few results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=%22error+type:%22')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
+        })
+        test('Perform global text search for "error", expect many results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Perform global text search for "error", expect many results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Perform global text search for "error count:>1000", expect many results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error+count:1000')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Perform global text search for "repohasfile:copying", expect many results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repohasfile:copying')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 2)
+        })
+        test('Perform global text search for something with more than 1000 results and use count:1000', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Perform global text search for a regular expression without indexing: "index:no ^func.*$", expect many results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Search for a repository by name.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repo:auth0/go-jwt-middleware$')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
+        })
+        test('Perform a case-sensitive search.', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
+        })
+        test('Perform a case-sensitive search.', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
+        })
         test('Search with fork:only', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+router')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 5)
