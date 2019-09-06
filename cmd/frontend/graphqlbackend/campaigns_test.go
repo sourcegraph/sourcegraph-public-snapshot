@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -21,7 +22,8 @@ func TestCampaigns(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 	ctx = backend.WithAuthzBypass(ctx)
 
 	s := db.NewCampaignsStore(dbconn.Global)
