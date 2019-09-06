@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -79,7 +80,8 @@ func TestRepos_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
@@ -105,7 +107,8 @@ func TestRepos_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
@@ -143,7 +146,8 @@ func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {

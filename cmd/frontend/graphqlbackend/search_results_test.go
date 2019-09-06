@@ -199,7 +199,8 @@ func BenchmarkSearchResults(b *testing.B) {
 }
 
 func BenchmarkIntegrationSearchResults(b *testing.B) {
-	ctx := dbtesting.TestContext(b)
+	dbtesting.SetupGlobalTestDB(b)
+	ctx := context.Background()
 
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)

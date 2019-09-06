@@ -155,7 +155,8 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	}
 	defer func() { MockAuthzFilter = nil }()
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	allRepos := mustCreate(ctx, t,

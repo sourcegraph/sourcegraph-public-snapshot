@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -66,7 +67,8 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
@@ -90,7 +92,8 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	if _, err := globalstatedb.Get(ctx); err != nil {
 		t.Fatal(err)
@@ -176,7 +179,8 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -224,7 +228,8 @@ func TestUsers_ListCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -280,7 +285,8 @@ func TestUsers_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -356,7 +362,8 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -391,7 +398,8 @@ func TestUsers_Delete(t *testing.T) {
 			if testing.Short() {
 				t.Skip()
 			}
-			ctx := dbtesting.TestContext(t)
+			dbtesting.SetupGlobalTestDB(t)
+			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 			otherUser, err := Users.Create(ctx, NewUser{Username: "other"})
