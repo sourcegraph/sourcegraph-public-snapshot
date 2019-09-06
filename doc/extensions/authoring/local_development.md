@@ -5,10 +5,11 @@ When developing an extension, you can sideload it from your local development ma
 To set this up:
 
 1. In your extension's directory, run `npm run serve` to run the Parcel dev server. Wait until it reports that it's listening.
-2. Reveal the **Ext ▲** debug menu by running the following JavaScript code in your browser's devtools console on a Sourcegraph page: `localStorage.debug=true;location.reload()`.
-3. In the **Ext ▲** debug menu, click **Sideload Extension -> Load Extension**.
-3. Enter the URL the Parcel dev server is listening on.
-4. Your extension should appear in the debug menu's "active extensions" list. If it doesn't, there may have been an error when activating your extension - check the debug console for error messages.
+1. Run the following JavaScript code in your browser's devtools console on a Sourcegraph page: `localStorage.debug=true;location.reload()`.
+1. In the global navbar, click **Dev** to open the Sourcegraph dev console.
+1. In the Sourcegraph dev console, click **Load extension**.
+1. Enter the URL the Parcel dev server is listening on (e.g., `http://localhost:1234`).
+1. Your extension should appear in the dev console's "Active extensions" list. If it isn't there, there may have been an error when activating your extension. Check your browser's devtools console for error messages.
 
 After doing this, the development cycle is as follows:
 

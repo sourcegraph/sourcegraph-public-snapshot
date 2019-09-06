@@ -4,7 +4,6 @@
 @import '../../shared/src/commandPalette/CommandList';
 @import '../../shared/src/components/completion/CompletionWidget.scss';
 @import '../../shared/src/components/Toggle';
-@import '../../shared/src/extensions/ExtensionStatus';
 @import '../../shared/src/notifications/NotificationItem';
 @import '../../shared/src/notifications/Notifications';
 
@@ -68,4 +67,11 @@ $body-color-dark: #f2f4f8;
 
 .line-decoration-attachment {
     margin-left: 0.25rem;
+}
+
+.extension-status {
+    // In the web app, this element is shown in a modal, which sets its own width boundaries. These
+    // styles only apply to the browser extension.
+    min-width: 24vw;
+    max-width: 50vw;
 }
