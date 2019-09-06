@@ -14,9 +14,9 @@ import { isErrorLike } from '../../../shared/src/util/errors'
  * Wait until all repositories in the list exist.
  */
 export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string[]): Promise<void> {
-    await Promise.all(
+    await zip(
         // List of Observables that complete after each repository is successfully fetched.
-        ensureRepos.map(repoName => {
+        ...ensureRepos.map(repoName => {
             // Track number of retries for this repository.
             let retries = 0
             const maxRetries = 10
@@ -62,9 +62,8 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                         )
                     )
                 )
-                .toPromise()
         })
-    )
+    ).toPromise()
 }
 
 export async function ensureExternalService(
