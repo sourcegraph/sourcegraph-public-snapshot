@@ -941,7 +941,10 @@ export async function importLsif(
         try {
             await importer.insert(element)
         } catch (e) {
-            throw Object.assign(new Error(`Failed to process line:\n${i}`), { e })
+            throw Object.assign(
+                new Error(`Failed to process line #${i + 1} (${JSON.stringify(element)}): ${e && e.message}`),
+                { status: 422 }
+            )
         }
 
         i++

@@ -1,5 +1,5 @@
 import promClient from 'prom-client'
-import { GenericCache } from './cache'
+import { GenericCache, createBarrierPromise } from './cache'
 import * as sinon from 'sinon'
 
 describe('GenericCache', () => {
@@ -42,7 +42,7 @@ describe('GenericCache', () => {
             factory.onCall(i).returns(Promise.resolve(value))
         }
 
-        const cache = new GenericCache<string, string>(5, () => 1, () => {}, testMetrics)
+        const cache = new GenericCache<string, string>(5, () => 1, () => Promise.resolve(), testMetrics)
         for (const value of values) {
             const returnValue = await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
             expect(returnValue).toBe(value)
@@ -54,10 +54,10 @@ describe('GenericCache', () => {
 
     it('should asynchronously resolve cache values', async () => {
         const factory = sinon.stub<string[], Promise<string>>()
-        const { wait, done } = createBarrier()
+        const { wait, done } = createBarrierPromise()
         factory.returns(wait.then(() => 'bar'))
 
-        const cache = new GenericCache<string, string>(5, () => 1, () => {}, testMetrics)
+        const cache = new GenericCache<string, string>(5, () => 1, () => Promise.resolve(), testMetrics)
         const p1 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p2 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p3 = cache.withValue('foo', factory, v => Promise.resolve(v))
@@ -75,8 +75,12 @@ describe('GenericCache', () => {
             'foo', // foo baz (drops bar)
         ]
 
-        const { wait, done } = createBarrier()
-        const disposer = sinon.spy(done)
+        const { wait, done } = createBarrierPromise()
+        const disposer = sinon.spy(() => {
+            done()
+            return Promise.resolve()
+        })
+
         const cache = new GenericCache<string, string>(2, () => 1, disposer, testMetrics)
 
         for (const value of values) {
@@ -102,7 +106,7 @@ describe('GenericCache', () => {
             factory.onCall(i).returns(Promise.resolve(value))
         }
 
-        const cache = new GenericCache<number, number>(5, v => v, () => {}, testMetrics)
+        const cache = new GenericCache<number, number>(5, v => v, () => Promise.resolve(), testMetrics)
         for (const value of values) {
             await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
         }
@@ -111,8 +115,12 @@ describe('GenericCache', () => {
     })
 
     it('should not evict referenced cache entries', async () => {
-        const { wait, done } = createBarrier()
-        const disposer = sinon.spy(done)
+        const { wait, done } = createBarrierPromise()
+        const disposer = sinon.spy(() => {
+            done()
+            return Promise.resolve()
+        })
+
         const cache = new GenericCache<string, string>(5, () => 1, disposer, testMetrics)
 
         const fooResolver = () => Promise.resolve('foo')
@@ -129,11 +137,11 @@ describe('GenericCache', () => {
                     await cache.withValue('bonk', bonkResolver, async () => {
                         await cache.withValue('quux', quuxResolver, async () => {
                             // Sixth entry, but nothing to evict (all held)
-                            await cache.withValue('honk', honkResolver, () => Promise.resolve(null))
+                            await cache.withValue('honk', honkResolver, () => Promise.resolve())
 
                             // Seventh entry, honk can now be removed as it's the least
                             // recently used value that's not currently under a read lock.
-                            await cache.withValue('ronk', ronkResolver, () => Promise.resolve(null))
+                            await cache.withValue('ronk', ronkResolver, () => Promise.resolve())
                         })
                     })
                 })
@@ -151,13 +159,63 @@ describe('GenericCache', () => {
             }
         )
     })
-})
 
-/**
- * Return a barrier promise that blocks until the done function is called.
- */
-function createBarrier(): { wait: Promise<void>; done: () => void } {
-    let done!: () => void
-    const wait = new Promise<void>(resolve => (done = resolve))
-    return { wait, done }
-}
+    it('should dispose busted keys', async () => {
+        const { wait, done } = createBarrierPromise()
+        const disposer = sinon.spy(() => {
+            done()
+            return Promise.resolve()
+        })
+
+        const cache = new GenericCache<string, string>(5, () => 1, disposer, testMetrics)
+
+        const factory = sinon.stub<string[], Promise<string>>()
+        factory.returns(Promise.resolve('foo'))
+
+        // Construct then bust a same key
+        await cache.withValue('foo', factory, () => Promise.resolve())
+        await cache.bustKey('foo')
+        await wait
+
+        // Ensure value was disposed
+        expect(disposer.args).toEqual([['foo']])
+
+        // Ensure entry was removed
+        expect(cache.withValue('foo', factory, () => Promise.resolve()))
+        expect(factory.args).toHaveLength(2)
+    })
+
+    it('should wait to dispose busted keys that are in use', async () => {
+        const { wait: wait1, done: done1 } = createBarrierPromise()
+        const { wait: wait2, done: done2 } = createBarrierPromise()
+
+        const resolver = () => Promise.resolve('foo')
+        const disposer = sinon.spy(() => {
+            done1()
+            return Promise.resolve()
+        })
+
+        const cache = new GenericCache<string, string>(5, () => 1, disposer, testMetrics)
+
+        // Create a cache entry for 'foo' that blocks on done2
+        const p1 = cache.withValue('foo', resolver, () => wait2)
+
+        // Attempt to bust the cache key that's used in the blocking promise above
+        const p2 = cache.bustKey('foo')
+
+        // Ensure that p1 and p2 are blocked on each other
+        const timedResolver = new Promise(resolve => setTimeout(() => resolve('$'), 10))
+        const winner = await Promise.race([p1, p2, timedResolver])
+        expect(winner).toEqual('$')
+
+        // Ensure dispose hasn't been called
+        expect(disposer.args).toHaveLength(0)
+
+        // Unblock p1
+        done2()
+
+        // Show that all promises are unblocked and dispose was called
+        await Promise.all([p1, p2, wait1])
+        expect(disposer.args).toEqual([['foo']])
+    })
+})
