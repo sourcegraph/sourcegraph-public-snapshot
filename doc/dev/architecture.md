@@ -114,7 +114,7 @@ Sourcegraph is composed of several smaller services (gitserver, repo-updater, sy
 
 - Does the code belong in an existing service?
     - If yes, it most likely belongs in that service container. For example, don't introduce a separate container to cleanup gitserver repositories if gitserver itself could reasonably perform that same work.
-- Instead of being a seperate service, could it reasonably live inside the frontend as a singleton background worker?
+- Instead of being a separate service, could it reasonably live inside the frontend as a singleton background worker?
 - Does it rely heavily on the APIs that exist in another service?
 - If done in an existing container, would it substantially increase the complexity of the task?
     - For example, the service you are writing _must_ be written in language X and it is impossible/very difficult to integrate language X into one of our existing Go services.
