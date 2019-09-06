@@ -90,7 +90,7 @@ export class Database {
             const definitionResults = await this.findResult(range.definitionResult)
 
             // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
-            // Not sure of a better way to do this right now until we work thorugh how to patch
+            // Not sure of a better way to do this right now until we work through how to patch
             // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
 
             if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
@@ -158,7 +158,7 @@ export class Database {
         const monikers = sortMonikers(range.monikers.map(id => assertDefined(id, 'monikers', document.monikers)))
 
         // Next, we search the references table of our own database - this search is necessary,
-        // but may be unintuitive, but remember that a 'Find References' operation on a reference
+        // but may be un-intuitive, but remember that a 'Find References' operation on a reference
         // should also return references to the definition. These are not necessarily fully linked
         // in the LSIF data.
 
@@ -222,7 +222,7 @@ export class Database {
      *
      * @param path The path of the document for this query.
      * @param document The document object for this query.
-     * @param resultData A lsit of range ids and the document they belong to.
+     * @param resultData A list of range ids and the document they belong to.
      */
     private async findQualifiedRanges(
         path: string,
@@ -263,7 +263,7 @@ export class Database {
     }
 
     /**
-     * Query the definitions or referencess table of `db` for items that match the given moniker.
+     * Query the definitions or references table of `db` for items that match the given moniker.
      * Convert each result into an LSP location. The `pathTransformer` function is invoked on each
      * result item to modify the resulting locations.
      *

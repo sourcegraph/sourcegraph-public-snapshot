@@ -370,7 +370,6 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
     constructor(max: number) {
         super(
             max,
-            // TODO - determine memory size
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
             (): Promise<void> => Promise.resolve()

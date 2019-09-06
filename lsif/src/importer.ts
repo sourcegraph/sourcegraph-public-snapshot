@@ -279,7 +279,7 @@ export async function importLsif(
     // Ensure packages are unique
     const exportedPackages = uniqWith(packageHashes, isEqual)
 
-    // Gather all imporpted moniker identifiers along with their package
+    // Gather all imported moniker identifiers along with their package
     // information. These will be the packages that are a dependency of the
     // repository represented by this LSIF dump.
 
@@ -296,7 +296,7 @@ export async function importLsif(
     }
 
     // Create a unique list of package information and imported symbol pairs.
-    // Ensure that each pacakge is represented only once in the list.
+    // Ensure that each package is represented only once in the list.
 
     const importedReferences = Array.from(packages.keys()).map(key => ({
         package: assertDefined(key, 'package', packages),
