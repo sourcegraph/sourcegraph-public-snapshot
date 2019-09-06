@@ -199,7 +199,8 @@ func BenchmarkSearchResults(b *testing.B) {
 }
 
 func BenchmarkIntegrationSearchResults(b *testing.B) {
-	ctx := dbtesting.TestContext(b)
+	dbtesting.SetupGlobalTestDB(b)
+	ctx := context.Background()
 
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
@@ -416,26 +417,26 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{`\.graphql$|\.gql$`},
+			IncludePatterns:        []string{`\.graphql$|\.gql$|\.graphqls$`},
 		},
 		"p lang:graphql file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{"f", `\.graphql$|\.gql$`},
+			IncludePatterns:        []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
 		},
 		"p -lang:graphql file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
 			IncludePatterns:        []string{"f"},
-			ExcludePattern:         `\.graphql$|\.gql$`,
+			ExcludePattern:         `\.graphql$|\.gql$|\.graphqls$`,
 		},
 		"p -lang:graphql -file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			ExcludePattern:         `f|(\.graphql$|\.gql$)`,
+			ExcludePattern:         `f|(\.graphql$|\.gql$|\.graphqls$)`,
 		},
 	}
 	for queryStr, want := range tests {

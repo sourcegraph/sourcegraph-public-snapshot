@@ -43,11 +43,10 @@ func GetObject(ctx context.Context, repo gitserver.Repo, objectName string) (oid
 	if err != nil {
 		return oid, "", err
 	}
-	oidBytes, err := hex.DecodeString(string(sha))
+	oid, err = decodeOID(string(sha))
 	if err != nil {
 		return oid, "", err
 	}
-	copy(oid[:], oidBytes)
 
 	// Check the SHA is safe (as an extra precaution).
 	if err := checkSpecArgSafety(string(sha)); err != nil {
@@ -61,4 +60,14 @@ func GetObject(ctx context.Context, repo gitserver.Repo, objectName string) (oid
 	}
 	objectType = ObjectType(string(bytes.TrimSpace(out)))
 	return oid, objectType, nil
+}
+
+func decodeOID(sha string) (OID, error) {
+	oidBytes, err := hex.DecodeString(sha)
+	if err != nil {
+		return OID{}, err
+	}
+	var oid OID
+	copy(oid[:], oidBytes)
+	return oid, nil
 }

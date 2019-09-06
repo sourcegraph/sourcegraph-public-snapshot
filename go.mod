@@ -1,5 +1,7 @@
 module github.com/sourcegraph/sourcegraph
 
+go 1.13
+
 require (
 	cloud.google.com/go v0.44.3
 	github.com/DataDog/zstd v1.4.1 // indirect
@@ -53,7 +55,6 @@ require (
 	github.com/go-critic/go-critic v0.3.4 // indirect
 	github.com/go-delve/delve v1.3.0
 	github.com/go-redsync/redsync v1.3.0
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.3.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.6.1
@@ -87,7 +88,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/goware/urlx v0.3.1
-	github.com/graph-gophers/graphql-go v0.0.0-20190902095048-c760ee3fa257
+	github.com/graph-gophers/graphql-go v0.0.0-20190902214650-641ae197eec7
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-retryablehttp v0.6.2 // indirect
@@ -167,6 +168,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.4.0 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
+	github.com/src-d/enry/v2 v2.1.0
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/stripe/stripe-go v62.8.2+incompatible
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
@@ -212,7 +214,6 @@ require (
 
 replace (
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190821144538-4e4eef546d3e
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

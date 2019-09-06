@@ -40,12 +40,12 @@ type namespaceResolver struct {
 	Namespace
 }
 
-func (r *namespaceResolver) ToOrg() (*OrgResolver, bool) {
+func (r namespaceResolver) ToOrg() (*OrgResolver, bool) {
 	n, ok := r.Namespace.(*OrgResolver)
 	return n, ok
 }
 
-func (r *namespaceResolver) ToUser() (*UserResolver, bool) {
+func (r namespaceResolver) ToUser() (*UserResolver, bool) {
 	n, ok := r.Namespace.(*UserResolver)
 	return n, ok
 }

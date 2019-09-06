@@ -1,9 +1,11 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -78,7 +80,9 @@ func TestRepos_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -103,7 +107,9 @@ func TestRepos_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -140,7 +146,9 @@ func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {

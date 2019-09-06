@@ -2,7 +2,6 @@
 package dbtesting
 
 import (
-	"context"
 	"database/sql"
 	"hash/fnv"
 	"io"
@@ -15,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 )
 
@@ -38,7 +36,7 @@ func useFastPasswordMocks() {
 	}
 }
 
-// BeforeTest functions are called before each test is run (by TestContext).
+// BeforeTest functions are called before each test is run (by SetupGlobalTestDB).
 var BeforeTest []func()
 
 // DBNameSuffix must be set by DB test packages at init time to a value that is unique among all
@@ -51,13 +49,14 @@ var (
 	connectErr  error
 )
 
-// TestContext constructs a new context that holds a temporary test DB
-// handle and other test configuration.
+// SetupGlobalTestDB creates a temporary test DB handle, sets
+// `dbconn.Global` to it and setups other test configuration.
 //
-// Callers (other than github.com/sourcegraph/sourcegraph/cmd/frontend/db) must set a name in this
-// package's DBNameSuffix var that is unique among all other test packages that call TestContext, so
-// that each package's tests run in separate DBs and do not conflict.
-func TestContext(t testing.TB) context.Context {
+// Callers (other than github.com/sourcegraph/sourcegraph/cmd/frontend/db) must
+// set a name in this package's DBNameSuffix var that is unique among all other
+// test packages that call SetupGlobalTestDB, so that each package's
+// tests run in separate DBs and do not conflict.
+func SetupGlobalTestDB(t testing.TB) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
@@ -75,16 +74,11 @@ func TestContext(t testing.TB) context.Context {
 		t.Fatal("Could not connect to DB", connectErr)
 	}
 
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
-
 	for _, f := range BeforeTest {
 		f()
 	}
 
 	emptyDBPreserveSchema(t, dbconn.Global)
-
-	return ctx
 }
 
 func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
