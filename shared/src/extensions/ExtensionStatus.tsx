@@ -1,7 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import * as React from 'react'
-import { UncontrolledPopover } from 'reactstrap'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExecutableExtension } from '../api/client/services/extensionsService'
@@ -10,7 +8,9 @@ import { ExtensionsControllerProps } from './controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps<'sideloadedExtensionURL'> {
+interface Props
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'sideloadedExtensionURL'> {
     link: React.ComponentType<{ id: string }>
 }
 
@@ -67,7 +67,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="extension-status card border-0">
-                <div className="card-header">Active extensions (DEBUG)</div>
+                <div className="card-header">Active extensions</div>
                 {this.state.extensionsOrError ? (
                     isErrorLike(this.state.extensionsOrError) ? (
                         <div className="alert alert-danger mb-0 rounded-0">{this.state.extensionsOrError.message}</div>
@@ -132,6 +132,11 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                         </div>
                     )}
                 </div>
+                <p className="card-body small border-top mb-0">
+                    To hide this developer console, run{' '}
+                    <code className="small">localStorage.debug=false;location.reload()</code> in the browser devtools
+                    JavaScript console.
+                </p>
             </div>
         )
     }
@@ -146,21 +151,5 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
 
     private clearSideloadedExtensionURL = () => {
         this.props.platformContext.sideloadedExtensionURL.next(null)
-    }
-}
-
-/** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export class ExtensionStatusPopover extends React.PureComponent<Props> {
-    public render(): JSX.Element | null {
-        return (
-            <>
-                <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
-                    <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
-                </button>
-                <UncontrolledPopover placement="auto-end" target="extension-status-popover">
-                    <ExtensionStatus {...this.props} />
-                </UncontrolledPopover>
-            </>
-        )
     }
 }

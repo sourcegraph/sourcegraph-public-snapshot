@@ -20,7 +20,6 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
 import { KEYBOARD_SHORTCUT_SHOW_HELP, KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
@@ -172,7 +171,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 platformContext={props.platformContext}
                 history={props.history}
             />
-            <GlobalDebug {...props} />
         </div>
     )
 }
