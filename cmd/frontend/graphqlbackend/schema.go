@@ -343,7 +343,7 @@ type Mutation {
     deleteSavedSearch(id: ID!): EmptyResponse
 }
 
-# A campaign is a collection of threads.
+# A collection of threads.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
