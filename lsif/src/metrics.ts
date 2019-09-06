@@ -53,6 +53,11 @@ export const XREPO_INSERTION_ERRORS_COUNTER = new promClient.Counter({
 //
 // Cache Metrics
 
+export const CONNECTION_CACHE_CAPACITY_GAUGE = new promClient.Gauge({
+    name: 'lsif_connection_cache_capacity',
+    help: 'The maximum number of open SQLite handles.',
+})
+
 export const CONNECTION_CACHE_SIZE_GAUGE = new promClient.Gauge({
     name: 'lsif_connection_cache_size',
     help: 'The current number of open SQLite handles.',
@@ -62,6 +67,11 @@ export const CONNECTION_CACHE_EVENTS_COUNTER = new promClient.Counter({
     name: 'lsif_connection_cache_events_total',
     help: 'The number of connection cache hits, misses, and evictions.',
     labelNames: ['type'],
+})
+
+export const DOCUMENT_CACHE_CAPACITY_GAUGE = new promClient.Gauge({
+    name: 'lsif_document_cache_capacity',
+    help: 'The maximum number of documents loaded in memory.',
 })
 
 export const DOCUMENT_CACHE_SIZE_GAUGE = new promClient.Gauge({

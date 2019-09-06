@@ -7,6 +7,7 @@ import { ConnectionCache, DocumentCache } from './cache'
 import { createBackend, ERRNOLSIFDATA } from './backend'
 import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
+import { DOCUMENT_CACHE_CAPACITY_GAUGE, CONNECTION_CACHE_CAPACITY_GAUGE } from './metrics'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -18,12 +19,12 @@ const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
  * value may be exceeded for a short period if many handles are held
  * at once.
  */
-const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 1000)
+const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 1000)
 
 /**
  * The maximum number of documents that can be held in memory at once.
  */
-const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
+const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1000)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -39,8 +40,12 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
-    const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
+    // Update cache capacities on startup
+    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
+    DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
+
+    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
+    const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache)
     const app = express()
     app.use(morgan('tiny'))
