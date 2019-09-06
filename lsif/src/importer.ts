@@ -245,7 +245,7 @@ export async function importLsif(
         id: 1,
         lsifVersion: correlator.lsifVersion,
         sourcegraphVersion: INTERNAL_LSIF_VERSION,
-        numResultChunks: numResultChunks,
+        numResultChunks,
     })
 
     // Ensure all records are written
