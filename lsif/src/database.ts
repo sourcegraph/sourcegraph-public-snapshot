@@ -1,16 +1,25 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { isEqual, uniqWith } from 'lodash'
-import { Connection } from 'typeorm'
-import { decodeJSON } from './encoding'
-import { MonikerData, RangeData, DocumentData, ResultChunkData } from './entities'
-import { Id } from 'lsif-protocol'
-import { makeFilename } from './backend'
-import { XrepoDatabase } from './xrepo'
-import { ConnectionCache, DocumentCache, ResultChunkCache, EncodedJsonCacheValue } from './cache'
-import { DefinitionModel, DocumentModel, ReferenceModel, MetaModel, ResultChunkModel } from './models.database'
-import { PackageModel } from './models.xrepo'
 import { assertDefined, hashKey } from './util'
+import { Connection } from 'typeorm'
+import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
+import { decodeJSON } from './encoding'
 import { DefaultMap } from './default-map'
+import {
+    DefinitionModel,
+    DocumentData,
+    DocumentModel,
+    MetaModel,
+    MonikerData,
+    RangeData,
+    ReferenceModel,
+    ResultChunkData,
+    ResultChunkModel,
+} from './models.database'
+import { Id } from 'lsif-protocol'
+import { isEqual, uniqWith } from 'lodash'
+import { makeFilename } from './backend'
+import { PackageModel } from './models.xrepo'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * A partially-resolved qualified range.

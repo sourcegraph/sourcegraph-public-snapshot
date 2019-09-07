@@ -2,7 +2,7 @@ import RelateUrl from 'relateurl'
 import { assertDefined } from './util'
 import { DefaultMap } from './default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
-import { MonikerData, PackageInformationData, RangeData } from './entities'
+import { MonikerData, PackageInformationData, RangeData } from './models.database'
 import {
     Id,
     VertexLabels,

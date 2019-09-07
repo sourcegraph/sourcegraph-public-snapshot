@@ -1,8 +1,18 @@
 import { assertDefined, assertId, hashKey, readEnvInt } from './util'
 import { Correlator, ResultSetData } from './correlator'
 import { DefaultMap } from './default-map'
-import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
-import { DocumentData, MonikerData, PackageInformationData, RangeData, QualifiedRangeId } from './entities'
+import {
+    DefinitionModel,
+    DocumentData,
+    DocumentModel,
+    MetaModel,
+    MonikerData,
+    PackageInformationData,
+    QualifiedRangeId,
+    RangeData,
+    ReferenceModel,
+    ResultChunkModel,
+} from './models.database'
 import { Edge, Id, MonikerKind, Vertex } from 'lsif-protocol'
 import { encodeJSON } from './encoding'
 import { EntityManager } from 'typeorm'

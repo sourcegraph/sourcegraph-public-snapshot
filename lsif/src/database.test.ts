@@ -1,7 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { comparePosition, findRange, makeRemoteUri, mapRangesToLocations } from './database'
 import { Id } from 'lsif-protocol'
-import { RangeData } from './entities'
+import { RangeData } from './models.database'
 
 describe('findRange', () => {
     it('should find all ranges in list', () => {

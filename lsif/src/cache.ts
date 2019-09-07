@@ -1,5 +1,5 @@
 import { Connection, createConnection, EntityManager } from 'typeorm'
-import { DocumentData, ResultChunkData } from './entities'
+import { DocumentData, ResultChunkData } from './models.database'
 import Yallist from 'yallist'
 
 /**
