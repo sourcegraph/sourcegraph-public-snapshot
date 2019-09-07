@@ -231,6 +231,8 @@
 // 1528395583_add_default_repos_primary_key.up.sql (67B)
 // 1528395584_add_campaigns_table.down.sql (50B)
 // 1528395584_add_campaigns_table.up.sql (822B)
+// 1528395585_go-1.13-dummy-migration.down.sql (109B)
+// 1528395585_go-1.13-dummy-migration.up.sql (109B)
 
 package migrations
 
@@ -4919,6 +4921,46 @@ func _1528395584_add_campaigns_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395585_go113DummyMigrationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xc6\xbd\x0e\xc2\x20\x10\x00\xe0\xdd\xa7\xb8\xc4\x19\x31\xb4\x1d\xea\xee\x83\x20\x12\x20\xf6\xb8\xcb\xfd\xc4\xf8\xf6\xce\xdd\xbe\x10\xe0\x89\x6c\x3f\xc0\xd1\x24\xdb\xa0\x09\x46\xf0\x25\xf9\x64\x21\x9f\x6f\xe8\x66\xac\x8f\x18\xdb\xb0\xee\xaf\x5b\x21\x8c\x4a\x2e\xa5\x36\xc9\xdc\x4f\x66\x3f\x8e\xb8\xad\x7b\xba\x0e\x55\xaf\x85\x10\xeb\xb4\xb0\xa5\xfd\x9e\xd6\xb4\x2c\x97\x7f\x00\x00\x00\xff\xff\x54\xa6\x6d\x03\x6d\x00\x00\x00")
+
+func _1528395585_go113DummyMigrationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_go113DummyMigrationDownSql,
+		"1528395585_go-1.13-dummy-migration.down.sql",
+	)
+}
+
+func _1528395585_go113DummyMigrationDownSql() (*asset, error) {
+	bytes, err := _1528395585_go113DummyMigrationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_go-1.13-dummy-migration.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4e, 0xc1, 0xe7, 0x92, 0x39, 0xb1, 0x7d, 0x39, 0x45, 0x6c, 0xa0, 0x14, 0x5b, 0x25, 0xae, 0xfd, 0xc5, 0x4b, 0x81, 0x4, 0x5, 0x4e, 0xca, 0x35, 0x9a, 0xfd, 0x26, 0x73, 0x58, 0x8a, 0x28, 0xf4}}
+	return a, nil
+}
+
+var __1528395585_go113DummyMigrationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xc6\xbd\x0e\xc2\x20\x10\x00\xe0\xdd\xa7\xb8\xc4\x19\x31\xb4\x1d\xea\xee\x83\x20\x12\x20\xf6\xb8\xcb\xfd\xc4\xf8\xf6\xce\xdd\xbe\x10\xe0\x89\x6c\x3f\xc0\xd1\x24\xdb\xa0\x09\x46\xf0\x25\xf9\x64\x21\x9f\x6f\xe8\x66\xac\x8f\x18\xdb\xb0\xee\xaf\x5b\x21\x8c\x4a\x2e\xa5\x36\xc9\xdc\x4f\x66\x3f\x8e\xb8\xad\x7b\xba\x0e\x55\xaf\x85\x10\xeb\xb4\xb0\xa5\xfd\x9e\xd6\xb4\x2c\x97\x7f\x00\x00\x00\xff\xff\x54\xa6\x6d\x03\x6d\x00\x00\x00")
+
+func _1528395585_go113DummyMigrationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_go113DummyMigrationUpSql,
+		"1528395585_go-1.13-dummy-migration.up.sql",
+	)
+}
+
+func _1528395585_go113DummyMigrationUpSql() (*asset, error) {
+	bytes, err := _1528395585_go113DummyMigrationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_go-1.13-dummy-migration.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4e, 0xc1, 0xe7, 0x92, 0x39, 0xb1, 0x7d, 0x39, 0x45, 0x6c, 0xa0, 0x14, 0x5b, 0x25, 0xae, 0xfd, 0xc5, 0x4b, 0x81, 0x4, 0x5, 0x4e, 0xca, 0x35, 0x9a, 0xfd, 0x26, 0x73, 0x58, 0x8a, 0x28, 0xf4}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5471,6 +5513,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395584_add_campaigns_table.down.sql": _1528395584_add_campaigns_tableDownSql,
 
 	"1528395584_add_campaigns_table.up.sql": _1528395584_add_campaigns_tableUpSql,
+
+	"1528395585_go-1.13-dummy-migration.down.sql": _1528395585_go113DummyMigrationDownSql,
+
+	"1528395585_go-1.13-dummy-migration.up.sql": _1528395585_go113DummyMigrationUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5745,6 +5791,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395583_add_default_repos_primary_key.up.sql":             {_1528395583_add_default_repos_primary_keyUpSql, map[string]*bintree{}},
 	"1528395584_add_campaigns_table.down.sql":                     {_1528395584_add_campaigns_tableDownSql, map[string]*bintree{}},
 	"1528395584_add_campaigns_table.up.sql":                       {_1528395584_add_campaigns_tableUpSql, map[string]*bintree{}},
+	"1528395585_go-1.13-dummy-migration.down.sql":                 {_1528395585_go113DummyMigrationDownSql, map[string]*bintree{}},
+	"1528395585_go-1.13-dummy-migration.up.sql":                   {_1528395585_go113DummyMigrationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
