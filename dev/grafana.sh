@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# Description: Dashboards and graphs for grafana metrics.
+# Description: Dashboards and graphs for Grafana metrics.
 #
 
 set -euf -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-GRAFANA_DISK="${HOME}/sourcegraph-docker/grafana-disk"
+GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 
 CID_FILE="${GRAFANA_DISK}/grafana.cid"
 
@@ -23,10 +23,10 @@ function finish {
 }
 trap finish EXIT
 
-CONFIG_SUB_DIR="internal"
+CONFIG_SUB_DIR="all"
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-   CONFIG_SUB_DIR="local"
+   CONFIG_SUB_DIR="linux"
 fi
 
 docker run --rm  --cidfile ${CID_FILE} \

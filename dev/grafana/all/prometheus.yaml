@@ -1,3 +1,4 @@
+# Configuration for all non-Linux platforms.
 apiVersion: 1
 
 datasources:

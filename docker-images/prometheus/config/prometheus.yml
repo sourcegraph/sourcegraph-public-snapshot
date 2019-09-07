@@ -24,19 +24,6 @@ scrape_configs:
     static_configs:
         - targets: ["localhost:9090"]
 
-  # Scrape Docker for metrics.
-  # You will need to configure docker for this to work: https://docs.docker.com/config/thirdparty/prometheus/#configure-docker
-  - job_name: "docker"
-    static_configs:
-      # For Linux, use this line:
-      #- targets: ["localhost:9323"]
-      #
-      # For Mac, use this line:
-      #- targets: ["docker.for.mac.host.internal:9323"]
-      #
-      # For Windows, use this line:
-      #- targets: ["docker.for.win.localhost:9090"]
-
   - job_name: "sg"
     file_sd_configs:
       - files:

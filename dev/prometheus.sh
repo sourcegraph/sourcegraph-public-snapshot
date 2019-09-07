@@ -4,7 +4,7 @@ set -euf -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-PROMETHEUS_DISK="${HOME}/sourcegraph-docker/prometheus-disk"
+PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
 CID_FILE="${PROMETHEUS_DISK}/prometheus.cid"
 
 mkdir -p ${PROMETHEUS_DISK}/logs
@@ -20,11 +20,11 @@ function finish {
 trap finish EXIT
 
 NET_ARG=""
-CONFIG_SUB_DIR="internal"
+CONFIG_SUB_DIR="all"
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
    NET_ARG="--net=host"
-   CONFIG_SUB_DIR="local"
+   CONFIG_SUB_DIR="linux"
 fi
 
 # Description: Prometheus collects metrics and aggregates them into graphs.
