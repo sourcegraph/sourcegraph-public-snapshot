@@ -107,7 +107,7 @@ export async function importLsif(
     await referenceInserter.flush()
 
     // Return correlation data to populate xrepo database
-    return prepareCorrelationData(correlator)
+    return { packages: getPackages(correlator), references: getReferences(correlator) }
 }
 
 /**
@@ -291,7 +291,7 @@ async function populateDefinitionsAndReferencesTables(
         }
     }
 
-    // Insert definitions and references records.
+    // Insert definitions and references records
     await insertMonikerRanges(correlator.definitionData, definitionMonikers, definitionInserter)
     await insertMonikerRanges(correlator.referenceData, referenceMonikers, referenceInserter)
 }
@@ -316,56 +316,55 @@ async function populateMetadataTable(
 }
 
 /**
- * Get the data needed to add this dump's package and dependency information into the
- * xrepo database.
+ * Gather all package information that is referenced by an exported
+ * moniker. These will be the packages that are provided by the repository
+ * represented by this LSIF dump.
  */
-function prepareCorrelationData(correlator: Correlator): { packages: Package[]; references: SymbolReferences[] } {
-    // Gather all package information that is referenced by an exported
-    // moniker. These will be the packages that are provided by the repository
-    // represented by this LSIF dump.
-
-    const packageHashes: Package[] = []
-    for (const monikerId of correlator.exportedMonikers) {
-        const source = mustGet(correlator.monikerData, monikerId, 'moniker')
+function getPackages(correlator: Correlator): Package[] {
+    const packages: Package[] = []
+    for (const id of correlator.exportedMonikers) {
+        const source = mustGet(correlator.monikerData, id, 'moniker')
         const packageInformationId = assertId(source.packageInformationId)
         const packageInfo = mustGet(correlator.packageInformationData, packageInformationId, 'packageInformation')
-
-        packageHashes.push({
+        packages.push({
             scheme: source.scheme,
             name: packageInfo.name,
             version: packageInfo.version,
         })
     }
 
-    // Ensure packages are unique
-    const exportedPackages = uniqWith(packageHashes, isEqual)
+    return uniqWith(packages, isEqual)
+}
 
-    // Gather all imported moniker identifiers along with their package
-    // information. These will be the packages that are a dependency of the
-    // repository represented by this LSIF dump.
-
-    const packages = new Map<string, Package>()
-    const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
-    for (const monikerId of correlator.importedMonikers) {
-        const source = mustGet(correlator.monikerData, monikerId, 'moniker')
+/**
+ * Gather all imported moniker identifiers along with their package
+ * information. These will be the packages that are a dependency of the
+ * repository represented by this LSIF dump.
+ */
+function getReferences(correlator: Correlator): SymbolReferences[] {
+    const packageIdentifiers: Map<string, string[]> = new Map()
+    for (const id of correlator.importedMonikers) {
+        const source = mustGet(correlator.monikerData, id, 'moniker')
         const packageInformationId = assertId(source.packageInformationId)
         const packageInfo = mustGet(correlator.packageInformationData, packageInformationId, 'packageInformation')
+        const pkg = JSON.stringify({
+            scheme: source.scheme,
+            name: packageInfo.name,
+            version: packageInfo.version,
+        })
 
-        const key = `${source.scheme}::${packageInfo.name}::${packageInfo.version}`
-        packages.set(key, { scheme: source.scheme, name: packageInfo.name, version: packageInfo.version })
-        packageIdentifiers.getOrDefault(key).push(source.identifier)
+        const list = packageIdentifiers.get(pkg)
+        if (list) {
+            list.push(source.identifier)
+        } else {
+            packageIdentifiers.set(pkg, [source.identifier])
+        }
     }
 
-    // Create a unique list of package information and imported symbol pairs.
-    // Ensure that each package is represented only once in the list.
-
-    const importedReferences = Array.from(packages.keys()).map(key => ({
-        package: mustGet(packages, key, 'package'),
-        identifiers: mustGet(packageIdentifiers, key, 'packageIdentifier'),
+    return Array.from(packageIdentifiers).map(([key, identifiers]) => ({
+        package: JSON.parse(key) as Package,
+        identifiers,
     }))
-
-    // Kick back the xrepo data needed to be inserted into the correlation database
-    return { packages: exportedPackages, references: importedReferences }
 }
 
 /**
