@@ -21,13 +21,11 @@ export function createRemoteLocation(
     endLine: number,
     endCharacter: number
 ): lsp.Location {
-    return createLocation(
-        `git://${repository}?${createCommit(repository)}#${path}`,
-        startLine,
-        startCharacter,
-        endLine,
-        endCharacter
-    )
+    const url = new URL(`git://${repository}`)
+    url.search = createCommit(repository)
+    url.hash = path
+
+    return createLocation(url.href, startLine, startCharacter, endLine, endCharacter)
 }
 
 export function createCommit(repository: string): string {
