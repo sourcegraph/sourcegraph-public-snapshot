@@ -212,8 +212,8 @@ export class Database {
     // Helper Functions
 
     /**
-     * Convert a set of range results (from a definition or reference query) into a set
-     * of LSP ranges. Each range result holds the range identifier as well as the document
+     * Convert a set of range-document pairs (from a definition or reference query) into
+     * a set of LSP ranges. Each pair holds the range identifier as well as the document
      * path. For document paths matching the loaded document, find the range data locally.
      * For all other paths, find the document in this database and find the range in that
      * document.
