@@ -71,7 +71,7 @@ export class GenericCache<K, V> {
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
-        private disposeFunction: (value: V) => Promise<void>
+        private disposeFunction: (value: V) => Promise<void> | void
     ) {}
 
     /**

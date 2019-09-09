@@ -25,7 +25,7 @@ describe('GenericCache', () => {
             factory.onCall(i).returns(Promise.resolve(value))
         }
 
-        const cache = new GenericCache<string, string>(5, () => 1, () => Promise.resolve())
+        const cache = new GenericCache<string, string>(5, () => 1, () => {})
         for (const value of values) {
             const returnValue = await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
             expect(returnValue).toBe(value)
@@ -40,7 +40,7 @@ describe('GenericCache', () => {
         const { wait, done } = createBarrierPromise()
         factory.returns(wait.then(() => 'bar'))
 
-        const cache = new GenericCache<string, string>(5, () => 1, () => Promise.resolve())
+        const cache = new GenericCache<string, string>(5, () => 1, () => {})
         const p1 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p2 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p3 = cache.withValue('foo', factory, v => Promise.resolve(v))
@@ -59,11 +59,7 @@ describe('GenericCache', () => {
         ]
 
         const { wait, done } = createBarrierPromise()
-        const disposer = sinon.spy(() => {
-            done()
-            return Promise.resolve()
-        })
-
+        const disposer = sinon.spy(done)
         const cache = new GenericCache<string, string>(2, () => 1, disposer)
 
         for (const value of values) {
@@ -89,7 +85,7 @@ describe('GenericCache', () => {
             factory.onCall(i).returns(Promise.resolve(value))
         }
 
-        const cache = new GenericCache<number, number>(5, v => v, () => Promise.resolve())
+        const cache = new GenericCache<number, number>(5, v => v, () => {})
         for (const value of values) {
             await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
         }
@@ -99,11 +95,7 @@ describe('GenericCache', () => {
 
     it('should not evict referenced cache entries', async () => {
         const { wait, done } = createBarrierPromise()
-        const disposer = sinon.spy(() => {
-            done()
-            return Promise.resolve()
-        })
-
+        const disposer = sinon.spy(done)
         const cache = new GenericCache<string, string>(5, () => 1, disposer)
 
         const fooResolver = () => Promise.resolve('foo')
@@ -145,11 +137,7 @@ describe('GenericCache', () => {
 
     it('should dispose busted keys', async () => {
         const { wait, done } = createBarrierPromise()
-        const disposer = sinon.spy(() => {
-            done()
-            return Promise.resolve()
-        })
-
+        const disposer = sinon.spy(done)
         const cache = new GenericCache<string, string>(5, () => 1, disposer)
 
         const factory = sinon.stub<string[], Promise<string>>()
@@ -173,11 +161,7 @@ describe('GenericCache', () => {
         const { wait: wait2, done: done2 } = createBarrierPromise()
 
         const resolver = () => Promise.resolve('foo')
-        const disposer = sinon.spy(() => {
-            done1()
-            return Promise.resolve()
-        })
-
+        const disposer = sinon.spy(done1)
         const cache = new GenericCache<string, string>(5, () => 1, disposer)
 
         // Create a cache entry for 'foo' that blocks on done2
