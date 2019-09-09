@@ -8,7 +8,6 @@ import { constant } from 'lodash'
 
 interface Props {
     location: H.Location
-    history: H.History
     type: SearchType
     query: string
 }
@@ -20,17 +19,16 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
     repo: 'Repos',
 }
 
-export const SearchResultTabHeader: React.FunctionComponent<Props> = props => {
-    const q = toggleSearchType(props.query, props.type)
+export const SearchResultTabHeader: React.FunctionComponent<Props> = ({ location, type, query }) => {
+    const q = toggleSearchType(query, type)
     const builtURLQuery = buildSearchURLQuery(q)
 
     const isActiveFunc = constant(location.search === `?${builtURLQuery}`)
-    const type = props.type
     return (
         <li className="nav-item e2e-search-result-tab">
             <NavLink
                 to={{ pathname: '/search', search: builtURLQuery }}
-                className={`nav-link e2e-search-result-tab-${props.type}`}
+                className={`nav-link e2e-search-result-tab-${type}`}
                 activeClassName="active e2e-search-result-tab--active"
                 isActive={isActiveFunc}
             >
