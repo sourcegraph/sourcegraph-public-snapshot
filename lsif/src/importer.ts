@@ -1,5 +1,5 @@
 import { assertDefined, assertId, hashKey, readEnvInt } from './util'
-import { Correlator, ResultSetData } from './correlator'
+import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { DefaultMap } from './default-map'
 import {
     DefinitionModel,
@@ -8,12 +8,21 @@ import {
     MetaModel,
     MonikerData,
     PackageInformationData,
-    QualifiedRangeId,
     RangeData,
     ReferenceModel,
     ResultChunkModel,
+    DocumentIdRangeId,
+    DefinitionResultId,
+    MonikerId,
+    DefinitionReferenceResultId,
+    DocumentId,
+    ReferenceResultId,
+    PackageInformationId,
+    HoverResultId,
+    Ix,
+    OrderedRanges,
 } from './models.database'
-import { Edge, Id, MonikerKind, Vertex } from 'lsif-protocol'
+import { Edge, MonikerKind, Vertex, RangeId } from 'lsif-protocol'
 import { encodeJSON } from './encoding'
 import { EntityManager } from 'typeorm'
 import { isEqual, uniqWith } from 'lodash'
@@ -130,14 +139,14 @@ export async function importLsif(
     // and we don't want to create them lazily.
 
     const resultChunks = new Array(numResultChunks).fill(null).map(() => ({
-        paths: new Map<Id, string>(),
-        qualifiedRanges: new Map<Id, QualifiedRangeId[]>(),
+        paths: new Map<DocumentId, string>(),
+        qualifiedRanges: new Map<DefinitionReferenceResultId, DocumentIdRangeId[]>(),
     }))
 
-    const chunkResults = (data: Map<Id, Map<Id, Id[]>>): void => {
+    const chunkResults = (data: Map<DefinitionReferenceResultId, Map<DocumentId, RangeId[]>>): void => {
         for (const [id, documentRanges] of data) {
             // Flatten map into list of qualified ranges
-            let qualifiedRanges: QualifiedRangeId[] = []
+            let qualifiedRanges: DocumentIdRangeId[] = []
             for (const [documentId, rangeIds] of documentRanges) {
                 qualifiedRanges = qualifiedRanges.concat(rangeIds.map(rangeId => ({ documentId, rangeId })))
             }
@@ -182,8 +191,8 @@ export async function importLsif(
     //   (2) it stop us from re-iterating over the range data of the entire
     //       LSIF dump, which is by far the largest proportion of data.
 
-    const definitionMonikers = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
-    const referenceMonikers = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set<MonikerId>())
+    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set<MonikerId>())
 
     for (const range of correlator.rangeData.values()) {
         if (range.monikers.length === 0) {
@@ -206,8 +215,8 @@ export async function importLsif(
     }
 
     const insertMonikerRanges = async (
-        data: Map<Id, Map<Id, Id[]>>,
-        monikers: Map<Id, Set<Id>>,
+        data: Map<DefinitionReferenceResultId, Map<DocumentId, RangeId[]>>,
+        monikers: Map<MonikerId, Set<RangeId>>,
         inserter: TableInserter<DefinitionModel | ReferenceModel, new () => DefinitionModel | ReferenceModel>
     ): Promise<void> => {
         for (const [id, documentRanges] of data) {
@@ -326,8 +335,8 @@ export async function importLsif(
  * @param id The item identifier.
  * @param item The range or result set item.
  */
-function canonicalizeItem(correlator: Correlator, id: Id, item: RangeData | ResultSetData): void {
-    const monikers = new Set<Id>()
+function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, item: RangeData | ResultSetData): void {
+    const monikers = new Set<MonikerId>()
     if (item.monikers.length > 0) {
         // If we have any monikers attached to this item, then we only need to look at the
         // monikers reachable from any attached moniker. All other attached monikers are
@@ -386,17 +395,17 @@ function canonicalizeItem(correlator: Correlator, id: Id, item: RangeData | Resu
  * @param currentDocumentId The identifier of the document.
  * @param path The path of the document.
  */
-function gatherDocument(correlator: Correlator, currentDocumentId: Id, path: string): DocumentData {
+function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, path: string): DocumentData {
     const document = {
         path,
-        ranges: new Map<Id, number>(),
+        ranges: new Map<RangeId, Ix<OrderedRanges>>(),
         orderedRanges: [] as RangeData[],
-        hoverResults: new Map<Id, string>(),
-        monikers: new Map<Id, MonikerData>(),
-        packageInformation: new Map<Id, PackageInformationData>(),
+        hoverResults: new Map<HoverResultId, string>(),
+        monikers: new Map<MonikerId, MonikerData>(),
+        packageInformation: new Map<PackageInformationId, PackageInformationData>(),
     }
 
-    const addHover = (id: Id | undefined): void => {
+    const addHover = (id: HoverResultId | undefined): void => {
         if (id === undefined || document.hoverResults.has(id)) {
             return
         }
@@ -406,7 +415,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: Id, path: str
         document.hoverResults.set(id, data)
     }
 
-    const addPackageInformation = (id: Id | undefined): void => {
+    const addPackageInformation = (id: PackageInformationId | undefined): void => {
         if (id === undefined || document.packageInformation.has(id)) {
             return
         }
@@ -416,7 +425,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: Id, path: str
         document.packageInformation.set(id, data)
     }
 
-    const addMoniker = (id: Id | undefined): void => {
+    const addMoniker = (id: MonikerId | undefined): void => {
         if (id === undefined || document.monikers.has(id)) {
             return
         }
@@ -431,7 +440,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: Id, path: str
 
     // Correlate range data with its id so after we sort we can pull out the ids in the
     // same order to make the identifier -> index mapping.
-    const orderedRanges: (RangeData & { id: Id })[] = []
+    const orderedRanges: (RangeData & { id: RangeId })[] = []
 
     for (const id of assertDefined(currentDocumentId, 'contains', correlator.containsData)) {
         const range = assertDefined(id, 'range', correlator.rangeData)
@@ -465,8 +474,8 @@ function gatherDocument(correlator: Correlator, currentDocumentId: Id, path: str
  * @param monikerSets A undirected graph of moniker ids.
  * @param id The initial moniker id.
  */
-export function reachableMonikers(monikerSets: Map<Id, Set<Id>>, id: Id): Set<Id> {
-    const monikerIds = new Set<Id>()
+export function reachableMonikers(monikerSets: Map<MonikerId, Set<MonikerId>>, id: MonikerId): Set<MonikerId> {
+    const monikerIds = new Set<MonikerId>()
     let frontier = [id]
 
     while (frontier.length > 0) {

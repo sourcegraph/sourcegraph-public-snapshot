@@ -1,8 +1,37 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
 import { Id, MonikerKind } from 'lsif-protocol'
 
+export type DocumentId = Id
+export type DocumentPath = string
+export type RangeId = Id
+export type DefinitionResultId = Id
+export type ReferenceResultId = Id
+export type DefinitionReferenceResultId = DefinitionResultId | ReferenceResultId
+export type HoverResultId = Id
+export type MonikerId = Id
+export type PackageInformationId = Id
+
 /**
- * An entity within the database describing LSIF data for a single repository
+ * A type that describes a gzipped and JSON-encoded value of type `T`.
+ */
+export type JSONEncoded<T> = string
+
+/**
+ * A type of hashed value created by hashing a value of type `T` and performing
+ * the modulus with a value of type `U`. This is to link the index of a result
+ * chunk to the hashed value of the identifiers stored within it.
+ */
+export type HashMod<T, U> = number
+
+/**
+ * A type of array index bounded by another type or value `T`. This is used
+ * to link the values of `ranges` to the indices of `orderedRanges` in the
+ * `DocumentData` interface defined below.
+ */
+export type Ix<T> = number
+
+/**
+n entity within the database describing LSIF data for a single repository
  * and commit pair. There should be only one metadata entity per database.
  */
 @Entity({ name: 'meta' })
@@ -46,13 +75,13 @@ export class DocumentModel {
      * The root-relative path of the document.
      */
     @PrimaryColumn('text')
-    public path!: string
+    public path!: DocumentPath
 
     /**
      * The JSON-encoded document data.
      */
     @Column('text')
-    public data!: string
+    public data!: JSONEncoded<DocumentData>
 }
 
 /**
@@ -68,13 +97,13 @@ export class ResultChunkModel {
      * (modulo the total number of chunks for the dump).
      */
     @PrimaryColumn('int')
-    public id!: number
+    public id!: HashMod<DefinitionReferenceResultId, MetaModel['numResultChunks']>
 
     /**
      * The JSON-encoded chunk data.
      */
     @Column('text')
-    public data!: string
+    public data!: JSONEncoded<ResultChunkData>
 }
 
 /**
@@ -104,7 +133,7 @@ class Symbols {
      * The path of the document to which this reference belongs.
      */
     @Column('text')
-    public documentPath!: string
+    public documentPath!: DocumentPath
 
     /**
      * The zero-indexed line describing the start of this range.
@@ -160,49 +189,66 @@ export interface DocumentData {
      * identifier quickly, and keep them sorted so we can find the range that
      * encloses a position quickly.
      */
-    ranges: Map<Id, number>
+    ranges: Map<RangeId, Ix<this['orderedRanges']>>
 
     /**
      * An array of range data sorted by startLine, then by startCharacter. This
      * allows us to perform binary search to find a particular location subsumed
      * by a range in the document.
      */
-    orderedRanges: RangeData[]
+    orderedRanges: OrderedRanges
 
     /**
      * A map of hover result identifiers to hover results normalized as a single
      * string.
      */
-    hoverResults: Map<Id, string>
+    hoverResults: Map<HoverResultId, string>
 
     /**
      * A map of moniker identifiers to moniker data.
      */
-    monikers: Map<Id, MonikerData>
+    monikers: Map<MonikerId, MonikerData>
 
     /**
      * A map of package information identifiers to package information data.
      */
-    packageInformation: Map<Id, PackageInformationData>
+    packageInformation: Map<PackageInformationId, PackageInformationData>
 }
 
 /**
- * A range identifier that also specifies the path of the document to which it
- * belongs. This is sometimes necessary as we hold definition and refererence
- * results between packages, but the identifier of the range must be looked up
- * in a map of another encoded document.
+ * A range identifier that also specifies the identifier of the document to
+ * which it belongs. This is sometimes necessary as we hold definition and
+ * reference results between packages, but the identifier of the range must be
+ * looked up in a map of another encoded document.
  */
-export interface QualifiedRangeId {
+export interface DocumentIdRangeId {
     /**
      * The identifier of the document. The path of the document can be queried
      * by this identifier in the containing document.
      */
-    documentId: Id
+    documentId: DocumentId
 
     /**
      * The identifier of the range in the referenced document.
      */
-    rangeId: Id
+    rangeId: RangeId
+}
+
+/**
+ * A range identifier that also specifies the path of the document to which it
+ * belongs. This is generally created by determining the path from an instance of
+ * `DocumentIdRangeId`.
+ */
+export interface DocumentPathRangeId {
+    /**
+     * The path of the document.
+     */
+    documentPath: DocumentPath
+
+    /**
+     * The identifier of the range in the referenced document.
+     */
+    rangeId: RangeId
 }
 
 /**
@@ -215,13 +261,13 @@ export interface ResultChunkData {
      * A map from document identifiers to document paths. The document identifiers
      * in the qualified ranges map reference a concrete path stored here.
      */
-    paths: Map<Id, string>
+    paths: Map<DocumentId, DocumentPath>
 
     /**
      * A map from definition or reference result identifiers to the qualified ranges
      * that compose the result set.
      */
-    qualifiedRanges: Map<Id, QualifiedRangeId[]>
+    qualifiedRanges: Map<DefinitionReferenceResultId, DocumentIdRangeId[]>
 
     // TODO - suffix like things with Id
 }
@@ -258,29 +304,34 @@ export interface RangeData {
      * The definition result object can be queried by its * identifier within the containing
      * document.
      */
-    definitionResult?: Id
+    definitionResult?: DefinitionResultId
 
     /**
      * The identifier of the reference result attached to this range, if one exists.
      * The reference result object can be queried by its identifier within the containing
      * document.
      */
-    referenceResult?: Id
+    referenceResult?: ReferenceResultId
 
     /**
      * The identifier of the hover result attached to this range, if one exists. The
      * hover result object can be queried by its identifier within the containing
      * document.
      */
-    hoverResult?: Id
+    hoverResult?: HoverResultId
 
     /**
      * The set of moniker identifiers directly attached to this range. The moniker
      * object can be queried by its identifier within the
      * containing document.
      */
-    monikers: Id[]
+    monikers: MonikerId[]
 }
+
+/**
+ * An array of `RangeData` instances.
+ */
+export type OrderedRanges = RangeData[]
 
 /**
  * Data about a moniker attached to a range.
@@ -306,7 +357,7 @@ export interface MonikerData {
      * The package information object can be queried by its identifier within the
      * containing document.
      */
-    packageInformation?: Id
+    packageInformation?: PackageInformationId
 }
 
 /**

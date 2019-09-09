@@ -1,4 +1,5 @@
 import { Id } from 'lsif-protocol'
+import { DefinitionReferenceResultId } from './models.database'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -45,7 +46,7 @@ export function assertDefined<K, V>(key: K, name: string, ...maps: Map<K, V>[]):
  *
  * @param id The identifier.
  */
-export function assertId(id: Id | undefined): Id {
+export function assertId<T extends Id>(id: T | undefined): T {
     if (id !== undefined) {
         return id
     }
@@ -60,7 +61,7 @@ export function assertId(id: Id | undefined): Id {
  * @param id The identifier to hash.
  * @param maxIndex The maximum of the range.
  */
-export function hashKey(id: Id, maxIndex: number): number {
+export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): number {
     const s = `${id}`
 
     let hash = 0

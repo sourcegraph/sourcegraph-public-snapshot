@@ -14,27 +14,16 @@ import {
     ReferenceModel,
     ResultChunkData,
     ResultChunkModel,
+    DocumentPathRangeId,
+    OrderedRanges,
+    Ix,
+    DefinitionReferenceResultId,
+    RangeId,
 } from './models.database'
-import { Id } from 'lsif-protocol'
 import { isEqual, uniqWith } from 'lodash'
 import { makeFilename } from './backend'
 import { PackageModel } from './models.xrepo'
 import { XrepoDatabase } from './xrepo'
-
-/**
- * A partially-resolved qualified range.
- */
-interface ResolvedQualifiedRange {
-    /**
-     * The resolved document path.
-     */
-    documentPath: string
-
-    /**
-     * The identifier of the range.
-     */
-    rangeId: Id
-}
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -224,22 +213,22 @@ export class Database {
 
     /**
      * Convert a set of range results (from a definition or reference query) into a set
-     * of LSP ranges. Each range result holds the range Id as well as the document path.
-     * For document paths matching the loaded document, find the range data locally. For
-     * all other paths, find the document in this database and find the range in that
+     * of LSP ranges. Each range result holds the range identifier as well as the document
+     * path. For document paths matching the loaded document, find the range data locally.
+     * For all other paths, find the document in this database and find the range in that
      * document.
      *
      * @param path The path of the document for this query.
      * @param document The document object for this query.
-     * @param resultData A lsit of range ids and the document they belong to.
+     * @param resultData A list of range ids and the document they belong to.
      */
     private async findQualifiedRanges(
         path: string,
         document: DocumentData,
-        resultData: ResolvedQualifiedRange[]
+        resultData: DocumentPathRangeId[]
     ): Promise<lsp.Location[]> {
         // Group by document path so we only have to load each document once
-        const groupedResults = new DefaultMap<string, Set<Id>>(() => new Set<Id>())
+        const groupedResults = new DefaultMap<string, Set<RangeId>>(() => new Set<RangeId>())
 
         for (const { documentPath, rangeId } of resultData) {
             groupedResults.getOrDefault(documentPath).add(rangeId)
@@ -476,7 +465,7 @@ export class Database {
      *
      * @param id The identifier of the definition or reference result.
      */
-    private async findResult(id: Id): Promise<ResolvedQualifiedRange[]> {
+    private async findResult(id: DefinitionReferenceResultId): Promise<DocumentPathRangeId[]> {
         const { paths, qualifiedRanges } = await this.findResultChunk(id)
         const ranges = assertDefined(id, 'qualifiedRange', qualifiedRanges)
 
@@ -491,7 +480,7 @@ export class Database {
      *
      * @param id An identifier contained in the result chunk.
      */
-    private async findResultChunk(id: Id): Promise<ResultChunkData> {
+    private async findResultChunk(id: DefinitionReferenceResultId): Promise<ResultChunkData> {
         // Find the result chunk index this id belongs to
         const index = hashKey(id, await this.getNumResultChunks())
 
@@ -574,7 +563,7 @@ export class Database {
  * @param orderedRanges The ranges of the document, ordered by startLine/startCharacter.
  * @param position The user's hover position.
  */
-export function findRange(orderedRanges: RangeData[], position: lsp.Position): RangeData | undefined {
+export function findRange(orderedRanges: OrderedRanges, position: lsp.Position): RangeData | undefined {
     let lo = 0
     let hi = orderedRanges.length - 1
 
@@ -687,10 +676,10 @@ function makeRange(result: {
  * @param ids The set of range identifiers for each resulting location.
  */
 export function mapRangesToLocations(
-    ranges: Map<Id, number>,
-    orderedRanges: RangeData[],
+    ranges: Map<RangeId, Ix<OrderedRanges>>,
+    orderedRanges: OrderedRanges,
     uri: string,
-    ids: Id[]
+    ids: RangeId[]
 ): lsp.Location[] {
     return ids.map(id => lsp.Location.create(uri, makeRange(orderedRanges[assertDefined(id, 'range', ranges)])))
 }

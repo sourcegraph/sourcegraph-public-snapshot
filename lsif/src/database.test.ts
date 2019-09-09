@@ -1,7 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { comparePosition, findRange, makeRemoteUri, mapRangesToLocations } from './database'
-import { Id } from 'lsif-protocol'
-import { RangeData } from './models.database'
+import { RangeData, RangeId } from './models.database'
 
 describe('findRange', () => {
     it('should find all ranges in list', () => {
@@ -71,7 +70,7 @@ describe('makeRemoteUri', () => {
 
 describe('mapRangesToLocations', () => {
     it('should map ranges to locations', () => {
-        const ranges = new Map<Id, number>()
+        const ranges = new Map<RangeId, number>()
         ranges.set(1, 0)
         ranges.set(2, 2)
         ranges.set(4, 1)

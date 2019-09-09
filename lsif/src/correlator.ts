@@ -2,7 +2,17 @@ import RelateUrl from 'relateurl'
 import { assertDefined } from './util'
 import { DefaultMap } from './default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
-import { MonikerData, PackageInformationData, RangeData } from './models.database'
+import {
+    MonikerData,
+    PackageInformationData,
+    RangeData,
+    MonikerId,
+    HoverResultId,
+    ReferenceResultId,
+    DefinitionResultId,
+    DocumentId,
+    PackageInformationId,
+} from './models.database'
 import {
     Id,
     VertexLabels,
@@ -22,7 +32,13 @@ import {
     MetaData,
     ElementTypes,
     contains,
+    RangeId,
 } from 'lsif-protocol'
+
+/**
+ * Identifiers of result set vertices.
+ */
+export type ResultSetId = Id
 
 /**
  * An internal representation of a result set vertex. This is only used during import
@@ -32,22 +48,22 @@ export interface ResultSetData {
     /**
      * * The identifier of the definition result attached to this result set.
      */
-    definitionResult?: Id
+    definitionResult?: DefinitionResultId
 
     /**
      * * The identifier of the reference result attached to this result set.
      */
-    referenceResult?: Id
+    referenceResult?: ReferenceResultId
 
     /**
      * * The identifier of the hover result attached to this result set.
      */
-    hoverResult?: Id
+    hoverResult?: HoverResultId
 
     /**
      * * The set of moniker identifiers directly attached to this result set.
      */
-    monikers: Id[]
+    monikers: MonikerId[]
 }
 
 /**
@@ -70,35 +86,35 @@ export class Correlator {
     public projectRoot?: URL
 
     // Vertex data
-    public documentPaths = new Map<Id, string>()
-    public rangeData = new Map<Id, RangeData>()
-    public resultSetData = new Map<Id, ResultSetData>()
-    public hoverData = new Map<Id, string>()
-    public monikerData = new Map<Id, MonikerData>()
-    public packageInformationData = new Map<Id, PackageInformationData>()
+    public documentPaths = new Map<DocumentId, string>()
+    public rangeData = new Map<RangeId, RangeData>()
+    public resultSetData = new Map<ResultSetId, ResultSetData>()
+    public hoverData = new Map<HoverResultId, string>()
+    public monikerData = new Map<MonikerId, MonikerData>()
+    public packageInformationData = new Map<PackageInformationId, PackageInformationData>()
 
     // Edge data
-    public nextData = new Map<Id, Id>()
-    public containsData = new Map<Id, Set<Id>>() // document to ranges
-    public definitionData = new Map<Id, DefaultMap<Id, Id[]>>() // definition result to document to ranges
-    public referenceData = new Map<Id, DefaultMap<Id, Id[]>>() // reference result to document to ranges
+    public nextData = new Map<RangeId | ResultSetId, ResultSetId>()
+    public containsData = new Map<DocumentId, Set<RangeId>>()
+    public definitionData = new Map<DefinitionResultId, DefaultMap<DocumentId, RangeId[]>>()
+    public referenceData = new Map<ReferenceResultId, DefaultMap<DocumentId, RangeId[]>>()
 
     /**
      * A mapping for the relation from moniker to the set of monikers that they are related
      * to via nextMoniker edges. This relation is symmetric (if `a` is in `MonikerSets[b]`,
      * then `b` is in `monikerSets[a]`).
      */
-    public monikerSets = new DefaultMap<Id, Set<Id>>(() => new Set<Id>())
+    public monikerSets = new DefaultMap<RangeId, Set<MonikerId>>(() => new Set<MonikerId>())
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    public importedMonikers = new Set<Id>()
+    public importedMonikers = new Set<MonikerId>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    public exportedMonikers = new Set<Id>()
+    public exportedMonikers = new Set<MonikerId>()
 
     /**
      * Process a single vertex or edge.
@@ -124,7 +140,7 @@ export class Correlator {
                     })
 
                     this.documentPaths.set(element.id, path)
-                    this.containsData.set(element.id, new Set<Id>())
+                    this.containsData.set(element.id, new Set<RangeId>())
                     break
                 }
 
@@ -147,11 +163,11 @@ export class Correlator {
                     break
 
                 case VertexLabels.definitionResult:
-                    this.definitionData.set(element.id, new DefaultMap<Id, Id[]>(() => []))
+                    this.definitionData.set(element.id, new DefaultMap<DocumentId, RangeId[]>(() => []))
                     break
 
                 case VertexLabels.referenceResult:
-                    this.referenceData.set(element.id, new DefaultMap<Id, Id[]>(() => []))
+                    this.referenceData.set(element.id, new DefaultMap<DocumentId, RangeId[]>(() => []))
                     break
 
                 case VertexLabels.hoverResult:
@@ -295,7 +311,7 @@ export class Correlator {
      * @param edge The moniker edge.
      */
     private handleMonikerEdge(edge: moniker): void {
-        const source = assertDefined<Id, RangeData | ResultSetData>(
+        const source = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
             this.rangeData,
@@ -313,7 +329,13 @@ export class Correlator {
      * @param edge The next edge.
      */
     private handleNextEdge(edge: next): void {
-        assertDefined<Id, RangeData | ResultSetData>(edge.outV, 'range/resultSet', this.rangeData, this.resultSetData)
+        assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
+            edge.outV,
+            'range/resultSet',
+            this.rangeData,
+            this.resultSetData
+        )
+
         assertDefined(edge.inV, 'resultSet', this.resultSetData)
         this.nextData.set(edge.outV, edge.inV)
     }
@@ -359,7 +381,7 @@ export class Correlator {
      * @param edge The textDocument/definition edge.
      */
     private handleDefinitionEdge(edge: textDocument_definition): void {
-        const outV = assertDefined<Id, RangeData | ResultSetData>(
+        const outV = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
             this.rangeData,
@@ -377,7 +399,7 @@ export class Correlator {
      * @param edge The textDocument/hover edge.
      */
     private handleHoverEdge(edge: textDocument_hover): void {
-        const outV = assertDefined<Id, RangeData | ResultSetData>(
+        const outV = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
             this.rangeData,
@@ -395,7 +417,7 @@ export class Correlator {
      * @param edge The textDocument/references edge.
      */
     private handleReferenceEdge(edge: textDocument_references): void {
-        const outV = assertDefined<Id, RangeData | ResultSetData>(
+        const outV = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
             edge.outV,
             'range/resultSet',
             this.rangeData,
