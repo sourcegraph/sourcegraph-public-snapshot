@@ -238,8 +238,8 @@ export class Correlator {
 
     /**
      * This should be the first vertex seen. Extract the project root so we
-     * can create relative paths for documents. Insert a row in the meta
-     * table with the LSIF protocol version.
+     * can create relative paths for documents and cache the LSIF protocol
+     * version that we will later insert into he metadata table.
      *
      * @param vertex The metadata vertex.
      */
