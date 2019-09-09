@@ -41,13 +41,8 @@ const configFields: { [K in keyof Config]: ConfigField } = {
  */
 export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
     const configFile = process.env.CONFIG_FILE
-    let config: any
-    if (configFile) {
-        // eslint-disable-next-line no-sync
-        config = JSON.parse(fs.readFileSync(configFile).toString())
-    } else {
-        config = {}
-    }
+    // eslint-disable-next-line no-sync
+    const config = configFile ? JSON.parse(fs.readFileSync(configFile, 'utf-8')) : {}
 
     // Set defaults and read env vars
     for (const [fieldName, field] of Object.entries(configFields)) {
