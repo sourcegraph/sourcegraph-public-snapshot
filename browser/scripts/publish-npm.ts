@@ -3,6 +3,7 @@ import latestVersion from 'latest-version'
 import signale from 'signale'
 import * as semver from 'semver'
 import execa from 'execa'
+import * as path from 'path'
 
 // Publish the native integration to npm
 
@@ -34,13 +35,14 @@ async function main(): Promise<void> {
     }
     signale.info(`New version is ${packageJson.version}`)
     // Write package.json
-    await writeFile(__dirname + '/../build/integration/package.json', JSON.stringify(packageJson, null, 2))
+    const packagePath = path.resolve(__dirname + '/../build/integration/package.json')
+    await writeFile(packagePath, JSON.stringify(packageJson, null, 2))
     if (!process.env.CI) {
         signale.warn('Not running in CI, aborting')
         return
     }
     // Publish
-    await execa('npm', ['publish', '--access', 'public'], { stdio: 'inherit' })
+    await execa('npm', ['publish', '--access', 'public'], { cwd: packagePath, stdio: 'inherit' })
 }
 main().catch(err => {
     process.exitCode = 1
