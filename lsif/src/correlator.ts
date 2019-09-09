@@ -186,7 +186,7 @@ export class Correlator {
                 case VertexLabels.packageInformation:
                     this.packageInformationData.set(element.id, {
                         name: element.name,
-                        version: element.version || '$missing',
+                        version: element.version || null,
                     })
                     break
             }

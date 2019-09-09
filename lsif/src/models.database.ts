@@ -371,5 +371,5 @@ export interface PackageInformationData {
     /**
      * The version of the package the moniker describes.
      */
-    version: string
+    version: string | null
 }

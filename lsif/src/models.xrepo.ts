@@ -28,8 +28,8 @@ export class PackageModel {
     /**
      * The version of the package this repository and commit provides.
      */
-    @Column('text')
-    public version!: string
+    @Column('text', { nullable: true })
+    public version!: string | null
 
     /**
      * The name of the source repository.
@@ -72,8 +72,8 @@ export class ReferenceModel {
     /**
      * The version of the package this repository and commit depends on.
      */
-    @Column('text')
-    public version!: string
+    @Column('text', { nullable: true })
+    public version!: string | null
 
     /**
      * The name of the source repository.
