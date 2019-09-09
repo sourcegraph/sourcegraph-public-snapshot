@@ -1,5 +1,5 @@
 import * as fs from 'mz/fs'
-import * as temp from 'temp'
+import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
@@ -13,7 +13,7 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = temp.mkdirSync('typescript') // eslint-disable-line no-sync
+        storageRoot = await fs.promises.mkdtemp('typescript-')
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const inputs: { input: Readable; repository: string; commit: string }[] = []
 
@@ -28,6 +28,10 @@ describe('Database', () => {
         for (const { input, repository, commit } of inputs) {
             await backend.insertDump(input, repository, commit)
         }
+    })
+
+    afterAll(() => {
+        rimraf.sync(storageRoot)
     })
 
     it('should find all defs of `add` from repo a', async () => {

@@ -1,5 +1,5 @@
 import * as fs from 'mz/fs'
-import * as temp from 'temp'
+import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
@@ -12,10 +12,14 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = temp.mkdirSync('cpp') // eslint-disable-line no-sync
+        storageRoot = await fs.promises.mkdtemp('cpp-')
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
         await backend.insertDump(input, 'five', createCommit('five'))
+    })
+
+    afterAll(() => {
+        rimraf.sync(storageRoot)
     })
 
     it('should find all defs of `four` from main.cpp', async () => {
@@ -45,7 +49,7 @@ describe('Database', () => {
         expect(references).toContainEqual(createLocation('five.cpp', 2, 4, 2, 4))
         expect(references).toContainEqual(createLocation('main.cpp', 11, 2, 11, 6))
         expect(references).toContainEqual(createLocation('main.cpp', 13, 2, 13, 6))
-        expect(references && references.length).toEqual(4)
+        expect(references).toHaveLength(4)
     })
 })
 
