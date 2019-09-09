@@ -167,7 +167,7 @@ class Symbols {
  */
 @Entity({ name: 'definitions' })
 @Index(['scheme', 'identifier'])
-export class DefinitionModel extends Symbols { }
+export class DefinitionModel extends Symbols {}
 
 /**
  * An entity within the database describing LSIF data for a single repository and commit
@@ -176,7 +176,7 @@ export class DefinitionModel extends Symbols { }
  */
 @Entity({ name: 'references' })
 @Index(['scheme', 'identifier'])
-export class ReferenceModel extends Symbols { }
+export class ReferenceModel extends Symbols {}
 
 /**
  * Data for a single document within an LSIF dump. The data here can answer definitions,

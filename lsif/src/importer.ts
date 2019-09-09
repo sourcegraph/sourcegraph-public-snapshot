@@ -81,22 +81,55 @@ export async function importLsif(
         throw new Error('No metadata defined.')
     }
 
-    // Determine the max batch size of each model type. We cannot perform an
-    // insert operation with more than 999 placeholder variables, so we need
-    // to flush our batch before we reach that amount. The batch size for each
-    // model is calculated based on the number of fields inserted. If fields
-    // are added to the models, these numbers will also need to change.
+    const numResults = correlator.definitionData.size + correlator.referenceData.size
+    const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
 
-    const metaInserter = new TableInserter(entityManager, MetaModel, Math.floor(999 / 3))
-    const documentInserter = new TableInserter(entityManager, DocumentModel, Math.floor(999 / 2))
-    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, Math.floor(999 / 2))
-    const definitionInserter = new TableInserter(entityManager, DefinitionModel, Math.floor(999 / 8))
-    const referenceInserter = new TableInserter(entityManager, ReferenceModel, Math.floor(999 / 8))
+    // Insert metadata
+    const metaInserter = new TableInserter(entityManager, MetaModel, getBatchSize(3))
+    await populateMetadataTable(correlator, metaInserter, numResultChunks)
+    await metaInserter.flush()
 
-    //
-    // Step 1: Populate documents table.
-    //
+    // Insert documents
+    const documentInserter = new TableInserter(entityManager, DocumentModel, getBatchSize(2))
+    await populateDocumentsTable(correlator, documentInserter)
+    await documentInserter.flush()
 
+    // Insert result chunks
+    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, getBatchSize(2))
+    await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
+    await resultChunkInserter.flush()
+
+    // Insert definitions and references
+    const definitionInserter = new TableInserter(entityManager, DefinitionModel, getBatchSize(8))
+    const referenceInserter = new TableInserter(entityManager, ReferenceModel, getBatchSize(8))
+    await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
+    await definitionInserter.flush()
+    await referenceInserter.flush()
+
+    // Return correlation data to populate xrepo database
+    return await prepareCorrelationData(correlator)
+}
+
+/**
+ * Determine the table inserter batch size for an entity given the number of
+ * fields inserted for that entity. We cannot perform an insert operation with
+ * more than 999 placeholder variables, so we need to flush our batch before
+ * we reach that amount. If fields are added to the models, the argument to
+ * this function also needs to change.
+ *
+ * @param numFields The number of fields for an entity.
+ */
+function getBatchSize(numFields: number): number {
+    return Math.floor(999 / numFields)
+}
+
+/**
+ * Correlate, encode, and insert all document entries for this dump.
+ */
+async function populateDocumentsTable(
+    correlator: Correlator,
+    documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
+): Promise<void> {
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
     // the "next" edges coming from range data.
@@ -127,15 +160,16 @@ export async function importLsif(
             }),
         })
     }
+}
 
-    //
-    // Step 2: Populate result chunks table.
-    //
-
-    // TODO - store this somewhere
-    const numResults = correlator.definitionData.size + correlator.referenceData.size
-    const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
-
+/**
+ * Correlate and insert all result chunk entries for this dump.
+ */
+async function populateResultChunksTable(
+    correlator: Correlator,
+    resultChunkInserter: TableInserter<ResultChunkModel, new () => ResultChunkModel>,
+    numResultChunks: number
+): Promise<void> {
     // Create all the result chunks we'll be populating and inserting up-front. Data will
     // be inserted into result chunks based on hash values (modulo the number of result chunks),
     // and we don't want to create them lazily.
@@ -182,11 +216,16 @@ export async function importLsif(
         // Encode and insert result chunk record
         await resultChunkInserter.insert({ id, data })
     }
+}
 
-    //
-    // Step 3: Populate definitions and references table.
-    //
-
+/**
+ * Correlate and insert all definition and reference entries for this dump.
+ */
+async function populateDefinitionsAndReferencesTables(
+    correlator: Correlator,
+    definitionInserter: TableInserter<DefinitionModel, new () => DefinitionModel>,
+    referenceInserter: TableInserter<ReferenceModel, new () => ReferenceModel>
+): Promise<void> {
     // Determine the set of monikers that are attached to a definition or a
     // reference result. Correlating information in this way has two benefits:
     //   (1) it reduces duplicates in the definitions and references tables
@@ -255,27 +294,34 @@ export async function importLsif(
     // Insert definitions and references records.
     await insertMonikerRanges(correlator.definitionData, definitionMonikers, definitionInserter)
     await insertMonikerRanges(correlator.referenceData, referenceMonikers, referenceInserter)
+}
 
-    // Step 4: Insert metadata row. This gives us a place to store the version of
-    // the converter that created a database in case we have backwards-incompatible
-    // changes in the future that require historic version flagging. This also stores
-    // the number of result chunks determined above so that we can have stable hashes
-    // at query time.
-
+/**
+ * Insert metadata row. This gives us a place to store the version of the converter that
+ * created a database in case we have backwards-incompatible changes in the future that
+ * require historic version flagging. This also stores the number of result chunks
+ * determined above so that we can have stable hashes at query time.
+ */
+async function populateMetadataTable(
+    correlator: Correlator,
+    metaInserter: TableInserter<MetaModel, new () => MetaModel>,
+    numResultChunks: number
+): Promise<void> {
     await metaInserter.insert({
         id: 1,
         lsifVersion: correlator.lsifVersion,
         sourcegraphVersion: INTERNAL_LSIF_VERSION,
         numResultChunks,
     })
+}
 
-    // Ensure all records are written
-    await metaInserter.flush()
-    await documentInserter.flush()
-    await resultChunkInserter.flush()
-    await definitionInserter.flush()
-    await referenceInserter.flush()
-
+/**
+ * Get the data needed to add this dump's package and dependency information into the
+ * xrepo database.
+ */
+async function prepareCorrelationData(
+    correlator: Correlator
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     //
     // Step 5: Prepare data for correlation database.
     //

@@ -316,7 +316,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData,
             edge.outV,
-            'range/resultSet',
+            'range/resultSet'
         )
 
         mustGet(this.monikerData, edge.inV, 'moniker')
@@ -334,7 +334,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData,
             edge.outV,
-            'range/resultSet',
+            'range/resultSet'
         )
 
         mustGet(this.resultSetData, edge.inV, 'resultSet')
@@ -386,7 +386,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData,
             edge.outV,
-            'range/resultSet',
+            'range/resultSet'
         )
 
         mustGet(this.definitionData, edge.inV, 'definitionResult')
@@ -404,7 +404,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData,
             edge.outV,
-            'range/resultSet',
+            'range/resultSet'
         )
 
         mustGet(this.hoverData, edge.inV, 'hoverResult')
@@ -422,7 +422,7 @@ export class Correlator {
             this.rangeData,
             this.resultSetData,
             edge.outV,
-            'range/resultSet',
+            'range/resultSet'
         )
 
         mustGet(this.referenceData, edge.inV, 'referenceResult')

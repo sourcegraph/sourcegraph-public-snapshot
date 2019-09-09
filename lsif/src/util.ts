@@ -38,7 +38,6 @@ export function mustGet<K, V>(map: Map<K, V>, key: K, elementType: string): V {
     throw new Error(`Unknown ${elementType} '${key}'.`)
 }
 
-
 /**
  * Return the value of the given key from one of the given maps. The first
  * non-undefined value to be found is returned. If the key does not exist in

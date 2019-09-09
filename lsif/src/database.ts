@@ -57,7 +57,7 @@ export class Database {
         private repository: string,
         private commit: string,
         private databasePath: string
-    ) { }
+    ) {}
 
     /**
      * Determine if data exists for a particular document in this database.
@@ -145,7 +145,11 @@ export class Database {
         if (range.referenceResultId) {
             // We have references in this database.
             locations = locations.concat(
-                await this.convertRangesToLspLocations(path, document, await this.getResultById(range.referenceResultId))
+                await this.convertRangesToLspLocations(
+                    path,
+                    document,
+                    await this.getResultById(range.referenceResultId)
+                )
             )
         }
 
