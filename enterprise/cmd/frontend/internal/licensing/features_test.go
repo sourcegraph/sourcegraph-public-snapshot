@@ -17,10 +17,10 @@ func TestIsFeatureEnabled(t *testing.T) {
 	}
 
 	t.Run(string(conf.FeatureGuestUsers), func(t *testing.T) {
-		check(t, FeatureACLs, EnterpriseStarterTags, false)
-		check(t, FeatureACLs, EnterpriseTags, false)
-		check(t, FeatureACLs, EnterprisePlusTags, false)
-		check(t, FeatureACLs, EliteTags, true)
+		check(t, conf.FeatureGuestUsers, EnterpriseStarterTags, false)
+		check(t, conf.FeatureGuestUsers, EnterpriseTags, false)
+		check(t, conf.FeatureGuestUsers, EnterprisePlusTags, false)
+		check(t, conf.FeatureGuestUsers, EliteTags, true)
 	})
 
 	t.Run(string(FeatureACLs), func(t *testing.T) {
