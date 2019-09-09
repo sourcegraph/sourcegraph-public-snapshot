@@ -8,7 +8,9 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-migrate create -ext sql -dir . -digits 10 -seq "$1"
+# Workaround for https://github.com/golang-migrate/migrate/issues/238
+ABSOLUTE_PATH=$(pwd)
+migrate create -ext sql -dir $ABSOLUTE_PATH -digits 10 -seq "$1"
 
 files=$(ls -1 | grep '^[0-9]'.*\.sql | sort -n | tail -n2)
 
@@ -25,6 +27,6 @@ BEGIN;
 
 COMMIT;
 EOF
-   
+
     echo "Created migrations/$f"
 done

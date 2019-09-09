@@ -1,6 +1,8 @@
 package graphqlbackend
 
 import (
+	"flag"
+	"os"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -108,8 +110,10 @@ func TestNodeResolverTo(t *testing.T) {
 	}
 }
 
-func init() {
+func TestMain(m *testing.M) {
+	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 	}
+	os.Exit(m.Run())
 }

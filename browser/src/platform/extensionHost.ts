@@ -3,14 +3,18 @@ import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
+import { SourcegraphIntegrationURLs } from './context'
 
-function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
+function createInPageExtensionHost({
+    sourcegraphURL,
+    assetsURL,
+}: SourcegraphIntegrationURLs): Observable<EndpointPair> {
     return new Observable(subscriber => {
         // Create an iframe pointing to extensionHostFrame.html,
         // which will load the extension host worker, and forward it
         // the client endpoints.
         const frame: HTMLIFrameElement = document.createElement('iframe')
-        frame.setAttribute('src', `${sourcegraphURL}/.assets/extension/extensionHostFrame.html`)
+        frame.setAttribute('src', new URL('extensionHostFrame.html', assetsURL).href)
         frame.setAttribute('style', 'display: none;')
         document.body.append(frame)
         const clientAPIChannel = new MessageChannel()
@@ -65,9 +69,9 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
  * worker per pair of ports, and forward messages between the port objects and
  * the extension host worker's endpoints.
  */
-export function createExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
+export function createExtensionHost(urls: SourcegraphIntegrationURLs): Observable<EndpointPair> {
     if (isInPage) {
-        return createInPageExtensionHost(sourcegraphURL)
+        return createInPageExtensionHost(urls)
     }
     const id = uuid.v4()
     return new Observable(subscriber => {

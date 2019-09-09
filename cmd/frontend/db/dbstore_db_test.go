@@ -13,8 +13,8 @@ func TestMigrations(t *testing.T) {
 		t.Skip()
 	}
 
-	// get testing context to ensure we can connect to the DB
-	_ = dbtesting.TestContext(t)
+	// Setup a global test database
+	dbtesting.SetupGlobalTestDB(t)
 
 	m := dbconn.NewMigrate(dbconn.Global)
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.

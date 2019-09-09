@@ -6,7 +6,6 @@ import (
 	neturl "net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -24,14 +23,15 @@ import (
 type gitTreeEntryResolver struct {
 	commit *GitCommitResolver
 
-	path string      // this tree entry's path (relative to the root)
-	stat os.FileInfo // this tree entry's file info
+	// stat is this tree entry's file info. Its Name method must return the full path relative to
+	// the root, not the basename.
+	stat os.FileInfo
 
 	isRecursive bool // whether entries is populated recursively (otherwise just current level of hierarchy)
 }
 
-func (r *gitTreeEntryResolver) Path() string { return r.path }
-func (r *gitTreeEntryResolver) Name() string { return path.Base(r.path) }
+func (r *gitTreeEntryResolver) Path() string { return r.stat.Name() }
+func (r *gitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
 func (r *gitTreeEntryResolver) ToGitTree() (*gitTreeEntryResolver, bool) { return r, true }
 func (r *gitTreeEntryResolver) ToGitBlob() (*gitTreeEntryResolver, bool) { return r, true }
@@ -81,14 +81,14 @@ func (r *gitTreeEntryResolver) urlPath(prefix string) (string, error) {
 		typ = "tree"
 	}
 
-	u.Path = path.Join(u.Path, "-", typ, r.path)
+	u.Path = path.Join(u.Path, "-", typ, r.Path())
 	return u.String(), nil
 }
 
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
@@ -197,7 +197,7 @@ func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if err != nil {
 		return false, err
 	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), filepath.Dir(r.path), false)
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}
