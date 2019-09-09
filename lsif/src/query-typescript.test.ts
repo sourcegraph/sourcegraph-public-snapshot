@@ -3,8 +3,8 @@ import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
-import { lsp } from 'lsif-protocol'
 import { Readable } from 'stream'
+import { createCommit, createLocation, createRemoteLocation } from './test-utils'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -174,40 +174,3 @@ describe('Database', () => {
         expect(references && references.length).toEqual(20)
     })
 })
-
-//
-// Helpers
-
-function createLocation(
-    uri: string,
-    startLine: number,
-    startCharacter: number,
-    endLine: number,
-    endCharacter: number
-): lsp.Location {
-    return lsp.Location.create(uri, {
-        start: { line: startLine, character: startCharacter },
-        end: { line: endLine, character: endCharacter },
-    })
-}
-
-function createRemoteLocation(
-    repository: string,
-    path: string,
-    startLine: number,
-    startCharacter: number,
-    endLine: number,
-    endCharacter: number
-): lsp.Location {
-    return createLocation(
-        `git://${repository}?${createCommit(repository)}#${path}`,
-        startLine,
-        startCharacter,
-        endLine,
-        endCharacter
-    )
-}
-
-function createCommit(repository: string): string {
-    return repository.repeat(40).substring(0, 40)
-}

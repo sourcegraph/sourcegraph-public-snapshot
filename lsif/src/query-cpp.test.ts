@@ -3,7 +3,7 @@ import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
-import { lsp } from 'lsif-protocol'
+import { createCommit, createLocation } from './test-utils'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -52,23 +52,3 @@ describe('Database', () => {
         expect(references).toHaveLength(4)
     })
 })
-
-//
-// Helpers
-
-function createLocation(
-    uri: string,
-    startLine: number,
-    startCharacter: number,
-    endLine: number,
-    endCharacter: number
-): lsp.Location {
-    return lsp.Location.create(uri, {
-        start: { line: startLine, character: startCharacter },
-        end: { line: endLine, character: endCharacter },
-    })
-}
-
-function createCommit(repository: string): string {
-    return repository.repeat(40).substring(0, 40)
-}
