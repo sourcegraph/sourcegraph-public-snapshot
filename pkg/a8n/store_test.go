@@ -111,8 +111,8 @@ func TestStore(t *testing.T) {
 			}
 		}
 
-		{
-			count, err := s.CountThreads(ctx)
+		t.Run("Count-All", func(t *testing.T) {
+			count, err := s.CountThreads(ctx, CountThreadsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -120,7 +120,18 @@ func TestStore(t *testing.T) {
 			if have, want := count, int64(len(threads)); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
-		}
+		})
+
+		t.Run("Count-Campaign", func(t *testing.T) {
+			count, err := s.CountThreads(ctx, CountThreadsOpts{CampaignID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(1); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
 
 		for i := 1; i <= len(threads); i++ {
 			opts := ListThreadsOpts{CampaignID: int64(i)}

@@ -85,9 +85,15 @@ func createThreadQuery(t *Thread) (*sqlf.Query, error) {
 	), nil
 }
 
+// CountThreadsOpts captures the query options needed for
+// counting threads.
+type CountThreadsOpts struct {
+	CampaignID int64
+}
+
 // CountThreads returns the number of threads in the database.
-func (s *Store) CountThreads(ctx context.Context) (int64, error) {
-	q := countThreadsQuery
+func (s *Store) CountThreads(ctx context.Context, opts CountThreadsOpts) (int64, error) {
+	q := countThreadsQuery(&opts)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -102,10 +108,25 @@ func (s *Store) CountThreads(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-var countThreadsQuery = sqlf.Sprintf(`
--- source: pkg/a8n/store.go:CountThreads
-SELECT COUNT(id) FROM threads
-`)
+var countThreadsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListThreads
+SELECT COUNT(id)
+FROM threads
+WHERE %s
+`
+
+func countThreadsQuery(opts *CountThreadsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countThreadsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
 
 // ListThreadsOpts captures the query options needed for
 // listing threads.
