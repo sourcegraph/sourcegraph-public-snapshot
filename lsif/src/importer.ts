@@ -100,8 +100,8 @@ export async function importLsif(
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
     // the "next" edges coming from range data.
-    for (const [id, range] of correlator.rangeData) {
-        canonicalizeItem(correlator, id, range)
+    for (const [rangeId, range] of correlator.rangeData) {
+        canonicalizeItem(correlator, rangeId, range)
     }
 
     // Gather and insert document data that includes the ranges contained in the document,
@@ -142,20 +142,20 @@ export async function importLsif(
 
     const resultChunks = new Array(numResultChunks).fill(null).map(() => ({
         paths: new Map<DocumentId, string>(),
-        qualifiedRanges: new Map<DefinitionReferenceResultId, DocumentIdRangeId[]>(),
+        documentIdRangeIds: new Map<DefinitionReferenceResultId, DocumentIdRangeId[]>(),
     }))
 
     const chunkResults = (data: Map<DefinitionReferenceResultId, Map<DocumentId, RangeId[]>>): void => {
         for (const [id, documentRanges] of data) {
-            // Flatten map into list of qualified ranges
-            let qualifiedRanges: DocumentIdRangeId[] = []
+            // Flatten map into list of ranges
+            let documentIdRangeIds: DocumentIdRangeId[] = []
             for (const [documentId, rangeIds] of documentRanges) {
-                qualifiedRanges = qualifiedRanges.concat(rangeIds.map(rangeId => ({ documentId, rangeId })))
+                documentIdRangeIds = documentIdRangeIds.concat(rangeIds.map(rangeId => ({ documentId, rangeId })))
             }
 
-            // Insert qualifieied ranges into target result chunk
+            // Insert ranges into target result chunk
             const resultChunk = resultChunks[hashKey(id, resultChunks.length)]
-            resultChunk.qualifiedRanges.set(id, qualifiedRanges)
+            resultChunk.documentIdRangeIds.set(id, documentIdRangeIds)
 
             for (const documentId of documentRanges.keys()) {
                 // Add paths into the result chunk where they are used
@@ -170,13 +170,13 @@ export async function importLsif(
 
     for (let id = 0; id < resultChunks.length; id++) {
         // Empty chunk, no need to serialize as it will never be queried
-        if (resultChunks[id].paths.size === 0 && resultChunks[id].qualifiedRanges.size === 0) {
+        if (resultChunks[id].paths.size === 0 && resultChunks[id].documentIdRangeIds.size === 0) {
             continue
         }
 
         const data = await encodeJSON({
-            paths: resultChunks[id].paths,
-            qualifiedRanges: resultChunks[id].qualifiedRanges,
+            documentPaths: resultChunks[id].paths,
+            documentIdRangeIds: resultChunks[id].documentIdRangeIds,
         })
 
         // Encode and insert result chunk record
@@ -197,20 +197,20 @@ export async function importLsif(
     const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set<MonikerId>())
 
     for (const range of correlator.rangeData.values()) {
-        if (range.monikers.length === 0) {
+        if (range.monikerIds.length === 0) {
             continue
         }
 
-        if (range.definitionResult !== undefined) {
-            const set = definitionMonikers.getOrDefault(range.definitionResult)
-            for (const monikerId of range.monikers) {
+        if (range.definitionResultId !== undefined) {
+            const set = definitionMonikers.getOrDefault(range.definitionResultId)
+            for (const monikerId of range.monikerIds) {
                 set.add(monikerId)
             }
         }
 
-        if (range.referenceResult !== undefined) {
-            const set = referenceMonikers.getOrDefault(range.referenceResult)
-            for (const monikerId of range.monikers) {
+        if (range.referenceResultId !== undefined) {
+            const set = referenceMonikers.getOrDefault(range.referenceResultId)
+            for (const monikerId of range.monikerIds) {
                 set.add(monikerId)
             }
         }
@@ -287,7 +287,7 @@ export async function importLsif(
     const packageHashes: Package[] = []
     for (const monikerId of correlator.exportedMonikers) {
         const source = assertDefined(monikerId, 'moniker', correlator.monikerData)
-        const packageInformationId = assertId(source.packageInformation)
+        const packageInformationId = assertId(source.packageInformationId)
         const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
 
         packageHashes.push({
@@ -308,7 +308,7 @@ export async function importLsif(
     const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
     for (const monikerId of correlator.importedMonikers) {
         const source = assertDefined(monikerId, 'moniker', correlator.monikerData)
-        const packageInformationId = assertId(source.packageInformation)
+        const packageInformationId = assertId(source.packageInformationId)
         const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
 
         const key = `${source.scheme}::${packageInfo.name}::${packageInfo.version}`
@@ -339,12 +339,12 @@ export async function importLsif(
  */
 function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, item: RangeData | ResultSetData): void {
     const monikers = new Set<MonikerId>()
-    if (item.monikers.length > 0) {
+    if (item.monikerIds.length > 0) {
         // If we have any monikers attached to this item, then we only need to look at the
         // monikers reachable from any attached moniker. All other attached monikers are
         // necessarily reachable.
 
-        for (const monikerId of reachableMonikers(correlator.monikerSets, item.monikers[0])) {
+        for (const monikerId of reachableMonikers(correlator.monikerSets, item.monikerIds[0])) {
             if (assertDefined(monikerId, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
                 monikers.add(monikerId)
             }
@@ -361,28 +361,28 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
         canonicalizeItem(correlator, nextId, nextItem)
 
         // Add each moniker of the next set to this item
-        for (const monikerId of nextItem.monikers) {
+        for (const monikerId of nextItem.monikerIds) {
             monikers.add(monikerId)
         }
 
         // If we do not have a definition, reference, or hover result, take the result
         // value from the next item.
 
-        if (item.definitionResult === undefined) {
-            item.definitionResult = nextItem.definitionResult
+        if (item.definitionResultId === undefined) {
+            item.definitionResultId = nextItem.definitionResultId
         }
 
-        if (item.referenceResult === undefined) {
-            item.referenceResult = nextItem.referenceResult
+        if (item.referenceResultId === undefined) {
+            item.referenceResultId = nextItem.referenceResultId
         }
 
-        if (item.hoverResult === undefined) {
-            item.hoverResult = nextItem.hoverResult
+        if (item.hoverResultId === undefined) {
+            item.hoverResultId = nextItem.hoverResultId
         }
     }
 
     // Update our moniker sets (our normalized sets and any monikers of our next item)
-    item.monikers = Array.from(monikers)
+    item.monikerIds = Array.from(monikers)
 
     // Remove the next edge so we don't traverse it a second time
     correlator.nextData.delete(id)
@@ -437,7 +437,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         document.monikers.set(id, moniker)
 
         // Add related package information to document
-        addPackageInformation(moniker.packageInformation)
+        addPackageInformation(moniker.packageInformationId)
     }
 
     // Correlate range data with its id so after we sort we can pull out the ids in the
@@ -447,8 +447,8 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
     for (const id of assertDefined(currentDocumentId, 'contains', correlator.containsData)) {
         const range = assertDefined(id, 'range', correlator.rangeData)
         orderedRanges.push({ id, ...range })
-        addHover(range.hoverResult)
-        for (const id of range.monikers) {
+        addHover(range.hoverResultId)
+        for (const id of range.monikerIds) {
             addMoniker(id)
         }
     }

@@ -57,7 +57,7 @@ export class Database {
         private repository: string,
         private commit: string,
         private databasePath: string
-    ) {}
+    ) { }
 
     /**
      * Determine if data exists for a particular document in this database.
@@ -83,9 +83,9 @@ export class Database {
         // First, we try to find the definition result attached to the range or one
         // of the result sets to which the range is attached.
 
-        if (range.definitionResult) {
+        if (range.definitionResultId) {
             // We have a definition result in this database.
-            const definitionResults = await this.findResult(range.definitionResult)
+            const definitionResults = await this.findResult(range.definitionResultId)
 
             // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
             // Not sure of a better way to do this right now until we work through how to patch
@@ -101,7 +101,7 @@ export class Database {
         // moniker sequentially in order of priority, where import monikers, if any exist,
         // will be processed first.
 
-        for (const moniker of sortMonikers(range.monikers.map(id => assertDefined(id, 'moniker', document.monikers)))) {
+        for (const moniker of sortMonikers(range.monikerIds.map(id => assertDefined(id, 'moniker', document.monikers)))) {
             if (moniker.kind === 'import') {
                 // This symbol was imported from another database. See if we have xrepo
                 // definition for it.
@@ -142,10 +142,10 @@ export class Database {
         // First, we try to find the reference result attached to the range or one
         // of the result sets to which the range is attached.
 
-        if (range.referenceResult) {
+        if (range.referenceResultId) {
             // We have references in this database.
             locations = locations.concat(
-                await this.findQualifiedRanges(path, document, await this.findResult(range.referenceResult))
+                await this.findQualifiedRanges(path, document, await this.findResult(range.referenceResultId))
             )
         }
 
@@ -153,7 +153,7 @@ export class Database {
         // moniker sequentially in order of priority for each stage, where import monikers,
         // if any exist, will be processed first.
 
-        const monikers = sortMonikers(range.monikers.map(id => assertDefined(id, 'monikers', document.monikers)))
+        const monikers = sortMonikers(range.monikerIds.map(id => assertDefined(id, 'monikers', document.monikers)))
 
         // Next, we search the references table of our own database - this search is necessary,
         // but may be un-intuitive, but remember that a 'Find References' operation on a reference
@@ -201,8 +201,8 @@ export class Database {
         // which the range is attached. There is no fall-back search via monikers for this
         // operation.
 
-        if (range.hoverResult) {
-            return { contents: assertDefined(range.hoverResult, 'hoverResult', document.hoverResults) }
+        if (range.hoverResultId) {
+            return { contents: assertDefined(range.hoverResultId, 'hoverResult', document.hoverResults) }
         }
 
         return null
@@ -298,11 +298,11 @@ export class Database {
      * @param moniker The target moniker.
      */
     private async remoteDefinitions(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[] | null> {
-        if (!moniker.packageInformation) {
+        if (!moniker.packageInformationId) {
             return null
         }
 
-        const packageInformation = document.packageInformation.get(moniker.packageInformation)
+        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
         if (!packageInformation) {
             return null
         }
@@ -334,11 +334,11 @@ export class Database {
      * @param moniker The target moniker.
      */
     private async remoteMoniker(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[]> {
-        if (!moniker.packageInformation) {
+        if (!moniker.packageInformationId) {
             return []
         }
 
-        const packageInformation = document.packageInformation.get(moniker.packageInformation)
+        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
         if (!packageInformation) {
             return []
         }
@@ -373,11 +373,11 @@ export class Database {
      * @param moniker The target moniker.
      */
     private async remoteReferences(document: DocumentData, moniker: MonikerData): Promise<lsp.Location[]> {
-        if (!moniker.packageInformation) {
+        if (!moniker.packageInformationId) {
             return []
         }
 
-        const packageInformation = document.packageInformation.get(moniker.packageInformation)
+        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
         if (!packageInformation) {
             return []
         }
@@ -460,17 +460,18 @@ export class Database {
     }
 
     /**
-     * Return a list of resolved qualified ranges by looking into the result
-     * chunks table and parsing the data associated with the given identifier.
+     * Convert a list of ranges with document ids into a list of ranges with
+     * document paths by looking into the result chunks table and parsing the
+     * data associated with the given identifier.
      *
      * @param id The identifier of the definition or reference result.
      */
     private async findResult(id: DefinitionReferenceResultId): Promise<DocumentPathRangeId[]> {
-        const { paths, qualifiedRanges } = await this.findResultChunk(id)
-        const ranges = assertDefined(id, 'qualifiedRange', qualifiedRanges)
+        const { documentPaths, documentIdRangeIds } = await this.findResultChunk(id)
+        const ranges = assertDefined(id, 'documentIdRangeId', documentIdRangeIds)
 
         return ranges.map(range => ({
-            documentPath: assertDefined(range.documentId, 'documentPath', paths),
+            documentPath: assertDefined(range.documentId, 'documentPath', documentPaths),
             rangeId: range.rangeId,
         }))
     }

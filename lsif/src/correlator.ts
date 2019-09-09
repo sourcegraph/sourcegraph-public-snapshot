@@ -41,36 +41,37 @@ import {
 export type ResultSetId = Id
 
 /**
- * An internal representation of a result set vertex. This is only used during import
- * as we flatten this data into the range vertices for faster queries.
+ * An internal representation of a result set vertex. This is only used during
+ * correlation and import as we flatten this data into the range vertices for
+ * faster queries.
  */
 export interface ResultSetData {
     /**
-     * * The identifier of the definition result attached to this result set.
+     * The identifier of the definition result attached to this result set.
      */
-    definitionResult?: DefinitionResultId
+    definitionResultId?: DefinitionResultId
 
     /**
-     * * The identifier of the reference result attached to this result set.
+     * The identifier of the reference result attached to this result set.
      */
-    referenceResult?: ReferenceResultId
+    referenceResultId?: ReferenceResultId
 
     /**
-     * * The identifier of the hover result attached to this result set.
+     * The identifier of the hover result attached to this result set.
      */
-    hoverResult?: HoverResultId
+    hoverResultId?: HoverResultId
 
     /**
-     * * The set of moniker identifiers directly attached to this result set.
+     * The set of moniker identifiers directly attached to this result set.
      */
-    monikers: MonikerId[]
+    monikerIds: MonikerId[]
 }
 
 /**
  * Common state around the conversion of a single LSIF dump upload. This class
- * receives the parsed vertex or edge, line by line, from the caller, and adds it
- * into an in-memory structure that is later processed and converted into a SQLite
- * database on disk.
+ * receives the parsed vertex or edge, line by line and adds it into an in-memory
+ * adjacency-list graph structure that is later processed and converted into a
+ * SQLite database on disk.
  */
 export class Correlator {
     /**
@@ -101,8 +102,8 @@ export class Correlator {
 
     /**
      * A mapping for the relation from moniker to the set of monikers that they are related
-     * to via nextMoniker edges. This relation is symmetric (if `a` is in `MonikerSets[b]`,
-     * then `b` is in `monikerSets[a]`).
+     * to via nextMoniker edges. This relation is symmetric such that if `a` is in
+     * `MonikerSets[b]`, then `b` is in `monikerSets[a]`.
      */
     public monikerSets = new DefaultMap<RangeId, Set<MonikerId>>(() => new Set<MonikerId>())
 
@@ -154,12 +155,12 @@ export class Correlator {
                         startCharacter: element.start.character,
                         endLine: element.end.line,
                         endCharacter: element.end.character,
-                        monikers: [],
+                        monikerIds: [],
                     })
                     break
 
                 case VertexLabels.resultSet:
-                    this.resultSetData.set(element.id, { monikers: [] })
+                    this.resultSetData.set(element.id, { monikerIds: [] })
                     break
 
                 case VertexLabels.definitionResult:
@@ -319,7 +320,7 @@ export class Correlator {
         )
 
         assertDefined(edge.inV, 'moniker', this.monikerData)
-        source.monikers = [edge.inV]
+        source.monikerIds = [edge.inV]
     }
 
     /**
@@ -363,7 +364,7 @@ export class Correlator {
     private handlePackageInformationEdge(edge: packageInformation): void {
         const source = assertDefined(edge.outV, 'moniker', this.monikerData)
         assertDefined(edge.inV, 'packageInformation', this.packageInformationData)
-        source.packageInformation = edge.inV
+        source.packageInformationId = edge.inV
 
         if (source.kind === 'export') {
             this.exportedMonikers.add(edge.outV)
@@ -389,7 +390,7 @@ export class Correlator {
         )
 
         assertDefined(edge.inV, 'definitionResult', this.definitionData)
-        outV.definitionResult = edge.inV
+        outV.definitionResultId = edge.inV
     }
 
     /**
@@ -407,7 +408,7 @@ export class Correlator {
         )
 
         assertDefined(edge.inV, 'hoverResult', this.hoverData)
-        outV.hoverResult = edge.inV
+        outV.hoverResultId = edge.inV
     }
 
     /**
@@ -425,7 +426,7 @@ export class Correlator {
         )
 
         assertDefined(edge.inV, 'referenceResult', this.referenceData)
-        outV.referenceResult = edge.inV
+        outV.referenceResultId = edge.inV
     }
 }
 

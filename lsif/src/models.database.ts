@@ -167,7 +167,7 @@ class Symbols {
  */
 @Entity({ name: 'definitions' })
 @Index(['scheme', 'identifier'])
-export class DefinitionModel extends Symbols {}
+export class DefinitionModel extends Symbols { }
 
 /**
  * An entity within the database describing LSIF data for a single repository and commit
@@ -176,7 +176,7 @@ export class DefinitionModel extends Symbols {}
  */
 @Entity({ name: 'references' })
 @Index(['scheme', 'identifier'])
-export class ReferenceModel extends Symbols {}
+export class ReferenceModel extends Symbols { }
 
 /**
  * Data for a single document within an LSIF dump. The data here can answer definitions,
@@ -259,17 +259,16 @@ export interface DocumentPathRangeId {
 export interface ResultChunkData {
     /**
      * A map from document identifiers to document paths. The document identifiers
-     * in the qualified ranges map reference a concrete path stored here.
+     * in the `documentIdRangeIds` field reference a concrete path stored here.
      */
-    paths: Map<DocumentId, DocumentPath>
+    documentPaths: Map<DocumentId, DocumentPath>
 
     /**
-     * A map from definition or reference result identifiers to the qualified ranges
-     * that compose the result set.
+     * A map from definition or reference result identifiers to the ranges that
+     * compose the result set. Each range is paired with the identifier of the
+     * document in which it can be found.
      */
-    qualifiedRanges: Map<DefinitionReferenceResultId, DocumentIdRangeId[]>
-
-    // TODO - suffix like things with Id
+    documentIdRangeIds: Map<DefinitionReferenceResultId, DocumentIdRangeId[]>
 }
 
 /**
@@ -304,28 +303,28 @@ export interface RangeData {
      * The definition result object can be queried by its * identifier within the containing
      * document.
      */
-    definitionResult?: DefinitionResultId
+    definitionResultId?: DefinitionResultId
 
     /**
      * The identifier of the reference result attached to this range, if one exists.
      * The reference result object can be queried by its identifier within the containing
      * document.
      */
-    referenceResult?: ReferenceResultId
+    referenceResultId?: ReferenceResultId
 
     /**
      * The identifier of the hover result attached to this range, if one exists. The
      * hover result object can be queried by its identifier within the containing
      * document.
      */
-    hoverResult?: HoverResultId
+    hoverResultId?: HoverResultId
 
     /**
      * The set of moniker identifiers directly attached to this range. The moniker
      * object can be queried by its identifier within the
      * containing document.
      */
-    monikers: MonikerId[]
+    monikerIds: MonikerId[]
 }
 
 /**
@@ -357,7 +356,7 @@ export interface MonikerData {
      * The package information object can be queried by its identifier within the
      * containing document.
      */
-    packageInformation?: PackageInformationId
+    packageInformationId?: PackageInformationId
 }
 
 /**
