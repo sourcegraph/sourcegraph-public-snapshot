@@ -64,7 +64,7 @@ export interface ResultSetData {
     /**
      * The set of moniker identifiers directly attached to this result set.
      */
-    monikerIds: MonikerId[]
+    monikerIds: Set<MonikerId>
 }
 
 /**
@@ -155,12 +155,12 @@ export class Correlator {
                         startCharacter: element.start.character,
                         endLine: element.end.line,
                         endCharacter: element.end.character,
-                        monikerIds: [],
+                        monikerIds: new Set<MonikerId>(),
                     })
                     break
 
                 case VertexLabels.resultSet:
-                    this.resultSetData.set(element.id, { monikerIds: [] })
+                    this.resultSetData.set(element.id, { monikerIds: new Set<MonikerId>() })
                     break
 
                 case VertexLabels.definitionResult:
@@ -320,7 +320,7 @@ export class Correlator {
         )
 
         mustGet(this.monikerData, edge.inV, 'moniker')
-        source.monikerIds = [edge.inV]
+        source.monikerIds = new Set<MonikerId>([edge.inV])
     }
 
     /**

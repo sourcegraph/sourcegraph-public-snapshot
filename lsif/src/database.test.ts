@@ -1,6 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { comparePosition, getRangeByPosition, createRemoteUri, mapRangesToLocations } from './database'
-import { RangeData, RangeId } from './models.database'
+import { RangeData, RangeId, MonikerId } from './models.database'
 import { range } from 'lodash'
 
 describe('getRangeByPosition', () => {
@@ -15,8 +15,20 @@ describe('getRangeByPosition', () => {
             const c2 = characters[(i - 1) * 2 + 1]
 
             // Generate two ranges on each line
-            ranges.push({ startLine: i, startCharacter: c1, endLine: i, endCharacter: c1 + 3, monikerIds: [] })
-            ranges.push({ startLine: i, startCharacter: c2, endLine: i, endCharacter: c2 + 3, monikerIds: [] })
+            ranges.push({
+                startLine: i,
+                startCharacter: c1,
+                endLine: i,
+                endCharacter: c1 + 3,
+                monikerIds: new Set<MonikerId>(),
+            })
+            ranges.push({
+                startLine: i,
+                startCharacter: c2,
+                endLine: i,
+                endCharacter: c2 + 3,
+                monikerIds: new Set<MonikerId>(),
+            })
         }
 
         for (const range of ranges) {
@@ -40,7 +52,7 @@ describe('comparePosition', () => {
             startCharacter: 11,
             endLine: 5,
             endCharacter: 13,
-            monikerIds: [],
+            monikerIds: new Set<MonikerId>(),
         }
 
         expect(comparePosition(range, { line: 5, character: 11 })).toEqual(0)
@@ -77,9 +89,9 @@ describe('mapRangesToLocations', () => {
         ranges.set(4, 1)
 
         const orderedRanges = [
-            { startLine: 1, startCharacter: 1, endLine: 1, endCharacter: 2, monikerIds: [] },
-            { startLine: 2, startCharacter: 1, endLine: 2, endCharacter: 2, monikerIds: [] },
-            { startLine: 3, startCharacter: 1, endLine: 3, endCharacter: 2, monikerIds: [] },
+            { startLine: 1, startCharacter: 1, endLine: 1, endCharacter: 2, monikerIds: new Set<MonikerId>() },
+            { startLine: 2, startCharacter: 1, endLine: 2, endCharacter: 2, monikerIds: new Set<MonikerId>() },
+            { startLine: 3, startCharacter: 1, endLine: 3, endCharacter: 2, monikerIds: new Set<MonikerId>() },
         ]
 
         expect(mapRangesToLocations(ranges, orderedRanges, 'src/position.ts', [1, 2, 4])).toEqual([

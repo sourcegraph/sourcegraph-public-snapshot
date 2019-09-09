@@ -236,7 +236,7 @@ async function populateDefinitionsAndReferencesTables(
     const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set<MonikerId>())
 
     for (const range of correlator.rangeData.values()) {
-        if (range.monikerIds.length === 0) {
+        if (range.monikerIds.size === 0) {
             continue
         }
 
@@ -379,12 +379,15 @@ function prepareCorrelationData(correlator: Correlator): { packages: Package[]; 
  */
 function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, item: RangeData | ResultSetData): void {
     const monikers = new Set<MonikerId>()
-    if (item.monikerIds.length > 0) {
+    if (item.monikerIds.size > 0) {
         // If we have any monikers attached to this item, then we only need to look at the
         // monikers reachable from any attached moniker. All other attached monikers are
-        // necessarily reachable.
+        // necessarily reachable, so we can choose any single value from the moniker set
+        // as the source of the graph traversal.
 
-        for (const monikerId of reachableMonikers(correlator.monikerSets, item.monikerIds[0])) {
+        const candidateMoniker = item.monikerIds.keys().next().value
+
+        for (const monikerId of reachableMonikers(correlator.monikerSets, candidateMoniker)) {
             if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== MonikerKind.local) {
                 monikers.add(monikerId)
             }
@@ -422,7 +425,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
     }
 
     // Update our moniker sets (our normalized sets and any monikers of our next item)
-    item.monikerIds = Array.from(monikers)
+    item.monikerIds = monikers
 
     // Remove the next edge so we don't traverse it a second time
     correlator.nextData.delete(id)

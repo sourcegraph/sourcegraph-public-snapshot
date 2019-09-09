@@ -101,7 +101,9 @@ export class Database {
         // moniker sequentially in order of priority, where import monikers, if any exist,
         // will be processed first.
 
-        for (const moniker of sortMonikers(range.monikerIds.map(id => mustGet(document.monikers, id, 'moniker')))) {
+        for (const moniker of sortMonikers(
+            Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'moniker'))
+        )) {
             if (moniker.kind === 'import') {
                 // This symbol was imported from another database. See if we have xrepo
                 // definition for it.
@@ -157,7 +159,9 @@ export class Database {
         // moniker sequentially in order of priority for each stage, where import monikers,
         // if any exist, will be processed first.
 
-        const monikers = sortMonikers(range.monikerIds.map(id => mustGet(document.monikers, id, 'monikers')))
+        const monikers = sortMonikers(
+            Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'monikers'))
+        )
 
         // Next, we search the references table of our own database - this search is necessary,
         // but may be un-intuitive, but remember that a 'Find References' operation on a reference

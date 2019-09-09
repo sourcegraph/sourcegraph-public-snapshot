@@ -324,7 +324,7 @@ export interface RangeData {
      * object can be queried by its identifier within the
      * containing document.
      */
-    monikerIds: MonikerId[]
+    monikerIds: Set<MonikerId>
 }
 
 /**
