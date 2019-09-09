@@ -176,26 +176,41 @@ Each payload has the following form.
 
 ```json
 {
-    "documentPaths": {
-        "4": "foo.ts",
-        "80": "bar.ts"
-    },
-    "documentIdRangeIds": {
-        "49": [{ "documentId": "4", "rangeId": "9" }],
-        "55": [{ "documentId": "4", "rangeId": "4" }],
-        "61": [{ "documentId": "4", "rangeId": "21" }],
-        "71": [{ "documentId": "4", "rangeId": "47" }],
-        "52": [{ "documentId": "4", "rangeId": "9" }, { "documentId": "80", "rangeId": "95" }],
-        "58": [{ "documentId": "4", "rangeId": "14" }, { "documentId": "80", "rangeId": "91" }, { "documentId": "80", "rangeId": "111" }, { "documentId": "80", "rangeId": "113" }],
-        "64": [{ "documentId": "4", "rangeId": "21" }, { "documentId": "4", "rangeId": "25" }, { "documentId": "4", "rangeId": "38" }],
-        "68": [{ "documentId": "4", "rangeId": "36" }],
-        "117": [{ "documentId": "80", "rangeId": "85" }],
-        "120": [{ "documentId": "80", "rangeId": "85" }],
-        "125": [{ "documentId": "80", "rangeId": "100" }],
-        "128": [{ "documentId": "80", "rangeId": "100" }],
-        "131": [{ "documentId": "80", "rangeId": "107" }],
-        "134": [{ "documentId": "80", "rangeId": "107" }, { "documentId": "80", "rangeId": "115" }]
-    }
+  "documentPaths": {
+    "4": "foo.ts",
+    "80": "bar.ts"
+  },
+  "documentIdRangeIds": {
+    "49": [{ "documentId": "4", "rangeId": "9" }],
+    "55": [{ "documentId": "4", "rangeId": "4" }],
+    "61": [{ "documentId": "4", "rangeId": "21" }],
+    "71": [{ "documentId": "4", "rangeId": "47" }],
+    "52": [
+      { "documentId": "4", "rangeId": "9" },
+      { "documentId": "80", "rangeId": "95" }
+    ],
+    "58": [
+      { "documentId": "4", "rangeId": "14" },
+      { "documentId": "80", "rangeId": "91" },
+      { "documentId": "80", "rangeId": "111" },
+      { "documentId": "80", "rangeId": "113" }
+    ],
+    "64": [
+      { "documentId": "4", "rangeId": "21" },
+      { "documentId": "4", "rangeId": "25" },
+      { "documentId": "4", "rangeId": "38" }
+    ],
+    "68": [{ "documentId": "4", "rangeId": "36" }],
+    "117": [{ "documentId": "80", "rangeId": "85" }],
+    "120": [{ "documentId": "80", "rangeId": "85" }],
+    "125": [{ "documentId": "80", "rangeId": "100" }],
+    "128": [{ "documentId": "80", "rangeId": "100" }],
+    "131": [{ "documentId": "80", "rangeId": "107" }],
+    "134": [
+      { "documentId": "80", "rangeId": "107" },
+      { "documentId": "80", "rangeId": "115" }
+    ]
+  }
 }
 ```
 
