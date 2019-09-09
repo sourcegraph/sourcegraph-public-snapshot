@@ -6,9 +6,8 @@ import { isInPage } from '../context'
 import { SourcegraphIntegrationURLs } from './context'
 
 function createInPageExtensionHost({
-    sourcegraphURL,
     assetsURL,
-}: SourcegraphIntegrationURLs): Observable<EndpointPair> {
+}: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
     return new Observable(subscriber => {
         // Create an iframe pointing to extensionHostFrame.html,
         // which will load the extension host worker, and forward it
@@ -27,7 +26,7 @@ function createInPageExtensionHost({
             proxy: extensionHostAPIChannel.port1,
             expose: clientAPIChannel.port1,
         }
-        // Subscribe to the load event on the frame,
+        // Subscribe to the load event on the frame
         frame.addEventListener(
             'load',
             () => {
@@ -39,7 +38,7 @@ function createInPageExtensionHost({
                             wrapEndpoints: false,
                         },
                     },
-                    sourcegraphURL,
+                    new URL(assetsURL).origin,
                     Object.values(clientEndpoints)
                 )
                 subscriber.next(workerEndpoints)
@@ -69,7 +68,7 @@ function createInPageExtensionHost({
  * worker per pair of ports, and forward messages between the port objects and
  * the extension host worker's endpoints.
  */
-export function createExtensionHost(urls: SourcegraphIntegrationURLs): Observable<EndpointPair> {
+export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
     if (isInPage) {
         return createInPageExtensionHost(urls)
     }
