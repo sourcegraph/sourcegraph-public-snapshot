@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 )
 
 func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
@@ -31,7 +31,7 @@ func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	campaign := &types.Campaign{
+	campaign := &a8n.Campaign{
 		Name:        args.Input.Name,
 		Description: args.Input.Description,
 		AuthorID:    user.ID,
@@ -51,7 +51,7 @@ func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 		return nil, errors.Errorf("Invalid namespace of type %T", ns)
 	}
 
-	if err := r.CampaignsStore.CreateCampaign(ctx, campaign); err != nil {
+	if err := r.A8NStore.CreateCampaign(ctx, campaign); err != nil {
 		return nil, err
 	}
 
@@ -67,20 +67,20 @@ func (r *schemaResolver) Campaigns(ctx context.Context, args *struct {
 	}
 
 	return &campaignsConnectionResolver{
-		store: r.CampaignsStore,
-		opts: db.ListCampaignsOpts{
+		store: r.A8NStore,
+		opts: a8n.ListCampaignsOpts{
 			Limit: int(args.ConnectionArgs.GetFirst()),
 		},
 	}, nil
 }
 
 type campaignsConnectionResolver struct {
-	store *db.CampaignsStore
-	opts  db.ListCampaignsOpts
+	store *a8n.Store
+	opts  a8n.ListCampaignsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
-	campaigns []*types.Campaign
+	campaigns []*a8n.Campaign
 	next      int64
 	err       error
 }
@@ -110,14 +110,14 @@ func (r *campaignsConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*types.Campaign, int64, error) {
+func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campaign, int64, error) {
 	r.once.Do(func() {
 		r.campaigns, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
 	})
 	return r.campaigns, r.next, r.err
 }
 
-type campaignResolver struct{ *types.Campaign }
+type campaignResolver struct{ *a8n.Campaign }
 
 const campaignIDKind = "Campaign"
 
