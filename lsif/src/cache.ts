@@ -24,9 +24,10 @@ interface CacheEntry<K, V> {
     size: number
 
     /**
-     * The number of active withValue calls referencing this entry.
-     * If this value is non-zero, it should not be evict-able from the
-     * cache.
+     * The number of active withValue calls referencing this entry with
+     * a special case: this value is negative until the promise value
+     * has resolved. If this value is non-zero, it should not be evict-able
+     * from the cache.
      */
     readers: number
 
