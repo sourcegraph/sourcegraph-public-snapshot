@@ -1,4 +1,4 @@
-package db
+package a8n
 
 import (
 	"context"
@@ -7,24 +7,22 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 )
 
-// CampaignsStore exposes methods to read and write campaigns
+// Store exposes methods to read and write a8n domain models
 // from persistent storage.
-type CampaignsStore struct {
+type Store struct {
 	db dbutil.DB
 }
 
-// NewCampaignsStore returns a new CampaignsStore backed
-// by the given db.
-func NewCampaignsStore(db dbutil.DB) *CampaignsStore {
-	return &CampaignsStore{db: db}
+// NewStore returns a new Store backed by the given db.
+func NewStore(db dbutil.DB) *Store {
+	return &Store{db: db}
 }
 
 // CreateCampaign creates the given Campaign.
-func (s *CampaignsStore) CreateCampaign(ctx context.Context, c *types.Campaign) error {
+func (s *Store) CreateCampaign(ctx context.Context, c *Campaign) error {
 	q := createCampaignQuery(c)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -63,7 +61,7 @@ RETURNING
 	updated_at
 `
 
-func createCampaignQuery(c *types.Campaign) *sqlf.Query {
+func createCampaignQuery(c *Campaign) *sqlf.Query {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	}
@@ -92,12 +90,12 @@ func nullInt32Column(n int32) *int32 {
 }
 
 // UpdateCampaign updates the given Campaign.
-func (s *CampaignsStore) UpdateCampaign(ctx context.Context, c *types.Campaign) error {
+func (s *Store) UpdateCampaign(ctx context.Context, c *Campaign) error {
 	panic("not implemented")
 }
 
 // CountCampaigns returns the number of campaigns in the database.
-func (s *CampaignsStore) CountCampaigns(ctx context.Context) (int64, error) {
+func (s *Store) CountCampaigns(ctx context.Context) (int64, error) {
 	q := countCampaignsQuery
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -125,7 +123,7 @@ type ListCampaignsOpts struct {
 }
 
 // ListCampaigns lists Campaigns with the given filters.
-func (s *CampaignsStore) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*types.Campaign, next int64, err error) {
+func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*Campaign, next int64, err error) {
 	q := listCampaignsQuery(&opts)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -133,9 +131,9 @@ func (s *CampaignsStore) ListCampaigns(ctx context.Context, opts ListCampaignsOp
 		return nil, 0, err
 	}
 
-	cs = make([]*types.Campaign, 0, opts.Limit)
+	cs = make([]*Campaign, 0, opts.Limit)
 	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
-		var c types.Campaign
+		var c Campaign
 		if err = scanCampaign(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -207,7 +205,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanCampaign(c *types.Campaign, s scanner) error {
+func scanCampaign(c *Campaign, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,

@@ -1,4 +1,4 @@
-package db
+package a8n
 
 import (
 	"context"
@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
-func TestCampaignsStore(t *testing.T) {
+func TestStore(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -28,13 +27,13 @@ func TestCampaignsStore(t *testing.T) {
 	tx, done := dbtest.NewTx(t, d)
 	defer done()
 
-	s := NewCampaignsStore(tx)
+	s := NewStore(tx)
 	ctx := context.Background()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	campaigns := make([]*types.Campaign, 3)
+	campaigns := make([]*Campaign, 3)
 	for i := range campaigns {
-		campaigns[i] = &types.Campaign{
+		campaigns[i] = &Campaign{
 			Name:        fmt.Sprintf("Upgrade ES-Lint %d", i),
 			Description: "All the Javascripts are belong to us",
 			AuthorID:    23,
