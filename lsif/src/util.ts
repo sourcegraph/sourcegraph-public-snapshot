@@ -73,7 +73,7 @@ export function assertId<T extends Id>(id: T | undefined): T {
 }
 
 /**
- * Hash a string or numeric identifier into the range [0, `maxIndex`). The
+ * Hash a string or numeric identifier into the range `[0, maxIndex)`. The
  * hash algorithm here is similar to the one used in Java's String.hashCode.
  *
  * @param id The identifier to hash.
