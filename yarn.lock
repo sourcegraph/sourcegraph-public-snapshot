@@ -1646,10 +1646,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-4.0.0.tgz#dd2a406f90760bb789fd89fde4bd0a8d681f2767"
   integrity sha512-jxrhKbek4yu1HUDpUhqR9hAGFiUgaJ9NIM+c8JEkAnvpW67ab1AUFWb82aSVfZWX1UVqfR84AMr7xP3E8LlL+A==
 
-"@sourcegraph/tslint-config@^14.0.1":
-  version "14.0.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-14.0.1.tgz#fa39264594811889e3be7db9fcac58dd9562325b"
-  integrity sha512-i6GpkBmv8aDhDo8wfMWEYODyBOp/zVEHaSPzbLdNlRJyN+pwwAL00Vk7O8dp5BfKfAPlYO2D/LFUmiHapAA6AQ==
+"@sourcegraph/tslint-config@^14.0.2":
+  version "14.0.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/tslint-config/-/tslint-config-14.0.2.tgz#e29c4043f2175e5853d29dc2a35033c10ce284f1"
+  integrity sha512-UnZXDGwwJHkIavxiywJ6l9E/aoG6Ef3jRJzbSP4hEn5Hv72eujgNAoZihTUMkCPM5IPjBMMiW/YaxaBtaP6+FQ==
   dependencies:
     rxjs-tslint-rules "^4.23.0"
 
