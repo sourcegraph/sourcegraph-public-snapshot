@@ -1,19 +1,20 @@
 import * as fs from 'mz/fs'
-import * as temp from 'temp'
+import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
-import { ConnectionCache, DocumentCache } from './cache'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
-import { lsp } from 'lsif-protocol'
 import { Readable } from 'stream'
+import { createCommit, createLocation, createRemoteLocation } from './test-utils'
 
 describe('Database', () => {
     let storageRoot!: string
     const connectionCache = new ConnectionCache(10)
     const documentCache = new DocumentCache(10)
+    const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = temp.mkdirSync('typescript') // eslint-disable-line no-sync
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        storageRoot = await fs.promises.mkdtemp('typescript-')
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const inputs: { input: Readable; repository: string; commit: string }[] = []
 
         for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
@@ -29,8 +30,12 @@ describe('Database', () => {
         }
     })
 
+    afterAll(() => {
+        rimraf.sync(storageRoot)
+    })
+
     it('should find all defs of `add` from repo a', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const db = await backend.createDatabase('a', createCommit('a'))
         const definitions = await db.definitions('src/index.ts', { line: 11, character: 18 })
         expect(definitions).toContainEqual(createLocation('src/index.ts', 0, 16, 0, 19))
@@ -38,7 +43,7 @@ describe('Database', () => {
     })
 
     it('should find all defs of `add` from repo b1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const db = await backend.createDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19))
@@ -46,7 +51,7 @@ describe('Database', () => {
     })
 
     it('should find all defs of `mul` from repo b1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const db = await backend.createDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19))
@@ -54,7 +59,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `mul` from repo a', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const db = await backend.createDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 4, character: 19 }))!.filter(
@@ -78,7 +83,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `mul` from repo b1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const db = await backend.createDatabase('b1', createCommit('b1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
@@ -102,7 +107,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo a', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const db = await backend.createDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 0, character: 17 }))!.filter(
@@ -136,7 +141,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo c1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache)
+        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const db = await backend.createDatabase('c1', createCommit('c1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
@@ -169,40 +174,3 @@ describe('Database', () => {
         expect(references && references.length).toEqual(20)
     })
 })
-
-//
-// Helpers
-
-function createLocation(
-    uri: string,
-    startLine: number,
-    startCharacter: number,
-    endLine: number,
-    endCharacter: number
-): lsp.Location {
-    return lsp.Location.create(uri, {
-        start: { line: startLine, character: startCharacter },
-        end: { line: endLine, character: endCharacter },
-    })
-}
-
-function createRemoteLocation(
-    repository: string,
-    path: string,
-    startLine: number,
-    startCharacter: number,
-    endLine: number,
-    endCharacter: number
-): lsp.Location {
-    return createLocation(
-        `git://${repository}?${createCommit(repository)}#${path}`,
-        startLine,
-        startCharacter,
-        endLine,
-        endCharacter
-    )
-}
-
-function createCommit(repository: string): string {
-    return repository.repeat(40).substring(0, 40)
-}

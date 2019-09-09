@@ -25,4 +25,18 @@ describe('encodeJSON', () => {
         const decoded = await decodeJSON(encoded)
         expect(decoded).toEqual(value)
     })
+
+    it('should preserve sets', async () => {
+        const s = new Set<number>([1, 2, 3, 4, 5])
+
+        const value = {
+            foo: [1, 2, 3],
+            bar: ['abc', 'xyz'],
+            baz: s,
+        }
+
+        const encoded = await encodeJSON(value)
+        const decoded = await decodeJSON(encoded)
+        expect(decoded).toEqual(value)
+    })
 })

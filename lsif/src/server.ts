@@ -1,6 +1,6 @@
 import bodyParser from 'body-parser'
 import express from 'express'
-import { ConnectionCache, DocumentCache } from './cache'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { ERRNOLSIFDATA, createBackend } from './backend'
 import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
@@ -24,6 +24,11 @@ const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 1000)
 const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
 
 /**
+ * The maximum number of result chunks that can be held in memory at once.
+ */
+const RESULT_CHUNK_CACHE_SIZE = readEnvInt('RESULT_CHUNK_CACHE_SIZE', 1000)
+
+/**
  * Whether or not to log a message when the HTTP server is ready and listening.
  */
 const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
@@ -39,7 +44,8 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
-    const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache)
+    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
+    const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
     const app = express()
     app.use(errorHandler)
 

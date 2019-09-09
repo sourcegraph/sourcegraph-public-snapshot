@@ -1,6 +1,5 @@
 import { Connection, createConnection, EntityManager } from 'typeorm'
-import { DocumentData } from './entities'
-import { Id } from 'lsif-protocol'
+import { DocumentData, ResultChunkData } from './models.database'
 import Yallist from 'yallist'
 
 /**
@@ -25,9 +24,8 @@ interface CacheEntry<K, V> {
     size: number
 
     /**
-     * The number of active withValue calls referencing this entry.
-     * If this value is non-zero, it should not be evict-able from the
-     * cache.
+     * The number of active withValue calls referencing this entry. If
+     * this value is non-zero, it is not evict-able from the cache.
      */
     readers: number
 
@@ -73,7 +71,7 @@ export class GenericCache<K, V> {
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
-        private disposeFunction: (value: V) => Promise<void>
+        private disposeFunction: (value: V) => Promise<void> | void
     ) {}
 
     /**
@@ -90,12 +88,6 @@ export class GenericCache<K, V> {
     public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
         // Find or create the entry
         const entry = await this.getEntry(key, factory)
-
-        // Increase the number of readers currently looking at this value.
-        // While this value is not equal to zero, it wll not be skipped over
-        // on the cache eviction pass.
-
-        entry.readers++
 
         try {
             // Re-resolve the promise. If this is already resolved it's a fast
@@ -147,7 +139,7 @@ export class GenericCache<K, V> {
 
         const value = await promise
 
-        if (readers !== 0) {
+        if (readers > 0) {
             // There's someone holding the cache value. Create a barrier promise
             // and stash the function that can unlock it. When the reader count
             // for an entry is decremented, the waiter function, if present, is
@@ -178,19 +170,21 @@ export class GenericCache<K, V> {
         if (node) {
             // Found, move to head of list
             this.lruList.unshiftNode(node)
-            return node.value
+            const entry = node.value
+            // Ensure entry is locked before returning
+            entry.readers++
+            return entry
         }
 
-        // Create promise and the entry that wraps it. We don't know
-        // the effective size of the value until the promise resolves,
-        // so we put zero. We have a reader count of -1, which is the
-        // value that denotes that the cache entry is currently under
-        // construction. We don't want to block here while waiting for
-        // the promise value to resolve, otherwise a second request for
+        // Create promise and the entry that wraps it. We don't know the effective
+        // size of the value until the promise resolves, so we put zero. We have a
+        // reader count of 1, in order to lock the entry until after the user that
+        // requested the entry is done using it. We don't want to block here while
+        // waiting for the promise value to resolve, otherwise a second request for
         // the same key will create a duplicate cache entry.
 
         const promise = factory()
-        const newEntry = { key, promise, size: 0, readers: -1, waiter: undefined }
+        const newEntry = { key, promise, size: 0, readers: 1, waiter: undefined }
 
         // Add to head of list
         this.lruList.unshift(newEntry)
@@ -209,12 +203,6 @@ export class GenericCache<K, V> {
 
         const value = await promise
         await this.resolved(newEntry, value)
-
-        // Remove the under-construction value from the reader count.
-        // Callers of this method end up incrementing this value again
-        // a second time before calling a user callback function.
-        newEntry.readers++
-
         return newEntry
     }
 
@@ -240,12 +228,10 @@ export class GenericCache<K, V> {
             } = node
 
             if (readers === 0) {
-                // If readers < 0, then we're under construction and we
-                // don't have anything yet to discard. If readers > 0, then
-                // it may be actively used by another part of the code that
-                // hit a portion of their critical section that returned
-                // control to the event loop. We don't want to mess with
-                // those if we can help it.
+                // If readers > 0, then it may be actively used by another
+                // part of the code that hit a portion of their critical
+                // section that returned control to the event loop. We don't
+                // want to mess with those if we can help it.
 
                 this.removeNode(node, size)
                 await this.disposeFunction(await promise)
@@ -322,50 +308,87 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * @param database The database filename.
      * @param entities The set of expected entities present in this schema.
      * @param callback The function invoke with a SQLite transaction connection.
+     * @param pragmaHook The function called with connection before the transaction begins.
      */
     public withTransactionalEntityManager<T>(
         database: string,
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
-        callback: (entityManager: EntityManager) => Promise<T>
+        callback: (entityManager: EntityManager) => Promise<T>,
+        pragmaHook?: (connection: Connection) => Promise<void>
     ): Promise<T> {
-        return this.withConnection(database, entities, connection => connection.transaction(em => callback(em)))
+        return this.withConnection(database, entities, async connection => {
+            if (pragmaHook) {
+                await pragmaHook(connection)
+            }
+
+            return await connection.transaction(callback)
+        })
     }
 }
 
 /**
- * A cache of deserialized `DocumentData` values indexed by their Identifer.
+ * A wrapper around a cache value that retains its encoded size. In order to keep
+ * the in-memory limit of these decoded items, we use this value as the cache entry
+ * size. This assumes that the size of the encoded text is a good proxy for the size
+ * of the in-memory representation.
  */
-export class DocumentCache extends GenericCache<Id, DocumentData> {
+export interface EncodedJsonCacheValue<T> {
     /**
-     * Create a new `DocumentCache` with the given maximum (soft) size for
+     * The size of the encoded value.
+     */
+    size: number
+
+    /**
+     * The decoded value.
+     */
+    data: T
+}
+
+/**
+ * A cache of decoded values encoded as JSON and gzipped in a SQLite database.
+ */
+class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
+    /**
+     * Create a new `EncodedJsonCache` with the given maximum (soft) size for
      * all items in the cache.
      */
     constructor(max: number) {
         super(
             max,
-            // TODO - determine memory size
-            () => 1,
+            v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
             (): Promise<void> => Promise.resolve()
         )
     }
+}
 
+/**
+ * A cache of deserialized `DocumentData` values indexed by a string containing
+ * the database path and the path of the document.
+ */
+export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
     /**
-     * Invoke `callback` with document value obtained from the cache
-     * cache or created on cache miss.
-     *
-     * @param documentId The identifier of the document.
-     * @param factory The function used to create a document.
-     * @param callback The function invoked with the document.
+     * Create a new `DocumentCache` with the given maximum (soft) size for
+     * all items in the cache.
      */
-    public withDocument<T>(
-        documentId: Id,
-        factory: () => Promise<DocumentData>,
-        callback: (document: DocumentData) => Promise<T>
-    ): Promise<T> {
-        return this.withValue(documentId, factory, callback)
+    constructor(max: number) {
+        super(max)
+    }
+}
+
+/**
+ * A cache of deserialized `ResultChunkData` values indexed by a string containing
+ * the database path and the chunk index.
+ */
+export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> {
+    /**
+     * Create a new `ResultChunkCache` with the given maximum (soft) size for
+     * all items in the cache.
+     */
+    constructor(max: number) {
+        super(max)
     }
 }
 
