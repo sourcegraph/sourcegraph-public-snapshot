@@ -1582,15 +1582,16 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.1.0.tgz#260c1b33945b65f53965b902e121b0dcf247619a"
-  integrity sha512-W5gbS2EstUop5hAk4xakrE5YMC6PQp5Cax7S+sk0XqWqvlG8WjzUCmjNSGkOIFLUSSUItlFhe6VHTeaoiE03Nw==
+"@sourcegraph/eslint-config@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.2.0.tgz#7b16c2557b192062acab49a5a35a36a9be96f24b"
+  integrity sha512-eEPyoT/Ebk93FDsnEiRokVit8A+0dFyAXiup8hiRq4i25KHHw+er05pQWGYQM/u2GM+CsJWRyIEIBTJvfNqFRQ==
   dependencies:
     "@typescript-eslint/eslint-plugin" "^1.13.0"
     "@typescript-eslint/parser" "^1.13.0"
     eslint-config-prettier "^6.0.0"
     eslint-plugin-ban "^1.2.0"
+    eslint-plugin-etc "^0.0.1-beta.6"
     eslint-plugin-import "^2.18.2"
     eslint-plugin-jsdoc "^15.8.0"
     eslint-plugin-react "^7.14.3"
@@ -7049,6 +7050,11 @@ eslint-config-prettier@^6.0.0:
   dependencies:
     get-stdin "^6.0.0"
 
+eslint-etc@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.npmjs.org/eslint-etc/-/eslint-etc-0.0.1.tgz#e082e6ed4de09e901378a950c7d48efe3a4c4b60"
+  integrity sha512-XqVDWFXffrRW/RKB2dojpz+xcoox+WikWjkwUNW2cKdqhE/puJGu1Gd7wo4qWLozvirS7WXCoTY5xhVsQkhgUw==
+
 eslint-import-resolver-node@^0.3.2:
   version "0.3.2"
   resolved "https://registry.npmjs.org/eslint-import-resolver-node/-/eslint-import-resolver-node-0.3.2.tgz#58f15fb839b8d0576ca980413476aab2472db66a"
@@ -7071,6 +7077,18 @@ eslint-plugin-ban@^1.2.0:
   integrity sha512-UKdGRnKnaTo8dFnLYEgErBBmcDW1p/OtqFDdYz4a1QBduJpJFSNllz06psu53YMBShVK5bLGg798/E9LGf1bog==
   dependencies:
     requireindex "~1.2.0"
+
+eslint-plugin-etc@^0.0.1-beta.6:
+  version "0.0.1-beta.6"
+  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.1-beta.6.tgz#7edee4ee78073078312e4a7798907be94708c9dc"
+  integrity sha512-0htnrSFUDNKL3WIaIbS/HQQmO3KnvTuU3AGjc8YiX/xvTWMk6mPtp/UrmsMvUSI3LZhWfgJCcXF8qA1hgZOA4Q==
+  dependencies:
+    eslint-etc "^0.0.1"
+    requireindex "~1.2.0"
+    tslib "^1.8.0"
+    tslint-etc "^1.6.0"
+    tsutils "^3.0.0"
+    tsutils-etc "^1.0.0"
 
 eslint-plugin-import@^2.18.2:
   version "2.18.2"
@@ -16845,6 +16863,16 @@ tslib@^1, tslib@^1.10.0, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.10.0.tgz#c3c19f95973fb0a62973fb09d90d961ee43e5c8a"
   integrity sha512-qOebF53frne81cf0S9B41ByenJ3/IuH8yJKngAX35CmiZySA0khhkovshKK+jGCaMnVomla7gVlIcc3EvKPbTQ==
 
+tslint-etc@^1.6.0:
+  version "1.7.0"
+  resolved "https://registry.npmjs.org/tslint-etc/-/tslint-etc-1.7.0.tgz#7cd5b500bca458067c7061aad6f53e352d0872d5"
+  integrity sha512-8NOGfr4zRquMNugz8D9gr0Tz8xxNA1Zrd2OFqURaWNKV779GO4LhqHjFL572m3MusUwSxPkUOMSmsqAwkvu6qQ==
+  dependencies:
+    "@phenomnomnominal/tsquery" "^3.0.0"
+    tslib "^1.8.0"
+    tsutils "^3.0.0"
+    tsutils-etc "^1.0.0"
+
 tslint@^5.19.0:
   version "5.19.0"
   resolved "https://registry.npmjs.org/tslint/-/tslint-5.19.0.tgz#a2cbd4a7699386da823f6b499b8394d6c47bb968"
@@ -16864,7 +16892,7 @@ tslint@^5.19.0:
     tslib "^1.8.0"
     tsutils "^2.29.0"
 
-tsutils-etc@^1.1.0:
+tsutils-etc@^1.0.0, tsutils-etc@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/tsutils-etc/-/tsutils-etc-1.1.0.tgz#82ce1c92da29e07d3cde95692d5c5e8dbdc92fd0"
   integrity sha512-pJlLtLmQPUyGHqY/Pq6EGnpGmQCnnTDZetQ7eWkeQ5xaw4GtfcR1Zt7HMKFHGDDp53HzQfbqQ+7ps6iJbfa9Hw==
