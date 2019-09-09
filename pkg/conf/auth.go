@@ -1,6 +1,8 @@
 package conf
 
-import "github.com/sourcegraph/sourcegraph/schema"
+import (
+	"github.com/sourcegraph/sourcegraph/schema"
+)
 
 // AuthProviderType returns the type string for the auth provider.
 func AuthProviderType(p schema.AuthProviders) string {
@@ -23,10 +25,15 @@ func AuthProviderType(p schema.AuthProviders) string {
 }
 
 // AuthPublic reports whether the site is public. Currently only the builtin auth provider allows
-// sites to be public. AuthPublic only returns true if auth.public (in site config) is true *and*
-// there is a builtin auth provider.
+// sites to be public. Public (guest) users is a paid feature. AuthPublic only returns true if
+// auth.public (in site config) is true *and* there is a builtin auth provider *and* there is a
+// valid license key.
 func AuthPublic() bool { return authPublic(Get()) }
 func authPublic(c *Unified) bool {
+	if err := CheckFeature(FeatureGuestUsers); err != nil {
+		return false
+	}
+
 	for _, p := range c.Critical.AuthProviders {
 		if p.Builtin != nil && c.Critical.AuthPublic {
 			return true

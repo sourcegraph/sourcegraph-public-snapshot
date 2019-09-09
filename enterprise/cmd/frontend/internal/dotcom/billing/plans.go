@@ -13,8 +13,8 @@ import (
 // InfoForProductPlan returns the license key tags and min quantity that should be used for the
 // given product plan.
 //
-// License key tags indicate which product variant (e.g., Enterprise vs. Enterprise Starter), so
-// they are stored on the billing system in the metadata of the product plans.
+// License key tags indicate which product variant (e.g., Enterprise vs. Enterprise Plus vs.
+// Elite), so they are stored on the billing system in the metadata of the product plans.
 func InfoForProductPlan(ctx context.Context, planID string) (licenseTags []string, minQuantity *int32, err error) {
 	params := &stripe.PlanParams{Params: stripe.Params{Context: ctx}}
 	params.AddExpand("product")

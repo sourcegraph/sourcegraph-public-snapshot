@@ -71,6 +71,9 @@ func initLicensing() {
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
 
+	// Make the OSS conf.CheckFeature function use the proper license checks.
+	conf.CheckFeature = licensing.CheckFeature
+
 	// Make the Site.productSubscription.actualUserCount and Site.productSubscription.actualUserCountDate
 	// GraphQL fields return the proper max user count and timestamp on the current license.
 	graphqlbackend.ActualUserCount = licensing.ActualUserCount

@@ -7,6 +7,12 @@ const (
 	// of Enterprise features).
 	EnterpriseStarterTag = "starter"
 
+	// EnterprisePlusTag is the license tag for the Sourcegraph Enterprise Plus tier.
+	EnterprisePlusTag = "plus"
+
+	// EliteTag is the license tag for the Sourcegraph Elite tier.
+	EliteTag = "elite"
+
 	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
 	// exceeded and will be charged later.
 	TrueUpUserCountTag = "true-up"
@@ -19,6 +25,12 @@ var (
 	// EnterpriseTags is the license tags for Enterprise (intentionally empty because it has no
 	// feature restrictions)
 	EnterpriseTags = []string{}
+
+	// EnterprisePlusTags is the license tags for Enterprise Plus.
+	EnterprisePlusTags = []string{EnterprisePlusTag}
+
+	// EliteTags is the license tags for Elite.
+	EliteTags = []string{EliteTag}
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -37,9 +49,18 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 		return false
 	}
 
-	var name string
+	var name = " Enterprise"
+	// DEPRECATED: the Starter product is no longer available for new customers
 	if hasTag("starter") {
-		name = " Starter"
+		name = " Enterprise Starter"
+	}
+
+	if hasTag("plus") {
+		name = " Enterprise Plus"
+	}
+
+	if hasTag("elite") {
+		name = " Elite"
 	}
 
 	var misc []string
@@ -53,5 +74,5 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 		name += " (" + strings.Join(misc, ", ") + ")"
 	}
 
-	return "Sourcegraph Enterprise" + name
+	return "Sourcegraph" + name
 }

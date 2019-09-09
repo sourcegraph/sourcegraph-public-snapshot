@@ -118,7 +118,7 @@ const CriticalSchemaJSON = `{
       "default": [{ "type": "builtin", "allowSignup": true }]
     },
     "auth.public": {
-      "description": "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider.",
+      "description": "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider\n\nNote: this is a paid feature and only available with a valid license key.",
       "type": "boolean",
       "default": false,
       "group": "Authentication"

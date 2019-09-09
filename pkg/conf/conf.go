@@ -126,3 +126,18 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 // FormatOptions is the default format options that should be used for jsonx
 // edit computation.
 var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
+
+// Feature is a product feature that is selectively activated based on the current license key.
+type Feature string
+
+const (
+	// FeatureGuestUsers is whether an instance is allowed to have unlimited guests (i.e., anonymous,
+	// with no user account).
+	FeatureGuestUsers Feature = "guests"
+)
+
+// CheckFeature checks whether the feature is activated based on the current license. Any feature
+// that exists to be checked in OSS code is automatically available to OSS builds.
+var CheckFeature = func(feature Feature) error {
+	return nil // feature is activated for current license
+}
