@@ -1,6 +1,9 @@
 package conf
 
-import "github.com/sourcegraph/sourcegraph/schema"
+import (
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/schema"
+)
 
 // AuthProviderType returns the type string for the auth provider.
 func AuthProviderType(p schema.AuthProviders) string {
@@ -22,17 +25,11 @@ func AuthProviderType(p schema.AuthProviders) string {
 	}
 }
 
-// AuthPublic reports whether the site is public. Currently only the builtin auth provider allows
-// sites to be public. AuthPublic only returns true if auth.public (in site config) is true *and*
-// there is a builtin auth provider.
+// AuthPublic reports whether the site is public. This leads to a significantly degraded user
+// experience, and as a result, is currently only supported on Sourcegraph.com.
 func AuthPublic() bool { return authPublic(Get()) }
 func authPublic(c *Unified) bool {
-	for _, p := range c.Critical.AuthProviders {
-		if p.Builtin != nil && c.Critical.AuthPublic {
-			return true
-		}
-	}
-	return false
+	return envvar.SourcegraphDotComMode()
 }
 
 // AuthAllowSignup reports whether the site allows signup. Currently only the builtin auth provider
