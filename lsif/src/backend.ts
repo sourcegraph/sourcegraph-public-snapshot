@@ -5,7 +5,6 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { Database } from './database'
 import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
 import { Edge, Vertex } from 'lsif-protocol'
-import { EntityManager, Connection } from 'typeorm'
 import { hasErrorCode } from './util'
 import { importLsif } from './importer'
 import { Readable } from 'stream'
@@ -58,9 +57,8 @@ export class Backend {
         const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
             [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
-            (entityManager: EntityManager) =>
-                importLsif(entityManager, parseLines(readline.createInterface({ input }))),
-            async (connection: Connection) => {
+            entityManager => importLsif(entityManager, parseLines(readline.createInterface({ input }))),
+            async connection => {
                 await connection.query('PRAGMA synchronous = OFF')
                 await connection.query('PRAGMA journal_mode = OFF')
             }
