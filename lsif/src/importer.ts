@@ -1,4 +1,4 @@
-import { assertDefined, assertId, hashKey, readEnvInt } from './util'
+import { mustGet, assertId, hashKey, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { DefaultMap } from './default-map'
 import {
@@ -159,7 +159,7 @@ export async function importLsif(
 
             for (const documentId of documentRanges.keys()) {
                 // Add paths into the result chunk where they are used
-                resultChunk.paths.set(documentId, assertDefined(documentId, 'documentPath', correlator.documentPaths))
+                resultChunk.paths.set(documentId, mustGet(correlator.documentPaths, documentId, 'documentPath'))
             }
         }
     }
@@ -232,13 +232,13 @@ export async function importLsif(
             // the result set provided by the data argument of this function.
 
             for (const monikerId of monikerIds) {
-                const moniker = assertDefined(monikerId, 'moniker', correlator.monikerData)
+                const moniker = mustGet(correlator.monikerData, monikerId, 'moniker')
 
                 for (const [documentId, rangeIds] of documentRanges) {
-                    const documentPath = assertDefined(documentId, 'documentPath', correlator.documentPaths)
+                    const documentPath = mustGet(correlator.documentPaths, documentId, 'documentPath')
 
                     for (const rangeId of rangeIds) {
-                        const range = assertDefined(rangeId, 'range', correlator.rangeData)
+                        const range = mustGet(correlator.rangeData, rangeId, 'range')
 
                         await inserter.insert({
                             scheme: moniker.scheme,
@@ -286,9 +286,9 @@ export async function importLsif(
 
     const packageHashes: Package[] = []
     for (const monikerId of correlator.exportedMonikers) {
-        const source = assertDefined(monikerId, 'moniker', correlator.monikerData)
+        const source = mustGet(correlator.monikerData, monikerId, 'moniker')
         const packageInformationId = assertId(source.packageInformationId)
-        const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
+        const packageInfo = mustGet(correlator.packageInformationData, packageInformationId, 'packageInformation')
 
         packageHashes.push({
             scheme: source.scheme,
@@ -307,9 +307,9 @@ export async function importLsif(
     const packages = new Map<string, Package>()
     const packageIdentifiers = new DefaultMap<string, string[]>(() => [])
     for (const monikerId of correlator.importedMonikers) {
-        const source = assertDefined(monikerId, 'moniker', correlator.monikerData)
+        const source = mustGet(correlator.monikerData, monikerId, 'moniker')
         const packageInformationId = assertId(source.packageInformationId)
-        const packageInfo = assertDefined(packageInformationId, 'packageInformation', correlator.packageInformationData)
+        const packageInfo = mustGet(correlator.packageInformationData, packageInformationId, 'packageInformation')
 
         const key = `${source.scheme}::${packageInfo.name}::${packageInfo.version}`
         packages.set(key, { scheme: source.scheme, name: packageInfo.name, version: packageInfo.version })
@@ -320,8 +320,8 @@ export async function importLsif(
     // Ensure that each package is represented only once in the list.
 
     const importedReferences = Array.from(packages.keys()).map(key => ({
-        package: assertDefined(key, 'package', packages),
-        identifiers: assertDefined(key, 'packageIdentifier', packageIdentifiers),
+        package: mustGet(packages, key, 'package'),
+        identifiers: mustGet(packageIdentifiers, key, 'packageIdentifier'),
     }))
 
     // Kick back the xrepo data needed to be inserted into the correlation database
@@ -345,7 +345,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
         // necessarily reachable.
 
         for (const monikerId of reachableMonikers(correlator.monikerSets, item.monikerIds[0])) {
-            if (assertDefined(monikerId, 'moniker', correlator.monikerData).kind !== MonikerKind.local) {
+            if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== MonikerKind.local) {
                 monikers.add(monikerId)
             }
         }
@@ -357,7 +357,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
         // will recursively look at any result that that it can reach that hasn't yet been
         // canonicalized.
 
-        const nextItem = assertDefined(nextId, 'resultSet', correlator.resultSetData)
+        const nextItem = mustGet(correlator.resultSetData, nextId, 'resultSet')
         canonicalizeItem(correlator, nextId, nextItem)
 
         // Add each moniker of the next set to this item
@@ -413,7 +413,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         }
 
         // Add hover result to the document, if defined and not a duplicate
-        const data = assertDefined(id, 'hoverResult', correlator.hoverData)
+        const data = mustGet(correlator.hoverData, id, 'hoverResult')
         document.hoverResults.set(id, data)
     }
 
@@ -423,7 +423,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         }
 
         // Add package information to the document, if defined and not a duplicate
-        const data = assertDefined(id, 'packageInformation', correlator.packageInformationData)
+        const data = mustGet(correlator.packageInformationData, id, 'packageInformation')
         document.packageInformation.set(id, data)
     }
 
@@ -433,7 +433,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         }
 
         // Add moniker to the document, if defined and not a duplicate
-        const moniker = assertDefined(id, 'moniker', correlator.monikerData)
+        const moniker = mustGet(correlator.monikerData, id, 'moniker')
         document.monikers.set(id, moniker)
 
         // Add related package information to document
@@ -444,8 +444,8 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
     // same order to make the identifier -> index mapping.
     const orderedRanges: (RangeData & { id: RangeId })[] = []
 
-    for (const id of assertDefined(currentDocumentId, 'contains', correlator.containsData)) {
-        const range = assertDefined(id, 'range', correlator.rangeData)
+    for (const id of mustGet(correlator.containsData, currentDocumentId, 'contains')) {
+        const range = mustGet(correlator.rangeData, id, 'range')
         orderedRanges.push({ id, ...range })
         addHover(range.hoverResultId)
         for (const id of range.monikerIds) {

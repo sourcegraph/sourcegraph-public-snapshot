@@ -22,23 +22,42 @@ export function hasErrorCode(e: any, expectedCode: string): boolean {
 }
 
 /**
- * Return the value of the given key in one of the given maps. The first value
- * to exist is returned. If the key does not exist in any map, an exception is
- * thrown.
+ * Return the value of the given key from the given map. If the key does not
+ * exist in the map, an exception is thrown with the given error text.
  *
+ * @param maps The map to query.
  * @param key The key to search for.
- * @param name The type of element (used for exception message).
- * @param maps The set of maps to query.
+ * @param elementType The type of element (used for exception message).
  */
-export function assertDefined<K, V>(key: K, name: string, ...maps: Map<K, V>[]): V {
-    for (const map of maps) {
+export function mustGet<K, V>(map: Map<K, V>, key: K, elementType: string): V {
+    const value = map.get(key)
+    if (value !== undefined) {
+        return value
+    }
+
+    throw new Error(`Unknown ${elementType} '${key}'.`)
+}
+
+
+/**
+ * Return the value of the given key from one of the given maps. The first
+ * non-undefined value to be found is returned. If the key does not exist in
+ * either map, an exception is thrown with the given error text.
+ *
+ * @param map1 The first map to query.
+ * @param map2 The second map to query.
+ * @param key The key to search for.
+ * @param elementType The type of element (used for exception message).
+ */
+export function mustGetFromEither<K, V>(map1: Map<K, V>, map2: Map<K, V>, key: K, elementType: string): V {
+    for (const map of [map1, map2]) {
         const value = map.get(key)
         if (value !== undefined) {
             return value
         }
     }
 
-    throw new Error(`Unknown ${name} '${key}'.`)
+    throw new Error(`Unknown ${elementType} '${key}'.`)
 }
 
 /**

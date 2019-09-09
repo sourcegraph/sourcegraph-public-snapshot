@@ -1,5 +1,5 @@
 import RelateUrl from 'relateurl'
-import { assertDefined } from './util'
+import { mustGet, mustGetFromEither } from './util'
 import { DefaultMap } from './default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import {
@@ -263,9 +263,9 @@ export class Correlator {
             return
         }
 
-        const set = assertDefined(edge.outV, 'contains', this.containsData)
+        const set = mustGet(this.containsData, edge.outV, 'contains')
         for (const inV of edge.inVs) {
-            assertDefined(inV, 'range', this.rangeData)
+            mustGet(this.rangeData, inV, 'range')
             set.add(inV)
         }
     }
@@ -281,10 +281,10 @@ export class Correlator {
             // `item` edges with a `property` refer to a referenceResult
             case ItemEdgeProperties.definitions:
             case ItemEdgeProperties.references: {
-                const documentMap = assertDefined(edge.outV, 'referenceResult', this.referenceData)
+                const documentMap = mustGet(this.referenceData, edge.outV, 'referenceResult')
                 const rangeIds = documentMap.getOrDefault(edge.document)
                 for (const inV of edge.inVs) {
-                    assertDefined(inV, 'range', this.rangeData)
+                    mustGet(this.rangeData, inV, 'range')
                     rangeIds.push(inV)
                 }
 
@@ -293,10 +293,10 @@ export class Correlator {
 
             // `item` edges without a `property` refer to a definitionResult
             case undefined: {
-                const documentMap = assertDefined(edge.outV, 'definitionResult', this.definitionData)
+                const documentMap = mustGet(this.definitionData, edge.outV, 'definitionResult')
                 const rangeIds = documentMap.getOrDefault(edge.document)
                 for (const inV of edge.inVs) {
-                    assertDefined(inV, 'range', this.rangeData)
+                    mustGet(this.rangeData, inV, 'range')
                     rangeIds.push(inV)
                 }
 
@@ -312,14 +312,14 @@ export class Correlator {
      * @param edge The moniker edge.
      */
     private handleMonikerEdge(edge: moniker): void {
-        const source = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const source = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+            this.rangeData,
+            this.resultSetData,
             edge.outV,
             'range/resultSet',
-            this.rangeData,
-            this.resultSetData
         )
 
-        assertDefined(edge.inV, 'moniker', this.monikerData)
+        mustGet(this.monikerData, edge.inV, 'moniker')
         source.monikerIds = [edge.inV]
     }
 
@@ -330,14 +330,14 @@ export class Correlator {
      * @param edge The next edge.
      */
     private handleNextEdge(edge: next): void {
-        assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
+        mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+            this.rangeData,
+            this.resultSetData,
             edge.outV,
             'range/resultSet',
-            this.rangeData,
-            this.resultSetData
         )
 
-        assertDefined(edge.inV, 'resultSet', this.resultSetData)
+        mustGet(this.resultSetData, edge.inV, 'resultSet')
         this.nextData.set(edge.outV, edge.inV)
     }
 
@@ -348,8 +348,8 @@ export class Correlator {
      * @param edge The nextMoniker edge.
      */
     private handleNextMonikerEdge(edge: nextMoniker): void {
-        assertDefined(edge.inV, 'moniker', this.monikerData)
-        assertDefined(edge.outV, 'moniker', this.monikerData)
+        mustGet(this.monikerData, edge.inV, 'moniker')
+        mustGet(this.monikerData, edge.outV, 'moniker')
         this.monikerSets.getOrDefault(edge.inV).add(edge.outV) // Forward direction
         this.monikerSets.getOrDefault(edge.outV).add(edge.inV) // Backwards direction
     }
@@ -362,8 +362,8 @@ export class Correlator {
      * @param edge The packageInformation edge.
      */
     private handlePackageInformationEdge(edge: packageInformation): void {
-        const source = assertDefined(edge.outV, 'moniker', this.monikerData)
-        assertDefined(edge.inV, 'packageInformation', this.packageInformationData)
+        const source = mustGet(this.monikerData, edge.outV, 'moniker')
+        mustGet(this.packageInformationData, edge.inV, 'packageInformation')
         source.packageInformationId = edge.inV
 
         if (source.kind === 'export') {
@@ -382,14 +382,14 @@ export class Correlator {
      * @param edge The textDocument/definition edge.
      */
     private handleDefinitionEdge(edge: textDocument_definition): void {
-        const outV = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+            this.rangeData,
+            this.resultSetData,
             edge.outV,
             'range/resultSet',
-            this.rangeData,
-            this.resultSetData
         )
 
-        assertDefined(edge.inV, 'definitionResult', this.definitionData)
+        mustGet(this.definitionData, edge.inV, 'definitionResult')
         outV.definitionResultId = edge.inV
     }
 
@@ -400,14 +400,14 @@ export class Correlator {
      * @param edge The textDocument/hover edge.
      */
     private handleHoverEdge(edge: textDocument_hover): void {
-        const outV = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+            this.rangeData,
+            this.resultSetData,
             edge.outV,
             'range/resultSet',
-            this.rangeData,
-            this.resultSetData
         )
 
-        assertDefined(edge.inV, 'hoverResult', this.hoverData)
+        mustGet(this.hoverData, edge.inV, 'hoverResult')
         outV.hoverResultId = edge.inV
     }
 
@@ -418,14 +418,14 @@ export class Correlator {
      * @param edge The textDocument/references edge.
      */
     private handleReferenceEdge(edge: textDocument_references): void {
-        const outV = assertDefined<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+            this.rangeData,
+            this.resultSetData,
             edge.outV,
             'range/resultSet',
-            this.rangeData,
-            this.resultSetData
         )
 
-        assertDefined(edge.inV, 'referenceResult', this.referenceData)
+        mustGet(this.referenceData, edge.inV, 'referenceResult')
         outV.referenceResultId = edge.inV
     }
 }

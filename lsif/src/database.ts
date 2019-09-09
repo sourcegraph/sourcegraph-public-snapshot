@@ -1,5 +1,5 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { assertDefined, hashKey } from './util'
+import { mustGet, hashKey } from './util'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
 import { decodeJSON } from './encoding'
@@ -101,7 +101,7 @@ export class Database {
         // moniker sequentially in order of priority, where import monikers, if any exist,
         // will be processed first.
 
-        for (const moniker of sortMonikers(range.monikerIds.map(id => assertDefined(id, 'moniker', document.monikers)))) {
+        for (const moniker of sortMonikers(range.monikerIds.map(id => mustGet(document.monikers, id, 'moniker')))) {
             if (moniker.kind === 'import') {
                 // This symbol was imported from another database. See if we have xrepo
                 // definition for it.
@@ -153,7 +153,7 @@ export class Database {
         // moniker sequentially in order of priority for each stage, where import monikers,
         // if any exist, will be processed first.
 
-        const monikers = sortMonikers(range.monikerIds.map(id => assertDefined(id, 'monikers', document.monikers)))
+        const monikers = sortMonikers(range.monikerIds.map(id => mustGet(document.monikers, id, 'monikers')))
 
         // Next, we search the references table of our own database - this search is necessary,
         // but may be un-intuitive, but remember that a 'Find References' operation on a reference
@@ -202,7 +202,7 @@ export class Database {
         // operation.
 
         if (range.hoverResultId) {
-            return { contents: assertDefined(range.hoverResultId, 'hoverResult', document.hoverResults) }
+            return { contents: mustGet(document.hoverResults, range.hoverResultId, 'hoverResult') }
         }
 
         return null
@@ -468,10 +468,10 @@ export class Database {
      */
     private async findResult(id: DefinitionReferenceResultId): Promise<DocumentPathRangeId[]> {
         const { documentPaths, documentIdRangeIds } = await this.findResultChunk(id)
-        const ranges = assertDefined(id, 'documentIdRangeId', documentIdRangeIds)
+        const ranges = mustGet(documentIdRangeIds, id, 'documentIdRangeId')
 
         return ranges.map(range => ({
-            documentPath: assertDefined(range.documentId, 'documentPath', documentPaths),
+            documentPath: mustGet(documentPaths, range.documentId, 'documentPath'),
             rangeId: range.rangeId,
         }))
     }
@@ -682,5 +682,5 @@ export function mapRangesToLocations(
     uri: string,
     ids: RangeId[]
 ): lsp.Location[] {
-    return ids.map(id => lsp.Location.create(uri, makeRange(orderedRanges[assertDefined(id, 'range', ranges)])))
+    return ids.map(id => lsp.Location.create(uri, makeRange(orderedRanges[mustGet(ranges, id, 'range')])))
 }
