@@ -65,7 +65,7 @@ export class Database {
      * @param path The path of the document.
      */
     public async exists(path: string): Promise<boolean> {
-        return (await this.findDocument(path)) !== undefined
+        return (await this.getDocumentByPath(path)) !== undefined
     }
 
     /**
@@ -75,7 +75,7 @@ export class Database {
      * @param position The current hover position.
      */
     public async definitions(path: string, position: lsp.Position): Promise<lsp.Location[] | null> {
-        const { document, range } = await this.findRange(path, position)
+        const { document, range } = await this.getRangeByPosition(path, position)
         if (!document || !range) {
             return null
         }
@@ -85,14 +85,14 @@ export class Database {
 
         if (range.definitionResultId) {
             // We have a definition result in this database.
-            const definitionResults = await this.findResult(range.definitionResultId)
+            const definitionResults = await this.getResultById(range.definitionResultId)
 
             // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
             // Not sure of a better way to do this right now until we work through how to patch
             // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
 
             if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
-                return await this.findQualifiedRanges(path, document, definitionResults)
+                return await this.convertRangesToLspLocations(path, document, definitionResults)
             }
         }
 
@@ -132,7 +132,7 @@ export class Database {
      * @param position The current hover position.
      */
     public async references(path: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
-        const { document, range } = await this.findRange(path, position)
+        const { document, range } = await this.getRangeByPosition(path, position)
         if (!document || !range) {
             return undefined
         }
@@ -145,7 +145,7 @@ export class Database {
         if (range.referenceResultId) {
             // We have references in this database.
             locations = locations.concat(
-                await this.findQualifiedRanges(path, document, await this.findResult(range.referenceResultId))
+                await this.convertRangesToLspLocations(path, document, await this.getResultById(range.referenceResultId))
             )
         }
 
@@ -192,7 +192,7 @@ export class Database {
      * @param position The current hover position.
      */
     public async hover(path: string, position: lsp.Position): Promise<lsp.Hover | null> {
-        const { document, range } = await this.findRange(path, position)
+        const { document, range } = await this.getRangeByPosition(path, position)
         if (!document || !range) {
             return null
         }
@@ -222,7 +222,7 @@ export class Database {
      * @param document The document object for this query.
      * @param resultData A list of range ids and the document they belong to.
      */
-    private async findQualifiedRanges(
+    private async convertRangesToLspLocations(
         path: string,
         document: DocumentData,
         resultData: DocumentPathRangeId[]
@@ -246,7 +246,7 @@ export class Database {
             }
 
             // Otherwise, we need to get the correct document
-            const sibling = await this.findDocument(documentPath)
+            const sibling = await this.getDocumentByPath(documentPath)
             if (!sibling) {
                 continue
             }
@@ -285,7 +285,7 @@ export class Database {
             })
         )
 
-        return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), makeRange(result)))
+        return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), createRange(result)))
     }
 
     /**
@@ -323,7 +323,7 @@ export class Database {
             makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
-        const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
+        const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
         return await Database.monikerResults(db, DefinitionModel, moniker, pathTransformer)
     }
 
@@ -359,7 +359,7 @@ export class Database {
             makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
-        const pathTransformer = (path: string): string => makeRemoteUri(packageEntity, path)
+        const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
         return await Database.monikerResults(db, ReferenceModel, moniker, pathTransformer)
     }
 
@@ -403,7 +403,7 @@ export class Database {
                 makeFilename(this.storageRoot, reference.repository, reference.commit)
             )
 
-            const pathTransformer = (path: string): string => makeRemoteUri(reference, path)
+            const pathTransformer = (path: string): string => createRemoteUri(reference, path)
             const references = await Database.monikerResults(db, ReferenceModel, moniker, pathTransformer)
             allReferences = allReferences.concat(references)
         }
@@ -417,7 +417,7 @@ export class Database {
      *
      * @param path The path of the document.
      */
-    private async findDocument(path: string): Promise<DocumentData | undefined> {
+    private async getDocumentByPath(path: string): Promise<DocumentData | undefined> {
         const factory = async (): Promise<EncodedJsonCacheValue<DocumentData>> => {
             const document = await this.withConnection(connection =>
                 connection.getRepository(DocumentModel).findOneOrFail(path)
@@ -442,16 +442,16 @@ export class Database {
      * @param path The path of the document.
      * @param position The user's hover position.
      */
-    private async findRange(
+    private async getRangeByPosition(
         path: string,
         position: lsp.Position
     ): Promise<{ document: DocumentData | undefined; range: RangeData | undefined }> {
-        const document = await this.findDocument(path)
+        const document = await this.getDocumentByPath(path)
         if (!document) {
             return { document: undefined, range: undefined }
         }
 
-        const range = findRange(document.orderedRanges, position)
+        const range = getRangeByPosition(document.orderedRanges, position)
         if (!range) {
             return { document: undefined, range: undefined }
         }
@@ -466,8 +466,8 @@ export class Database {
      *
      * @param id The identifier of the definition or reference result.
      */
-    private async findResult(id: DefinitionReferenceResultId): Promise<DocumentPathRangeId[]> {
-        const { documentPaths, documentIdRangeIds } = await this.findResultChunk(id)
+    private async getResultById(id: DefinitionReferenceResultId): Promise<DocumentPathRangeId[]> {
+        const { documentPaths, documentIdRangeIds } = await this.getResultChunkByResultId(id)
         const ranges = mustGet(documentIdRangeIds, id, 'documentIdRangeId')
 
         return ranges.map(range => ({
@@ -481,7 +481,7 @@ export class Database {
      *
      * @param id An identifier contained in the result chunk.
      */
-    private async findResultChunk(id: DefinitionReferenceResultId): Promise<ResultChunkData> {
+    private async getResultChunkByResultId(id: DefinitionReferenceResultId): Promise<ResultChunkData> {
         // Find the result chunk index this id belongs to
         const index = hashKey(id, await this.getNumResultChunks())
 
@@ -564,7 +564,7 @@ export class Database {
  * @param orderedRanges The ranges of the document, ordered by startLine/startCharacter.
  * @param position The user's hover position.
  */
-export function findRange(orderedRanges: OrderedRanges, position: lsp.Position): RangeData | undefined {
+export function getRangeByPosition(orderedRanges: OrderedRanges, position: lsp.Position): RangeData | undefined {
     let lo = 0
     let hi = orderedRanges.length - 1
 
@@ -647,7 +647,7 @@ export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
  * @param pkg The target package.
  * @param path The path relative to the project root.
  */
-export function makeRemoteUri(pkg: PackageModel, path: string): string {
+export function createRemoteUri(pkg: PackageModel, path: string): string {
     const url = new URL(`git://${pkg.repository}`)
     url.search = pkg.commit
     url.hash = path
@@ -659,7 +659,7 @@ export function makeRemoteUri(pkg: PackageModel, path: string): string {
  *
  * @param result The start/end line/character of the range.
  */
-function makeRange(result: {
+function createRange(result: {
     startLine: number
     startCharacter: number
     endLine: number
@@ -682,5 +682,5 @@ export function mapRangesToLocations(
     uri: string,
     ids: RangeId[]
 ): lsp.Location[] {
-    return ids.map(id => lsp.Location.create(uri, makeRange(orderedRanges[mustGet(ranges, id, 'range')])))
+    return ids.map(id => lsp.Location.create(uri, createRange(orderedRanges[mustGet(ranges, id, 'range')])))
 }

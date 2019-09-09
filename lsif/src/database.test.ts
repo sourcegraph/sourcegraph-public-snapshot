@@ -1,9 +1,9 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { comparePosition, findRange, makeRemoteUri, mapRangesToLocations } from './database'
+import { comparePosition, getRangeByPosition, createRemoteUri, mapRangesToLocations } from './database'
 import { RangeData, RangeId } from './models.database'
 import { range } from 'lodash'
 
-describe('findRange', () => {
+describe('getRangeByPosition', () => {
     it('should find all ranges in list', () => {
         // Generate starting characters for each range. These need to be
         // spread wide enough so that the ranges on each line don't touch.
@@ -22,13 +22,13 @@ describe('findRange', () => {
         for (const range of ranges) {
             // search for midpoint of each range
             const c = (range.startCharacter + range.endCharacter) / 2
-            expect(findRange(ranges, { line: range.startLine, character: c })).toEqual(range)
+            expect(getRangeByPosition(ranges, { line: range.startLine, character: c })).toEqual(range)
         }
 
         for (let i = 1; i <= 1000; i++) {
             // search for the empty space between ranges on a line
             const c = characters[(i - 1) * 2 + 1] - 1
-            expect(findRange(ranges, { line: i, character: c })).toBeUndefined()
+            expect(getRangeByPosition(ranges, { line: i, character: c })).toBeUndefined()
         }
     })
 })
@@ -53,7 +53,7 @@ describe('comparePosition', () => {
     })
 })
 
-describe('makeRemoteUri', () => {
+describe('createRemoteUri', () => {
     it('should generate a URI to another project', () => {
         const pkg = {
             id: 0,
@@ -64,7 +64,7 @@ describe('makeRemoteUri', () => {
             commit: 'deadbeef',
         }
 
-        const uri = makeRemoteUri(pkg, 'src/position.ts')
+        const uri = createRemoteUri(pkg, 'src/position.ts')
         expect(uri).toEqual('git://github.com/sourcegraph/codeintellify?deadbeef#src/position.ts')
     })
 })
