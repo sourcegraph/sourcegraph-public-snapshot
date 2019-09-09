@@ -107,7 +107,7 @@ export async function importLsif(
     await referenceInserter.flush()
 
     // Return correlation data to populate xrepo database
-    return await prepareCorrelationData(correlator)
+    return prepareCorrelationData(correlator)
 }
 
 /**
@@ -319,13 +319,7 @@ async function populateMetadataTable(
  * Get the data needed to add this dump's package and dependency information into the
  * xrepo database.
  */
-async function prepareCorrelationData(
-    correlator: Correlator
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    //
-    // Step 5: Prepare data for correlation database.
-    //
-
+function prepareCorrelationData(correlator: Correlator): { packages: Package[]; references: SymbolReferences[] } {
     // Gather all package information that is referenced by an exported
     // moniker. These will be the packages that are provided by the repository
     // represented by this LSIF dump.

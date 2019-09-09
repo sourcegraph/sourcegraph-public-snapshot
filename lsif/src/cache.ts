@@ -337,7 +337,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
                 await pragmaHook(connection)
             }
 
-            return await connection.transaction(em => callback(em))
+            return await connection.transaction(callback)
         })
     }
 }
