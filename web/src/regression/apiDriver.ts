@@ -110,6 +110,9 @@ export async function ensureExternalService(
             gql`
                 mutation addExternalService($input: AddExternalServiceInput!) {
                     addExternalService(input: $input) {
+                        kind
+                        displayName
+                        config
                     }
                 }
             `,
