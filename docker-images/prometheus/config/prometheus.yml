@@ -14,32 +14,17 @@ alerting:
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:
-  - "frontend.rules"
-  - "searcher.rules"
-  - "service.rules"
-  - "symbols.rules"
+  - "*_rules.yml"
+  - "/sg_prometheus_add_ons/*_rules.yml"
 
 # A scrape configuration containing exactly one endpoint to scrape for metrics:
 scrape_configs:
   # Scrape prometheus itself for metrics.
   - job_name: "prometheus"
     static_configs:
-      - targets: ["localhost:9090"]
+        - targets: ["localhost:9090"]
 
-  # Scrape Docker for metrics.
-  # You will need to configure docker for this to work: https://docs.docker.com/config/thirdparty/prometheus/#configure-docker
-  - job_name: "docker"
-    static_configs:
-      # For Linux, use this line:
-      #- targets: ["localhost:9323"]
-      #
-      # For Mac, use this line:
-      #- targets: ["docker.for.mac.host.internal:9323"]
-      #
-      # For Windows, use this line:
-      #- targets: ["docker.for.win.localhost:9090"]
-
-  - job_name: "node"
+  - job_name: "sg"
     file_sd_configs:
       - files:
-          - "/etc/prometheus/prometheus_targets.yml"
+          - "/sg_prometheus_add_ons/*_targets.yml"

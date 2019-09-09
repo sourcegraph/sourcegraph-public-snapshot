@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -14,7 +15,8 @@ func TestRegistryExtensionReleases(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {

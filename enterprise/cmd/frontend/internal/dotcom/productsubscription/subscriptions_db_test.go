@@ -1,6 +1,7 @@
 package productsubscription
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -9,7 +10,8 @@ import (
 )
 
 func TestProductSubscriptions_Create(t *testing.T) {
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {
@@ -56,7 +58,8 @@ func TestProductSubscriptions_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	u1, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})
 	if err != nil {
@@ -118,7 +121,8 @@ func TestProductSubscriptions_List(t *testing.T) {
 }
 
 func TestProductSubscriptions_Update(t *testing.T) {
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {
