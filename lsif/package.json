@@ -5,7 +5,6 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
-    "@types/relateurl": "^0.2.28",
     "async-middleware": "^1.2.1",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
@@ -21,7 +20,6 @@
     "yallist": "^3.0.3"
   },
   "devDependencies": {
-    "@jest/fake-timers": "^24.9.0",
     "@sourcegraph/tsconfig": "^4.0.0",
     "@types/bloomfilter": "^0.0.0",
     "@types/body-parser": "1.17.0",
@@ -29,6 +27,7 @@
     "@types/jest": "24.0.17",
     "@types/lodash": "^4.14.138",
     "@types/mz": "0.0.32",
+    "@types/relateurl": "^0.2.28",
     "@types/sinon": "^7.0.13",
     "@types/temp": "^0.8.34",
     "@types/yallist": "^3.0.1",

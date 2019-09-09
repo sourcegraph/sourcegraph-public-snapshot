@@ -1,7 +1,7 @@
 import { PrimaryGeneratedColumn, Column, Entity, Index } from 'typeorm'
 
 /**
- * An entity within the correlationf database. This maps a given repository and
+ * An entity within the correlation database. This maps a given repository and
  * commit pair to the package that it provides to other projects.
  */
 @Entity({ name: 'packages' })

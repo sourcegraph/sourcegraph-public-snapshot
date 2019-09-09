@@ -73,13 +73,8 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
-// Builds and tests the LSIF server.
+// Tests the LSIF server.
 func addLSIFServer(pipeline *bk.Pipeline) {
-	// LSIF server build
-	pipeline.AddStep(":typescript:",
-		bk.Cmd("dev/ci/yarn-build-separate.sh lsif"))
-
-	// LSIF server tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
 		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
@@ -157,11 +152,12 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("E2E_BROWSER", browser),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test-e2e"),
+			bk.Cmd("yarn -s jest --runInBand ./e2e/github.test"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
