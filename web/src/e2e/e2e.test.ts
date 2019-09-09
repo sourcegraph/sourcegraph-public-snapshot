@@ -661,16 +661,17 @@ describe('e2e test suite', () => {
                     symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
                 },
                 {
-                    name: 'displays valid symbols at different file depths for Go (./router.go)',
+                    name:
+                        'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
-                    filePath: '/tree/traceapp',
-                    symbolPath: '/blob/traceapp/router.go#L31:6-31:15',
+                    filePath: '/tree/examples',
+                    symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
                 },
                 {
-                    name: 'displays valid symbols at different file depths for Go (./tmpl/data.go)',
+                    name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
-                    filePath: '/tree/traceapp',
-                    symbolPath: '/blob/traceapp/tmpl/data.go#L11:6-11:21',
+                    filePath: '/tree/sqltrace',
+                    symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
                 },
             ]
 
