@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
@@ -26,7 +27,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -238,18 +238,12 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	addLangFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
-		extensionToLanguageLookup := func(ext string) string {
-			for _, lang := range filelang.Langs {
-				for _, langExt := range lang.Extensions {
-					if ext == langExt {
-						return strings.ToLower(lang.Name)
-					}
-				}
-			}
-			return ""
+		extensionToLanguageLookup := func(path string) string {
+			language, _ := inventory.GetLanguageByFilename(path)
+			return strings.ToLower(language)
 		}
 		if ext := path.Ext(fileMatchPath); ext != "" {
-			language := extensionToLanguageLookup(path.Ext(fileMatchPath))
+			language := extensionToLanguageLookup(fileMatchPath)
 			if language != "" {
 				value := fmt.Sprintf(`lang:%s`, language)
 				add(value, value, lineMatchCount, limitHit, "lang")

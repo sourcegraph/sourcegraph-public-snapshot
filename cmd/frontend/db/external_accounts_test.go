@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -13,7 +14,8 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	spec := extsvc.ExternalAccountSpec{
 		ServiceType: "xa",
@@ -39,7 +41,8 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{Username: "u"})
 	if err != nil {
@@ -75,7 +78,8 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	spec := extsvc.ExternalAccountSpec{
 		ServiceType: "xa",

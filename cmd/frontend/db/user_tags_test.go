@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"sort"
 	"testing"
@@ -13,7 +14,8 @@ func TestUsers_SetTag(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	// Create user.
 	u, err := Users.Create(ctx, NewUser{Username: "u"})

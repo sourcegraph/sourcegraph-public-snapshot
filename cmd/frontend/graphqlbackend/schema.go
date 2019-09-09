@@ -27,6 +27,8 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
+    # Create a campaign in a namespace. The newly created campaign is returned.
+    createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -341,6 +343,57 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+}
+
+# Input arguments for creating a campaign.
+input CreateCampaignInput {
+    # The ID of the namespace where this campaign is defined.
+    namespace: ID!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description of the campaign as Markdown.
+    description: String!
+}
+
+# A collection of threads.
+type Campaign implements Node {
+    # The unique ID for the campaign.
+    id: ID!
+
+    # The namespace where this campaign is defined.
+    namespace: Namespace!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description as Markdown.
+    description: String!
+
+    # The user who authored the campaign.
+    author: User!
+
+    # The URL to this campaign.
+    url: String!
+
+    # The date and time when the campaign was created.
+    createdAt: DateTime!
+
+    # The date and time when the campaign was updated.
+    updatedAt: DateTime!
+}
+
+# A list of campaigns.
+type CampaignConnection {
+    # A list of campaigns.
+    nodes: [Campaign!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A new external service.
@@ -661,6 +714,13 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
+
+    # A list of campaigns.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
+
     # Looks up a repository by either name or cloneURL.
     repository(
         # Query the repository by name, for example "github.com/gorilla/mux".
@@ -1075,6 +1135,10 @@ type CodemodResult implements GenericSearchResultInterface {
     detail: Markdown!
     # A list of matches in this search result.
     matches: [SearchResultMatch!]!
+    # The commit whose contents the codemod was run against.
+    commit: GitCommit!
+    # The raw diff of the modification.
+    rawDiff: String!
 }
 
 # A search result that is a diff between two diffable Git objects.
@@ -1420,6 +1484,14 @@ type GitRefConnection {
 
 # The differences between two Git commits in a repository.
 type RepositoryComparison {
+    # The repository that is the base (left-hand side) of this comparison.
+    baseRepository: Repository!
+
+    # The repository that is the head (right-hand side) of this comparison. Cross-repository
+    # comparisons are not yet supported, so this is always equal to
+    # RepositoryComparison.baseRepository.
+    headRepository: Repository!
+
     # The range that this comparison represents.
     range: GitRevisionRange!
     # The commits in the comparison range, excluding the base and including the head.
@@ -1748,6 +1820,11 @@ type PageInfo {
 type GitCommitConnection {
     # A list of Git commits.
     nodes: [GitCommit!]!
+    # The total number of Git commits in the connection. If the GitCommitConnection is paginated
+    # (e.g., because a "first" parameter was provided to the field that produced it), this field is
+    # null to avoid it taking unexpectedly long to compute the total count. Remove the pagination
+    # parameters to obtain a non-null value for this field.
+    totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
 }
@@ -2129,6 +2206,10 @@ interface Namespace {
     # The globally unique ID of this namespace.
     id: ID!
 
+    # The name of this namespace's component. For a user, this is the username. For an organization,
+    # this is the organization name.
+    namespaceName: String!
+
     # The URL to this namespace.
     url: String!
 }
@@ -2238,6 +2319,9 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # FOR INTERNAL USE ONLY.
     databaseID: Int!
+
+    # The name of this user namespace's component. For users, this is the username.
+    namespaceName: String!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2427,6 +2511,9 @@ type Org implements Node & SettingsSubject & Namespace {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
+
+    # The name of this user namespace's component. For organizations, this is the organization's name.
+    namespaceName: String!
 }
 
 # The result of Mutation.inviteUserToOrganization.

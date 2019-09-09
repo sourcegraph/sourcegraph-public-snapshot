@@ -2,7 +2,7 @@
   "name": "management-console",
   "private": true,
   "dependencies": {
-    "react": "^16.8.6",
+    "react": "^16.9.0",
     "rxjs": "^6.5.2"
   },
   "scripts": {
