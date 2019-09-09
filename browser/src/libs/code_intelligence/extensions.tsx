@@ -23,7 +23,7 @@ import {
 } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { createPlatformContext } from '../../platform/context'
+import { createPlatformContext, SourcegraphIntegrationURLs } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
@@ -35,10 +35,10 @@ import { DOMFunctions } from './code_views'
  */
 export function initializeExtensions(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
-    sourcegraphURL: string,
+    urls: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): PlatformContextProps & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile, getContext }, sourcegraphURL, isExtension)
+    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, isExtension)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }

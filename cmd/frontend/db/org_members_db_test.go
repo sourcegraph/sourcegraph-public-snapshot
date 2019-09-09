@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"testing"
@@ -14,7 +15,8 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	// Create fixtures.
 	org1, err := Orgs.Create(ctx, "org1", nil)

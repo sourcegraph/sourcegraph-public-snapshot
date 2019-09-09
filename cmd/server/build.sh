@@ -57,11 +57,13 @@ yarn --cwd lsif/server run build
 cp lsif/server/out/http-server.bundle.js "$OUTPUT/lsif-server.js"
 
 echo "--- prometheus config"
-mkdir "$OUTPUT/etc"
-cp -r dev/prometheus "$OUTPUT/etc"
+cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
+mkdir "$OUTPUT/sg_prometheus_add_ons"
+cp dev/prometheus/linux/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
 
 echo "--- grafana config"
-cp -r dev/grafana "$OUTPUT/etc"
+cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
+cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \

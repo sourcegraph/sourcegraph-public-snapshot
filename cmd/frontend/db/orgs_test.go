@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -11,7 +12,8 @@ func TestOrgs_ValidNames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
@@ -34,7 +36,8 @@ func TestOrgs_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	org, err := Orgs.Create(ctx, "a", nil)
 	if err != nil {
@@ -62,7 +65,8 @@ func TestOrgs_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	org, err := Orgs.Create(ctx, "a", nil)
 	if err != nil {

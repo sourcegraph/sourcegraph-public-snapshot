@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -48,7 +49,8 @@ func Test_defaultRepos_List(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := dbtesting.TestContext(t)
+			dbtesting.SetupGlobalTestDB(t)
+			ctx := context.Background()
 			for _, r := range tc.repos {
 				if _, err := dbconn.Global.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
 					t.Fatal(err)
@@ -71,7 +73,8 @@ func Test_defaultRepos_List(t *testing.T) {
 }
 
 func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
-	ctx := dbtesting.TestContext(b)
+	dbtesting.SetupGlobalTestDB(b)
+	ctx := context.Background()
 	select {
 	case <-ctx.Done():
 		b.Fatal("context already canceled")

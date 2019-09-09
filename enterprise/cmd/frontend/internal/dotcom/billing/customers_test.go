@@ -1,6 +1,7 @@
 package billing
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -9,7 +10,8 @@ import (
 )
 
 func TestGetOrAssignUserCustomerID(t *testing.T) {
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	c := 0
 	mockCreateCustomerID = func(userID int32) (string, error) {

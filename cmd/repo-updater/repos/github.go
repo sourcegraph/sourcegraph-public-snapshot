@@ -452,6 +452,7 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, re
 		return
 	case "affiliated":
 		s.listAffiliated(ctx, results)
+		return
 	case "none":
 		// nothing
 		return

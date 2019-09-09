@@ -56,7 +56,9 @@ COPY --from=sourcegraph/syntect_server:5e1efbb@sha256:6ec136246b302a6c8fc113f087
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:v1.4.1@sha256:1a02878ac9a0f532a68673bda93d406b21786706446c42a40cb3ed3e867278c0 /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:v2.12.0 /bin/prometheus /usr/local/bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:v2.12.0 /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \
@@ -65,7 +67,7 @@ RUN set -ex && \
  apk add --no-cache libc6-compat=1.1.23-r3 ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=grafana/grafana:6.1.1@sha256:e7a513bf7f33ef9681b2d35a799136e1ce9330f9055f75dfa2101d812946184b /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:6.3.3 /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so

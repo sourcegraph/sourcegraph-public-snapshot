@@ -159,7 +159,6 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome:",
-		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd browser"),
 		bk.Cmd("yarn -s run build"),
@@ -168,10 +167,17 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Build and self sign the FF extension and upload it to ...
 	pipeline.AddStep(":rocket::firefox:",
-		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd browser"),
 		bk.Cmd("yarn release:ff"),
+		bk.Cmd("popd"))
+
+	// Release to npm
+	pipeline.AddStep(":rocket::npm:",
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd browser"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("yarn release:npm"),
 		bk.Cmd("popd"))
 }
 

@@ -85,6 +85,7 @@ func Main() error {
 	if err := dbconn.ConnectToDB(""); err != nil {
 		log.Fatal(err)
 	}
+
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
 	}
