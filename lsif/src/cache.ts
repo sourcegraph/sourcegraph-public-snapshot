@@ -91,12 +91,6 @@ export class GenericCache<K, V> {
         // Find or create the entry
         const entry = await this.getEntry(key, factory)
 
-        // Increase the number of readers currently looking at this value.
-        // While this value is not equal to zero, it wll not be skipped over
-        // on the cache eviction pass.
-
-        entry.readers++
-
         try {
             // Re-resolve the promise. If this is already resolved it's a fast
             // no-op. Otherwise, we got a cache entry that was under-construction
@@ -178,7 +172,10 @@ export class GenericCache<K, V> {
         if (node) {
             // Found, move to head of list
             this.lruList.unshiftNode(node)
-            return node.value
+            const entry = node.value
+            // Ensure entry is locked before returning
+            entry.readers++
+            return entry
         }
 
         // Create promise and the entry that wraps it. We don't know
@@ -210,10 +207,9 @@ export class GenericCache<K, V> {
         const value = await promise
         await this.resolved(newEntry, value)
 
-        // Remove the under-construction value from the reader count.
-        // Callers of this method end up incrementing this value again
-        // a second time before calling a user callback function.
-        newEntry.readers++
+        // Remove the under-construction value from the reader count
+        // and lock the entry before returning.
+        newEntry.readers += 2
 
         return newEntry
     }
