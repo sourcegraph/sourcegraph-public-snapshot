@@ -31,7 +31,6 @@ import {
     mergeMap,
     observeOn,
     switchMap,
-    take,
     withLatestFrom,
     tap,
 } from 'rxjs/operators'
@@ -75,7 +74,6 @@ import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { EventLogger } from '../../shared/tracking/eventLogger'
-import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
