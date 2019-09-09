@@ -216,7 +216,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Kinds of external services in use are now included in [server pings](https://docs.sourcegraph.com/admin/pings).
 - Bitbucket Server: An actual Bitbucket icon is now used for the jump-to-bitbucket action on repository pages instead of the previously generic icon.
 - Default config for GitHub, GitHub Enterprise, GitLab, Bitbucket Server, and AWS Code Commit external services has been revised to make it easier for first time admins.
-- Anonymous usage (no user accounts) is now only available on Sourcegraph.com. It leads to significantly degraded user experience and exposes unwitting administrators to the risk of exposing their source code accidentally.
+- Public/anonymous usage is now only available on Sourcegraph.com. Public usage leads to a degraded user experience, and it exposes administrators to the risk of releasing source code accidentally.
 
 ### Removed
 
