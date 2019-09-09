@@ -110,7 +110,8 @@ SELECT COUNT(id) FROM threads
 // ListThreadsOpts captures the query options needed for
 // listing threads.
 type ListThreadsOpts struct {
-	Limit int
+	Limit      int
+	CampaignID int64
 }
 
 // ListThreads lists Threads with the given filters.
@@ -150,6 +151,7 @@ SELECT
 	updated_at,
 	metadata
 FROM threads
+WHERE %s
 ORDER BY id ASC
 LIMIT %s
 `
@@ -161,7 +163,21 @@ func listThreadsQuery(opts *ListThreadsOpts) *sqlf.Query {
 		opts.Limit = defaultListLimit
 	}
 	opts.Limit++
-	return sqlf.Sprintf(listThreadsQueryFmtstr, opts.Limit)
+
+	var preds []*sqlf.Query
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(
+		listThreadsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
+	)
 }
 
 // CreateCampaign creates the given Campaign.

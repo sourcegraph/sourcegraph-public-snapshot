@@ -98,7 +98,7 @@ func TestStore(t *testing.T) {
 		threads := make([]*Thread, 3)
 		for i := range threads {
 			threads[i] = &Thread{
-				CampaignID: 23,
+				CampaignID: int64(i + 1),
 				RepoID:     42,
 				CreatedAt:  now,
 				UpdatedAt:  now,
@@ -123,7 +123,29 @@ func TestStore(t *testing.T) {
 		}
 
 		for i := 1; i <= len(threads); i++ {
-			cs, next, err := s.ListThreads(ctx, ListThreadsOpts{Limit: i})
+			opts := ListThreadsOpts{CampaignID: int64(i)}
+
+			ts, next, err := s.ListThreads(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := next, int64(0); have != want {
+				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+			}
+
+			have, want := ts, threads[i-1:i]
+			if len(have) != len(want) {
+				t.Fatalf("listed %d threads, want: %d", len(have), len(want))
+			}
+
+			if !reflect.DeepEqual(have, want) {
+				t.Fatalf("opts: %+v, diff: %s", opts, cmp.Diff(have, want))
+			}
+		}
+
+		for i := 1; i <= len(threads); i++ {
+			ts, next, err := s.ListThreads(ctx, ListThreadsOpts{Limit: i})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -140,7 +162,7 @@ func TestStore(t *testing.T) {
 			}
 
 			{
-				have, want := cs, threads[:i]
+				have, want := ts, threads[:i]
 				if len(have) != len(want) {
 					t.Fatalf("listed %d threads, want: %d", len(have), len(want))
 				}
