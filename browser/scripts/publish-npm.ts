@@ -35,8 +35,8 @@ async function main(): Promise<void> {
     }
     signale.info(`New version is ${packageJson.version}`)
     // Write package.json
-    const packagePath = path.resolve(__dirname + '/../build/integration/package.json')
-    await writeFile(packagePath, JSON.stringify(packageJson, null, 2))
+    const packagePath = path.resolve(__dirname, '/../build/integration')
+    await writeFile(path.join(packagePath, 'package.json'), JSON.stringify(packageJson, null, 2))
     if (!process.env.CI) {
         signale.warn('Not running in CI, aborting')
         return
