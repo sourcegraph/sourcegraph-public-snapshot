@@ -3,6 +3,7 @@ import { map } from 'rxjs/operators'
 import { observeStorageKey } from '../../browser/storage'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
+export const DEFAULT_ASSETS_URL: string = new URL('/.assets/extension/', DEFAULT_SOURCEGRAPH_URL).href
 
 export function observeSourcegraphURL(isExtension: boolean): Observable<string> {
     if (isExtension) {
