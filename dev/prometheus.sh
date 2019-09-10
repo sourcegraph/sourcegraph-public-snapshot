@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 
+# Description: Prometheus collects metrics and aggregates them into graphs.
+#
+
 set -euf -o pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
+
+IMAGE=sourcegraph/prometheus:v2.12.0
+CONTAINER=prometheus
+
 CID_FILE="${PROMETHEUS_DISK}/prometheus.cid"
 
 mkdir -p ${PROMETHEUS_DISK}/logs
@@ -16,6 +23,7 @@ function finish {
       docker stop $(cat ${CID_FILE})
       rm -f  ${CID_FILE}
   fi
+  docker rm -f $CONTAINER
 }
 trap finish EXIT
 
@@ -27,9 +35,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
    CONFIG_SUB_DIR="linux"
 fi
 
-# Description: Prometheus collects metrics and aggregates them into graphs.
-#
-#
+docker inspect $CONTAINER > /dev/null 2>&1 && docker rm -f $CONTAINER
 docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     --name=prometheus \
     --cpus=4 \
@@ -38,5 +44,5 @@ docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     -p 0.0.0.0:9090:9090 \
     -v ${PROMETHEUS_DISK}:/prometheus \
     -v ${DIR}/prometheus/${CONFIG_SUB_DIR}:/sg_prometheus_add_ons \
-    sourcegraph/prometheus:v2.12.0 >> ${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
+    ${IMAGE} >> ${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
 wait $!
