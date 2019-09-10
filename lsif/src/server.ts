@@ -72,6 +72,7 @@ async function main(): Promise<void> {
 
     // Ensure storage roots exist
     await createDirectory(STORAGE_ROOT)
+    await createDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create backend

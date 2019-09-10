@@ -86,7 +86,7 @@ function createConvertJob(
         console.log(`Converting ${repository}@${commit}`)
 
         const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
-        const tempFile = temp.path()
+        const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
 
         try {
             // Create database in a temp path
