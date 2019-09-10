@@ -11,7 +11,7 @@ import { isEqual } from 'lodash'
 const PHABRICATOR_BASE_URL = process.env.PHABRICATOR_BASE_URL || 'http://127.0.0.1'
 const PHABRICATOR_USERNAME = process.env.PHABRICATOR_USERNAME || 'admin'
 const PHABRICATOR_PASSWORD = process.env.PHABRICATOR_PASSWORD || 'sourcegraph'
-const TEST_NATIVE_INTEGRATION = Boolean(process.env.TEST_NATIVE_INTEGRATION)
+const TEST_NATIVE_INTEGRATION = Boolean(process.env.TEST_NATIVE_INTEGRATION && JSON.parse(process.env.TEST_NATIVE_INTEGRATION))
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
