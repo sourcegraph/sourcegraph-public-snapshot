@@ -36,6 +36,9 @@ const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
+/**
+ * Runs the worker which accepts LSIF conversion jobs from node-resque.
+ */
 async function main(): Promise<void> {
     const connectionOptions = {
         host: REDIS_HOST,
@@ -46,7 +49,7 @@ async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const filename = path.join(STORAGE_ROOT, 'correlation.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
-    const convertJob = { perform: makeConvertJob(xrepoDatabase) }
+    const convertJob = { perform: createConvertJob(xrepoDatabase) }
 
     const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, { convert: convertJob })
     worker.on('error', logErrorAndExit)
@@ -59,10 +62,19 @@ async function main(): Promise<void> {
     }
 }
 
-function makeConvertJob(
+/**
+ * Create a job that takes a repository, commit, and filename containing the gzipped
+ * input of an LSIF dump and converts it to a SQLite database. This will also populate
+ * the correlation database for this dump.
+ *
+ * @param backend The correlation database.
+ */
+function createConvertJob(
     xrepoDatabase: XrepoDatabase
 ): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
+        console.log(`Converting ${repository}@${commit}`)
+
         const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
         const tempFile = temp.path()
 
@@ -76,10 +88,12 @@ function makeConvertJob(
             // Add the new database to the correlation db
             await addToXrepoDatabase(xrepoDatabase, packages, references, repository, commit)
         } catch (e) {
+            // Don't leave busted artifacts
             await fs.unlink(tempFile)
             throw e
         }
 
+        // Remove input
         await fs.unlink(filename)
     }
 }

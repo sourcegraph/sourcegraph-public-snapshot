@@ -6,6 +6,13 @@ import { Package, SymbolReferences, XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
 import { readline } from 'mz'
 
+/**
+ * Populate a SQLite database with the given input stream. Returns the
+ * data required to populate the correlation database.
+ *
+ * @param input The input stream containing JSON-encoded LSIF data.
+ * @param database The filepath to the database to populate.
+ */
 export async function convertLsif(
     input: Readable,
     database: string
@@ -30,6 +37,16 @@ export async function convertLsif(
     }
 }
 
+/**
+ * Populate the correlation database with the packages provided and
+ * imported by the given repository and commit.
+ *
+ * @param xrepoDatabase The correlation database.
+ * @param packages The external packages to insert.
+ * @param references The dependencies to insert.
+ * @param repository The repository for which this data applies.
+ * @param commit The commit for which this data applies.
+ */
 export async function addToXrepoDatabase(
     xrepoDatabase: XrepoDatabase,
     packages: Package[],
