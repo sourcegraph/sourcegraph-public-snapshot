@@ -3,10 +3,10 @@ BEGIN;
 CREATE TABLE event_logs (
     id                  BIGSERIAL NOT NULL PRIMARY KEY,
     name                TEXT NOT NULL,
-    argument            TEXT NOT NULL,
     url                 TEXT NOT NULL,
     user_id             INTEGER NOT NULL,
     anonymous_user_id   TEXT NOT NULL,
+    argument            TEXT NOT NULL,
 	timestamp           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 

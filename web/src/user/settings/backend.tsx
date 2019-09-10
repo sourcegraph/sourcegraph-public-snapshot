@@ -97,8 +97,8 @@ export function logUserEvent(event: GQL.UserEvent): void {
     }
     mutateGraphQL(
         gql`
-            mutation logUserEvent($event: String!, $userCookieID: String!, $url: String!, $argument: String) {
-                logUserEvent(event: $event, userCookieID: $userCookieID, url: $url, argument: $argument) {
+            mutation logUserEvent($event: String!, $userCookieID: String!, $url: String!) {
+                logUserEvent(event: $event, userCookieID: $userCookieID, url: $url) {
                     alwaysNil
                 }
             }

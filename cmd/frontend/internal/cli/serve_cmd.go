@@ -154,6 +154,7 @@ func Main() error {
 	goroutine.Go(func() { bg.LogSearchQueries(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
+	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.AfterDBInit != nil {

@@ -11,10 +11,10 @@ type eventLogs struct{}
 
 type EventLogInfo struct {
 	Name            string
-	Argument        string
 	URL             string
 	UserID          int32
 	AnonymousUserID string
+	Argument        string
 }
 
 func (*eventLogs) Insert(ctx context.Context, info *EventLogInfo) error {
@@ -26,12 +26,12 @@ func (*eventLogs) Insert(ctx context.Context, info *EventLogInfo) error {
 
 	_, err := dbconn.Global.ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, argument, url, user_id, anonymous_user_id) VALUES($1, $2, $3, $4, $5)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id,argument) VALUES($1, $2, $3, $4, $5)",
 		info.Name,
-		info.Argument,
 		info.URL,
 		info.UserID,
 		info.AnonymousUserID,
+		info.Argument,
 	)
 	if err != nil {
 		return errors.Wrap(err, "INSERT")
