@@ -35,7 +35,6 @@ interface Props
     authenticatedUser: GQL.IUser | null
     showDotComMarketing: boolean
     isSourcegraphDotCom: boolean
-    showStatusIndicator: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -98,7 +97,6 @@ export class NavLinks extends React.PureComponent<Props> {
                     </>
                 )}
                 {!this.props.isSourcegraphDotCom &&
-                    this.props.showStatusIndicator &&
                     this.props.authenticatedUser &&
                     this.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">
