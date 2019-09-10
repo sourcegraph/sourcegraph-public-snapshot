@@ -34,6 +34,7 @@ docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     --name=prometheus \
     --cpus=4 \
     --memory=4g \
+    --user=$UID \
     -p 0.0.0.0:9090:9090 \
     -v ${PROMETHEUS_DISK}:/prometheus \
     -v ${DIR}/prometheus/${CONFIG_SUB_DIR}:/sg_prometheus_add_ons \
