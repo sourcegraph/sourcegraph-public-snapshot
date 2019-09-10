@@ -229,26 +229,21 @@ type JSONInt64Set struct{ Set *[]int64 }
 
 // Scan implements the Scanner interface.
 func (n *JSONInt64Set) Scan(value interface{}) error {
-	a := make(map[int64]*struct{}, len(*n.Set))
-	for _, id := range *n.Set {
-		a[id] = nil
-	}
+	set := make(map[int64]*struct{})
 
-	b := make(map[int64]*struct{})
 	switch value := value.(type) {
 	case nil:
 	case []byte:
-		if err := json.Unmarshal(value, &b); err != nil {
+		if err := json.Unmarshal(value, &set); err != nil {
 			return err
 		}
 	default:
 		return fmt.Errorf("value is not []byte: %T", value)
 	}
 
-	for id := range b {
-		if _, ok := a[id]; !ok {
-			*n.Set = append(*n.Set, id)
-		}
+	*n.Set = (*n.Set)[:0]
+	for id := range set {
+		*n.Set = append(*n.Set, id)
 	}
 
 	return nil

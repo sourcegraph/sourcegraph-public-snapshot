@@ -14,17 +14,20 @@ import (
 // Store exposes methods to read and write a8n domain models
 // from persistent storage.
 type Store struct {
-	db dbutil.DB
+	db  dbutil.DB
+	now func() time.Time
 }
 
 // NewStore returns a new Store backed by the given db.
 func NewStore(db dbutil.DB) *Store {
-	return &Store{db: db}
+	return &Store{db: db, now: func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}}
 }
 
 // CreateThread creates the given Thread.
 func (s *Store) CreateThread(ctx context.Context, t *Thread) error {
-	q, err := createThreadQuery(t)
+	q, err := s.createThreadQuery(t)
 	if err != nil {
 		return err
 	}
@@ -54,7 +57,7 @@ RETURNING
 	campaign_ids
 `
 
-func createThreadQuery(t *Thread) (*sqlf.Query, error) {
+func (s *Store) createThreadQuery(t *Thread) (*sqlf.Query, error) {
 	metadata, err := metadataColumn(t.Metadata)
 	if err != nil {
 		return nil, err
@@ -66,7 +69,7 @@ func createThreadQuery(t *Thread) (*sqlf.Query, error) {
 	}
 
 	if t.CreatedAt.IsZero() {
-		t.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
+		t.CreatedAt = s.now()
 	}
 
 	if t.UpdatedAt.IsZero() {
@@ -188,7 +191,7 @@ func listThreadsQuery(opts *ListThreadsOpts) *sqlf.Query {
 
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *Campaign) error {
-	q, err := createCampaignQuery(c)
+	q, err := s.createCampaignQuery(c)
 	if err != nil {
 		return err
 	}
@@ -224,14 +227,14 @@ RETURNING
 	thread_ids
 `
 
-func createCampaignQuery(c *Campaign) (*sqlf.Query, error) {
+func (s *Store) createCampaignQuery(c *Campaign) (*sqlf.Query, error) {
 	threadIDs, err := jsonSetColumn(c.ThreadIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	if c.CreatedAt.IsZero() {
-		c.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
+		c.CreatedAt = s.now()
 	}
 
 	if c.UpdatedAt.IsZero() {
@@ -260,7 +263,7 @@ func nullInt32Column(n int32) *int32 {
 
 // UpdateCampaign updates the given Campaign.
 func (s *Store) UpdateCampaign(ctx context.Context, c *Campaign) error {
-	q, err := updateCampaignQuery(c)
+	q, err := s.updateCampaignQuery(c)
 	if err != nil {
 		return err
 	}
@@ -273,17 +276,17 @@ func (s *Store) UpdateCampaign(ctx context.Context, c *Campaign) error {
 
 var updateCampaignQueryFmtstr = `
 -- source: pkg/a8n/store.go:UpdateCampaign
-INSERT INTO campaigns (
+UPDATE campaigns
+SET (
 	name,
 	description,
 	author_id,
 	namespace_user_id,
 	namespace_org_id,
-	created_at,
 	updated_at,
 	thread_ids
-)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s)
+WHERE id = %s
 RETURNING
 	id,
 	name,
@@ -296,30 +299,24 @@ RETURNING
 	thread_ids
 `
 
-func updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
+func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
 	threadIDs, err := jsonSetColumn(c.ThreadIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	if c.CreatedAt.IsZero() {
-		c.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
-	}
-
-	if c.UpdatedAt.IsZero() {
-		c.UpdatedAt = c.CreatedAt
-	}
+	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
-		createCampaignQueryFmtstr,
+		updateCampaignQueryFmtstr,
 		c.Name,
 		c.Description,
 		c.AuthorID,
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
-		c.CreatedAt,
 		c.UpdatedAt,
 		threadIDs,
+		c.ID,
 	), nil
 }
 
