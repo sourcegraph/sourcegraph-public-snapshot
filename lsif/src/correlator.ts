@@ -277,32 +277,29 @@ export class Correlator {
      * @param edge The item edge.
      */
     private handleItemEdge(edge: item): void {
-        switch (edge.property) {
-            // `item` edges with a `property` refer to a referenceResult
-            case ItemEdgeProperties.definitions:
-            case ItemEdgeProperties.references: {
-                const documentMap = mustGet(this.referenceData, edge.outV, 'referenceResult')
-                const rangeIds = documentMap.getOrDefault(edge.document)
-                for (const inV of edge.inVs) {
-                    mustGet(this.rangeData, inV, 'range')
-                    rangeIds.push(inV)
-                }
-
-                break
+        if (this.definitionData.has(edge.outV)) {
+            const documentMap = mustGet(this.definitionData, edge.outV, 'definitionResult')
+            const rangeIds = documentMap.getOrDefault(edge.document)
+            for (const inV of edge.inVs) {
+                mustGet(this.rangeData, inV, 'range')
+                rangeIds.push(inV)
             }
 
-            // `item` edges without a `property` refer to a definitionResult
-            case undefined: {
-                const documentMap = mustGet(this.definitionData, edge.outV, 'definitionResult')
-                const rangeIds = documentMap.getOrDefault(edge.document)
-                for (const inV of edge.inVs) {
-                    mustGet(this.rangeData, inV, 'range')
-                    rangeIds.push(inV)
-                }
-
-                break
-            }
+            return
         }
+
+        if (this.referenceData.has(edge.outV)) {
+            const documentMap = mustGet(this.referenceData, edge.outV, 'referenceResult')
+            const rangeIds = documentMap.getOrDefault(edge.document)
+            for (const inV of edge.inVs) {
+                mustGet(this.rangeData, inV, 'range')
+                rangeIds.push(inV)
+            }
+
+            return
+        }
+
+        throw new Error(`Unknown definition or reference result ${edge.outV}.`)
     }
 
     /**
