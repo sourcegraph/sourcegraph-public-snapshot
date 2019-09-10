@@ -1,13 +1,13 @@
 import * as fs from 'mz/fs'
-import * as rimraf from 'rimraf'
 import * as path from 'path'
+import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
+import { addToXrepoDatabase, convertLsif } from './conversion'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createCommit, createLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
-import { convertLsif, addToXrepoDatabase } from './worker'
 
 describe('Database', () => {
     let storageRoot!: string

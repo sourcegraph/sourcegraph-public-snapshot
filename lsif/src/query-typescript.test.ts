@@ -1,13 +1,13 @@
 import * as fs from 'mz/fs'
-import * as rimraf from 'rimraf'
 import * as path from 'path'
+import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
+import { addToXrepoDatabase, convertLsif } from './conversion'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { Readable } from 'stream'
 import { createCommit, createLocation, createRemoteLocation } from './test-utils'
-import { Database } from './database'
 import { createDatabaseFilename } from './util'
-import { convertLsif, addToXrepoDatabase } from './worker'
+import { Database } from './database'
+import { Readable } from 'stream'
 import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {

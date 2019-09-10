@@ -3,16 +3,11 @@ import * as path from 'path'
 import * as temp from 'temp'
 import * as zlib from 'mz/zlib'
 import exitHook from 'async-exit-hook'
+import { addToXrepoDatabase, convertLsif } from './conversion'
 import { ConnectionCache } from './cache'
-import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
-import { logErrorAndExit, readEnvInt, createDatabaseFilename } from './util'
+import { createDatabaseFilename, logErrorAndExit, readEnvInt } from './util'
 import { Worker } from 'node-resque'
-import { XrepoDatabase, Package, SymbolReferences } from './xrepo'
-import { readline } from 'mz'
-import { importLsif } from './importer'
-import { Readable } from 'stream'
-import { Vertex, Edge } from 'lsif-protocol'
-import { createConnection } from './connection'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
@@ -72,9 +67,13 @@ function makeConvertJob(
         const tempFile = temp.path()
 
         try {
+            // Create database in a temp path
             const { packages, references } = await convertLsif(input, tempFile)
+
             // Move the temp file where it can be found by the server
             await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
+
+            // Add the new database to the correlation db
             await addToXrepoDatabase(xrepoDatabase, packages, references, repository, commit)
         } catch (e) {
             await fs.unlink(tempFile)
@@ -82,62 +81,6 @@ function makeConvertJob(
         }
 
         await fs.unlink(filename)
-    }
-}
-
-export async function convertLsif(
-    input: Readable,
-    database: string
-): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const connection = await createConnection(database, [
-        DefinitionModel,
-        DocumentModel,
-        MetaModel,
-        ReferenceModel,
-        ResultChunkModel,
-    ])
-
-    try {
-        await connection.query('PRAGMA synchronous = OFF')
-        await connection.query('PRAGMA journal_mode = OFF')
-
-        return await connection.transaction(entityManager =>
-            importLsif(entityManager, parseLines(readline.createInterface({ input })))
-        )
-    } finally {
-        await connection.close()
-    }
-}
-
-export async function addToXrepoDatabase(
-    xrepoDatabase: XrepoDatabase,
-    packages: Package[],
-    references: SymbolReferences[],
-    repository: string,
-    commit: string
-): Promise<void> {
-    await xrepoDatabase.addPackages(repository, commit, packages)
-    await xrepoDatabase.addReferences(repository, commit, references)
-}
-
-/**
- * Converts streaming JSON input into an iterable of vertex and edge objects.
- *
- * @param lines The stream of raw, uncompressed JSON lines.
- */
-async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex | Edge> {
-    let i = 0
-    for await (const line of lines) {
-        try {
-            yield JSON.parse(line)
-        } catch (e) {
-            throw Object.assign(
-                new Error(`Failed to process line #${i + 1} (${JSON.stringify(line)}): Invalid JSON.`),
-                { status: 422 }
-            )
-        }
-
-        i++
     }
 }
 
