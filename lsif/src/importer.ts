@@ -25,8 +25,6 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
-    Ix,
-    OrderedRanges,
 } from './models.database'
 import { DATABASE_INSERTION_ERRORS_COUNTER, DATABASE_INSERTION_DURATION_HISTOGRAM } from './metrics'
 
@@ -160,7 +158,6 @@ async function populateDocumentsTable(
             path: documentPath,
             data: await encodeJSON({
                 ranges: document.ranges,
-                orderedRanges: document.orderedRanges,
                 hoverResults: document.hoverResults,
                 monikers: document.monikers,
                 packageInformation: document.packageInformation,
@@ -449,8 +446,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
 function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, path: string): DocumentData {
     const document = {
         path,
-        ranges: new Map<RangeId, Ix<OrderedRanges>>(),
-        orderedRanges: [] as RangeData[],
+        ranges: new Map<RangeId, RangeData>(),
         hoverResults: new Map<HoverResultId, string>(),
         monikers: new Map<MonikerId, MonikerData>(),
         packageInformation: new Map<PackageInformationId, PackageInformationData>(),
@@ -489,29 +485,15 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         addPackageInformation(moniker.packageInformationId)
     }
 
-    // Correlate range data with its id so after we sort we can pull out the ids in the
-    // same order to make the identifier -> index mapping.
-    const orderedRanges: (RangeData & { id: RangeId })[] = []
-
     for (const id of mustGet(correlator.containsData, currentDocumentId, 'contains')) {
         const range = mustGet(correlator.rangeData, id, 'range')
-        orderedRanges.push({ id, ...range })
         addHover(range.hoverResultId)
         for (const id of range.monikerIds) {
             addMoniker(id)
         }
+
+        document.ranges.set(id, range)
     }
-
-    // Sort ranges by their starting position
-    orderedRanges.sort((a, b) => a.startLine - b.startLine || a.startCharacter - b.startCharacter)
-
-    // Populate a reverse lookup so ranges can be queried by id via `orderedRanges[range[id]]`.
-    for (const [index, range] of orderedRanges.entries()) {
-        document.ranges.set(range.id, index)
-    }
-
-    // eslint-disable-next-line require-atomic-updates
-    document.orderedRanges = orderedRanges.map(({ id, ...range }) => range)
 
     return document
 }
