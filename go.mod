@@ -55,6 +55,7 @@ require (
 	github.com/go-critic/go-critic v0.3.4 // indirect
 	github.com/go-delve/delve v1.3.0
 	github.com/go-redsync/redsync v1.3.0
+	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.3.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.6.1
