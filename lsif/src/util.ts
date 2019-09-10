@@ -1,4 +1,5 @@
 import * as fs from 'mz/fs'
+import * as path from 'path'
 import { DefinitionReferenceResultId } from './models.database'
 import { Id } from 'lsif-protocol'
 
@@ -92,6 +93,17 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
 
     // Hash value may be negative - must unset sign bit before modulus
     return Math.abs(hash) % maxIndex
+}
+
+/**
+ * Construct the path of the SQLite database file for the given repository and commit.
+ *
+ * @param storageRoot The path where SQLite databases are stored.
+ * @param repository The repository name.
+ * @param commit The repository commit.
+ */
+export function createDatabaseFilename(storageRoot: string, repository: string, commit: string): string {
+    return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
 /**

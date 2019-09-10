@@ -9,10 +9,11 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { CONNECTION_CACHE_CAPACITY_GAUGE, DOCUMENT_CACHE_CAPACITY_GAUGE } from './metrics'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createBackend, ERRNOLSIFDATA } from './backend'
-import { hasErrorCode, readEnvInt, logErrorAndExit, createDirectory } from './util'
+import { createDatabaseFilename, createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { Database } from './database'
 import { Queue, Scheduler } from 'node-resque'
 import { wrap } from 'async-middleware'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -72,7 +73,33 @@ async function main(): Promise<void> {
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
-    const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
+    const filename = path.join(STORAGE_ROOT, 'correlation.db')
+    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
+
+    const createDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+        const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
+
+        try {
+            await fs.stat(file)
+        } catch (e) {
+            if (hasErrorCode(e, 'ENOENT')) {
+                return undefined
+            }
+
+            throw e
+        }
+
+        return new Database(
+            STORAGE_ROOT,
+            xrepoDatabase,
+            connectionCache,
+            documentCache,
+            resultChunkCache,
+            repository,
+            commit,
+            file
+        )
+    }
 
     // Create queue to publish jobs for worker
     const queue = await setupQueue()
@@ -119,18 +146,14 @@ async function main(): Promise<void> {
                 checkRepository(repository)
                 checkCommit(commit)
 
-                try {
-                    const db = await backend.createDatabase(repository, commit)
-                    const result = !file || (await db.exists(file))
-                    res.json(result)
-                } catch (e) {
-                    if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                        res.json(false)
-                        return
-                    }
-
-                    throw e
+                const db = await createDatabase(repository, commit)
+                if (!db) {
+                    res.json(false)
+                    return
                 }
+
+                const result = !file || (await db.exists(file))
+                res.json(result)
             }
         )
     )
@@ -147,17 +170,14 @@ async function main(): Promise<void> {
                 checkMethod(method, ['definitions', 'references', 'hover'])
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-                try {
-                    // TODO - is null needed here now?
-                    const db = await backend.createDatabase(repository, commit)
-                    res.json((await db[cleanMethod](path, position)) || null)
-                } catch (e) {
-                    if (hasErrorCode(e, ERRNOLSIFDATA)) {
-                        throw Object.assign(e, { status: 404 })
-                    }
-
-                    throw e
+                const db = await createDatabase(repository, commit)
+                if (!db) {
+                    throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
+                        status: 404,
+                    })
                 }
+
+                res.json((await db[cleanMethod](path, position)) || null)
             }
         )
     )

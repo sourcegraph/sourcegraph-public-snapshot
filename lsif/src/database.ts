@@ -4,9 +4,8 @@ import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache
 import { DATABASE_QUERY_DURATION_HISTOGRAM, DATABASE_QUERY_ERRORS_COUNTER, instrument } from './metrics'
 import { decodeJSON } from './encoding'
 import { DefaultMap } from './default-map'
-import { hashKey, mustGet } from './util'
+import { hashKey, mustGet, createDatabaseFilename } from './util'
 import { isEqual, uniqWith } from 'lodash'
-import { makeFilename } from './backend'
 import { PackageModel } from './models.xrepo'
 import { XrepoDatabase } from './xrepo'
 import {
@@ -329,7 +328,7 @@ export class Database {
         const db = this.createNewDatabase(
             packageEntity.repository,
             packageEntity.commit,
-            makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
+            createDatabaseFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
         const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
@@ -365,7 +364,7 @@ export class Database {
         const db = this.createNewDatabase(
             packageEntity.repository,
             packageEntity.commit,
-            makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
+            createDatabaseFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
         const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
@@ -409,7 +408,7 @@ export class Database {
             const db = this.createNewDatabase(
                 reference.repository,
                 reference.commit,
-                makeFilename(this.storageRoot, reference.repository, reference.commit)
+                createDatabaseFilename(this.storageRoot, reference.repository, reference.commit)
             )
 
             const pathTransformer = (path: string): string => createRemoteUri(reference, path)

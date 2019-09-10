@@ -1,10 +1,14 @@
 import * as fs from 'mz/fs'
 import * as rimraf from 'rimraf'
+import * as path from 'path'
 import * as zlib from 'mz/zlib'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createBackend } from './backend'
 import { Readable } from 'stream'
 import { createCommit, createLocation, createRemoteLocation } from './test-utils'
+import { Database } from './database'
+import { createDatabaseFilename } from './util'
+import { convertLsif, addToXrepoDatabase } from './worker'
+import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -12,21 +16,28 @@ describe('Database', () => {
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
+    const createDatabase = async (repository: string, commit: string): Promise<Database> => {
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
+        return new Database(
+            storageRoot,
+            xrepoDatabase,
+            connectionCache,
+            documentCache,
+            resultChunkCache,
+            repository,
+            commit,
+            createDatabaseFilename(storageRoot, repository, commit)
+        )
+    }
+
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const inputs: { input: Readable; repository: string; commit: string }[] = []
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
 
-        for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
-            const input = fs
-                .createReadStream(`./test-data/typescript/data/${repository}.lsif.gz`)
-                .pipe(zlib.createGunzip())
-            const commit = createCommit(repository)
-            inputs.push({ input, repository, commit })
-        }
-
-        for (const { input, repository, commit } of inputs) {
-            await backend.insertDump(input, repository, commit)
+        for (const { input, repository, commit } of createTestInputs()) {
+            const database = createDatabaseFilename(storageRoot, repository, commit)
+            const { packages, references } = await convertLsif(input, database)
+            await addToXrepoDatabase(xrepoDatabase, packages, references, repository, commit)
         }
     })
 
@@ -35,32 +46,28 @@ describe('Database', () => {
     })
 
     it('should find all defs of `add` from repo a', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('a', createCommit('a'))
+        const db = await createDatabase('a', createCommit('a'))
         const definitions = await db.definitions('src/index.ts', { line: 11, character: 18 })
         expect(definitions).toContainEqual(createLocation('src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `add` from repo b1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('b1', createCommit('b1'))
+        const db = await createDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `mul` from repo b1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('b1', createCommit('b1'))
+        const db = await createDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all refs of `mul` from repo a', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('a', createCommit('a'))
+        const db = await createDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 4, character: 19 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -83,8 +90,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `mul` from repo b1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('b1', createCommit('b1'))
+        const db = await createDatabase('b1', createCommit('b1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -107,8 +113,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo a', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('a', createCommit('a'))
+        const db = await createDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 0, character: 17 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -141,8 +146,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo c1', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('c1', createCommit('c1'))
+        const db = await createDatabase('c1', createCommit('c1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -174,3 +178,20 @@ describe('Database', () => {
         expect(references && references.length).toEqual(20)
     })
 })
+
+function createTestInputs(): {
+    input: Readable
+    repository: string
+    commit: string
+}[] {
+    const repositories = ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']
+
+    const inputs = []
+    for (const repository of repositories) {
+        const input = fs.createReadStream(`./test-data/typescript/data/${repository}.lsif.gz`).pipe(zlib.createGunzip())
+        const commit = createCommit(repository)
+        inputs.push({ input, repository, commit })
+    }
+
+    return inputs
+}
