@@ -36,8 +36,6 @@ describe('Database', () => {
             { line: 16, character: 3 },
         ]
 
-        // TODO - describe why
-
         for (const position of positions) {
             const references = await db.references('src/index.ts', position)
             expect(references).toContainEqual(createLocation('src/index.ts', 1, 4, 1, 7)) // abstract def in I
