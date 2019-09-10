@@ -54,7 +54,7 @@ async function main(): Promise<void> {
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
     const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
-    const convertJob = { perform: makeConvertJob(backend) }
+    const convertJob = { perform: createConvertJob(backend) }
 
     const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, { convert: convertJob })
     worker.on('error', logErrorAndExit)
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     }
 }
 
-function makeConvertJob(backend: Backend): (repository: string, commit: string, filename: string) => Promise<void> {
+function createConvertJob(backend: Backend): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
         console.log(`Converting ${repository}@${commit}`)
         const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
