@@ -123,13 +123,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         )}
                     </>
                 )}
-                {!this.state.authRequired && (
-                    <NavLinks
-                        {...this.props}
-                        showStatusIndicator={!!window.context.showStatusIndicator}
-                        showDotComMarketing={showDotComMarketing}
-                    />
-                )}
+                {!this.state.authRequired && <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />}
             </div>
         )
     }

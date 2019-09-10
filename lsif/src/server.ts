@@ -7,7 +7,11 @@ import express from 'express'
 import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
-import { CONNECTION_CACHE_CAPACITY_GAUGE, DOCUMENT_CACHE_CAPACITY_GAUGE } from './metrics'
+import {
+    CONNECTION_CACHE_CAPACITY_GAUGE,
+    DOCUMENT_CACHE_CAPACITY_GAUGE,
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
+} from './metrics'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createDatabaseFilename, createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
 import { Database } from './database'
@@ -35,17 +39,17 @@ const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
  * value may be exceeded for a short period if many handles are held
  * at once.
  */
-const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 1000)
+const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
 
 /**
  * The maximum number of documents that can be held in memory at once.
  */
-const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1000)
+const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * The maximum number of result chunks that can be held in memory at once.
  */
-const RESULT_CHUNK_CACHE_SIZE = readEnvInt('RESULT_CHUNK_CACHE_SIZE', 1000)
+const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -64,6 +68,7 @@ async function main(): Promise<void> {
     // Update cache capacities on startup
     CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
     DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await createDirectory(STORAGE_ROOT)
@@ -72,7 +77,7 @@ async function main(): Promise<void> {
     // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
+    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
     const filename = path.join(STORAGE_ROOT, 'correlation.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 

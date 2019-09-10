@@ -33,6 +33,7 @@ describe('Database', () => {
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
+        const inputs: { input: Readable; repository: string; commit: string }[] = []
 
         for (const { input, repository, commit } of createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
@@ -188,7 +189,9 @@ function createTestInputs(): {
 
     const inputs = []
     for (const repository of repositories) {
-        const input = fs.createReadStream(`./test-data/typescript/data/${repository}.lsif.gz`).pipe(zlib.createGunzip())
+        const input = fs
+            .createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
+            .pipe(zlib.createGunzip())
         const commit = createCommit(repository)
         inputs.push({ input, repository, commit })
     }

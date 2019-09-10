@@ -1708,7 +1708,7 @@
       "format": "short",
       "gridPos": {
         "h": 6,
-        "w": 6,
+        "w": 4.7999999999999998,
         "x": 0,
         "y": 36
       },
@@ -1746,6 +1746,13 @@
           "intervalFactor": 2,
           "legendFormat": "document cache utilization",
           "refId": "B"
+        },
+        {
+          "expr": "lsif_result_chunk_cache_size / lsif_result_chunk_cache_capacity",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "result chunk cache utilization",
+          "refId": "C"
         }
       ],
       "thresholds": [],
@@ -1793,8 +1800,8 @@
       "format": "short",
       "gridPos": {
         "h": 6,
-        "w": 6,
-        "x": 6,
+        "w": 4.7999999999999998,
+        "x": 4.7999999999999998,
         "y": 36
       },
       "id": 24,
@@ -1891,8 +1898,8 @@
       "format": "short",
       "gridPos": {
         "h": 6,
-        "w": 6,
-        "x": 12,
+        "w": 4.7999999999999998,
+        "x": 9.5999999999999996,
         "y": 36
       },
       "id": 25,
@@ -1989,11 +1996,109 @@
       "format": "short",
       "gridPos": {
         "h": 6,
-        "w": 6,
-        "x": 18,
+        "w": 4.7999999999999998,
+        "x": 14.399999999999999,
         "y": 36
       },
       "id": 26,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(lsif_result_chunk_cache_events_total{type=\"hit\"}[1m])",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "hits",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(lsif_result_chunk_cache_events_total{type=\"miss\"}[1m])",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "misses",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(lsif_result_chunk_cache_events_total{type=\"eviction\"}[1m])",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "evictions",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(lsif_result_chunk_cache_events_total{type=\"locked-eviction\"}[1m])",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "locked entries",
+          "refId": "D"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Result chunk cache events",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 4.7999999999999998,
+        "x": 19.199999999999999,
+        "y": 36
+      },
+      "id": 27,
       "legend": {
         "show": false
       },

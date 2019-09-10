@@ -7,6 +7,8 @@ import {
     CONNECTION_CACHE_SIZE_GAUGE,
     DOCUMENT_CACHE_SIZE_GAUGE,
     DOCUMENT_CACHE_EVENTS_COUNTER,
+    RESULT_CHUNK_CACHE_SIZE_GAUGE,
+    RESULT_CHUNK_CACHE_EVENTS_COUNTER,
 } from './metrics'
 import { createConnection } from './connection'
 
@@ -314,7 +316,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
             // Each handle is roughly the same size.
             () => 1,
             // Close the underlying file handle on cache eviction.
-            (connection: Connection) => connection.close(),
+            connection => connection.close(),
             {
                 sizeGauge: CONNECTION_CACHE_SIZE_GAUGE,
                 eventsCounter: CONNECTION_CACHE_EVENTS_COUNTER,
@@ -385,17 +387,17 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
     /**
      * Create a new `EncodedJsonCache` with the given maximum (soft) size for
      * all items in the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
+     * @param metrics The bag of metrics to use for this instance of the cache.
      */
-    constructor(max: number) {
+    constructor(max: number, metrics: CacheMetrics) {
         super(
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
-            (): Promise<void> => Promise.resolve(),
-            {
-                sizeGauge: DOCUMENT_CACHE_SIZE_GAUGE,
-                eventsCounter: DOCUMENT_CACHE_EVENTS_COUNTER,
-            }
+            () => {},
+            metrics
         )
     }
 }
@@ -408,9 +410,14 @@ export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
     /**
      * Create a new `DocumentCache` with the given maximum (soft) size for
      * all items in the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
      */
     constructor(max: number) {
-        super(max)
+        super(max, {
+            sizeGauge: DOCUMENT_CACHE_SIZE_GAUGE,
+            eventsCounter: DOCUMENT_CACHE_EVENTS_COUNTER,
+        })
     }
 }
 
@@ -422,9 +429,14 @@ export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> 
     /**
      * Create a new `ResultChunkCache` with the given maximum (soft) size for
      * all items in the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
      */
     constructor(max: number) {
-        super(max)
+        super(max, {
+            sizeGauge: RESULT_CHUNK_CACHE_SIZE_GAUGE,
+            eventsCounter: RESULT_CHUNK_CACHE_EVENTS_COUNTER,
+        })
     }
 }
 
