@@ -81,6 +81,10 @@ export async function importLsif(
         throw new Error('No metadata defined.')
     }
 
+    // Determine which reference results are linked together. Determine a canonical
+    // reference result for each set so that we can remap all identifiers to the
+    // chosen one.
+
     const canonicalReferenceResultIds = canonicalizeReferenceResults(correlator)
 
     // Calculate the number of result chunks that we'll attempt to populate
@@ -128,6 +132,10 @@ function getBatchSize(numFields: number): number {
 
 /**
  * Correlate, encode, and insert all document entries for this dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param documentInserter The inserter for the documents table.
+ * @param canonicalReferenceResultIds A map from reference result identifiers to its canonical identifier.
  */
 async function populateDocumentsTable(
     correlator: Correlator,
@@ -168,6 +176,10 @@ async function populateDocumentsTable(
 
 /**
  * Correlate and insert all result chunk entries for this dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param documentInserter The inserter for the result chunks table.
+ * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
  */
 async function populateResultChunksTable(
     correlator: Correlator,
@@ -224,6 +236,10 @@ async function populateResultChunksTable(
 
 /**
  * Correlate and insert all definition and reference entries for this dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param definitionInserter The inserter for the definitions table.
+ * @param referenceInserter The inserter for the references table.
  */
 async function populateDefinitionsAndReferencesTables(
     correlator: Correlator,
@@ -305,6 +321,10 @@ async function populateDefinitionsAndReferencesTables(
  * created a database in case we have backwards-incompatible changes in the future that
  * require historic version flagging. This also stores the number of result chunks
  * determined above so that we can have stable hashes at query time.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param metaInserter The inserter for the meta table.
+ * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
  */
 async function populateMetadataTable(
     correlator: Correlator,
@@ -323,6 +343,8 @@ async function populateMetadataTable(
  * Gather all package information that is referenced by an exported
  * moniker. These will be the packages that are provided by the repository
  * represented by this LSIF dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
  */
 function getPackages(correlator: Correlator): Package[] {
     const packages: Package[] = []
@@ -344,6 +366,8 @@ function getPackages(correlator: Correlator): Package[] {
  * Gather all imported moniker identifiers along with their package
  * information. These will be the packages that are a dependency of the
  * repository represented by this LSIF dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
  */
 function getReferences(correlator: Correlator): SymbolReferences[] {
     const packageIdentifiers: Map<string, string[]> = new Map()
@@ -371,6 +395,14 @@ function getReferences(correlator: Correlator): SymbolReferences[] {
     }))
 }
 
+/**
+ * Determine which reference result sets are linked via item edges. Choose a canonical
+ * reference result from each batch. Merge all data into the canonical result and remove
+ * all non-canonical results from the correlator (note: this leave unlinked results alone).
+ * Return a map from reference result identifier to the identifier of the canonical result.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ */
 function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResultId, ReferenceResultId> {
     const canonicalReferenceResultIds = new Map<ReferenceResultId, ReferenceResultId>()
 
