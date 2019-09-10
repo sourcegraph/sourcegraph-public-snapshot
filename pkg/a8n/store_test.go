@@ -98,11 +98,11 @@ func TestStore(t *testing.T) {
 		threads := make([]*Thread, 3)
 		for i := range threads {
 			threads[i] = &Thread{
-				CampaignID: int64(i + 1),
-				RepoID:     42,
-				CreatedAt:  now,
-				UpdatedAt:  now,
-				Metadata:   "{}",
+				CampaignIDs: []int64{int64(i) + 1},
+				RepoID:      42,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+				Metadata:    "{}",
 			}
 
 			err := s.CreateThread(ctx, threads[i])

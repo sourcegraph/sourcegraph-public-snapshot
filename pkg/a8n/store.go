@@ -45,24 +45,34 @@ func (s *Store) CreateThread(ctx context.Context, t *Thread) error {
 var createThreadQueryFmtstr = `
 -- source: pkg/a8n/store.go:CreateThread
 INSERT INTO threads (
-	campaign_id,
 	repo_id,
 	created_at,
 	updated_at,
-	metadata
+	metadata,
+	campaign_ids
 )
 VALUES (%s, %s, %s, %s, %s)
 RETURNING
 	id,
-	campaign_id,
 	repo_id,
 	created_at,
 	updated_at,
-	metadata
+	metadata,
+	campaign_ids
 `
 
 func createThreadQuery(t *Thread) (*sqlf.Query, error) {
 	metadata, err := metadataColumn(t.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make(map[int64]*struct{}, len(t.CampaignIDs))
+	for _, id := range t.CampaignIDs {
+		ids[id] = nil
+	}
+
+	campaignIDs, err := json.Marshal(ids)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +87,11 @@ func createThreadQuery(t *Thread) (*sqlf.Query, error) {
 
 	return sqlf.Sprintf(
 		createThreadQueryFmtstr,
-		t.CampaignID,
 		t.RepoID,
 		t.CreatedAt,
 		t.UpdatedAt,
 		metadata,
+		campaignIDs,
 	), nil
 }
 
@@ -118,7 +128,7 @@ WHERE %s
 func countThreadsQuery(opts *CountThreadsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if len(preds) == 0 {
@@ -166,11 +176,11 @@ var listThreadsQueryFmtstr = `
 -- source: pkg/a8n/store.go:ListThreads
 SELECT
 	id,
-	campaign_id,
 	repo_id,
 	created_at,
 	updated_at,
-	metadata
+	metadata,
+	campaign_ids
 FROM threads
 WHERE %s
 ORDER BY id ASC
@@ -187,7 +197,7 @@ func listThreadsQuery(opts *ListThreadsOpts) *sqlf.Query {
 
 	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if len(preds) == 0 {
@@ -385,14 +395,31 @@ func closeErr(c io.Closer, err *error) {
 
 func scanThread(t *Thread, s scanner) error {
 	t.Metadata = json.RawMessage{}
-	return s.Scan(
+	campaignIDs := json.RawMessage{}
+	err := s.Scan(
 		&t.ID,
-		&t.CampaignID,
 		&t.RepoID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&t.Metadata,
+		&campaignIDs,
 	)
+
+	if err != nil {
+		return err
+	}
+
+	set := map[int64]struct{}{}
+	if err = json.Unmarshal(campaignIDs, &set); err != nil {
+		return err
+	}
+
+	t.CampaignIDs = make([]int64, 0, len(set))
+	for id := range set {
+		t.CampaignIDs = append(t.CampaignIDs, id)
+	}
+
+	return nil
 }
 
 func scanCampaign(c *Campaign, s scanner) error {
