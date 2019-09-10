@@ -1,5 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
+import uuid from 'uuid'
 import * as readline from 'mz/readline'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { Database } from './database'
@@ -8,7 +9,6 @@ import { Edge, Vertex } from 'lsif-protocol'
 import { hasErrorCode } from './util'
 import { importLsif } from './importer'
 import { Readable } from 'stream'
-import * as temp from 'temp'
 import { XrepoDatabase } from './xrepo'
 
 export const ERRNOLSIFDATA = 'NoLSIFDataError'
@@ -42,7 +42,7 @@ export class Backend {
      * can be subsequently read by the `createRunner` method.
      */
     public async insertDump(input: Readable, repository: string, commit: string): Promise<void> {
-        const outFile = temp.path()
+        const outFile = path.join(this.storageRoot, 'tmp', uuid.v4())
 
         try {
             const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
