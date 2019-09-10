@@ -9,6 +9,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 
+IMAGE=sourcegraph/grafana:6.3.3
+CONTAINER=grafana
+
 CID_FILE="${GRAFANA_DISK}/grafana.cid"
 
 mkdir -p ${GRAFANA_DISK}/logs
@@ -20,6 +23,7 @@ function finish {
       docker stop $(cat ${CID_FILE})
       rm -f  ${CID_FILE}
   fi
+  docker rm -f $CONTAINER
 }
 trap finish EXIT
 
@@ -29,6 +33,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
    CONFIG_SUB_DIR="linux"
 fi
 
+docker inspect $CONTAINER > /dev/null 2>&1 && docker rm -f $CONTAINER
 docker run --rm  --cidfile ${CID_FILE} \
     --name=grafana \
     --cpus=1 \
@@ -43,7 +48,7 @@ docker run --rm  --cidfile ${CID_FILE} \
     -e GF_USERS_ALLOW_SIGN_UP='false' \
     -e GF_USERS_AUTO_ASSIGN_ORG='true' \
     -e GF_USERS_AUTO_ASSIGN_ORG_ROLE=Editor \
-    sourcegraph/grafana:6.3.3 >> ${GRAFANA_DISK}/logs/grafana.log 2>&1 &
+    ${IMAGE} >> ${GRAFANA_DISK}/logs/grafana.log 2>&1 &
 wait $!
 
 # Add the following lines above if you wish to use an auth proxy with Grafana:
