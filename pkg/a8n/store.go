@@ -29,17 +29,10 @@ func (s *Store) CreateThread(ctx context.Context, t *Thread) error {
 		return err
 	}
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-
-	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanThread(t, sc)
 		return int64(t.ID), 1, err
 	})
-
-	return err
 }
 
 var createThreadQueryFmtstr = `
@@ -97,20 +90,12 @@ type CountThreadsOpts struct {
 }
 
 // CountThreads returns the number of threads in the database.
-func (s *Store) CountThreads(ctx context.Context, opts CountThreadsOpts) (int64, error) {
+func (s *Store) CountThreads(ctx context.Context, opts CountThreadsOpts) (count int64, _ error) {
 	q := countThreadsQuery(&opts)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return 0, err
-	}
-
-	_, count, err := scanAll(rows, func(sc scanner) (_, count int64, err error) {
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
 	})
-
-	return count, err
 }
 
 var countThreadsQueryFmtstr = `
@@ -144,13 +129,8 @@ type ListThreadsOpts struct {
 func (s *Store) ListThreads(ctx context.Context, opts ListThreadsOpts) (cs []*Thread, next int64, err error) {
 	q := listThreadsQuery(&opts)
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, 0, err
-	}
-
 	cs = make([]*Thread, 0, opts.Limit)
-	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		var c Thread
 		if err = scanThread(&c, sc); err != nil {
 			return 0, 0, err
@@ -213,17 +193,10 @@ func (s *Store) CreateCampaign(ctx context.Context, c *Campaign) error {
 		return err
 	}
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-
-	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanCampaign(c, sc)
 		return int64(c.ID), 1, err
 	})
-
-	return err
 }
 
 var createCampaignQueryFmtstr = `
@@ -287,24 +260,76 @@ func nullInt32Column(n int32) *int32 {
 
 // UpdateCampaign updates the given Campaign.
 func (s *Store) UpdateCampaign(ctx context.Context, c *Campaign) error {
-	panic("not implemented")
+	q, err := updateCampaignQuery(c)
+	if err != nil {
+		return err
+	}
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanCampaign(c, sc)
+		return int64(c.ID), 1, err
+	})
+}
+
+var updateCampaignQueryFmtstr = `
+-- source: pkg/a8n/store.go:UpdateCampaign
+INSERT INTO campaigns (
+	name,
+	description,
+	author_id,
+	namespace_user_id,
+	namespace_org_id,
+	created_at,
+	updated_at,
+	thread_ids
+)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING
+	id,
+	name,
+	description,
+	author_id,
+	namespace_user_id,
+	namespace_org_id,
+	created_at,
+	updated_at,
+	thread_ids
+`
+
+func updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
+	threadIDs, err := jsonSetColumn(c.ThreadIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
+	return sqlf.Sprintf(
+		createCampaignQueryFmtstr,
+		c.Name,
+		c.Description,
+		c.AuthorID,
+		nullInt32Column(c.NamespaceUserID),
+		nullInt32Column(c.NamespaceOrgID),
+		c.CreatedAt,
+		c.UpdatedAt,
+		threadIDs,
+	), nil
 }
 
 // CountCampaigns returns the number of campaigns in the database.
-func (s *Store) CountCampaigns(ctx context.Context) (int64, error) {
+func (s *Store) CountCampaigns(ctx context.Context) (count int64, _ error) {
 	q := countCampaignsQuery
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return 0, err
-	}
-
-	_, count, err := scanAll(rows, func(sc scanner) (_, count int64, err error) {
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
 	})
-
-	return count, err
 }
 
 var countCampaignsQuery = sqlf.Sprintf(`
@@ -322,13 +347,8 @@ type ListCampaignsOpts struct {
 func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*Campaign, next int64, err error) {
 	q := listCampaignsQuery(&opts)
 
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, 0, err
-	}
-
 	cs = make([]*Campaign, 0, opts.Limit)
-	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		var c Campaign
 		if err = scanCampaign(&c, sc); err != nil {
 			return 0, 0, err
@@ -368,6 +388,19 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 	opts.Limit++
 	return sqlf.Sprintf(listCampaignsQueryFmtstr, opts.Limit)
+}
+
+func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
+	_, _, err := s.query(ctx, q, sc)
+	return err
+}
+
+func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) (last, count int64, err error) {
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return 0, 0, err
+	}
+	return scanAll(rows, sc)
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row
