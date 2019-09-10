@@ -67,12 +67,7 @@ func createThreadQuery(t *Thread) (*sqlf.Query, error) {
 		return nil, err
 	}
 
-	ids := make(map[int64]*struct{}, len(t.CampaignIDs))
-	for _, id := range t.CampaignIDs {
-		ids[id] = nil
-	}
-
-	campaignIDs, err := json.Marshal(ids)
+	campaignIDs, err := jsonSetColumn(t.CampaignIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +208,10 @@ func listThreadsQuery(opts *ListThreadsOpts) *sqlf.Query {
 
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *Campaign) error {
-	q := createCampaignQuery(c)
+	q, err := createCampaignQuery(c)
+	if err != nil {
+		return err
+	}
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -237,9 +235,10 @@ INSERT INTO campaigns (
 	namespace_user_id,
 	namespace_org_id,
 	created_at,
-	updated_at
+	updated_at,
+	thread_ids
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	name,
@@ -248,10 +247,16 @@ RETURNING
 	namespace_user_id,
 	namespace_org_id,
 	created_at,
-	updated_at
+	updated_at,
+	thread_ids
 `
 
-func createCampaignQuery(c *Campaign) *sqlf.Query {
+func createCampaignQuery(c *Campaign) (*sqlf.Query, error) {
+	threadIDs, err := jsonSetColumn(c.ThreadIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = time.Now().UTC().Truncate(time.Microsecond)
 	}
@@ -269,7 +274,8 @@ func createCampaignQuery(c *Campaign) *sqlf.Query {
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-	)
+		threadIDs,
+	), nil
 }
 
 func nullInt32Column(n int32) *int32 {
@@ -349,7 +355,8 @@ SELECT
 	namespace_user_id,
 	namespace_org_id,
 	created_at,
-	updated_at
+	updated_at,
+	thread_ids
 FROM campaigns
 ORDER BY id ASC
 LIMIT %s
@@ -395,31 +402,14 @@ func closeErr(c io.Closer, err *error) {
 
 func scanThread(t *Thread, s scanner) error {
 	t.Metadata = json.RawMessage{}
-	campaignIDs := json.RawMessage{}
-	err := s.Scan(
+	return s.Scan(
 		&t.ID,
 		&t.RepoID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&t.Metadata,
-		&campaignIDs,
+		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 	)
-
-	if err != nil {
-		return err
-	}
-
-	set := map[int64]struct{}{}
-	if err = json.Unmarshal(campaignIDs, &set); err != nil {
-		return err
-	}
-
-	t.CampaignIDs = make([]int64, 0, len(set))
-	for id := range set {
-		t.CampaignIDs = append(t.CampaignIDs, id)
-	}
-
-	return nil
 }
 
 func scanCampaign(c *Campaign, s scanner) error {
@@ -432,6 +422,7 @@ func scanCampaign(c *Campaign, s scanner) error {
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&dbutil.JSONInt64Set{Set: &c.ThreadIDs},
 	)
 }
 
@@ -449,4 +440,12 @@ func metadataColumn(metadata interface{}) (msg json.RawMessage, err error) {
 		msg, err = json.MarshalIndent(m, "        ", "    ")
 	}
 	return
+}
+
+func jsonSetColumn(ids []int64) ([]byte, error) {
+	set := make(map[int64]*struct{}, len(ids))
+	for _, id := range ids {
+		set[id] = nil
+	}
+	return json.Marshal(set)
 }

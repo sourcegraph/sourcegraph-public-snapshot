@@ -91,6 +91,8 @@ func TestStore(t *testing.T) {
 				}
 			}
 		}
+
+		// Test the update by adding more threads to the campaign.
 	})
 
 	t.Run("Threads", func(t *testing.T) {
