@@ -11,7 +11,7 @@ import { readline } from 'mz'
  * data required to populate the correlation database.
  *
  * @param input The input stream containing JSON-encoded LSIF data.
- * @param database The filepath to the database to populate.
+ * @param database The filepath of the database to populate.
  */
 export async function convertLsif(
     input: Readable,
