@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"reflect"
 	"sort"
 	"testing"
 	"time"
@@ -68,8 +67,8 @@ func TestStore(t *testing.T) {
 				want.CreatedAt = now
 				want.UpdatedAt = now
 
-				if !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
 				}
 
 				campaigns = append(campaigns, c)
@@ -111,8 +110,8 @@ func TestStore(t *testing.T) {
 						t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
 					}
 
-					if !reflect.DeepEqual(have, want) {
-						t.Fatal(cmp.Diff(have, want))
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
 					}
 				}
 			}
@@ -141,8 +140,8 @@ func TestStore(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
 				}
 
 				// Test that duplicates are not introduced.
@@ -151,8 +150,8 @@ func TestStore(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
 				}
 
 				// Test we can add to the set.
@@ -167,8 +166,8 @@ func TestStore(t *testing.T) {
 					return have.ThreadIDs[a] < have.ThreadIDs[b]
 				})
 
-				if !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
 				}
 
 				// Test we can remove from the set.
@@ -179,10 +178,37 @@ func TestStore(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
 				}
 			}
+		})
+
+		t.Run("Get", func(t *testing.T) {
+			t.Run("ByID", func(t *testing.T) {
+				want := campaigns[0]
+				opts := GetCampaignOpts{ID: want.ID}
+
+				have, err := s.GetCampaign(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("NoResults", func(t *testing.T) {
+				opts := GetCampaignOpts{ID: 0xdeadbeef}
+
+				_, have := s.GetCampaign(ctx, opts)
+				want := ErrNoResults
+
+				if have != want {
+					t.Fatalf("have err %v, want %v", have, want)
+				}
+			})
 		})
 	})
 
@@ -214,8 +240,8 @@ func TestStore(t *testing.T) {
 				want.CreatedAt = now
 				want.UpdatedAt = now
 
-				if !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
 				}
 
 				threads = append(threads, th)
@@ -260,8 +286,8 @@ func TestStore(t *testing.T) {
 					t.Fatalf("listed %d threads, want: %d", len(have), len(want))
 				}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Fatalf("opts: %+v, diff: %s", opts, cmp.Diff(have, want))
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 
@@ -288,8 +314,8 @@ func TestStore(t *testing.T) {
 						t.Fatalf("listed %d threads, want: %d", len(have), len(want))
 					}
 
-					if !reflect.DeepEqual(have, want) {
-						t.Fatal(cmp.Diff(have, want))
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
 					}
 				}
 			}

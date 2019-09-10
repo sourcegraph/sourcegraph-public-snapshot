@@ -241,7 +241,12 @@ func (n *JSONInt64Set) Scan(value interface{}) error {
 		return fmt.Errorf("value is not []byte: %T", value)
 	}
 
-	*n.Set = (*n.Set)[:0]
+	if *n.Set == nil {
+		*n.Set = make([]int64, 0, len(set))
+	} else {
+		*n.Set = (*n.Set)[:0]
+	}
+
 	for id := range set {
 		*n.Set = append(*n.Set, id)
 	}
