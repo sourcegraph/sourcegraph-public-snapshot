@@ -20,7 +20,6 @@ import {
     Vertex,
     Edge,
     MonikerKind,
-    ItemEdgeProperties,
     moniker,
     next,
     nextMoniker,
