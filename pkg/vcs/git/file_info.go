@@ -26,3 +26,13 @@ type Submodule struct {
 	// submodule repository's commit ID space).
 	CommitID api.CommitID
 }
+
+// ObjectInfo holds information about a Git object and is returned in (os.FileInfo).Sys for blobs
+// and trees from Stat/Lstat/ReadDir calls.
+type ObjectInfo interface {
+	OID() OID
+}
+
+type objectInfo OID
+
+func (oid objectInfo) OID() OID { return OID(oid) }

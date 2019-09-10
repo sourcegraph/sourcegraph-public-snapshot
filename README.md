@@ -63,7 +63,9 @@ The `docs` folder has additional documentation for developing and understanding 
 - [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/architecture.md): high-level architecture
 - [Database setup](./doc/dev/postgresql.md): database setup and best practices
-- [Style guide](./doc/dev/style.md)
+- [General style guide](./doc/dev/style_guide.md)
+- [Code style guide](./doc/dev/code_style_guide.md)
+- [Documentation style guide](./doc/dev/documentation/style_guide.md)
 - [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 

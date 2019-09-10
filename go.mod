@@ -1,5 +1,7 @@
 module github.com/sourcegraph/sourcegraph
 
+go 1.13
+
 require (
 	cloud.google.com/go v0.44.3
 	github.com/DataDog/zstd v1.4.1 // indirect
@@ -7,7 +9,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/OpenPeeDeeP/depguard v1.0.0 // indirect
-	github.com/RoaringBitmap/roaring v0.4.19
+	github.com/RoaringBitmap/roaring v0.4.20
 	github.com/alecthomas/chroma v0.6.6 // indirect
 	github.com/aws/aws-sdk-go-v2 v0.11.0
 	github.com/beevik/etree v1.1.0
@@ -48,14 +50,13 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.4.0 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
-	github.com/glycerine/go-unsnap-stream v0.0.0-20190730064659-98d31706395a // indirect
+	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/glycerine/goconvey v0.0.0-20190410193231-58a59202ab31 // indirect
 	github.com/go-critic/go-critic v0.3.4 // indirect
-	github.com/go-delve/delve v1.2.0
+	github.com/go-delve/delve v1.3.0
 	github.com/go-redsync/redsync v1.3.0
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
-	github.com/gogo/protobuf v1.2.2-0.20190730201129-28a6bbf47e48 // indirect
+	github.com/gogo/protobuf v1.3.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.6.1
 	github.com/golang/gddo v0.0.0-20190815223733-287de01127ef
 	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6
@@ -87,7 +88,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/goware/urlx v0.3.1
-	github.com/graph-gophers/graphql-go v0.0.0-20190724201507-010347b5f9e6
+	github.com/graph-gophers/graphql-go v0.0.0-20190902214650-641ae197eec7
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-retryablehttp v0.6.2 // indirect
@@ -118,12 +119,12 @@ require (
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/mattn/goreman v0.2.1
-	github.com/mcuadros/go-version v0.0.0-20190308113854-92cdf37c5b75
+	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/nbutton23/zxcvbn-go v0.0.0-20180912185939-ae427f1e4c1d // indirect
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
-	github.com/onsi/ginkgo v1.9.0 // indirect
-	github.com/onsi/gomega v1.6.0 // indirect
+	github.com/onsi/ginkgo v1.10.1 // indirect
+	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pelletier/go-toml v1.4.0 // indirect
@@ -141,7 +142,6 @@ require (
 	github.com/sergi/go-diff v1.0.0
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/go v0.0.0-20190704215121-7189cc372560 // indirect
-	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20181215221002-9d8641ddf2e1 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
@@ -167,14 +167,15 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.4.0 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
+	github.com/src-d/enry/v2 v2.1.0
 	github.com/stretchr/testify v1.4.0 // indirect
-	github.com/stripe/stripe-go v62.6.0+incompatible
+	github.com/stripe/stripe-go v62.8.2+incompatible
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt v1.1.1
 	github.com/timakin/bodyclose v0.0.0-20190721030226-87058b9bfcec // indirect
 	github.com/uber-go/atomic v1.4.0 // indirect
 	github.com/uber/gonduit v0.4.0
-	github.com/uber/jaeger-client-go v2.16.0+incompatible
+	github.com/uber/jaeger-client-go v2.17.0+incompatible
 	github.com/uber/jaeger-lib v2.0.0+incompatible
 	github.com/ugorji/go v1.1.7 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
@@ -184,32 +185,33 @@ require (
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/zenazn/goji v0.9.0 // indirect
+	go.starlark.net v0.0.0-20190820173200-988906f77f65 // indirect
 	go.uber.org/automaxprocs v1.2.0
 	golang.org/x/arch v0.0.0-20190815191158-8a70ba74b3a1 // indirect
-	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
-	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7
+	golang.org/x/crypto v0.0.0-20190829043050-9756ffdc2472
+	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
-	golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456
+	golang.org/x/sys v0.0.0-20190830142957-1e83adbbebd0
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190826234050-71894ab67ee3
+	golang.org/x/tools v0.0.0-20190830223141-573d9926052a
 	google.golang.org/api v0.9.0 // indirect
+	google.golang.org/appengine v1.6.2 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
 	google.golang.org/grpc v1.23.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
-	gopkg.in/yaml.v2 v2.2.2
 	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f // indirect
 	sourcegraph.com/sqs/pbtypes v1.0.0 // indirect
 )
 
 replace (
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190821144538-4e4eef546d3e
-	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
@@ -220,3 +222,20 @@ replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.2
 replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
 
 replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
+
+replace github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8 => github.com/kevinburke/differ v0.0.0-20180721181420-bdfd927653c8
+
+replace github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 => github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
+
+replace (
+	github.com/go-critic/go-critic v0.0.0-20181204210945-1df300866540 => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
+	github.com/golangci/errcheck v0.0.0-20181003203344-ef45e06d44b6 => github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6
+	github.com/golangci/go-tools v0.0.0-20180109140146-af6baa5dc196 => github.com/golangci/go-tools v0.0.0-20190318060251-af6baa5dc196
+	github.com/golangci/gofmt v0.0.0-20181105071733-0b8337e80d98 => github.com/golangci/gofmt v0.0.0-20181222123516-0b8337e80d98
+	github.com/golangci/gosec v0.0.0-20180901114220-66fb7fc33547 => github.com/golangci/gosec v0.0.0-20190211064107-66fb7fc33547
+	github.com/golangci/ineffassign v0.0.0-20180808204949-42439a7714cc => github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc
+	github.com/golangci/lint-1 v0.0.0-20180610141402-ee948d087217 => github.com/golangci/lint-1 v0.0.0-20190420132249-ee948d087217
+	mvdan.cc/unparam v0.0.0-20190124213536-fbb59629db34 => mvdan.cc/unparam v0.0.0-20190209190245-fbb59629db34
+)
+
+replace github.com/daviddengcn/go-colortext v0.0.0-20190211032704-186a3d44e920 => github.com/daviddengcn/go-colortext v0.0.0-20180409174941-186a3d44e920

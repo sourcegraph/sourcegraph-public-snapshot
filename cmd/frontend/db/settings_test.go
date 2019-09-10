@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -11,7 +12,8 @@ func TestSettings_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user1, err := Users.Create(ctx, NewUser{Username: "u1"})
 	if err != nil {

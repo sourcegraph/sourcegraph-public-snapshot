@@ -51,7 +51,7 @@ export function encodeJSON<T>(value: T): Promise<string> {
  * @param value The value to decode.
  */
 export async function decodeJSON<T>(value: string): Promise<T> {
-    return parseJSON(await unb64gzip(value))
+    return await parseJSON(await unb64gzip(value))
 }
 
 /**
@@ -74,9 +74,9 @@ async function unb64gzip(value: string): Promise<string> {
 
 /**
  * Return the JSON representation of `value`. This has special logic to
- * convert an ES6 map structure into a JSON-representable value. This
- * method, along with `parseJSON` should be used over the raw methods if
- * the payload may contain maps.
+ * convert ES6 map and set structures into a JSON-representable value.
+ * This method, along with `parseJSON` should be used over the raw methods
+ * if the payload may contain maps.
  *
  * @param value The value to jsonify.
  */
@@ -89,20 +89,33 @@ function dumpJSON<T>(value: T): string {
             }
         }
 
+        if (value instanceof Set) {
+            return {
+                type: 'set',
+                value: [...value],
+            }
+        }
+
         return value
     })
 }
 
 /**
  * Parse the JSON representation of `value`. This has special logic to
- * unmarshal map objects as encoded by `dumpJSON`.
+ * unmarshal map and set objects as encoded by `dumpJSON`.
  *
  * @param value The value to unmarshal.
  */
 function parseJSON<T>(value: string): T {
     return JSON.parse(value, (_, value) => {
-        if (typeof value === 'object' && value !== null && value.type === 'map') {
-            return new Map(value.value)
+        if (typeof value === 'object' && value !== null) {
+            if (value.type === 'map') {
+                return new Map(value.value)
+            }
+
+            if (value.type === 'set') {
+                return new Set(value.value)
+            }
         }
 
         return value

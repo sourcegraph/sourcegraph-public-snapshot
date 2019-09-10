@@ -325,7 +325,7 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 
-	return srcs.ListRepos(ctx)
+	return listAll(ctx, srcs)
 }
 
 func (s *Syncer) setOrResetLastSyncErr(perr *error) {

@@ -1,6 +1,7 @@
 package productsubscription
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -8,7 +9,8 @@ import (
 )
 
 func TestProductLicenses_Create(t *testing.T) {
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {
@@ -60,7 +62,8 @@ func TestProductLicenses_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	u1, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})
 	if err != nil {

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -15,7 +16,8 @@ func TestOrgInvitations(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	sender, err := Users.Create(ctx, NewUser{
 		Email:                 "a1@example.com",

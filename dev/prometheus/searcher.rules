@@ -1,4 +1,0 @@
-# Searcher service rules
-searcher_requests:rate10m = sum by (instance)(rate(searcher_service_request_total[10m]))
-searcher_errors:rate10m   = sum by (instance)(rate(searcher_service_request_total{code!="200",code!="canceled"}[10m]))
-searcher_errors:ratio10m  = sum(searcher_errors:rate10m) / sum(searcher_requests:rate10m)

@@ -1,6 +1,7 @@
 package bitbucketserver
 
 import (
+	"flag"
 	"os"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}

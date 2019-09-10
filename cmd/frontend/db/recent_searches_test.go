@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -14,7 +15,8 @@ func TestRecentSearches_Log(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 	q := fmt.Sprintf("fake query with random number %d", rand.Int())
 	rs := &RecentSearches{}
 	if err := rs.Log(ctx, q); err != nil {
@@ -38,13 +40,15 @@ func TestRecentSearches_Cleanup(t *testing.T) {
 	}
 	rs := &RecentSearches{}
 	t.Run("empty case", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
+		dbtesting.SetupGlobalTestDB(t)
+		ctx := context.Background()
 		if err := rs.Cleanup(ctx, 1); err != nil {
 			t.Error(err)
 		}
 	})
 	t.Run("single case", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
+		dbtesting.SetupGlobalTestDB(t)
+		ctx := context.Background()
 		q := "fake query"
 		if err := rs.Log(ctx, q); err != nil {
 			t.Fatal(err)
@@ -61,7 +65,8 @@ func TestRecentSearches_Cleanup(t *testing.T) {
 		}
 	})
 	t.Run("simple case", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
+		dbtesting.SetupGlobalTestDB(t)
+		ctx := context.Background()
 		limit := 10
 		for i := 1; i <= limit+1; i++ {
 			q := fmt.Sprintf("fake query for i = %d", i)
@@ -81,7 +86,8 @@ func TestRecentSearches_Cleanup(t *testing.T) {
 		}
 	})
 	t.Run("id gap", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
+		dbtesting.SetupGlobalTestDB(t)
+		ctx := context.Background()
 		addQueryWithRandomId := func(q string) {
 			insert := `INSERT INTO recent_searches (id, query) VALUES ((1e6*RANDOM())::int, $1)`
 			if _, err := dbconn.Global.ExecContext(ctx, insert, q); err != nil {
@@ -108,7 +114,8 @@ func TestRecentSearches_Cleanup(t *testing.T) {
 
 func BenchmarkRecentSearches_LogAndCleanup(b *testing.B) {
 	rs := &RecentSearches{}
-	ctx := dbtesting.TestContext(b)
+	dbtesting.SetupGlobalTestDB(b)
+	ctx := context.Background()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		q := fmt.Sprintf("fake query for i = %d", i)
@@ -177,7 +184,8 @@ func TestRecentSearches_Top(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rs := &RecentSearches{}
-			ctx := dbtesting.TestContext(t)
+			dbtesting.SetupGlobalTestDB(t)
+			ctx := context.Background()
 			for _, q := range tt.queries {
 				if err := rs.Log(ctx, q); err != nil {
 					t.Fatal(err)

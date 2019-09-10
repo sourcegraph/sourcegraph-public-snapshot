@@ -31,7 +31,7 @@ export class TableInserter<T, M extends new () => T> {
 
     /**
      * Submit a model for insertion. This may happen immediately, on a
-     * subsequent call to insert, or when the `finalize` method is called.
+     * subsequent call to insert, or when the `flush` method is called.
      *
      * @param model The instance to save.
      */
@@ -46,7 +46,7 @@ export class TableInserter<T, M extends new () => T> {
     /**
      * Ensure any outstanding records are inserted into the database.
      */
-    public finalize(): Promise<void> {
+    public flush(): Promise<void> {
         return this.executeBatch()
     }
 

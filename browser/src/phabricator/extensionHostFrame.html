@@ -1,6 +1,7 @@
 <script type="text/javascript">
     // Create extension host worker
-    const hostWorker = new Worker('/.assets/extension/scripts/extensionHostWorker.bundle.js')
+    const assetsUrl = window.parent.SOURCEGRAPH_ASSETS_URL || '/.assets/extension/'
+    const hostWorker = new Worker(new URL('scripts/extensionHostWorker.bundle.js', assetsUrl).href)
     // Forward extension host worker init message,
     // making sur to transfer the endpoint MessagePort objects.
     window.addEventListener('message', ({ data }) => {

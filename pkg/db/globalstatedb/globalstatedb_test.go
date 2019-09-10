@@ -1,6 +1,7 @@
 package globalstatedb
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -15,7 +16,8 @@ func TestGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 	config, err := Get(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +73,8 @@ func TestManagementConsoleState(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	// Site must be initialized to get mgmt console state.
 	mgmt, err := getManagementConsoleState(ctx)

@@ -13,6 +13,7 @@
     "release": "yarn release:chrome",
     "release:chrome": "webstore upload --auto-publish --source build/bundles/chrome-bundle.zip --extension-id dgjhfomjieaadpoljlnidmbgkdffpack --client-id $GOOGLE_CLIENT_ID --client-secret $GOOGLE_CLIENT_SECRET --refresh-token $GOOGLE_REFRESH_TOKEN",
     "release:ff": "./scripts/release-ff.sh",
+    "release:npm": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./scripts/publish-npm.ts",
     "lint": "yarn run tslint && yarn run eslint && yarn run stylelint",
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './**/*.ts?(x)'",
     "eslint": "eslint '**/*.[jt]s?(x)'",

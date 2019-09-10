@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
@@ -10,7 +11,8 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	if _, err := Users.Create(ctx, NewUser{
 		Email:       "foo@bar.com",
@@ -90,7 +92,8 @@ func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:           "foo@bar.com",
@@ -115,7 +118,8 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	oldPasswordResetRateLimit := passwordResetRateLimit
 	defer func() {
@@ -153,7 +157,8 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	usr, err := Users.Create(ctx, NewUser{
 		Email:                 "foo@bar.com",
