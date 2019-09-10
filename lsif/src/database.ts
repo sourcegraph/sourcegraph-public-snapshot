@@ -15,8 +15,6 @@ import {
     ResultChunkData,
     ResultChunkModel,
     DocumentPathRangeId,
-    OrderedRanges,
-    Ix,
     DefinitionReferenceResultId,
     RangeId,
 } from './models.database'
@@ -249,7 +247,7 @@ export class Database {
 
             if (documentPath === path) {
                 // If the document path is this document, convert the locations directly
-                results = results.concat(mapRangesToLocations(document.ranges, document.orderedRanges, path, rangeIds))
+                results = results.concat(mapRangesToLocations(document.ranges, path, rangeIds))
                 continue
             }
 
@@ -260,9 +258,7 @@ export class Database {
             }
 
             // Then finally convert the locations in the sibling document
-            results = results.concat(
-                mapRangesToLocations(sibling.ranges, sibling.orderedRanges, documentPath, rangeIds)
-            )
+            results = results.concat(mapRangesToLocations(sibling.ranges, documentPath, rangeIds))
         }
 
         return results
@@ -459,12 +455,13 @@ export class Database {
             return { document: undefined, range: undefined }
         }
 
-        const range = getRangeByPosition(document.orderedRanges, position)
-        if (!range) {
-            return { document: undefined, range: undefined }
+        for (const range of document.ranges.values()) {
+            if (comparePosition(range, position) === 0) {
+                return { document, range }
+            }
         }
 
-        return { document, range }
+        return { document: undefined, range: undefined }
     }
 
     /**
@@ -562,40 +559,6 @@ export class Database {
 }
 
 /**
- * Perform binary search over the ordered ranges of a document, returning
- * the range that includes it (if it exists). LSIF requires that no ranges
- * overlap in a single document. Then, we can compare a position against a
- * range by saying that it's contained within it (what we want), occurs
- * before it, or occurs after it. These later two results let us cut our
- * search space by half each time.
- *
- * @param orderedRanges The ranges of the document, ordered by startLine/startCharacter.
- * @param position The user's hover position.
- */
-export function getRangeByPosition(orderedRanges: OrderedRanges, position: lsp.Position): RangeData | undefined {
-    let lo = 0
-    let hi = orderedRanges.length - 1
-
-    while (lo <= hi) {
-        const mid = Math.floor((lo + hi) / 2)
-        const range = orderedRanges[mid]
-
-        const cmp = comparePosition(range, position)
-        if (cmp === 0) {
-            return range
-        }
-
-        if (cmp < 0) {
-            lo = mid + 1
-        } else {
-            hi = mid - 1
-        }
-    }
-
-    return undefined
-}
-
-/**
  * Compare a position against a range. Returns 0 if the position occurs
  * within the range (inclusive bounds), -1 if the position occurs after
  * it, and +1 if the position occurs before it.
@@ -679,16 +642,10 @@ function createRange(result: {
 /**
  * Convert the given range identifiers into LSP location objects.
  *
- * @param ranges The map of ranges of the document (from identifier to the range's index in `orderedRanges`).
- * @param orderedRanges The ordered ranges of the document.
+ * @param ranges The map of ranges of the document.
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-export function mapRangesToLocations(
-    ranges: Map<RangeId, Ix<OrderedRanges>>,
-    orderedRanges: OrderedRanges,
-    uri: string,
-    ids: RangeId[]
-): lsp.Location[] {
-    return ids.map(id => lsp.Location.create(uri, createRange(orderedRanges[mustGet(ranges, id, 'range')])))
+export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: string, ids: RangeId[]): lsp.Location[] {
+    return ids.map(id => lsp.Location.create(uri, createRange(mustGet(ranges, id, 'range'))))
 }
