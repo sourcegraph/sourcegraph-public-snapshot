@@ -1,4 +1,4 @@
-# LSIF test data for C++ via DXR Plugin
+# LSIF data for C++ tests (via DXR plugin)
 
 Getting the DXR plugin to work with macOS is an ongoing project. For now, we just version control some output. The reference source is given below.
 

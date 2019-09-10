@@ -1,12 +1,13 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
+import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_ERRORS_COUNTER } from './metrics'
 import { DefaultMap } from './default-map'
+import { Edge, Id, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { encodeJSON } from './encoding'
 import { EntityManager } from 'typeorm'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from './xrepo'
 import { TableInserter } from './inserter'
-import { Vertex, Edge, MonikerKind, RangeId } from 'lsif-protocol'
 import {
     DefinitionModel,
     DocumentData,
@@ -25,10 +26,7 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
-    Ix,
-    OrderedRanges,
 } from './models.database'
-import { DATABASE_INSERTION_ERRORS_COUNTER, DATABASE_INSERTION_DURATION_HISTOGRAM } from './metrics'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -82,6 +80,12 @@ export async function importLsif(
         throw new Error('No metadata defined.')
     }
 
+    // Determine which reference results are linked together. Determine a canonical
+    // reference result for each set so that we can remap all identifiers to the
+    // chosen one.
+
+    const canonicalReferenceResultIds = canonicalizeReferenceResults(correlator)
+
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
@@ -98,7 +102,7 @@ export async function importLsif(
 
     // Insert documents
     const documentInserter = new TableInserter(entityManager, DocumentModel, getBatchSize(2), inserterMetrics)
-    await populateDocumentsTable(correlator, documentInserter)
+    await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
     await documentInserter.flush()
 
     // Insert result chunks
@@ -132,16 +136,21 @@ function getBatchSize(numFields: number): number {
 
 /**
  * Correlate, encode, and insert all document entries for this dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param documentInserter The inserter for the documents table.
+ * @param canonicalReferenceResultIds A map from reference result identifiers to its canonical identifier.
  */
 async function populateDocumentsTable(
     correlator: Correlator,
-    documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
+    documentInserter: TableInserter<DocumentModel, new () => DocumentModel>,
+    canonicalReferenceResultIds: Map<ReferenceResultId, ReferenceResultId>
 ): Promise<void> {
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
     // the "next" edges coming from range data.
     for (const [rangeId, range] of correlator.rangeData) {
-        canonicalizeItem(correlator, rangeId, range)
+        canonicalizeItem(correlator, canonicalReferenceResultIds, rangeId, range)
     }
 
     // Gather and insert document data that includes the ranges contained in the document,
@@ -160,7 +169,6 @@ async function populateDocumentsTable(
             path: documentPath,
             data: await encodeJSON({
                 ranges: document.ranges,
-                orderedRanges: document.orderedRanges,
                 hoverResults: document.hoverResults,
                 monikers: document.monikers,
                 packageInformation: document.packageInformation,
@@ -171,6 +179,10 @@ async function populateDocumentsTable(
 
 /**
  * Correlate and insert all result chunk entries for this dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param documentInserter The inserter for the result chunks table.
+ * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
  */
 async function populateResultChunksTable(
     correlator: Correlator,
@@ -227,6 +239,10 @@ async function populateResultChunksTable(
 
 /**
  * Correlate and insert all definition and reference entries for this dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param definitionInserter The inserter for the definitions table.
+ * @param referenceInserter The inserter for the references table.
  */
 async function populateDefinitionsAndReferencesTables(
     correlator: Correlator,
@@ -308,6 +324,10 @@ async function populateDefinitionsAndReferencesTables(
  * created a database in case we have backwards-incompatible changes in the future that
  * require historic version flagging. This also stores the number of result chunks
  * determined above so that we can have stable hashes at query time.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ * @param metaInserter The inserter for the meta table.
+ * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
  */
 async function populateMetadataTable(
     correlator: Correlator,
@@ -326,6 +346,8 @@ async function populateMetadataTable(
  * Gather all package information that is referenced by an exported
  * moniker. These will be the packages that are provided by the repository
  * represented by this LSIF dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
  */
 function getPackages(correlator: Correlator): Package[] {
     const packages: Package[] = []
@@ -347,6 +369,8 @@ function getPackages(correlator: Correlator): Package[] {
  * Gather all imported moniker identifiers along with their package
  * information. These will be the packages that are a dependency of the
  * repository represented by this LSIF dump.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
  */
 function getReferences(correlator: Correlator): SymbolReferences[] {
     const packageIdentifiers: Map<string, string[]> = new Map()
@@ -375,15 +399,64 @@ function getReferences(correlator: Correlator): SymbolReferences[] {
 }
 
 /**
+ * Determine which reference result sets are linked via item edges. Choose a canonical
+ * reference result from each batch. Merge all data into the canonical result and remove
+ * all non-canonical results from the correlator (note: this leave unlinked results alone).
+ * Return a map from reference result identifier to the identifier of the canonical result.
+ *
+ * @param correlator The correlator with all vertices and edges inserted.
+ */
+function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResultId, ReferenceResultId> {
+    const canonicalReferenceResultIds = new Map<ReferenceResultId, ReferenceResultId>()
+
+    for (const referenceResultId of correlator.linkedReferenceResults.keys()) {
+        if (canonicalReferenceResultIds.has(referenceResultId)) {
+            continue
+        }
+
+        const linkedIds = Array.from(reachableItems(referenceResultId, correlator.linkedReferenceResults))
+        linkedIds.sort()
+
+        const canonicalId = linkedIds[0]
+        const canonicalReferenceResult = mustGet(correlator.referenceData, canonicalId, 'referenceResult')
+
+        for (const linkedId of linkedIds) {
+            canonicalReferenceResultIds.set(linkedId, canonicalId)
+
+            if (linkedId !== canonicalId) {
+                for (const [documentId, rangeIds] of mustGet(correlator.referenceData, linkedId, 'referenceResult')) {
+                    canonicalReferenceResult.getOrDefault(documentId).push(...rangeIds)
+                }
+            }
+        }
+    }
+
+    const keys = new Set(canonicalReferenceResultIds.keys())
+    const vals = new Set(canonicalReferenceResultIds.values())
+    for (const key of keys) {
+        if (!vals.has(key)) {
+            correlator.referenceData.delete(key)
+        }
+    }
+
+    return canonicalReferenceResultIds
+}
+/**
  * Flatten the definition result, reference result, hover results, and monikers of range
  * and result set items by following next links in the graph. This needs to be run over
  * each range before committing them to a document.
  *
  * @param correlator The correlator with all vertices and edges inserted.
+ * @param canonicalReferenceResultIds A map from reference result identifiers to its canonical identifier.
  * @param id The item identifier.
  * @param item The range or result set item.
  */
-function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, item: RangeData | ResultSetData): void {
+function canonicalizeItem(
+    correlator: Correlator,
+    canonicalReferenceResultIds: Map<ReferenceResultId, ReferenceResultId>,
+    id: RangeId | ResultSetId,
+    item: RangeData | ResultSetData
+): void {
     const monikers = new Set<MonikerId>()
     if (item.monikerIds.size > 0) {
         // If we have any monikers attached to this item, then we only need to look at the
@@ -393,7 +466,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
 
         const candidateMoniker = item.monikerIds.keys().next().value
 
-        for (const monikerId of reachableMonikers(correlator.monikerSets, candidateMoniker)) {
+        for (const monikerId of reachableItems(candidateMoniker, correlator.linkedMonikers)) {
             if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== MonikerKind.local) {
                 monikers.add(monikerId)
             }
@@ -407,7 +480,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
         // canonicalized.
 
         const nextItem = mustGet(correlator.resultSetData, nextId, 'resultSet')
-        canonicalizeItem(correlator, nextId, nextItem)
+        canonicalizeItem(correlator, canonicalReferenceResultIds, nextId, nextItem)
 
         // Add each moniker of the next set to this item
         for (const monikerId of nextItem.monikerIds) {
@@ -430,6 +503,11 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
         }
     }
 
+    if (item.referenceResultId && canonicalReferenceResultIds.has(item.referenceResultId)) {
+        // If there is a canonical version of this reference result, use that instead
+        item.referenceResultId = canonicalReferenceResultIds.get(item.referenceResultId)
+    }
+
     // Update our moniker sets (our normalized sets and any monikers of our next item)
     item.monikerIds = monikers
 
@@ -449,8 +527,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
 function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, path: string): DocumentData {
     const document = {
         path,
-        ranges: new Map<RangeId, Ix<OrderedRanges>>(),
-        orderedRanges: [] as RangeData[],
+        ranges: new Map<RangeId, RangeData>(),
         hoverResults: new Map<HoverResultId, string>(),
         monikers: new Map<MonikerId, MonikerData>(),
         packageInformation: new Map<PackageInformationId, PackageInformationData>(),
@@ -489,60 +566,43 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         addPackageInformation(moniker.packageInformationId)
     }
 
-    // Correlate range data with its id so after we sort we can pull out the ids in the
-    // same order to make the identifier -> index mapping.
-    const orderedRanges: (RangeData & { id: RangeId })[] = []
-
     for (const id of mustGet(correlator.containsData, currentDocumentId, 'contains')) {
         const range = mustGet(correlator.rangeData, id, 'range')
-        orderedRanges.push({ id, ...range })
         addHover(range.hoverResultId)
         for (const id of range.monikerIds) {
             addMoniker(id)
         }
+
+        document.ranges.set(id, range)
     }
-
-    // Sort ranges by their starting position
-    orderedRanges.sort((a, b) => a.startLine - b.startLine || a.startCharacter - b.startCharacter)
-
-    // Populate a reverse lookup so ranges can be queried by id via `orderedRanges[range[id]]`.
-    for (const [index, range] of orderedRanges.entries()) {
-        document.ranges.set(range.id, index)
-    }
-
-    // eslint-disable-next-line require-atomic-updates
-    document.orderedRanges = orderedRanges.map(({ id, ...range }) => range)
 
     return document
 }
 
 /**
- * Return the set of moniker identifiers which are reachable from the given value.
- * This relies on `monikerSets` being properly set up: each moniker edge `a -> b`
- * from the dump should ensure that `b` is a member of `monkerSets[a]`, and that
- * `a` is a member of `monikerSets[b]`.
+ * Return the set of item identifiers that are reachable from the given source
+ * identifier through a directed graph of identifiers supplied as an adjacency list.
  *
- * @param monikerSets A undirected graph of moniker ids.
- * @param id The initial moniker id.
+ * @param sourceId The item identifier with which to start the search.
+ * @param linkedItemIds A map from identifiers to reachable neighbor identifiers.
  */
-export function reachableMonikers(monikerSets: Map<MonikerId, Set<MonikerId>>, id: MonikerId): Set<MonikerId> {
-    const monikerIds = new Set<MonikerId>()
-    let frontier = [id]
+export function reachableItems<T extends Id>(sourceId: T, linkedItemIds: Map<T, Set<T>>): Set<T> {
+    const itemIds = new Set<T>()
+    let frontier = [sourceId]
 
     while (frontier.length > 0) {
         const val = assertId(frontier.pop())
-        if (monikerIds.has(val)) {
+        if (itemIds.has(val)) {
             continue
         }
 
-        monikerIds.add(val)
+        itemIds.add(val)
 
-        const nextValues = monikerSets.get(val)
+        const nextValues = linkedItemIds.get(val)
         if (nextValues) {
             frontier = frontier.concat(Array.from(nextValues))
         }
     }
 
-    // TODO - (efritz) should we sort these ids here instead of at query time?
-    return monikerIds
+    return itemIds
 }

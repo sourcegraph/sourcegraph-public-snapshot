@@ -41,7 +41,7 @@ export function bar(input: string): string {
 
 **`meta` table**
 
-This table is populated with **exactly** one row containing the version of the LSIF input, the version of the software that converted it into a SQLite database, and the approximate number of result chunk rows for this dump.
+This table is populated with **exactly** one row containing the version of the LSIF input, the version of the software that converted it into a SQLite database, and the number used to determine in which result chunk a result identifier belongs (via hash and modulus over the number of chunks). Generally, this number will be the number of rows in the `resultChunks` table, but this number may be higher as we won't insert empty chunks (in the case that no identifier happened to hash to it).
 
 The last value is used in order to achieve a consistent hash of identifiers that map to the correct result chunk row identifier. This will be explained in more detail later in this document.
 
@@ -65,64 +65,55 @@ Each payload has the following form. As the documents are large, we show only th
 ````json
 {
   "ranges": {
-    "9": 0,
-    "14": 1,
-    "21": 2,
-    "25": 3,
-    "36": 4,
-    "38": 5,
-    "47": 6
-  },
-  "orderedRanges": [
-    {
+    "9": {
       "range": "0:0-0:0",
       "definitionResultId": "49",
       "referenceResultId": "52",
       "monikerIds": ["9007199254740990"]
     },
-    {
+    "14": {
       "range": "0:16-0:19",
       "definitionResultId": "55",
       "referenceResultId": "58",
       "hoverResultId": "16",
       "monikerIds": ["9007199254740987"]
     },
-    {
+    "21": {
       "range": "0:20-0:25",
       "definitionResultId": "61",
       "referenceResultId": "64",
       "hoverResultId": "23",
       "monikerIds": []
     },
-    {
+    "25": {
       "range": "1:9-1:14",
       "definitionResultId": "61",
       "referenceResultId": "64",
       "hoverResultId": "23",
       "monikerIds": []
     },
-    {
+    "36": {
       "range": "1:15-1:24",
       "definitionResultId": "144",
       "referenceResultId": "68",
       "hoverResultId": "34",
       "monikerIds": ["30"]
     },
-    {
+    "38": {
       "range": "1:28-1:33",
       "definitionResultId": "61",
       "referenceResultId": "64",
       "hoverResultId": "23",
       "monikerIds": []
     },
-    {
+    "47": {
       "range": "1:34-1:40",
       "definitionResultId": "148",
       "referenceResultId": "71",
       "hoverResultId": "45",
       "monikerIds": []
     }
-  ],
+  },
   "hoverResults": {
     "16": "```typescript\nfunction foo(value: string): string\n```",
     "23": "```typescript\n(parameter) value: string\n```",
@@ -152,15 +143,7 @@ Each payload has the following form. As the documents are large, we show only th
 }
 ````
 
-The `ranges` field holds a map from range identifier to the index of the range data in the `orderedRanges` field. The `orderedRanges` hold the full range data and the array is sorted by the starting line and starting character. Having both fields allows us to efficiently lookup a range by identifier or by a position in the document.
-
-Each range has optional fields for a definition result, a reference result, and a hover result. Each range also has a possibly empty list of moniker ids.
-
-To retrieve a definition or reference result by its identifier, we must first determine in which result chunk it is defined. This requires that we take the hash of the identifier (modulo the `numResultChunks` field of the `meta` table). This gives us the unique identifier into the `resultChunks` table. The format of this payload is discussed below.
-
-In this example, there is only one result chunk. Larger dumps will have a greater number of result chunks to keep the amount of data encoded in a single database row reasonable.
-
-The hover result and moniker identifiers index into the `hoverResults` and `monikers` field of the document.
+The `ranges` field holds a map from range identifier range data including the extents within the source code and optional fields for a definition result, a reference result, and a hover result. Each range also has a possibly empty list of moniker ids. The hover result and moniker identifiers index into the `hoverResults` and `monikers` field of the document.
 
 **`resultChunks` table**
 
@@ -209,6 +192,8 @@ Each payload has the following form.
 ```
 
 The `documentIdRangeIds` field store a list of _pairs_ of document identifiers and range identifiers. To look up a range in this format, the `documentId` must be translated into a document path via the `documentPaths` field. This gives the primary key of the document containing the range in the `documents` table, and the range identifier can be looked up in the decoded payload.
+
+To retrieve a definition or reference result by its identifier, we must first determine in which result chunk it is defined. This requires that we take the hash of the identifier (modulo the `numResultChunks` field of the `meta` table). This gives us the unique identifier into the `resultChunks` table. The format of this payload is discussed below. In this example, there is only one result chunk. Larger dumps will have a greater number of result chunks to keep the amount of data encoded in a single database row reasonable.
 
 **definitions table**
 

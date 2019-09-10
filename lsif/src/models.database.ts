@@ -24,13 +24,6 @@ export type JSONEncoded<T> = string
 export type HashMod<T, U> = number
 
 /**
- * A type of array index bounded by another type or value `T`. This is used
- * to link the values of `ranges` to the indices of `orderedRanges` in the
- * `DocumentData` interface defined below.
- */
-export type Ix<T> = number
-
-/**
 n entity within the database describing LSIF data for a single repository
  * and commit pair. There should be only one metadata entity per database.
  */
@@ -184,19 +177,9 @@ export class ReferenceModel extends Symbols {}
  */
 export interface DocumentData {
     /**
-     * A mapping from range identifiers to the index of the range in the
-     * `orderedRanges` array. We keep a mapping so we can look range data by
-     * identifier quickly, and keep them sorted so we can find the range that
-     * encloses a position quickly.
+     * A mapping from range identifiers to range data.
      */
-    ranges: Map<RangeId, Ix<this['orderedRanges']>>
-
-    /**
-     * An array of range data sorted by startLine, then by startCharacter. This
-     * allows us to perform binary search to find a particular location subsumed
-     * by a range in the document.
-     */
-    orderedRanges: OrderedRanges
+    ranges: Map<RangeId, RangeData>
 
     /**
      * A map of hover result identifiers to hover results normalized as a single
@@ -326,11 +309,6 @@ export interface RangeData {
      */
     monikerIds: Set<MonikerId>
 }
-
-/**
- * An array of `RangeData` instances.
- */
-export type OrderedRanges = RangeData[]
 
 /**
  * Data about a moniker attached to a range.

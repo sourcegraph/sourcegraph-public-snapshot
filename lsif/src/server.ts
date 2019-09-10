@@ -7,7 +7,11 @@ import express from 'express'
 import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
-import { CONNECTION_CACHE_CAPACITY_GAUGE, DOCUMENT_CACHE_CAPACITY_GAUGE } from './metrics'
+import {
+    CONNECTION_CACHE_CAPACITY_GAUGE,
+    DOCUMENT_CACHE_CAPACITY_GAUGE,
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
+} from './metrics'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend, ERRNOLSIFDATA } from './backend'
 import { hasErrorCode, readEnvInt, logErrorAndExit, createDirectory } from './util'
@@ -44,7 +48,7 @@ const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 102
 /**
  * The maximum number of result chunks that can be held in memory at once.
  */
-const RESULT_CHUNK_CACHE_SIZE = readEnvInt('RESULT_CHUNK_CACHE_SIZE', 1024 * 1024 * 1024)
+const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -63,6 +67,7 @@ async function main(): Promise<void> {
     // Update cache capacities on startup
     CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
     DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await createDirectory(STORAGE_ROOT)
@@ -71,7 +76,7 @@ async function main(): Promise<void> {
     // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
+    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
     const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
 
     // Create queue to publish jobs for worker

@@ -1,6 +1,6 @@
-# LSIF test data for TypeScript
+# LSIF data for TypeScript cross repo tests
 
-The `./bin/generate.sh` to create LSIF dumps for a set of TypeScript projects that reference each other. This will create seven repositories and gzipped LSIF dump files which is used in the tests found in `query-typescript.test.ts`.
+The `./bin/generate.sh` to create LSIF dumps for a set of TypeScript projects that reference each other. This will create seven repositories and gzipped LSIF dump files which is used in the tests found in `typescript-xrepo.test.ts`.
 
 The dump files used for testing are under version control, but can be regenerated to test changes in the indexer utilities.
 

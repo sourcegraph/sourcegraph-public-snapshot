@@ -12,7 +12,7 @@
 Run `jsonnet` to execute a `.jsonnet` file and produce a JSON payload on standard out. This should be redirected to the correct directory for provisioned dashboards. For example,
 
 ```
-jsonnet -J /path/to/grafonnet-lib lsif.jsonnet > ../provisioning/dashboards/sourcegraph/lsif.json
+jsonnet -J /path/to/grafonnet-lib ./lsif.jsonnet > ../../../docker-images/grafana/config/provisioning/dashboards/sourcegraph/lsif.json
 ```
 
 ## Libsonnet
