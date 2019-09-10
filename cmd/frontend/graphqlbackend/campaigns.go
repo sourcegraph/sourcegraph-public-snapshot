@@ -125,6 +125,11 @@ func marshalCampaignID(id int64) graphql.ID {
 	return relay.MarshalID(campaignIDKind, id)
 }
 
+func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
+}
+
 func (r *campaignResolver) ID() graphql.ID {
 	return marshalCampaignID(r.Campaign.ID)
 }

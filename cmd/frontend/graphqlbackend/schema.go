@@ -27,8 +27,13 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
+    # Creates a Thread from a code host URL (e.g. to an issue or pull request on GitHub) and
+    # adds it to a Campaign.
+    addThreadFromURLToCampaign(url: String!, campaign: ID!): Thread!
+
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
+
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -388,6 +393,36 @@ type Campaign implements Node {
 type CampaignConnection {
     # A list of campaigns.
     nodes: [Campaign!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A thread is a change set or an issue on a code host.
+type Thread implements Node {
+    # The unique ID for the campaign.
+    id: ID!
+
+    # The repository where this thread is defined.
+    repository: Repository!
+
+    # The campaigns that have this thread in them.
+    campaigns: CampaignConnection!
+
+    # The date and time when the campaign was created.
+    createdAt: DateTime!
+
+    # The date and time when the campaign was updated.
+    updatedAt: DateTime!
+}
+
+# A list of threads.
+type ThreadConnection {
+    # A list of campaigns.
+    nodes: [Thread!]!
 
     # The total number of campaigns in the connection.
     totalCount: Int!
