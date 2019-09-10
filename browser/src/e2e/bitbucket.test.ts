@@ -27,7 +27,7 @@ jest.setTimeout(1000 * 60 * 1000)
  */
 async function bitbucketLogin({ page }: Driver): Promise<void> {
     await page.goto(BITBUCKET_BASE_URL)
-    if (new URL(page.url()).pathname === '/login') {
+    if (new URL(page.url()).pathname.endsWith('/login')) {
         await page.type('#j_username', BITBUCKET_USERNAME)
         await page.type('#j_password', BITBUCKET_PASSWORD)
         await Promise.all([page.click('#submit'), page.waitForNavigation()])
@@ -51,7 +51,7 @@ async function importBitbucketRepo(driver: Driver): Promise<void> {
         const browsePage = '/projects/SOURCEGRAPH/repos/jsonrpc2/browse'
         await driver.page.goto(BITBUCKET_BASE_URL + browsePage)
         // Retry until not redirected to the "import in progress" page anymore
-        expect(new URL(driver.page.url()).pathname).toBe(browsePage)
+        expect(new URL(driver.page.url()).pathname).toBe(new URL(BITBUCKET_BASE_URL).pathname + browsePage)
         // Ensure this is not a 404 page
         expect(await driver.page.$('.filebrowser-content')).toBeTruthy()
     })
@@ -61,7 +61,7 @@ async function importBitbucketRepo(driver: Driver): Promise<void> {
  * Configures the Sourcegraph for Bitbucket Server integration on the Bitbucket instance.
  */
 async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
-    await driver.ensureHasCORSOrigin({ corsOriginURL: BITBUCKET_BASE_URL })
+    await driver.ensureHasCORSOrigin({ corsOriginURL: new URL(BITBUCKET_BASE_URL).origin })
     await bitbucketLogin(driver)
     await driver.page.goto(BITBUCKET_BASE_URL + '/plugins/servlet/upm?source=side_nav_manage_addons')
     await driver.page.waitForSelector('#upm-manage-plugins-user-installed')
@@ -84,7 +84,12 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     await driver.page.waitForSelector('#sourcegraph-admin-link')
     await driver.page.click('#sourcegraph-admin-link')
     await driver.page.waitForSelector('form#admin')
-    await new Promise<void>(resolve => setTimeout(resolve, 1000))
+    // The Sourcegraph URL input field is disabled until the Sourcegraph URL has been fetched.
+    await retry(async () => {
+        expect(
+            await driver.page.evaluate(() => document.querySelector('form#admin input#url')!.getAttribute('disabled'))
+        ).toBe(null)
+    })
     await driver.replaceText({ selector: 'form#admin input#url', newText: sourcegraphBaseUrl })
     await driver.page.click('form#admin input#submit')
     await driver.page.waitForSelector('.aui-message-success')
