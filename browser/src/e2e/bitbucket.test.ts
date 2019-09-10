@@ -11,7 +11,7 @@ import { testSingleFilePage } from './shared'
 const BITBUCKET_BASE_URL = process.env.BITBUCKET_BASE_URL || 'http://localhost:7990'
 const BITBUCKET_USERNAME = process.env.BITBUCKET_USERNAME || 'test'
 const BITBUCKET_PASSWORD = process.env.BITBUCKET_PASSWORD || 'test'
-const BITBUCKET_TEST_INTEGRATION = !!process.env.BITBUCKET_TEST_INTEGRATION
+const TEST_NATIVE_INTEGRATION = Boolean(process.env.TEST_NATIVE_INTEGRATION)
 const REPO_PATH_PREFIX = new URL(BITBUCKET_BASE_URL).hostname
 
 const BITBUCKET_INTEGRATION_JAR_URL = 'https://storage.googleapis.com/sourcegraph-for-bitbucket-server/latest.jar'
@@ -95,7 +95,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  */
 async function init(driver: Driver): Promise<void> {
     await driver.ensureLoggedIn()
-    if (BITBUCKET_TEST_INTEGRATION) {
+    if (TEST_NATIVE_INTEGRATION) {
         await configureSourcegraphIntegration(driver)
     } else {
         await bitbucketLogin(driver)
@@ -121,7 +121,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
 
     beforeAll(async () => {
         try {
-            driver = await createDriverForTest({ loadExtension: !BITBUCKET_TEST_INTEGRATION })
+            driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION })
             await init(driver)
         } catch (err) {
             console.error(err)
