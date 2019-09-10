@@ -126,9 +126,6 @@ interface SourcegraphContext {
 
         brandName: string
     }
-
-    /** Whether new external service status indicator is shown in navbar or not. */
-    showStatusIndicator?: boolean
 }
 
 interface BrandAssets {
