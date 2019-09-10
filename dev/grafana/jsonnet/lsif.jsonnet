@@ -84,6 +84,7 @@ local cacheUtilizationPanel = common.makePanel(
   targets=[
     prometheus.target('lsif_connection_cache_size / lsif_connection_cache_capacity', legendFormat='connection cache utilization'),
     prometheus.target('lsif_document_cache_size / lsif_document_cache_capacity', legendFormat='document cache utilization'),
+    prometheus.target('lsif_result_chunk_cache_size / lsif_result_chunk_cache_capacity', legendFormat='result chunk cache utilization'),
   ],
 );
 
@@ -95,6 +96,11 @@ local connectionCacheEventsPanel = common.makePanel(
 local documentCacheEventsPanel = common.makePanel(
   title='Document cache events',
   targets=makeCacheTargets('lsif_document_cache') + makeCacheEvictionTargets('lsif_document_cache')
+);
+
+local resultChunkCacheEventsPanel = common.makePanel(
+  title='Result chunk cache events',
+  targets=makeCacheTargets('lsif_result_chunk_cache') + makeCacheEvictionTargets('lsif_result_chunk_cache')
 );
 
 local bloomFilterEventsPanel = common.makePanel(
@@ -111,4 +117,4 @@ common.makeDashboard(title='LSIF')
 .addRow(title='Xrepo queries', panels=[xrepoQueryRequestsPanel, xrepoQueryErrorRatePanel, xrepoQueryDurationPercentilesPanel])
 .addRow(title='Database insertions', panels=[databaseInsertionRequestsPanel, databaseInsertionErrorRatePanel, databaseInsertionDurationPercentilesPanel])
 .addRow(title='Xrepo insertions', panels=[xrepoInsertionRequestsPanel, xrepoInsertionErrorRatePanel, xrepoInsertionDurationPercentilesPanel])
-.addRow(title='Caches and Filters', panels=[cacheUtilizationPanel, connectionCacheEventsPanel, documentCacheEventsPanel, bloomFilterEventsPanel])
+.addRow(title='Caches and Filters', panels=[cacheUtilizationPanel, connectionCacheEventsPanel, documentCacheEventsPanel, resultChunkCacheEventsPanel, bloomFilterEventsPanel])

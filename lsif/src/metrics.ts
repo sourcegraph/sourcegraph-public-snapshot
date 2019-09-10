@@ -85,6 +85,22 @@ export const DOCUMENT_CACHE_EVENTS_COUNTER = new promClient.Counter({
     labelNames: ['type'],
 })
 
+export const RESULT_CHUNK_CACHE_CAPACITY_GAUGE = new promClient.Gauge({
+    name: 'lsif_results_chunk_cache_capacity',
+    help: 'The maximum number of result chunks loaded in memory.',
+})
+
+export const RESULT_CHUNK_CACHE_SIZE_GAUGE = new promClient.Gauge({
+    name: 'lsif_results_chunk_cache_size',
+    help: 'The current number of result chunks loaded in memory.',
+})
+
+export const RESULT_CHUNK_CACHE_EVENTS_COUNTER = new promClient.Counter({
+    name: 'lsif_results_chunk_cache_events_total',
+    help: 'The number of result chunk cache hits, misses, and evictions.',
+    labelNames: ['type'],
+})
+
 //
 // Bloom Filter Metrics
 
