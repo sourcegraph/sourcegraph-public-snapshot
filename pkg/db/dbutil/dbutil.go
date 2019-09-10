@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -218,4 +219,45 @@ func (n NullInt32) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return *n.N, nil
+}
+
+// JSONInt64Set represents an int64 set as a JSONB object where the keys are
+// the ids and the values are null. It implements the sql.Scanner interface so
+// it can be used as a scan destination, similar to
+// sql.NullString.
+type JSONInt64Set struct{ Set *[]int64 }
+
+// Scan implements the Scanner interface.
+func (n *JSONInt64Set) Scan(value interface{}) error {
+	a := make(map[int64]*struct{}, len(*n.Set))
+	for _, id := range *n.Set {
+		a[id] = nil
+	}
+
+	b := make(map[int64]*struct{})
+	switch value := value.(type) {
+	case nil:
+	case []byte:
+		if err := json.Unmarshal(value, &b); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("value is not []byte: %T", value)
+	}
+
+	for id := range b {
+		if _, ok := a[id]; !ok {
+			*n.Set = append(*n.Set, id)
+		}
+	}
+
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (n JSONInt64Set) Value() (driver.Value, error) {
+	if n.Set == nil {
+		return nil, nil
+	}
+	return *n.Set, nil
 }

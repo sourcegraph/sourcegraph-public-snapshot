@@ -12,6 +12,7 @@ type Campaign struct {
 	NamespaceOrgID  int32
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	ThreadIDs       []int64
 }
 
 // A Thread is a sum type representing either a ChangeSet or an Issue
