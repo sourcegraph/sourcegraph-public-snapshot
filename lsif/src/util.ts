@@ -1,5 +1,6 @@
-import { Id } from 'lsif-protocol'
+import * as fs from 'mz/fs'
 import { DefinitionReferenceResultId } from './models.database'
+import { Id } from 'lsif-protocol'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -91,4 +92,30 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
 
     // Hash value may be negative - must unset sign bit before modulus
     return Math.abs(hash) % maxIndex
+}
+
+/**
+ * Ensure the directory exists.
+ *
+ * @param path The directory path.
+ */
+export async function createDirectory(path: string): Promise<void> {
+    try {
+        await fs.mkdir(path)
+    } catch (e) {
+        if (!hasErrorCode(e, 'EEXIST')) {
+            throw e
+        }
+    }
+}
+
+/**
+ * Log an error value to standard error and exit the process after a short
+ * timeout to allow outstanding logs to flush.
+ *
+ * @param e The error value.
+ */
+export function logErrorAndExit(e: any): void {
+    console.error(e)
+    setTimeout(() => process.exit(1), 100)
 }

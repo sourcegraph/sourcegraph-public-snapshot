@@ -8,6 +8,7 @@ import { Edge, Vertex } from 'lsif-protocol'
 import { hasErrorCode } from './util'
 import { importLsif } from './importer'
 import { Readable } from 'stream'
+import * as temp from 'temp'
 import { XrepoDatabase } from './xrepo'
 
 export const ERRNOLSIFDATA = 'NoLSIFDataError'
@@ -41,34 +42,31 @@ export class Backend {
      * can be subsequently read by the `createRunner` method.
      */
     public async insertDump(input: Readable, repository: string, commit: string): Promise<void> {
-        const outFile = makeFilename(this.storageRoot, repository, commit)
+        const outFile = temp.path()
 
         try {
-            await fs.unlink(outFile)
+            const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
+                outFile,
+                [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
+                entityManager => importLsif(entityManager, parseLines(readline.createInterface({ input }))),
+                async connection => {
+                    await connection.query('PRAGMA synchronous = OFF')
+                    await connection.query('PRAGMA journal_mode = OFF')
+                }
+            )
+
+            // These needs to be done in sequence as SQLite can only have one
+            // write txn at a time without causing the other one to abort with
+            // a weird error.
+            await this.xrepoDatabase.addPackages(repository, commit, packages)
+            await this.xrepoDatabase.addReferences(repository, commit, references)
+
+            // Move the temp file where it can be found by the server
+            await fs.rename(outFile, makeFilename(this.storageRoot, repository, commit))
         } catch (e) {
-            if (!hasErrorCode(e, 'ENOENT')) {
-                throw e
-            }
+            await fs.unlink(outFile)
+            throw e
         }
-
-        // Remove any connection in the cache to the file we just removed
-        await this.connectionCache.bustKey(outFile)
-
-        const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
-            outFile,
-            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
-            entityManager => importLsif(entityManager, parseLines(readline.createInterface({ input }))),
-            async connection => {
-                await connection.query('PRAGMA synchronous = OFF')
-                await connection.query('PRAGMA journal_mode = OFF')
-            }
-        )
-
-        // These needs to be done in sequence as SQLite can only have one
-        // write txn at a time without causing the other one to abort with
-        // a weird error.
-        await this.xrepoDatabase.addPackages(repository, commit, packages)
-        await this.xrepoDatabase.addReferences(repository, commit, references)
     }
 
     /**

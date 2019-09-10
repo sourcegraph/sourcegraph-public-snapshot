@@ -422,6 +422,13 @@
     "@types/minimatch" "*"
     "@types/node" "*"
 
+"@types/ioredis@^4.0.17":
+  version "4.0.17"
+  resolved "https://registry.npmjs.org/@types/ioredis/-/ioredis-4.0.17.tgz#d677459f078c46acc77a4a3249fb612fca19a24b"
+  integrity sha512-Lq/lG64wTc6A3uu4tj8zKtVHZw2GPLIJgmWweMbMLwwIx34KycyyQJtbeUZBOtD4a8K5RCPr1kWau0x81rKQNw==
+  dependencies:
+    "@types/node" "*"
+
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0":
   version "2.0.1"
   resolved "https://registry.npmjs.org/@types/istanbul-lib-coverage/-/istanbul-lib-coverage-2.0.1.tgz#42995b446db9a48a11a07ec083499a860e9138ff"
@@ -483,6 +490,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/node-resque@^5.4.1":
+  version "5.4.1"
+  resolved "https://registry.npmjs.org/@types/node-resque/-/node-resque-5.4.1.tgz#dba714a271802610857d0d7d55d5543f94d43cd3"
+  integrity sha512-Y87MJ6Xp3+uz6ERintSfW/v9JjdgcxJgRjRC6fjDuroZkfHf38ByH/tRNudv+AvSr86ae/LvJ/sgbJeICWuQBg==
+  dependencies:
+    "@types/node" "*"
+
 "@types/node@*":
   version "12.7.4"
   resolved "https://registry.npmjs.org/@types/node/-/node-12.7.4.tgz#64db61e0359eb5a8d99b55e05c729f130a678b04"
@@ -523,6 +537,20 @@
   version "1.0.1"
   resolved "https://registry.npmjs.org/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
+
+"@types/temp@^0.8.34":
+  version "0.8.34"
+  resolved "https://registry.npmjs.org/@types/temp/-/temp-0.8.34.tgz#03e4b3cb67cbb48c425bbf54b12230fef85540ac"
+  integrity sha512-oLa9c5LHXgS6UimpEVp08De7QvZ+Dfu5bMQuWyMhf92Z26Q10ubEMOWy9OEfUdzW7Y/sDWVHmUaLFtmnX/2j0w==
+  dependencies:
+    "@types/node" "*"
+
+"@types/uuid@^3.4.5":
+  version "3.4.5"
+  resolved "https://registry.npmjs.org/@types/uuid/-/uuid-3.4.5.tgz#d4dc10785b497a1474eae0ba7f0cb09c0ddfd6eb"
+  integrity sha512-MNL15wC3EKyw1VLF+RoVO4hJJdk9t/Hlv3rt1OL65Qvuadm4BYo6g9ZJQqoq7X8NBFSsQXgAujWciovh2lpVjA==
+  dependencies:
+    "@types/node" "*"
 
 "@types/yallist@^3.0.1":
   version "3.0.1"
@@ -718,6 +746,11 @@ astral-regex@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/astral-regex/-/astral-regex-1.0.0.tgz#6c8c3fb827dd43ee3918f27b82782ab7658a6fd9"
   integrity sha512-+Ryf6g3BKoRc7jfp7ad8tM4TtMiaWvbF/1/sQcZPkkS7ag3D5nMBCe2UfOTONtAkaG0tO0ij3C5Lwmf1EiyjHg==
+
+async-exit-hook@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/async-exit-hook/-/async-exit-hook-2.0.1.tgz#8bd8b024b0ec9b1c01cccb9af9db29bd717dfaf3"
+  integrity sha512-NW2cX8m1Q7KPA7a5M2ULQeZ2wR5qI5PAbw5L0UOMxdioVk9PMZ0h1TmyZEkPYrCvYjDlFICusOu1dlEKAAeXBw==
 
 async-limiter@~1.0.0:
   version "1.0.1"
@@ -1013,6 +1046,11 @@ cliui@^5.0.0:
     strip-ansi "^5.2.0"
     wrap-ansi "^5.1.0"
 
+cluster-key-slot@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/cluster-key-slot/-/cluster-key-slot-1.1.0.tgz#30474b2a981fb12172695833052bc0d01336d10d"
+  integrity sha512-2Nii8p3RwAPiFwsnZvukotvow2rIHM+yQ6ZcBXGHdniadkYGZYiGmkHJIbZPIV9nfv7m/U1IPMVVcAhoWFeklw==
+
 co@^4.6.0:
   version "4.6.0"
   resolved "https://registry.npmjs.org/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
@@ -1236,6 +1274,11 @@ delegates@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
   integrity sha1-hMbhWbgZBP3KWaDvRM2HDTElD5o=
+
+denque@^1.1.0:
+  version "1.4.1"
+  resolved "https://registry.npmjs.org/denque/-/denque-1.4.1.tgz#6744ff7641c148c3f8a69c307e51235c1f4a37cf"
+  integrity sha512-OfzPuSZKGcgr96rf1oODnfjqBFmr1DVoc/TrItj3Ohe0Ah1C5WX5Baquw/9U9KovnQ88EqmJbD66rKYUQYN1tQ==
 
 depd@~1.1.2:
   version "1.1.2"
@@ -1923,6 +1966,21 @@ invariant@^2.2.4:
   integrity sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==
   dependencies:
     loose-envify "^1.0.0"
+
+ioredis@^4.14.0:
+  version "4.14.0"
+  resolved "https://registry.npmjs.org/ioredis/-/ioredis-4.14.0.tgz#d0e83b1d308ca1ba6e849798bfe91583b560eaac"
+  integrity sha512-vGzyW9QTdGMjaAPUhMj48Z31mIO5qJLzkbsE5dg+orNi7L5Ph035htmkBZNDTDdDk7kp7e9UJUr+alhRuaWp8g==
+  dependencies:
+    cluster-key-slot "^1.1.0"
+    debug "^4.1.1"
+    denque "^1.1.0"
+    lodash.defaults "^4.2.0"
+    lodash.flatten "^4.4.0"
+    redis-commands "1.5.0"
+    redis-errors "^1.2.0"
+    redis-parser "^3.0.0"
+    standard-as-callback "^2.0.1"
 
 ipaddr.js@1.9.0:
   version "1.9.0"
@@ -2672,6 +2730,16 @@ locate-path@^3.0.0:
     p-locate "^3.0.0"
     path-exists "^3.0.0"
 
+lodash.defaults@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.npmjs.org/lodash.defaults/-/lodash.defaults-4.2.0.tgz#d09178716ffea4dde9e5fb7b37f6f0802274580c"
+  integrity sha1-0JF4cW/+pN3p5ft7N/bwgCJ0WAw=
+
+lodash.flatten@^4.4.0:
+  version "4.4.0"
+  resolved "https://registry.npmjs.org/lodash.flatten/-/lodash.flatten-4.4.0.tgz#f31c22225a9632d2bbf8e4addbef240aa765a61f"
+  integrity sha1-8xwiIlqWMtK7+OSt2+8kCqdlph8=
+
 lodash.sortby@^4.7.0:
   version "4.7.0"
   resolved "https://registry.npmjs.org/lodash.sortby/-/lodash.sortby-4.7.0.tgz#edd14c824e2cc9c1e0b0a1b42bb5210516a42438"
@@ -3003,6 +3071,13 @@ node-pre-gyp@^0.12.0:
     rimraf "^2.6.1"
     semver "^5.3.0"
     tar "^4"
+
+node-resque@^5.5.6:
+  version "5.5.6"
+  resolved "https://registry.npmjs.org/node-resque/-/node-resque-5.5.6.tgz#fc6f1cc9f30028ebaf21c9f7775dc6fc4d7830fc"
+  integrity sha512-2hjFRXE6bh9i+F88yHciUsU21Xv9rjGSGeaZmpNwzQrMnlZ5a61M4NbFqr6hB1P3/SmFOeGFg23+6dk4SlB+rg==
+  dependencies:
+    ioredis "^4.14.0"
 
 nopt@^4.0.1:
   version "4.0.1"
@@ -3481,6 +3556,23 @@ realpath-native@^1.1.0:
   dependencies:
     util.promisify "^1.0.0"
 
+redis-commands@1.5.0:
+  version "1.5.0"
+  resolved "https://registry.npmjs.org/redis-commands/-/redis-commands-1.5.0.tgz#80d2e20698fe688f227127ff9e5164a7dd17e785"
+  integrity sha512-6KxamqpZ468MeQC3bkWmCB1fp56XL64D4Kf0zJSwDZbVLLm7KFkoIcHrgRvQ+sk8dnhySs7+yBg94yIkAK7aJg==
+
+redis-errors@^1.0.0, redis-errors@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/redis-errors/-/redis-errors-1.2.0.tgz#eb62d2adb15e4eaf4610c04afe1529384250abad"
+  integrity sha1-62LSrbFeTq9GEMBK/hUpOEJQq60=
+
+redis-parser@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/redis-parser/-/redis-parser-3.0.0.tgz#b66d828cdcafe6b4b8a428a7def4c6bcac31c8b4"
+  integrity sha1-tm2CjNyv5rS4pCin3vTGvKwxyLQ=
+  dependencies:
+    redis-errors "^1.0.0"
+
 reflect-metadata@^0.1.13:
   version "0.1.13"
   resolved "https://registry.npmjs.org/reflect-metadata/-/reflect-metadata-0.1.13.tgz#67ae3ca57c972a2aa1642b10fe363fe32d49dc08"
@@ -3611,6 +3703,13 @@ rimraf@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/rimraf/-/rimraf-3.0.0.tgz#614176d4b3010b75e5c390eb0ee96f6dc0cebb9b"
   integrity sha512-NDGVxTsjqfunkds7CqsOiEnxln4Bo7Nddl3XhS4pXg5OzwkLqJ971ZVAAnB+DDLnF76N+VnDEiBHaVV8I06SUg==
+  dependencies:
+    glob "^7.1.3"
+
+rimraf@~2.6.2:
+  version "2.6.3"
+  resolved "https://registry.npmjs.org/rimraf/-/rimraf-2.6.3.tgz#b2d104fe0d8fb27cf9e0a1cda8262dd3833c6cab"
+  integrity sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==
   dependencies:
     glob "^7.1.3"
 
@@ -3903,6 +4002,11 @@ stack-utils@^1.0.1:
   resolved "https://registry.npmjs.org/stack-utils/-/stack-utils-1.0.2.tgz#33eba3897788558bebfc2db059dc158ec36cebb8"
   integrity sha512-MTX+MeG5U994cazkjd/9KNAapsHnibjMLnfXodlkXw76JEea0UiNzrqidzo1emMwk7w5Qhc9jd4Bn9TBb1MFwA==
 
+standard-as-callback@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/standard-as-callback/-/standard-as-callback-2.0.1.tgz#ed8bb25648e15831759b6023bdb87e6b60b38126"
+  integrity sha512-NQOxSeB8gOI5WjSaxjBgog2QFw55FV8TkS6Y07BiB3VJ8xNTvUYm0wl0s8ObgQ5NhdpnNfigMIKjgPESzgr4tg==
+
 static-extend@^0.1.1:
   version "0.1.2"
   resolved "https://registry.npmjs.org/static-extend/-/static-extend-0.1.2.tgz#60809c39cbff55337226fd5e0b520f341f1fb5c6"
@@ -4069,6 +4173,13 @@ tdigest@^0.1.1:
   integrity sha1-Ljyyw56kSeVdHmzZEReszKRYgCE=
   dependencies:
     bintrees "1.0.1"
+
+temp@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.npmjs.org/temp/-/temp-0.9.0.tgz#61391795a11bd9738d4c4d7f55f012cb8f55edaa"
+  integrity sha512-YfUhPQCJoNQE5N+FJQcdPz63O3x3sdT4Xju69Gj4iZe0lBKOtnAMi0SLj9xKhGkcGhsxThvTJ/usxtFPo438zQ==
+  dependencies:
+    rimraf "~2.6.2"
 
 test-exclude@^5.2.3:
   version "5.2.3"
@@ -4342,7 +4453,7 @@ utils-merge@1.0.1:
   resolved "https://registry.npmjs.org/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha1-n5VxD1CiZ5R7LMwSR0HBAoQn5xM=
 
-uuid@^3.3.2:
+uuid@^3.3.2, uuid@^3.3.3:
   version "3.3.3"
   resolved "https://registry.npmjs.org/uuid/-/uuid-3.3.3.tgz#4568f0216e78760ee1dbf3a4d2cf53e224112866"
   integrity sha512-pW0No1RGHgzlpHJO1nsVrHKpOEIxkGg1xB+v0ZmdNH5OAeAwzAVrCnI2/6Mtx+Uys6iaylxa+D3g4j63IKKjSQ==

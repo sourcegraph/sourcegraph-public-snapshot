@@ -1,18 +1,33 @@
+import * as fs from 'mz/fs'
+import * as path from 'path'
 import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
+import exitHook from 'async-exit-hook'
 import express from 'express'
 import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
+import uuid from 'uuid'
 import { CONNECTION_CACHE_CAPACITY_GAUGE, DOCUMENT_CACHE_CAPACITY_GAUGE } from './metrics'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend, ERRNOLSIFDATA } from './backend'
-import { hasErrorCode, readEnvInt } from './util'
+import { hasErrorCode, readEnvInt, logErrorAndExit, createDirectory } from './util'
+import { Queue, Scheduler } from 'node-resque'
 import { wrap } from 'async-middleware'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
  */
 const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
+
+/**
+ * The host running the redis instance containing work queues. Defaults to localhost.
+ */
+const REDIS_HOST = process.env.LSIF_REDIS_HOST || 'localhost'
+
+/**
+ * The port of the redis instance containing work queues. Defaults to 6379.
+ */
+const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
 
 /**
  * The number of SQLite connections that can be opened at once. This
@@ -49,10 +64,19 @@ async function main(): Promise<void> {
     CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
     DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
 
+    // Ensure storage roots exist
+    await createDirectory(STORAGE_ROOT)
+    await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
+
+    // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
     const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
+
+    // Create queue to publish jobs for worker
+    const queue = await setupQueue()
+
     const app = express()
     app.use(morgan('tiny'))
     app.use(errorHandler)
@@ -74,8 +98,14 @@ async function main(): Promise<void> {
                 const { repository, commit } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
-                const input = req.pipe(zlib.createGunzip()).on('error', next)
-                await backend.insertDump(input, repository, commit)
+
+                const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+                const writeStream = fs.createWriteStream(filename)
+                req.pipe(zlib.createGunzip())
+                    .pipe(zlib.createGzip())
+                    .pipe(writeStream)
+                await new Promise(resolve => writeStream.on('finish', resolve))
+                await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
             }
         )
@@ -140,6 +170,34 @@ async function main(): Promise<void> {
 }
 
 /**
+ * Connect and start an active connection to the worker queue. We also run a
+ * node-resque scheduler on each server instance, as these are guaranteed to
+ * always be up with a responsive system. The schedulers will do their own
+ * master election via a redis key and will check for dead workers attached
+ * to the queue.
+ */
+async function setupQueue(): Promise<Queue> {
+    const connectionOptions = {
+        host: REDIS_HOST,
+        port: REDIS_PORT,
+        namespace: 'lsif',
+    }
+
+    const queue = new Queue({ connection: connectionOptions })
+    queue.on('error', logErrorAndExit)
+    await queue.connect()
+    exitHook(() => queue.end())
+
+    const scheduler = new Scheduler({ connection: connectionOptions })
+    scheduler.on('error', logErrorAndExit)
+    await scheduler.connect()
+    exitHook(() => scheduler.end())
+    scheduler.start().catch(logErrorAndExit)
+
+    return queue
+}
+
+/**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  */
 function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
@@ -183,7 +241,4 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(e => {
-    console.error(e)
-    setTimeout(() => process.exit(1), 100)
-})
+main().catch(logErrorAndExit)
