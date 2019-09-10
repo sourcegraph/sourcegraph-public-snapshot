@@ -137,14 +137,16 @@ func TestCampaigns(t *testing.T) {
 		t.Fatalf("have orgs's campaign namespace id %q, want %q", have, want)
 	}
 
-	var listed struct {
-		First, All struct {
-			Nodes      []Campaign
-			TotalCount int
-			PageInfo   struct {
-				HasNextPage bool
-			}
+	type CampaignConnection struct {
+		Nodes      []Campaign
+		TotalCount int
+		PageInfo   struct {
+			HasNextPage bool
 		}
+	}
+
+	var listed struct {
+		First, All CampaignConnection
 	}
 
 	mustExec(ctx, t, schema, nil, &listed, `
@@ -188,6 +190,49 @@ func TestCampaigns(t *testing.T) {
 	if listed.All.PageInfo.HasNextPage {
 		t.Errorf("wrong page info: %+v", listed.All.PageInfo.HasNextPage)
 	}
+
+	var thread struct {
+		ID         string
+		Repository struct{ ID int32 }
+		Campaigns  CampaignConnection
+		CreatedAt  string
+		UpdatedAt  string
+	}
+
+	input = map[string]interface{}{
+		"url":      "http://github.com/sourcegraph/sourcegraph/issues/1",
+		"campaign": campaigns.Admin.ID,
+	}
+
+	mustExec(ctx, t, schema, nil, &thread, `
+		fragment u on User { id, databaseID, siteAdmin }
+		fragment o on Org  { id, name }
+		fragment c on Campaign {
+			id, name, description, createdAt, updatedAt
+			author    { ...u }
+			namespace {
+				... on User { ...u }
+				... on Org  { ...o }
+			}
+		}
+		fragment n on CampaignConnection {
+			nodes { ...c }
+			totalCount
+			pageInfo { hasNextPage }
+		}
+		fragment t on Thread {
+			id
+			repository { id }
+			campaigns { ...n }
+			createdAt
+			updatedAt
+		}
+		mutation($url: String!, $campaign: ID!) {
+			addThreadFromURLToCampaign(url: $url, campaign: $campaign) {
+				...t
+			}
+		}
+	`)
 }
 
 func mustExec(

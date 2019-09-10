@@ -92,6 +92,11 @@ func (r *NodeResolver) ToCampaign() (*campaignResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToThread() (*threadResolver, bool) {
+	n, ok := r.Node.(*threadResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
 	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
