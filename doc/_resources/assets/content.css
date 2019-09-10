@@ -383,7 +383,6 @@ a:hover {
     border-width: 1px;
     border-style: solid;
     border-radius: 3px;
-    overflow: auto;
 }
 .markdown-body aside > :first-child {
     margin-top: 0;
@@ -527,6 +526,7 @@ a:hover {
     font-size: 85%;
     background-color: rgba(27, 31, 35, 0.05);
     border-radius: 3px;
+    white-space: pre-wrap;
 }
 .markdown-body pre {
     word-wrap: normal;
