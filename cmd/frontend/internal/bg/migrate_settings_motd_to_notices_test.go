@@ -14,7 +14,8 @@ func TestMigrateAllSettingsMOTDToNotices(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	// In TestMigrateSettingsMOTDToNotices below, we test the actual migration in more detail. Here
 	// we add 2 settings document that need migration (1 valid, 1 with an error). This makes this
@@ -70,7 +71,8 @@ func TestMigrateSettingsMOTDToNotices(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	check := func(t *testing.T, subject api.SettingsSubject, wantChanged bool, wantContents string) {
 		t.Helper()

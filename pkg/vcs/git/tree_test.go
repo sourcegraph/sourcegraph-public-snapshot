@@ -177,6 +177,9 @@ func TestRepository_FileSystem(t *testing.T) {
 		if dir1Info.Size() != 0 {
 			t.Errorf("%s: got dir1 size %d, want 0", label, dir1Info.Size())
 		}
+		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(git.ObjectInfo).OID().String(); got != want {
+			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
+		}
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := git.ReadDir(ctx, test.repo, test.first, "dir1", false)
@@ -189,11 +192,14 @@ func TestRepository_FileSystem(t *testing.T) {
 			continue
 		}
 		file1Info := dir1Entries[0]
-		if file1Info.Name() != "file1" {
-			t.Errorf("%s: got dir1 entry name == %q, want 'file1'", label, file1Info.Name())
+		if got, want := file1Info.Name(), "dir1/file1"; got != want {
+			t.Errorf("%s: got dir1 entry name == %q, want %q", label, got, want)
 		}
 		if want := int64(7); file1Info.Size() != want {
 			t.Errorf("%s: got dir1 entry size == %d, want %d", label, file1Info.Size(), want)
+		}
+		if got, want := "a20cc2fb45631b1dd262371a058b1bf31702abaa", file1Info.Sys().(git.ObjectInfo).OID().String(); got != want {
+			t.Errorf("%s: got dir1 entry OID %q, want %q", label, got, want)
 		}
 
 		// dir2 should not exist
@@ -204,7 +210,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
-		file1Data, err := git.ReadFile(ctx, test.repo, test.first, "dir1/file1")
+		file1Data, err := git.ReadFile(ctx, test.repo, test.first, "dir1/file1", 0)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadFile(dir1/file1): %s", label, err)
 			continue
@@ -220,21 +226,21 @@ func TestRepository_FileSystem(t *testing.T) {
 		if !file1Info.Mode().IsRegular() {
 			t.Errorf("%s: file1 stat !IsRegular", label)
 		}
-		if name := file1Info.Name(); name != "file1" {
-			t.Errorf("%s: got file1 name %q, want 'file1'", label, name)
+		if got, want := file1Info.Name(), "dir1/file1"; got != want {
+			t.Errorf("%s: got file1 name %q, want %q", label, got, want)
 		}
 		if want := int64(7); file1Info.Size() != want {
 			t.Errorf("%s: got file1 size == %d, want %d", label, file1Info.Size(), want)
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
-		_, err = git.ReadFile(ctx, test.repo, test.first, "file 2")
+		_, err = git.ReadFile(ctx, test.repo, test.first, "file 2", 0)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
 		// file 2 should exist in the 2nd commit.
-		_, err = git.ReadFile(ctx, test.repo, test.second, "file 2")
+		_, err = git.ReadFile(ctx, test.repo, test.second, "file 2", 0)
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
@@ -245,7 +251,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		if _, err := git.ReadFile(ctx, test.repo, test.second, "dir1/file1"); err != nil {
+		if _, err := git.ReadFile(ctx, test.repo, test.second, "dir1/file1", 0); err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
@@ -287,8 +293,8 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: got %d dir1 entries, want 1", label, len(dir1Entries))
 			continue
 		}
-		if file1Info := dir1Entries[0]; file1Info.Name() != "file1" {
-			t.Errorf("%s: got dir1 entry name == %q, want 'file1'", label, file1Info.Name())
+		if got, want := dir1Entries[0].Name(), "dir1/file1"; got != want {
+			t.Errorf("%s: got dir1 entry name == %q, want %q", label, got, want)
 		}
 
 		// rootEntries should be empty for third commit
@@ -445,7 +451,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		_, err = git.ReadFile(ctx, test.repo, commitID, "submod")
+		_, err = git.ReadFile(ctx, test.repo, commitID, "submod", 0)
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue

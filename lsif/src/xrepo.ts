@@ -1,7 +1,7 @@
 import { Connection, EntityManager } from 'typeorm'
 import { ConnectionCache } from './cache'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel } from './models'
+import { PackageModel, ReferenceModel } from './models.xrepo'
 import { TableInserter } from './inserter'
 import {
     XREPO_INSERTION_ERRORS_COUNTER,
@@ -35,7 +35,7 @@ export interface Package {
     /**
      * The version of the package.
      */
-    version: string
+    version: string | null
 }
 
 /**
@@ -75,7 +75,7 @@ export class XrepoDatabase {
      * @param name The package name.
      * @param version The package version.
      */
-    public async getPackage(scheme: string, name: string, version: string): Promise<PackageModel | undefined> {
+    public async getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
         return await this.withConnection(connection =>
             connection.getRepository(PackageModel).findOne({
                 where: {
@@ -102,7 +102,7 @@ export class XrepoDatabase {
                 await inserter.insert({ repository, commit, ...pkg })
             }
 
-            await inserter.finalize()
+            await inserter.flush()
         })
     }
 
@@ -126,7 +126,7 @@ export class XrepoDatabase {
     }: {
         scheme: string
         name: string
-        version: string
+        version: string | null
         value: string
     }): Promise<ReferenceModel[]> {
         const results = await this.withConnection(connection =>
@@ -178,7 +178,7 @@ export class XrepoDatabase {
                 })
             }
 
-            await inserter.finalize()
+            await inserter.flush()
         })
     }
 

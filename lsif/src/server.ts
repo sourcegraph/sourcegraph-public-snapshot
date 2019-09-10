@@ -3,11 +3,11 @@ import bodyParser from 'body-parser'
 import express from 'express'
 import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
-import { ConnectionCache, DocumentCache } from './cache'
+import { CONNECTION_CACHE_CAPACITY_GAUGE, DOCUMENT_CACHE_CAPACITY_GAUGE } from './metrics'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend, ERRNOLSIFDATA } from './backend'
 import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
-import { DOCUMENT_CACHE_CAPACITY_GAUGE, CONNECTION_CACHE_CAPACITY_GAUGE } from './metrics'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -25,6 +25,11 @@ const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 1000)
  * The maximum number of documents that can be held in memory at once.
  */
 const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1000)
+
+/**
+ * The maximum number of result chunks that can be held in memory at once.
+ */
+const RESULT_CHUNK_CACHE_SIZE = readEnvInt('RESULT_CHUNK_CACHE_SIZE', 1000)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -46,7 +51,8 @@ async function main(): Promise<void> {
 
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache)
+    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
+    const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
     const app = express()
     app.use(morgan('tiny'))
     app.use(errorHandler)

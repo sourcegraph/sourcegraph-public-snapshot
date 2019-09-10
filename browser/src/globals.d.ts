@@ -1,13 +1,14 @@
 interface Window {
-    SOURCEGRAPH_URL: string | undefined
+    SOURCEGRAPH_URL?: string
+    SOURCEGRAPH_ASSETS_URL?: string
     PHABRICATOR_CALLSIGN_MAPPINGS:
         | {
               callsign: string
               path: string
           }[]
         | undefined
-    SOURCEGRAPH_PHABRICATOR_EXTENSION: boolean | undefined
-    SOURCEGRAPH_INTEGRATION: undefined | 'phabricator-integration' | 'bitbucket-integration'
+    SOURCEGRAPH_PHABRICATOR_EXTENSION?: boolean
+    SOURCEGRAPH_INTEGRATION?: 'phabricator-integration' | 'bitbucket-integration'
     SG_ENV: 'EXTENSION' | 'PAGE'
     EXTENSION_ENV: 'CONTENT' | 'BACKGROUND' | 'OPTIONS' | null
     SOURCEGRAPH_BUNDLE_URL: string | undefined // Bundle Sourcegraph URL is set from the Phabricator extension.

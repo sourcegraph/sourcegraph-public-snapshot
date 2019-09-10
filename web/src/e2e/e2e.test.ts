@@ -661,16 +661,17 @@ describe('e2e test suite', () => {
                     symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
                 },
                 {
-                    name: 'displays valid symbols at different file depths for Go (./router.go)',
+                    name:
+                        'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
-                    filePath: '/tree/traceapp',
-                    symbolPath: '/blob/traceapp/router.go#L31:6-31:15',
+                    filePath: '/tree/examples',
+                    symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
                 },
                 {
-                    name: 'displays valid symbols at different file depths for Go (./tmpl/data.go)',
+                    name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
-                    filePath: '/tree/traceapp',
-                    symbolPath: '/blob/traceapp/tmpl/data.go#L11:6-11:21',
+                    filePath: '/tree/sqltrace',
+                    symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
                 },
             ]
 
@@ -1107,6 +1108,37 @@ describe('e2e test suite', () => {
                 const numberOfResults = parseInt(match[1], 10)
                 expect(numberOfResults).toBeGreaterThan(0)
             })
+        })
+    })
+
+    describe('Search result type tabs', () => {
+        test('Search results type tabs appear', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await driver.page.waitForSelector('.e2e-search-result-type-tabs', { visible: true })
+            await driver.page.waitForSelector('.e2e-search-result-tab--active', { visible: true })
+            const tabs = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result-tab'), tab => tab.textContent)
+            )
+
+            expect(tabs.length).toEqual(5)
+            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos'])
+
+            const activeTab = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-search-result-tab--active').length
+            )
+            expect(activeTab).toEqual(1)
+
+            const label = await driver.page.evaluate(
+                () => document.querySelector('.e2e-search-result-tab--active')!.textContent || ''
+            )
+            expect(label).toEqual('Code')
+        })
+
+        test('Clicking search results tabs updates query and URL', async () => {
+            for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
+                await driver.page.click(`.e2e-search-result-tab-${searchType}`)
+                await driver.assertWindowLocation(`/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}`)
+            }
         })
     })
 })

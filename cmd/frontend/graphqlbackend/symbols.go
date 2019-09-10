@@ -97,7 +97,6 @@ func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, 
 	resolver.location = &locationResolver{
 		resource: &gitTreeEntryResolver{
 			commit: commitResolver,
-			path:   resolver.uri.Fragment,
 			stat:   createFileInfo(resolver.uri.Fragment, false), // assume the path refers to a file (not dir)
 		},
 		lspRange: &symbolRange,

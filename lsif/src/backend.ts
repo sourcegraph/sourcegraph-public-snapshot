@@ -1,15 +1,14 @@
-import * as path from 'path'
 import * as fs from 'mz/fs'
+import * as path from 'path'
 import * as readline from 'mz/readline'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { Database } from './database'
+import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
+import { Edge, Vertex } from 'lsif-protocol'
 import { hasErrorCode } from './util'
 import { importLsif } from './importer'
-import { XrepoDatabase } from './xrepo'
 import { Readable } from 'stream'
-import { ConnectionCache, DocumentCache } from './cache'
-import { DefModel, MetaModel, RefModel, DocumentModel } from './models'
-import { Edge, Vertex } from 'lsif-protocol'
-import { EntityManager } from 'typeorm'
+import { XrepoDatabase } from './xrepo'
 
 export const ERRNOLSIFDATA = 'NoLSIFDataError'
 
@@ -27,12 +26,13 @@ export class NoLSIFDataError extends Error {
 /**
  * Backend for LSIF dumps stored in SQLite.
  */
-export class SQLiteBackend {
+export class Backend {
     constructor(
         private storageRoot: string,
         private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
-        private documentCache: DocumentCache
+        private documentCache: DocumentCache,
+        private resultChunkCache: ResultChunkCache
     ) {}
 
     /**
@@ -56,8 +56,12 @@ export class SQLiteBackend {
 
         const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
             outFile,
-            [DefModel, DocumentModel, MetaModel, RefModel],
-            (entityManager: EntityManager) => importLsif(entityManager, parseLines(readline.createInterface({ input })))
+            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
+            entityManager => importLsif(entityManager, parseLines(readline.createInterface({ input }))),
+            async connection => {
+                await connection.query('PRAGMA synchronous = OFF')
+                await connection.query('PRAGMA journal_mode = OFF')
+            }
         )
 
         // These needs to be done in sequence as SQLite can only have one
@@ -90,6 +94,7 @@ export class SQLiteBackend {
             this.xrepoDatabase,
             this.connectionCache,
             this.documentCache,
+            this.resultChunkCache,
             repository,
             commit,
             file
@@ -132,8 +137,9 @@ async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex |
 export async function createBackend(
     storageRoot: string,
     connectionCache: ConnectionCache,
-    documentCache: DocumentCache
-): Promise<SQLiteBackend> {
+    documentCache: DocumentCache,
+    resultChunkCache: ResultChunkCache
+): Promise<Backend> {
     try {
         await fs.mkdir(storageRoot)
     } catch (e) {
@@ -152,5 +158,11 @@ export async function createBackend(
         }
     }
 
-    return new SQLiteBackend(storageRoot, new XrepoDatabase(connectionCache, filename), connectionCache, documentCache)
+    return new Backend(
+        storageRoot,
+        new XrepoDatabase(connectionCache, filename),
+        connectionCache,
+        documentCache,
+        resultChunkCache
+    )
 }
