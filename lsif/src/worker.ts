@@ -43,6 +43,9 @@ const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
+/**
+ * Runs the worker which accepts LSIF conversion jobs from node-resque.
+ */
 async function main(): Promise<void> {
     const connectionOptions = {
         host: REDIS_HOST,
@@ -67,6 +70,12 @@ async function main(): Promise<void> {
     }
 }
 
+/**
+ * Create a job that takes a repository, commit, and input filename as input and converts
+ * the convents of the file into a SQLite database.
+ *
+ * @param backend The backend instance.
+ */
 function createConvertJob(backend: Backend): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
         console.log(`Converting ${repository}@${commit}`)
