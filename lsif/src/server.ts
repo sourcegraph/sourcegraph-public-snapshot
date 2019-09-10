@@ -23,17 +23,17 @@ const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
  * value may be exceeded for a short period if many handles are held
  * at once.
  */
-const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 1000)
+const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
 
 /**
  * The maximum number of documents that can be held in memory at once.
  */
-const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1000)
+const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * The maximum number of result chunks that can be held in memory at once.
  */
-const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITy', 1000)
+const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITy', 1024 * 1024 * 1024)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
