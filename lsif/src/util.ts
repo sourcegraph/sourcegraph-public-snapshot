@@ -25,7 +25,7 @@ export function hasErrorCode(e: any, expectedCode: string): boolean {
  * Return the value of the given key from the given map. If the key does not
  * exist in the map, an exception is thrown with the given error text.
  *
- * @param maps The map to query.
+ * @param map The map to query.
  * @param key The key to search for.
  * @param elementType The type of element (used for exception message).
  */
