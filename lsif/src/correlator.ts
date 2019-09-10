@@ -326,7 +326,7 @@ export class Correlator {
      * @param edge The moniker edge.
      */
     private handleMonikerEdge(edge: moniker): void {
-        const source = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const source = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -344,7 +344,7 @@ export class Correlator {
      * @param edge The next edge.
      */
     private handleNextEdge(edge: next): void {
-        mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -396,7 +396,7 @@ export class Correlator {
      * @param edge The textDocument/definition edge.
      */
     private handleDefinitionEdge(edge: textDocument_definition): void {
-        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -408,31 +408,13 @@ export class Correlator {
     }
 
     /**
-     * Sets the hover result of the specified range or result set. Ensures all referenced
-     * vertices are defined.
-     *
-     * @param edge The textDocument/hover edge.
-     */
-    private handleHoverEdge(edge: textDocument_hover): void {
-        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
-            this.rangeData,
-            this.resultSetData,
-            edge.outV,
-            'range/resultSet'
-        )
-
-        mustGet(this.hoverData, edge.inV, 'hoverResult')
-        outV.hoverResultId = edge.inV
-    }
-
-    /**
      * Sets the reference result of the specified range or result set. Ensures all
      * referenced vertices are defined.
      *
      * @param edge The textDocument/references edge.
      */
     private handleReferenceEdge(edge: textDocument_references): void {
-        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -441,6 +423,24 @@ export class Correlator {
 
         mustGet(this.referenceData, edge.inV, 'referenceResult')
         outV.referenceResultId = edge.inV
+    }
+
+    /**
+     * Sets the hover result of the specified range or result set. Ensures all referenced
+     * vertices are defined.
+     *
+     * @param edge The textDocument/hover edge.
+     */
+    private handleHoverEdge(edge: textDocument_hover): void {
+        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+            this.rangeData,
+            this.resultSetData,
+            edge.outV,
+            'range/resultSet'
+        )
+
+        mustGet(this.hoverData, edge.inV, 'hoverResult')
+        outV.hoverResultId = edge.inV
     }
 }
 
