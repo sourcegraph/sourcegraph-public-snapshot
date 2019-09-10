@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -62,7 +61,8 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 		return nil
 	}
 
-	return fmt.Errorf("unknown user event %s", event)
+	log15.Warn("usagestats.LogActivity: unknown user event", "event", event)
+	return nil
 }
 
 // Custom event handlers
