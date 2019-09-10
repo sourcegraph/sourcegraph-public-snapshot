@@ -11,8 +11,8 @@ import { XrepoDatabase, Package, SymbolReferences } from './xrepo'
 import { readline } from 'mz'
 import { importLsif } from './importer'
 import { Readable } from 'stream'
-import { createConnection } from 'typeorm'
 import { Vertex, Edge } from 'lsif-protocol'
+import { createConnection } from './connection'
 
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
@@ -89,16 +89,13 @@ export async function convertLsif(
     input: Readable,
     database: string
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    // TODO - standardize
-    const connection = await createConnection({
-        database,
-        entities: [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
-        type: 'sqlite',
-        name: database,
-        synchronize: true,
-        logging: ['error', 'warn'],
-        maxQueryExecutionTime: 1000,
-    })
+    const connection = await createConnection(database, [
+        DefinitionModel,
+        DocumentModel,
+        MetaModel,
+        ReferenceModel,
+        ResultChunkModel,
+    ])
 
     try {
         await connection.query('PRAGMA synchronous = OFF')
