@@ -358,23 +358,15 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * @param database The database filename.
      * @param entities The set of expected entities present in this schema.
      * @param callback The function invoke with a SQLite transaction connection.
-     * @param pragmaHook The function called with connection before the transaction begins.
      */
     public withTransactionalEntityManager<T>(
         database: string,
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
-        callback: (entityManager: EntityManager) => Promise<T>,
-        pragmaHook?: (connection: Connection) => Promise<void>
+        callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, async connection => {
-            if (pragmaHook) {
-                await pragmaHook(connection)
-            }
-
-            return await connection.transaction(callback)
-        })
+        return this.withConnection(database, entities, async connection => connection.transaction(callback))
     }
 }
 
