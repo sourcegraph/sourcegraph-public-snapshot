@@ -82,32 +82,33 @@ export async function importLsif(
         throw new Error('No metadata defined.')
     }
 
+    // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
 
-    const metrics = {
+    const inserterMetrics = {
         durationHistogram: DATABASE_INSERTION_DURATION_HISTOGRAM,
         errorsCounter: DATABASE_INSERTION_ERRORS_COUNTER,
     }
 
     // Insert metadata
-    const metaInserter = new TableInserter(entityManager, MetaModel, getBatchSize(3), metrics)
+    const metaInserter = new TableInserter(entityManager, MetaModel, getBatchSize(3), inserterMetrics)
     await populateMetadataTable(correlator, metaInserter, numResultChunks)
     await metaInserter.flush()
 
     // Insert documents
-    const documentInserter = new TableInserter(entityManager, DocumentModel, getBatchSize(2), metrics)
+    const documentInserter = new TableInserter(entityManager, DocumentModel, getBatchSize(2), inserterMetrics)
     await populateDocumentsTable(correlator, documentInserter)
     await documentInserter.flush()
 
     // Insert result chunks
-    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, getBatchSize(2), metrics)
+    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, getBatchSize(2), inserterMetrics)
     await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
     await resultChunkInserter.flush()
 
     // Insert definitions and references
-    const definitionInserter = new TableInserter(entityManager, DefinitionModel, getBatchSize(8), metrics)
-    const referenceInserter = new TableInserter(entityManager, ReferenceModel, getBatchSize(8), metrics)
+    const definitionInserter = new TableInserter(entityManager, DefinitionModel, getBatchSize(8), inserterMetrics)
+    const referenceInserter = new TableInserter(entityManager, ReferenceModel, getBatchSize(8), inserterMetrics)
     await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
     await definitionInserter.flush()
     await referenceInserter.flush()
