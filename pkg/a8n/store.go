@@ -437,7 +437,8 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 // ListCampaignsOpts captures the query options needed for
 // listing campaigns.
 type ListCampaignsOpts struct {
-	Limit int
+	ThreadID int64
+	Limit    int
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -475,6 +476,7 @@ SELECT
 	updated_at,
 	thread_ids
 FROM campaigns
+WHERE %s
 ORDER BY id ASC
 LIMIT %s
 `
@@ -484,7 +486,21 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		opts.Limit = defaultListLimit
 	}
 	opts.Limit++
-	return sqlf.Sprintf(listCampaignsQueryFmtstr, opts.Limit)
+
+	var preds []*sqlf.Query
+	if opts.ThreadID != 0 {
+		preds = append(preds, sqlf.Sprintf("thread_ids ? %s", opts.ThreadID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(
+		listCampaignsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
+	)
 }
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
