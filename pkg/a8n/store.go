@@ -376,6 +376,64 @@ var countCampaignsQuery = sqlf.Sprintf(`
 SELECT COUNT(id) FROM campaigns
 `)
 
+// GetCampaignOpts captures the query options needed for getting a Campaign
+type GetCampaignOpts struct {
+	ID int64
+}
+
+// ErrNoResults is returned by Store method calls that found no results.
+var ErrNoResults = errors.New("no results")
+
+// GetCampaign gets a campaign matching the given options.
+func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*Campaign, error) {
+	q := getCampaignQuery(&opts)
+
+	var c Campaign
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanCampaign(&c, sc)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+var getCampaignsQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetCampaign
+SELECT
+	id,
+	name,
+	description,
+	author_id,
+	namespace_user_id,
+	namespace_org_id,
+	created_at,
+	updated_at,
+	thread_ids
+FROM campaigns
+WHERE %s
+LIMIT 1
+`
+
+func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(getCampaignsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
 // ListCampaignsOpts captures the query options needed for
 // listing campaigns.
 type ListCampaignsOpts struct {
