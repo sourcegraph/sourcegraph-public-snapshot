@@ -383,6 +383,7 @@ a:hover {
     border-width: 1px;
     border-style: solid;
     border-radius: 3px;
+    overflow: auto;
 }
 .markdown-body aside > :first-child {
     margin-top: 0;
