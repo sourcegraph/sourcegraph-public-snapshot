@@ -69,6 +69,7 @@ async function main(): Promise<void> {
 
 function makeConvertJob(backend: Backend): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
+        console.log(`Converting ${repository}@${commit}`)
         const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
         await backend.insertDump(input, repository, commit)
         await fs.unlink(filename)
