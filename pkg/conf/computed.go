@@ -301,14 +301,6 @@ func BrandName() string {
 	return branding.BrandName
 }
 
-func ShowStatusIndicator() bool {
-	val := Get().ExperimentalFeatures.StatusIndicator
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
 // SearchSymbolsParallelism returns 20, or the site config
 // "debug.search.symbolsParallelism" value if configured.
 func SearchSymbolsParallelism() int {
