@@ -88,6 +88,28 @@ func TestStore(t *testing.T) {
 
 		t.Run("List", func(t *testing.T) {
 			for i := 1; i <= len(campaigns); i++ {
+				opts := ListCampaignsOpts{ThreadID: int64(i)}
+
+				ts, next, err := s.ListCampaigns(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				have, want := ts, campaigns[i-1:i]
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaigns, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			for i := 1; i <= len(campaigns); i++ {
 				cs, next, err := s.ListCampaigns(ctx, ListCampaignsOpts{Limit: i})
 				if err != nil {
 					t.Fatal(err)
