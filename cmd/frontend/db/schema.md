@@ -170,6 +170,25 @@ Referenced by:
 
 ```
 
+# Table "public.event_logs"
+```
+      Column       |           Type           |                        Modifiers                        
+-------------------+--------------------------+---------------------------------------------------------
+ id                | bigint                   | not null default nextval('event_logs_id_seq'::regclass)
+ name              | text                     | not null
+ argument          | text                     | not null
+ url               | text                     | not null
+ user_id           | integer                  | not null
+ anonymous_user_id | text                     | not null
+ timestamp         | timestamp with time zone | not null default now()
+Indexes:
+    "event_logs_pkey" PRIMARY KEY, btree (id)
+    "event_logs_name" btree (name)
+    "event_logs_timestamp" btree ("timestamp")
+    "event_logs_user_id" btree (user_id)
+
+```
+
 # Table "public.external_services"
 ```
     Column    |           Type           |                           Modifiers                            

@@ -97,13 +97,13 @@ export function logUserEvent(event: GQL.UserEvent): void {
     }
     mutateGraphQL(
         gql`
-            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
-                logUserEvent(event: $event, userCookieID: $userCookieID) {
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!, $url: String!, $argument: String) {
+                logUserEvent(event: $event, userCookieID: $userCookieID, url: $url, argument: $argument) {
                     alwaysNil
                 }
             }
         `,
-        { event, userCookieID: eventLogger.getAnonUserID() }
+        { event, userCookieID: eventLogger.getAnonUserID(), url: window.location.href }
     )
         .pipe(
             map(({ data, errors }) => {

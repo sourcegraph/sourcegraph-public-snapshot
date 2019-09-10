@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (

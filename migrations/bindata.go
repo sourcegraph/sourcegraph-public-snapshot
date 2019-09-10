@@ -235,6 +235,8 @@
 // 1528395585_go-1.13-dummy-migration.up.sql (109B)
 // 1528395586_add_threads_table.down.sql (48B)
 // 1528395586_add_threads_table.up.sql (501B)
+// 1528395587_create_events_logging_table.down.sql (50B)
+// 1528395587_create_events_logging_table.up.sql (536B)
 
 package migrations
 
@@ -5003,6 +5005,46 @@ func _1528395586_add_threads_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395587_create_events_logging_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xfd\xdb\xa4\x84\x32\x00\x00\x00")
+
+func _1528395587_create_events_logging_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395587_create_events_logging_tableDownSql,
+		"1528395587_create_events_logging_table.down.sql",
+	)
+}
+
+func _1528395587_create_events_logging_tableDownSql() (*asset, error) {
+	bytes, err := _1528395587_create_events_logging_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395587_create_events_logging_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x7c, 0x55, 0xd, 0xe0, 0x3a, 0x6, 0x9, 0x6e, 0xf6, 0x44, 0x4b, 0x3a, 0x6, 0x1f, 0x74, 0x63, 0x63, 0x1b, 0x18, 0xd9, 0x2b, 0xa7, 0x33, 0x6c, 0x25, 0x98, 0x50, 0xa, 0x95, 0x57, 0xcc, 0xd2}}
+	return a, nil
+}
+
+var __1528395587_create_events_logging_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x90\xcd\x4e\xc3\x30\x10\x84\xcf\xf8\x29\xf6\x98\x48\xbc\x41\x4e\x0e\x5d\xc2\x0a\xdb\xa9\xdc\xad\x68\xb9\x44\x91\xb0\xaa\x4a\xb5\x83\xf2\x03\xe2\xed\x11\x01\x9a\xd4\xe1\xc7\x37\x8f\xe6\xf3\x8c\x27\xc7\x82\x4c\x26\xc4\x8d\x45\xc9\x08\x2c\x73\x85\xe0\x5e\x5c\xe8\xab\x53\x73\xe8\x20\x11\x00\x00\xc7\x27\x58\x9c\x9c\x8a\x0d\x5a\x92\x0a\x4c\xc9\x60\xb6\x4a\xc1\xda\x92\x96\x76\x0f\xf7\xb8\xbf\x1e\xb9\x50\x7b\x17\x73\x8c\x3b\x3e\x23\x9f\xb6\xba\x3d\x0c\xde\x85\xfe\x1f\xdb\xd0\x9e\x16\x2d\x7e\xb2\x75\xae\xad\xa2\xc6\x64\x18\x0b\xb4\x71\x6e\x68\xc2\x9b\x6f\x86\xae\x9a\x98\xe8\xc1\xab\xfe\xe8\x5d\xd7\xd7\xfe\x79\x1e\x4a\x1a\x37\x2c\xf5\x1a\x1e\x88\xef\xc6\x2b\x3c\x96\x06\xa7\x25\x56\x78\x2b\xb7\x8a\x21\x34\xaf\x49\x2a\xd2\x69\x60\x32\x2b\xdc\xcd\x06\xae\xc6\x89\x4a\x33\x93\x92\x0f\x29\xcd\x7e\x25\xbe\xbb\x5e\x42\x5f\xea\x1f\xdc\xf4\x93\x4b\xf2\xac\x8f\x35\x4b\xad\x89\x33\xf1\x1e\x00\x00\xff\xff\x16\xd7\xf1\xa5\x18\x02\x00\x00")
+
+func _1528395587_create_events_logging_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395587_create_events_logging_tableUpSql,
+		"1528395587_create_events_logging_table.up.sql",
+	)
+}
+
+func _1528395587_create_events_logging_tableUpSql() (*asset, error) {
+	bytes, err := _1528395587_create_events_logging_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395587_create_events_logging_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0x89, 0xd, 0x22, 0x58, 0x99, 0xd1, 0x3a, 0xbc, 0x8f, 0x79, 0x36, 0x2f, 0xfa, 0x41, 0x25, 0x7d, 0xb3, 0xcc, 0x90, 0x4f, 0xd0, 0xbb, 0xe, 0xe6, 0x21, 0x8f, 0x74, 0xa9, 0x73, 0x4f, 0xe4}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5563,6 +5605,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395586_add_threads_table.down.sql": _1528395586_add_threads_tableDownSql,
 
 	"1528395586_add_threads_table.up.sql": _1528395586_add_threads_tableUpSql,
+
+	"1528395587_create_events_logging_table.down.sql": _1528395587_create_events_logging_tableDownSql,
+
+	"1528395587_create_events_logging_table.up.sql": _1528395587_create_events_logging_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5841,6 +5887,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395585_go-1.13-dummy-migration.up.sql":                   {_1528395585_go113DummyMigrationUpSql, map[string]*bintree{}},
 	"1528395586_add_threads_table.down.sql":                       {_1528395586_add_threads_tableDownSql, map[string]*bintree{}},
 	"1528395586_add_threads_table.up.sql":                         {_1528395586_add_threads_tableUpSql, map[string]*bintree{}},
+	"1528395587_create_events_logging_table.down.sql":             {_1528395587_create_events_logging_tableDownSql, map[string]*bintree{}},
+	"1528395587_create_events_logging_table.up.sql":               {_1528395587_create_events_logging_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

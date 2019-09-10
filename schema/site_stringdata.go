@@ -59,6 +59,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "eventLogging": {
+          "description": "Enables the event logging for admins.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         }
       },
       "group": "Experimental",

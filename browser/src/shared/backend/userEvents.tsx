@@ -21,13 +21,13 @@ export const logUserEvent = (
     }
     requestGraphQL<GQL.IMutation>({
         request: gql`
-            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
-                logUserEvent(event: $event, userCookieID: $userCookieID) {
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!, $url: String!, $argument: String) {
+                logUserEvent(event: $event, userCookieID: $userCookieID, url: $url, argument: $argument) {
                     alwaysNil
                 }
             }
         `,
-        variables: { event, userCookieID: uid },
+        variables: { event, userCookieID: uid, url },
         mightContainPrivateInfo: false,
     }).subscribe({
         error: error => {

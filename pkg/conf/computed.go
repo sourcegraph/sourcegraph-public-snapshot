@@ -310,3 +310,11 @@ func SearchSymbolsParallelism() int {
 	}
 	return val
 }
+
+func EnableEventLogging() bool {
+	val := Get().ExperimentalFeatures.EventLogging
+	if val == "" {
+		return true
+	}
+	return val == "enabled"
+}
