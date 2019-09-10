@@ -30,6 +30,7 @@ describe('DefaultMap', () => {
             .getOrDefault('bar')
             .push('bonk')
 
-        expect(map.get('foo')!.get('bar')).toEqual(['baz', 'bonk'])
+        const inner = map.get('foo')
+        expect(inner && inner.get('bar')).toEqual(['baz', 'bonk'])
     })
 })
