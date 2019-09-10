@@ -20,7 +20,7 @@ type EventLogInfo struct {
 func (*eventLogs) Insert(ctx context.Context, info *EventLogInfo) error {
 	if info.Name == "" {
 		return errors.New("empty event name")
-	} else if info.UserID <= 0 || info.AnonymousUserID == "" {
+	} else if info.UserID <= 0 && info.AnonymousUserID == "" {
 		return errors.New("one of UserID or AnonymousUserID must have valid value")
 	}
 
