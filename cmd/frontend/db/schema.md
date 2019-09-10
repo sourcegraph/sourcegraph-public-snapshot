@@ -176,10 +176,10 @@ Referenced by:
 -------------------+--------------------------+---------------------------------------------------------
  id                | bigint                   | not null default nextval('event_logs_id_seq'::regclass)
  name              | text                     | not null
- argument          | text                     | not null
  url               | text                     | not null
  user_id           | integer                  | not null
  anonymous_user_id | text                     | not null
+ argument          | text                     | not null
  timestamp         | timestamp with time zone | not null default now()
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
