@@ -235,6 +235,8 @@
 // 1528395585_go-1.13-dummy-migration.up.sql (109B)
 // 1528395586_add_threads_table.down.sql (48B)
 // 1528395586_add_threads_table.up.sql (501B)
+// 1528395587_campaigns_threads_many_to_many_relation.down.sql (244B)
+// 1528395587_campaigns_threads_many_to_many_relation.up.sql (459B)
 
 package migrations
 
@@ -5003,6 +5005,46 @@ func _1528395586_add_threads_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395587_campaigns_threads_many_to_many_relationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xce\xb1\x8a\xc3\x30\x10\x04\xd0\x5e\x5f\xb1\xe5\xdd\x37\xa8\x92\xb5\x7b\xc7\xc2\x6a\x75\xc8\xeb\xe2\xaa\x60\x62\xe3\xa8\x88\x09\xb6\xff\x9f\x90\x84\x10\x0c\x49\x3b\x3c\x66\xa6\xa1\x5f\x56\xef\x5c\x10\xa3\x02\x16\x1a\x21\x38\xf6\xe7\x4b\x5f\xa7\x79\x05\x2c\xf9\x0f\x62\x96\x2e\x29\x6c\xa7\x65\xec\x87\x43\x1d\x56\xbf\xd3\x8f\x7c\x6f\x9f\x0d\x9f\x75\x40\x7c\x83\xa1\xce\xdb\x38\x8d\x8b\xd3\x6c\xa0\x9d\x08\x14\xfa\xa1\x42\x1a\xa9\x7d\xdd\xfa\xaa\xc3\x37\x64\x05\x24\x21\x23\x17\x43\x1b\x03\x12\xe0\x8d\x96\xfb\x0a\x2b\x1b\x07\x91\x7f\xe0\x94\x08\x39\x18\x79\xe7\x62\x4e\x89\xcd\xbb\x6b\x00\x00\x00\xff\xff\xce\xa5\x53\xac\xf4\x00\x00\x00")
+
+func _1528395587_campaigns_threads_many_to_many_relationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395587_campaigns_threads_many_to_many_relationDownSql,
+		"1528395587_campaigns_threads_many_to_many_relation.down.sql",
+	)
+}
+
+func _1528395587_campaigns_threads_many_to_many_relationDownSql() (*asset, error) {
+	bytes, err := _1528395587_campaigns_threads_many_to_many_relationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395587_campaigns_threads_many_to_many_relation.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9d, 0x55, 0xa2, 0xda, 0x44, 0xaf, 0x38, 0xf4, 0xa6, 0xd9, 0x5d, 0x62, 0x92, 0x11, 0xe5, 0x84, 0xc2, 0x61, 0xba, 0x98, 0x73, 0x2f, 0x9e, 0xaa, 0x38, 0xcf, 0x84, 0x78, 0x5b, 0x58, 0x94, 0x9c}}
+	return a, nil
+}
+
+var __1528395587_campaigns_threads_many_to_many_relationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8f\xc1\x4a\xc4\x30\x18\x84\xef\x79\x8a\xb9\x75\xf7\x19\x8a\x87\x6c\xf3\x5b\x83\xe9\x1f\xa9\x29\x78\x0b\xdd\x6d\x5d\xb3\x60\xbb\x98\x1e\x14\xf1\xdd\x45\xdd\x25\x51\x44\xf0\x3c\x33\xdf\xf0\x6d\xa8\xd6\x5c\x0a\x21\x8d\xa3\x16\x4e\x6e\x0c\x61\xd7\x3f\x1e\xfb\xb0\x9f\x22\xa4\x52\xa8\xac\xe9\x1a\xc6\xf2\xf0\x34\xf6\x83\x0f\x43\xc4\x21\xce\xd3\x56\xb0\x75\xe0\xce\x18\x28\xba\x94\x9d\x71\x28\x5e\xdf\x0a\x54\x57\x54\x5d\x63\xf5\x59\xf1\xcb\xcb\x71\x9c\xef\x57\x69\xba\xc6\x05\x8a\x79\x7b\x18\x77\x4b\xb1\x2e\x85\xa8\x5a\x92\x8e\xa0\x59\xd1\x5d\xba\xf5\x69\xe0\xf7\x61\xf2\x61\x78\x86\xe5\x94\x8b\xee\x56\x73\x8d\x5a\x33\x72\xf6\x0f\x8b\xaf\x24\x42\xb5\xf6\xe6\x2c\x71\x46\xf8\x30\x94\xbf\x96\x33\xe1\xac\xfb\x7f\xe5\x7c\xfc\xa7\xf4\xe9\xd8\xe7\x83\x5c\xfa\x94\xe7\xca\xdf\xd8\x1f\x3c\xdb\x34\xda\x95\xe2\x3d\x00\x00\xff\xff\x6f\xd6\xf7\xb6\xcb\x01\x00\x00")
+
+func _1528395587_campaigns_threads_many_to_many_relationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395587_campaigns_threads_many_to_many_relationUpSql,
+		"1528395587_campaigns_threads_many_to_many_relation.up.sql",
+	)
+}
+
+func _1528395587_campaigns_threads_many_to_many_relationUpSql() (*asset, error) {
+	bytes, err := _1528395587_campaigns_threads_many_to_many_relationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395587_campaigns_threads_many_to_many_relation.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8b, 0x81, 0x6, 0x8e, 0xf9, 0x87, 0x1d, 0x9e, 0x0, 0x50, 0x7d, 0x4b, 0x74, 0x74, 0x9b, 0xfa, 0x8b, 0xda, 0xf7, 0xdb, 0x38, 0x9f, 0x53, 0x8e, 0x3c, 0x74, 0x40, 0xa4, 0xbb, 0xf, 0x35, 0x94}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5563,6 +5605,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395586_add_threads_table.down.sql": _1528395586_add_threads_tableDownSql,
 
 	"1528395586_add_threads_table.up.sql": _1528395586_add_threads_tableUpSql,
+
+	"1528395587_campaigns_threads_many_to_many_relation.down.sql": _1528395587_campaigns_threads_many_to_many_relationDownSql,
+
+	"1528395587_campaigns_threads_many_to_many_relation.up.sql": _1528395587_campaigns_threads_many_to_many_relationUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5841,6 +5887,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395585_go-1.13-dummy-migration.up.sql":                   {_1528395585_go113DummyMigrationUpSql, map[string]*bintree{}},
 	"1528395586_add_threads_table.down.sql":                       {_1528395586_add_threads_tableDownSql, map[string]*bintree{}},
 	"1528395586_add_threads_table.up.sql":                         {_1528395586_add_threads_tableUpSql, map[string]*bintree{}},
+	"1528395587_campaigns_threads_many_to_many_relation.down.sql": {_1528395587_campaigns_threads_many_to_many_relationDownSql, map[string]*bintree{}},
+	"1528395587_campaigns_threads_many_to_many_relation.up.sql":   {_1528395587_campaigns_threads_many_to_many_relationUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
