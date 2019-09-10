@@ -1,6 +1,12 @@
-import { mustGet, assertId, hashKey, readEnvInt } from './util'
+import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { DefaultMap } from './default-map'
+import { Edge, Id, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
+import { encodeJSON } from './encoding'
+import { EntityManager } from 'typeorm'
+import { isEqual, uniqWith } from 'lodash'
+import { Package, SymbolReferences } from './xrepo'
+import { TableInserter } from './inserter'
 import {
     DefinitionModel,
     DocumentData,
@@ -22,12 +28,6 @@ import {
     Ix,
     OrderedRanges,
 } from './models.database'
-import { Edge, MonikerKind, Vertex, RangeId } from 'lsif-protocol'
-import { encodeJSON } from './encoding'
-import { EntityManager } from 'typeorm'
-import { isEqual, uniqWith } from 'lodash'
-import { Package, SymbolReferences } from './xrepo'
-import { TableInserter } from './inserter'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -81,6 +81,9 @@ export async function importLsif(
         throw new Error('No metadata defined.')
     }
 
+    const canonicalReferenceResultIds = canonicalizeReferenceResults(correlator)
+
+    // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
 
@@ -91,7 +94,7 @@ export async function importLsif(
 
     // Insert documents
     const documentInserter = new TableInserter(entityManager, DocumentModel, getBatchSize(2))
-    await populateDocumentsTable(correlator, documentInserter)
+    await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
     await documentInserter.flush()
 
     // Insert result chunks
@@ -128,13 +131,14 @@ function getBatchSize(numFields: number): number {
  */
 async function populateDocumentsTable(
     correlator: Correlator,
-    documentInserter: TableInserter<DocumentModel, new () => DocumentModel>
+    documentInserter: TableInserter<DocumentModel, new () => DocumentModel>,
+    canonicalReferenceResultIds: Map<ReferenceResultId, ReferenceResultId>
 ): Promise<void> {
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
     // the "next" edges coming from range data.
     for (const [rangeId, range] of correlator.rangeData) {
-        canonicalizeItem(correlator, rangeId, range)
+        canonicalizeItem(correlator, canonicalReferenceResultIds, rangeId, range)
     }
 
     // Gather and insert document data that includes the ranges contained in the document,
@@ -367,16 +371,57 @@ function getReferences(correlator: Correlator): SymbolReferences[] {
     }))
 }
 
+function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResultId, ReferenceResultId> {
+    const canonicalReferenceResultIds = new Map<ReferenceResultId, ReferenceResultId>()
+
+    for (const referenceResultId of correlator.linkedReferenceResults.keys()) {
+        if (canonicalReferenceResultIds.has(referenceResultId)) {
+            continue
+        }
+
+        const linkedIds = Array.from(reachableItems(referenceResultId, correlator.linkedReferenceResults))
+        linkedIds.sort()
+
+        const canonicalId = linkedIds[0]
+        const canonicalReferenceResult = mustGet(correlator.referenceData, canonicalId, 'referenceResult')
+
+        for (const linkedId of linkedIds) {
+            canonicalReferenceResultIds.set(linkedId, canonicalId)
+
+            if (linkedId !== canonicalId) {
+                for (const [documentId, rangeIds] of mustGet(correlator.referenceData, linkedId, 'referenceResult')) {
+                    canonicalReferenceResult.getOrDefault(documentId).push(...rangeIds)
+                }
+            }
+        }
+    }
+
+    const keys = new Set(canonicalReferenceResultIds.keys())
+    const vals = new Set(canonicalReferenceResultIds.values())
+    for (const key of keys) {
+        if (!vals.has(key)) {
+            correlator.referenceData.delete(key)
+        }
+    }
+
+    return canonicalReferenceResultIds
+}
 /**
  * Flatten the definition result, reference result, hover results, and monikers of range
  * and result set items by following next links in the graph. This needs to be run over
  * each range before committing them to a document.
  *
  * @param correlator The correlator with all vertices and edges inserted.
+ * @param canonicalReferenceResultIds A map from reference result identifiers to its canonical identifier.
  * @param id The item identifier.
  * @param item The range or result set item.
  */
-function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, item: RangeData | ResultSetData): void {
+function canonicalizeItem(
+    correlator: Correlator,
+    canonicalReferenceResultIds: Map<ReferenceResultId, ReferenceResultId>,
+    id: RangeId | ResultSetId,
+    item: RangeData | ResultSetData
+): void {
     const monikers = new Set<MonikerId>()
     if (item.monikerIds.size > 0) {
         // If we have any monikers attached to this item, then we only need to look at the
@@ -386,7 +431,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
 
         const candidateMoniker = item.monikerIds.keys().next().value
 
-        for (const monikerId of reachableMonikers(correlator.monikerSets, candidateMoniker)) {
+        for (const monikerId of reachableItems(candidateMoniker, correlator.linkedMonikers)) {
             if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== MonikerKind.local) {
                 monikers.add(monikerId)
             }
@@ -400,7 +445,7 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
         // canonicalized.
 
         const nextItem = mustGet(correlator.resultSetData, nextId, 'resultSet')
-        canonicalizeItem(correlator, nextId, nextItem)
+        canonicalizeItem(correlator, canonicalReferenceResultIds, nextId, nextItem)
 
         // Add each moniker of the next set to this item
         for (const monikerId of nextItem.monikerIds) {
@@ -421,6 +466,11 @@ function canonicalizeItem(correlator: Correlator, id: RangeId | ResultSetId, ite
         if (item.hoverResultId === undefined) {
             item.hoverResultId = nextItem.hoverResultId
         }
+    }
+
+    if (item.referenceResultId && canonicalReferenceResultIds.has(item.referenceResultId)) {
+        // If there is a canonical version of this reference result, use that instead
+        item.referenceResultId = canonicalReferenceResultIds.get(item.referenceResultId)
     }
 
     // Update our moniker sets (our normalized sets and any monikers of our next item)
@@ -510,32 +560,29 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
 }
 
 /**
- * Return the set of moniker identifiers which are reachable from the given value.
- * This relies on `monikerSets` being properly set up: each moniker edge `a -> b`
- * from the dump should ensure that `b` is a member of `monkerSets[a]`, and that
- * `a` is a member of `monikerSets[b]`.
+ * Return the set of item identifiers that are reachable from the given source
+ * identifier through a directed graph of identifiers supplied as an adjacency list.
  *
- * @param monikerSets A undirected graph of moniker ids.
- * @param id The initial moniker id.
+ * @param sourceId The item identifier with which to start the search.
+ * @param linkedItemIds A map from identifiers to reachable neighbor identifiers.
  */
-export function reachableMonikers(monikerSets: Map<MonikerId, Set<MonikerId>>, id: MonikerId): Set<MonikerId> {
-    const monikerIds = new Set<MonikerId>()
-    let frontier = [id]
+export function reachableItems<T extends Id>(sourceId: T, linkedItemIds: Map<T, Set<T>>): Set<T> {
+    const itemIds = new Set<T>()
+    let frontier = [sourceId]
 
     while (frontier.length > 0) {
         const val = assertId(frontier.pop())
-        if (monikerIds.has(val)) {
+        if (itemIds.has(val)) {
             continue
         }
 
-        monikerIds.add(val)
+        itemIds.add(val)
 
-        const nextValues = monikerSets.get(val)
+        const nextValues = linkedItemIds.get(val)
         if (nextValues) {
             frontier = frontier.concat(Array.from(nextValues))
         }
     }
 
-    // TODO - (efritz) should we sort these ids here instead of at query time?
-    return monikerIds
+    return itemIds
 }
