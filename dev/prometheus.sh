@@ -42,6 +42,7 @@ docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     --memory=4g \
     --user=$UID \
     -p 0.0.0.0:9090:9090 \
+    -e PROMETHEUS_ADDITIONAL_FLAGS='--web.external-url=http://localhost:3080/-/debug/prometheus --web.route-prefix=/' \
     -v ${PROMETHEUS_DISK}:/prometheus \
     -v ${DIR}/prometheus/${CONFIG_SUB_DIR}:/sg_prometheus_add_ons \
     ${IMAGE} >> ${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
