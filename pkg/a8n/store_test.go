@@ -39,10 +39,10 @@ func TestStore(t *testing.T) {
 		t.Run("Create", func(t *testing.T) {
 			for i := 0; i < cap(campaigns); i++ {
 				c := &Campaign{
-					Name:        fmt.Sprintf("Upgrade ES-Lint %d", i),
-					Description: "All the Javascripts are belong to us",
-					AuthorID:    23,
-					ThreadIDs:   []int64{int64(i) + 1},
+					Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
+					Description:  "All the Javascripts are belong to us",
+					AuthorID:     23,
+					ChangeSetIDs: []int64{int64(i) + 1},
 				}
 
 				if i%2 == 0 {
@@ -76,7 +76,7 @@ func TestStore(t *testing.T) {
 		})
 
 		t.Run("Count", func(t *testing.T) {
-			count, err := s.CountCampaigns(ctx)
+			count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -84,11 +84,20 @@ func TestStore(t *testing.T) {
 			if have, want := count, int64(len(campaigns)); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
+
+			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangeSetID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(1); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
 		})
 
 		t.Run("List", func(t *testing.T) {
 			for i := 1; i <= len(campaigns); i++ {
-				opts := ListCampaignsOpts{ThreadID: int64(i)}
+				opts := ListCampaignsOpts{ChangeSetID: int64(i)}
 
 				ts, next, err := s.ListCampaigns(ctx, opts)
 				if err != nil {
@@ -167,7 +176,7 @@ func TestStore(t *testing.T) {
 				}
 
 				// Test that duplicates are not introduced.
-				have.ThreadIDs = append(have.ThreadIDs, have.ThreadIDs...)
+				have.ChangeSetIDs = append(have.ChangeSetIDs, have.ChangeSetIDs...)
 				if err := s.UpdateCampaign(ctx, have); err != nil {
 					t.Fatal(err)
 				}
@@ -177,15 +186,15 @@ func TestStore(t *testing.T) {
 				}
 
 				// Test we can add to the set.
-				have.ThreadIDs = append(have.ThreadIDs, 42)
-				want.ThreadIDs = append(want.ThreadIDs, 42)
+				have.ChangeSetIDs = append(have.ChangeSetIDs, 42)
+				want.ChangeSetIDs = append(want.ChangeSetIDs, 42)
 
 				if err := s.UpdateCampaign(ctx, have); err != nil {
 					t.Fatal(err)
 				}
 
-				sort.Slice(have.ThreadIDs, func(a, b int) bool {
-					return have.ThreadIDs[a] < have.ThreadIDs[b]
+				sort.Slice(have.ChangeSetIDs, func(a, b int) bool {
+					return have.ChangeSetIDs[a] < have.ChangeSetIDs[b]
 				})
 
 				if diff := cmp.Diff(have, want); diff != "" {
@@ -193,8 +202,8 @@ func TestStore(t *testing.T) {
 				}
 
 				// Test we can remove from the set.
-				have.ThreadIDs = have.ThreadIDs[:0]
-				want.ThreadIDs = want.ThreadIDs[:0]
+				have.ChangeSetIDs = have.ChangeSetIDs[:0]
+				want.ChangeSetIDs = want.ChangeSetIDs[:0]
 
 				if err := s.UpdateCampaign(ctx, have); err != nil {
 					t.Fatal(err)
@@ -234,11 +243,11 @@ func TestStore(t *testing.T) {
 		})
 	})
 
-	t.Run("Threads", func(t *testing.T) {
-		threads := make([]*Thread, 0, 3)
+	t.Run("ChangeSets", func(t *testing.T) {
+		changesets := make([]*ChangeSet, 0, 3)
 		t.Run("Create", func(t *testing.T) {
-			for i := 0; i < cap(threads); i++ {
-				th := &Thread{
+			for i := 0; i < cap(changesets); i++ {
+				th := &ChangeSet{
 					RepoID:      42,
 					CreatedAt:   now,
 					UpdatedAt:   now,
@@ -249,7 +258,7 @@ func TestStore(t *testing.T) {
 				want := th.Clone()
 				have := th
 
-				err := s.CreateThread(ctx, have)
+				err := s.CreateChangeSet(ctx, have)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -266,21 +275,21 @@ func TestStore(t *testing.T) {
 					t.Fatal(diff)
 				}
 
-				threads = append(threads, th)
+				changesets = append(changesets, th)
 			}
 		})
 
 		t.Run("Count", func(t *testing.T) {
-			count, err := s.CountThreads(ctx, CountThreadsOpts{})
+			count, err := s.CountChangeSets(ctx, CountChangeSetsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if have, want := count, int64(len(threads)); have != want {
+			if have, want := count, int64(len(changesets)); have != want {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 
-			count, err = s.CountThreads(ctx, CountThreadsOpts{CampaignID: 1})
+			count, err = s.CountChangeSets(ctx, CountChangeSetsOpts{CampaignID: 1})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -291,10 +300,10 @@ func TestStore(t *testing.T) {
 		})
 
 		t.Run("List", func(t *testing.T) {
-			for i := 1; i <= len(threads); i++ {
-				opts := ListThreadsOpts{CampaignID: int64(i)}
+			for i := 1; i <= len(changesets); i++ {
+				opts := ListChangeSetsOpts{CampaignID: int64(i)}
 
-				ts, next, err := s.ListThreads(ctx, opts)
+				ts, next, err := s.ListChangeSets(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -303,9 +312,9 @@ func TestStore(t *testing.T) {
 					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 				}
 
-				have, want := ts, threads[i-1:i]
+				have, want := ts, changesets[i-1:i]
 				if len(have) != len(want) {
-					t.Fatalf("listed %d threads, want: %d", len(have), len(want))
+					t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
 				}
 
 				if diff := cmp.Diff(have, want); diff != "" {
@@ -313,16 +322,16 @@ func TestStore(t *testing.T) {
 				}
 			}
 
-			for i := 1; i <= len(threads); i++ {
-				ts, next, err := s.ListThreads(ctx, ListThreadsOpts{Limit: i})
+			for i := 1; i <= len(changesets); i++ {
+				ts, next, err := s.ListChangeSets(ctx, ListChangeSetsOpts{Limit: i})
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				{
 					have, want := next, int64(0)
-					if i < len(threads) {
-						want = threads[i].ID
+					if i < len(changesets) {
+						want = changesets[i].ID
 					}
 
 					if have != want {
@@ -331,9 +340,9 @@ func TestStore(t *testing.T) {
 				}
 
 				{
-					have, want := ts, threads[:i]
+					have, want := ts, changesets[:i]
 					if len(have) != len(want) {
-						t.Fatalf("listed %d threads, want: %d", len(have), len(want))
+						t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
 					}
 
 					if diff := cmp.Diff(have, want); diff != "" {

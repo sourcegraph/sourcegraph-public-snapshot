@@ -98,7 +98,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]*campaignRes
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := a8n.CountCampaignsOpts{ThreadID: r.opts.ThreadID}
+	opts := a8n.CountCampaignsOpts{ChangeSetID: r.opts.ChangeSetID}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }

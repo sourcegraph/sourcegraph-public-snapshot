@@ -250,7 +250,7 @@ func TestCampaigns(t *testing.T) {
 		"campaign": campaigns.Admin.ID,
 	}
 
-	type Thread struct {
+	type ChangeSet struct {
 		ID         string
 		Repository struct{ ID string }
 		Campaigns  CampaignConnection
@@ -259,7 +259,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	var result struct {
-		Thread Thread
+		ChangeSet ChangeSet
 	}
 
 	mustExec(ctx, t, schema, input, &result, `
@@ -278,7 +278,7 @@ func TestCampaigns(t *testing.T) {
 			totalCount
 			pageInfo { hasNextPage }
 		}
-		fragment t on Thread {
+		fragment t on ChangeSet {
 			id
 			repository { id }
 			campaigns { ...n }
@@ -286,25 +286,25 @@ func TestCampaigns(t *testing.T) {
 			updatedAt
 		}
 		mutation($url: String!, $campaign: ID!) {
-			thread: addThreadFromURLToCampaign(url: $url, campaign: $campaign) {
+			changeset: addChangeSetFromURLToCampaign(url: $url, campaign: $campaign) {
 				...t
 			}
 		}
 	`)
 
-	if result.Thread.ID == "" {
-		t.Fatalf("thread id is blank")
+	if result.ChangeSet.ID == "" {
+		t.Fatalf("changeset id is blank")
 	}
-	if have, want := result.Thread.Campaigns.TotalCount, 1; have != want {
-		t.Fatalf("TotalCount of campaigns for thread is %d, want %d", have, want)
+	if have, want := result.ChangeSet.Campaigns.TotalCount, 1; have != want {
+		t.Fatalf("TotalCount of campaigns for changeset is %d, want %d", have, want)
 	}
-	if have, want := result.Thread.Campaigns.Nodes[0].ID, campaigns.Admin.ID; have != want {
-		t.Fatalf("have thread campaign id %q, want %q", have, want)
+	if have, want := result.ChangeSet.Campaigns.Nodes[0].ID, campaigns.Admin.ID; have != want {
+		t.Fatalf("have changeset campaign id %q, want %q", have, want)
 	}
 
 	wantRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
-	if have, want := result.Thread.Repository.ID, wantRepoID; have != want {
-		t.Fatalf("have thread repo id %q, want %q", have, want)
+	if have, want := result.ChangeSet.Repository.ID, wantRepoID; have != want {
+		t.Fatalf("have changeset repo id %q, want %q", have, want)
 	}
 }
 

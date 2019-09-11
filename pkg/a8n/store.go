@@ -67,22 +67,22 @@ func (s *Store) Done(errs ...*error) {
 	}
 }
 
-// CreateThread creates the given Thread.
-func (s *Store) CreateThread(ctx context.Context, t *Thread) error {
-	q, err := s.createThreadQuery(t)
+// CreateChangeSet creates the given ChangeSet.
+func (s *Store) CreateChangeSet(ctx context.Context, t *ChangeSet) error {
+	q, err := s.createChangeSetQuery(t)
 	if err != nil {
 		return err
 	}
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanThread(t, sc)
+		err = scanChangeSet(t, sc)
 		return int64(t.ID), 1, err
 	})
 }
 
-var createThreadQueryFmtstr = `
--- source: pkg/a8n/store.go:CreateThread
-INSERT INTO threads (
+var createChangeSetQueryFmtstr = `
+-- source: pkg/a8n/store.go:CreateChangeSet
+INSERT INTO changesets (
 	repo_id,
 	created_at,
 	updated_at,
@@ -99,7 +99,7 @@ RETURNING
 	campaign_ids
 `
 
-func (s *Store) createThreadQuery(t *Thread) (*sqlf.Query, error) {
+func (s *Store) createChangeSetQuery(t *ChangeSet) (*sqlf.Query, error) {
 	metadata, err := metadataColumn(t.Metadata)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (s *Store) createThreadQuery(t *Thread) (*sqlf.Query, error) {
 	}
 
 	return sqlf.Sprintf(
-		createThreadQueryFmtstr,
+		createChangeSetQueryFmtstr,
 		t.RepoID,
 		t.CreatedAt,
 		t.UpdatedAt,
@@ -128,29 +128,29 @@ func (s *Store) createThreadQuery(t *Thread) (*sqlf.Query, error) {
 	), nil
 }
 
-// CountThreadsOpts captures the query options needed for
-// counting threads.
-type CountThreadsOpts struct {
+// CountChangeSetsOpts captures the query options needed for
+// counting changesets.
+type CountChangeSetsOpts struct {
 	CampaignID int64
 }
 
-// CountThreads returns the number of threads in the database.
-func (s *Store) CountThreads(ctx context.Context, opts CountThreadsOpts) (count int64, _ error) {
-	q := countThreadsQuery(&opts)
+// CountChangeSets returns the number of changesets in the database.
+func (s *Store) CountChangeSets(ctx context.Context, opts CountChangeSetsOpts) (count int64, _ error) {
+	q := countChangeSetsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
 	})
 }
 
-var countThreadsQueryFmtstr = `
--- source: pkg/a8n/store.go:ListThreads
+var countChangeSetsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListChangeSets
 SELECT COUNT(id)
-FROM threads
+FROM changesets
 WHERE %s
 `
 
-func countThreadsQuery(opts *CountThreadsOpts) *sqlf.Query {
+func countChangeSetsQuery(opts *CountChangeSetsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
@@ -160,24 +160,24 @@ func countThreadsQuery(opts *CountThreadsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(countThreadsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(countChangeSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListThreadsOpts captures the query options needed for
-// listing threads.
-type ListThreadsOpts struct {
+// ListChangeSetsOpts captures the query options needed for
+// listing changesets.
+type ListChangeSetsOpts struct {
 	Limit      int
 	CampaignID int64
 }
 
-// ListThreads lists Threads with the given filters.
-func (s *Store) ListThreads(ctx context.Context, opts ListThreadsOpts) (cs []*Thread, next int64, err error) {
-	q := listThreadsQuery(&opts)
+// ListChangeSets lists ChangeSets with the given filters.
+func (s *Store) ListChangeSets(ctx context.Context, opts ListChangeSetsOpts) (cs []*ChangeSet, next int64, err error) {
+	q := listChangeSetsQuery(&opts)
 
-	cs = make([]*Thread, 0, opts.Limit)
+	cs = make([]*ChangeSet, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c Thread
-		if err = scanThread(&c, sc); err != nil {
+		var c ChangeSet
+		if err = scanChangeSet(&c, sc); err != nil {
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
@@ -192,8 +192,8 @@ func (s *Store) ListThreads(ctx context.Context, opts ListThreadsOpts) (cs []*Th
 	return cs, next, err
 }
 
-var listThreadsQueryFmtstr = `
--- source: pkg/a8n/store.go:ListThreads
+var listChangeSetsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListChangeSets
 SELECT
 	id,
 	repo_id,
@@ -201,7 +201,7 @@ SELECT
 	updated_at,
 	metadata,
 	campaign_ids
-FROM threads
+FROM changesets
 WHERE %s
 ORDER BY id ASC
 LIMIT %s
@@ -209,7 +209,7 @@ LIMIT %s
 
 const defaultListLimit = 50
 
-func listThreadsQuery(opts *ListThreadsOpts) *sqlf.Query {
+func listChangeSetsQuery(opts *ListChangeSetsOpts) *sqlf.Query {
 	if opts.Limit == 0 {
 		opts.Limit = defaultListLimit
 	}
@@ -225,7 +225,7 @@ func listThreadsQuery(opts *ListThreadsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listThreadsQueryFmtstr,
+		listChangeSetsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
 		opts.Limit,
 	)
@@ -254,7 +254,7 @@ INSERT INTO campaigns (
 	namespace_org_id,
 	created_at,
 	updated_at,
-	thread_ids
+	changeset_ids
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
@@ -266,11 +266,11 @@ RETURNING
 	namespace_org_id,
 	created_at,
 	updated_at,
-	thread_ids
+	changeset_ids
 `
 
 func (s *Store) createCampaignQuery(c *Campaign) (*sqlf.Query, error) {
-	threadIDs, err := jsonSetColumn(c.ThreadIDs)
+	changesetIDs, err := jsonSetColumn(c.ChangeSetIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +292,7 @@ func (s *Store) createCampaignQuery(c *Campaign) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		threadIDs,
+		changesetIDs,
 	), nil
 }
 
@@ -326,7 +326,7 @@ SET (
 	namespace_user_id,
 	namespace_org_id,
 	updated_at,
-	thread_ids
+	changeset_ids
 ) = (%s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
@@ -338,11 +338,11 @@ RETURNING
 	namespace_org_id,
 	created_at,
 	updated_at,
-	thread_ids
+	changeset_ids
 `
 
 func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
-	threadIDs, err := jsonSetColumn(c.ThreadIDs)
+	changesetIDs, err := jsonSetColumn(c.ChangeSetIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +357,7 @@ func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		c.UpdatedAt,
-		threadIDs,
+		changesetIDs,
 		c.ID,
 	), nil
 }
@@ -365,7 +365,7 @@ func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
 // CountCampaignsOpts captures the query options needed for
 // counting campaigns.
 type CountCampaignsOpts struct {
-	ThreadID int64
+	ChangeSetID int64
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -386,8 +386,8 @@ WHERE %s
 
 func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
-	if opts.ThreadID != 0 {
-		preds = append(preds, sqlf.Sprintf("thread_ids ? %s", opts.ThreadID))
+	if opts.ChangeSetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangeSetID))
 	}
 
 	if len(preds) == 0 {
@@ -436,7 +436,7 @@ SELECT
 	namespace_org_id,
 	created_at,
 	updated_at,
-	thread_ids
+	changeset_ids
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -458,7 +458,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 // ListCampaignsOpts captures the query options needed for
 // listing campaigns.
 type ListCampaignsOpts struct {
-	ThreadID int64
+	ChangeSetID int64
 	Limit    int
 }
 
@@ -495,7 +495,7 @@ SELECT
 	namespace_org_id,
 	created_at,
 	updated_at,
-	thread_ids
+	changeset_ids
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -509,8 +509,8 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	opts.Limit++
 
 	var preds []*sqlf.Query
-	if opts.ThreadID != 0 {
-		preds = append(preds, sqlf.Sprintf("thread_ids ? %s", opts.ThreadID))
+	if opts.ChangeSetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangeSetID))
 	}
 
 	if len(preds) == 0 {
@@ -567,7 +567,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanThread(t *Thread, s scanner) error {
+func scanChangeSet(t *ChangeSet, s scanner) error {
 	t.Metadata = json.RawMessage{}
 	return s.Scan(
 		&t.ID,
@@ -589,7 +589,7 @@ func scanCampaign(c *Campaign, s scanner) error {
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
-		&dbutil.JSONInt64Set{Set: &c.ThreadIDs},
+		&dbutil.JSONInt64Set{Set: &c.ChangeSetIDs},
 	)
 }
 

@@ -2,7 +2,7 @@ package a8n
 
 import "time"
 
-// A Campaign of threads (i.e. ChangeSets and Issues) over multiple Repos over time.
+// A Campaign of changesets (i.e. ChangeSets and Issues) over multiple Repos over time.
 type Campaign struct {
 	ID              int64
 	Name            string
@@ -12,19 +12,19 @@ type Campaign struct {
 	NamespaceOrgID  int32
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	ThreadIDs       []int64
+	ChangeSetIDs       []int64
 }
 
 // Clone returns a clone of a Campaign.
 func (c *Campaign) Clone() *Campaign {
 	cc := *c
-	cc.ThreadIDs = c.ThreadIDs[:len(c.ThreadIDs):len(c.ThreadIDs)]
+	cc.ChangeSetIDs = c.ChangeSetIDs[:len(c.ChangeSetIDs):len(c.ChangeSetIDs)]
 	return &cc
 }
 
-// A Thread is a sum type representing either a ChangeSet or an Issue
+// A ChangeSet is a sum type representing either a ChangeSet or an Issue
 // belonging to a Repository and a Campaign.
-type Thread struct {
+type ChangeSet struct {
 	ID          int64
 	RepoID      int32
 	CreatedAt   time.Time
@@ -33,8 +33,8 @@ type Thread struct {
 	CampaignIDs []int64
 }
 
-// Clone returns a clone of a Thread.
-func (t *Thread) Clone() *Thread {
+// Clone returns a clone of a ChangeSet.
+func (t *ChangeSet) Clone() *ChangeSet {
 	tt := *t
 	tt.CampaignIDs = t.CampaignIDs[:len(t.CampaignIDs):len(t.CampaignIDs)]
 	return &tt

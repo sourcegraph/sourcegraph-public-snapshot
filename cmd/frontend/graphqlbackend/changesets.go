@@ -15,17 +15,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func (r *schemaResolver) AddThreadFromURLToCampaign(ctx context.Context, args *struct {
+func (r *schemaResolver) AddChangeSetFromURLToCampaign(ctx context.Context, args *struct {
 	URL      string
 	Campaign graphql.ID
-}) (_ *threadResolver, err error) {
+}) (_ *changesetResolver, err error) {
 	var user *types.User
 	user, err = db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
 	}
 
-	// 🚨 SECURITY: Only site admins may create a thread for now.
+	// 🚨 SECURITY: Only site admins may create a changeset for now.
 	if !user.SiteAdmin {
 		return nil, backend.ErrMustBeSiteAdmin
 	}
@@ -56,69 +56,69 @@ func (r *schemaResolver) AddThreadFromURLToCampaign(ctx context.Context, args *s
 		return nil, err
 	}
 
-	thread := &a8n.Thread{
+	changeset := &a8n.ChangeSet{
 		RepoID:      int32(repo.ID),
 		CampaignIDs: []int64{campaign.ID},
 	}
 
-	if err = tx.CreateThread(ctx, thread); err != nil {
+	if err = tx.CreateChangeSet(ctx, changeset); err != nil {
 		return nil, err
 	}
 
-	campaign.ThreadIDs = append(campaign.ThreadIDs, thread.ID)
+	campaign.ChangeSetIDs = append(campaign.ChangeSetIDs, changeset.ID)
 	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
 		return nil, err
 	}
 
-	return &threadResolver{store: r.A8NStore, Thread: thread}, nil
+	return &changesetResolver{store: r.A8NStore, ChangeSet: changeset}, nil
 }
 
-func (r *schemaResolver) Threads(ctx context.Context, args *struct {
+func (r *schemaResolver) ChangeSets(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) (*threadsConnectionResolver, error) {
+}) (*changesetsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	return &threadsConnectionResolver{
+	return &changesetsConnectionResolver{
 		store: r.A8NStore,
-		opts: a8n.ListThreadsOpts{
+		opts: a8n.ListChangeSetsOpts{
 			Limit: int(args.ConnectionArgs.GetFirst()),
 		},
 	}, nil
 }
 
-type threadsConnectionResolver struct {
+type changesetsConnectionResolver struct {
 	store *a8n.Store
-	opts  a8n.ListThreadsOpts
+	opts  a8n.ListChangeSetsOpts
 
 	// cache results because they are used by multiple fields
 	once    sync.Once
-	threads []*a8n.Thread
+	changesets []*a8n.ChangeSet
 	next    int64
 	err     error
 }
 
-func (r *threadsConnectionResolver) Nodes(ctx context.Context) ([]*threadResolver, error) {
-	threads, _, err := r.compute(ctx)
+func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]*changesetResolver, error) {
+	changesets, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*threadResolver, 0, len(threads))
-	for _, c := range threads {
-		resolvers = append(resolvers, &threadResolver{Thread: c})
+	resolvers := make([]*changesetResolver, 0, len(changesets))
+	for _, c := range changesets {
+		resolvers = append(resolvers, &changesetResolver{ChangeSet: c})
 	}
 	return resolvers, nil
 }
 
-func (r *threadsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := a8n.CountThreadsOpts{CampaignID: r.opts.CampaignID}
-	count, err := r.store.CountThreads(ctx, opts)
+func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	opts := a8n.CountChangeSetsOpts{CampaignID: r.opts.CampaignID}
+	count, err := r.store.CountChangeSets(ctx, opts)
 	return int32(count), err
 }
 
-func (r *threadsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -126,50 +126,50 @@ func (r *threadsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *threadsConnectionResolver) compute(ctx context.Context) ([]*a8n.Thread, int64, error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.ChangeSet, int64, error) {
 	r.once.Do(func() {
-		r.threads, r.next, r.err = r.store.ListThreads(ctx, r.opts)
+		r.changesets, r.next, r.err = r.store.ListChangeSets(ctx, r.opts)
 	})
-	return r.threads, r.next, r.err
+	return r.changesets, r.next, r.err
 }
 
-type threadResolver struct {
+type changesetResolver struct {
 	store *a8n.Store
-	*a8n.Thread
+	*a8n.ChangeSet
 }
 
-const threadIDKind = "Thread"
+const changesetIDKind = "ChangeSet"
 
-func marshalThreadID(id int64) graphql.ID {
-	return relay.MarshalID(threadIDKind, id)
+func marshalChangeSetID(id int64) graphql.ID {
+	return relay.MarshalID(changesetIDKind, id)
 }
 
-func (r *threadResolver) ID() graphql.ID {
-	return marshalThreadID(r.Thread.ID)
+func (r *changesetResolver) ID() graphql.ID {
+	return marshalChangeSetID(r.ChangeSet.ID)
 }
 
-func (r *threadResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
-	return repositoryByIDInt32(ctx, api.RepoID(r.Thread.RepoID))
+func (r *changesetResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	return repositoryByIDInt32(ctx, api.RepoID(r.ChangeSet.RepoID))
 }
 
-func (r *threadResolver) Campaigns(ctx context.Context, args struct {
+func (r *changesetResolver) Campaigns(ctx context.Context, args struct {
 	graphqlutil.ConnectionArgs
 }) *campaignsConnectionResolver {
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts: a8n.ListCampaignsOpts{
-			ThreadID: r.Thread.ID,
+			ChangeSetID: r.ChangeSet.ID,
 			Limit:    int(args.ConnectionArgs.GetFirst()),
 		},
 	}
 }
 
-func (r *threadResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.Thread.CreatedAt}
+func (r *changesetResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.ChangeSet.CreatedAt}
 }
 
-func (r *threadResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.Thread.UpdatedAt}
+func (r *changesetResolver) UpdatedAt() DateTime {
+	return DateTime{Time: r.ChangeSet.UpdatedAt}
 }
 
 func issueURLToRepoURL(url string) string {

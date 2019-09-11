@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS changesets;
+
+COMMIT;
+

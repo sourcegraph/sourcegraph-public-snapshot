@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS threads (
+CREATE TABLE IF NOT EXISTS changesets (
   id bigserial PRIMARY KEY,
   campaign_id integer NOT NULL REFERENCES campaigns(id)
     ON DELETE CASCADE DEFERRABLE INITIALLY IMMEDIATE,
