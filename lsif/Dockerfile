@@ -27,5 +27,5 @@ RUN apk add --no-cache tini supervisor nodejs-current=11.3.0-r0
 COPY --from=builder /lsif /lsif
 COPY supervisord.conf /etc/supervisord.conf
 
-EXPOSE 3186
+EXPOSE 3186 3187
 CMD ["/sbin/tini", "--", "/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
