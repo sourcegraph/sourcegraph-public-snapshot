@@ -2,8 +2,7 @@ package db
 
 import (
 	"context"
-	"errors"
-	"strings"
+	"fmt"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
@@ -19,27 +18,19 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	var testCases = []struct {
 		name      string
 		userEvent *UserEvent
-		err       string // Error substr, empty string implies error is nil
+		err       string // Stringified error
 	}{
-		{"EmptyName", &UserEvent{UserID: 1}, `violates check constraint "event_logs_check_name_not_empty"`},
-		{"InvalidUser", &UserEvent{Name: "test_event"}, `violates check constraint "event_logs_check_has_user"`},
+		{"EmptyName", &UserEvent{UserID: 1}, `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty"`},
+		{"InvalidUser", &UserEvent{Name: "test_event"}, `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_has_user"`},
 
-		{"ValidInsert", &UserEvent{Name: "test_event", UserID: 1}, ""},
+		{"ValidInsert", &UserEvent{Name: "test_event", UserID: 1}, "<nil>"},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := EventLogs.Insert(ctx, tc.userEvent)
 
-			// Should have no error
-			if tc.err == "" {
-				if err != nil {
-					t.Fatal(err)
-				}
-				return
-			}
-
-			if err == nil || !strings.Contains(err.Error(), tc.err) {
-				t.Errorf("got %+v, want %+v", err, errors.New(tc.err))
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have %+v, want %+v", have, want)
 			}
 		})
 	}
