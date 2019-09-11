@@ -66,7 +66,7 @@ export class XrepoDatabase {
      * @param connectionCache The cache of SQLite connections.
      * @param database The filename of the database.
      */
-    constructor(private connectionCache: ConnectionCache, private database: string) {}
+    constructor(private connectionCache: ConnectionCache, private database: string) { }
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
@@ -155,14 +155,7 @@ export class XrepoDatabase {
             BLOOM_FILTER_EVENTS_COUNTER.labels(flag ? 'hit' : 'miss').inc()
         }
 
-        // Zip reference model results and the result of the bloom filter test together
-        const zip: { result: ReferenceModel; keep: boolean }[] = results.map((result, i) => ({
-            result,
-            keep: keepFlags[i],
-        }))
-
-        // Return the reference models that passed the bloom filter test
-        return zip.filter(({ keep }) => keep).map(({ result }) => result)
+        return results.filter((_, i) => keepFlags[i])
     }
 
     /**
