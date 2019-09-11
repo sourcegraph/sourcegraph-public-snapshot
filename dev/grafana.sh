@@ -42,7 +42,7 @@ docker run --rm  --cidfile ${CID_FILE} \
     -p 0.0.0.0:3000:3000 \
     -v ${GRAFANA_DISK}:/var/lib/grafana \
     -v ${DIR}/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
-    -v ${DIR}/grafana/additional_dashboards:/sg_grafana_additional_dashboards \
+    -v ${DIR}/../docker-images/grafana/config/provisioning/dashboards/sourcegraph:/sg_grafana_additional_dashboards \
     -e GF_AUTH_ANONYMOUS_ENABLED=true \
     -e GF_AUTH_ANONYMOUS_ORG_NAME=Sourcegraph \
     -e GF_AUTH_ANONYMOUS_ORG_ROLE=Editor \
