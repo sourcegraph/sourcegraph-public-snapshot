@@ -101,15 +101,17 @@ export class Correlator {
 
     /**
      * A mapping from a moniker identifier to the set of moniker identifiers to which it
-     * is linked via a `nextMoniker` edge. This relation is symmetric such that if `a` is in
-     * `linkedMonikers[b]`, then `b` is in `linkedMonikers[a]`.
+     * is linked via a `nextMoniker` edge. This forms a disjoint set data structure where
+     * all nodes in the same est are reachable by performing a tree search from any given
+     * node.
      */
     public linkedMonikers = new DefaultMap<MonikerId, Set<MonikerId>>(() => new Set())
 
     /**
-     * A mapping from a reference result identifier to the set of reference result identifiers
-     * to which it is linked via an `item` edge. This relation is symmetric such that if `a` is
-     * in `linkedReferenceResults[b]`, then `b` is in `linkedReferenceResults[a]`.
+     * A mapping from a reference result identifier to the set of reference result
+     * identifiers to which it is linked via an `item` edge. This forms a disjoint set data
+     * structure where all nodes in the same est are reachable by performing a tree search
+     * from any given node.
      */
     public linkedReferenceResults = new DefaultMap<ReferenceResultId, Set<ReferenceResultId>>(() => new Set())
 
