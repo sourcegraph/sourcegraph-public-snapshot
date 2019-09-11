@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP TABLE IF EXISTS changesets;
+DROP TABLE IF EXISTS threads;
 
 COMMIT;
 
