@@ -26,7 +26,7 @@ func (*eventLogs) Insert(ctx context.Context, info *EventLogInfo) error {
 
 	_, err := dbconn.Global.ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id,argument) VALUES($1, $2, $3, $4, $5)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, argument) VALUES($1, $2, $3, $4, $5)",
 		info.Name,
 		info.URL,
 		info.UserID,

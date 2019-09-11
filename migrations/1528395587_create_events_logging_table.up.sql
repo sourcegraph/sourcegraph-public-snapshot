@@ -7,7 +7,7 @@ CREATE TABLE event_logs (
     user_id             INTEGER NOT NULL,
     anonymous_user_id   TEXT NOT NULL,
     argument            TEXT NOT NULL,
-	timestamp           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    timestamp           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 CREATE INDEX event_logs_name ON event_logs(name);
