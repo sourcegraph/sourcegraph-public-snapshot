@@ -33,6 +33,7 @@ import {
     contains,
     RangeId,
 } from 'lsif-protocol'
+import { DisjointSet } from './disjoint-set'
 
 /**
  * Identifiers of result set vertices.
@@ -100,20 +101,14 @@ export class Correlator {
     public referenceData = new Map<ReferenceResultId, DefaultMap<DocumentId, RangeId[]>>()
 
     /**
-     * A mapping from a moniker identifier to the set of moniker identifiers to which it
-     * is linked via a `nextMoniker` edge. This forms a disjoint set data structure where
-     * all nodes in the same est are reachable by performing a tree search from any given
-     * node.
+     * A disjoint set of monikers linked by `nextMoniker` edges.
      */
-    public linkedMonikers = new DefaultMap<MonikerId, Set<MonikerId>>(() => new Set())
+    public linkedMonikers = new DisjointSet<MonikerId>()
 
     /**
-     * A mapping from a reference result identifier to the set of reference result
-     * identifiers to which it is linked via an `item` edge. This forms a disjoint set data
-     * structure where all nodes in the same est are reachable by performing a tree search
-     * from any given node.
+     * A disjoint set of reference results linked by `item` edges.
      */
-    public linkedReferenceResults = new DefaultMap<ReferenceResultId, Set<ReferenceResultId>>(() => new Set())
+    public linkedReferenceResults = new DisjointSet<ReferenceResultId>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
@@ -300,19 +295,12 @@ export class Correlator {
             const documentMap = mustGet(this.referenceData, edge.outV, 'referenceResult')
             const rangeIds = documentMap.getOrDefault(edge.document)
             for (const inV of edge.inVs) {
-                // A reference result may be correlated with another reference result
-                // via a next edge. In this case, we want to put them into an association
-                // table as we do with monikers/nextMoniker relationships we can grab the
-                // entire set of reachable reference results from a range.
-
                 if (this.referenceData.has(inV)) {
-                    this.linkedReferenceResults.getOrDefault(inV).add(edge.outV) // Forward direction
-                    this.linkedReferenceResults.getOrDefault(edge.outV).add(inV) // Backwards direction
-                    continue
+                    this.linkedReferenceResults.union(edge.outV, inV)
+                } else {
+                    mustGet(this.rangeData, inV, 'range')
+                    rangeIds.push(inV)
                 }
-
-                mustGet(this.rangeData, inV, 'range')
-                rangeIds.push(inV)
             }
 
             return
@@ -366,8 +354,7 @@ export class Correlator {
     private handleNextMonikerEdge(edge: nextMoniker): void {
         mustGet(this.monikerData, edge.inV, 'moniker')
         mustGet(this.monikerData, edge.outV, 'moniker')
-        this.linkedMonikers.getOrDefault(edge.inV).add(edge.outV) // Forward direction
-        this.linkedMonikers.getOrDefault(edge.outV).add(edge.inV) // Backwards direction
+        this.linkedMonikers.union(edge.inV, edge.outV)
     }
 
     /**

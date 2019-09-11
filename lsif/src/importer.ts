@@ -1,7 +1,7 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { DefaultMap } from './default-map'
-import { Edge, Id, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
+import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { encodeJSON } from './encoding'
 import { EntityManager } from 'typeorm'
 import { isEqual, uniqWith } from 'lodash'
@@ -397,7 +397,7 @@ function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResu
         }
 
         // Find all reachable items and order them deterministically
-        const linkedIds = Array.from(reachableItems(referenceResultId, correlator.linkedReferenceResults))
+        const linkedIds = Array.from(correlator.linkedReferenceResults.extractSet(referenceResultId))
         linkedIds.sort()
 
         // Choose arbitrary canonical id
@@ -450,14 +450,11 @@ function canonicalizeItem(
 ): void {
     const monikers = new Set<MonikerId>()
     if (item.monikerIds.size > 0) {
-        // If we have any monikers attached to this item, then we only need to look at the
-        // monikers reachable from any attached moniker. All other attached monikers are
-        // necessarily reachable, so we can choose any single value from the moniker set
-        // as the source of the graph traversal.
-
+        // Find arbitrary moniker attached to item
         const candidateMoniker = item.monikerIds.keys().next().value
 
-        for (const monikerId of reachableItems(candidateMoniker, correlator.linkedMonikers)) {
+        // Get all monikers reachable from this one
+        for (const monikerId of correlator.linkedMonikers.extractSet(candidateMoniker)) {
             if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== MonikerKind.local) {
                 monikers.add(monikerId)
             }
@@ -568,32 +565,4 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
     }
 
     return document
-}
-
-/**
- * Return the set of item identifiers that are reachable from the given source
- * identifier through a directed graph of identifiers supplied as an adjacency list.
- *
- * @param sourceId The item identifier with which to start the search.
- * @param linkedItemIds A map from identifiers to reachable neighbor identifiers.
- */
-export function reachableItems<T extends Id>(sourceId: T, linkedItemIds: Map<T, Set<T>>): Set<T> {
-    const itemIds = new Set<T>()
-    let frontier = [sourceId]
-
-    while (frontier.length > 0) {
-        const val = assertId(frontier.pop())
-        if (itemIds.has(val)) {
-            continue
-        }
-
-        itemIds.add(val)
-
-        const nextValues = linkedItemIds.get(val)
-        if (nextValues) {
-            frontier = frontier.concat(Array.from(nextValues))
-        }
-    }
-
-    return itemIds
 }
