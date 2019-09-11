@@ -104,9 +104,8 @@ async function main(): Promise<void> {
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 try {
-                    // TODO - is null needed here now?
                     const db = await backend.createDatabase(repository, commit)
-                    res.json((await db[cleanMethod](path, position)) || null)
+                    res.json(await db[cleanMethod](path, position))
                 } catch (e) {
                     if (hasErrorCode(e, ERRNOLSIFDATA)) {
                         throw Object.assign(e, { status: 404 })
