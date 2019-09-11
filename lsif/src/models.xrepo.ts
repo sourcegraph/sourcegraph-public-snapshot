@@ -1,4 +1,5 @@
 import { PrimaryGeneratedColumn, Column, Entity, Index } from 'typeorm'
+import { getBatchSize } from './util'
 
 /**
  * The base class for `PackageModel` and `ReferenceModel` as they have nearly
@@ -48,7 +49,13 @@ class Package {
  */
 @Entity({ name: 'packages' })
 @Index(['scheme', 'name', 'version'])
-export class PackageModel extends Package {}
+@Index(['repository', 'commit'])
+export class PackageModel extends Package {
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(5)
+}
 
 /**
  * An entity within the xrepo database. This lists the dependencies of a given
@@ -56,7 +63,13 @@ export class PackageModel extends Package {}
  */
 @Entity({ name: 'references' })
 @Index(['scheme', 'name', 'version'])
+@Index(['repository', 'commit'])
 export class ReferenceModel extends Package {
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(6)
+
     /**
      * A serialized bloom filter that encodes the set of symbols that this repository
      * and commit imports from the given package. Testing this filter will prevent the

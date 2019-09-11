@@ -1,5 +1,6 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
 import { Id, MonikerKind } from 'lsif-protocol'
+import { getBatchSize } from './util'
 
 export type DocumentId = Id
 export type DocumentPath = string
@@ -370,17 +371,4 @@ export interface PackageInformationData {
      * The version of the package the moniker describes.
      */
     version: string | null
-}
-
-/**
- * Determine the table inserter batch size for an entity given the number of
- * fields inserted for that entity. We cannot perform an insert operation with
- * more than 999 placeholder variables, so we need to flush our batch before
- * we reach that amount. If fields are added to the models, the argument to
- * this function also needs to change.
- *
- * @param numFields The number of fields for an entity.
- */
-function getBatchSize(numFields: number): number {
-    return Math.floor(999 / numFields)
 }
