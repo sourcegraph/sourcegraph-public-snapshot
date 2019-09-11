@@ -583,9 +583,13 @@ input MarkdownOptions {
 
 # Input for Mutation.logUserEvent, which contains fields needed for logging a user event.
 input LogUserEventInput {
+    # The name of the event.
     event: String!
+    # The unique user ID stored in the cookie.
     userCookieID: String!
+    # The URL which event happens.
     url: String!
+    # The additional argument information.
     argument: String
 }
 
