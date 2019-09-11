@@ -66,10 +66,6 @@ async function main(): Promise<void> {
         .toPromise()
 
     const items = await storage.sync.get()
-    if (items.disableExtension) {
-        return
-    }
-
     const sourcegraphURL = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
 
     const isSourcegraphServer = checkIsSourcegraph(sourcegraphURL)

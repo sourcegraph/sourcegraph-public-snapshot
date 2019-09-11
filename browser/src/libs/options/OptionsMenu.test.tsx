@@ -18,7 +18,9 @@ describe('ServerURLForm', () => {
         requestPermissions: noop,
         onURLChange: noop,
         onURLSubmit: noop,
+        isActivated: true,
         toggleFeatureFlag: noop,
+        onToggleActivationClick: noop,
         onSettingsClick: noop,
     }
 
