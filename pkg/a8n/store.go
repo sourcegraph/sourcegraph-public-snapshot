@@ -87,16 +87,18 @@ INSERT INTO changesets (
 	created_at,
 	updated_at,
 	metadata,
-	campaign_ids
+	campaign_ids,
+	external_id
 )
-VALUES (%s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repo_id,
 	created_at,
 	updated_at,
 	metadata,
-	campaign_ids
+	campaign_ids,
+	external_id
 `
 
 func (s *Store) createChangeSetQuery(t *ChangeSet) (*sqlf.Query, error) {
@@ -125,6 +127,7 @@ func (s *Store) createChangeSetQuery(t *ChangeSet) (*sqlf.Query, error) {
 		t.UpdatedAt,
 		metadata,
 		campaignIDs,
+		t.ExternalID,
 	), nil
 }
 
@@ -200,7 +203,8 @@ SELECT
 	created_at,
 	updated_at,
 	metadata,
-	campaign_ids
+	campaign_ids,
+	external_id
 FROM changesets
 WHERE %s
 ORDER BY id ASC
@@ -459,7 +463,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 // listing campaigns.
 type ListCampaignsOpts struct {
 	ChangeSetID int64
-	Limit    int
+	Limit       int
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -576,6 +580,7 @@ func scanChangeSet(t *ChangeSet, s scanner) error {
 		&t.UpdatedAt,
 		&t.Metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
+		&t.ExternalID,
 	)
 }
 

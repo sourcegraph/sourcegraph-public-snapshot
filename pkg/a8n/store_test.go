@@ -253,6 +253,7 @@ func TestStore(t *testing.T) {
 					UpdatedAt:   now,
 					Metadata:    []byte("{}"),
 					CampaignIDs: []int64{int64(i) + 1},
+					ExternalID:  fmt.Sprintf("foobar-%d", i),
 				}
 
 				want := th.Clone()

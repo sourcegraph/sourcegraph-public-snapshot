@@ -29,9 +29,10 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Creates a ChangeSet from a code host URL (e.g. to an issue or pull request on GitHub) and
-    # adds it to a Campaign.
-    addChangeSetFromURLToCampaign(url: String!, campaign: ID!): ChangeSet!
+    # Creates a ChangeSet of a given repository in a code host (e.g. pull request on GitHub)
+    createChangeSet(repository: ID!, externalID: String!): ChangeSet!
+    # Adds a ChangeSet to a Campaign.
+    addChangeSetToCampaign(changeset: ID!, campaign: ID!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.

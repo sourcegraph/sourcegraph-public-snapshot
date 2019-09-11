@@ -12,7 +12,7 @@ type Campaign struct {
 	NamespaceOrgID  int32
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	ChangeSetIDs       []int64
+	ChangeSetIDs    []int64
 }
 
 // Clone returns a clone of a Campaign.
@@ -31,6 +31,7 @@ type ChangeSet struct {
 	UpdatedAt   time.Time
 	Metadata    interface{}
 	CampaignIDs []int64
+	ExternalID  string
 }
 
 // Clone returns a clone of a ChangeSet.
