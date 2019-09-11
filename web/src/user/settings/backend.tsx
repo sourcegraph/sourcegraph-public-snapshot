@@ -85,20 +85,43 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
     )
 }
 
+// A user event.
+export enum UserEvent {
+    PAGEVIEW = 'PAGEVIEW',
+    SEARCHQUERY = 'SEARCHQUERY',
+    CODEINTEL = 'CODEINTEL',
+    CODEINTELREFS = 'CODEINTELREFS',
+    CODEINTELINTEGRATION = 'CODEINTELINTEGRATION',
+    CODEINTELINTEGRATIONREFS = 'CODEINTELINTEGRATIONREFS',
+
+    // Product stages
+    STAGEMANAGE = 'STAGEMANAGE',
+    STAGEPLAN = 'STAGEPLAN',
+    STAGECODE = 'STAGECODE',
+    STAGEREVIEW = 'STAGEREVIEW',
+    STAGEVERIFY = 'STAGEVERIFY',
+    STAGEPACKAGE = 'STAGEPACKAGE',
+    STAGEDEPLOY = 'STAGEDEPLOY',
+    STAGECONFIGURE = 'STAGECONFIGURE',
+    STAGEMONITOR = 'STAGEMONITOR',
+    STAGESECURE = 'STAGESECURE',
+    STAGEAUTOMATE = 'STAGEAUTOMATE',
+}
+
 /**
  * Log a user action (used to allow site admins on a Sourcegraph instance
  * to see a count of unique users on a daily, weekly, and monthly basis).
  *
  * Not used at all for public/sourcegraph.com usage.
  */
-export function logUserEvent(event: GQL.UserEvent): void {
+export function logUserEvent(event: UserEvent): void {
     if (window.context && window.context.sourcegraphDotComMode) {
         return
     }
     mutateGraphQL(
         gql`
             mutation logUserEvent($event: String!, $userCookieID: String!, $url: String!) {
-                logUserEvent(event: $event, userCookieID: $userCookieID, url: $url) {
+                logUserEvent(input: { event: $event, userCookieID: $userCookieID, url: $url }) {
                     alwaysNil
                 }
             }

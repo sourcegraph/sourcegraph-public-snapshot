@@ -11,8 +11,7 @@ import {
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
-import { logUserEvent } from '../user/settings/backend'
-import { UserEvent } from '../../../browser/src/shared/backend/userEvents'
+import { logUserEvent, UserEvent } from '../user/settings/backend'
 
 /**
  * Fetches activation status from server.
