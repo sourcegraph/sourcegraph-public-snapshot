@@ -88,21 +88,67 @@ export class XrepoDatabase {
     }
 
     /**
-     * Correlate a `repository` and `commit` with a set of unique packages.
+     * Correlate a `repository` and `commit` with a set of unique packages it defines and
+     * with  the the names referenced from a particular dependent package.
      *
-     * @param repository The repository that defines the given package.
-     * @param commit The commit of the that defines the given package.
-     * @param packages The package list (scheme, name, and version).
+     * @param repository The repository being updated.
+     * @param commit The commit of the being updated.
+     * @param packages The list of packages that this repository defines (scheme, name, and version).
+     * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      */
-    public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
+    public async addPackagesAndReferences(
+        repository: string,
+        commit: string,
+        packages: Package[],
+        references: SymbolReferences[]
+    ): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new TableInserter(entityManager, PackageModel, 6, insertionMetrics)
+            const packageInserter = new TableInserter(
+                entityManager,
+                PackageModel,
+                PackageModel.BatchSize,
+                insertionMetrics,
+                true // Do nothing on conflict
+            )
+
+            const referenceInserter = new TableInserter(
+                entityManager,
+                ReferenceModel,
+                ReferenceModel.BatchSize,
+                insertionMetrics
+            )
+
+            // Remove all previous package data for this repo/commit
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(PackageModel)
+                .where({ repository, commit })
+                .execute()
+
+            // Remove all previous reference data for this repo/commit
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(ReferenceModel)
+                .where({ repository, commit })
+                .execute()
+
             for (const pkg of packages) {
-                // TODO - upsert
-                await inserter.insert({ repository, commit, ...pkg })
+                await packageInserter.insert({ repository, commit, ...pkg })
             }
 
-            await inserter.flush()
+            for (const reference of references) {
+                await referenceInserter.insert({
+                    repository,
+                    commit,
+                    filter: await createFilter(reference.identifiers),
+                    ...reference.package,
+                })
+            }
+
+            await packageInserter.flush()
+            await referenceInserter.flush()
         })
     }
 
@@ -110,7 +156,7 @@ export class XrepoDatabase {
      * Find all repository/commit pairs that reference `value` in the given package. The
      * returned results will include only repositories that have a dependency on the given
      * package. The returned results may (but is not likely to) include a repository/commit
-     * pair that does not reference `uri`. See cache.ts for configuration values that tune
+     * pair that does not reference `value`. See cache.ts for configuration values that tune
      * the bloom filter false positive rates.
      *
      * @param scheme The package manager scheme (e.g. npm, pip).
@@ -155,31 +201,6 @@ export class XrepoDatabase {
 
         // Return the reference models that passed the bloom filter test
         return zip.filter(({ keep }) => keep).map(({ result }) => result)
-    }
-
-    /**
-     * Correlate the given `repository` and `commit` with the the names referenced from a
-     * particular remote package.
-     *
-     * @param repository The repository that depends on the given package.
-     * @param commit The commit that depends on the given package.
-     * @param references The package data (scheme, name, and version) and the symbols that the package references.
-     */
-    public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
-        return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new TableInserter(entityManager, ReferenceModel, 7, insertionMetrics)
-            for (const reference of references) {
-                // TODO - upsert
-                await inserter.insert({
-                    repository,
-                    commit,
-                    filter: await createFilter(reference.identifiers),
-                    ...reference.package,
-                })
-            }
-
-            await inserter.flush()
-        })
     }
 
     /**

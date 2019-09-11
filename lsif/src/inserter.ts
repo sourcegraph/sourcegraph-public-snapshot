@@ -45,12 +45,14 @@ export class TableInserter<T, M extends new () => T> {
      * @param model The model object constructor.
      * @param maxBatchSize The maximum number of records that can be inserted at once.
      * @param metrics The bag of metrics to use for this instance of the inserter.
+     * @param ignoreConflicts Whether or not to ignore conflicting data on unique constraint violations.
      */
     constructor(
         private entityManager: EntityManager,
         private model: M,
         private maxBatchSize: number,
-        private metrics: TableInserterMetrics
+        private metrics: TableInserterMetrics,
+        private ignoreConflicts: boolean = false
     ) {}
 
     /**
@@ -83,14 +85,17 @@ export class TableInserter<T, M extends new () => T> {
             return
         }
 
-        await instrument(this.metrics.durationHistogram, this.metrics.errorsCounter, () =>
-            this.entityManager
-                .createQueryBuilder()
-                .insert()
-                .into(this.model)
-                .values(this.batch)
-                .execute()
-        )
+        let query = this.entityManager
+            .createQueryBuilder()
+            .insert()
+            .into(this.model)
+            .values(this.batch)
+
+        if (this.ignoreConflicts) {
+            query = query.onConflict('do nothing')
+        }
+
+        await instrument(this.metrics.durationHistogram, this.metrics.errorsCounter, () => query.execute())
 
         this.batch = []
     }

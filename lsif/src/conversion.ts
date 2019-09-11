@@ -2,7 +2,7 @@ import { createConnection } from './connection'
 import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
 import { Edge, Vertex } from 'lsif-protocol'
 import { importLsif } from './importer'
-import { Package, SymbolReferences, XrepoDatabase } from './xrepo'
+import { Package, SymbolReferences } from './xrepo'
 import { Readable } from 'stream'
 import { readline } from 'mz'
 
@@ -35,30 +35,6 @@ export async function convertLsif(
     } finally {
         await connection.close()
     }
-}
-
-/**
- * Populate the correlation database with the packages provided and
- * imported by the given repository and commit.
- *
- * @param xrepoDatabase The correlation database.
- * @param packages The external packages to insert.
- * @param references The dependencies to insert.
- * @param repository The repository for which this data applies.
- * @param commit The commit for which this data applies.
- */
-export async function addToXrepoDatabase(
-    xrepoDatabase: XrepoDatabase,
-    packages: Package[],
-    references: SymbolReferences[],
-    repository: string,
-    commit: string
-): Promise<void> {
-    // These need to be done in sequence as multiple write transactions
-    // tends to mess up the sqlite database.
-
-    await xrepoDatabase.addPackages(repository, commit, packages)
-    await xrepoDatabase.addReferences(repository, commit, references)
 }
 
 /**

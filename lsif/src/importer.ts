@@ -51,7 +51,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 /**
  * Correlate each vertex and edge together, then populate the provided entity manager
  * with the document, definition, and reference information. Returns the package and
- * external reference data needed to populate the correlation database.
+ * external reference data needed to populate the xrepo database.
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param elements The stream of vertex and edge objects composing the LSIF dump.
@@ -96,42 +96,44 @@ export async function importLsif(
     }
 
     // Insert metadata
-    const metaInserter = new TableInserter(entityManager, MetaModel, getBatchSize(3), inserterMetrics)
+    const metaInserter = new TableInserter(entityManager, MetaModel, MetaModel.BatchSize, inserterMetrics)
     await populateMetadataTable(correlator, metaInserter, numResultChunks)
     await metaInserter.flush()
 
     // Insert documents
-    const documentInserter = new TableInserter(entityManager, DocumentModel, getBatchSize(2), inserterMetrics)
+    const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize, inserterMetrics)
     await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
     await documentInserter.flush()
 
     // Insert result chunks
-    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, getBatchSize(2), inserterMetrics)
+    const resultChunkInserter = new TableInserter(
+        entityManager,
+        ResultChunkModel,
+        ResultChunkModel.BatchSize,
+        inserterMetrics
+    )
     await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
     await resultChunkInserter.flush()
 
     // Insert definitions and references
-    const definitionInserter = new TableInserter(entityManager, DefinitionModel, getBatchSize(8), inserterMetrics)
-    const referenceInserter = new TableInserter(entityManager, ReferenceModel, getBatchSize(8), inserterMetrics)
+    const definitionInserter = new TableInserter(
+        entityManager,
+        DefinitionModel,
+        DefinitionModel.BatchSize,
+        inserterMetrics
+    )
+    const referenceInserter = new TableInserter(
+        entityManager,
+        ReferenceModel,
+        ReferenceModel.BatchSize,
+        inserterMetrics
+    )
     await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
     await definitionInserter.flush()
     await referenceInserter.flush()
 
-    // Return correlation data to populate xrepo database
+    // Return data to populate xrepo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }
-}
-
-/**
- * Determine the table inserter batch size for an entity given the number of
- * fields inserted for that entity. We cannot perform an insert operation with
- * more than 999 placeholder variables, so we need to flush our batch before
- * we reach that amount. If fields are added to the models, the argument to
- * this function also needs to change.
- *
- * @param numFields The number of fields for an entity.
- */
-function getBatchSize(numFields: number): number {
-    return Math.floor(999 / numFields)
 }
 
 /**
@@ -410,20 +412,29 @@ function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResu
     const canonicalReferenceResultIds = new Map<ReferenceResultId, ReferenceResultId>()
 
     for (const referenceResultId of correlator.linkedReferenceResults.keys()) {
+        // Don't re-process the same set of linked reference results
         if (canonicalReferenceResultIds.has(referenceResultId)) {
             continue
         }
 
+        // Find all reachable items and order them deterministically
         const linkedIds = Array.from(reachableItems(referenceResultId, correlator.linkedReferenceResults))
         linkedIds.sort()
 
+        // Choose arbitrary canonical id
         const canonicalId = linkedIds[0]
         const canonicalReferenceResult = mustGet(correlator.referenceData, canonicalId, 'referenceResult')
 
         for (const linkedId of linkedIds) {
+            // Link each id to its canonical representation. We do this for
+            // the `linkedId === canonicalId` case so we can reliably detect
+            // duplication at the start of this loop.
+
             canonicalReferenceResultIds.set(linkedId, canonicalId)
 
             if (linkedId !== canonicalId) {
+                // If it's a different identifier, then normalize all data from the linked result
+                // set into the canoical one.
                 for (const [documentId, rangeIds] of mustGet(correlator.referenceData, linkedId, 'referenceResult')) {
                     canonicalReferenceResult.getOrDefault(documentId).push(...rangeIds)
                 }
@@ -431,6 +442,7 @@ function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResu
         }
     }
 
+    // Remove all non-canonical but linked result sets
     const keys = new Set(canonicalReferenceResultIds.keys())
     const vals = new Set(canonicalReferenceResultIds.values())
     for (const key of keys) {

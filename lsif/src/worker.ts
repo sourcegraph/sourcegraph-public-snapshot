@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as zlib from 'mz/zlib'
 import exitHook from 'async-exit-hook'
 import uuid from 'uuid'
-import { addToXrepoDatabase, convertLsif } from './conversion'
+import {  convertLsif } from './conversion'
 import { ConnectionCache } from './cache'
 import { createDatabaseFilename, logErrorAndExit, readEnvInt } from './util'
 import { Worker } from 'node-resque'
@@ -86,7 +86,7 @@ function createConvertJob(
             await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
 
             // Add the new database to the correlation db
-            await addToXrepoDatabase(xrepoDatabase, packages, references, repository, commit)
+            await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         } catch (e) {
             // Don't leave busted artifacts
             await fs.unlink(tempFile)

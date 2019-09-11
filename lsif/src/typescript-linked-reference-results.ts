@@ -2,7 +2,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
-import { addToXrepoDatabase, convertLsif } from './conversion'
+import {  convertLsif } from './conversion'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createCommit, createLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
@@ -39,7 +39,7 @@ describe('Database', () => {
             .pipe(zlib.createGunzip())
         const database = createDatabaseFilename(storageRoot, repository, commit)
         const { packages, references } = await convertLsif(input, database)
-        await addToXrepoDatabase(xrepoDatabase, packages, references, repository, commit)
+        await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references, )
     })
 
     afterAll(() => {
@@ -56,8 +56,6 @@ describe('Database', () => {
             { line: 13, character: 3 },
             { line: 16, character: 3 },
         ]
-
-        // TODO - describe why
 
         for (const position of positions) {
             const references = await db.references('src/index.ts', position)

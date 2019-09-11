@@ -2,7 +2,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
-import { addToXrepoDatabase, convertLsif } from './conversion'
+import {  convertLsif } from './conversion'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createCommit, createLocation, createRemoteLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
@@ -35,7 +35,7 @@ describe('Database', () => {
         for (const { input, repository, commit } of createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
             const { packages, references } = await convertLsif(input, database)
-            await addToXrepoDatabase(xrepoDatabase, packages, references, repository, commit)
+            await xrepoDatabase.addPackagesAndReferences( repository, commit, packages, references,)
         }
     })
 
