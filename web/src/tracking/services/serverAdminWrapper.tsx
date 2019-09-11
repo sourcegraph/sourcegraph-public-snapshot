@@ -1,5 +1,6 @@
 import { authenticatedUser } from '../../auth'
-import { logUserEvent, UserEvent } from '../../user/settings/backend'
+import { logUserEvent } from '../../user/settings/backend'
+import { UserEvent } from '../../../../browser/src/shared/backend/userEvents'
 
 class ServerAdminWrapper {
     /**
