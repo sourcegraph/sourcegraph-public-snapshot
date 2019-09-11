@@ -49,6 +49,9 @@ export interface StorageItems {
     repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
     sourcegraphAnonymousUid: string
+    /**
+     * Temporarily disable the browser extension features.
+     */
     disableExtension: boolean
     /**
      * Storage for feature flags.

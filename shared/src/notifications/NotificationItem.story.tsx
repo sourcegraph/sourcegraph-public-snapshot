@@ -18,11 +18,16 @@ const { add } = storiesOf('NotificationItem', module).addDecorator(story => (
 ))
 
 for (const [name, type] of Object.entries(NotificationType)) {
+    // TS enums are reverse-indexed, so filter the number keys out
+    if (!isNaN(parseInt(name, 10))) {
+        continue
+    }
+
     add(name, () => (
         <NotificationItem
             notification={{
                 message: 'Formatted *message*',
-                type,
+                type: type as NotificationTypeType,
             }}
             onDismiss={onDismiss}
         />
@@ -31,7 +36,7 @@ for (const [name, type] of Object.entries(NotificationType)) {
     add(`${name} - Progress`, () => (
         <NotificationItem
             notification={{
-                type,
+                type: type as NotificationTypeType,
                 progress: interval(100).pipe(
                     startWith(0),
                     map(i => ({
