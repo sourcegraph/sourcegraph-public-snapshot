@@ -70,7 +70,7 @@ async function main(): Promise<void> {
     startMetricsServer()
 
     // Create worker and start processing jobs
-    startWorker(jobFunctions)
+    await startWorker(jobFunctions)
 
     if (LOG_READY) {
         console.log('Listening for uploads')
