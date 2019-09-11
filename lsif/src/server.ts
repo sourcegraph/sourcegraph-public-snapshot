@@ -1,20 +1,25 @@
-import * as es from 'event-stream'
-import * as fs from 'mz/fs'
-import * as path from 'path'
-import * as zlib from 'mz/zlib'
-import Ajv from 'ajv'
-import { ValidateFunction } from 'ajv'
-import bodyParser from 'body-parser'
-import exitHook from 'async-exit-hook'
-import express from 'express'
-import morgan from 'morgan'
-import promBundle from 'express-prom-bundle'
-import uuid from 'uuid'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createBackend, ERRNOLSIFDATA } from './backend'
-import { createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
-import { Queue, Scheduler } from 'node-resque'
-import { wrap } from 'async-middleware'
+import * as definitionsSchema from './lsif.schema.json';
+import * as es from 'event-stream';
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import * as zlib from 'mz/zlib';
+import Ajv, { ValidateFunction } from 'ajv';
+import bodyParser from 'body-parser';
+import exitHook from 'async-exit-hook';
+import express from 'express';
+import morgan from 'morgan';
+import promBundle from 'express-prom-bundle';
+import uuid from 'uuid';
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
+import { createBackend, ERRNOLSIFDATA } from './backend';
+import {
+    createDirectory,
+    hasErrorCode,
+    logErrorAndExit,
+    readEnvInt
+} from './util';
+import { Queue, Scheduler } from 'node-resque';
+import { wrap } from 'async-middleware';
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
     DOCUMENT_CACHE_CAPACITY_GAUGE,
@@ -127,7 +132,7 @@ async function main(): Promise<void> {
                     )
                 }
 
-                const validateLine = (text: string) => {
+                const validateLine = (text: string): void => {
                     if (text === '' || DISABLE_VALIDATION) {
                         return
                     }
@@ -150,6 +155,8 @@ async function main(): Promise<void> {
                 await new Promise((resolve, reject) => {
                     req.pipe(zlib.createGunzip()) // unzip input
                         .pipe(es.split()) // split into lines
+                        // Must check each line synchronously
+                        // eslint-disable-next-line no-sync
                         .pipe(es.mapSync(validateLine)) // validate each line
                         .on('error', reject) // catch validation error
                         .pipe(es.join('\n')) // join back into text
@@ -255,15 +262,13 @@ async function setupQueue(): Promise<Queue> {
  * LSIF dump input.
  */
 function createInputValidator(): ValidateFunction {
-    // Add id to generated schema so that it can be referred to externally
-    const definitionsSchema = require('./lsif.schema.json')
-    definitionsSchema['$id'] = 'defs.json'
-
-    // Create schema that validates with input matching vertex or edge definition
-    const schema = { oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }] }
-
     // Compile schema with defs as a reference
-    return new Ajv().addSchema(definitionsSchema).compile(schema)
+    return new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
+        oneOf: [
+            { $ref: 'defs.json#/definitions/Vertex' },
+            { $ref: 'defs.json#/definitions/Edge' }
+        ]
+    })
 }
 
 /**
