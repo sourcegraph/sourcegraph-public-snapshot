@@ -391,20 +391,29 @@ function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResu
     const canonicalReferenceResultIds = new Map<ReferenceResultId, ReferenceResultId>()
 
     for (const referenceResultId of correlator.linkedReferenceResults.keys()) {
+        // Don't re-process the same set of linked reference results
         if (canonicalReferenceResultIds.has(referenceResultId)) {
             continue
         }
 
+        // Find all reachable items and order them deterministically
         const linkedIds = Array.from(reachableItems(referenceResultId, correlator.linkedReferenceResults))
         linkedIds.sort()
 
+        // Choose arbitrary canonical id
         const canonicalId = linkedIds[0]
         const canonicalReferenceResult = mustGet(correlator.referenceData, canonicalId, 'referenceResult')
 
         for (const linkedId of linkedIds) {
+            // Link each id to its canonical representation. We do this for
+            // the `linkedId === canonicalId` case so we can reliably detect
+            // duplication at the start of this loop.
+
             canonicalReferenceResultIds.set(linkedId, canonicalId)
 
             if (linkedId !== canonicalId) {
+                // If it's a different identifier, then normalize all data from the linked result
+                // set into the canoical one.
                 for (const [documentId, rangeIds] of mustGet(correlator.referenceData, linkedId, 'referenceResult')) {
                     canonicalReferenceResult.getOrDefault(documentId).push(...rangeIds)
                 }
@@ -412,6 +421,7 @@ function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResu
         }
     }
 
+    // Remove all non-canonical but linked result sets
     const keys = new Set(canonicalReferenceResultIds.keys())
     const vals = new Set(canonicalReferenceResultIds.values())
     for (const key of keys) {
