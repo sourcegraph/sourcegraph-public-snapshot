@@ -67,7 +67,7 @@ export function encodeJSON<T>(value: T): Promise<string> {
  * @param value The value to decode.
  */
 export async function decodeJSON<T>(value: string): Promise<T> {
-    return await parseJSON(await unb64gzip(value))
+    return parseJSON(await unb64gzip(value))
 }
 
 /**
