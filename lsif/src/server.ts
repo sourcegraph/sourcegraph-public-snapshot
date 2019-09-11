@@ -97,16 +97,8 @@ async function main(): Promise<void> {
     const app = express()
     app.use(morgan('tiny'))
     app.use(errorHandler)
-
-    app.get('/ping', (_, res) => {
-        res.send({ pong: 'pong' })
-    })
-
-    app.use(
-        promBundle({
-            // TODO - tune histogram buckets or switch to summary
-        })
-    )
+    app.get('/ping', (_, res) => res.send({ pong: 'pong' }))
+    app.use(promBundle({}))
 
     app.post(
         '/upload',

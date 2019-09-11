@@ -1,10 +1,18 @@
-import * as fs from 'mz/fs'
-import * as zlib from 'mz/zlib'
-import exitHook from 'async-exit-hook'
-import { Backend, createBackend } from './backend'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { readEnvInt, logErrorAndExit } from './util'
-import { Worker } from 'node-resque'
+import * as fs from 'mz/fs';
+import * as zlib from 'mz/zlib';
+import exitHook from 'async-exit-hook';
+import express from 'express';
+import promBundle from 'express-prom-bundle';
+import { Backend, createBackend } from './backend';
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
+import { logErrorAndExit, readEnvInt } from './util';
+import { Worker } from 'node-resque';
+import morgan from 'morgan'
+
+/**
+ * Which port to run the worker metrics server on. Defaults to 3187.
+ */
+const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187s)
 
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
@@ -65,6 +73,9 @@ async function main(): Promise<void> {
     exitHook(() => worker.end())
     worker.start().catch(logErrorAndExit)
 
+    // TODO
+    startMetricsServer()
+
     if (LOG_READY) {
         console.log('Listening for uploads')
     }
@@ -83,6 +94,21 @@ function createConvertJob(backend: Backend): (repository: string, commit: string
         await backend.insertDump(input, repository, commit)
         await fs.unlink(filename)
     }
+}
+
+
+// TODO
+function startMetricsServer(): void {
+    const app = express()
+    app.use(morgan('tiny'))
+    app.get('/ping', (_, res) => res.send({ pong: 'pong' }))
+    app.use(promBundle({}))
+
+    app.listen(WORKER_METRICS_PORT, () => {
+        if (LOG_READY) {
+            console.log(`Listening for HTTP requests on port ${WORKER_METRICS_PORT}`)
+        }
+    })
 }
 
 main().catch(logErrorAndExit)
