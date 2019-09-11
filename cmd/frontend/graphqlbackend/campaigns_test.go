@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,8 +13,13 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -197,6 +204,53 @@ func TestCampaigns(t *testing.T) {
 		Campaigns  CampaignConnection
 		CreatedAt  string
 		UpdatedAt  string
+	}
+
+	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
+	externalService := &types.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: `{
+		"url": "https://github.com",
+		"token": "TOKEN",
+		"repos": ["sourcegraph/sourcegraph"]
+		}`,
+	}
+
+	err = db.ExternalServices.Create(ctx, conf.Get, externalService)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	urn := fmt.Sprintf("extsvc:github:%d", externalService.ID)
+
+	repo := &repos.Repo{
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Description: "Code search and navigation tool (self-hosted)",
+		URI:         "github.com/sourcegraph/sourcegraph",
+		Language:    "",
+		Fork:        false,
+		Enabled:     true,
+		Archived:    false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+			ServiceType: "github",
+			ServiceID:   "https://github.com",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: "https://TOKEN@github.com/sourcegraph/sourcegraph",
+			},
+		},
+		Metadata: "{}",
+	}
+
+	err = repoStore.UpsertRepos(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	input = map[string]interface{}{

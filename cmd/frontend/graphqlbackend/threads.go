@@ -50,8 +50,14 @@ func (r *schemaResolver) AddThreadFromURLToCampaign(ctx context.Context, args *s
 		return nil, err
 	}
 
+	var repo *types.Repo
+	repo, err = db.Repos.GetByName(ctx, api.RepoName(issueURLToRepoURL(args.URL)))
+	if err != nil {
+		return nil, err
+	}
+
 	thread := &a8n.Thread{
-		RepoID:      0xbeef,
+		RepoID:      int32(repo.ID),
 		CampaignIDs: []int64{campaign.ID},
 	}
 
@@ -159,4 +165,12 @@ func (r *threadResolver) CreatedAt() DateTime {
 
 func (r *threadResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.Thread.UpdatedAt}
+}
+
+func issueURLToRepoURL(url string) string {
+	// TODO: here be dragons
+	// 1. Parse URL
+	// 2. Determine code host
+	// 3. According to which code host it is, go from issue URL to repoURL (i.e. cut off "issues/1")
+	return "github.com/sourcegraph/sourcegraph"
 }
