@@ -58,22 +58,33 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
-func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
+type logUserEventInput struct {
 	Event        string
 	UserCookieID string
 	URL          string
 	Argument     *string
+}
+
+func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
+	Input *logUserEventInput
 }) (*EmptyResponse, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, nil
 	}
 	actor := actor.FromContext(ctx)
-	if err := usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event); err != nil {
+	err := usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.Input.UserCookieID, args.Input.Event)
+	if err != nil {
 		return nil, err
 	}
 
 	if conf.EnableEventLogging() {
-		return nil, usagestats.LogEvent(args.Event, args.URL, actor.UID, args.UserCookieID, args.Argument)
+		return nil, usagestats.LogEvent(
+			args.Input.Event,
+			args.Input.URL,
+			actor.UID,
+			args.Input.UserCookieID,
+			args.Input.Argument,
+		)
 	}
 	return nil, nil
 }

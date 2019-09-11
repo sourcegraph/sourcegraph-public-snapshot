@@ -267,7 +267,7 @@ type Mutation {
         date: String
     ): GitCommit
     # Logs a user event.
-    logUserEvent(event: String!, userCookieID: String!, url: String!, argument: String): EmptyResponse
+    logUserEvent(input: LogUserEventInput!): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
     #
@@ -586,6 +586,14 @@ input MarkdownOptions {
 
     # A dummy null value (empty input types are not allowed yet).
     alwaysNil: String
+}
+
+# Input for Mutation.logUserEvent, which contains fields needed for logging a user event.
+input LogUserEventInput {
+    event: String!
+    userCookieID: String!
+    url: String!
+    argument: String
 }
 
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
