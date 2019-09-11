@@ -11,7 +11,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
@@ -27,7 +27,7 @@ func TestCampaigns(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 
 	sr := schemaResolver{
-		CampaignsStore: db.NewCampaignsStore(dbconn.Global),
+		A8NStore: a8n.NewStore(dbconn.Global),
 	}
 
 	schema, err := graphql.ParseSchema(Schema, &sr)

@@ -43,6 +43,8 @@ Foreign-key constraints:
     "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "threads" CONSTRAINT "threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -468,6 +470,7 @@ Check constraints:
 Referenced by:
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "threads" CONSTRAINT "threads_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -567,6 +570,26 @@ Indexes:
     "survey_responses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+
+```
+
+# Table "public.threads"
+```
+   Column    |           Type           |                      Modifiers                       
+-------------+--------------------------+------------------------------------------------------
+ id          | bigint                   | not null default nextval('threads_id_seq'::regclass)
+ campaign_id | integer                  | not null
+ repo_id     | integer                  | not null
+ created_at  | timestamp with time zone | not null default now()
+ updated_at  | timestamp with time zone | not null default now()
+ metadata    | jsonb                    | not null default '{}'::jsonb
+Indexes:
+    "threads_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "threads_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+Foreign-key constraints:
+    "threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
+    "threads_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 

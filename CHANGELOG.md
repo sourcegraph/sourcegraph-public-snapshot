@@ -22,6 +22,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- The `statusIndicator` feature flag has been removed from the site configuration's `experimentalFeatures` section. The status indicator has been enabled by default since 3.6.0 and you can now safely remove the feature flag from your configuration.
+
 ## 3.7.1
 
 ### Fixed

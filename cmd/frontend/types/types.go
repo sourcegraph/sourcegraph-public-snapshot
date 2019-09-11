@@ -7,18 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// A Campaign of threads (i.e. ChangeSets and Issues) over multiple Repos over time.
-type Campaign struct {
-	ID              int64
-	Name            string
-	Description     string
-	AuthorID        int32
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-}
-
 // RepoFields are lazy loaded data fields on a Repo (from the DB).
 type RepoFields struct {
 	// URI is the full name for this repository (e.g.,

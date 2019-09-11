@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -54,7 +55,7 @@ func init() {
 	GraphQLSchema, err = graphql.ParseSchema(
 		Schema,
 		&schemaResolver{
-			CampaignsStore: db.NewCampaignsStore(dbconn.Global),
+			A8NStore: a8n.NewStore(dbconn.Global),
 		},
 		graphql.Tracer(prometheusTracer{}),
 	)
@@ -186,7 +187,7 @@ type stringLogger interface {
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
 type schemaResolver struct {
-	*db.CampaignsStore
+	A8NStore *a8n.Store
 }
 
 // DEPRECATED
