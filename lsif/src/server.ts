@@ -29,12 +29,12 @@ const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
  */
-const REDIS_HOST = process.env.LSIF_REDIS_HOST || 'localhost'
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost'
 
 /**
  * The port of the redis instance containing work queues. Defaults to 6379.
  */
-const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
+const REDIS_PORT = readEnvInt('REDIS_PORT', 6379)
 
 /**
  * The number of SQLite connections that can be opened at once. This
