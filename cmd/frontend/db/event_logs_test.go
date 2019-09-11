@@ -17,7 +17,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("EmptyName", func(t *testing.T) {
-		err := EventLogs.Insert(ctx, &EventLogInfo{})
+		err := EventLogs.Insert(ctx, &UserEvent{})
 		if err == nil {
 			t.Errorf("got %+v, want %+v", err, errors.New("empty event name"))
 		} else if !strings.Contains(err.Error(), "empty event name") {
@@ -26,7 +26,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	})
 
 	t.Run("InvalidUserID", func(t *testing.T) {
-		err := EventLogs.Insert(ctx, &EventLogInfo{
+		err := EventLogs.Insert(ctx, &UserEvent{
 			Name: "test_event",
 		})
 		if err == nil {
@@ -37,7 +37,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	})
 
 	t.Run("ValidInsert", func(t *testing.T) {
-		err := EventLogs.Insert(ctx, &EventLogInfo{
+		err := EventLogs.Insert(ctx, &UserEvent{
 			Name:   "test_event",
 			UserID: 1,
 		})

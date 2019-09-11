@@ -165,7 +165,7 @@ var logStageEvent = func(userID int32, event string, isAuthenticated bool) error
 }
 
 func LogEvent(name, url string, userID int32, userCookieID string, argument *string) error {
-	info := &db.EventLogInfo{
+	info := &db.UserEvent{
 		Name:            name,
 		URL:             url,
 		UserID:          userID,
