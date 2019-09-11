@@ -17,8 +17,8 @@ Image expects two volumes mounted:
 - at `/sg_config_grafana/provisioning/datasources` a directory with data source yaml files.
 
 A directory containing dashboard json specifications can be mounted at
- `/sg_grafana_additional_dashboards` and they will be picked up automatically. Changes to files in that directory
- will be detected automatically while Grafana is running.
+`/sg_grafana_additional_dashboards` and they will be picked up automatically. Changes to files in that directory
+will be detected automatically while Grafana is running.
 
 More behavior can be controlled with
 [environmental variables](https://grafana.com/docs/installation/configuration/).
