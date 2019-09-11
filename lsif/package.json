@@ -5,10 +5,12 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
+    "ajv": "^6.10.2",
     "async-exit-hook": "^2.0.1",
     "async-middleware": "^1.2.1",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
+    "event-stream": "^4.0.1",
     "express": "^4.17.1",
     "express-prom-bundle": "^5.1.5",
     "ioredis": "^4.14.0",
@@ -30,6 +32,7 @@
     "@sourcegraph/tsconfig": "^4.0.0",
     "@types/bloomfilter": "^0.0.0",
     "@types/body-parser": "1.17.0",
+    "@types/event-stream": "^3.3.34",
     "@types/express": "4.17.0",
     "@types/ioredis": "^4.0.17",
     "@types/jest": "24.0.17",
@@ -48,7 +51,8 @@
     "source-map-support": "^0.5.13",
     "tsc-watch": "^2.2.1",
     "tslint": "^5.18.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.5.3",
+    "typescript-json-schema": "^0.40.0"
   },
   "scripts": {
     "build": "tsc",
@@ -57,6 +61,7 @@
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server.js\" --noClear",
-    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear"
+    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear",
+    "schema": "typescript-json-schema ./node_modules/lsif-protocol/lib/protocol.d.ts '*' -o src/lsif.schema.json --titles --ignoreErrors --noExtraProps --required --strictNullChecks"
   }
 }
