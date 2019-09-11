@@ -362,19 +362,40 @@ func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
 	), nil
 }
 
+// CountCampaignsOpts captures the query options needed for
+// counting campaigns.
+type CountCampaignsOpts struct {
+	ThreadID int64
+}
+
 // CountCampaigns returns the number of campaigns in the database.
-func (s *Store) CountCampaigns(ctx context.Context) (count int64, _ error) {
-	q := countCampaignsQuery
+func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (count int64, _ error) {
+	q := countCampaignsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
 	})
 }
 
-var countCampaignsQuery = sqlf.Sprintf(`
--- source: pkg/a8n/store.go:CountCampaigns
-SELECT COUNT(id) FROM campaigns
-`)
+var countCampaignsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListCampaigns
+SELECT COUNT(id)
+FROM campaigns
+WHERE %s
+`
+
+func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ThreadID != 0 {
+		preds = append(preds, sqlf.Sprintf("thread_ids ? %s", opts.ThreadID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countCampaignsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
 
 // GetCampaignOpts captures the query options needed for getting a Campaign
 type GetCampaignOpts struct {
