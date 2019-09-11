@@ -16,11 +16,10 @@ describe('Database', () => {
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
-    const createDatabase = async (repository: string, commit: string): Promise<Database> => {
-        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
-        return new Database(
+    const createDatabase = (repository: string, commit: string): Promise<Database> =>
+        new Database(
             storageRoot,
-            xrepoDatabase,
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
             connectionCache,
             documentCache,
             resultChunkCache,
@@ -28,12 +27,10 @@ describe('Database', () => {
             commit,
             createDatabaseFilename(storageRoot, repository, commit)
         )
-    }
 
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
-        const inputs: { input: Readable; repository: string; commit: string }[] = []
 
         for (const { input, repository, commit } of createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)

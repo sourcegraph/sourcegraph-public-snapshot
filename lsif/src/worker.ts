@@ -1,8 +1,8 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as temp from 'temp'
 import * as zlib from 'mz/zlib'
 import exitHook from 'async-exit-hook'
+import uuid from 'uuid'
 import { addToXrepoDatabase, convertLsif } from './conversion'
 import { ConnectionCache } from './cache'
 import { createDatabaseFilename, logErrorAndExit, readEnvInt } from './util'
@@ -25,16 +25,6 @@ const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
  * at once.
  */
 const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 1024 * 1024 * 1024)
-
-/**
- * The maximum number of documents that can be held in memory at once.
- */
-const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
-
-/**
- * The maximum number of result chunks that can be held in memory at once.
- */
-const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -77,7 +67,7 @@ async function main(): Promise<void> {
  * input of an LSIF dump and converts it to a SQLite database. This will also populate
  * the correlation database for this dump.
  *
- * @param backend The correlation database.
+ * @param xrepoDatabase The correlation database.
  */
 function createConvertJob(
     xrepoDatabase: XrepoDatabase

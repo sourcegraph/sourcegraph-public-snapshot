@@ -358,7 +358,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[],
         callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, async connection => connection.transaction(callback))
+        return this.withConnection(database, entities, connection => connection.transaction(callback))
     }
 }
 
