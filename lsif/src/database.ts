@@ -73,10 +73,10 @@ export class Database {
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      */
-    public async definitions(path: string, position: lsp.Position): Promise<lsp.Location[] | null> {
+    public async definitions(path: string, position: lsp.Position): Promise<lsp.Location[]> {
         const { document, range } = await this.getRangeByPosition(path, position)
         if (!document || !range) {
-            return null
+            return []
         }
 
         // First, we try to find the definition result attached to the range or one
@@ -123,7 +123,7 @@ export class Database {
             }
         }
 
-        return null
+        return []
     }
 
     /**
@@ -132,10 +132,10 @@ export class Database {
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      */
-    public async references(path: string, position: lsp.Position): Promise<lsp.Location[] | undefined> {
+    public async references(path: string, position: lsp.Position): Promise<lsp.Location[]> {
         const { document, range } = await this.getRangeByPosition(path, position)
         if (!document || !range) {
-            return undefined
+            return []
         }
 
         let locations: lsp.Location[] = []

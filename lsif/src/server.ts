@@ -24,7 +24,7 @@ import {
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
  */
-const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
+const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
@@ -203,9 +203,8 @@ async function main(): Promise<void> {
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 try {
-                    // TODO - is null needed here now?
                     const db = await backend.createDatabase(repository, commit)
-                    res.json((await db[cleanMethod](path, position)) || null)
+                    res.json(await db[cleanMethod](path, position))
                 } catch (e) {
                     if (hasErrorCode(e, ERRNOLSIFDATA)) {
                         throw Object.assign(e, { status: 404 })
