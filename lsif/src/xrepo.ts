@@ -97,7 +97,7 @@ export class XrepoDatabase {
      * Find all repository/commit pairs that reference `value` in the given package. The
      * returned results will include only repositories that have a dependency on the given
      * package. The returned results may (but is not likely to) include a repository/commit
-     * pair that does not reference `uri`. See cache.ts for configuration values that tune
+     * pair that does not reference `value`. See cache.ts for configuration values that tune
      * the bloom filter false positive rates.
      *
      * @param scheme The package manager scheme (e.g. npm, pip).
