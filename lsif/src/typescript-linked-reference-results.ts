@@ -18,7 +18,7 @@ describe('Database', () => {
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
-    const createDatabase = (repository: string, commit: string): Promise<Database> =>
+    const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
             new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
@@ -47,7 +47,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `foo`', async () => {
-        const db = await createDatabase('data', createCommit('data'))
+        const db = createDatabase('data', createCommit('data'))
 
         const positions = [
             { line: 1, character: 5 },

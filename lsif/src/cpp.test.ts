@@ -18,7 +18,7 @@ describe('Database', () => {
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
-    const createDatabase = (repository: string, commit: string): Promise<Database> =>
+    const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
             new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
@@ -45,21 +45,21 @@ describe('Database', () => {
     })
 
     it('should find all defs of `four` from main.cpp', async () => {
-        const db = await createDatabase('five', createCommit('five'))
+        const db = createDatabase('five', createCommit('five'))
         const definitions = await db.definitions('main.cpp', { line: 12, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('main.cpp', 6, 4, 6, 4)])
     })
 
     it('should find all defs of `five` from main.cpp', async () => {
-        const db = await createDatabase('five', createCommit('five'))
+        const db = createDatabase('five', createCommit('five'))
         const definitions = await db.definitions('main.cpp', { line: 11, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('five.cpp', 2, 4, 2, 4)])
     })
 
     it('should find all refs of `five` from main.cpp', async () => {
-        const db = await createDatabase('five', createCommit('five'))
+        const db = createDatabase('five', createCommit('five'))
         const references = await db.references('main.cpp', { line: 11, character: 3 })
 
         // TODO - should the definition be in this result set?

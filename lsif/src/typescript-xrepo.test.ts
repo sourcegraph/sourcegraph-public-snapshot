@@ -16,7 +16,7 @@ describe('Database', () => {
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
-    const createDatabase = (repository: string, commit: string): Promise<Database> =>
+    const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
             new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
@@ -44,28 +44,28 @@ describe('Database', () => {
     })
 
     it('should find all defs of `add` from repo a', async () => {
-        const db = await createDatabase('a', createCommit('a'))
+        const db = createDatabase('a', createCommit('a'))
         const definitions = await db.definitions('src/index.ts', { line: 11, character: 18 })
         expect(definitions).toContainEqual(createLocation('src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `add` from repo b1', async () => {
-        const db = await createDatabase('b1', createCommit('b1'))
+        const db = createDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `mul` from repo b1', async () => {
-        const db = await createDatabase('b1', createCommit('b1'))
+        const db = createDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all refs of `mul` from repo a', async () => {
-        const db = await createDatabase('a', createCommit('a'))
+        const db = createDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 4, character: 19 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -88,7 +88,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `mul` from repo b1', async () => {
-        const db = await createDatabase('b1', createCommit('b1'))
+        const db = createDatabase('b1', createCommit('b1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -111,7 +111,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo a', async () => {
-        const db = await createDatabase('a', createCommit('a'))
+        const db = createDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 0, character: 17 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -144,7 +144,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo c1', async () => {
-        const db = await createDatabase('c1', createCommit('c1'))
+        const db = createDatabase('c1', createCommit('c1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
             l => !l.uri.includes('node_modules')
