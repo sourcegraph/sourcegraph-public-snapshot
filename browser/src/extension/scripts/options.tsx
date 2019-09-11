@@ -149,6 +149,8 @@ const inject = (): void => {
     const injectDOM = document.createElement('div')
     injectDOM.className = 'sourcegraph-options-menu options'
     document.body.appendChild(injectDOM)
+    // For shared CSS that would otherwise be dark by default
+    document.body.classList.add('theme-light')
 
     render(<Options />, injectDOM)
 }
