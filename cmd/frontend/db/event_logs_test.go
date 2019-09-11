@@ -16,33 +16,31 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	t.Run("EmptyName", func(t *testing.T) {
-		err := EventLogs.Insert(ctx, &UserEvent{})
-		if err == nil {
-			t.Errorf("got %+v, want %+v", err, errors.New("empty event name"))
-		} else if !strings.Contains(err.Error(), "empty event name") {
-			t.Fatal(err)
-		}
-	})
+	var testCases = []struct {
+		name      string
+		userEvent *UserEvent
+		err       string // Error substr, empty string implies error is nil
+	}{
+		{"EmptyName", &UserEvent{UserID: 1}, `violates check constraint "event_logs_check_name_not_empty"`},
+		{"InvalidUser", &UserEvent{Name: "test_event"}, `violates check constraint "event_logs_check_has_user"`},
 
-	t.Run("InvalidUserID", func(t *testing.T) {
-		err := EventLogs.Insert(ctx, &UserEvent{
-			Name: "test_event",
-		})
-		if err == nil {
-			t.Errorf("got %+v, want %+v", err, errors.New("one of UserID or AnonymousUserID must have valid value"))
-		} else if !strings.Contains(err.Error(), "must have valid value") {
-			t.Fatal(err)
-		}
-	})
+		{"ValidInsert", &UserEvent{Name: "test_event", UserID: 1}, ""},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := EventLogs.Insert(ctx, tc.userEvent)
 
-	t.Run("ValidInsert", func(t *testing.T) {
-		err := EventLogs.Insert(ctx, &UserEvent{
-			Name:   "test_event",
-			UserID: 1,
+			// Should have no error
+			if tc.err == "" {
+				if err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
+
+			if err == nil || !strings.Contains(err.Error(), tc.err) {
+				t.Errorf("got %+v, want %+v", err, errors.New(tc.err))
+			}
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
+	}
 }
