@@ -14,6 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
+var prometheusURLFromEnv = env.Get("SRC_PROMETHEUS_SERVER_URL", "", "URL at which Prometheus can be reached")
+var grafanaURLFromEnv = env.Get("SRC_GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
+
 // addDebugHandlers registers the reverse proxies to each services debug
 // endpoints.
 func addDebugHandlers(r *mux.Router) {
@@ -45,6 +48,13 @@ func addDebugHandlers(r *mux.Router) {
 		// We do not support cluster deployments yet.
 		if len(debugserver.Services) == 0 {
 			fmt.Fprintf(w, `Instrumentation endpoint proxying for Sourcegraph cluster deployments is not yet available<br>`)
+		}
+
+		if len(prometheusURLFromEnv) > 0 {
+			fmt.Fprintf(w, `<a target="_blank" href="%s">prometheus</a><br>`, prometheusURLFromEnv)
+		}
+		if len(grafanaURLFromEnv) > 0 {
+			fmt.Fprintf(w, `<a target="_blank" href="%s">grafana</a><br>`, grafanaURLFromEnv)
 		}
 	})
 	r.Handle("/", adminOnly(index))
