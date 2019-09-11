@@ -96,7 +96,7 @@ export async function importLsif(
 
     // Insert documents
     const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize)
-    await populateDocumentsTable(correlator, documentInserter,canonicalReferenceResultIds)
+    await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
     await documentInserter.flush()
 
     // Insert result chunks
