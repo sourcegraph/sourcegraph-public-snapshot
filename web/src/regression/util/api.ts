@@ -5,8 +5,8 @@
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQLClient'
-import { map, tap, retryWhen, delayWhen } from 'rxjs/operators'
-import { zip, timer } from 'rxjs'
+import { map, tap, retryWhen, delayWhen, take } from 'rxjs/operators'
+import { zip, timer, concat, throwError, defer } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 
@@ -16,12 +16,8 @@ import { isErrorLike } from '../../../../shared/src/util/errors'
 export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string[]): Promise<void> {
     await zip(
         // List of Observables that complete after each repository is successfully fetched.
-        ...ensureRepos.map(repoName => {
-            // Track number of retries for this repository.
-            let retries = 0
-            const maxRetries = 10
-
-            return gqlClient
+        ...ensureRepos.map(repoName =>
+            gqlClient
                 .queryGraphQL(
                     gql`
                         query ResolveRev($repoName: String!) {
@@ -46,23 +42,23 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                         }
                     }),
                     retryWhen(errors =>
-                        errors.pipe(
-                            delayWhen(error => {
-                                if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
-                                    // Throw an error if we hit the retry limit.
-                                    if (retries++ === maxRetries) {
-                                        throw new Error(`Could not resolve repo ${repoName}: too many retries`)
+                        concat(
+                            errors.pipe(
+                                delayWhen(error => {
+                                    if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
+                                        // Delay retry by 1s.
+                                        return timer(1000)
                                     }
-                                    // Otherwise, delay retry by 1s.
-                                    return timer(1000)
-                                }
-                                // Throw all errors  other than ECLONEINPROGRESS
-                                throw error
-                            })
+                                    // Throw all errors other than ECLONEINPROGRESS
+                                    throw error
+                                }),
+                                take(10)
+                            ),
+                            defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
                         )
                     )
                 )
-        })
+        )
     ).toPromise()
 }
 
