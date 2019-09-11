@@ -3,29 +3,6 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 
-// A user event.
-export enum UserEvent {
-    PAGEVIEW = 'PAGEVIEW',
-    SEARCHQUERY = 'SEARCHQUERY',
-    CODEINTEL = 'CODEINTEL',
-    CODEINTELREFS = 'CODEINTELREFS',
-    CODEINTELINTEGRATION = 'CODEINTELINTEGRATION',
-    CODEINTELINTEGRATIONREFS = 'CODEINTELINTEGRATIONREFS',
-
-    // Product stages
-    STAGEMANAGE = 'STAGEMANAGE',
-    STAGEPLAN = 'STAGEPLAN',
-    STAGECODE = 'STAGECODE',
-    STAGEREVIEW = 'STAGEREVIEW',
-    STAGEVERIFY = 'STAGEVERIFY',
-    STAGEPACKAGE = 'STAGEPACKAGE',
-    STAGEDEPLOY = 'STAGEDEPLOY',
-    STAGECONFIGURE = 'STAGECONFIGURE',
-    STAGEMONITOR = 'STAGEMONITOR',
-    STAGESECURE = 'STAGESECURE',
-    STAGEAUTOMATE = 'STAGEAUTOMATE',
-}
-
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
  * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
