@@ -92,10 +92,7 @@ export async function ensureExternalService(
             map(({ externalServices }) => externalServices)
         )
         .toPromise()
-    const existingMatches = externalServices.nodes.filter(
-        externalService => externalService.displayName === options.uniqueDisplayName
-    )
-    if (existingMatches.length > 0) {
+    if (externalServices.nodes.some(({ displayName }) => displayName === options.uniqueDisplayName)) {
         return
     }
 
