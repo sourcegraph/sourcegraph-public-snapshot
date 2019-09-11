@@ -14,6 +14,61 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 )
 
+func (r *schemaResolver) AddChangeSetToCampaign(ctx context.Context, args *struct {
+	ChangeSet, Campaign graphql.ID
+}) (_ *campaignResolver, err error) {
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
+	}
+
+	// 🚨 SECURITY: Only site admins may create a changeset for now.
+	if !user.SiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
+	}
+
+	changesetID, err := unmarshalChangeSetID(args.ChangeSet)
+	if err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.A8NStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err := tx.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	changeset, err := tx.GetChangeSet(ctx, a8n.GetChangeSetOpts{ID: changesetID})
+	if err != nil {
+		return nil, err
+	}
+
+	campaign.ChangeSetIDs = append(campaign.ChangeSetIDs, changeset.ID)
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	changeset.CampaignIDs = append(changeset.CampaignIDs, campaign.ID)
+	if err = tx.UpdateChangeSet(ctx, changset); err != nil {
+		return nil, err
+	}
+
+	// TODO(tsenart): Sync change-set metadata from code-host.
+
+	return &campaignResolver{store: tx, Campaign: campaign}, nil
+}
+
 func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 	Input struct {
 		Namespace   graphql.ID
@@ -118,7 +173,10 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campa
 	return r.campaigns, r.next, r.err
 }
 
-type campaignResolver struct{ *a8n.Campaign }
+type campaignResolver struct {
+	store *a8n.Store
+	*a8n.Campaign
+}
 
 const campaignIDKind = "Campaign"
 
@@ -172,4 +230,16 @@ func (r *campaignResolver) CreatedAt() DateTime {
 
 func (r *campaignResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.Campaign.UpdatedAt}
+}
+
+func (r *campaignResolver) ChangeSets(ctx context.Context, args struct {
+	graphqlutil.ConnectionArgs
+}) *changesetsConnectionResolver {
+	return &changesetsConnectionResolver{
+		store: r.store,
+		opts: a8n.ListChangeSetsOpts{
+			CampaignID: r.Campaign.ID,
+			Limit:      int(args.ConnectionArgs.GetFirst()),
+		},
+	}
 }

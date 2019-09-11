@@ -67,6 +67,10 @@ func (s *Store) Done(errs ...*error) {
 	}
 }
 
+// DB returns the underlying dbutil.DB that this Store was
+// instantiated with.
+func (s *Store) DB() dbutil.DB { return s.db }
+
 // CreateChangeSet creates the given ChangeSet.
 func (s *Store) CreateChangeSet(ctx context.Context, t *ChangeSet) error {
 	q, err := s.createChangeSetQuery(t)
@@ -164,6 +168,62 @@ func countChangeSetsQuery(opts *CountChangeSetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(countChangeSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
+// GetChangeSetOpts captures the query options needed for getting a ChangeSet
+type GetChangeSetOpts struct {
+	ID int64
+}
+
+// ErrNoResults is returned by Store method calls that found no results.
+var ErrNoResults = errors.New("no results")
+
+// GetChangeSet gets a changeset matching the given options.
+func (s *Store) GetChangeSet(ctx context.Context, opts GetChangeSetOpts) (*ChangeSet, error) {
+	q := getChangeSetQuery(&opts)
+
+	var c ChangeSet
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanChangeSet(&c, sc)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+var getChangeSetsQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetChangeSet
+SELECT
+	id,
+	repo_id,
+	created_at,
+	updated_at,
+	metadata,
+	campaign_ids,
+	external_id
+FROM changesets
+WHERE %s
+LIMIT 1
+`
+
+func getChangeSetQuery(opts *GetChangeSetOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(getChangeSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
 // ListChangeSetsOpts captures the query options needed for
@@ -405,9 +465,6 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 type GetCampaignOpts struct {
 	ID int64
 }
-
-// ErrNoResults is returned by Store method calls that found no results.
-var ErrNoResults = errors.New("no results")
 
 // GetCampaign gets a campaign matching the given options.
 func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*Campaign, error) {

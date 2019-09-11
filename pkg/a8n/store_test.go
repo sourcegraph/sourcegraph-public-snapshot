@@ -352,5 +352,32 @@ func TestStore(t *testing.T) {
 				}
 			}
 		})
+
+		t.Run("Get", func(t *testing.T) {
+			t.Run("ByID", func(t *testing.T) {
+				want := changesets[0]
+				opts := GetChangeSetOpts{ID: want.ID}
+
+				have, err := s.GetChangeSet(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("NoResults", func(t *testing.T) {
+				opts := GetChangeSetOpts{ID: 0xdeadbeef}
+
+				_, have := s.GetChangeSet(ctx, opts)
+				want := ErrNoResults
+
+				if have != want {
+					t.Fatalf("have err %v, want %v", have, want)
+				}
+			})
+		})
 	})
 }

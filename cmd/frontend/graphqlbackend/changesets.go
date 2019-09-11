@@ -10,17 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func (r *schemaResolver) AddChangeSetFromURLToCampaign(ctx context.Context, args *struct {
-	URL      string
-	Campaign graphql.ID
+func (r *schemaResolver) CreateChangeSet(ctx context.Context, args *struct {
+	Repository graphql.ID
+	ExternalID string
 }) (_ *changesetResolver, err error) {
-	var user *types.User
-	user, err = db.Users.GetByCurrentAuthUser(ctx)
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
 	}
@@ -30,45 +28,21 @@ func (r *schemaResolver) AddChangeSetFromURLToCampaign(ctx context.Context, args
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	var campaignID int64
-	campaignID, err = unmarshalCampaignID(args.Campaign)
-	if err != nil {
-		return nil, err
-	}
-
-	var tx *a8n.Store
-	tx, err = r.A8NStore.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer tx.Done(&err)
-
-	var campaign *a8n.Campaign
-	campaign, err = tx.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		return nil, err
-	}
-
-	var repo *types.Repo
-	repo, err = db.Repos.GetByName(ctx, api.RepoName(issueURLToRepoURL(args.URL)))
+	repoID, err := unmarshalRepositoryID(args.Repository)
 	if err != nil {
 		return nil, err
 	}
 
 	changeset := &a8n.ChangeSet{
-		RepoID:      int32(repo.ID),
-		CampaignIDs: []int64{campaign.ID},
+		RepoID:     int32(repoID),
+		ExternalID: args.ExternalID,
 	}
 
-	if err = tx.CreateChangeSet(ctx, changeset); err != nil {
+	if err = r.A8NStore.CreateChangeSet(ctx, changeset); err != nil {
 		return nil, err
 	}
 
-	campaign.ChangeSetIDs = append(campaign.ChangeSetIDs, changeset.ID)
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
-		return nil, err
-	}
+	// TODO(tsenart): Sync change-set metadata.
 
 	return &changesetResolver{store: r.A8NStore, ChangeSet: changeset}, nil
 }
@@ -94,10 +68,10 @@ type changesetsConnectionResolver struct {
 	opts  a8n.ListChangeSetsOpts
 
 	// cache results because they are used by multiple fields
-	once    sync.Once
+	once       sync.Once
 	changesets []*a8n.ChangeSet
-	next    int64
-	err     error
+	next       int64
+	err        error
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]*changesetResolver, error) {
@@ -144,6 +118,11 @@ func marshalChangeSetID(id int64) graphql.ID {
 	return relay.MarshalID(changesetIDKind, id)
 }
 
+func unmarshalChangeSetID(id graphql.ID) (cid int64, err error) {
+	err = relay.UnmarshalSpec(id, &cid)
+	return
+}
+
 func (r *changesetResolver) ID() graphql.ID {
 	return marshalChangeSetID(r.ChangeSet.ID)
 }
@@ -159,7 +138,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args struct {
 		store: r.store,
 		opts: a8n.ListCampaignsOpts{
 			ChangeSetID: r.ChangeSet.ID,
-			Limit:    int(args.ConnectionArgs.GetFirst()),
+			Limit:       int(args.ConnectionArgs.GetFirst()),
 		},
 	}
 }
