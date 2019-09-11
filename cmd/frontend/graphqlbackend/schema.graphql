@@ -415,7 +415,7 @@ type Thread implements Node {
     repository: Repository!
 
     # The campaigns that have this thread in them.
-    campaigns: CampaignConnection!
+    campaigns(first: Int): CampaignConnection!
 
     # The date and time when the campaign was created.
     createdAt: DateTime!

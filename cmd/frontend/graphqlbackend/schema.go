@@ -30,10 +30,8 @@ type Mutation {
     # Creates a Thread from a code host URL (e.g. to an issue or pull request on GitHub) and
     # adds it to a Campaign.
     addThreadFromURLToCampaign(url: String!, campaign: ID!): Thread!
-
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -410,7 +408,7 @@ type Thread implements Node {
     repository: Repository!
 
     # The campaigns that have this thread in them.
-    campaigns: CampaignConnection!
+    campaigns(first: Int): CampaignConnection!
 
     # The date and time when the campaign was created.
     createdAt: DateTime!
