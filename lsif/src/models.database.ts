@@ -30,6 +30,11 @@ n entity within the database describing LSIF data for a single repository
 @Entity({ name: 'meta' })
 export class MetaModel {
     /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(4)
+
+    /**
      * A unique ID required by typeorm entities: always zero here.
      */
     @PrimaryColumn('int')
@@ -65,6 +70,11 @@ export class MetaModel {
 @Entity({ name: 'documents' })
 export class DocumentModel {
     /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(2)
+
+    /**
      * The root-relative path of the document.
      */
     @PrimaryColumn('text')
@@ -85,6 +95,11 @@ export class DocumentModel {
 @Entity({ name: 'resultChunks' })
 export class ResultChunkModel {
     /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(2)
+
+    /**
      * The identifier of the chunk. This is also the index of the chunk during its
      * construction, and the identifiers contained in this chunk hash to this index
      * (modulo the total number of chunks for the dump).
@@ -104,6 +119,11 @@ export class ResultChunkModel {
  * column descriptions.
  */
 class Symbols {
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(7)
+
     /**
      * A unique ID required by typeorm entities.
      */
@@ -350,4 +370,17 @@ export interface PackageInformationData {
      * The version of the package the moniker describes.
      */
     version: string | null
+}
+
+/**
+ * Determine the table inserter batch size for an entity given the number of
+ * fields inserted for that entity. We cannot perform an insert operation with
+ * more than 999 placeholder variables, so we need to flush our batch before
+ * we reach that amount. If fields are added to the models, the argument to
+ * this function also needs to change.
+ *
+ * @param numFields The number of fields for an entity.
+ */
+function getBatchSize(numFields: number): number {
+    return Math.floor(999 / numFields)
 }

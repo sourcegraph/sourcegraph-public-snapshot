@@ -83,42 +83,29 @@ export async function importLsif(
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
 
     // Insert metadata
-    const metaInserter = new TableInserter(entityManager, MetaModel, getBatchSize(3))
+    const metaInserter = new TableInserter(entityManager, MetaModel, MetaModel.BatchSize)
     await populateMetadataTable(correlator, metaInserter, numResultChunks)
     await metaInserter.flush()
 
     // Insert documents
-    const documentInserter = new TableInserter(entityManager, DocumentModel, getBatchSize(2))
+    const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize)
     await populateDocumentsTable(correlator, documentInserter)
     await documentInserter.flush()
 
     // Insert result chunks
-    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, getBatchSize(2))
+    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, ResultChunkModel.BatchSize)
     await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
     await resultChunkInserter.flush()
 
     // Insert definitions and references
-    const definitionInserter = new TableInserter(entityManager, DefinitionModel, getBatchSize(8))
-    const referenceInserter = new TableInserter(entityManager, ReferenceModel, getBatchSize(8))
+    const definitionInserter = new TableInserter(entityManager, DefinitionModel, DefinitionModel.BatchSize)
+    const referenceInserter = new TableInserter(entityManager, ReferenceModel, ReferenceModel.BatchSize)
     await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
     await definitionInserter.flush()
     await referenceInserter.flush()
 
     // Return data to populate xrepo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }
-}
-
-/**
- * Determine the table inserter batch size for an entity given the number of
- * fields inserted for that entity. We cannot perform an insert operation with
- * more than 999 placeholder variables, so we need to flush our batch before
- * we reach that amount. If fields are added to the models, the argument to
- * this function also needs to change.
- *
- * @param numFields The number of fields for an entity.
- */
-function getBatchSize(numFields: number): number {
-    return Math.floor(999 / numFields)
 }
 
 /**
