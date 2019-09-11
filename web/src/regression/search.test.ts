@@ -134,7 +134,11 @@ describe('Search regression test suite', () => {
                 if (!resultsElem) {
                     return false
                 }
-                if (!(resultsElem as HTMLElement).innerText.includes('No results')) {
+                const resultsText = (resultsElem as HTMLElement).innerText
+                if (!resultsText) {
+                    return false
+                }
+                if (!resultsText.includes('No results')) {
                     throw new Error('Expected "No results" message, but didn\'t find it')
                 }
                 return true
