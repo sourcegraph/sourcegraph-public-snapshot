@@ -165,6 +165,31 @@ export class XrepoDatabase {
     }
 
     /**
+     * Remove references to the given repository and commit from both packages and
+     * references table.
+     *
+     * @param repository The repository.
+     * @param commit The commit.
+     */
+    public async clearCommit(repository: string, commit: string): Promise<void> {
+        return await this.withTransactionalEntityManager(async entityManager => {
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(PackageModel)
+                .where({ repository, commit })
+                .execute()
+
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(ReferenceModel)
+                .where({ repository, commit })
+                .execute()
+        })
+    }
+
+    /**
      * Invoke `callback` with a SQLite connection object obtained from the
      * cache or created on cache miss.
      *

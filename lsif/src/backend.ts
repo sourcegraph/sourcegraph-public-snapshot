@@ -44,12 +44,16 @@ export class Backend {
         const outFile = makeFilename(this.storageRoot, repository, commit)
 
         try {
+            // Remove old databse file, if it exists
             await fs.unlink(outFile)
         } catch (e) {
             if (!hasErrorCode(e, 'ENOENT')) {
                 throw e
             }
         }
+
+        // Remove old data from xrepo database
+        await this.xrepoDatabase.clearCommit(repository, commit)
 
         // Remove any connection in the cache to the file we just removed
         await this.connectionCache.bustKey(outFile)
