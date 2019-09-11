@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE IF EXISTS threads
+RENAME TO changesets;
+
+COMMIT;
