@@ -1,25 +1,20 @@
-import * as definitionsSchema from './lsif.schema.json';
-import * as es from 'event-stream';
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import * as zlib from 'mz/zlib';
-import Ajv, { ValidateFunction } from 'ajv';
-import bodyParser from 'body-parser';
-import exitHook from 'async-exit-hook';
-import express from 'express';
-import morgan from 'morgan';
-import promBundle from 'express-prom-bundle';
-import uuid from 'uuid';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import { createBackend, ERRNOLSIFDATA } from './backend';
-import {
-    createDirectory,
-    hasErrorCode,
-    logErrorAndExit,
-    readEnvInt
-} from './util';
-import { Queue, Scheduler } from 'node-resque';
-import { wrap } from 'async-middleware';
+import * as definitionsSchema from './lsif.schema.json'
+import * as es from 'event-stream'
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import * as zlib from 'mz/zlib'
+import Ajv, { ValidateFunction } from 'ajv'
+import bodyParser from 'body-parser'
+import exitHook from 'async-exit-hook'
+import express from 'express'
+import morgan from 'morgan'
+import promBundle from 'express-prom-bundle'
+import uuid from 'uuid'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { createBackend, ERRNOLSIFDATA } from './backend'
+import { createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { Queue, Scheduler } from 'node-resque'
+import { wrap } from 'async-middleware'
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
     DOCUMENT_CACHE_CAPACITY_GAUGE,
@@ -264,10 +259,7 @@ async function setupQueue(): Promise<Queue> {
 function createInputValidator(): ValidateFunction {
     // Compile schema with defs as a reference
     return new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
-        oneOf: [
-            { $ref: 'defs.json#/definitions/Vertex' },
-            { $ref: 'defs.json#/definitions/Edge' }
-        ]
+        oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }],
     })
 }
 
