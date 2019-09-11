@@ -135,7 +135,7 @@ async function main(): Promise<void> {
                     let data: any
 
                     try {
-                        data =JSON.parse(text)
+                        data = JSON.parse(text)
                     } catch (e) {
                         throwValidationError(text, 'Invalid JSON')
                     }

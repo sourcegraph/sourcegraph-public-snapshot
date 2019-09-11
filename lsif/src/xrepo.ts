@@ -96,9 +96,17 @@ export class XrepoDatabase {
      */
     public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new TableInserter(entityManager, PackageModel, 6, insertionMetrics)
+            // We replace on conflict here: the first LSIF upload to provide a package will be
+            // the repository and commit used in cross-repository jump-to-definition queries.
+
+            const inserter = new TableInserter(
+                entityManager,
+                PackageModel,
+                PackageModel.BatchSize,
+                insertionMetrics,
+                true
+            )
             for (const pkg of packages) {
-                // TODO - upsert
                 await inserter.insert({ repository, commit, ...pkg })
             }
 
@@ -110,7 +118,7 @@ export class XrepoDatabase {
      * Find all repository/commit pairs that reference `value` in the given package. The
      * returned results will include only repositories that have a dependency on the given
      * package. The returned results may (but is not likely to) include a repository/commit
-     * pair that does not reference `uri`. See cache.ts for configuration values that tune
+     * pair that does not reference `value`. See cache.ts for configuration values that tune
      * the bloom filter false positive rates.
      *
      * @param scheme The package manager scheme (e.g. npm, pip).
@@ -167,9 +175,13 @@ export class XrepoDatabase {
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new TableInserter(entityManager, ReferenceModel, 7, insertionMetrics)
+            const inserter = new TableInserter(
+                entityManager,
+                ReferenceModel,
+                ReferenceModel.BatchSize,
+                insertionMetrics
+            )
             for (const reference of references) {
-                // TODO - upsert
                 await inserter.insert({
                     repository,
                     commit,
@@ -179,6 +191,31 @@ export class XrepoDatabase {
             }
 
             await inserter.flush()
+        })
+    }
+
+    /**
+     * Remove references to the given repository and commit from both packages and
+     * references table.
+     *
+     * @param repository The repository.
+     * @param commit The commit.
+     */
+    public async clearCommit(repository: string, commit: string): Promise<void> {
+        return await this.withTransactionalEntityManager(async entityManager => {
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(PackageModel)
+                .where({ repository, commit })
+                .execute()
+
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(ReferenceModel)
+                .where({ repository, commit })
+                .execute()
         })
     }
 

@@ -1,5 +1,6 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
 import { Id, MonikerKind } from 'lsif-protocol'
+import { getBatchSize } from './util'
 
 export type DocumentId = Id
 export type DocumentPath = string
@@ -29,6 +30,11 @@ n entity within the database describing LSIF data for a single repository
  */
 @Entity({ name: 'meta' })
 export class MetaModel {
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(4)
+
     /**
      * A unique ID required by typeorm entities: always zero here.
      */
@@ -65,6 +71,11 @@ export class MetaModel {
 @Entity({ name: 'documents' })
 export class DocumentModel {
     /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(2)
+
+    /**
      * The root-relative path of the document.
      */
     @PrimaryColumn('text')
@@ -85,6 +96,11 @@ export class DocumentModel {
 @Entity({ name: 'resultChunks' })
 export class ResultChunkModel {
     /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(2)
+
+    /**
      * The identifier of the chunk. This is also the index of the chunk during its
      * construction, and the identifiers contained in this chunk hash to this index
      * (modulo the total number of chunks for the dump).
@@ -104,6 +120,11 @@ export class ResultChunkModel {
  * column descriptions.
  */
 class Symbols {
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(7)
+
     /**
      * A unique ID required by typeorm entities.
      */

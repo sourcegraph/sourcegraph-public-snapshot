@@ -55,6 +55,9 @@ export class Backend {
                 }
             )
 
+            // Remove old data from xrepo database
+            await this.xrepoDatabase.clearCommit(repository, commit)
+
             // These needs to be done in sequence as SQLite can only have one
             // write txn at a time without causing the other one to abort with
             // a weird error.
@@ -146,19 +149,9 @@ export async function createBackend(
         }
     }
 
-    const filename = path.join(storageRoot, 'correlation.db')
-
-    try {
-        await fs.stat(filename)
-    } catch (e) {
-        if (!hasErrorCode(e, 'ENOENT')) {
-            throw e
-        }
-    }
-
     return new Backend(
         storageRoot,
-        new XrepoDatabase(connectionCache, filename),
+        new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
         connectionCache,
         documentCache,
         resultChunkCache
