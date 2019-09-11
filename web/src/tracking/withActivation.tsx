@@ -12,6 +12,7 @@ import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent } from '../user/settings/backend'
+import { UserEvent } from '../../../browser/src/shared/backend/userEvents'
 
 /**
  * Fetches activation status from server.
@@ -163,7 +164,7 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
  */
 const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     if (update.FoundReferences) {
-        logUserEvent(GQL.UserEvent.CODEINTELREFS)
+        logUserEvent(UserEvent.CODEINTELREFS)
     }
 }
 

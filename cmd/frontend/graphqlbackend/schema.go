@@ -3066,29 +3066,6 @@ type UserUsageStatistics {
     lastActiveCodeHostIntegrationTime: String
 }
 
-# A user event.
-enum UserEvent {
-    PAGEVIEW
-    SEARCHQUERY
-    CODEINTEL
-    CODEINTELREFS
-    CODEINTELINTEGRATION
-    CODEINTELINTEGRATIONREFS
-
-    # Product stages
-    STAGEMANAGE
-    STAGEPLAN
-    STAGECODE
-    STAGEREVIEW
-    STAGEVERIFY
-    STAGEPACKAGE
-    STAGEDEPLOY
-    STAGECONFIGURE
-    STAGEMONITOR
-    STAGESECURE
-    STAGEAUTOMATE
-}
-
 # A period of time in which a set of users have been active.
 enum UserActivePeriod {
     # Since today at 00:00 UTC.
