@@ -1,18 +1,24 @@
-import * as fs from 'mz/fs';
-import * as zlib from 'mz/zlib';
-import exitHook from 'async-exit-hook';
-import express from 'express';
-import promBundle from 'express-prom-bundle';
-import { Backend, createBackend } from './backend';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import { logErrorAndExit, readEnvInt } from './util';
-import { Worker } from 'node-resque';
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import * as zlib from 'mz/zlib'
+import exitHook from 'async-exit-hook'
+import express from 'express'
 import morgan from 'morgan'
+import promBundle from 'express-prom-bundle'
+import { Backend, createBackend } from './backend'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { createDirectory, logErrorAndExit, readEnvInt } from './util'
+import { JobsHash, Worker } from 'node-resque'
+import {
+    CONNECTION_CACHE_CAPACITY_GAUGE,
+    DOCUMENT_CACHE_CAPACITY_GAUGE,
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
+} from './metrics'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
  */
-const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187s)
+const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187)
 
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
@@ -39,7 +45,7 @@ const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 102
 /**
  * The maximum number of result chunks that can be held in memory at once.
  */
-const RESULT_CHUNK_CACHE_SIZE = readEnvInt('RESULT_CHUNK_CACHE_SIZE', 1024 * 1024 * 1024)
+const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -55,26 +61,31 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
-    const connectionOptions = {
-        host: REDIS_HOST,
-        port: REDIS_PORT,
-        namespace: 'lsif',
-    }
+    // Update cache capacities on startup
+    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
+    DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
 
+    // Ensure storage roots exist
+    await createDirectory(STORAGE_ROOT)
+    await createDirectory(path.join(STORAGE_ROOT, 'tmp'))
+    await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
+
+    // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
+    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
     const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
-    const convertJob = { perform: createConvertJob(backend) }
 
-    const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, { convert: convertJob })
-    worker.on('error', logErrorAndExit)
-    await worker.connect()
-    exitHook(() => worker.end())
-    worker.start().catch(logErrorAndExit)
+    const jobFunctions = {
+        convert: createConvertJob(backend),
+    }
 
-    // TODO
+    // Start metrics server
     startMetricsServer()
+
+    // Create worker and start processing jobs
+    startWorker(jobFunctions)
 
     if (LOG_READY) {
         console.log('Listening for uploads')
@@ -96,8 +107,33 @@ function createConvertJob(backend: Backend): (repository: string, commit: string
     }
 }
 
+/**
+ * Connect to redis and begin processing work with the given hash of job functions.
+ *
+ * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
+ */
+async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+    const connectionOptions = {
+        host: REDIS_HOST,
+        port: REDIS_PORT,
+        namespace: 'lsif',
+    }
 
-// TODO
+    const jobs: JobsHash = {}
+    for (const key of Object.keys(jobFunctions)) {
+        jobs[key] = { perform: jobFunctions[key] }
+    }
+
+    const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs)
+    worker.on('error', logErrorAndExit)
+    await worker.connect()
+    exitHook(() => worker.end())
+    worker.start().catch(logErrorAndExit)
+}
+
+/**
+ * Create an express server that only has /ping and /metric endpoints.
+ */
 function startMetricsServer(): void {
     const app = express()
     app.use(morgan('tiny'))
