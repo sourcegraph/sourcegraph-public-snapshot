@@ -204,7 +204,7 @@ func TestCampaigns(t *testing.T) {
 		"campaign": campaigns.Admin.ID,
 	}
 
-	mustExec(ctx, t, schema, nil, &thread, `
+	mustExec(ctx, t, schema, input, &thread, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
