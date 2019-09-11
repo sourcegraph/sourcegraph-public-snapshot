@@ -16,5 +16,6 @@
     - 127.0.0.1:6067
     # zoekt-indexserver
     # - 127.0.0.1:6072
-    # lsif-server
+    # lsif-server/worker
     - 127.0.0.1:3186
+    - 127.0.0.1:3187

@@ -25,17 +25,17 @@ import { Database } from './database.js'
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
  */
-const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
+const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
  */
-const REDIS_HOST = process.env.LSIF_REDIS_HOST || 'localhost'
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost'
 
 /**
  * The port of the redis instance containing work queues. Defaults to 6379.
  */
-const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
+const REDIS_PORT = readEnvInt('REDIS_PORT', 6379)
 
 /**
  * The number of SQLite connections that can be opened at once. This
@@ -124,16 +124,8 @@ async function main(): Promise<void> {
     const app = express()
     app.use(morgan('tiny'))
     app.use(errorHandler)
-
-    app.get('/ping', (_, res) => {
-        res.send({ pong: 'pong' })
-    })
-
-    app.use(
-        promBundle({
-            // TODO - tune histogram buckets or switch to summary
-        })
-    )
+    app.get('/ping', (_, res) => res.send({ pong: 'pong' }))
+    app.use(promBundle({}))
 
     app.post(
         '/upload',
@@ -232,7 +224,7 @@ async function main(): Promise<void> {
                     })
                 }
 
-                res.json((await db[cleanMethod](path, position)) || null)
+                res.json(await db[cleanMethod](path, position))
             }
         )
     )

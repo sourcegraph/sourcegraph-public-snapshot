@@ -2,22 +2,31 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as zlib from 'mz/zlib'
 import exitHook from 'async-exit-hook'
+import express from 'express'
+import morgan from 'morgan'
+import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { convertLsif } from './conversion'
-import { ConnectionCache } from './cache'
-import { createDatabaseFilename, logErrorAndExit, readEnvInt } from './util'
-import { Worker } from 'node-resque'
+import { createDatabaseFilename, createDirectory, logErrorAndExit, readEnvInt } from './util'
+import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
+import { ConnectionCache } from './cache'
+import { CONNECTION_CACHE_CAPACITY_GAUGE } from './metrics'
+
+/**
+ * Which port to run the worker metrics server on. Defaults to 3187.
+ */
+const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187)
 
 /**
  * The host running the redis instance containing work queues. Defaults to localhost.
  */
-const REDIS_HOST = process.env.LSIF_REDIS_HOST || 'localhost'
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost'
 
 /**
  * The port of the redis instance containing work queues. Defaults to 6379.
  */
-const REDIS_PORT = readEnvInt('LSIF_REDIS_PORT', 6379)
+const REDIS_PORT = readEnvInt('REDIS_PORT', 6379)
 
 /**
  * The number of SQLite connections that can be opened at once. This
@@ -40,22 +49,28 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
-    const connectionOptions = {
-        host: REDIS_HOST,
-        port: REDIS_PORT,
-        namespace: 'lsif',
-    }
+    // Update cache capacities on startup
+    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
 
+    // Ensure storage roots exist
+    await createDirectory(STORAGE_ROOT)
+    await createDirectory(path.join(STORAGE_ROOT, 'tmp'))
+    await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
+
+    // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const filename = path.join(STORAGE_ROOT, 'correlation.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
-    const convertJob = { perform: createConvertJob(xrepoDatabase) }
 
-    const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, { convert: convertJob })
-    worker.on('error', logErrorAndExit)
-    await worker.connect()
-    exitHook(() => worker.end())
-    worker.start().catch(logErrorAndExit)
+    const jobFunctions = {
+        convert: createConvertJob(xrepoDatabase),
+    }
+
+    // Start metrics server
+    startMetricsServer()
+
+    // Create worker and start processing jobs
+    startWorker(jobFunctions)
 
     if (LOG_READY) {
         console.log('Listening for uploads')
@@ -96,6 +111,46 @@ function createConvertJob(
         // Remove input
         await fs.unlink(filename)
     }
+}
+
+/**
+ * Connect to redis and begin processing work with the given hash of job functions.
+ *
+ * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
+ */
+async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+    const connectionOptions = {
+        host: REDIS_HOST,
+        port: REDIS_PORT,
+        namespace: 'lsif',
+    }
+
+    const jobs: JobsHash = {}
+    for (const key of Object.keys(jobFunctions)) {
+        jobs[key] = { perform: jobFunctions[key] }
+    }
+
+    const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs)
+    worker.on('error', logErrorAndExit)
+    await worker.connect()
+    exitHook(() => worker.end())
+    worker.start().catch(logErrorAndExit)
+}
+
+/**
+ * Create an express server that only has /ping and /metric endpoints.
+ */
+function startMetricsServer(): void {
+    const app = express()
+    app.use(morgan('tiny'))
+    app.get('/ping', (_, res) => res.send({ pong: 'pong' }))
+    app.use(promBundle({}))
+
+    app.listen(WORKER_METRICS_PORT, () => {
+        if (LOG_READY) {
+            console.log(`Listening for HTTP requests on port ${WORKER_METRICS_PORT}`)
+        }
+    })
 }
 
 main().catch(logErrorAndExit)
