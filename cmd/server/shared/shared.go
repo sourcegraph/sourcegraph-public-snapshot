@@ -36,7 +36,7 @@ var defaultEnv = map[string]string{
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
 	"SRC_PROMETHEUS_SERVER_URL": "http://127.0.0.1:9090",
-	"SRC_GRAFANA_SERVER_URL": "http://127.0.0.1:3000",
+	"SRC_GRAFANA_SERVER_URL":    "http://127.0.0.1:3000",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
