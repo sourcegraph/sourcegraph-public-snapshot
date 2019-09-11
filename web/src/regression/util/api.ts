@@ -2,13 +2,13 @@
  * Provides convenience functions for interacting with the Sourcegraph API from tests.
  */
 
-import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { GraphQLClient } from './api'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { GraphQLClient } from './GraphQLClient'
 import { map, tap, retryWhen, delayWhen } from 'rxjs/operators'
 import { zip, timer } from 'rxjs'
-import { CloneInProgressError, ECLONEINPROGESS } from '../../../shared/src/backend/errors'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
+import { isErrorLike } from '../../../../shared/src/util/errors'
 
 /**
  * Wait until all repositories in the list exist.

@@ -1,4 +1,4 @@
-import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver } from '../../../../shared/src/e2e/driver'
 
 export function regressionTestInit(): void {
     // 10s test timeout. This must be greater than the Puppeteer navigation timeout (set to 5s

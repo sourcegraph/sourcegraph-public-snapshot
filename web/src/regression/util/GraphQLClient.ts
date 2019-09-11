@@ -1,5 +1,5 @@
-import { GraphQLResult, requestGraphQL } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
+import { GraphQLResult, requestGraphQL } from '../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { Observable } from 'rxjs'
 
 /**

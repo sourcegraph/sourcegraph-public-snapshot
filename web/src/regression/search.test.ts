@@ -2,10 +2,10 @@ import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { regressionTestInit, createAndInitializeDriver } from './util'
+import { regressionTestInit, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { GraphQLClient } from './api'
-import { ensureExternalService, waitForRepos } from './apiDriver'
+import { GraphQLClient } from './util/GraphQLClient'
+import { ensureExternalService, waitForRepos } from './util/api'
 
 const testRepoSlugs = [
     'auth0/go-jwt-middleware',
