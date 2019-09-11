@@ -97,7 +97,7 @@ async function main(): Promise<void> {
     const app = express()
     app.use(morgan('tiny'))
     app.use(errorHandler)
-    app.get('/ping', (_, res) => res.send({ pong: 'pong' }))
+    app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
     app.post(
