@@ -116,27 +116,48 @@ async function main(): Promise<void> {
                 checkRepository(repository)
                 checkCommit(commit)
 
+                let line = 0
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const writeStream = fs.createWriteStream(filename)
 
-                req.pipe(zlib.createGunzip())
-                    .pipe(es.split())
-                    .pipe(
-                        es.mapSync((line: string) => {
-                            if (line === ''||DISABLE_VALIDATION) {
-                                return
-                            }
-
-                            if (!validator(JSON.parse(line))) {
-                                console.log(line, validator.errors![0])
-                            }
-                        })
+                const throwValidationError = (text: string, errorText: string): never => {
+                    throw Object.assign(
+                        new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
+                        { status: 422 }
                     )
-                    .pipe(es.join('\n'))
-                    .pipe(zlib.createGzip())
-                    .pipe(writeStream)
+                }
 
-                await new Promise(resolve => writeStream.on('finish', resolve))
+                const validateLine = (text: string) => {
+                    if (text === '' || DISABLE_VALIDATION) {
+                        return
+                    }
+
+                    let data: any
+
+                    try {
+                        data =JSON.parse(text)
+                    } catch (e) {
+                        throwValidationError(text, 'Invalid JSON')
+                    }
+
+                    if (!validator(data)) {
+                        throwValidationError(text, 'Does not match a known vertex or edge shape')
+                    }
+
+                    line++
+                }
+
+                await new Promise((resolve, reject) => {
+                    req.pipe(zlib.createGunzip()) // unzip input
+                        .pipe(es.split()) // split into lines
+                        .pipe(es.mapSync(validateLine)) // validate each line
+                        .on('error', reject) // catch validation error
+                        .pipe(es.join('\n')) // join back into text
+                        .pipe(zlib.createGzip()) // re-zip input
+                        .pipe(writeStream) // write to temp file
+                        .on('finish', resolve) // unblock promise when done
+                })
+
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
             }
