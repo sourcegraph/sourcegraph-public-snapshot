@@ -157,9 +157,9 @@ describe('Correlator', () => {
             document: '1',
         })
 
-        expect(c.linkedReferenceResults.get('2')).toEqual(new Set(['3', '4']))
-        expect(c.linkedReferenceResults.get('3')).toEqual(new Set(['2', '4']))
-        expect(c.linkedReferenceResults.get('4')).toEqual(new Set(['2', '3']))
+        expect(c.linkedReferenceResults.extractSet('2')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedReferenceResults.extractSet('3')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedReferenceResults.extractSet('4')).toEqual(new Set(['2', '3', '4']))
     })
 
     it('should normalize hover results', () => {
@@ -301,9 +301,9 @@ describe('Correlator', () => {
 
         const range = c.rangeData.get('1')
         expect(range && range.monikerIds).toEqual(new Set(['2']))
-        expect(c.linkedMonikers.get('2')).toEqual(new Set(['3']))
-        expect(c.linkedMonikers.get('3')).toEqual(new Set(['2', '4']))
-        expect(c.linkedMonikers.get('4')).toEqual(new Set(['3']))
+        expect(c.linkedMonikers.extractSet('2')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedMonikers.extractSet('3')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedMonikers.extractSet('4')).toEqual(new Set(['2', '3', '4']))
     })
 })
 
