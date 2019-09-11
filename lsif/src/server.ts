@@ -1,22 +1,25 @@
+import * as es from 'event-stream'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as zlib from 'mz/zlib'
+import Ajv from 'ajv'
+import { ValidateFunction } from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { createBackend, ERRNOLSIFDATA } from './backend'
+import { createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { Queue, Scheduler } from 'node-resque'
+import { wrap } from 'async-middleware'
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
     DOCUMENT_CACHE_CAPACITY_GAUGE,
     RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
 } from './metrics'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createBackend, ERRNOLSIFDATA } from './backend'
-import { hasErrorCode, readEnvInt, logErrorAndExit, createDirectory } from './util'
-import { Queue, Scheduler } from 'node-resque'
-import { wrap } from 'async-middleware'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -61,6 +64,11 @@ const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
+ * Whether or not to disable input validation. Validation is enabled by default.
+ */
+const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
+
+/**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
@@ -82,6 +90,9 @@ async function main(): Promise<void> {
 
     // Create queue to publish jobs for worker
     const queue = await setupQueue()
+
+    // Compile the JSON schema used for validation
+    const validator = createInputValidator()
 
     const app = express()
     app.use(morgan('tiny'))
@@ -107,9 +118,24 @@ async function main(): Promise<void> {
 
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const writeStream = fs.createWriteStream(filename)
+
                 req.pipe(zlib.createGunzip())
+                    .pipe(es.split())
+                    .pipe(
+                        es.mapSync((line: string) => {
+                            if (line === ''||DISABLE_VALIDATION) {
+                                return
+                            }
+
+                            if (!validator(JSON.parse(line))) {
+                                console.log(line, validator.errors![0])
+                            }
+                        })
+                    )
+                    .pipe(es.join('\n'))
                     .pipe(zlib.createGzip())
                     .pipe(writeStream)
+
                 await new Promise(resolve => writeStream.on('finish', resolve))
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
@@ -201,6 +227,22 @@ async function setupQueue(): Promise<Queue> {
     scheduler.start().catch(logErrorAndExit)
 
     return queue
+}
+
+/**
+ * Create a json schema validation function that can validate each line of an
+ * LSIF dump input.
+ */
+function createInputValidator(): ValidateFunction {
+    // Add id to generated schema so that it can be referred to externally
+    const definitionsSchema = require('./lsif.schema.json')
+    definitionsSchema['$id'] = 'defs.json'
+
+    // Create schema that validates with input matching vertex or edge definition
+    const schema = { oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }] }
+
+    // Compile schema with defs as a reference
+    return new Ajv().addSchema(definitionsSchema).compile(schema)
 }
 
 /**
