@@ -9,7 +9,7 @@ import * as zlib from 'mz/zlib'
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
  */
-const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
+const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 
 /**
  * The number of SQLite connections that can be opened at once. This
