@@ -143,9 +143,11 @@ Each payload has the following form. As the documents are large, we show only th
 }
 ````
 
-The `ranges` field holds a map from range identifier range data including the extents within the source code and optional fields for a definition result, a reference result, and a hover result. Each range also has a possibly empty list of moniker ids. The hover result and moniker identifiers index into the `hoverResults` and `monikers` field of the document.
+The `ranges` field holds a map from range identifier range data including the extents within the source code and optional fields for a definition result, a reference result, and a hover result. Each range also has a possibly empty list of moniker ids. The hover result and moniker identifiers index into the `hoverResults` and `monikers` field of the document. The definition and reference result identifiers index into a result chunk payload, as described below.
 
 **`resultChunks` table**
+
+Originally, definition and reference results were stored inline in the document payload. However, this caused document payloads to be come massive in some circumstances (for instance, where the reference result of a frequently used symbol includes multiple ranges in every document of the project). In order to keep each row to a manageable and cacheable size, the definition and reference results were moved into a separate table. The size of each result chunk can then be controlled by varying *how many* result chunks there are available in a database. It may also be worth noting here that hover result and monikers are best left inlined, as normalizing the former would require another SQL lookup on hover queries, and normalizing the latter would require a SQL lookup per moniker attached to a range; normalizing either does not have a large effect on the size of the document payload.
 
 This table is populated with gzipped, base64-encoded JSON payloads that contains a mapping from definition result or reference result identifiers to the set of ranges that compose that result. A definition or reference result may be referred to by many documents, which is why it is encoded separately. The table is keyed on the common hash of each definition and reference result id inserted in this chunk.
 
@@ -193,7 +195,7 @@ Each payload has the following form.
 
 The `documentIdRangeIds` field store a list of _pairs_ of document identifiers and range identifiers. To look up a range in this format, the `documentId` must be translated into a document path via the `documentPaths` field. This gives the primary key of the document containing the range in the `documents` table, and the range identifier can be looked up in the decoded payload.
 
-To retrieve a definition or reference result by its identifier, we must first determine in which result chunk it is defined. This requires that we take the hash of the identifier (modulo the `numResultChunks` field of the `meta` table). This gives us the unique identifier into the `resultChunks` table. The format of this payload is discussed below. In this example, there is only one result chunk. Larger dumps will have a greater number of result chunks to keep the amount of data encoded in a single database row reasonable.
+To retrieve a definition or reference result by its identifier, we must first determine in which result chunk it is defined. This requires that we take the hash of the identifier (modulo the `numResultChunks` field of the `meta` table). This gives us the unique identifier into the `resultChunks` table. In the running example of this document, there is only one result chunk. Larger dumps will have a greater number of result chunks to keep the amount of data encoded in a single database row reasonable.
 
 **definitions table**
 
