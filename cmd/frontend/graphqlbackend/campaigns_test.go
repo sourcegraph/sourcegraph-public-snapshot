@@ -198,14 +198,6 @@ func TestCampaigns(t *testing.T) {
 		t.Errorf("wrong page info: %+v", listed.All.PageInfo.HasNextPage)
 	}
 
-	var thread struct {
-		ID         string
-		Repository struct{ ID int32 }
-		Campaigns  CampaignConnection
-		CreatedAt  string
-		UpdatedAt  string
-	}
-
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
@@ -258,7 +250,19 @@ func TestCampaigns(t *testing.T) {
 		"campaign": campaigns.Admin.ID,
 	}
 
-	mustExec(ctx, t, schema, input, &thread, `
+	type Thread struct {
+		ID         string
+		Repository struct{ ID string }
+		Campaigns  CampaignConnection
+		CreatedAt  string
+		UpdatedAt  string
+	}
+
+	var result struct {
+		Thread Thread
+	}
+
+	mustExec(ctx, t, schema, input, &result, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -282,11 +286,26 @@ func TestCampaigns(t *testing.T) {
 			updatedAt
 		}
 		mutation($url: String!, $campaign: ID!) {
-			addThreadFromURLToCampaign(url: $url, campaign: $campaign) {
+			thread: addThreadFromURLToCampaign(url: $url, campaign: $campaign) {
 				...t
 			}
 		}
 	`)
+
+	if result.Thread.ID == "" {
+		t.Fatalf("thread id is blank")
+	}
+	if have, want := result.Thread.Campaigns.TotalCount, 1; have != want {
+		t.Fatalf("TotalCount of campaigns for thread is %d, want %d", have, want)
+	}
+	if have, want := result.Thread.Campaigns.Nodes[0].ID, campaigns.Admin.ID; have != want {
+		t.Fatalf("have thread campaign id %q, want %q", have, want)
+	}
+
+	wantRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
+	if have, want := result.Thread.Repository.ID, wantRepoID; have != want {
+		t.Fatalf("have thread repo id %q, want %q", have, want)
+	}
 }
 
 func mustExec(

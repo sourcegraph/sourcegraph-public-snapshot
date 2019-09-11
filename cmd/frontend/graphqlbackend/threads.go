@@ -65,6 +65,11 @@ func (r *schemaResolver) AddThreadFromURLToCampaign(ctx context.Context, args *s
 		return nil, err
 	}
 
+	campaign.ThreadIDs = append(campaign.ThreadIDs, thread.ID)
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
 	return &threadResolver{store: r.A8NStore, Thread: thread}, nil
 }
 
