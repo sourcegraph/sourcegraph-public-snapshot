@@ -132,7 +132,13 @@ func main() {
 	server.Syncer = syncer
 
 	if !envvar.SourcegraphDotComMode() {
-		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval(), streamingSyncer)) }()
+		go func() {
+			if streamingSyncer {
+				log.Fatal(syncer.StreamingRun(ctx, repos.GetUpdateInterval()))
+			} else {
+				log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval()))
+			}
+		}()
 	}
 
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)

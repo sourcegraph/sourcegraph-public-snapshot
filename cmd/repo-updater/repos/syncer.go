@@ -57,16 +57,27 @@ func NewSyncer(
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, interval time.Duration, useStreaming bool) error {
+func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
-		if useStreaming {
-			if err := s.StreamingSync(ctx); err != nil {
-				log15.Error("Syncer", "error", err)
-			}
-		} else {
-			if _, err := s.Sync(ctx); err != nil {
-				log15.Error("Syncer", "error", err)
-			}
+		if _, err := s.Sync(ctx); err != nil {
+			log15.Error("Syncer", "error", err)
+		}
+
+		select {
+		case <-time.After(interval):
+		case <-s.syncSignal:
+		}
+	}
+
+	return ctx.Err()
+}
+
+// StreamingRun runs the Sync at the specified interval using the StreamingSync
+// method
+func (s *Syncer) StreamingRun(ctx context.Context, interval time.Duration) error {
+	for ctx.Err() == nil {
+		if err := s.StreamingSync(ctx); err != nil {
+			log15.Error("Syncer", "error", err)
 		}
 
 		select {
