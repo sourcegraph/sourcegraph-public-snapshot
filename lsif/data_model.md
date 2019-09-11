@@ -223,4 +223,4 @@ This table is populated with the monikers attached to a reference result. The ta
 | 7   | npm    | sample:foo:foo | bar.ts       | 3:13 to 3:16 |
 | 8   | npm    | sample:bar:bar | bar.ts       | 2:16 to 2:19 |
 
-THe row with ids `4` through `7` correlate the `npm` moniker for the `foo` function with its references: the definition in `foo.ts`, its import in `bar.ts`, and its two uses in `bar.ts`, respectively.
+The row with ids `4` through `7` correlate the `npm` moniker for the `foo` function with its references: the definition in `foo.ts`, its import in `bar.ts`, and its two uses in `bar.ts`, respectively.
