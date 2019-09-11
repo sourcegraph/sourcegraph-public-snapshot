@@ -183,7 +183,7 @@ async function populateDocumentsTable(
  * Correlate and insert all result chunk entries for this dump.
  *
  * @param correlator The correlator with all vertices and edges inserted.
- * @param documentInserter The inserter for the result chunks table.
+ * @param resultChunkInserter The inserter for the result chunks table.
  * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
  */
 async function populateResultChunksTable(
