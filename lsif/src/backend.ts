@@ -55,14 +55,8 @@ export class Backend {
                 }
             )
 
-            // Remove old data from xrepo database
-            await this.xrepoDatabase.clearCommit(repository, commit)
-
-            // These needs to be done in sequence as SQLite can only have one
-            // write txn at a time without causing the other one to abort with
-            // a weird error.
-            await this.xrepoDatabase.addPackages(repository, commit, packages)
-            await this.xrepoDatabase.addReferences(repository, commit, references)
+            // Update cross-repository database
+            await this.xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
 
             // Move the temp file where it can be found by the server
             await fs.rename(outFile, makeFilename(this.storageRoot, repository, commit))
