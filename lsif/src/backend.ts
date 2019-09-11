@@ -148,7 +148,7 @@ export async function createBackend(
         }
     }
 
-    const filename = path.join(storageRoot, 'correlation.db')
+    const filename = path.join(storageRoot, 'xrepo.db')
 
     try {
         await fs.stat(filename)
