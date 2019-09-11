@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 type eventLogs struct{}
@@ -13,26 +14,21 @@ type eventLogs struct{}
 type UserEvent struct {
 	Name            string
 	URL             string
-	UserID          int32
+	UserID          uint32
 	AnonymousUserID string
 	Argument        string
 }
 
 func (*eventLogs) Insert(ctx context.Context, e *UserEvent) error {
-	if e.Name == "" {
-		return errors.New("empty event name")
-	} else if e.UserID <= 0 && e.AnonymousUserID == "" {
-		return errors.New("one of UserID or AnonymousUserID must have valid value")
-	}
-
 	_, err := dbconn.Global.ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, argument) VALUES($1, $2, $3, $4, $5)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, argument, version) VALUES($1, $2, $3, $4, $5, $6)",
 		e.Name,
 		e.URL,
 		e.UserID,
 		e.AnonymousUserID,
 		e.Argument,
+		version.Version(),
 	)
 	if err != nil {
 		return errors.Wrap(err, "INSERT")

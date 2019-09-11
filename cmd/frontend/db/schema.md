@@ -180,12 +180,16 @@ Referenced by:
  user_id           | integer                  | not null
  anonymous_user_id | text                     | not null
  argument          | text                     | not null
+ version           | text                     | not null
  timestamp         | timestamp with time zone | not null default now()
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_name" btree (name)
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_user_id" btree (user_id)
+Check constraints:
+    "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
+    "event_logs_check_name_not_empty" CHECK (name <> ''::text)
 
 ```
 
