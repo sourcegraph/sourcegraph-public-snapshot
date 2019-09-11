@@ -83,9 +83,11 @@ export class XrepoDatabase {
      */
     public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new TableInserter(entityManager, PackageModel, PackageModel.BatchSize)
+            // We replace on conflict here: the first LSIF upload to provide a package will be
+            // the repository and commit used in cross-repository jump-to-definition queries.
+
+            const inserter = new TableInserter(entityManager, PackageModel, PackageModel.BatchSize, true)
             for (const pkg of packages) {
-                // TODO - upsert
                 await inserter.insert({ repository, commit, ...pkg })
             }
 
@@ -151,7 +153,6 @@ export class XrepoDatabase {
         return await this.withTransactionalEntityManager(async entityManager => {
             const inserter = new TableInserter(entityManager, ReferenceModel, ReferenceModel.BatchSize)
             for (const reference of references) {
-                // TODO - upsert
                 await inserter.insert({
                     repository,
                     commit,

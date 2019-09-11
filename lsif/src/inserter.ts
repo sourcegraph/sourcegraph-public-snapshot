@@ -26,8 +26,14 @@ export class TableInserter<T, M extends new () => T> {
      * @param entityManager A transactional SQLite entity manager.
      * @param model The model object constructor.
      * @param maxBatchSize The maximum number of records that can be inserted at once.
+     * @param ignoreConflicts Whether or not to ignore conflicting data on unique constraint violations.
      */
-    constructor(private entityManager: EntityManager, private model: M, private maxBatchSize: number) {}
+    constructor(
+        private entityManager: EntityManager,
+        private model: M,
+        private maxBatchSize: number,
+        private ignoreConflicts: boolean = false
+    ) {}
 
     /**
      * Submit a model for insertion. This may happen immediately, on a
@@ -59,12 +65,17 @@ export class TableInserter<T, M extends new () => T> {
             return
         }
 
-        await this.entityManager
+        let query = this.entityManager
             .createQueryBuilder()
             .insert()
             .into(this.model)
             .values(this.batch)
-            .execute()
+
+        if (this.ignoreConflicts) {
+            query = query.onConflict('do nothing')
+        }
+
+        await query.execute()
 
         this.batch = []
     }

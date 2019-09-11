@@ -48,7 +48,7 @@ class Package {
  * pair to the package that it provides to other projects.
  */
 @Entity({ name: 'packages' })
-@Index(['scheme', 'name', 'version'])
+@Index(['scheme', 'name', 'version'], { unique: true })
 @Index(['repository', 'commit'])
 export class PackageModel extends Package {
     /**
