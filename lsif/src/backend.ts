@@ -148,19 +148,9 @@ export async function createBackend(
         }
     }
 
-    const filename = path.join(storageRoot, 'xrepo.db')
-
-    try {
-        await fs.stat(filename)
-    } catch (e) {
-        if (!hasErrorCode(e, 'ENOENT')) {
-            throw e
-        }
-    }
-
     return new Backend(
         storageRoot,
-        new XrepoDatabase(connectionCache, filename),
+        new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
         connectionCache,
         documentCache,
         resultChunkCache
