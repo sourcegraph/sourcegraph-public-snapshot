@@ -241,10 +241,7 @@ export class Database {
         }
 
         let results: lsp.Location[] = []
-        for (const [documentPath, rangeIdSet] of groupedResults) {
-            // Sets are not mappable, use array
-            const rangeIds = Array.from(rangeIdSet)
-
+        for (const [documentPath, rangeIds] of groupedResults) {
             if (documentPath === path) {
                 // If the document path is this document, convert the locations directly
                 results = results.concat(mapRangesToLocations(document.ranges, path, rangeIds))
@@ -646,6 +643,11 @@ function createRange(result: {
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: string, ids: RangeId[]): lsp.Location[] {
-    return ids.map(id => lsp.Location.create(uri, createRange(mustGet(ranges, id, 'range'))))
+export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: string, ids: Set<RangeId>): lsp.Location[] {
+    const locations = []
+    for (const id of ids) {
+        locations.push(lsp.Location.create(uri, createRange(mustGet(ranges, id, 'range'))))
+    }
+
+    return locations
 }
