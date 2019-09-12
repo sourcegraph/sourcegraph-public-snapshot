@@ -90,6 +90,19 @@ func New(urlspec string) *Map {
 	return m
 }
 
+// Static returns an Endpoint map which consistently hashes over endpoints.
+//
+// There are no requirements on endpoints, it can be any arbitrary
+// string. Unlike static endpoints created via New.
+//
+// Static Maps are guaranteed to never return an error.
+func Static(endpoints ...string) *Map {
+	return &Map{
+		urlspec: fmt.Sprintf("%v", endpoints),
+		urls:    newConsistentHashMap(endpoints),
+	}
+}
+
 // Empty returns an Endpoint map which always fails with err.
 func Empty(err error) *Map {
 	return &Map{
@@ -115,6 +128,21 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	}
 
 	return urls.get(key, exclude), nil
+}
+
+// GetMany is the same as calling Get on each item of keys. However, it is
+// optimized to be faster.
+func (m *Map) GetMany(keys ...string) ([]string, error) {
+	urls, err := m.getUrls()
+	if err != nil {
+		return nil, err
+	}
+
+	vals := make([]string, len(keys))
+	for i := range keys {
+		vals[i] = urls.get(keys[i], nil)
+	}
+	return vals, nil
 }
 
 // Endpoints returns a set of all addresses. Do not modify the returned value.
