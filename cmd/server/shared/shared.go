@@ -35,8 +35,7 @@ var defaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
-	"SRC_PROMETHEUS_SERVER_URL": "http://127.0.0.1:9090",
-	"SRC_GRAFANA_SERVER_URL":    "http://127.0.0.1:3000",
+	"SRC_GRAFANA_SERVER_URL": "http://127.0.0.1:3000",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -153,7 +152,7 @@ func Main() {
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
-		`prometheus: prometheus --config.file=/sg_config_prometheus/prometheus.yml  --storage.tsdb.path=/var/opt/sourcegraph/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles --web.external-url=http://localhost:7080/-/debug/prometheus --web.route-prefix=/ >> /var/opt/sourcegraph/prometheus.log 2>&1`,
+		`prometheus: prometheus --config.file=/sg_config_prometheus/prometheus.yml  --storage.tsdb.path=/var/opt/sourcegraph/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles >> /var/opt/sourcegraph/prometheus.log 2>&1`,
 		`grafana: env GF_AUTH_ANONYMOUS_ENABLED=true GF_AUTH_ANONYMOUS_ORG_NAME='Main Org.' GF_AUTH_ANONYMOUS_ORG_ROLE=Editor GF_USERS_ALLOW_SIGN_UP=false GF_USERS_AUTO_ASSIGN_ORG=true GF_USERS_AUTO_ASSIGN_ORG_ROLE=Editor /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`,
 	}
 	procfile = append(procfile, ProcfileAdditions...)

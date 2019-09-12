@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-var prometheusURLFromEnv = env.Get("SRC_PROMETHEUS_SERVER_URL", "", "URL at which Prometheus can be reached")
 var grafanaURLFromEnv = env.Get("SRC_GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 
 // addDebugHandlers registers the reverse proxies to each services debug
@@ -33,22 +32,6 @@ func addDebugHandlers(r *mux.Router) {
 	//    - cmd/server/shared/shared.go: prometheus entry in Procfile, value for --web.external-url
 	//    - dev/prometheus.sh: value for --web.external-url
 	//  other deploy contexts also need appropriate adjustments
-
-	if len(prometheusURLFromEnv) > 0 {
-		prometheusURL, err := url.Parse(prometheusURLFromEnv)
-		if err != nil {
-			log.Printf("failed to parse SRC_PROMETHEUS_SERVER_URL=%s: %v. won't generate Prometheus link w",
-				prometheusURLFromEnv, err)
-			// setting to empty string so no link gets created for it below
-			prometheusURLFromEnv = ""
-		} else {
-			addReverseProxyForService(debugserver.Service{
-				Name:        "prometheus",
-				Host:        prometheusURL.Host,
-				DefaultPath: "",
-			}, r)
-		}
-	}
 
 	if len(grafanaURLFromEnv) > 0 {
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
@@ -81,9 +64,6 @@ func addDebugHandlers(r *mux.Router) {
 			fmt.Fprintf(w, `Instrumentation endpoint proxying for Sourcegraph cluster deployments is not yet available<br>`)
 		}
 
-		if len(prometheusURLFromEnv) > 0 {
-			fmt.Fprintf(w, `<a target="_blank" href="prometheus">prometheus</a><br>`)
-		}
 		if len(grafanaURLFromEnv) > 0 {
 			fmt.Fprintf(w, `<a target="_blank" href="grafana">grafana</a><br>`)
 		}
