@@ -16,6 +16,7 @@
     - host.docker.internal:6067
     # zoekt-indexserver
     # - host.docker.internal:6072
-    # lsif-server/worker
+    # lsif-server
     - host.docker.internal:3186
+    # lsif-worker
     - host.docker.internal:3187

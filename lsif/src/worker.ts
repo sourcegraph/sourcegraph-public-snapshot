@@ -159,7 +159,7 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
 function startMetricsServer(): void {
     const app = express()
     app.use(morgan('tiny'))
-    app.get('/ping', (_, res) => res.send({ pong: 'pong' }))
+    app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
     app.listen(WORKER_METRICS_PORT, () => {
