@@ -99,7 +99,7 @@ func TestCampaigns(t *testing.T) {
 		CreatedAt    string
 		UpdatedAt    string
 		Namespace    UserOrg
-		ChangeSetIDs []int64
+		ChangesetIDs []int64
 	}
 
 	var campaigns struct{ Admin, Org Campaign }
@@ -240,7 +240,7 @@ func TestCampaigns(t *testing.T) {
 
 	graphqlRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
 
-	type ChangeSet struct {
+	type Changeset struct {
 		ID         string
 		Repository struct{ ID string }
 		Campaigns  CampaignConnection
@@ -249,7 +249,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	var result struct {
-		ChangeSet ChangeSet
+		Changeset Changeset
 	}
 
 	input = map[string]interface{}{
@@ -273,7 +273,7 @@ func TestCampaigns(t *testing.T) {
 			totalCount
 			pageInfo { hasNextPage }
 		}
-		fragment cs on ChangeSet {
+		fragment cs on Changeset {
 			id
 			repository { id }
 			campaigns { ...n }
@@ -281,22 +281,22 @@ func TestCampaigns(t *testing.T) {
 			updatedAt
 		}
 		mutation($repository: ID!, $externalID: String!) {
-			changeset: createChangeSet(repository: $repository, externalID: $externalID) {
+			changeset: createChangeset(repository: $repository, externalID: $externalID) {
 				...cs
 			}
 		}
 	`)
 
-	if result.ChangeSet.ID == "" {
+	if result.Changeset.ID == "" {
 		t.Fatalf("changeset id is blank")
 	}
 
-	if have, want := result.ChangeSet.Repository.ID, graphqlRepoID; have != want {
+	if have, want := result.Changeset.Repository.ID, graphqlRepoID; have != want {
 		t.Fatalf("have changeset repo id %q, want %q", have, want)
 	}
 
-	type ChangeSetConnection struct {
-		Nodes      []ChangeSet
+	type ChangesetConnection struct {
+		Nodes      []Changeset
 		TotalCount int
 		PageInfo   struct {
 			HasNextPage bool
@@ -311,21 +311,21 @@ func TestCampaigns(t *testing.T) {
 		CreatedAt   string
 		UpdatedAt   string
 		Namespace   UserOrg
-		Changesets  ChangeSetConnection
+		Changesets  ChangesetConnection
 	}
 
-	var addChangeSetResult struct{ Campaign CampaignWithChangesets }
+	var addChangesetResult struct{ Campaign CampaignWithChangesets }
 
 	input = map[string]interface{}{
-		"changeset": result.ChangeSet.ID,
+		"changeset": result.Changeset.ID,
 		"campaign":  campaigns.Admin.ID,
 	}
 
-	mustExec(ctx, t, schema, input, &addChangeSetResult, `
+	mustExec(ctx, t, schema, input, &addChangesetResult, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 
-		fragment cs on ChangeSet {
+		fragment cs on Changeset {
 			id
 			repository { id }
 			createdAt
@@ -347,27 +347,27 @@ func TestCampaigns(t *testing.T) {
 			}
 		}
 		mutation($changeset: ID!, $campaign: ID!) {
-			campaign: addChangeSetToCampaign(changeset: $changeset, campaign: $campaign) {
+			campaign: addChangesetToCampaign(changeset: $changeset, campaign: $campaign) {
 				...c
 			}
 		}
 	`)
 
-	if addChangeSetResult.Campaign.Changesets.TotalCount != 1 {
+	if addChangesetResult.Campaign.Changesets.TotalCount != 1 {
 		t.Fatalf(
 			"campaign changesets totalcount is wrong. got=%d",
-			addChangeSetResult.Campaign.Changesets.TotalCount,
+			addChangesetResult.Campaign.Changesets.TotalCount,
 		)
 	}
 
-	wantChangesetID := result.ChangeSet.ID
-	haveChangesetID := addChangeSetResult.Campaign.Changesets.Nodes[0].ID
+	wantChangesetID := result.Changeset.ID
+	haveChangesetID := addChangesetResult.Campaign.Changesets.Nodes[0].ID
 	if haveChangesetID != wantChangesetID {
 		t.Errorf("wrong changesets added to campaign. want=%s, have=%s", wantChangesetID, haveChangesetID)
 	}
 
 	wantCampaignID := campaigns.Admin.ID
-	haveCampaignID := addChangeSetResult.Campaign.Changesets.Nodes[0].Campaigns.Nodes[0].ID
+	haveCampaignID := addChangesetResult.Campaign.Changesets.Nodes[0].Campaigns.Nodes[0].ID
 	if haveCampaignID != wantCampaignID {
 		t.Errorf("wrong campaign added to changeset. want=%s, have=%s", wantCampaignID, haveCampaignID)
 	}

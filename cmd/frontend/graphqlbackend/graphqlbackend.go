@@ -92,7 +92,7 @@ func (r *NodeResolver) ToCampaign() (*campaignResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToChangeSet() (*changesetResolver, bool) {
+func (r *NodeResolver) ToChangeset() (*changesetResolver, bool) {
 	n, ok := r.Node.(*changesetResolver)
 	return n, ok
 }

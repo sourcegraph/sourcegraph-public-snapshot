@@ -42,7 +42,7 @@ func TestStore(t *testing.T) {
 					Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
 					Description:  "All the Javascripts are belong to us",
 					AuthorID:     23,
-					ChangeSetIDs: []int64{int64(i) + 1},
+					ChangesetIDs: []int64{int64(i) + 1},
 				}
 
 				if i%2 == 0 {
@@ -85,7 +85,7 @@ func TestStore(t *testing.T) {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 
-			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangeSetID: 1})
+			count, err = s.CountCampaigns(ctx, CountCampaignsOpts{ChangesetID: 1})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -97,7 +97,7 @@ func TestStore(t *testing.T) {
 
 		t.Run("List", func(t *testing.T) {
 			for i := 1; i <= len(campaigns); i++ {
-				opts := ListCampaignsOpts{ChangeSetID: int64(i)}
+				opts := ListCampaignsOpts{ChangesetID: int64(i)}
 
 				ts, next, err := s.ListCampaigns(ctx, opts)
 				if err != nil {
@@ -176,7 +176,7 @@ func TestStore(t *testing.T) {
 				}
 
 				// Test that duplicates are not introduced.
-				have.ChangeSetIDs = append(have.ChangeSetIDs, have.ChangeSetIDs...)
+				have.ChangesetIDs = append(have.ChangesetIDs, have.ChangesetIDs...)
 				if err := s.UpdateCampaign(ctx, have); err != nil {
 					t.Fatal(err)
 				}
@@ -186,15 +186,15 @@ func TestStore(t *testing.T) {
 				}
 
 				// Test we can add to the set.
-				have.ChangeSetIDs = append(have.ChangeSetIDs, 42)
-				want.ChangeSetIDs = append(want.ChangeSetIDs, 42)
+				have.ChangesetIDs = append(have.ChangesetIDs, 42)
+				want.ChangesetIDs = append(want.ChangesetIDs, 42)
 
 				if err := s.UpdateCampaign(ctx, have); err != nil {
 					t.Fatal(err)
 				}
 
-				sort.Slice(have.ChangeSetIDs, func(a, b int) bool {
-					return have.ChangeSetIDs[a] < have.ChangeSetIDs[b]
+				sort.Slice(have.ChangesetIDs, func(a, b int) bool {
+					return have.ChangesetIDs[a] < have.ChangesetIDs[b]
 				})
 
 				if diff := cmp.Diff(have, want); diff != "" {
@@ -202,8 +202,8 @@ func TestStore(t *testing.T) {
 				}
 
 				// Test we can remove from the set.
-				have.ChangeSetIDs = have.ChangeSetIDs[:0]
-				want.ChangeSetIDs = want.ChangeSetIDs[:0]
+				have.ChangesetIDs = have.ChangesetIDs[:0]
+				want.ChangesetIDs = want.ChangesetIDs[:0]
 
 				if err := s.UpdateCampaign(ctx, have); err != nil {
 					t.Fatal(err)
@@ -243,11 +243,11 @@ func TestStore(t *testing.T) {
 		})
 	})
 
-	t.Run("ChangeSets", func(t *testing.T) {
-		changesets := make([]*ChangeSet, 0, 3)
+	t.Run("Changesets", func(t *testing.T) {
+		changesets := make([]*Changeset, 0, 3)
 		t.Run("Create", func(t *testing.T) {
 			for i := 0; i < cap(changesets); i++ {
-				th := &ChangeSet{
+				th := &Changeset{
 					RepoID:      42,
 					CreatedAt:   now,
 					UpdatedAt:   now,
@@ -259,7 +259,7 @@ func TestStore(t *testing.T) {
 				want := th.Clone()
 				have := th
 
-				err := s.CreateChangeSet(ctx, have)
+				err := s.CreateChangeset(ctx, have)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -281,7 +281,7 @@ func TestStore(t *testing.T) {
 		})
 
 		t.Run("Count", func(t *testing.T) {
-			count, err := s.CountChangeSets(ctx, CountChangeSetsOpts{})
+			count, err := s.CountChangesets(ctx, CountChangesetsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -290,7 +290,7 @@ func TestStore(t *testing.T) {
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 
-			count, err = s.CountChangeSets(ctx, CountChangeSetsOpts{CampaignID: 1})
+			count, err = s.CountChangesets(ctx, CountChangesetsOpts{CampaignID: 1})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -302,9 +302,9 @@ func TestStore(t *testing.T) {
 
 		t.Run("List", func(t *testing.T) {
 			for i := 1; i <= len(changesets); i++ {
-				opts := ListChangeSetsOpts{CampaignID: int64(i)}
+				opts := ListChangesetsOpts{CampaignID: int64(i)}
 
-				ts, next, err := s.ListChangeSets(ctx, opts)
+				ts, next, err := s.ListChangesets(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -324,7 +324,7 @@ func TestStore(t *testing.T) {
 			}
 
 			for i := 1; i <= len(changesets); i++ {
-				ts, next, err := s.ListChangeSets(ctx, ListChangeSetsOpts{Limit: i})
+				ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: i})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -356,9 +356,9 @@ func TestStore(t *testing.T) {
 		t.Run("Get", func(t *testing.T) {
 			t.Run("ByID", func(t *testing.T) {
 				want := changesets[0]
-				opts := GetChangeSetOpts{ID: want.ID}
+				opts := GetChangesetOpts{ID: want.ID}
 
-				have, err := s.GetChangeSet(ctx, opts)
+				have, err := s.GetChangeset(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -369,9 +369,9 @@ func TestStore(t *testing.T) {
 			})
 
 			t.Run("NoResults", func(t *testing.T) {
-				opts := GetChangeSetOpts{ID: 0xdeadbeef}
+				opts := GetChangesetOpts{ID: 0xdeadbeef}
 
-				_, have := s.GetChangeSet(ctx, opts)
+				_, have := s.GetChangeset(ctx, opts)
 				want := ErrNoResults
 
 				if have != want {
@@ -393,7 +393,7 @@ func TestStore(t *testing.T) {
 				want.UpdatedAt = now
 
 				have := c.Clone()
-				if err := s.UpdateChangeSet(ctx, have); err != nil {
+				if err := s.UpdateChangeset(ctx, have); err != nil {
 					t.Fatal(err)
 				}
 
@@ -403,7 +403,7 @@ func TestStore(t *testing.T) {
 
 				// Test that duplicates are not introduced.
 				have.CampaignIDs = append(have.CampaignIDs, have.CampaignIDs...)
-				if err := s.UpdateChangeSet(ctx, have); err != nil {
+				if err := s.UpdateChangeset(ctx, have); err != nil {
 					t.Fatal(err)
 				}
 
@@ -415,7 +415,7 @@ func TestStore(t *testing.T) {
 				have.CampaignIDs = append(have.CampaignIDs, 42)
 				want.CampaignIDs = append(want.CampaignIDs, 42)
 
-				if err := s.UpdateChangeSet(ctx, have); err != nil {
+				if err := s.UpdateChangeset(ctx, have); err != nil {
 					t.Fatal(err)
 				}
 
@@ -431,7 +431,7 @@ func TestStore(t *testing.T) {
 				have.CampaignIDs = have.CampaignIDs[:0]
 				want.CampaignIDs = want.CampaignIDs[:0]
 
-				if err := s.UpdateChangeSet(ctx, have); err != nil {
+				if err := s.UpdateChangeset(ctx, have); err != nil {
 					t.Fatal(err)
 				}
 

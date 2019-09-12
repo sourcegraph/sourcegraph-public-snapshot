@@ -27,10 +27,10 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Creates a ChangeSet of a given repository in a code host (e.g. pull request on GitHub)
-    createChangeSet(repository: ID!, externalID: String!): ChangeSet!
-    # Adds a ChangeSet to a Campaign.
-    addChangeSetToCampaign(changeset: ID!, campaign: ID!): Campaign!
+    # Creates a Changeset of a given repository in a code host (e.g. pull request on GitHub)
+    createChangeset(repository: ID!, externalID: String!): Changeset!
+    # Adds a Changeset to a Campaign.
+    addChangesetToCampaign(changeset: ID!, campaign: ID!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.
@@ -388,7 +388,7 @@ type Campaign implements Node {
     updatedAt: DateTime!
 
     # The changesets in this campaign.
-    changesets(first: Int): ChangeSetConnection!
+    changesets(first: Int): ChangesetConnection!
 }
 
 # A list of campaigns.
@@ -404,7 +404,7 @@ type CampaignConnection {
 }
 
 # A changeset in a code host (e.g. a PR on Github)
-type ChangeSet implements Node {
+type Changeset implements Node {
     # The unique ID for the campaign.
     id: ID!
 
@@ -422,9 +422,9 @@ type ChangeSet implements Node {
 }
 
 # A list of changesets.
-type ChangeSetConnection {
+type ChangesetConnection {
     # A list of campaigns.
-    nodes: [ChangeSet!]!
+    nodes: [Changeset!]!
 
     # The total number of campaigns in the connection.
     totalCount: Int!

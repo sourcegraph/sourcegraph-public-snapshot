@@ -71,21 +71,21 @@ func (s *Store) Done(errs ...*error) {
 // instantiated with.
 func (s *Store) DB() dbutil.DB { return s.db }
 
-// CreateChangeSet creates the given ChangeSet.
-func (s *Store) CreateChangeSet(ctx context.Context, t *ChangeSet) error {
-	q, err := s.createChangeSetQuery(t)
+// CreateChangeset creates the given Changeset.
+func (s *Store) CreateChangeset(ctx context.Context, t *Changeset) error {
+	q, err := s.createChangesetQuery(t)
 	if err != nil {
 		return err
 	}
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanChangeSet(t, sc)
+		err = scanChangeset(t, sc)
 		return int64(t.ID), 1, err
 	})
 }
 
-var createChangeSetQueryFmtstr = `
--- source: pkg/a8n/store.go:CreateChangeSet
+var createChangesetQueryFmtstr = `
+-- source: pkg/a8n/store.go:CreateChangeset
 INSERT INTO changesets (
 	repo_id,
 	created_at,
@@ -105,7 +105,7 @@ RETURNING
 	external_id
 `
 
-func (s *Store) createChangeSetQuery(t *ChangeSet) (*sqlf.Query, error) {
+func (s *Store) createChangesetQuery(t *Changeset) (*sqlf.Query, error) {
 	metadata, err := metadataColumn(t.Metadata)
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (s *Store) createChangeSetQuery(t *ChangeSet) (*sqlf.Query, error) {
 	}
 
 	return sqlf.Sprintf(
-		createChangeSetQueryFmtstr,
+		createChangesetQueryFmtstr,
 		t.RepoID,
 		t.CreatedAt,
 		t.UpdatedAt,
@@ -135,29 +135,29 @@ func (s *Store) createChangeSetQuery(t *ChangeSet) (*sqlf.Query, error) {
 	), nil
 }
 
-// CountChangeSetsOpts captures the query options needed for
+// CountChangesetsOpts captures the query options needed for
 // counting changesets.
-type CountChangeSetsOpts struct {
+type CountChangesetsOpts struct {
 	CampaignID int64
 }
 
-// CountChangeSets returns the number of changesets in the database.
-func (s *Store) CountChangeSets(ctx context.Context, opts CountChangeSetsOpts) (count int64, _ error) {
-	q := countChangeSetsQuery(&opts)
+// CountChangesets returns the number of changesets in the database.
+func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (count int64, _ error) {
+	q := countChangesetsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
 	})
 }
 
-var countChangeSetsQueryFmtstr = `
--- source: pkg/a8n/store.go:ListChangeSets
+var countChangesetsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListChangesets
 SELECT COUNT(id)
 FROM changesets
 WHERE %s
 `
 
-func countChangeSetsQuery(opts *CountChangeSetsOpts) *sqlf.Query {
+func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
@@ -167,24 +167,24 @@ func countChangeSetsQuery(opts *CountChangeSetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(countChangeSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetChangeSetOpts captures the query options needed for getting a ChangeSet
-type GetChangeSetOpts struct {
+// GetChangesetOpts captures the query options needed for getting a Changeset
+type GetChangesetOpts struct {
 	ID int64
 }
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
 
-// GetChangeSet gets a changeset matching the given options.
-func (s *Store) GetChangeSet(ctx context.Context, opts GetChangeSetOpts) (*ChangeSet, error) {
-	q := getChangeSetQuery(&opts)
+// GetChangeset gets a changeset matching the given options.
+func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*Changeset, error) {
+	q := getChangesetQuery(&opts)
 
-	var c ChangeSet
+	var c Changeset
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanChangeSet(&c, sc)
+		return 0, 0, scanChangeset(&c, sc)
 	})
 
 	if err != nil {
@@ -198,8 +198,8 @@ func (s *Store) GetChangeSet(ctx context.Context, opts GetChangeSetOpts) (*Chang
 	return &c, nil
 }
 
-var getChangeSetsQueryFmtstr = `
--- source: pkg/a8n/store.go:GetChangeSet
+var getChangesetsQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetChangeset
 SELECT
 	id,
 	repo_id,
@@ -213,7 +213,7 @@ WHERE %s
 LIMIT 1
 `
 
-func getChangeSetQuery(opts *GetChangeSetOpts) *sqlf.Query {
+func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
@@ -223,24 +223,24 @@ func getChangeSetQuery(opts *GetChangeSetOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(getChangeSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListChangeSetsOpts captures the query options needed for
+// ListChangesetsOpts captures the query options needed for
 // listing changesets.
-type ListChangeSetsOpts struct {
+type ListChangesetsOpts struct {
 	Limit      int
 	CampaignID int64
 }
 
-// ListChangeSets lists ChangeSets with the given filters.
-func (s *Store) ListChangeSets(ctx context.Context, opts ListChangeSetsOpts) (cs []*ChangeSet, next int64, err error) {
-	q := listChangeSetsQuery(&opts)
+// ListChangesets lists Changesets with the given filters.
+func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs []*Changeset, next int64, err error) {
+	q := listChangesetsQuery(&opts)
 
-	cs = make([]*ChangeSet, 0, opts.Limit)
+	cs = make([]*Changeset, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c ChangeSet
-		if err = scanChangeSet(&c, sc); err != nil {
+		var c Changeset
+		if err = scanChangeset(&c, sc); err != nil {
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
@@ -255,8 +255,8 @@ func (s *Store) ListChangeSets(ctx context.Context, opts ListChangeSetsOpts) (cs
 	return cs, next, err
 }
 
-var listChangeSetsQueryFmtstr = `
--- source: pkg/a8n/store.go:ListChangeSets
+var listChangesetsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListChangesets
 SELECT
 	id,
 	repo_id,
@@ -273,7 +273,7 @@ LIMIT %s
 
 const defaultListLimit = 50
 
-func listChangeSetsQuery(opts *ListChangeSetsOpts) *sqlf.Query {
+func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.Limit == 0 {
 		opts.Limit = defaultListLimit
 	}
@@ -289,27 +289,27 @@ func listChangeSetsQuery(opts *ListChangeSetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangeSetsQueryFmtstr,
+		listChangesetsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
 		opts.Limit,
 	)
 }
 
-// UpdateChangeSet updates the given ChangeSet.
-func (s *Store) UpdateChangeSet(ctx context.Context, c *ChangeSet) error {
-	q, err := s.updateChangeSetQuery(c)
+// UpdateChangeset updates the given Changeset.
+func (s *Store) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	q, err := s.updateChangesetQuery(c)
 	if err != nil {
 		return err
 	}
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanChangeSet(c, sc)
+		err = scanChangeset(c, sc)
 		return int64(c.ID), 1, err
 	})
 }
 
-var updateChangeSetQueryFmtstr = `
--- source: pkg/a8n/store.go:UpdateChangeSet
+var updateChangesetQueryFmtstr = `
+-- source: pkg/a8n/store.go:UpdateChangeset
 UPDATE changesets
 SET (
 	repo_id,
@@ -330,7 +330,7 @@ RETURNING
 	external_id
 `
 
-func (s *Store) updateChangeSetQuery(c *ChangeSet) (*sqlf.Query, error) {
+func (s *Store) updateChangesetQuery(c *Changeset) (*sqlf.Query, error) {
 	metadata, err := metadataColumn(c.Metadata)
 	if err != nil {
 		return nil, err
@@ -344,7 +344,7 @@ func (s *Store) updateChangeSetQuery(c *ChangeSet) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
-		updateChangeSetQueryFmtstr,
+		updateChangesetQueryFmtstr,
 		c.RepoID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -394,7 +394,7 @@ RETURNING
 `
 
 func (s *Store) createCampaignQuery(c *Campaign) (*sqlf.Query, error) {
-	changesetIDs, err := jsonSetColumn(c.ChangeSetIDs)
+	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -466,7 +466,7 @@ RETURNING
 `
 
 func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
-	changesetIDs, err := jsonSetColumn(c.ChangeSetIDs)
+	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +489,7 @@ func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
 // CountCampaignsOpts captures the query options needed for
 // counting campaigns.
 type CountCampaignsOpts struct {
-	ChangeSetID int64
+	ChangesetID int64
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -510,8 +510,8 @@ WHERE %s
 
 func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
-	if opts.ChangeSetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangeSetID))
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
 	}
 
 	if len(preds) == 0 {
@@ -579,7 +579,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 // ListCampaignsOpts captures the query options needed for
 // listing campaigns.
 type ListCampaignsOpts struct {
-	ChangeSetID int64
+	ChangesetID int64
 	Limit       int
 }
 
@@ -631,8 +631,8 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	opts.Limit++
 
 	var preds []*sqlf.Query
-	if opts.ChangeSetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangeSetID))
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
 	}
 
 	if len(preds) == 0 {
@@ -689,7 +689,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanChangeSet(t *ChangeSet, s scanner) error {
+func scanChangeset(t *Changeset, s scanner) error {
 	t.Metadata = json.RawMessage{}
 	return s.Scan(
 		&t.ID,
@@ -712,7 +712,7 @@ func scanCampaign(c *Campaign, s scanner) error {
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
-		&dbutil.JSONInt64Set{Set: &c.ChangeSetIDs},
+		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 	)
 }
 
