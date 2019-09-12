@@ -17,7 +17,7 @@ The sections below describe the the dependencies that you need to have to be abl
 
 ## Step 1: Get the code
 
-> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
+> Install [Go](https://golang.org/doc/install) (v1.13 or higher)
 
 On Mac with homebrew, you can run
 ```
