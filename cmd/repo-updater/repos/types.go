@@ -12,6 +12,7 @@ import (
 	"github.com/goware/urlx"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
@@ -22,6 +23,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
+
+// A Changeset of an existing Repo.
+type Changeset struct {
+	*a8n.Changeset
+	*Repo
+}
 
 // An ExternalService is defines a Source that yields Repos.
 type ExternalService struct {
