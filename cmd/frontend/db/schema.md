@@ -203,6 +203,7 @@ Referenced by:
  url               | text                     | not null
  user_id           | integer                  | not null
  anonymous_user_id | text                     | not null
+ source            | text                     | not null
  argument          | text                     | not null
  version           | text                     | not null
  timestamp         | timestamp with time zone | not null default now()
@@ -214,6 +215,9 @@ Indexes:
 Check constraints:
     "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
     "event_logs_check_name_not_empty" CHECK (name <> ''::text)
+    "event_logs_check_source_not_empty" CHECK (source <> ''::text)
+    "event_logs_check_url_not_empty" CHECK (url <> ''::text)
+    "event_logs_check_version_not_empty" CHECK (version <> ''::text)
 
 ```
 

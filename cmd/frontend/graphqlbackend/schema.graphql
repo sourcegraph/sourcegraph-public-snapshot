@@ -625,6 +625,12 @@ input MarkdownOptions {
     alwaysNil: String
 }
 
+# The sources of user events would come from.
+enum UserEventSource {
+    WEB
+    CODEHOSTINTEGRATION
+}
+
 # Input for Mutation.logUserEvent, which contains fields needed for logging a user event.
 input LogUserEventInput {
     # The name of the event.
@@ -633,6 +639,8 @@ input LogUserEventInput {
     userCookieID: String!
     # The URL which event happens.
     url: String!
+    # The source of the event happens.
+    source: UserEventSource!
     # The additional argument information.
     argument: String
 }

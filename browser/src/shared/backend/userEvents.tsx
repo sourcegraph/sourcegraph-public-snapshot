@@ -21,13 +21,13 @@ export const logUserEvent = (
     }
     requestGraphQL<GQL.IMutation>({
         request: gql`
-            mutation logUserEvent($event: String!, $userCookieID: String!, $url: String!) {
-                logUserEvent(input: { event: $event, userCookieID: $userCookieID, url: $url }) {
+            mutation logUserEvent($event: String!, $userCookieID: String!, $url: String!, $source: UserEventSource!) {
+                logUserEvent(input: { event: $event, userCookieID: $userCookieID, url: $url, source: $source }) {
                     alwaysNil
                 }
             }
         `,
-        variables: { event, userCookieID: uid, url },
+        variables: { event, userCookieID: uid, url, source: GQL.UserEventSource.CODEHOSTINTEGRATION },
         mightContainPrivateInfo: false,
     }).subscribe({
         error: error => {

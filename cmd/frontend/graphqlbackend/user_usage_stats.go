@@ -62,6 +62,7 @@ type logUserEventInput struct {
 	Event        string
 	UserCookieID string
 	URL          string
+	Source       string
 	Argument     *string
 }
 
@@ -83,6 +84,7 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 			args.Input.URL,
 			actor.UID,
 			args.Input.UserCookieID,
+			args.Input.Source,
 			args.Input.Argument,
 		)
 	}
