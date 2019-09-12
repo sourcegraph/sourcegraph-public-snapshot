@@ -124,7 +124,7 @@ export interface EditorService {
 /**
  * Creates a {@link EditorService} instance.
  */
-export function createEditorService({ removeModel }: Pick<ModelService, 'removeModel'>): EditorService {
+export function createEditorService(modelService: Pick<ModelService, 'removeModel'>): EditorService {
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
     // test code (because the IDs change depending on test execution order).
     let id = 0
@@ -195,7 +195,7 @@ export function createEditorService({ removeModel }: Pick<ModelService, 'removeM
                 activeEditorUpdates.next(undefined)
             }
             if (modelRefs.decrement(editor.resource)) {
-                removeModel(editor.resource)
+                modelService.removeModel(editor.resource)
             }
         },
         removeAllEditors(): void {
