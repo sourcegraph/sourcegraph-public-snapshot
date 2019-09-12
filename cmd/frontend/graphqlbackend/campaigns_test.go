@@ -237,9 +237,11 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	graphqlRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
+
 	input = map[string]interface{}{
-		"url":      "http://github.com/sourcegraph/sourcegraph/issues/1",
-		"campaign": campaigns.Admin.ID,
+		"repository": graphqlRepoID,
+		"externalID": "999",
 	}
 
 	type ChangeSet struct {
@@ -277,8 +279,8 @@ func TestCampaigns(t *testing.T) {
 			createdAt
 			updatedAt
 		}
-		mutation($url: String!, $campaign: ID!) {
-			changeset: addChangeSetFromURLToCampaign(url: $url, campaign: $campaign) {
+		mutation($repository: ID!, $externalID: String!) {
+			changeset: createChangeSet(repository: $repository, externalID: $externalID) {
 				...t
 			}
 		}
@@ -287,15 +289,8 @@ func TestCampaigns(t *testing.T) {
 	if result.ChangeSet.ID == "" {
 		t.Fatalf("changeset id is blank")
 	}
-	if have, want := result.ChangeSet.Campaigns.TotalCount, 1; have != want {
-		t.Fatalf("TotalCount of campaigns for changeset is %d, want %d", have, want)
-	}
-	if have, want := result.ChangeSet.Campaigns.Nodes[0].ID, campaigns.Admin.ID; have != want {
-		t.Fatalf("have changeset campaign id %q, want %q", have, want)
-	}
 
-	wantRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
-	if have, want := result.ChangeSet.Repository.ID, wantRepoID; have != want {
+	if have, want := result.ChangeSet.Repository.ID, graphqlRepoID; have != want {
 		t.Fatalf("have changeset repo id %q, want %q", have, want)
 	}
 }

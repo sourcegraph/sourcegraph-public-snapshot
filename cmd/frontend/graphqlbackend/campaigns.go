@@ -60,7 +60,7 @@ func (r *schemaResolver) AddChangeSetToCampaign(ctx context.Context, args *struc
 	}
 
 	changeset.CampaignIDs = append(changeset.CampaignIDs, campaign.ID)
-	if err = tx.UpdateChangeSet(ctx, changset); err != nil {
+	if err = tx.UpdateChangeSet(ctx, changeset); err != nil {
 		return nil, err
 	}
 
