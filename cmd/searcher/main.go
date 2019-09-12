@@ -23,10 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/search/rpc"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
@@ -52,7 +50,7 @@ func main() {
 	service := &search.Service{
 		Store: &store.Store{
 			FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
-				return git.Archive(ctx, repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
+				return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 			},
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
@@ -62,10 +60,6 @@ func main() {
 	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
-	rpcHandler, err := rpc.Server(&search.StoreSearcher{Store: service.Store})
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	host := ""
 	if env.InsecureDev {
@@ -81,11 +75,6 @@ func main() {
 				w.Write([]byte("ok"))
 				return
 			}
-			if r.URL.Path == rpc.DefaultRPCPath {
-				rpcHandler.ServeHTTP(w, r)
-				return
-			}
-
 			handler.ServeHTTP(w, r)
 		}),
 	}

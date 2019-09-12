@@ -9,13 +9,16 @@ import '../sentry'
 
 import React from 'react'
 import { render } from 'react-dom'
-import { keybindings } from '../keybindings'
+import '../enterprise.scss'
+import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import { enterpriseExploreSections } from './explore/exploreSections'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
+import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
+import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { enterpriseRepoContainerRoutes, enterpriseRepoRevContainerRoutes } from './repo/routes'
 import { enterpriseRoutes } from './routes'
@@ -42,11 +45,13 @@ window.addEventListener('DOMContentLoaded', () => {
             userAreaRoutes={enterpriseUserAreaRoutes}
             userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
             userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
+            orgAreaRoutes={enterpriseOrganizationAreaRoutes}
+            orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
             repoContainerRoutes={enterpriseRepoContainerRoutes}
             repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
             repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
             routes={enterpriseRoutes}
-            keybindings={keybindings}
+            keyboardShortcuts={KEYBOARD_SHORTCUTS}
         />,
         document.querySelector('#root')
     )

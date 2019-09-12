@@ -174,15 +174,23 @@ type ExternalServiceSyncResult struct {
 	Error           string
 }
 
-type StatusMessageType string
+type CloningProgress struct {
+	Message string
+}
 
-const (
-	CloningStatusMessage StatusMessageType = "CLONING"
-)
+type ExternalServiceSyncError struct {
+	Message           string
+	ExternalServiceId int64
+}
+
+type SyncError struct {
+	Message string
+}
 
 type StatusMessage struct {
-	Message string            `json:"message"`
-	Type    StatusMessageType `json:"type"`
+	Cloning                  *CloningProgress          `json:"cloning"`
+	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
+	SyncError                *SyncError                `json:"sync_error"`
 }
 
 type StatusMessagesResponse struct {

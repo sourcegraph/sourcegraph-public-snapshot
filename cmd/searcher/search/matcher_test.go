@@ -15,6 +15,7 @@ import (
 	"testing/quick"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"github.com/sourcegraph/sourcegraph/pkg/store"
 	"github.com/sourcegraph/sourcegraph/pkg/testutil"
 )
@@ -420,51 +421,6 @@ func TestReadAll(t *testing.T) {
 	}
 }
 
-func TestLineLimit(t *testing.T) {
-	rg, err := compile(&protocol.PatternInfo{Pattern: "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		size    int
-		matches bool
-	}{
-		{size: maxLineSize, matches: true},
-		{size: maxLineSize + 1, matches: false},
-	}
-
-	// calculate maximum size in tests,
-	// needed because readerGreps re-use their buffers.
-	maxBuf := 0
-	for _, test := range tests {
-		if test.size > maxBuf {
-			maxBuf = test.size
-		}
-	}
-
-	for i, test := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			fakeZipFile := store.ZipFile{
-				MaxLen: maxBuf,
-				Data:   bytes.Repeat([]byte("A"), test.size),
-			}
-			fakeSrcFile := store.SrcFile{Len: int32(test.size)}
-			matches, limitHit, err := rg.Find(&fakeZipFile, &fakeSrcFile)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if limitHit {
-				t.Fatalf("expected limit to not hit")
-			}
-			hasMatches := len(matches) != 0
-			if hasMatches != test.matches {
-				t.Fatalf("hasMatches=%t test.matches=%t", hasMatches, test.matches)
-			}
-		})
-	}
-}
-
 func TestMaxMatches(t *testing.T) {
 	pattern := "foo"
 
@@ -480,11 +436,9 @@ func TestMaxMatches(t *testing.T) {
 			t.Fatal(err)
 		}
 		for j := 0; j < maxLineMatches+1; j++ {
-			for k := 0; k < maxOffsets+1; k++ {
-				w.Write([]byte(pattern))
-				w.Write([]byte{' '})
-			}
-			w.Write([]byte{'\n'})
+			_, _ = w.Write([]byte(pattern))
+			_, _ = w.Write([]byte{' '})
+			_, _ = w.Write([]byte{'\n'})
 		}
 	}
 	err := zw.Close()
@@ -500,7 +454,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, 0, true, false)
+	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, maxFileMatches, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -517,14 +471,6 @@ func TestMaxMatches(t *testing.T) {
 		}
 		if len(fm.LineMatches) != maxLineMatches {
 			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
-		}
-		for _, lm := range fm.LineMatches {
-			if !lm.LimitHit {
-				t.Fatalf("expected limitHit on line match")
-			}
-			if len(lm.OffsetAndLengths) != maxOffsets {
-				t.Fatalf("expected %d offsets, got %d", maxOffsets, len(lm.OffsetAndLengths))
-			}
 		}
 	}
 }
@@ -606,4 +552,67 @@ var githubStore = &store.Store{
 func init() {
 	// Clear out store so we pick up changes in our store writing code.
 	os.RemoveAll(githubStore.Path)
+}
+
+func Test_concurrentFind(t *testing.T) {
+	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	type args struct {
+		ctx                   context.Context
+		rg                    *readerGrep
+		zf                    *store.ZipFile
+		fileMatchLimit        int
+		patternMatchesContent bool
+		patternMatchesPaths   bool
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantFm       []protocol.FileMatch
+		wantLimitHit bool
+		wantErr      bool
+	}{
+		{
+			name: "nil re returns a FileMatch with no LineMatches",
+			args: args{
+				ctx: context.Background(),
+				rg: &readerGrep{
+					// Check this case specifically.
+					re:        nil,
+					matchPath: match,
+				},
+				zf: &store.ZipFile{
+					Files: []store.SrcFile{
+						{
+							Name: "a.go",
+						},
+					},
+				},
+				patternMatchesPaths:   false,
+				patternMatchesContent: true,
+			},
+			wantFm: []protocol.FileMatch{
+				{
+					Path: "a.go",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFm, gotLimitHit, err := concurrentFind(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("concurrentFind() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotFm, tt.wantFm) {
+				t.Errorf("concurrentFind() gotFm = %v, want %v", gotFm, tt.wantFm)
+			}
+			if gotLimitHit != tt.wantLimitHit {
+				t.Errorf("concurrentFind() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+			}
+		})
+	}
 }

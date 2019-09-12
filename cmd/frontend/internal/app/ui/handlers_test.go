@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestRedirects(t *testing.T) {
@@ -99,7 +99,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 	}, {
 		name: "rev-404",
 		rev:  "@marco",
-		err:  &git.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
+		err:  &gitserver.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
 		want: "revision not found: rev-404@marco",
 		code: 404,
 	}, {

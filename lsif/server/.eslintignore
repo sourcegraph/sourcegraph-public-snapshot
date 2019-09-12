@@ -1,0 +1,7 @@
+out/
+.cache/
+
+# copied from lsif-node
+src/database.ts
+src/files.ts
+src/json.ts

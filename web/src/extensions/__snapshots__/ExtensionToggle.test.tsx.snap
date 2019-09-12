@@ -5,6 +5,7 @@ exports[`ExtensionToggle extension disabled in settings 1`] = `
   className="toggle  "
   onClick={[Function]}
   title="Click to enable"
+  type="button"
   value={0}
 >
   <span
@@ -21,6 +22,7 @@ exports[`ExtensionToggle extension enabled in settings 1`] = `
   className="toggle  "
   onClick={[Function]}
   title="Click to enable"
+  type="button"
   value={1}
 >
   <span
@@ -37,6 +39,7 @@ exports[`ExtensionToggle extension not present in settings 1`] = `
   className="toggle  "
   onClick={[Function]}
   title="Click to enable"
+  type="button"
   value={0}
 >
   <span

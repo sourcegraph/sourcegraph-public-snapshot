@@ -16,7 +16,7 @@ import { BitbucketRepoInfo } from './scrape'
  * `path` should have a leading slash.
  * `project` and `repoSlug` should have neither a leading nor a traling slash.
  */
-const buildURL = (project: string, repoSlug: string, path: string) =>
+const buildURL = (project: string, repoSlug: string, path: string): string =>
     // If possible, use the global `AJS.contextPath()` to reliably construct an absolute URL.
     // This is possible in the native integration only - browser extension content scripts cannot
     // access the page's global scope.

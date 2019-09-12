@@ -21,6 +21,33 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.campaigns"
+```
+      Column       |           Type           |                       Modifiers                        
+-------------------+--------------------------+--------------------------------------------------------
+ id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
+ name              | text                     | not null
+ description       | text                     | 
+ author_id         | integer                  | not null
+ namespace_user_id | integer                  | 
+ namespace_org_id  | integer                  | 
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+Indexes:
+    "campaigns_pkey" PRIMARY KEY, btree (id)
+    "campaigns_namespace_org_id" btree (namespace_org_id)
+    "campaigns_namespace_user_id" btree (namespace_user_id)
+Check constraints:
+    "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
+Foreign-key constraints:
+    "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+    "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "threads" CONSTRAINT "threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -33,6 +60,18 @@ Foreign-key constraints:
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
+
+```
+
+# Table "public.default_repos"
+```
+ Column  |  Type   | Modifiers 
+---------+---------+-----------
+ repo_id | integer | not null
+Indexes:
+    "default_repos_pkey" PRIMARY KEY, btree (repo_id)
+Foreign-key constraints:
+    "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
 
 ```
 
@@ -258,6 +297,7 @@ Check constraints:
     "orgs_name_max_length" CHECK (char_length(name::text) <= 255)
     "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*$'::citext)
 Referenced by:
+    TABLE "campaigns" CONSTRAINT "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -428,7 +468,9 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
+    TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "threads" CONSTRAINT "threads_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -531,6 +573,26 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.threads"
+```
+   Column    |           Type           |                      Modifiers                       
+-------------+--------------------------+------------------------------------------------------
+ id          | bigint                   | not null default nextval('threads_id_seq'::regclass)
+ campaign_id | integer                  | not null
+ repo_id     | integer                  | not null
+ created_at  | timestamp with time zone | not null default now()
+ updated_at  | timestamp with time zone | not null default now()
+ metadata    | jsonb                    | not null default '{}'::jsonb
+Indexes:
+    "threads_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "threads_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+Foreign-key constraints:
+    "threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
+    "threads_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.user_emails"
 ```
       Column       |           Type           |       Modifiers        
@@ -616,6 +678,8 @@ Check constraints:
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+    TABLE "campaigns" CONSTRAINT "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT

@@ -44,13 +44,13 @@ docker exec "$CONTAINER" apk add --no-cache socat
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
 set +e
-timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
 done"
 if [ $? -ne 0 ]; then
     echo "^^^ +++"
-    echo "$URL was not accessible within 30s. Here's the output of docker inspect and docker logs:"
+    echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
     docker inspect "$CONTAINER"
     docker logs --timestamps "$CONTAINER"
     exit 1

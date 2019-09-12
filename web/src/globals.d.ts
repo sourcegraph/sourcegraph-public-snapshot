@@ -123,10 +123,9 @@ interface SourcegraphContext {
 
         /** Prevents the icon in the top-left corner of the screen from spinning. */
         disableSymbolSpin?: boolean
-    }
 
-    /** Whether new external service status indicator is shown in navbar or not. */
-    showStatusIndicator?: boolean
+        brandName: string
+    }
 }
 
 interface BrandAssets {

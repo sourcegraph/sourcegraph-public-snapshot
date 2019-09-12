@@ -7,13 +7,13 @@ As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.m
 ## Benefits
 
 1. Configuration can be checked into version control (e.g. Git).
-2. Configuration is enforced across the entire instance and edits cannot be made from the web UI.
+2. Configuration is enforced across the entire instance and edits cannot be made via the web UI (by default).
 
 ## Drawbacks
 
 Loading configuration in this manner has two important drawbacks:
 
-1. You will no longer be able to save configuration edits through the web UI (you can use the web UI as scratch space, though).
+1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as scratch space, though).
 2. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now be more manual for you (see below).
 
 ## Getting started
@@ -43,6 +43,8 @@ SITE_CONFIG_FILE=site.json
 ```
 
 `site.json` contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
+
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`. Note that if you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
 
 #### External service configuration
 
@@ -80,6 +82,8 @@ EXTSVC_CONFIG_FILE=extsvc.json
 ```
 
 You can find a full list of [valid top-level keys here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b7ebb9024e3a95109fdedfb8057795b9a7c638bc/-/blob/cmd/frontend/graphqlbackend/schema.graphql#L1104-1110).
+
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `EXTSVC_CONFIG_ALLOW_EDITS=true`. Note that if you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
 
 ## Upgrades & Migrations
 

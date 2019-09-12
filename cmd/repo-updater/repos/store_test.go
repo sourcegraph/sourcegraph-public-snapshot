@@ -100,6 +100,14 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		UpdatedAt:   now,
 	}
 
+	phabricatorService := repos.ExternalService{
+		Kind:        "PHABRICATOR",
+		DisplayName: "Phabricator - Test",
+		Config:      `{"url": "https://phab.org", "token": "foo"}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
 	svcs := repos.ExternalServices{
 		&github,
 		&gitlab,
@@ -107,6 +115,7 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 		&awsCodeCommit,
 		&otherService,
 		&gitoliteService,
+		&phabricatorService,
 	}
 
 	type testCase struct {
@@ -153,6 +162,27 @@ func testStoreListExternalServices(store repos.Store) func(*testing.T) {
 					return a.ID < b.ID
 				},
 			),
+		},
+		testCase{
+			name:   "excludes phabricator by default",
+			stored: svcs,
+			assert: repos.Assert.ExternalServicesEqual(func() (es repos.ExternalServices) {
+				for _, e := range svcs {
+					if e.Kind != "PHABRICATOR" {
+						es = append(es, e)
+					}
+				}
+				return es
+			}()...),
+		},
+		testCase{
+			name:   "includes phabricator if specified in Kinds",
+			stored: svcs,
+			args: func(repos.ExternalServices) (args repos.StoreListExternalServicesArgs) {
+				args.Kinds = []string{"PHABRICATOR"}
+				return args
+			},
+			assert: repos.Assert.ExternalServicesEqual(&phabricatorService),
 		},
 	)
 

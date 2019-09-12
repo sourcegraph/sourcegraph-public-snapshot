@@ -3,6 +3,7 @@ import extensionInfo from '../../src/extension/manifest.spec.json'
 /**
  * Generates a unique bundle ID that is used to prevent the Phabricator extension
  * from returning cached contents after upgrading.
+ *
  * @returns The current extension version from extension.info.json.
  */
 export function generateBundleUID(): string {

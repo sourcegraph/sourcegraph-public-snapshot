@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -22,7 +23,6 @@ type MockRepos struct {
 	GetCommit                 func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
 	ResolveRev                func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	GetInventory              func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
-	GetInventoryUncached      func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -104,7 +104,7 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", &git.RevisionNotFoundError{Repo: repo.Name, Spec: rev}
+		return "", &gitserver.RevisionNotFoundError{Repo: repo.Name, Spec: rev}
 	}
 	return
 }

@@ -3,6 +3,7 @@ import { ActivationProps } from '../../../shared/src/components/activation/Activ
 import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
+import { SearchType } from './results/SearchResults'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -11,7 +12,7 @@ import { eventLogger } from '../tracking/eventLogger'
 export function submitSearch(
     history: H.History,
     query: string,
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter',
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
     activation?: ActivationProps['activation']
 ): void {
     // Go to search results page
@@ -72,6 +73,48 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
 
     // Scope exists in the search query, so remove it now.
     return (query.substring(0, idx).trim() + ' ' + query.substring(idx + searchFilter.length).trim()).trim()
+}
+
+export function getSearchTypeFromQuery(query: string): SearchType {
+    // RegExp to match `type:$TYPE` in any part of a query.
+    const getTypeName = /\btype:(?<type>diff|commit|symbol|repo)\b/
+    const matches = query.match(getTypeName)
+
+    if (matches && matches.groups && matches.groups.type) {
+        // In an edge case where multiple `type:` filters are used, if
+        // `type:symbol` is included, symbol results be returned, regardless of order,
+        // so we must check for `type:symbol`. For other types,
+        // the first `type` filter appearing in the query is applied.
+        const symbolTypeRegex = /\btype:symbol\b/
+        const symbolMatches = query.match(symbolTypeRegex)
+        if (symbolMatches) {
+            return 'symbol'
+        }
+        return matches.groups.type as SearchType
+    }
+
+    return null
+}
+
+/**
+ * Adds the given search type (as a `type:` filter) into a query. This function replaces an existing `type:` filter,
+ * appends a `type:` filter, or returns the initial query, in order to apply the correct type
+ * to the query.
+ * @param query The search query to be mutated.
+ * @param searchType The search type to be applied.
+ */
+export function toggleSearchType(query: string, searchType: SearchType): string {
+    const match = query.match(/\btype:\w*\b/)
+    if (!match) {
+        return searchType ? `${query} type:${searchType}` : query
+    }
+
+    if (match[0] === `type:${searchType}`) {
+        /** Query already contains correct search type */
+        return query
+    }
+
+    return query.replace(match[0], searchType ? `type:${searchType}` : '')
 }
 
 /** Returns true if the given value is of the GraphQL SearchResults type */

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import {
     asyncScheduler,
     MonoTypeOperatorFunction,
@@ -8,8 +9,6 @@ import {
     Subscription,
     TeardownLogic,
 } from 'rxjs'
-
-// tslint:disable no-use-before-declare
 
 /**
  * Emits `valuesPerWindow` values from the source Observable, then ignores subsequent source values
@@ -26,7 +25,7 @@ import {
  * the optional `scheduler`.
  * @param valuesPerWindow The number of values to allow per time window.
  * @param The {@link SchedulerLike} to use for managing the timers that handle the throttling.
- * @return An Observable that performs the throttle operation to limit the rate of emissions from
+ * @returns An Observable that performs the throttle operation to limit the rate of emissions from
  * the source.
  */
 export function throttleTimeWindow<T>(

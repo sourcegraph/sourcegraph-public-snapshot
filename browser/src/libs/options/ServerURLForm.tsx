@@ -93,7 +93,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
 
     public render(): React.ReactNode {
         return (
-            // tslint:disable-next-line:jsx-ban-elements
+            // eslint-disable-next-line react/forbid-elements
             <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
                 <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
                 <div className="input-group">
@@ -107,13 +107,15 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                                         (this.isUpdating ? 'secondary' : statusClassNames[this.props.status])
                                     }
                                 />{' '}
-                                <span>{this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}</span>
+                                <span className="e2e-connection-status">
+                                    {this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}
+                                </span>
                             </span>
                         </span>
                     </div>
                     <input
                         type="text"
-                        className="form-control"
+                        className="form-control e2e-sourcegraph-url"
                         id="sourcegraph-url"
                         ref={this.inputElement}
                         value={this.props.value}
@@ -126,7 +128,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
                     <div className="mt-1">
                         Authentication to Sourcegraph failed.{' '}
-                        <a href={this.props.value} target="_blank">
+                        <a href={this.props.value} target="_blank" rel="noopener noreferrer">
                             Sign in to your instance
                         </a>{' '}
                         to continue.
@@ -136,11 +138,11 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                     <div className="mt-1">
                         <p>
                             Unable to connect to{' '}
-                            <a href={this.props.value} target="_blank">
+                            <a href={this.props.value} target="_blank" rel="noopener noreferrer">
                                 {this.props.value}
                             </a>
                             . Ensure the URL is correct and you are{' '}
-                            <a href={this.props.value + '/sign-in'} target="_blank">
+                            <a href={this.props.value + '/sign-in'} target="_blank" rel="noopener noreferrer">
                                 logged in
                             </a>
                             .
@@ -156,7 +158,11 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         )}
                         <p>
                             <b>Site admins:</b> ensure that{' '}
-                            <a href="https://docs.sourcegraph.com/admin/config/site_config" target="_blank">
+                            <a
+                                href="https://docs.sourcegraph.com/admin/config/site_config"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
                                 all users can create access tokens
                             </a>
                             .

@@ -1,4 +1,4 @@
-import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, DEFAULT_ASSETS_URL } from '../../shared/util/context'
 import { initializeExtensions } from './extensions'
 
 describe('Extensions controller', () => {
@@ -9,7 +9,10 @@ describe('Extensions controller', () => {
                 urlToFile: () => '',
                 getContext: () => ({ rawRepoName: 'foo', privateRepository: true }),
             },
-            DEFAULT_SOURCEGRAPH_URL,
+            {
+                sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+                assetsURL: DEFAULT_ASSETS_URL,
+            },
             false
         )
         return expect(

@@ -72,7 +72,7 @@ const discussionThreadFieldsFragment = gql`
 /**
  * Creates a new discussion thread.
  *
- * @return Observable that emits the new discussion thread.
+ * @returns Observable that emits the new discussion thread.
  */
 export function createThread(input: GQL.IDiscussionThreadCreateInput): Observable<GQL.IDiscussionThread> {
     return mutateGraphQL(
@@ -194,7 +194,7 @@ export function fetchDiscussionThreadAndComments(threadIDWithoutKind: string): O
 /**
  * Adds a comment to an existing discussion thread.
  *
- * @return Observable that emits the updated discussion thread and its comments.
+ * @returns Observable that emits the updated discussion thread and its comments.
  */
 export function addCommentToThread(threadID: GQL.ID, contents: string): Observable<GQL.IDiscussionThread> {
     return mutateGraphQL(
@@ -229,7 +229,7 @@ export function addCommentToThread(threadID: GQL.ID, contents: string): Observab
 /**
  * Updates an existing comment in a discussion thread.
  *
- * @return Observable that emits the updated discussion thread and its comments.
+ * @returns Observable that emits the updated discussion thread and its comments.
  */
 export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observable<GQL.IDiscussionThread> {
     return mutateGraphQL(
@@ -264,7 +264,7 @@ export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observa
 /**
  * Renders Markdown to HTML.
  *
- * @return Observable that emits the HTML string, which is already sanitized and escaped and thus is always safe to render.
+ * @returns Observable that emits the HTML string, which is already sanitized and escaped and thus is always safe to render.
  */
 export const renderMarkdown = memoizeObservable(
     (ctx: { markdown: string; options?: GQL.IMarkdownOptions }): Observable<string> =>

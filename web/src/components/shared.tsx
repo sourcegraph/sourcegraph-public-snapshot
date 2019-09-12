@@ -11,7 +11,12 @@ import { HoverOverlay, HoverOverlayProps } from '../../../shared/src/hover/Hover
 // Components from shared with web-styling class names applied
 
 export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps<never>> = props => (
-    <HoverOverlay closeButtonClassName="btn btn-icon" actionItemClassName="btn btn-secondary" {...props} />
+    <HoverOverlay
+        {...props}
+        className="card"
+        closeButtonClassName="btn btn-icon"
+        actionItemClassName="btn btn-secondary"
+    />
 )
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 
@@ -52,9 +57,9 @@ const completionWidgetListItemClassName = 'completion-widget-dropdown__item d-fl
 export const WebEditorCompletionWidget: React.FunctionComponent<EditorCompletionWidgetProps> = props => (
     <EditorCompletionWidget
         {...props}
-        listClassName={'completion-widget-dropdown d-block list-unstyled rounded p-0 m-0 mt-3'}
+        listClassName="completion-widget-dropdown d-block list-unstyled rounded p-0 m-0 mt-3"
         listItemClassName={completionWidgetListItemClassName}
-        selectedListItemClassName={'completion-widget-dropdown__item--selected bg-primary'}
+        selectedListItemClassName="completion-widget-dropdown__item--selected bg-primary"
         loadingClassName={completionWidgetListItemClassName}
         noResultsClassName={completionWidgetListItemClassName}
     />

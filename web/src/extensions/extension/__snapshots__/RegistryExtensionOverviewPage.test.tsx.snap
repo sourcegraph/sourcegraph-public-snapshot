@@ -115,7 +115,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           <a
             className="d-block"
             href="https://example.com"
-            rel="nofollow"
+            rel="nofollow noopener noreferrer"
             target="_blank"
           >
             Source code (JavaScript)

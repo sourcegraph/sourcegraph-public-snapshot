@@ -88,7 +88,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
-		repoResolver := &repositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{repo: minimalRepo}
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 	})
 
@@ -102,7 +102,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
-		repoResolver := &repositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{repo: minimalRepo}
 		_, err := repoResolver.Description(ctx)
 		if err == nil {
 			t.Fatal("err is unexpected nil")
@@ -124,7 +124,7 @@ func TestRepositoryHydration(t *testing.T) {
 	})
 }
 
-func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *repositoryResolver, hydrated *types.Repo) {
+func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *RepositoryResolver, hydrated *types.Repo) {
 	t.Helper()
 
 	description, err := r.Description(ctx)

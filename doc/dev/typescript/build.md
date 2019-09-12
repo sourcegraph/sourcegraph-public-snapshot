@@ -41,7 +41,7 @@ Based on our experience, we decided to:
 
 The one "hack" is that each subproject's `node_modules/.bin` is symlinked to the root `node_modules/.bin` so that `package.json` scripts can refer to programs installed by dependencies. (Subprojects' `node_modules` directories are otherwise empty.)
 
-### Howtos
+### HowTos
 
 #### Add a dependency
 

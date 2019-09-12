@@ -2,7 +2,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscription, concat } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import { EREPONOTFOUND, EREPOSEEOTHER, RepoSeeOtherError } from '../../../shared/src/backend/errors'
@@ -11,7 +11,7 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
 import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -64,15 +64,14 @@ interface RepoContainerProps
         ExtensionsControllerProps,
         ActivationProps,
         ThemeProps {
-    repoContainerRoutes: ReadonlyArray<RepoContainerRoute>
-    repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
-    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
+    repoContainerRoutes: readonly RepoContainerRoute[]
+    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     authenticatedUser: GQL.IUser | null
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {
     filePath?: string
-    rest?: string
 
     /**
      * The fetched repository or an error if occurred.
@@ -97,7 +96,7 @@ interface RepoRevContainerState extends ParsedRepoRev {
  * Renders a horizontal bar and content for a repository page.
  */
 export class RepoContainer extends React.Component<RepoContainerProps, RepoRevContainerState> {
-    private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
+    private componentUpdates = new Subject<RepoContainerProps>()
     private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
     private revResolves = new Subject<ResolvedRev | ErrorLike | undefined>()
     private subscriptions = new Subscription()
@@ -111,8 +110,10 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
     }
 
     public componentDidMount(): void {
-        const parsedRouteChanges = this.routeMatchChanges.pipe(
-            map(({ repoRevAndRest }) => parseURLPath(repoRevAndRest))
+        const parsedRouteChanges = this.componentUpdates.pipe(
+            map(props => props.match.params.repoRevAndRest),
+            distinctUntilChanged(),
+            map(parseURLPath)
         )
 
         // Fetch repository.
@@ -125,42 +126,37 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 .pipe(
                     tap(() => this.setState({ repoOrError: undefined })),
                     switchMap(repoName =>
-                        fetchRepository({ repoName }).pipe(
-                            catchError(error => {
-                                switch (error.code) {
-                                    case EREPOSEEOTHER:
-                                        redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
-                                        return []
-                                }
-                                this.setState({ repoOrError: error })
-                                return []
-                            })
+                        concat(
+                            [undefined],
+                            fetchRepository({ repoName }).pipe(
+                                catchError(error => {
+                                    switch (error.code) {
+                                        case EREPOSEEOTHER:
+                                            redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
+                                            return []
+                                    }
+                                    return [asError(error)]
+                                })
+                            )
                         )
                     )
                 )
-                .subscribe(
-                    repo => {
-                        this.setState({ repoOrError: repo })
-                    },
-                    err => {
-                        console.error(err)
-                    }
-                )
+                .subscribe(repoOrError => {
+                    this.setState({ repoOrError })
+                })
         )
 
         // Update resolved revision in state
-        this.revResolves.subscribe(resolvedRevOrError => this.setState({ resolvedRevOrError }))
+        this.subscriptions.add(this.revResolves.subscribe(resolvedRevOrError => this.setState({ resolvedRevOrError })))
 
         // Update header and other global state.
         this.subscriptions.add(
-            parsedRouteChanges.subscribe(({ repoName, rev, rawRev, rest }) => {
-                this.setState({ repoName, rev, rawRev, rest })
+            parsedRouteChanges.subscribe(({ repoName, rev, rawRev }) => {
+                this.setState({ repoName, rev, rawRev })
 
                 queryUpdates.next(searchQueryForRepoRev(repoName, rev))
             })
         )
-
-        this.routeMatchChanges.next(this.props.match.params)
 
         // Merge in repository updates.
         this.subscriptions.add(
@@ -193,12 +189,12 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         )
         // Clear the Sourcegraph extensions model's roots when navigating away.
         this.subscriptions.add(() => this.props.extensionsController.services.workspace.roots.next([]))
+
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: RepoContainerProps): void {
-        if (props.match.params !== this.props.match.params) {
-            this.routeMatchChanges.next(props.match.params)
-        }
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -280,6 +276,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 />
                 <ErrorBoundary location={this.props.location}>
                     <Switch>
+                        {/* eslint-disable react/jsx-no-bind */}
                         {[
                             '',
                             `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
@@ -291,7 +288,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                 path={`${repoMatchURL}${routePath}`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={routePath === ''}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
                                     <RepoRevContainer
                                         {...routeComponentProps}
@@ -315,12 +311,13 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                         path={context.routePrefix + path}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         exact={exact}
-                                        // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                                        // eslint-disable-next-line react/jsx-no-bind RouteProps.render is an exception
                                         render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                     />
                                 )
                         )}
                         <Route key="hardcoded-key" component={RepoPageNotFound} />
+                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </ErrorBoundary>
             </div>

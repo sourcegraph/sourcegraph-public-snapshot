@@ -1,7 +1,6 @@
 package repos_test
 
 import (
-	"context"
 	"database/sql"
 	"flag"
 	"testing"
@@ -28,11 +27,10 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	ctx := context.Background()
 	db, cleanup := dbtest.NewDB(t, *dsn)
 	defer cleanup()
 
-	dbstore := repos.NewDBStore(ctx, db, sql.TxOptions{
+	dbstore := repos.NewDBStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 

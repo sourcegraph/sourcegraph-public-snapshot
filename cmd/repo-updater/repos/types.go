@@ -604,10 +604,6 @@ func (r *Repo) IsDeleted() bool { return !r.DeletedAt.IsZero() }
 // Update updates Repo r with the fields from the given newer Repo n,
 // returning true if modified.
 func (r *Repo) Update(n *Repo) (modified bool) {
-	if !r.ExternalRepo.Equal(&n.ExternalRepo) && r.Name != n.Name {
-		return false
-	}
-
 	if r.Name != n.Name {
 		r.Name, modified = n.Name, true
 	}

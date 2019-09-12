@@ -65,6 +65,15 @@ Add events to the shared Release Schedule calendar in Google and invite team@sou
   - [ ] Pin new release tweet
   - [ ] Confirm with Product if tweet will be promoted
 - [ ] Send email in HubSpot
-- [ ] Create new `motd` in [Sourcegraph.com global settings](https://sourcegraph.com/site-admin/global-settings)
+- [ ] Create new `notice` in [Sourcegraph.com global settings](https://sourcegraph.com/site-admin/global-settings)
+   ```
+   "notices": [
+     {
+       "message": "Sourcegraph {VERSION} is now available! Check out the [{VERSION} release blog post](https://about.sourcegraph.com/blog/sourcegraph-{VERSION}) for more details.",
+       "location": "top",
+       "dismissible": true
+     }
+   ]
+   ```
 - [ ] Use tweet or email content for post on the [LinkedIn Sourcegraph company page](https://www.linkedin.com/company/sourcegraph/)
 - [ ] Put notification in #dev-rel Slack channel with links to blog post and tweet

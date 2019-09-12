@@ -45,8 +45,8 @@ export class SearchFilterChips extends React.PureComponent<Props> {
         )
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -83,7 +83,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                                         Add search scopes for quick filtering
                                     </span>
                                 ) : (
-                                    `Edit`
+                                    'Edit'
                                 )}
                             </small>
                         </NavLink>

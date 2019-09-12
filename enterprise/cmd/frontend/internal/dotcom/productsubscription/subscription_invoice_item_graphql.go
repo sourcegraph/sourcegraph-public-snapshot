@@ -44,6 +44,6 @@ func (r *productSubscriptionInvoiceItem) UserCount() int32 {
 	return r.userCount
 }
 
-func (r *productSubscriptionInvoiceItem) ExpiresAt() string {
-	return r.expiresAt.Format(time.RFC3339)
+func (r *productSubscriptionInvoiceItem) ExpiresAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.expiresAt}
 }

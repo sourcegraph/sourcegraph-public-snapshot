@@ -82,7 +82,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensi
     const [modelText, setModelText] = useState<string | null>(null)
     useEffect(() => {
         if (!editorId) {
-            return () => void 0
+            return () => undefined
         }
         const subscription = from(extensionsController.services.editor.observeEditorAndModel(editorId))
             .pipe(map(editor => editor.model.text))

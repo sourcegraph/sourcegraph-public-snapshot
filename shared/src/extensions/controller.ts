@@ -187,11 +187,11 @@ function log(level: 'info' | 'error', subject: string, message: any, other?: { [
     let color: string
     let backgroundColor: string
     if (level === 'info') {
-        f = console.log
+        f = console.log.bind(console)
         color = '#000'
         backgroundColor = '#eee'
     } else {
-        f = console.error
+        f = console.error.bind(console)
         color = 'white'
         backgroundColor = 'red'
     }

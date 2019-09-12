@@ -41,11 +41,13 @@ func Normalize(input string) []byte {
 	return output
 }
 
+var DefaultFormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2}
+
 // Remove returns the input JSON with the given path removed.
 func Remove(input string, path ...string) (string, error) {
 	edits, _, err := jsonx.ComputePropertyRemoval(input,
 		jsonx.PropertyPath(path...),
-		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
+		DefaultFormatOptions,
 	)
 	if err != nil {
 		return input, err
@@ -60,7 +62,7 @@ func Edit(input string, v interface{}, path ...string) (string, error) {
 		jsonx.PropertyPath(path...),
 		v,
 		nil,
-		jsonx.FormatOptions{InsertSpaces: true, TabSize: 2},
+		DefaultFormatOptions,
 	)
 	if err != nil {
 		return input, err
@@ -70,10 +72,9 @@ func Edit(input string, v interface{}, path ...string) (string, error) {
 }
 
 // Format returns the input JSON formatted with the given options.
-func Format(input string, spaces bool, tabsize int) (string, error) {
-	opts := jsonx.FormatOptions{
-		InsertSpaces: spaces,
-		TabSize:      tabsize,
+func Format(input string, opt *jsonx.FormatOptions) (string, error) {
+	if opt == nil {
+		opt = &DefaultFormatOptions
 	}
-	return jsonx.ApplyEdits(input, jsonx.Format(input, opts)...)
+	return jsonx.ApplyEdits(input, jsonx.Format(input, *opt)...)
 }

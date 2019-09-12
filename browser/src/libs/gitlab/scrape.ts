@@ -66,7 +66,7 @@ export function getPageInfo(): GitLabInfo {
 export function getFilePageInfo(): GitLabFileInfo {
     const { rawRepoName, owner, projectName } = getPageInfo()
 
-    const matches = window.location.pathname.match(new RegExp(`${owner}\/${projectName}\/blob\/(.*?)\/(.*)`))
+    const matches = window.location.pathname.match(new RegExp(`${owner}/${projectName}/blob/(.*?)/(.*)`))
     if (!matches) {
         throw new Error('Unable to determine revision or file path')
     }
@@ -127,7 +127,7 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
         throw buildFileError('no-file-title-element')
     }
 
-    const getFilePathFromElem = (elem: HTMLElement) => {
+    const getFilePathFromElem = (elem: HTMLElement): string => {
         const filePath = elem.dataset.originalTitle || elem.dataset.title
         if (!filePath) {
             throw buildFileError('no-file-title')

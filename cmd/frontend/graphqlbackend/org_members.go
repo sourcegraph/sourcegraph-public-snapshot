@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -45,10 +44,10 @@ func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolve
 	return UserByIDInt32(ctx, r.membership.UserID)
 }
 
-func (r *organizationMembershipResolver) CreatedAt() string {
-	return r.membership.CreatedAt.Format(time.RFC3339)
+func (r *organizationMembershipResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.membership.CreatedAt}
 }
 
-func (r *organizationMembershipResolver) UpdatedAt() string {
-	return r.membership.UpdatedAt.Format(time.RFC3339)
+func (r *organizationMembershipResolver) UpdatedAt() DateTime {
+	return DateTime{Time: r.membership.UpdatedAt}
 }

@@ -91,12 +91,9 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             </div>
         )}
-        {quickLinks && (
-            <div className="search-results-filter-bars__row" data-testid="quicklinks-bar">
-                <div className="search-results-filter-bars__quicklinks">
-                    <QuickLinks quickLinks={quickLinks} />
-                </div>
-            </div>
-        )}
+        <QuickLinks
+            quickLinks={quickLinks}
+            className="search-results-filter-bars__row search-results-filter-bars__quicklinks"
+        />
     </div>
 )

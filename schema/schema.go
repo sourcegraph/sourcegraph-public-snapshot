@@ -103,6 +103,7 @@ type BitbucketCloudConnection struct {
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
 type BitbucketServerAuthorization struct {
+	HardTTL          string                          `json:"hardTTL,omitempty"`
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
 	Oauth            BitbucketServerOAuth            `json:"oauth"`
 	Ttl              string                          `json:"ttl,omitempty"`
@@ -167,6 +168,7 @@ type BrandAssets struct {
 //
 // Only available in Sourcegraph Enterprise.
 type Branding struct {
+	BrandName         string       `json:"brandName,omitempty"`
 	Dark              *BrandAssets `json:"dark,omitempty"`
 	DisableSymbolSpin bool         `json:"disableSymbolSpin,omitempty"`
 	Favicon           string       `json:"favicon,omitempty"`
@@ -235,8 +237,7 @@ type ExcludedGitoliteRepo struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	Discussions     string `json:"discussions,omitempty"`
-	StatusIndicator string `json:"statusIndicator,omitempty"`
+	Discussions string `json:"discussions,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -403,8 +404,9 @@ type OpenIDConnectAuthProvider struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
-	Repos []string `json:"repos"`
-	Url   string   `json:"url,omitempty"`
+	Repos                 []string `json:"repos"`
+	RepositoryPathPattern string   `json:"repositoryPathPattern,omitempty"`
+	Url                   string   `json:"url,omitempty"`
 }
 
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
@@ -482,17 +484,16 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	AlertsShowPatchUpdates    bool                      `json:"alerts.showPatchUpdates,omitempty"`
-	CodeHostUseNativeTooltips bool                      `json:"codeHost.useNativeTooltips,omitempty"`
-	Extensions                map[string]bool           `json:"extensions,omitempty"`
-	Motd                      []string                  `json:"motd,omitempty"`
-	Notices                   []*Notice                 `json:"notices,omitempty"`
-	NotificationsSlack        *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	Quicklinks                []*QuickLink              `json:"quicklinks,omitempty"`
-	SearchContextLines        int                       `json:"search.contextLines,omitempty"`
-	SearchRepositoryGroups    map[string][]string       `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries        []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
-	SearchScopes              []*SearchScope            `json:"search.scopes,omitempty"`
+	AlertsShowPatchUpdates    bool                  `json:"alerts.showPatchUpdates,omitempty"`
+	CodeHostUseNativeTooltips bool                  `json:"codeHost.useNativeTooltips,omitempty"`
+	Extensions                map[string]bool       `json:"extensions,omitempty"`
+	Motd                      []string              `json:"motd,omitempty"`
+	Notices                   []*Notice             `json:"notices,omitempty"`
+	Quicklinks                []*QuickLink          `json:"quicklinks,omitempty"`
+	SearchContextLines        int                   `json:"search.contextLines,omitempty"`
+	SearchRepositoryGroups    map[string][]string   `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries        []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
+	SearchScopes              []*SearchScope        `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -500,6 +501,7 @@ type SiteConfiguration struct {
 	AuthAccessTokens                  *AuthAccessTokens           `json:"auth.accessTokens,omitempty"`
 	Branding                          *Branding                   `json:"branding,omitempty"`
 	CorsOrigin                        string                      `json:"corsOrigin,omitempty"`
+	DebugSearchSymbolsParallelism     int                         `json:"debug.search.symbolsParallelism,omitempty"`
 	DisableAutoGitUpdates             bool                        `json:"disableAutoGitUpdates,omitempty"`
 	DisableBuiltInSearches            bool                        `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                        `json:"disablePublicRepoRedirects,omitempty"`
@@ -514,16 +516,14 @@ type SiteConfiguration struct {
 	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
 	GithubClientID                    string                      `json:"githubClientID,omitempty"`
 	GithubClientSecret                string                      `json:"githubClientSecret,omitempty"`
+	LsifUploadSecret                  string                      `json:"lsifUploadSecret,omitempty"`
+	LsifVerificationGithubToken       string                      `json:"lsifVerificationGithubToken,omitempty"`
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph          `json:"parentSourcegraph,omitempty"`
 	RepoListUpdateInterval            int                         `json:"repoListUpdateInterval,omitempty"`
 	SearchIndexEnabled                *bool                       `json:"search.index.enabled,omitempty"`
+	SearchIndexSymbolsEnabled         *bool                       `json:"search.index.symbols.enabled,omitempty"`
 	SearchLargeFiles                  []string                    `json:"search.largeFiles,omitempty"`
-}
-
-// SlackNotificationsConfig description: Configuration for sending notifications to Slack.
-type SlackNotificationsConfig struct {
-	WebhookURL string `json:"webhookURL"`
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`

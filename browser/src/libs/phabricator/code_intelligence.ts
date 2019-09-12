@@ -7,7 +7,7 @@ import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost } from '../code_intelligence'
 import { CodeView, toCodeViewResolver } from '../code_intelligence/code_views'
 import { ViewResolver } from '../code_intelligence/views'
-import { convertSpacesToTabs, spacesToTabsAdjustment } from '../phabricator'
+import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './file_info'
 
@@ -166,7 +166,7 @@ const phabSourceCodeViewResolver = toCodeViewResolver('.phabricator-source-code-
     resolveFileInfo: resolveDiffusionFileInfo,
 })
 
-export const checkIsPhabricator = () => !!document.querySelector('.phabricator-wordmark')
+export const checkIsPhabricator = (): boolean => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
     codeViewResolvers: [
@@ -185,7 +185,9 @@ export const phabricatorCodeHost: CodeHost = {
         actionItemIconClass: 'action-item__icon--phabricator',
     },
     hoverOverlayClassProps: {
+        className: 'aphront-dialog-view hover-overlay--phabricator',
         actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
+        closeButtonClassName: 'button grey hover-overlay__close-button--phabricator',
     },
     codeViewsRequireTokenization: true,
 }

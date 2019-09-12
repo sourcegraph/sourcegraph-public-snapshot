@@ -15,7 +15,7 @@ export interface TelemetryService {
     /**
      * Log an event (by sending it to the server).
      */
-    log(eventName: string): void
+    log(eventName: string, eventProperties?: any): void
 }
 
 /**

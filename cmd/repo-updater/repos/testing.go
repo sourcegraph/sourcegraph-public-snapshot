@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -16,8 +17,19 @@ import (
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
 // ignoring the given external services.
 func NewFakeSourcer(err error, srcs ...Source) Sourcer {
-	return func(...*ExternalService) (Sources, error) {
-		return srcs, err
+	return func(svcs ...*ExternalService) (Sources, error) {
+		var errs *multierror.Error
+
+		if err != nil {
+			for _, svc := range svcs {
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
+			}
+			if len(svcs) == 0 {
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: nil})
+			}
+		}
+
+		return srcs, errs.ErrorOrNil()
 	}
 }
 
@@ -36,12 +48,15 @@ func NewFakeSource(svc *ExternalService, err error, rs ...*Repo) *FakeSource {
 
 // ListRepos returns the Repos that FakeSource was instantiated with
 // as well as the error, if any.
-func (s FakeSource) ListRepos(context.Context) ([]*Repo, error) {
-	repos := make([]*Repo, len(s.repos))
-	for i, r := range s.repos {
-		repos[i] = r.With(Opt.RepoSources(s.svc.URN()))
+func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	if s.err != nil {
+		results <- SourceResult{Source: s, Err: s.err}
+		return
 	}
-	return repos, s.err
+
+	for _, r := range s.repos {
+		results <- SourceResult{Source: s, Repo: r.With(Opt.RepoSources(s.svc.URN()))}
+	}
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -134,8 +149,10 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 	set := make(map[*ExternalService]bool, len(s.svcByID))
 	svcs := make(ExternalServices, 0, len(s.svcByID))
 	for _, svc := range s.svcByID {
+		k := strings.ToLower(svc.Kind)
+
 		if !set[svc] &&
-			(len(kinds) == 0 || kinds[strings.ToLower(svc.Kind)]) &&
+			((len(kinds) == 0 && k != "phabricator") || kinds[k]) &&
 			(len(ids) == 0 || ids[svc.ID]) &&
 			!svc.IsDeleted() {
 

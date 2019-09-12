@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { displayRepoName, splitPath } from '../components/RepoFileLink'
+import { displayRepoName, splitPath } from './RepoFileLink'
 import { Link } from './Link'
 
 interface Props {

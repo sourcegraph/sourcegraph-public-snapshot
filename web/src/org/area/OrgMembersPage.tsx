@@ -101,6 +101,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     <div className="site-admin-detail-list__actions">
                         {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
                             <button
+                                type="button"
                                 className="btn btn-secondary btn-sm site-admin-detail-list__action"
                                 onClick={this.remove}
                                 disabled={loading}
@@ -135,7 +136,7 @@ interface State {
  * The organizations members page
  */
 export class OrgMembersPage extends React.PureComponent<Props, State> {
-    private orgChanges = new Subject<GQL.IOrg>()
+    private componentUpdates = new Subject<Props>()
     private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -148,17 +149,20 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
         eventLogger.logViewEvent('OrgMembers', { organization: { org_name: this.props.org.name } })
 
         this.subscriptions.add(
-            this.orgChanges.pipe(distinctUntilChanged((a, b) => a.id === b.id)).subscribe(org => {
-                this.setState({ viewerCanAdminister: org.viewerCanAdminister })
-                this.userUpdates.next()
-            })
+            this.componentUpdates
+                .pipe(
+                    map(props => props.org),
+                    distinctUntilChanged((a, b) => a.id === b.id)
+                )
+                .subscribe(org => {
+                    this.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                    this.userUpdates.next()
+                })
         )
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        if (props.org !== this.props.org) {
-            this.orgChanges.next(props.org)
-        }
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

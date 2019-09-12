@@ -6,7 +6,7 @@ import * as React from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable, Subscription } from 'rxjs'
 import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
@@ -24,12 +24,12 @@ initSentry('options')
 type State = Pick<
     FeatureFlags,
     'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion'
-> & { sourcegraphURL: string | null }
+> & { sourcegraphURL: string | null; isActivated: boolean }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
 
-const toggleFeatureFlag = (key: string) => {
+const toggleFeatureFlag = (key: string): void => {
     if (keyIsFeatureFlag(key)) {
         featureFlags
             .toggle(key)
@@ -55,18 +55,19 @@ const fetchCurrentTabStatus = async (): Promise<OptionsMenuProps['currentTabStat
 }
 
 // Make GraphQL requests from background page
-function requestGraphQL<T extends IQuery | IMutation>(options: {
+function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
     request: string
     variables: {}
 }): Observable<GraphQLResult<T>> {
     return from(background.requestGraphQL<T>(options))
 }
 
-const ensureValidSite = () => fetchSite(requestGraphQL)
+const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 
 class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
+        isActivated: true,
         allowErrorReporting: false,
         experimentalLinkPreviews: false,
         experimentalTextFieldCompletion: false,
@@ -81,7 +82,11 @@ class Options extends React.Component<{}, State> {
                     ...featureFlagDefaults,
                     ...featureFlags,
                 }
-                this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion })
+                this.setState({
+                    allowErrorReporting,
+                    experimentalLinkPreviews,
+                    experimentalTextFieldCompletion,
+                })
             })
         )
 
@@ -91,6 +96,14 @@ class Options extends React.Component<{}, State> {
                     this.setState({ sourcegraphURL })
                 }
             )
+        )
+
+        this.subscriptions.add(
+            observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
+                this.setState({
+                    isActivated: !disableExtension,
+                })
+            })
         )
     }
 
@@ -105,6 +118,7 @@ class Options extends React.Component<{}, State> {
 
         const props: OptionsContainerProps = {
             sourcegraphURL: this.state.sourcegraphURL,
+            isActivated: this.state.isActivated,
 
             ensureValidSite,
             fetchCurrentTabStatus,
@@ -118,6 +132,7 @@ class Options extends React.Component<{}, State> {
                 }),
 
             setSourcegraphURL: (sourcegraphURL: string) => storage.sync.set({ sourcegraphURL }),
+            toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
             toggleFeatureFlag,
             featureFlags: [
                 { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
@@ -130,14 +145,14 @@ class Options extends React.Component<{}, State> {
     }
 }
 
-const inject = async () => {
+const inject = (): void => {
     const injectDOM = document.createElement('div')
     injectDOM.className = 'sourcegraph-options-menu options'
     document.body.appendChild(injectDOM)
+    // For shared CSS that would otherwise be dark by default
+    document.body.classList.add('theme-light')
 
     render(<Options />, injectDOM)
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await inject()
-})
+document.addEventListener('DOMContentLoaded', inject)

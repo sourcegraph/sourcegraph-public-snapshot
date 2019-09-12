@@ -86,8 +86,8 @@ export const OrgInvitationPage = withAuthenticatedUser(
             this.componentUpdates.next(this.props)
         }
 
-        public componentWillReceiveProps(props: Props): void {
-            this.componentUpdates.next(props)
+        public componentDidUpdate(): void {
+            this.componentUpdates.next(this.props)
         }
 
         public componentWillUnmount(): void {
@@ -145,6 +145,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                 </div>
                                 <div>
                                     <button
+                                        type="button"
                                         className="btn btn-link btn-sm"
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onDeclineInvitation}

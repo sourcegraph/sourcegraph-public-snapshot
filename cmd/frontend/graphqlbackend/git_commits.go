@@ -18,7 +18,7 @@ type gitCommitConnectionResolver struct {
 	author *string
 	after  *string
 
-	repo *repositoryResolver
+	repo *RepositoryResolver
 
 	// cache results because it is used by multiple fields
 	once    sync.Once
@@ -67,7 +67,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commi
 	return r.commits, r.err
 }
 
-func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitResolver, error) {
+func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitResolver, error) {
 	commits, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -78,12 +78,28 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitRe
 		commits = commits[:*r.first]
 	}
 
-	resolvers := make([]*gitCommitResolver, len(commits))
+	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
 		resolvers[i] = toGitCommitResolver(r.repo, commit)
 	}
 
 	return resolvers, nil
+}
+
+func (r *gitCommitConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+	if r.first != nil {
+		// Return indeterminate total count if the caller requested an incomplete list of commits
+		// (which means we'd need an extra and expensive Git operation to determine the total
+		// count). This is to avoid `totalCount` taking significantly longer than `nodes` to
+		// compute, which would be unexpected to many API clients.
+		return nil, nil
+	}
+	commits, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	n := int32(len(commits))
+	return &n, nil
 }
 
 func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {

@@ -460,7 +460,7 @@ func TestPick(t *testing.T) {
 }
 
 func formatJSON(t testing.TB, s string) string {
-	formatted, err := jsonc.Format(s, true, 2)
+	formatted, err := jsonc.Format(s, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

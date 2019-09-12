@@ -98,7 +98,7 @@ export function testMountGetter(
         expect(container.outerHTML).toBe(outerHTMLAfterFirstCall)
     })
     if (mayReturnNull) {
-        it('returns null if the mount does not belong into the container', async () => {
+        it('returns null if the mount does not belong into the container', () => {
             const container = document.createElement('div')
             container.innerHTML = '<div>Hello</div><div>World</div>'
             const mount = getMount(container)
@@ -163,7 +163,7 @@ export function testDOMFunctions(
             }
 
             describe('getLineElementFromLineNumber()', () => {
-                it(`should return the right line element given the line number`, async () => {
+                it('should return the right line element given the line number', () => {
                     const codeElement = domFunctions.getLineElementFromLineNumber(codeViewElement, lineNumber, diffPart)
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
@@ -176,7 +176,7 @@ export function testDOMFunctions(
             })
 
             describe('getCodeElementFromLineNumber()', () => {
-                it(`should return the right code element given the line number`, async () => {
+                it('should return the right code element given the line number', () => {
                     const codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)
                     expect(codeElement).toBeDefined()
                     expect(codeElement).not.toBeNull()
@@ -189,7 +189,7 @@ export function testDOMFunctions(
             })
 
             let codeElement: HTMLElement
-            const setCodeElement = () => {
+            const setCodeElement = (): void => {
                 codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)!
                 if (!codeElement) {
                     throw new Error('Test depends on test for getCodeElementFromLineNumber() passing')
@@ -198,7 +198,7 @@ export function testDOMFunctions(
             // These tests depend on getCodeElementFromLineNumber() working as expected
             describe('getLineNumberFromCodeElement()', () => {
                 beforeEach(setCodeElement)
-                it(`should return the right line number given the code element`, () => {
+                it('should return the right line number given the code element', () => {
                     const returnedLineNumber = domFunctions.getLineNumberFromCodeElement(codeElement)
                     expect(returnedLineNumber).toBe(lineNumber)
                 })
@@ -215,9 +215,10 @@ export function testDOMFunctions(
                 beforeEach(setCodeElement)
                 it('should return correctly whether the first character is a diff indicator', () => {
                     // Default is false
-                    const is =
-                        !!domFunctions.isFirstCharacterDiffIndicator &&
-                        domFunctions.isFirstCharacterDiffIndicator(codeElement)
+                    const is = Boolean(
+                        domFunctions.isFirstCharacterDiffIndicator &&
+                            domFunctions.isFirstCharacterDiffIndicator(codeElement)
+                    )
                     expect(is).toBe(firstCharacterIsDiffIndicator)
                     if (is) {
                         // Check that the first character is truly a diff indicator

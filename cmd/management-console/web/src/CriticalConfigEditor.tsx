@@ -336,7 +336,7 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
     private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
-            action.run().then(() => void 0, (err: any) => console.error(err))
+            action.run().then(() => undefined, (err: any) => console.error(err))
         }
     }
 
@@ -358,7 +358,6 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
                                 <button
                                     key={id}
                                     className="btn btn-secondary btn-sm critical-config-editor__action"
-                                    // tslint:disable-next-line:jsx-no-lambda
                                     onClick={() => this.runAction(id, this.configEditor)}
                                     type="button"
                                 >
@@ -386,7 +385,9 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
                         />
                     )}
                 </div>
-                <button onClick={this.onDidSave}>Save changes</button>
+                <button type="button" onClick={this.onDidSave}>
+                    Save changes
+                </button>
                 {this.state.showSaving && <span className="critical-config-editor__status-indicator">Saving...</span>}
                 {this.state.showSaved && (
                     <span className="critical-config-editor__status-indicator critical-config-editor__status-indicator--success">

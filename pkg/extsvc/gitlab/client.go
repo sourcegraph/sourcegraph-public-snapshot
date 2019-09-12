@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
-var requestCounter = metrics.NewRequestCounter("gitlab", "Total number of requests sent to the GitLab API.")
+var requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
 // separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple

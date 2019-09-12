@@ -51,7 +51,7 @@ export const ExtensionREADME: React.FunctionComponent<{
             <PublishNewManifestAlert
                 extension={extension}
                 alertClass="alert-info"
-                text={`This extension has no README.`}
+                text="This extension has no README."
                 buttonLabel="Add README and publish new release"
             />
         )

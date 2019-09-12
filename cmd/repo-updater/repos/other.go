@@ -3,10 +3,10 @@ package repos
 import (
 	"context"
 	"net/url"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -29,19 +29,22 @@ func NewOtherSource(svc *ExternalService) (*OtherSource, error) {
 
 // ListRepos returns all Other repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s OtherSource) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	urls, err := s.cloneURLs()
 	if err != nil {
-		return nil, err
+		results <- SourceResult{Source: s, Err: err}
+		return
 	}
 
 	urn := s.svc.URN()
-	repos := make([]*Repo, 0, len(urls))
 	for _, u := range urls {
-		repos = append(repos, otherRepoFromCloneURL(urn, u))
+		r, err := s.otherRepoFromCloneURL(urn, u)
+		if err != nil {
+			results <- SourceResult{Source: s, Err: err}
+			return
+		}
+		results <- SourceResult{Source: s, Repo: r}
 	}
-
-	return repos, nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -81,26 +84,23 @@ func otherRepoCloneURL(base *url.URL, repo string) (*url.URL, error) {
 	return base.Parse(repo)
 }
 
-var otherRepoNameReplacer = strings.NewReplacer(":", "-", "@", "-", "//", "")
-
-func otherRepoName(cloneURL *url.URL) string {
-	u := *cloneURL
-	u.User = nil
-	u.Scheme = ""
-	u.RawQuery = ""
-	u.Fragment = ""
-	return otherRepoNameReplacer.Replace(u.String())
-}
-
-func otherRepoFromCloneURL(urn string, u *url.URL) *Repo {
+func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error) {
 	repoURL := u.String()
-	repoName := otherRepoName(u)
+	repoSource := reposource.Other{OtherExternalServiceConnection: s.conn}
+	repoName, err := repoSource.CloneURLToRepoName(u.String())
+	if err != nil {
+		return nil, err
+	}
+	repoURI, err := repoSource.CloneURLToRepoURI(u.String())
+	if err != nil {
+		return nil, err
+	}
 	u.Path, u.RawQuery = "", ""
 	serviceID := u.String()
 
 	return &Repo{
-		Name: repoName,
-		URI:  repoName,
+		Name: string(repoName),
+		URI:  repoURI,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceType: "other",
@@ -113,5 +113,5 @@ func otherRepoFromCloneURL(urn string, u *url.URL) *Repo {
 				CloneURL: repoURL,
 			},
 		},
-	}
+	}, nil
 }

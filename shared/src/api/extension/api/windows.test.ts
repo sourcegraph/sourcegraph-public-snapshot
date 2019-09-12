@@ -5,7 +5,7 @@ import { ExtWindow, ExtWindows } from './windows'
 describe('ExtWindow', () => {
     const NOOP_PROXY = {} as any
 
-    const DOCUMENTS = new ExtDocuments(async () => void 0)
+    const DOCUMENTS = new ExtDocuments(() => Promise.resolve())
     DOCUMENTS.$acceptDocumentData([{ uri: 'u', text: 't', languageId: 'l' }])
 
     test('reuses ExtCodeEditor object when updated', () => {
@@ -46,7 +46,7 @@ describe('ExtWindow', () => {
 describe('ExtWindows', () => {
     const NOOP_PROXY = {} as any
 
-    const documents = new ExtDocuments(async () => void 0)
+    const documents = new ExtDocuments(() => Promise.resolve())
     documents.$acceptDocumentData([{ uri: 'u', text: 't', languageId: 'l' }])
 
     test('reuses ExtWindow object when updated', () => {

@@ -22,9 +22,7 @@ describe('tryCatchPromise', () => {
     })
 
     test('returns a rejected promise with the asynchronous error', () => {
-        const p = tryCatchPromise(
-            () => Promise.reject(ERROR) // tslint:disable-line:no-floating-promises
-        )
+        const p = tryCatchPromise(() => Promise.reject(ERROR))
         let rejected: any
         return p
             .then(undefined, v => (rejected = v))

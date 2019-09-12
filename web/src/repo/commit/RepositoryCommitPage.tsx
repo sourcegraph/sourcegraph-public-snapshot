@@ -207,7 +207,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             <div className="card-body">
                                 <GitCommitNode
                                     node={this.state.commitOrError}
-                                    repoName={this.props.repo.name}
                                     expandCommitMessageBody={true}
                                     showSHAAndParentsRow={true}
                                 />

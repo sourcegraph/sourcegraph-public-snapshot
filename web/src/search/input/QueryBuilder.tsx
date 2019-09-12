@@ -1,6 +1,5 @@
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
-import { Select } from '../../components/Select'
 import { InfoDropdown } from './InfoDropdown'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 
@@ -136,7 +135,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
             <>
                 <div className="query-builder__toggle">
                     <a href="" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
-                        {!!this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
+                        {this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
                     </a>
                 </div>
 
@@ -151,7 +150,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     Type:
                                 </label>
                                 <div className="query-builder__row-input">
-                                    <Select
+                                    <select
                                         id="query-builder__type"
                                         className="form-control query-builder__input"
                                         onChange={this.onTypeChange}
@@ -163,7 +162,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         <option value="diff">Commit diffs</option>
                                         <option value="commit">Commit messages</option>
                                         <option value="symbol">Symbols</option>
-                                    </Select>
+                                    </select>
                                 </div>
                                 <InfoDropdown
                                     title="Type"
@@ -281,7 +280,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     Case sensitive:
                                 </label>
                                 <div className="query-builder__row-input">
-                                    <Select
+                                    <select
                                         id="query-builder-case"
                                         className="form-control query-builder__input"
                                         onChange={this.onCaseChange}
@@ -290,7 +289,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                             No
                                         </option>
                                         <option value="yes">Yes</option>
-                                    </Select>
+                                    </select>
                                 </div>
                                 <InfoDropdown
                                     title="Case sensitive"
@@ -334,7 +333,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 title="File paths"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="file"
-                                description={`Only include results from matching file paths. Supports regexp. To exclude files, use the \`-file:\` keyword in the main search bar.`}
+                                description="Only include results from matching file paths. Supports regexp. To exclude files, use the `-file:` keyword in the main search bar."
                                 examples={[
                                     {
                                         description: 'Search in files whose full path contains `internal`',

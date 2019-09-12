@@ -99,7 +99,7 @@ We will let you perform safe, large-scale refactors of code across repositories,
 
  - 🏃 [Find and replace string literals across multiple GitHub repositories](https://github.com/sourcegraph/sourcegraph/issues/3483)
  - Find and replace using sophisticated pattern matching and replacement templates (e.g. regex or comby).
- - Add support for modifing code on more code hosts (e.g. Bitbucket Server, GitLab).
+ - Add support for modifying code on more code hosts (e.g. Bitbucket Server, GitLab).
  - Create a UI for viewing and managing the state of in progress refactors (e.g. how many PRs are merged, automatically opening new PRs to refactor matching code that just got committed).
 
 ## Deployment, configuration, and management
@@ -113,7 +113,7 @@ We want to make it easy to set up a self-hosted Sourcegraph instance in minutes,
 - Easier deployment and configuration of language servers
 - Customization:
   - [Configurable welcome page](https://github.com/sourcegraph/sourcegraph/issues/2443)
-  - [Configurable site admin contact info and internal helpdesk link](https://github.com/sourcegraph/sourcegraph/issues/2442)
+  - [Configurable site admin contact info and internal help desk link](https://github.com/sourcegraph/sourcegraph/issues/2442)
 - Improved flow for common configuration use cases (e.g., "just make everything work well with my GitHub.com organization")
 
 ## Core UX

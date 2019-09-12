@@ -111,8 +111,11 @@ type Server struct {
 	// Janitor job runs.
 	DeleteStaleRepositories bool
 
-	// DesiredFreeDiskSpace is how much space we need to keep free in bytes.
-	DesiredFreeDiskSpace uint64
+	// DesiredPercentFree is the desired percentage of disk space to keep free.
+	DesiredPercentFree int
+
+	// DiskSizer tells how much disk is free and how large the disk is.
+	DiskSizer DiskSizer
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -221,6 +224,7 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -445,13 +449,66 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
+	var (
+		q       = r.URL.Query()
+		treeish = q.Get("treeish")
+		repo    = q.Get("repo")
+		format  = q.Get("format")
+		paths   = q["path"]
+	)
+
+	if err := checkSpecArgSafety(treeish); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log15.Error("gitserver.archive.CheckSpecArgSafety", "error", err)
+		return
+	}
+
+	if repo == "" || format == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		log15.Error("gitserver.archive", "error", "empty repo or format")
+		return
+	}
+
+	req := &protocol.ExecRequest{
+		Repo: api.RepoName(repo),
+		Args: []string{
+			"archive",
+
+			// Suppresses fatal error when the repo contains paths matching **/.git/** and instead
+			// includes those files (to allow archiving invalid such repos). This is unexpected
+			// behavior; the --worktree-attributes flag should merely let us specify a gitattributes
+			// file that contains `**/.git/** export-ignore`, but it actually makes everything work as
+			// desired. Tested by the "repo with .git dir" test case.
+			"--worktree-attributes",
+
+			"--format=" + format,
+		},
+	}
+
+	if format == "zip" {
+		// Compression level of 0 (no compression) seems to perform the
+		// best overall on fast network links, but this has not been tuned
+		// thoroughly.
+		req.Args = append(req.Args, "-0")
+	}
+
+	req.Args = append(req.Args, treeish, "--")
+	req.Args = append(req.Args, paths...)
+
+	s.exec(w, r, req)
+}
+
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	var req protocol.ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	s.exec(w, r, &req)
+}
 
+func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
 	// Flush writes more aggressively than standard net/http so that clients
 	// with a context deadline see as much partial response body as possible.
 	if fw := newFlushingResponseWriter(w); fw != nil {
@@ -751,7 +808,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		defer pw.Close()
 		go readCloneProgress(repo, url, lock, pr)
 
-		if output, err := s.runWithRemoteOpts(ctx, cmd, pw); err != nil {
+		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
@@ -908,7 +965,7 @@ func (s *Server) isCloneable(ctx context.Context, url string) error {
 	}
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := s.runWithRemoteOpts(ctx, cmd, nil)
+	out, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -1198,7 +1255,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := s.runWithRemoteOpts(ctx, cmd, nil); err != nil {
+	if output, err := runWithRemoteOpts(ctx, cmd, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
 	}
@@ -1213,7 +1270,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
+	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to fetch remote info")

@@ -8,7 +8,7 @@ const OPTIONS: ApplyLinkPreviewOptions = {
 }
 
 describe('applyLinkPreview', () => {
-    test('annotates element and is idempotent', async () => {
+    test('annotates element and is idempotent', () => {
         const div = document.createElement('div')
         const link = document.createElement('a')
         link.href = 'u'

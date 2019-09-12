@@ -100,6 +100,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
 
                         {comment.canReport && onReport && (
                             <button
+                                type="button"
                                 className="btn btn-link btn-sm discussions-comment__report"
                                 data-tooltip="Report this comment"
                                 onClick={this.onReportClick}
@@ -117,6 +118,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                 </span>
                                 {comment.canClearReports && onClearReports && (
                                     <button
+                                        type="button"
                                         className="btn btn-link btn-sm discussions-comment__toolbar-btn"
                                         data-tooltip="Clear reports / mark as good message"
                                         onClick={this.onClearReportsClick}
@@ -128,6 +130,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                         )}
                         {comment.canDelete && onDelete && (
                             <button
+                                type="button"
                                 className="btn btn-link btn-sm discussions-comment__toolbar-btn"
                                 data-tooltip="Delete comment forever"
                                 onClick={this.onDeleteClick}

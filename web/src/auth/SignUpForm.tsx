@@ -90,6 +90,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         <label className="signin-signup-form__checkbox-label">
                             <input className="mr-1" type="checkbox" onChange={this.onRequestTrialFieldChange} />
                             Try Sourcegraph Enterprise free for 30 days
+                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
                             <a className="ml-1" target="_blank" href="https://about.sourcegraph.com/pricing">
                                 <HelpCircleOutlineIcon className="icon-inline" />
                             </a>
@@ -113,11 +114,12 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                 )}
                 {signupTerms && (
                     <small className="form-text text-muted">
-                        By signing up, you agree to our{' '}
+                        By signing up, you agree to our
+                        {/* eslint-disable-next-line react/jsx-no-target-blank */}
                         <a href="https://about.sourcegraph.com/terms" target="_blank">
                             Terms of Service
                         </a>{' '}
-                        and{' '}
+                        and {/* eslint-disable-next-line react/jsx-no-target-blank */}
                         <a href="https://about.sourcegraph.com/privacy" target="_blank">
                             Privacy Policy
                         </a>

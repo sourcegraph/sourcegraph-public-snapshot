@@ -53,6 +53,11 @@ type ExternalTool struct {
 func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath string) (cmd *exec.Cmd, err error) {
 	switch t.Name {
 	case "comby":
+		_, err = exec.LookPath("comby")
+		if err != nil {
+			return nil, errors.New("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+		}
+
 		var args []string
 		args = append(args, spec.MatchTemplate, spec.RewriteTemplate)
 
@@ -70,7 +75,7 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 		return exec.Command(t.BinaryPath, args...), nil
 
 	default:
-		return nil, errors.Errorf("Unknown external replace tool %q", t.Name)
+		return nil, errors.Errorf("Unknown external replace tool %q.", t.Name)
 	}
 }
 

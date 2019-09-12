@@ -33,7 +33,7 @@ export class ContributionRegistry {
     /** All entries, including entries that are not enabled in the current context. */
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
-    public constructor(
+    constructor(
         private editorService: Pick<EditorService, 'editorsAndModels'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
@@ -97,7 +97,7 @@ export class ContributionRegistry {
         extraContext?: Context<T>,
         logWarning = (...args: any[]) => console.log(...args)
     ): Observable<Evaluated<Contributions>> {
-        return combineLatest(
+        return combineLatest([
             entries.pipe(
                 switchMap(entries =>
                     combineLatestOrDefault(
@@ -112,8 +112,8 @@ export class ContributionRegistry {
             ),
             this.editorService.editorsAndModels,
             this.settingsService.data,
-            this.context
-        ).pipe(
+            this.context,
+        ]).pipe(
             map(([multiContributions, editors, settings, context]) => {
                 // Merge in extra context.
                 if (extraContext) {

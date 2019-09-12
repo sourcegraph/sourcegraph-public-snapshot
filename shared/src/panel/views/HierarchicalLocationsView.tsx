@@ -110,8 +110,8 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: HierarchicalLocationsViewProps): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -215,7 +215,6 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     className={`list-group-item hierarchical-locations-view__item ${
                                                         selectedGroups[i] === group.key ? 'active' : ''
                                                     }`}
-                                                    // tslint:disable-next-line:jsx-no-lambda
                                                     onClick={e => this.onSelectTree(e, selectedGroups, i, group.key)}
                                                 >
                                                     <span

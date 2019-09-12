@@ -42,7 +42,7 @@ export class ExtWindow implements sourcegraph.Window {
     }
 
     public showNotification(message: string, type: sourcegraph.NotificationType): void {
-        // tslint:disable-next-line: no-floating-promises
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.proxy.windows.$showNotification(message, type)
     }
 
@@ -73,12 +73,12 @@ export class ExtWindow implements sourcegraph.Window {
         const reporterProxy = await this.proxy.windows.$showProgress(options)
         return {
             next: (progress: sourcegraph.Progress) => {
-                // tslint:disable-next-line: no-floating-promises
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 reporterProxy.next(progress)
             },
             error: (err: any) => {
                 const error = asError(err)
-                // tslint:disable-next-line: no-floating-promises
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 reporterProxy.error({
                     message: error.message,
                     name: error.name,
@@ -86,7 +86,7 @@ export class ExtWindow implements sourcegraph.Window {
                 })
             },
             complete: () => {
-                // tslint:disable-next-line: no-floating-promises
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 reporterProxy.complete()
             },
         }

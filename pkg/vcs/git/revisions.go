@@ -114,7 +114,7 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
+			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
 	}
@@ -125,7 +125,7 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
+			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
 		}
 		return "", fmt.Errorf("ResolveRevision: got bad commit %q for repo %q at revision %q", commit, cmd.Name, spec)
 	}

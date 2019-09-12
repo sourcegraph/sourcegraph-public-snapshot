@@ -132,7 +132,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                     </div>
                     <div className="text-nowrap">
                         {this.props.node.accountData && (
-                            <button className="btn btn-secondary" onClick={this.toggleShowData}>
+                            <button type="button" className="btn btn-secondary" onClick={this.toggleShowData}>
                                 {this.state.showData ? 'Hide' : 'Show'} data
                             </button>
                         )}{' '}
@@ -141,7 +141,12 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                                 Refresh
                             </a>
                         )}{' '}
-                        <button className="btn btn-danger" onClick={this.deleteExternalAccount} disabled={loading}>
+                        <button
+                            type="button"
+                            className="btn btn-danger"
+                            onClick={this.deleteExternalAccount}
+                            disabled={loading}
+                        >
                             Delete
                         </button>
                         {isErrorLike(this.state.deletionOrError) && (

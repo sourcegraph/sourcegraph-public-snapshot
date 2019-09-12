@@ -21,8 +21,13 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
+    "typecheck": "../../node_modules/.bin/tsc -p .",
+    "tslint": "../../node_modules/.bin/tslint -t stylish -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
+    "eslint": "../../node_modules/.bin/eslint 'src/*.[jt]s?(x)'",
     "docs": "typedoc",
-    "prepublishOnly": "yarn run tslint && yarn run docs"
+    "prepublishOnly": "yarn run tslint && yarn run eslint && yarn run docs"
+  },
+  "devDependencies": {
+    "typedoc": "^0.15.0"
   }
 }

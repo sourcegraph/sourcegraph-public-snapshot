@@ -12,7 +12,7 @@ import { NavGroupDescriptor } from '../util/contributions'
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor {}
 
-export type SiteAdminSideBarGroups = ReadonlyArray<SiteAdminSideBarGroup>
+export type SiteAdminSideBarGroups = readonly SiteAdminSideBarGroup[]
 
 export interface SiteAdminSidebarProps {
     /** The items for the side bar, by group */

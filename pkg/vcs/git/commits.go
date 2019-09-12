@@ -185,7 +185,7 @@ func runCommitLog(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) (
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), string(opt.Range)) {
-			return nil, &RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: string(opt.Range)}
+			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: string(opt.Range)}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}

@@ -67,9 +67,6 @@ const SettingsSchemaJSON = `{
       "minimum": 0,
       "default": 1
     },
-    "notifications.slack": {
-      "$ref": "#/definitions/SlackNotificationsConfig"
-    },
     "quicklinks": {
       "description": "Links that should be accessible quickly from the home and search pages.",
       "type": "array",
@@ -171,19 +168,6 @@ const SettingsSchemaJSON = `{
         "description": {
           "type": "string",
           "description": "A description for this quick link"
-        }
-      }
-    },
-    "SlackNotificationsConfig": {
-      "type": "object",
-      "description": "Configuration for sending notifications to Slack.",
-      "additionalProperties": false,
-      "required": ["webhookURL"],
-      "properties": {
-        "webhookURL": {
-          "type": "string",
-          "description": "The Slack webhook URL used to post notification messages to a Slack channel. To obtain this URL, go to: https://YOUR-WORKSPACE-NAME.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks",
-          "format": "uri"
         }
       }
     }

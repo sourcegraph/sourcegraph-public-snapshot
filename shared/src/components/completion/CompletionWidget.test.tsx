@@ -1,10 +1,7 @@
 import React from 'react'
-// tslint:disable-next-line: no-submodule-imports
 import { createRenderer } from 'react-test-renderer/shallow'
 import { CompletionItem } from 'sourcegraph'
 import { CompletionWidget } from './CompletionWidget'
-
-// tslint:disable: jsx-no-lambda
 
 const COMPLETION_ITEM_2: CompletionItem = { label: 'b' }
 
@@ -16,7 +13,7 @@ describe('CompletionWidgetDropdown', () => {
         renderer.render(
             <CompletionWidget
                 completionListOrError={{ items: [{ label: 'a' }, COMPLETION_ITEM_2] }}
-                onSelectItem={() => void 0}
+                onSelectItem={() => undefined}
                 textArea={textArea}
                 listClassName="list-class-name"
                 listItemClassName="list-item-class-name"

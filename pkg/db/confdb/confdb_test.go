@@ -1,6 +1,7 @@
 package confdb
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -12,7 +13,8 @@ func TestCriticalGetLatestDefault(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	latest, err := CriticalGetLatest(ctx)
 	if err != nil {
@@ -29,7 +31,8 @@ func TestCriticalCreate_RejectInvalidJSON(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	malformedJSON := "[This is malformed.}"
 
@@ -154,7 +157,8 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := dbtesting.TestContext(t)
+			dbtesting.SetupGlobalTestDB(t)
+			ctx := context.Background()
 			for _, p := range test.sequence {
 				output, err := CriticalCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
 				if err != nil {

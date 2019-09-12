@@ -1,7 +1,7 @@
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { TextDocumentIdentifier } from '../../client/types/textDocument'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
@@ -22,7 +22,7 @@ const FIXTURE_RESULT: TextDocumentDecoration[] | null = [
     },
 ]
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getDecorations', () => {
     describe('0 providers', () => {

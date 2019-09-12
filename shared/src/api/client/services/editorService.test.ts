@@ -18,7 +18,7 @@ export function createTestEditorService(
     return { editorsAndModels }
 }
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('EditorService', () => {
     test('editors', () => {

@@ -1,9 +1,9 @@
-import { range } from 'lodash'
+import { range, isEqual } from 'lodash'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, filter, switchMap } from 'rxjs/operators'
+import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
@@ -54,13 +54,20 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
     private visibilitySensorOffset = { bottom: -500 }
 
-    public constructor(props: Props) {
+    constructor(props: Props) {
         super(props)
         this.subscriptions.add(
             combineLatest(this.propsChanges, this.visibilityChanges)
                 .pipe(
                     filter(([, isVisible]) => isVisible),
-                    switchMap(([{ repoName, filePath, commitID, isLightTheme }]) =>
+                    map(([{ repoName, filePath, commitID, isLightTheme }]) => ({
+                        repoName,
+                        filePath,
+                        commitID,
+                        isLightTheme,
+                    })),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    switchMap(({ repoName, filePath, commitID, isLightTheme }) =>
                         props.fetchHighlightedFileLines({
                             repoName,
                             commitID,
@@ -81,11 +88,9 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         this.propsChanges.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.propsChanges.next(nextProps)
-    }
+    public componentDidUpdate(): void {
+        this.propsChanges.next(this.props)
 
-    public componentDidUpdate(prevProps: Props, prevState: State): void {
         if (this.tableContainerElement) {
             const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
             for (const highlight of this.props.highlightRanges) {

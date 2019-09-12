@@ -4,7 +4,7 @@ package conf
 import (
 	"log"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
@@ -49,7 +49,7 @@ func getMode() configurationMode {
 	default:
 		// Detect 'go test' and default to test mode in that case.
 		p, err := os.Executable()
-		if err == nil && filepath.Ext(p) == ".test" {
+		if err == nil && strings.Contains(strings.ToLower(p), "test") {
 			return modeTest
 		}
 

@@ -20,7 +20,7 @@ import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
 interface Props extends ActivationProps {
     history: H.History
-    overviewComponents: ReadonlyArray<React.ComponentType>
+    overviewComponents: readonly React.ComponentType[]
     isLightTheme: boolean
 }
 

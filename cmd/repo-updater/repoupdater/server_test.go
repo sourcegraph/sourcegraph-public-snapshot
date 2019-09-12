@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -543,10 +545,18 @@ func TestServer_RepoExternalServices(t *testing.T) {
 }
 
 func TestServer_StatusMessages(t *testing.T) {
+	githubService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+	}
+
 	testCases := []struct {
 		name            string
 		stored          repos.Repos
 		gitserverCloned []string
+		sourcerErr      error
+		listRepoErr     error
 		res             *protocol.StatusMessagesResponse
 		err             string
 	}{
@@ -565,8 +575,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type:    protocol.CloningStatusMessage,
-						Message: "1 repositories enqueued for cloning...",
+						Cloning: &protocol.CloningProgress{
+							Message: "1 repositories enqueued for cloning...",
+						},
 					},
 				},
 			},
@@ -578,8 +589,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type:    protocol.CloningStatusMessage,
-						Message: "1 repositories enqueued for cloning...",
+						Cloning: &protocol.CloningProgress{
+							Message: "1 repositories enqueued for cloning...",
+						},
 					},
 				},
 			},
@@ -599,8 +611,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						Type:    protocol.CloningStatusMessage,
-						Message: "2 repositories enqueued for cloning...",
+						Cloning: &protocol.CloningProgress{
+							Message: "2 repositories enqueued for cloning...",
+						},
 					},
 				},
 			},
@@ -621,6 +634,33 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{},
 			},
 		},
+		{
+			name:       "one external service syncer err",
+			sourcerErr: errors.New("github is down"),
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+							Message:           "github is down",
+							ExternalServiceId: githubService.ID,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:        "one syncer err",
+			listRepoErr: errors.New("could not connect to database"),
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						SyncError: &protocol.SyncError{
+							Message: "syncer.sync.store.list-repos: could not connect to database",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -635,8 +675,27 @@ func TestServer_StatusMessages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			err = store.UpsertExternalServices(ctx, githubService)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			s := &Server{Store: store, GitserverClient: gitserverClient}
+			clock := repos.NewFakeClock(time.Now(), 0)
+			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+
+			if tc.sourcerErr != nil || tc.listRepoErr != nil {
+				store.ListReposError = tc.listRepoErr
+				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
+				// Run Sync so that possibly `LastSyncErrors` is set
+				syncer = repos.NewSyncer(store, sourcer, nil, clock.Now)
+				_, _ = syncer.Sync(ctx)
+			}
+
+			s := &Server{
+				Syncer:          syncer,
+				Store:           store,
+				GitserverClient: gitserverClient,
+			}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -998,7 +1057,7 @@ func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) 
 }
 
 func formatJSON(s string) string {
-	formatted, err := jsonc.Format(s, true, 2)
+	formatted, err := jsonc.Format(s, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -1011,8 +1070,10 @@ func must(err error) {
 	}
 }
 
-func init() {
+func TestMain(m *testing.M) {
+	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 	}
+	os.Exit(m.Run())
 }

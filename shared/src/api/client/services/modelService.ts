@@ -55,7 +55,7 @@ export interface ModelService {
  */
 export function createModelService(): ModelService {
     const models = new BehaviorSubject<readonly TextModel[]>([])
-    const hasModel = (uri: string) => models.value.some(m => m.uri === uri)
+    const hasModel = (uri: string): boolean => models.value.some(m => m.uri === uri)
     return {
         models,
         addModel: model => {

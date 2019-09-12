@@ -1,6 +1,7 @@
 package bg
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -15,7 +16,8 @@ func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	t.Run("migrate user saved query", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
@@ -80,7 +82,8 @@ func TestDoMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testi
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	t.Run("valid", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})
@@ -163,7 +166,8 @@ func TestMigrateSavedQueryIntoDB(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	check := func(t *testing.T, settings *api.Settings, wantChanged bool) {
 		t.Helper()
@@ -218,7 +222,8 @@ func TestInsertSavedQueryIntoDB(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	t.Run("user saved search inserted into db table", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})
@@ -309,7 +314,8 @@ func TestMigrateSlackWebhookURL(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	t.Run("migrate user slack webhook URL", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u1"})

@@ -77,7 +77,7 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
         //
         // TODO(sqs): Add timeouts to prevent long-running activate or deactivate functions from
         // significantly delaying other extensions.
-        return tryCatchPromise<void>(() => extensionExports.activate({ subscriptions: extensionSubscriptions })).catch(
+        await tryCatchPromise<void>(() => extensionExports.activate({ subscriptions: extensionSubscriptions })).catch(
             error => {
                 error = asError(error)
                 throw Object.assign(
@@ -95,7 +95,7 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
         const deactivate = this.extensionDeactivate.get(extensionID)
         if (deactivate) {
             this.extensionDeactivate.delete(extensionID)
-            return Promise.resolve(deactivate())
+            await Promise.resolve(deactivate())
         }
     }
 

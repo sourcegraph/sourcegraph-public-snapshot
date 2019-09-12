@@ -2,6 +2,9 @@
 package protocol
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
@@ -101,7 +104,7 @@ type PatternInfo struct {
 
 // AllIncludePatterns returns all include patterns (including the deprecated
 // single p.IncludePattern).
-func (p PatternInfo) AllIncludePatterns() []string {
+func (p *PatternInfo) AllIncludePatterns() []string {
 	if p.IncludePattern == "" {
 		return p.IncludePatterns
 	}
@@ -112,6 +115,46 @@ func (p PatternInfo) AllIncludePatterns() []string {
 	copy(all, p.IncludePatterns)
 	all[len(all)-1] = p.IncludePattern
 	return all
+}
+
+func (p *PatternInfo) String() string {
+	args := []string{fmt.Sprintf("%q", p.Pattern)}
+	if p.IsRegExp {
+		args = append(args, "re")
+	}
+	if p.IsWordMatch {
+		args = append(args, "word")
+	}
+	if p.IsCaseSensitive {
+		args = append(args, "case")
+	}
+	if !p.PatternMatchesContent {
+		args = append(args, "nocontent")
+	}
+	if !p.PatternMatchesPath {
+		args = append(args, "nopath")
+	}
+	if p.FileMatchLimit > 0 {
+		args = append(args, fmt.Sprintf("filematchlimit:%d", p.FileMatchLimit))
+	}
+
+	path := "glob"
+	if p.PathPatternsAreRegExps {
+		path = "f"
+	}
+	if p.PathPatternsAreCaseSensitive {
+		path = "F"
+	}
+	if p.ExcludePattern != "" {
+		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
+	}
+	if incs := p.AllIncludePatterns(); len(incs) > 0 {
+		for _, inc := range incs {
+			args = append(args, fmt.Sprintf("%s:%q", path, inc))
+		}
+	}
+
+	return fmt.Sprintf("PatternInfo{%s}", strings.Join(args, ","))
 }
 
 // Response represents the response from a Search request.

@@ -2,6 +2,7 @@
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {
+  const isTest = api.env('test')
   api.cache.forever()
 
   return {
@@ -9,7 +10,8 @@ module.exports = api => {
       [
         '@babel/preset-env',
         {
-          modules: false,
+          // Node (used for testing) doesn't support modules, so compile to CommonJS for testing.
+          modules: isTest ? 'commonjs' : false,
           useBuiltIns: 'entry',
           corejs: 3,
         },

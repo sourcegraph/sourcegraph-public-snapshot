@@ -88,7 +88,7 @@ type DBStore struct {
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db dbutil.DB, txOpts sql.TxOptions) *DBStore {
+func NewDBStore(db dbutil.DB, txOpts sql.TxOptions) *DBStore {
 	return &DBStore{db: db, txOpts: txOpts}
 }
 
@@ -187,6 +187,12 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 		}
 		preds = append(preds,
 			sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ",")))
+	} else {
+		// HACK(tsenart): The syncer and all other places that load all external
+		// services do not want phabricator instances. These are handled separately
+		// by RunPhabricatorRepositorySyncWorker.
+		preds = append(preds,
+			sqlf.Sprintf("LOWER(kind) != 'phabricator'"))
 	}
 
 	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))

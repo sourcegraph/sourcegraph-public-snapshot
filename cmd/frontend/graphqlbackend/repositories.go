@@ -198,18 +198,18 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 	return r.repos, r.err
 }
 
-func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {
+func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*RepositoryResolver, error) {
 	repos, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*repositoryResolver, 0, len(repos))
+	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
 
-		resolvers = append(resolvers, &repositoryResolver{repo: repo})
+		resolvers = append(resolvers, &RepositoryResolver{repo: repo})
 	}
 	return resolvers, nil
 }
@@ -377,14 +377,14 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
+func toRepositoryResolvers(repos []*types.Repo) []*RepositoryResolver {
 	if len(repos) == 0 {
-		return []*repositoryResolver{}
+		return []*RepositoryResolver{}
 	}
 
-	resolvers := make([]*repositoryResolver, len(repos))
+	resolvers := make([]*RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = &repositoryResolver{repo: repos[i]}
+		resolvers[i] = &RepositoryResolver{repo: repos[i]}
 	}
 
 	return resolvers

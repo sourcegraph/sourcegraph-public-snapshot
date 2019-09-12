@@ -14,6 +14,7 @@ var Mocks, emptyMocks struct {
 	GetCommit        func(api.CommitID) (*Commit, error)
 	ExecSafe         func(params []string) (stdout, stderr []byte, exitCode int, err error)
 	RawLogDiffSearch func(opt RawLogDiffSearchOptions) ([]*LogCommitSearchResult, bool, error)
+	ReadFile         func(commit api.CommitID, name string) ([]byte, error)
 	ReadDir          func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error)
 	ResolveRevision  func(spec string, opt *ResolveRevisionOptions) (api.CommitID, error)
 	Stat             func(commit api.CommitID, name string) (os.FileInfo, error)

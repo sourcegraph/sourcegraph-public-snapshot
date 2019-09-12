@@ -1,7 +1,7 @@
 import H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { pluralize } from '../../../shared/src/util/strings'
+import { pluralize } from '../util/strings'
 import * as GQL from '../graphql/schema'
 import { SettingsCascadeProps } from '../settings/settings'
 import { FetchFileCtx } from './CodeExcerpt'

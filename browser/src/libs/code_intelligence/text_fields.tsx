@@ -38,7 +38,7 @@ export function handleTextFields(
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected URI values in
     // test code (because the URIs would change depending on test execution order).
     let seq = 0
-    const nextModelUri = () => `${COMMENT_URI_SCHEME}://${seq++}`
+    const nextModelUri = (): string => `${COMMENT_URI_SCHEME}://${seq++}`
 
     return textFields.subscribe(textFieldEvent => {
         console.log('Text field added', { textFieldEvent })

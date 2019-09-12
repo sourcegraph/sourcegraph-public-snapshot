@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -30,8 +29,8 @@ func (o *settingsResolver) Configuration() *configurationResolver {
 
 func (o *settingsResolver) Contents() string { return o.settings.Contents }
 
-func (o *settingsResolver) CreatedAt() string {
-	return o.settings.CreatedAt.Format(time.RFC3339) // ISO
+func (o *settingsResolver) CreatedAt() DateTime {
+	return DateTime{Time: o.settings.CreatedAt}
 }
 
 func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {

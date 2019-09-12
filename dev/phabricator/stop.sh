@@ -13,7 +13,7 @@ source ./dev/phabricator/shared.sh
     # docker rm $db_container
 # fi
 
-docker ps -aq -f network=$network | xargs docker stop | xargs docker rm
+docker ps -aq -f network=$network | xargs docker rm -f
 
 # if [ "$(docker ps -aq -f name=$app_container)" ];
 # then

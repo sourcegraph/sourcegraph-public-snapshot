@@ -35,7 +35,7 @@ export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C
         readonly label: string
         readonly icon?: React.ComponentType<{ className?: string }>
     }
-    readonly items: ReadonlyArray<NavItemDescriptor<C>>
+    readonly items: readonly NavItemDescriptor<C>[]
 }
 
 /**

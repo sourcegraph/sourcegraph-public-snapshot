@@ -157,7 +157,7 @@ export function fetchViewerSettings(
  * Applies an edit and persists the result to client settings.
  */
 export async function editClientSettings(edit: SettingsEdit | string): Promise<void> {
-    const getNext = (prev: string) =>
+    const getNext = (prev: string): string =>
         typeof edit === 'string'
             ? edit
             : applyEdits(

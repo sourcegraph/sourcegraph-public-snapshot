@@ -12,6 +12,10 @@ type Resolver struct {
 	serviceType string // the type of service that the URL points to, used for showing a nice icon
 }
 
+func NewResolver(url, serviceType string) *Resolver {
+	return &Resolver{url: url, serviceType: serviceType}
+}
+
 func (r *Resolver) URL() string { return r.url }
 func (r *Resolver) ServiceType() *string {
 	if r.serviceType == "" {

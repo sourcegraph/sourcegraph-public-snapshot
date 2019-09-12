@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
@@ -26,7 +27,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -62,35 +62,35 @@ func (c *searchResultsCommon) LimitHit() bool {
 	return c.limitHit || c.resultCount > c.maxResultsCount
 }
 
-func (c *searchResultsCommon) Repositories() []*repositoryResolver {
-	return repositoryResolvers(c.repos)
+func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
+	return RepositoryResolvers(c.repos)
 }
 
-func (c *searchResultsCommon) RepositoriesSearched() []*repositoryResolver {
-	return repositoryResolvers(c.searched)
+func (c *searchResultsCommon) RepositoriesSearched() []*RepositoryResolver {
+	return RepositoryResolvers(c.searched)
 }
 
-func (c *searchResultsCommon) IndexedRepositoriesSearched() []*repositoryResolver {
-	return repositoryResolvers(c.indexed)
+func (c *searchResultsCommon) IndexedRepositoriesSearched() []*RepositoryResolver {
+	return RepositoryResolvers(c.indexed)
 }
 
-func (c *searchResultsCommon) Cloning() []*repositoryResolver {
-	return repositoryResolvers(c.cloning)
+func (c *searchResultsCommon) Cloning() []*RepositoryResolver {
+	return RepositoryResolvers(c.cloning)
 }
 
-func (c *searchResultsCommon) Missing() []*repositoryResolver {
-	return repositoryResolvers(c.missing)
+func (c *searchResultsCommon) Missing() []*RepositoryResolver {
+	return RepositoryResolvers(c.missing)
 }
 
-func (c *searchResultsCommon) Timedout() []*repositoryResolver {
-	return repositoryResolvers(c.timedout)
+func (c *searchResultsCommon) Timedout() []*RepositoryResolver {
+	return RepositoryResolvers(c.timedout)
 }
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
 	return c.indexUnavailable
 }
 
-func repositoryResolvers(repos types.Repos) []*repositoryResolver {
+func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {
 	dedupSort(&repos)
 	return toRepositoryResolvers(repos)
 }
@@ -238,18 +238,12 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	addLangFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
-		extensionToLanguageLookup := func(ext string) string {
-			for _, lang := range filelang.Langs {
-				for _, langExt := range lang.Extensions {
-					if ext == langExt {
-						return strings.ToLower(lang.Name)
-					}
-				}
-			}
-			return ""
+		extensionToLanguageLookup := func(path string) string {
+			language, _ := inventory.GetLanguageByFilename(path)
+			return strings.ToLower(language)
 		}
 		if ext := path.Ext(fileMatchPath); ext != "" {
-			language := extensionToLanguageLookup(path.Ext(fileMatchPath))
+			language := extensionToLanguageLookup(fileMatchPath)
 			if language != "" {
 				value := fmt.Sprintf(`lang:%s`, language)
 				add(value, value, lineMatchCount, limitHit, "lang")
@@ -414,7 +408,7 @@ loop:
 	for _, r := range sr.results {
 		r := r // shadow so it doesn't change in the goroutine
 		switch m := r.(type) {
-		case *repositoryResolver:
+		case *RepositoryResolver:
 			// We don't care about repo results here.
 			continue
 		case *commitSearchResultResolver:
@@ -1074,14 +1068,14 @@ func isContextError(ctx context.Context, err error) bool {
 //
 // Supported types:
 //
-//   - *repositoryResolver         // repo name match
+//   - *RepositoryResolver         // repo name match
 //   - *fileMatchResolver          // text match
 //   - *commitSearchResultResolver // diff or commit match
 //   - *codemodResultResolver      // code modification
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
 type searchResultResolver interface {
-	ToRepository() (*repositoryResolver, bool)
+	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*fileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
 	ToCodemodResult() (*codemodResultResolver, bool)

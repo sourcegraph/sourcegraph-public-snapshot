@@ -4,6 +4,7 @@ import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
+import { TelemetryService } from '../telemetry/telemetryService'
 import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
@@ -54,7 +55,7 @@ export interface PlatformContext {
      *
      * @template R The GraphQL result type
      * could leak private information such as repository names.
-     * @return Observable that emits the result or an error if the HTTP request failed
+     * @returns Observable that emits the result or an error if the HTTP request failed
      */
     requestGraphQL<R extends GQL.IQuery | GQL.IMutation>(options: {
         /**
@@ -95,7 +96,7 @@ export interface PlatformContext {
      * to importScripts.
      *
      * @param bundleURL The URL to the JavaScript bundle file specified in the extension manifest.
-     * @return A script URL suitable for passing to importScripts, typically either the original
+     * @returns A script URL suitable for passing to importScripts, typically either the original
      * https:// URL for the extension's bundle or a blob: URI for it.
      */
     getScriptURLForExtension(bundleURL: string): string | Promise<string>
@@ -104,7 +105,7 @@ export interface PlatformContext {
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.
      *
      * @param location The specific repository, revision, file, position, and view state to generate the URL for.
-     * @return The URL to the file with the specified options.
+     * @returns The URL to the file with the specified options.
      */
     urlToFile(
         location: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec>
@@ -140,6 +141,12 @@ export interface PlatformContext {
      * Used for extension development purposes, to run an extension that isn't on the registry.
      */
     sideloadedExtensionURL: Subscribable<string | null> & NextObserver<string | null>
+
+    /**
+     * A telemetry service implementation to log events.
+     * Optional because it's currently only used in the web app platform.
+     */
+    telemetryService?: TelemetryService
 }
 
 /**

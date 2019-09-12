@@ -90,41 +90,94 @@ func handleConfigOverrides() error {
 			}
 			confGet := func() *conf.Unified { return parsed }
 
-			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
-			if err != nil {
-				return errors.Wrap(err, "ExternalServices.List")
-			}
-			for _, existing := range existing {
-				err := db.ExternalServices.Delete(ctx, existing.ID)
-				if err != nil {
-					return errors.Wrap(err, "ExternalServices.Delete")
-				}
-			}
-
 			extsvc, err := ioutil.ReadFile(overrideExtSvcConfig)
 			if err != nil {
 				return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 			}
-			var configs map[string][]*json.RawMessage
-			if err := jsonc.Unmarshal(string(extsvc), &configs); err != nil {
+			var rawConfigs map[string][]*json.RawMessage
+			if err := jsonc.Unmarshal(string(extsvc), &rawConfigs); err != nil {
 				return errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
 			}
-			if len(configs) == 0 {
+			if len(rawConfigs) == 0 {
 				log15.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 			}
-			for key, cfgs := range configs {
+
+			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+			if err != nil {
+				return errors.Wrap(err, "ExternalServices.List")
+			}
+
+			// Perform delta update for external services. We don't want to
+			// just delete all external services and re-add all of them,
+			// because that would cause repo-updater to need to update
+			// repositories and reassociate them with external services each
+			// time the frontend restarts.
+			//
+			// Start out by assuming we will remove all and re-add all.
+			var (
+				toAdd    = make(map[*types.ExternalService]bool)
+				toRemove = make(map[*types.ExternalService]bool)
+				toUpdate = make(map[int64]*types.ExternalService)
+			)
+			for _, existing := range existing {
+				toRemove[existing] = true
+			}
+			for key, cfgs := range rawConfigs {
 				for i, cfg := range cfgs {
 					marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
 					if err != nil {
 						return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%v][%v])", key, i))
 					}
-					if err := db.ExternalServices.Create(ctx, confGet, &types.ExternalService{
+					toAdd[&types.ExternalService{
 						Kind:        key,
 						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
 						Config:      string(marshaledCfg),
-					}); err != nil {
-						return errors.Wrap(err, "ExternalServices.Create")
+					}] = true
+				}
+			}
+			// Now eliminate operations from toAdd/toRemove where the config
+			// file and DB describe an equivalent external service.
+			isEquiv := func(a, b *types.ExternalService) bool {
+				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config == b.Config
+			}
+			shouldUpdate := func(a, b *types.ExternalService) bool {
+				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config != b.Config
+			}
+			for a := range toAdd {
+				for b := range toRemove {
+					if isEquiv(a, b) { // Nothing changed
+						delete(toAdd, a)
+						delete(toRemove, b)
+					} else if shouldUpdate(a, b) {
+						delete(toAdd, a)
+						delete(toRemove, b)
+						toUpdate[b.ID] = a
 					}
+				}
+			}
+
+			// Apply the delta update.
+			for extSvc := range toRemove {
+				log15.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
+				err := db.ExternalServices.Delete(ctx, extSvc.ID)
+				if err != nil {
+					return errors.Wrap(err, "ExternalServices.Delete")
+				}
+			}
+			for extSvc := range toAdd {
+				log15.Debug("Adding external service", "displayName", extSvc.DisplayName)
+				if err := db.ExternalServices.Create(ctx, confGet, extSvc); err != nil {
+					return errors.Wrap(err, "ExternalServices.Create")
+				}
+			}
+
+			ps := confGet().Critical.AuthProviders
+			for id, extSvc := range toUpdate {
+				log15.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
+
+				update := &db.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config}
+				if err := db.ExternalServices.Update(ctx, ps, id, update); err != nil {
+					return errors.Wrap(err, "ExternalServices.Update")
 				}
 			}
 		}

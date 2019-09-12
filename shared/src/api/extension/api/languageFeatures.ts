@@ -1,3 +1,4 @@
+/* eslint-disable no-sync */
 import { ProxyInput, ProxyResult, proxyValue } from '@sourcegraph/comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'

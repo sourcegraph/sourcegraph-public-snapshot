@@ -107,7 +107,7 @@ interface Props
     extends ExtensionsControllerProps,
         Pick<
             TextareaHTMLAttributes<HTMLTextAreaElement>,
-            'className' | 'placeholder' | 'autoFocus' | 'onKeyDown' | 'rows' | 'spellCheck'
+            'className' | 'placeholder' | 'autoFocus' | 'onKeyDown' | 'rows' | 'spellCheck' | 'disabled' | 'style'
         > {
     /**
      * The ID of the editor that this component is backed by.
@@ -147,7 +147,6 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
 }: Props) => {
     // The new, preferred React hooks API requires use of lambdas.
     //
-    // tslint:disable: jsx-no-lambda
 
     const textAreaRef = _textAreaRef || createRef<HTMLTextAreaElement>()
 

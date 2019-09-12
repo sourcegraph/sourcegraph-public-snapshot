@@ -11,7 +11,7 @@ import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps, ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
-import { queryIndexOfScope, submitSearch } from '../helpers'
+import { submitSearch } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
@@ -36,27 +36,18 @@ interface State {
  * The search page
  */
 export class SearchPage extends React.Component<Props, State> {
-    private static HIDE_REPOGROUP_SAMPLE_STORAGE_KEY = 'SearchPage/hideRepogroupSample'
-
     constructor(props: Props) {
         super(props)
 
-        const query = parseSearchURLQuery(props.location.search)
+        const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
-            userQuery: query || '',
+            userQuery: queryFromUrl,
             builderQuery: '',
         }
     }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('Home')
-        if (
-            window.context.sourcegraphDotComMode &&
-            !localStorage.getItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY) &&
-            !this.state.userQuery
-        ) {
-            this.setState({ userQuery: 'repogroup:sample' })
-        }
     }
 
     public render(): JSX.Element | null {
@@ -86,7 +77,7 @@ export class SearchPage extends React.Component<Props, State> {
                             {...this.props}
                             value={this.state.userQuery}
                             onChange={this.onUserQueryChange}
-                            autoFocus={'cursor-at-end'}
+                            autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
                         />
                         <SearchButton />
@@ -103,11 +94,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 />
                             </div>
-                            {quickLinks.length > 0 && (
-                                <div className="search-page__input-sub-container">
-                                    <QuickLinks quickLinks={quickLinks} />
-                                </div>
-                            )}
+                            <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                             <QueryBuilder
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
@@ -119,11 +106,7 @@ export class SearchPage extends React.Component<Props, State> {
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             />
-                            {quickLinks.length > 0 && (
-                                <div className="search-page__input-sub-container">
-                                    <QuickLinks quickLinks={quickLinks} />
-                                </div>
-                            )}
+                            <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                             <div className="search-page__input-sub-container">
                                 <SearchFilterChips
                                     location={this.props.location}
@@ -144,14 +127,6 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onUserQueryChange = (userQuery: string) => {
         this.setState({ userQuery })
-
-        if (window.context.sourcegraphDotComMode) {
-            if (queryIndexOfScope(userQuery, 'repogroup:sample') !== -1) {
-                localStorage.removeItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY)
-            } else {
-                localStorage.setItem(SearchPage.HIDE_REPOGROUP_SAMPLE_STORAGE_KEY, 'true')
-            }
-        }
     }
 
     private onBuilderQueryChange = (builderQuery: string) => {

@@ -36,7 +36,7 @@ export class ClientViews implements ClientViewsAPI {
         const panelView = new ReplaySubject<PanelViewData>(1)
         const registryUnsubscribable = this.viewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
-            combineLatest(
+            combineLatest([
                 panelView.pipe(
                     map(data => omit(data, 'component')),
                     distinctUntilChanged((x, y) => isEqual(x, y))
@@ -59,8 +59,8 @@ export class ClientViews implements ClientViewsAPI {
                             })
                         )
                     })
-                )
-            ).pipe(
+                ),
+            ]).pipe(
                 map(([{ title, content, priority }, locationProvider]) => {
                     const panelView: PanelViewWithComponent = {
                         title,

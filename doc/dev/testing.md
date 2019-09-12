@@ -116,14 +116,14 @@ Then you can select the button with `[data-e2e-item-name="foo"] .e2e-item-delete
 
 Tip: it's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
 
-```
+```ts
 const elem = page.selector(".selector")
 elem.click()
 ```
 
 Do this:
 
-```
+```ts
 page.click(".selector")
 ```
 
@@ -189,7 +189,16 @@ Buildkite to run on the Sourcegraph build farm. Some things that are tested
 include:
 
 - all of the Go source files that have tests
-- dev/check/all.sh (gofmt, lint, go generator, no Security TODO's, Bash syntax, others)
+- dev/check/all.sh (gofmt, lint, go generator, no Security TODOs, Bash syntax, others)
 - JS formatting/linting (prettier, tslint, stylelint, graphql-lint)
 - Dockerfile linter (hadolint)
 - Check whether the Go module folders are "tidy" (go mod tidy)
+
+## Release testing
+
+To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
+
+For testing with a single Docker image, run something like
+```
+IMAGE=sourcegraph/server:3.6.2-rc.1 ./dev/run-server-image.sh
+```

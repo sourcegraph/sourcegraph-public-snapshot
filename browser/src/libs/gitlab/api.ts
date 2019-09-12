@@ -33,7 +33,7 @@ interface DiffVersionsResponse {
 
 type GetBaseCommitIDInput = Pick<GitLabDiffInfo, 'owner' | 'projectName' | 'mergeRequestID' | 'diffID'>
 
-const buildURL = (owner: string, projectName: string, path: string) =>
+const buildURL = (owner: string, projectName: string, path: string): string =>
     `${window.location.origin}/api/v4/projects/${encodeURIComponent(owner)}%2f${projectName}${path}`
 
 const get = <T>(url: string): Observable<T> => ajax.get(url).pipe(map(({ response }) => response as T))

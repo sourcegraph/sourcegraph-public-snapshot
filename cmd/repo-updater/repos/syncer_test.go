@@ -39,7 +39,7 @@ func TestSyncer_Sync(t *testing.T) {
 			name:    "sourcer error aborts sync",
 			sourcer: repos.NewFakeSourcer(errors.New("boom")),
 			store:   new(repos.FakeStore),
-			err:     "syncer.sync.sourced: boom",
+			err:     "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name: "sources partial errors aborts sync",
@@ -74,6 +74,10 @@ func TestSyncer_Sync(t *testing.T) {
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have error %q, want %q", have, want)
+			}
+
+			if have, want := fmt.Sprint(syncer.LastSyncError()), tc.err; have != want {
+				t.Errorf("have LastSyncError %q, want %q", have, want)
 			}
 		})
 	}
@@ -961,6 +965,21 @@ func TestDiff(t *testing.T) {
 			diff: repos.Diff{
 				Added: repos.Repos{
 					{Name: "Foo", ExternalRepo: eid("2")},
+				},
+			},
+		},
+		{
+			name: "conflict on case insensitive name no external",
+			store: repos.Repos{
+				{Name: "fOO"},
+			},
+			source: repos.Repos{
+				{Name: "fOO", ExternalRepo: eid("fOO")},
+				{Name: "Foo", ExternalRepo: eid("Foo")},
+			},
+			diff: repos.Diff{
+				Modified: repos.Repos{
+					{Name: "Foo", ExternalRepo: eid("Foo")},
 				},
 			},
 		},

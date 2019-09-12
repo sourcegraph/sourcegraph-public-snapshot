@@ -14,37 +14,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var allSavedQueries = &allSavedQueriesCached{}
-
-// allSavedQueriesCached allows us to get a list of all the saved queries
-// configured for every user/org on the entire server, without the overhead of
-// constantly querying, unmarshaling, and transferring over the network all of
-// the saved query setting values. Instead, we ask for the list once on startup
-// and frontend instances notify us of created/updated/deleted saved queries in
-// user/org configurations.
-type allSavedQueriesCached struct {
-	mu              sync.Mutex
-	allSavedQueries map[string]api.SavedQuerySpecAndConfig
-}
-
-func savedQueryIDSpecKey(s api.SavedQueryIDSpec) string {
-	return s.Subject.String() + s.Key
-}
-
-// get returns a copy of sq.allSavedQueries to avoid retaining the lock and
-// blocking other oparations that call savedQueryWas[Created|Updated|Deleted]
-// which also need the lock.
-func (sq *allSavedQueriesCached) get() map[string]api.SavedQuerySpecAndConfig {
-	sq.mu.Lock()
-	defer sq.mu.Unlock()
-
-	cpy := make(map[string]api.SavedQuerySpecAndConfig, len(sq.allSavedQueries))
-	for k, v := range sq.allSavedQueries {
-		cpy[k] = v
-	}
-	return cpy
-}
-
 // diffSavedQueryConfigs takes the old and new saved queries configurations.
 //
 // It returns maps whose keys represent the old value and value represent the
@@ -164,9 +133,11 @@ func notifySavedQueryWasCreatedOrUpdated(oldValue, newValue api.SavedQuerySpecAn
 	return nil
 }
 
+var testNotificationMu sync.Mutex
+
 func serveTestNotification(w http.ResponseWriter, r *http.Request) {
-	allSavedQueries.mu.Lock()
-	defer allSavedQueries.mu.Unlock()
+	testNotificationMu.Lock()
+	defer testNotificationMu.Unlock()
 
 	var args *queryrunnerapi.TestNotificationArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {

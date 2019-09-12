@@ -17,12 +17,28 @@ import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/c
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 
+export interface SourcegraphIntegrationURLs {
+    /**
+     * The URL of the configured Sourcegraph instance. Used for extensions, find-references, ...
+     */
+    sourcegraphURL: string
+
+    /**
+     * The base URL where assets will be fetched from (CSS, extension host
+     * worker bundle, ...)
+     *
+     * This is the sourcegraph URL in most cases, but may be different for
+     * native code hosts that self-host the integration bundle.
+     */
+    assetsURL: string
+}
+
 /**
  * Creates the {@link PlatformContext} for the browser extension.
  */
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
-    sourcegraphURL: string,
+    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
@@ -73,7 +89,7 @@ export function createPlatformContext(
          * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify
          *   the UX).
          */
-        settings: combineLatest(
+        settings: combineLatest([
             merge(
                 isInPage
                     ? fetchViewerSettings(requestGraphQL)
@@ -85,8 +101,8 @@ export function createPlatformContext(
                 publishReplay(1),
                 refCount()
             ),
-            storageSettingsCascade
-        ).pipe(
+            storageSettingsCascade,
+        ]).pipe(
             map(([gqlCascade, storageCascade]) =>
                 mergeCascades(
                     gqlToCascade(gqlCascade),
@@ -107,7 +123,7 @@ export function createPlatformContext(
             try {
                 await updateSettings(context, subject, edit, mutateSettings)
             } catch (error) {
-                if ('message' in error && /version mismatch/.test(error.message)) {
+                if ('message' in error && error.message.includes('version mismatch')) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
                     updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
@@ -120,7 +136,7 @@ export function createPlatformContext(
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
-        createExtensionHost: () => createExtensionHost(sourcegraphURL),
+        createExtensionHost: () => createExtensionHost({ assetsURL }),
         getScriptURLForExtension: async bundleURL => {
             if (isInPage) {
                 return bundleURL

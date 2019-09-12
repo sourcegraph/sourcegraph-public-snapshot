@@ -36,7 +36,7 @@ The frontend serves our [web app](web_app.md) and hosts our [GraphQL API](../api
 
 Application data is stored in our Postgresql database.
 
-Session data is stored in redis.
+Session data is stored in Redis.
 
 #### Scaling
 

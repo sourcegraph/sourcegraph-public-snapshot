@@ -100,12 +100,8 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s BitbucketServerSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	rs, err := s.listAllRepos(ctx)
-	for _, r := range rs {
-		repos = append(repos, s.makeRepo(r))
-	}
-	return repos, err
+func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	s.listAllRepos(ctx, results)
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -213,7 +209,7 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 	return false
 }
 
-func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbucketserver.Repo, error) {
+func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
 	type batch struct {
 		repos []*bitbucketserver.Repo
 		err   error
@@ -269,17 +265,16 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 		go func(q string) {
 			defer wg.Done()
 
-			page := &bitbucketserver.PageToken{Limit: 1000}
-			for page.HasMore() {
-				var err error
-				var repos []*bitbucketserver.Repo
-
-				if repos, page, err = s.client.Repos(ctx, page, q); err != nil {
-					ch <- batch{err: errors.Wrapf(err, "bibucketserver.repositoryQuery: item=%q, page=%+v", q, page)}
+			next := &bitbucketserver.PageToken{Limit: 1000}
+			for next.HasMore() {
+				repos, page, err := s.client.Repos(ctx, next, q)
+				if err != nil {
+					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
 					break
 				}
 
 				ch <- batch{repos: repos}
+				next = page
 			}
 		}(q)
 	}
@@ -290,22 +285,18 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 	}()
 
 	seen := make(map[int]bool)
-	errs := new(multierror.Error)
-	var repos []*bitbucketserver.Repo
-
 	for r := range ch {
 		if r.err != nil {
-			errs = multierror.Append(errs, r.err)
+			results <- SourceResult{Source: s, Err: r.err}
+			continue
 		}
 
 		for _, repo := range r.repos {
 			if !seen[repo.ID] && !s.excludes(repo) {
-				repos = append(repos, repo)
+				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
 				seen[repo.ID] = true
 			}
 		}
 
 	}
-
-	return repos, errs.ErrorOrNil()
 }

@@ -31,8 +31,8 @@ import {
     mergeMap,
     observeOn,
     switchMap,
-    take,
     withLatestFrom,
+    tap,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -74,7 +74,6 @@ import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { EventLogger } from '../../shared/tracking/eventLogger'
-import { observeSourcegraphURL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/code_intelligence'
@@ -95,6 +94,8 @@ import {
 import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
+import { observeStorageKey } from '../../browser/storage'
+import { SourcegraphIntegrationURLs } from '../../platform/context'
 
 registerHighlightContributions()
 
@@ -452,14 +453,14 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext) =>
+    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
         resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
             retryWhenCloneInProgressError(),
             map(rev => !!rev),
             catchError(() => [false])
         )
 
-    const openOptionsMenu = () => browser.runtime.sendMessage({ type: 'openOptionsPage' })
+    const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -542,9 +543,17 @@ export function handleCodeHost({
         )
     }
 
+    let codeViewCount = 0
+
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
+        // Limit number of code views for perf reasons.
+        filter(() => codeViewCount < 50),
+        tap(codeViewEvent => {
+            codeViewCount++
+            codeViewEvent.subscriptions.add(() => codeViewCount--)
+        }),
         mergeMap(codeViewEvent =>
             codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
                 mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
@@ -592,7 +601,7 @@ export function handleCodeHost({
      * Will only cause `workspace.roots` to emit if the root
      * with the given `uri` has no more references.
      */
-    const deleteRootRef = (uri: string) => {
+    const deleteRootRef = (uri: string): void => {
         const currentRefCount = rootRefCounts.get(uri)
         if (!currentRefCount) {
             throw new Error(`No preexisting root refs for uri ${uri}`)
@@ -701,13 +710,17 @@ export function handleCodeHost({
             {
                 let decorationsByLine: DecorationMapByLine = new Map()
                 const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                    decorationsByLine = applyDecorations(
-                        domFunctions,
-                        element,
-                        decorations || [],
-                        decorationsByLine,
-                        fileInfo.baseCommitID ? 'head' : undefined
-                    )
+                    try {
+                        decorationsByLine = applyDecorations(
+                            domFunctions,
+                            element,
+                            decorations || [],
+                            decorationsByLine,
+                            fileInfo.baseCommitID ? 'head' : undefined
+                        )
+                    } catch (err) {
+                        console.error('Could not apply head decorations to code view', codeViewEvent.element, err)
+                    }
                 }
                 codeViewEvent.subscriptions.add(
                     extensionsController.services.textDocumentDecoration
@@ -723,13 +736,17 @@ export function handleCodeHost({
             if (fileInfo.baseCommitID && fileInfo.baseFilePath) {
                 let decorationsByLine: DecorationMapByLine = new Map()
                 const update = (decorations?: TextDocumentDecoration[] | null): void => {
-                    decorationsByLine = applyDecorations(
-                        domFunctions,
-                        element,
-                        decorations || [],
-                        decorationsByLine,
-                        'base'
-                    )
+                    try {
+                        decorationsByLine = applyDecorations(
+                            domFunctions,
+                            element,
+                            decorations || [],
+                            decorationsByLine,
+                            'base'
+                        )
+                    } catch (err) {
+                        console.error('Could not apply base decorations to code view', codeViewEvent.element, err)
+                    }
                 }
                 codeViewEvent.subscriptions.add(
                     extensionsController.services.textDocumentDecoration
@@ -759,6 +776,7 @@ export function handleCodeHost({
             const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
+                // tslint:disable-next-line: rxjs-no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                     hoverSubscription.unsubscribe()
                     if (!useNativeTooltips) {
@@ -826,35 +844,50 @@ export function handleCodeHost({
     return subscriptions
 }
 
-const SHOW_DEBUG = () => localStorage.getItem('debug') !== null
+const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
 const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
-export async function injectCodeIntelligenceToCodeHost(
+export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
+    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
-): Promise<Subscription> {
+): Subscription {
     const subscriptions = new Subscription()
-    const sourcegraphURL = await observeSourcegraphURL(isExtension)
-        .pipe(take(1))
-        .toPromise()
-    const { platformContext, extensionsController } = initializeExtensions(codeHost, sourcegraphURL, isExtension)
+    const { platformContext, extensionsController } = initializeExtensions(
+        codeHost,
+        { sourcegraphURL, assetsURL },
+        isExtension
+    )
     const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
-    subscriptions.add(
-        handleCodeHost({
-            mutations,
-            codeHost,
-            extensionsController,
-            platformContext,
-            showGlobalDebug,
-            sourcegraphURL,
-            telemetryService,
-            render: reactDOMRender,
-        })
-    )
+
+    let codeHostSubscription: Subscription
+    observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
+        if (disableExtension) {
+            // We don't need to unsubscribe if the extension starts with disabled state.
+            if (codeHostSubscription) {
+                codeHostSubscription.unsubscribe()
+                subscriptions.remove(codeHostSubscription)
+            }
+            console.log('Browser extension is disabled')
+        } else {
+            codeHostSubscription = handleCodeHost({
+                mutations,
+                codeHost,
+                extensionsController,
+                platformContext,
+                showGlobalDebug,
+                sourcegraphURL,
+                telemetryService,
+                render: reactDOMRender,
+            })
+            subscriptions.add(codeHostSubscription)
+            console.log('Browser extension is enabled')
+        }
+    })
     return subscriptions
 }

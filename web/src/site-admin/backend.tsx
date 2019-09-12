@@ -91,7 +91,7 @@ interface RepositoryArgs {
 /**
  * Fetches all repositories.
  *
- * @return Observable that emits the list of repositories
+ * @returns Observable that emits the list of repositories
  */
 function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
     args = {
@@ -211,7 +211,7 @@ export function checkMirrorRepositoryConnection(
 /**
  * Fetches usage statistics for all users.
  *
- * @return Observable that emits the list of users and their usage data
+ * @returns Observable that emits the list of users and their usage data
  */
 export function fetchUserUsageStatistics(args: {
     activePeriod?: GQL.UserActivePeriod
@@ -247,7 +247,7 @@ export function fetchUserUsageStatistics(args: {
 /**
  * Fetches site-wide usage statitics.
  *
- * @return Observable that emits the list of users and their usage data
+ * @returns Observable that emits the list of users and their usage data
  */
 export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics> {
     return queryGraphQL(gql`
@@ -284,7 +284,7 @@ export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics>
 /**
  * Fetches the site and its configuration.
  *
- * @return Observable that emits the site
+ * @returns Observable that emits the site
  */
 export function fetchSite(): Observable<GQL.ISite> {
     return queryGraphQL(gql`

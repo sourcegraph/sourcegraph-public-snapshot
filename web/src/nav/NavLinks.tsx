@@ -11,7 +11,11 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
-import { KeybindingsProps } from '../keybindings'
+import {
+    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
+    KEYBOARD_SHORTCUT_SWITCH_THEME,
+    KeyboardShortcutsProps,
+} from '../keyboardShortcuts/keyboardShortcuts'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -19,7 +23,7 @@ import { UserNavItem } from './UserNavItem'
 
 interface Props
     extends SettingsCascadeProps,
-        KeybindingsProps,
+        KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip'>,
         ThemeProps,
@@ -31,7 +35,6 @@ interface Props
     authenticatedUser: GQL.IUser | null
     showDotComMarketing: boolean
     isSourcegraphDotCom: boolean
-    showStatusIndicator: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -94,7 +97,6 @@ export class NavLinks extends React.PureComponent<Props> {
                     </>
                 )}
                 {!this.props.isSourcegraphDotCom &&
-                    this.props.showStatusIndicator &&
                     this.props.authenticatedUser &&
                     this.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">
@@ -109,7 +111,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         {...this.props}
                         buttonClassName="nav-link btn btn-link"
                         menu={ContributableMenu.CommandPalette}
-                        toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
+                        keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                     />
                 </li>
                 {this.props.authenticatedUser && (
@@ -119,6 +121,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             authenticatedUser={this.props.authenticatedUser}
                             showDotComMarketing={this.props.showDotComMarketing}
                             showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
+                            keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>
                 )}

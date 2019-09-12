@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -48,15 +47,15 @@ func (r *externalAccountResolver) ServiceType() string { return r.account.Servic
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
 func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }
 func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
-func (r *externalAccountResolver) CreatedAt() string   { return r.account.CreatedAt.Format(time.RFC3339) }
-func (r *externalAccountResolver) UpdatedAt() string   { return r.account.UpdatedAt.Format(time.RFC3339) }
+func (r *externalAccountResolver) CreatedAt() DateTime { return DateTime{Time: r.account.CreatedAt} }
+func (r *externalAccountResolver) UpdatedAt() DateTime { return DateTime{Time: r.account.UpdatedAt} }
 
 func (r *externalAccountResolver) RefreshURL() *string {
 	// TODO(sqs): Not supported.
 	return nil
 }
 
-func (r *externalAccountResolver) AccountData(ctx context.Context) (*jsonValue, error) {
+func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, error) {
 	// 🚨 SECURITY: Only the site admins can view this information, because the auth provider might
 	// provide sensitive information that is not known to the user.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -64,7 +63,7 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*jsonValue, 
 	}
 
 	if r.account.AccountData != nil {
-		return &jsonValue{value: r.account.AccountData}, nil
+		return &JSONValue{r.account.AccountData}, nil
 	}
 	return nil, nil
 }

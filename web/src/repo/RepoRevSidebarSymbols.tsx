@@ -21,8 +21,8 @@ function symbolIsActive(symbolLocation: string, currentLocation: H.Location): bo
     )
 }
 
-const symbolIsActiveTrue = () => true
-const symbolIsActiveFalse = () => false
+const symbolIsActiveTrue = (): boolean => true
+const symbolIsActiveFalse = (): boolean => false
 
 interface SymbolNodeProps {
     node: GQL.ISymbol
@@ -36,11 +36,11 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
-                className="repo-rev-sidebar-symbols-node__link"
+                className="repo-rev-sidebar-symbols-node__link e2e-symbol-link"
                 activeClassName="repo-rev-sidebar-symbols-node__link--active"
             >
-                <SymbolIcon kind={node.kind} className="icon-inline mr-1" />
-                <span className="repo-rev-sidebar-symbols-node__name">{node.name}</span>
+                <SymbolIcon kind={node.kind} className="icon-inline mr-1 e2e-symbol-icon" />
+                <span className="repo-rev-sidebar-symbols-node__name e2e-symbol-name">{node.name}</span>
                 {node.containerName && (
                     <span className="repo-rev-sidebar-symbols-node__container-name">
                         <small>{node.containerName}</small>

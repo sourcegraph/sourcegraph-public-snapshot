@@ -31,7 +31,7 @@ export function fromLocation(location: sourcegraph.Location): clientType.Locatio
 export function fromHover(hover: sourcegraph.Hover): clientType.Hover {
     return {
         contents: hover.contents,
-        __backcompatContents: hover.__backcompatContents, // tslint:disable-line deprecation
+        __backcompatContents: hover.__backcompatContents,
         range: fromRange(hover.range),
     }
 }

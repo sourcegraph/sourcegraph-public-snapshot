@@ -7,9 +7,9 @@ exports[`ExtensionCard renders 1`] = `
   <div
     className="extension-card card"
   >
-    <a
-      className="card-body extension-card__body d-flex flex-column"
-      to="extensions/x/y"
+    <div
+      className="card-body extension-card__body d-flex flex-column position-relative"
+      onClick={[Function]}
     >
       <div
         className="d-flex"
@@ -19,24 +19,34 @@ exports[`ExtensionCard renders 1`] = `
           src="data:image/png,abcd"
         />
         <div
-          className="text-truncate"
+          className="text-truncate w-100"
         >
           <div
             className="d-flex align-items-center"
           >
             <h4
-              className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal"
+              className="card-title extension-card__body-title mb-0 mr-1 text-truncate font-weight-normal flex-1"
             >
-              <span
-                className="text-muted"
+              <a
+                className="stretched-link"
+                to="extensions/x/y"
               >
-                x
-                /
-              </span>
-              <strong>
-                y
-              </strong>
+                <span
+                  className="text-muted"
+                >
+                  x
+                  /
+                </span>
+                <strong>
+                  y
+                </strong>
+              </a>
             </h4>
+            <span
+              className="text-muted small"
+            >
+              Disabled
+            </span>
           </div>
           <div
             className="mt-1"
@@ -49,38 +59,6 @@ exports[`ExtensionCard renders 1`] = `
           </div>
         </div>
       </div>
-    </a>
-    <div
-      className="card-footer extension-card__footer py-0 pl-0"
-    >
-      <ul
-        className="nav align-items-center"
-      >
-        <li
-          className="nav-item"
-        >
-          <a
-            className="nav-link px-2"
-            href="/extensions/x/y"
-            onClick={[Function]}
-            tabIndex={-1}
-          >
-            Details
-          </a>
-        </li>
-        <li
-          className="extension-card__spacer"
-        />
-        <li
-          className="nav-item"
-        >
-          <span
-            className="text-muted "
-          >
-            Disabled
-          </span>
-        </li>
-      </ul>
     </div>
   </div>
 </div>

@@ -23,7 +23,7 @@ import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from 
 
 const maxEntries = 2500
 
-const errorWidth = (width?: string) => ({
+const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 
@@ -158,9 +158,10 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
             <>
                 {isErrorLike(treeOrError) ? (
                     <div
-                        className="tree__row tree__row-alert alert alert-danger"
-                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                        // needed because of dynamic styling
+                        // eslint-disable-next-line react/forbid-dom-props
                         style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
+                        className="tree__row tree__row-alert alert alert-danger"
                     >
                         Error loading tree: {treeOrError.message}
                     </div>

@@ -39,7 +39,7 @@ export interface InitData {
  * first message.
  *
  * @param transports The message reader and writer to use for communication with the client.
- * @return An unsubscribable to terminate the extension host.
+ * @returns An unsubscribable to terminate the extension host.
  */
 export function startExtensionHost(
     endpoints: EndpointPair
@@ -78,7 +78,7 @@ export function startExtensionHost(
  *
  * @param connection The connection used to communicate with the client.
  * @param initData The information to initialize this extension host.
- * @return An unsubscribable to terminate the extension host.
+ * @returns An unsubscribable to terminate the extension host.
  */
 function initializeExtensionHost(
     endpoints: EndpointPair,
@@ -102,7 +102,7 @@ function initializeExtensionHost(
         ;(global as any).require = () => {
             // Prevent callers from attempting to access the extension API after it was
             // unsubscribed.
-            throw new Error(`require: Sourcegraph extension API was unsubscribed`)
+            throw new Error('require: Sourcegraph extension API was unsubscribed')
         }
     })
 
@@ -121,7 +121,7 @@ function createExtensionAPI(
     const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
 
     // For debugging/tests.
-    const sync = async () => {
+    const sync = async (): Promise<void> => {
         await proxy.ping()
     }
     const context = new ExtContext(proxy.context)
@@ -185,7 +185,7 @@ function createExtensionAPI(
             },
             onDidOpenTextDocument: documents.openedTextDocuments,
             openedTextDocuments: documents.openedTextDocuments,
-            get roots(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
+            get roots(): readonly sourcegraph.WorkspaceRoot[] {
                 return roots.getAll()
             },
             onDidChangeRoots: roots.changes,
@@ -212,13 +212,13 @@ function createExtensionAPI(
                 console.warn(
                     'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
                 )
-                return { unsubscribe: () => void 0 }
+                return { unsubscribe: () => undefined }
             },
             registerImplementationProvider: () => {
                 console.warn(
                     'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
                 )
-                return { unsubscribe: () => void 0 }
+                return { unsubscribe: () => undefined }
             },
 
             registerReferenceProvider: (

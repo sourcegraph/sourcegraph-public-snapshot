@@ -8,18 +8,19 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// RequestCounter wraps a Prometheus request counter that is incremented by requests made by derived
+// RequestMeter wraps a Prometheus request meter (counter + duration histogram) updated by requests made by derived
 // http.RoundTrippers.
-type RequestCounter struct {
+type RequestMeter struct {
 	counter   *prometheus.CounterVec
+	duration  *prometheus.HistogramVec
 	subsystem string
 }
 
-// NewRequestCounter creates a new request counter.
-func NewRequestCounter(subsystem, help string) *RequestCounter {
+// NewRequestMeter creates a new request meter.
+func NewRequestMeter(subsystem, help string) *RequestMeter {
 	requestCounter := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: subsystem,
@@ -27,31 +28,45 @@ func NewRequestCounter(subsystem, help string) *RequestCounter {
 		Help:      help,
 	}, []string{"category", "code"})
 	prometheus.MustRegister(requestCounter)
-	return &RequestCounter{counter: requestCounter, subsystem: subsystem}
+
+	// TODO(uwedeportivo):
+	// A prometheus histogram has a request counter built in.
+	// It will have the suffix _count (ie src_subsystem_request_duration_count).
+	// See if we can get rid of requestCounter (if it hasn't been used by a customer yet) and use this counter instead.
+	requestDuration := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: subsystem,
+		Name:      "request_duration_seconds",
+		Help:      "Time (in seconds) spent on request.",
+		Buckets:   prometheus.DefBuckets,
+	}, []string{"category", "code"})
+	prometheus.MustRegister(requestDuration)
+
+	return &RequestMeter{counter: requestCounter, duration: requestDuration, subsystem: subsystem}
 }
 
-// Transport returns an http.RoundTripper that increments c for each request. The categoryFunc is called to
+// Transport returns an http.RoundTripper that updates rm for each request. The categoryFunc is called to
 // determine the category label for each request.
-func (c *RequestCounter) Transport(transport http.RoundTripper, categoryFunc func(*url.URL) string) http.RoundTripper {
+func (rm *RequestMeter) Transport(transport http.RoundTripper, categoryFunc func(*url.URL) string) http.RoundTripper {
 	return &requestCounterMiddleware{
-		counter:      c,
+		meter:        rm,
 		transport:    transport,
 		categoryFunc: categoryFunc,
 	}
 }
 
-// Doer returns an httpcli.Doer that increments c for each request. The categoryFunc is called to
+// Doer returns an httpcli.Doer that updates rm for each request. The categoryFunc is called to
 // determine the category label for each request.
-func (c *RequestCounter) Doer(cli httpcli.Doer, categoryFunc func(*url.URL) string) httpcli.Doer {
+func (rm *RequestMeter) Doer(cli httpcli.Doer, categoryFunc func(*url.URL) string) httpcli.Doer {
 	return &requestCounterMiddleware{
-		counter:      c,
+		meter:        rm,
 		cli:          cli,
 		categoryFunc: categoryFunc,
 	}
 }
 
 type requestCounterMiddleware struct {
-	counter      *RequestCounter
+	meter        *RequestMeter
 	cli          httpcli.Doer
 	transport    http.RoundTripper
 	categoryFunc func(*url.URL) string
@@ -74,8 +89,10 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 		code = strconv.Itoa(resp.StatusCode)
 	}
 
-	t.counter.counter.WithLabelValues(category, code).Inc()
-	log15.Debug("TRACE "+t.counter.subsystem, "host", r.URL.Host, "path", r.URL.Path, "code", code, "duration", time.Since(start))
+	d := time.Since(start)
+	t.meter.counter.WithLabelValues(category, code).Inc()
+	t.meter.duration.WithLabelValues(category, code).Observe(d.Seconds())
+	log15.Debug("TRACE "+t.meter.subsystem, "host", r.URL.Host, "path", r.URL.Path, "code", code, "duration", d)
 	return
 }
 

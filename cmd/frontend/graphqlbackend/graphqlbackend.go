@@ -15,7 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -50,7 +52,13 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func init() {
 	var err error
-	GraphQLSchema, err = graphql.ParseSchema(Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
+	GraphQLSchema, err = graphql.ParseSchema(
+		Schema,
+		&schemaResolver{
+			A8NStore: a8n.NewStore(dbconn.Global),
+		},
+		graphql.Tracer(prometheusTracer{}),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -66,93 +74,98 @@ func (er *EmptyResponse) AlwaysNil() *string {
 	return nil
 }
 
-type node interface {
+type Node interface {
 	ID() graphql.ID
 }
 
-type nodeResolver struct {
-	node
+type NodeResolver struct {
+	Node
 }
 
-func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
-	n, ok := r.node.(*accessTokenResolver)
+func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
+	n, ok := r.Node.(*accessTokenResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
-	n, ok := r.node.(*discussionCommentResolver)
+func (r *NodeResolver) ToCampaign() (*campaignResolver, bool) {
+	n, ok := r.Node.(*campaignResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
-	n, ok := r.node.(*discussionThreadResolver)
+func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
+	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToProductLicense() (ProductLicense, bool) {
-	n, ok := r.node.(ProductLicense)
+func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
+	n, ok := r.Node.(*discussionThreadResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToProductSubscription() (ProductSubscription, bool) {
-	n, ok := r.node.(ProductSubscription)
+func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
+	n, ok := r.Node.(ProductLicense)
 	return n, ok
 }
 
-func (r *nodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
-	n, ok := r.node.(*externalAccountResolver)
+func (r *NodeResolver) ToProductSubscription() (ProductSubscription, bool) {
+	n, ok := r.Node.(ProductSubscription)
 	return n, ok
 }
 
-func (r *nodeResolver) ToExternalService() (*externalServiceResolver, bool) {
-	n, ok := r.node.(*externalServiceResolver)
+func (r *NodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
+	n, ok := r.Node.(*externalAccountResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToGitRef() (*gitRefResolver, bool) {
-	n, ok := r.node.(*gitRefResolver)
+func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
+	n, ok := r.Node.(*externalServiceResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
-	n, ok := r.node.(*repositoryResolver)
+func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
+	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToUser() (*UserResolver, bool) {
-	n, ok := r.node.(*UserResolver)
+func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
+	n, ok := r.Node.(*RepositoryResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToOrg() (*OrgResolver, bool) {
-	n, ok := r.node.(*OrgResolver)
+func (r *NodeResolver) ToUser() (*UserResolver, bool) {
+	n, ok := r.Node.(*UserResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToOrganizationInvitation() (*organizationInvitationResolver, bool) {
-	n, ok := r.node.(*organizationInvitationResolver)
+func (r *NodeResolver) ToOrg() (*OrgResolver, bool) {
+	n, ok := r.Node.(*OrgResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
-	n, ok := r.node.(*gitCommitResolver)
+func (r *NodeResolver) ToOrganizationInvitation() (*organizationInvitationResolver, bool) {
+	n, ok := r.Node.(*organizationInvitationResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
+func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
+	n, ok := r.Node.(*GitCommitResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	if NodeToRegistryExtension == nil {
 		return nil, false
 	}
-	return NodeToRegistryExtension(r.node)
+	return NodeToRegistryExtension(r.Node)
 }
 
-func (r *nodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
-	n, ok := r.node.(*savedSearchResolver)
+func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
+	n, ok := r.Node.(*savedSearchResolver)
 	return n, ok
 }
 
-func (r *nodeResolver) ToSite() (*siteResolver, bool) {
-	n, ok := r.node.(*siteResolver)
+func (r *NodeResolver) ToSite() (*siteResolver, bool) {
+	n, ok := r.Node.(*siteResolver)
 	return n, ok
 }
 
@@ -173,22 +186,24 @@ type stringLogger interface {
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
-type schemaResolver struct{}
+type schemaResolver struct {
+	A8NStore *a8n.Store
+}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
 	return &schemaResolver{}
 }
 
-func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*nodeResolver, error) {
-	n, err := nodeByID(ctx, args.ID)
+func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
+	n, err := NodeByID(ctx, args.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &nodeResolver{n}, nil
+	return &NodeResolver{n}, nil
 }
 
-func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
+func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
@@ -217,7 +232,7 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
-		return orgByID(ctx, id)
+		return OrgByID(ctx, id)
 	case "OrganizationInvitation":
 		return orgInvitationByID(ctx, id)
 	case "GitCommit":
@@ -238,7 +253,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	CloneURL *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
-}) (*repositoryResolver, error) {
+}) (*RepositoryResolver, error) {
 	var name api.RepoName
 	if args.URI != nil {
 		// Deprecated query by "URI"
@@ -264,14 +279,14 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	repo, err := backend.Repos.GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
-			return &repositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
+			return &RepositoryResolver{repo: &types.Repo{}, redirectURL: &err.RedirectURL}, nil
 		}
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &repositoryResolver{repo: repo}, nil
+	return &RepositoryResolver{repo: repo}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

@@ -107,6 +107,7 @@ export class ProductPlanFormControl extends React.Component<Props, State> {
                                 </div>
                             ))}
                         </div>
+                        {/* eslint-disable-next-line react/jsx-no-target-blank */}
                         <a href="https://about.sourcegraph.com/pricing" target="_blank" className="small">
                             Compare plans
                         </a>

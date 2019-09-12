@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"strings"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -42,20 +41,20 @@ func (r *extensionDBResolver) Manifest(ctx context.Context) (graphqlbackend.Exte
 	return registry.NewExtensionManifest(manifest), nil
 }
 
-func (r *extensionDBResolver) CreatedAt() *string {
-	return strptr(r.v.CreatedAt.Format(time.RFC3339))
+func (r *extensionDBResolver) CreatedAt() *graphqlbackend.DateTime {
+	return &graphqlbackend.DateTime{Time: r.v.CreatedAt}
 }
 
-func (r *extensionDBResolver) UpdatedAt() *string {
-	return strptr(r.v.UpdatedAt.Format(time.RFC3339))
+func (r *extensionDBResolver) UpdatedAt() *graphqlbackend.DateTime {
+	return &graphqlbackend.DateTime{Time: r.v.UpdatedAt}
 }
 
-func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*string, error) {
+func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
 	_, publishedAt, err := getExtensionManifestWithBundleURL(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
 	if err != nil {
 		return nil, err
 	}
-	return strptr(publishedAt.Format(time.RFC3339)), nil
+	return &graphqlbackend.DateTime{Time: publishedAt}, nil
 }
 
 func (r *extensionDBResolver) URL() string {

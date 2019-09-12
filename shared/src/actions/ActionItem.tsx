@@ -204,7 +204,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     this.props.className,
                     showLoadingSpinner && 'action-item--loading',
                     variantClassName,
-                    pressed && [`action-item--pressed`, this.props.pressedClassName]
+                    pressed && ['action-item--pressed', this.props.pressedClassName]
                 )}
                 pressed={pressed}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render

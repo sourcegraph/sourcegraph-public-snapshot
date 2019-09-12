@@ -11,6 +11,7 @@ export const isErrorLike = (val: unknown): val is ErrorLike =>
 
 /**
  * Converts an ErrorLike to a proper Error if needed, copying all properties
+ *
  * @param errorLike An Error or object with ErrorLike properties
  */
 export const asError = (err: any): Error => {

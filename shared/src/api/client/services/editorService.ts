@@ -147,7 +147,7 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected ID values in
     // test code (because the IDs change depending on test execution order).
     let id = 0
-    const nextId = () => `editor#${id++}`
+    const nextId = (): string => `editor#${id++}`
 
     const findModelForEditor = (
         models: readonly TextModel[],
@@ -163,8 +163,9 @@ export function createEditorService(modelService: Pick<ModelService, 'models' | 
     }
 
     const editors = new BehaviorSubject<readonly CodeEditor[]>([])
-    const getEditor = (editorId: EditorId['editorId']) => editors.value.find(e => e.editorId === editorId)
-    const exists = (editorId: EditorId['editorId']) => !!getEditor(editorId)
+    const getEditor = (editorId: EditorId['editorId']): CodeEditor | undefined =>
+        editors.value.find(e => e.editorId === editorId)
+    const exists = (editorId: EditorId['editorId']): boolean => !!getEditor(editorId)
     return {
         editors,
         editorsAndModels: combineLatest([editors, modelService.models]).pipe(

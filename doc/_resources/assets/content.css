@@ -526,6 +526,7 @@ a:hover {
     font-size: 85%;
     background-color: rgba(27, 31, 35, 0.05);
     border-radius: 3px;
+    white-space: pre-wrap;
 }
 .markdown-body pre {
     word-wrap: normal;
@@ -584,6 +585,23 @@ a:hover {
 }
 .markdown-body hr {
     border-bottom-color: #eee;
+}
+
+/* Display hash  on hover for schema doc key */
+
+.markdown-body .json-schema-doc-heading {
+    margin-bottom: -1rem;
+}
+.schema-doc-key {
+    position: relative;
+}
+.schema-doc-key:hover::before {
+    content: '#';
+    position: absolute;
+    top: -2px;
+    left: -15px;
+    padding-right: 20px;
+    font-size: 1rem;
 }
 /*
 

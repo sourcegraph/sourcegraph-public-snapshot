@@ -8,7 +8,9 @@ import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
@@ -19,14 +21,19 @@ import {
     submitSearch,
     toggleSearchFilter,
     toggleSearchFilterAndReplaceSampleRepogroup,
+    getSearchTypeFromQuery,
 } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
+import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 
-const UI_PAGE_SIZE = 75
-
-export interface SearchResultsProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps, ThemeProps {
+export interface SearchResultsProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        SettingsCascadeProps,
+        TelemetryProps,
+        ThemeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -46,22 +53,22 @@ interface SearchResultsState {
     resultsOrError?: GQL.ISearchResults
     allExpanded: boolean
 
-    // TODO: Remove when newSearchResultsList is removed
-    uiLimit: number
-
     // Saved Queries
     showSavedQueryModal: boolean
     didSaveQuery: boolean
+
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
 }
+
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
+export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | null
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
-        uiLimit: UI_PAGE_SIZE,
     }
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
@@ -95,7 +102,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     switchMap(query =>
                         concat(
                             // Reset view state
-                            [{ resultsOrError: undefined, didSave: false }],
+                            [
+                                {
+                                    resultsOrError: undefined,
+                                    didSave: false,
+                                    activeType: getSearchTypeFromQuery(query),
+                                },
+                            ],
                             // Do async search request
                             this.props.searchRequest(query, this.props).pipe(
                                 // Log telemetry
@@ -120,7 +133,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     }
                                 ),
                                 // Update view with results or error
-                                map(results => ({ resultsOrError: results })),
+                                map(resultsOrError => ({ resultsOrError })),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )
@@ -134,7 +147,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             .subscribe(contributions => this.setState({ contributions }))
     }
 
-    public componentDidUpdate(prevProps: SearchResultsProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 
@@ -177,7 +190,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}
                 />
+                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQuery} />
                 <SearchResultsList
+                    {...this.props}
                     resultsOrError={this.state.resultsOrError}
                     onShowMoreResultsClick={this.showMoreResults}
                     onExpandAllResultsToggle={this.onExpandAllResultsToggle}
@@ -187,14 +202,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onSavedQueryModalClose={this.onModalClose}
                     onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                     didSave={this.state.didSaveQuery}
-                    location={this.props.location}
-                    history={this.props.history}
-                    authenticatedUser={this.props.authenticatedUser}
-                    settingsCascade={this.props.settingsCascade}
-                    isLightTheme={this.props.isLightTheme}
-                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                    fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                    deployType={this.props.deployType}
                 />
             </div>
         )

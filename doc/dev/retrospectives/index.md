@@ -63,7 +63,7 @@ Have the author of each feedback item read it out loud and answer any questions 
 
 Ask each participant vote on the items that they deem most important. Make sure that participants understand the rules for voting:
 
-- Each person has five votes (+1s).
+- Each person has ten votes (+1s).
 - Each person can vote for a topic more than once (e.g. +2, +3).
 - Each person must use all of their votes.
 
@@ -83,27 +83,25 @@ Ensure you ask everyone what their thoughts on each topic are. Everyone is diffe
 
 For each topic, if necessary, ensure there's a written down actionable commitment with an agreed upon owner who will pursue its resolution. Additionally, capture important discussion points for each topic in the shared document.
 
-#### Meta-retro (5 min)
-
-At the end of your retrospective, it’s important to take five minutes to discuss how it went. Be open and encouraging of feedback from the participants, and in the same way as the topics that were discussed, look at ways to improve the retrospective the next time around.
-
 ### Publish the results
 
 Remove any sensitive information from the retrospective document and commit it to this directory.
 
 To maintain list formatting, download the Google Doc as plaintext instead of attempting to copy/paste: File > Download As > Plain Text (.txt).
 
-## Completed retrospectives	
+## Completed retrospectives
 
-<!--	
-Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.	
--->	
+<!--
+Add links to completed retrospective docs here. These are publicly visible, so make sure they don't include anything sensitive.
+-->
 
-- [3.0 beta](3_0_beta.md)	
-- [3.0](3_0.md)	
-- [Tomás’ notes on the PostgreSQL upgrade](postgresql_upgrade.md)	
-- [3.2](3_2.md)	
-- [Customer license expiration](customer_license_expiration.md)	
+- [3.0 beta](3_0_beta.md)
+- [3.0](3_0.md)
+- [Tomás’ notes on the PostgreSQL upgrade](postgresql_upgrade.md)
+- [3.2](3_2.md)
+- [Customer license expiration](customer_license_expiration.md)
 - [3.3](3_3.md)
 - [3.4](3_4.md)
 - [3.5](3_5.md)
+- [3.6](3_6.md)
+- [3.7](3_7.md)

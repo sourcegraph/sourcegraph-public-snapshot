@@ -63,7 +63,7 @@ interface RepoRevContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps {
-    routes: ReadonlyArray<RepoRevContainerRoute>
+    routes: readonly RepoRevContainerRoute[]
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
@@ -79,18 +79,14 @@ interface RepoRevContainerProps
     onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
 }
 
-interface RepoRevContainerState {
-    showSidebar: boolean
-}
+interface RepoRevContainerState {}
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
 export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps, RepoRevContainerState> {
-    public state: RepoRevContainerState = {
-        showSidebar: true,
-    }
+    public state: RepoRevContainerState = {}
 
     private propsUpdates = new Subject<RepoRevContainerProps>()
     private subscriptions = new Subscription()
@@ -149,8 +145,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: RepoRevContainerProps): void {
-        this.propsUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.propsUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -254,6 +250,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
                     {this.props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>
                             condition(context) && (
@@ -261,11 +258,11 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                     path={this.props.routePrefix + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
-                                    // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                 />
                             )
                     )}
+                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
                 <RepoHeaderContributionPortal
                     position="left"

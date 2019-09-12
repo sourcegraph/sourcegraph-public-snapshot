@@ -1,15 +1,12 @@
 package httpapi
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 
-	"github.com/gorilla/mux"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -24,22 +21,8 @@ func init() {
 	if envvar.SourcegraphDotComMode() {
 		telemetryHandler = &httputil.ReverseProxy{
 			Director: func(req *http.Request) {
-				req.URL.Scheme = "https"
-				req.URL.Host = "sourcegraph-logging.telligentdata.com"
-				req.Host = "sourcegraph-logging.telligentdata.com"
-				req.URL.Path = "/" + mux.Vars(req)["TelemetryPath"]
-
-				var tr eventlogger.TelemetryRequest
-				err := json.NewDecoder(req.Body).Decode(&tr)
-				if err != nil {
-					log15.Error("telemetryHandler: Decode", "error", err)
-				}
-
-				var buf bytes.Buffer
-				if err := json.NewEncoder(&buf).Encode(tr.Payload); err != nil {
-					log15.Error("telemetryHandler: Encode", "error", err)
-				}
-				req.Body = ioutil.NopCloser(&buf)
+				// Removed due to our event logging ETL pipeline sunsetting schedule.
+				// TODO(Dan): update with new logging URL.
 			},
 			ErrorLog: log.New(env.DebugOut, "telemetry proxy: ", log.LstdFlags),
 		}

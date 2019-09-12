@@ -234,6 +234,9 @@ export enum ContributableMenu {
     /** The panel toolbar. */
     PanelToolbar = 'panel/toolbar',
 
+    /** The search results toolbar. */
+    SearchResultsToolbar = 'search/results/toolbar',
+
     /** The help menu in the application. */
     Help = 'help',
 }

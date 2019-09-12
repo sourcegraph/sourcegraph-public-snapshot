@@ -19,7 +19,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps {
@@ -66,7 +66,7 @@ interface State {
 export class SettingsArea extends React.Component<Props, State> {
     public state: State = { dataOrError: LOADING }
 
-    private subjectChanges = new Subject<Pick<GQL.ISettingsSubject, 'id'>>()
+    private componentUpdates = new Subject<Props>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -74,9 +74,14 @@ export class SettingsArea extends React.Component<Props, State> {
         eventLogger.logViewEvent(`Settings${this.props.subject.__typename}`)
         // Load settings.
         this.subscriptions.add(
-            combineLatest(this.subjectChanges, this.refreshRequests.pipe(startWith<void>(void 0)))
+            combineLatest([
+                this.componentUpdates.pipe(
+                    map(props => props.subject),
+                    distinctUntilChanged()
+                ),
+                this.refreshRequests.pipe(startWith<void>(undefined)),
+            ])
                 .pipe(
-                    distinctUntilChanged(),
                     switchMap(([{ id }]) =>
                         fetchSettingsCascade(id).pipe(
                             switchMap(cascade =>
@@ -92,13 +97,11 @@ export class SettingsArea extends React.Component<Props, State> {
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
-        this.subjectChanges.next(this.props.subject)
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        if (props.subject !== this.props.subject) {
-            this.subjectChanges.next(props.subject)
-        }
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -149,14 +152,15 @@ export class SettingsArea extends React.Component<Props, State> {
                 <h2>{term} settings</h2>
                 {this.props.extraHeader}
                 <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
                     <Route
                         path={this.props.match.url}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
                         render={routeComponentProps => <SettingsPage {...routeComponentProps} {...transferProps} />}
                     />
                     <Route key="hardcoded-key" component={NotFoundPage} />
+                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
             </div>
         )

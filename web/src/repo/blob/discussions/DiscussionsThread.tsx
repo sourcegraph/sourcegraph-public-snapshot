@@ -137,6 +137,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
     /**
      * Produces a URL hash for linking to the given discussion thread and the
      * line that it was created on.
+     *
      * @param thread The thread to link to.
      */
     private urlHashWithLine(

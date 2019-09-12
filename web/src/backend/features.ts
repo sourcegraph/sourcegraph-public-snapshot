@@ -7,7 +7,7 @@ import { FileSpec, PositionSpec, RepoSpec, ResolvedRevSpec } from '../../../shar
  * Fetches hover information for the given location.
  *
  * @param ctx the location
- * @return hover for the location
+ * @returns hover for the location
  */
 export function getHover(
     ctx: RepoSpec & ResolvedRevSpec & FileSpec & PositionSpec,

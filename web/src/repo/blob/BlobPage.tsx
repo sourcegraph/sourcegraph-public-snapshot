@@ -135,7 +135,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         // Fetch repository revision.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 this.propsUpdates.pipe(
                     map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
@@ -143,8 +143,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 this.extendHighlightingTimeoutClicks.pipe(
                     mapTo(true),
                     startWith(false)
-                )
-            )
+                ),
+            ])
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
                     switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
@@ -171,14 +171,14 @@ export class BlobPage extends React.PureComponent<Props, State> {
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.propsUpdates.next(newProps)
+    public componentDidUpdate(prevProps: Props): void {
+        this.propsUpdates.next(this.props)
         if (
-            newProps.repoName !== this.props.repoName ||
-            newProps.commitID !== this.props.commitID ||
-            newProps.filePath !== this.props.filePath ||
-            ToggleRenderedFileMode.getModeFromURL(newProps.location) !==
-                ToggleRenderedFileMode.getModeFromURL(this.props.location)
+            this.props.repoName !== prevProps.repoName ||
+            this.props.commitID !== prevProps.commitID ||
+            this.props.filePath !== prevProps.filePath ||
+            ToggleRenderedFileMode.getModeFromURL(this.props.location) !==
+                ToggleRenderedFileMode.getModeFromURL(prevProps.location)
         ) {
             this.logViewEvent()
         }
@@ -276,7 +276,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     <div className="blob-page__aborted">
                         <div className="alert alert-info">
                             Syntax-highlighting this file took too long. &nbsp;
-                            <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
+                            <button
+                                type="button"
+                                onClick={this.onExtendHighlightingTimeoutClick}
+                                className="btn btn-sm btn-primary"
+                            >
                                 Try again
                             </button>
                         </div>
@@ -286,7 +290,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {renderMode === 'code' && (
                     <Blob
                         {...this.props}
-                        className="blob-page__blob"
+                        className="blob-page__blob e2e-repo-blob"
                         content={this.state.blobOrError.content}
                         html={this.state.blobOrError.highlight.html}
                         wrapCode={this.state.wrapCode}

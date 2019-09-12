@@ -3,7 +3,7 @@ import { OFFSET_TO_POSITION_TESTS, POSITION_TO_OFFSET_TESTS } from '../../client
 import { ExtDocument, getEOL } from './textDocument'
 
 describe('ExtDocument', () => {
-    const doc = (text = 't') => new ExtDocument({ uri: 'u', languageId: 'l', text })
+    const doc = (text = 't'): ExtDocument => new ExtDocument({ uri: 'u', languageId: 'l', text })
 
     test('uri', () => expect(doc().uri).toBe('u'))
     test('languageId', () => expect(doc().languageId).toBe('l'))

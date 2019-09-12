@@ -5,7 +5,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -16,7 +16,7 @@ import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
 import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
 import { RepoSettingsSidebar } from './RepoSettingsSidebar'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -42,22 +42,24 @@ interface State {
 export class RepoSettingsArea extends React.Component<Props> {
     public state: State = {}
 
-    private repoChanges = new Subject<GQL.IRepository>()
+    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.repoChanges
-                .pipe(switchMap(({ name }) => fetchRepository(name)))
+            this.componentUpdates
+                .pipe(
+                    map(props => props.repo.name),
+                    distinctUntilChanged(),
+                    switchMap(name => fetchRepository(name))
+                )
                 .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
         )
-        this.repoChanges.next(this.props.repo)
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        if (props.repo !== this.props.repo) {
-            this.repoChanges.next(props.repo)
-        }
+    public componentDidUpdate(prevProps: Props): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -106,11 +108,11 @@ export class RepoSettingsArea extends React.Component<Props> {
                 <RepoSettingsSidebar className="flex-0 mr-3" {...this.props} {...transferProps} />
                 <div className="flex-1">
                     <Switch>
+                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path={`${this.props.match.url}`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <RepoSettingsOptionsPage
                                     {...routeComponentProps}
@@ -123,7 +125,6 @@ export class RepoSettingsArea extends React.Component<Props> {
                             path={`${this.props.match.url}/index`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <RepoSettingsIndexPage {...routeComponentProps} {...transferProps} />
                             )}
@@ -132,7 +133,6 @@ export class RepoSettingsArea extends React.Component<Props> {
                             path={`${this.props.match.url}/mirror`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
                                 <RepoSettingsMirrorPage
                                     {...routeComponentProps}
@@ -142,6 +142,7 @@ export class RepoSettingsArea extends React.Component<Props> {
                             )}
                         />
                         <Route key="hardcoded-key" component={NotFoundPage} />
+                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </div>
             </div>

@@ -97,7 +97,7 @@ const InvitedNotification: React.FunctionComponent<{
             )}
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <button className="btn btn-icon" title="Dismiss" onClick={onDismiss}>
+        <button type="button" className="btn btn-icon" title="Dismiss" onClick={onDismiss}>
             <CloseIcon className="icon-inline" />
         </button>
     </div>
@@ -231,8 +231,8 @@ export class InviteForm extends React.PureComponent<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -288,6 +288,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                             )}
                             {(emailInvitesEnabled || !this.viewerCanAddUserToOrganization) && (
                                 <div className="form-group flex-column mb-2 mr-sm-2">
+                                    {/* eslint-disable-next-line react/button-has-type */}
                                     <button
                                         type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                         disabled={!!this.state.loading}
@@ -330,15 +331,16 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     )}
                 {this.state.invited &&
                     this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
+                        /* eslint-disable react/jsx-no-bind */
                         <InvitedNotification
                             key={i}
                             className="alert alert-success invite-form__alert"
                             username={username}
                             sentInvitationEmail={sentInvitationEmail}
                             invitationURL={invitationURL}
-                            // tslint:disable-next-line:jsx-no-lambda
                             onDismiss={() => this.dismissNotification(i)}
                         />
+                        /* eslint-enable react/jsx-no-bind */
                     ))}
                 {this.state.error && (
                     <div className="invite-form__alert alert alert-danger">

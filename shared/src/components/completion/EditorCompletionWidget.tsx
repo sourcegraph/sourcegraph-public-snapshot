@@ -84,7 +84,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
         return () => subscription.unsubscribe()
     }, [completionItemsService, editorId, editorService, editorService.editors])
 
-    const onSelectItem = async (item: CompletionItem) => {
+    const onSelectItem = async (item: CompletionItem): Promise<void> => {
         const editor = await from(editorService.observeEditorAndModel({ editorId }))
             .pipe(first())
             .toPromise()

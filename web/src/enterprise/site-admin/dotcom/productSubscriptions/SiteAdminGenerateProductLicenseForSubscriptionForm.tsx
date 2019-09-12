@@ -110,7 +110,12 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                     <div className="border rounded border-success mb-5">
                         <div className="border-top-0 border-left-0 border-right-0 rounded-0 alert alert-success mb-0 d-flex align-items-center justify-content-between px-3 py-2">
                             <span>Generated product license.</span>
-                            <button className="btn btn-primary" onClick={this.dismissAlert} autoFocus={true}>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={this.dismissAlert}
+                                autoFocus={true}
+                            >
                                 Dismiss
                             </button>
                         </div>
@@ -193,7 +198,6 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                             href="#"
                                             key={days}
                                             className="mr-2"
-                                            // tslint:disable-next-line:jsx-no-lambda
                                             onClick={e => {
                                                 e.preventDefault()
                                                 this.setValidDays(days)

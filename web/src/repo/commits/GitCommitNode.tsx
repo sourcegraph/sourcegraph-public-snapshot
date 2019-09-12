@@ -14,9 +14,6 @@ import { GitCommitNodeByline } from './GitCommitNodeByline'
 export interface GitCommitNodeProps {
     node: GQL.IGitCommit
 
-    /** The repository that contains this commit. */
-    repoName: string
-
     /** An optional additional CSS class name to apply to this element. */
     className?: string
 
@@ -121,7 +118,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                                 this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                             }
                                         >
-                                            <ContentCopyIcon className="icon-inline" />
+                                            <ContentCopyIcon className="icon-inline small" />
                                         </button>
                                     </div>
                                 )}
@@ -131,7 +128,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         to={this.props.node.tree.canonicalURL}
                                         data-tooltip="View files at this commit"
                                     >
-                                        <FileDocumentIcon className="icon-inline" />
+                                        <FileDocumentIcon className="icon-inline small" />
                                     </Link>
                                 )}
                             </div>
@@ -179,7 +176,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         <Link
                                             key={i}
                                             className="git-ref-tag-2 git-commit-node__sha-and-parents-parent"
-                                            to={`/${this.props.repoName}/-/commit/${parent.oid}`}
+                                            to={parent.url}
                                         >
                                             <code>{parent.abbreviatedOID}</code>
                                         </Link>

@@ -14,6 +14,7 @@ export const RegistryExtensionSourceBadge: React.FunctionComponent<{
     <LinkOrSpan
         to={extension.remoteURL}
         target="_blank"
+        rel="noopener noreferrer"
         className={`text-muted text-nowrap d-inline-flex align-items-center ${className}`}
         data-tooltip={
             extension.isLocal

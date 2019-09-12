@@ -71,6 +71,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                 ) : (
                     <p>
                         To disable pings (for customers only),{' '}
+                        {/* eslint-disable-next-line react/jsx-no-target-blank */}
                         <a href="https://about.sourcegraph.com/contact/" target="_blank">
                             contact support
                         </a>

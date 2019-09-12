@@ -13,6 +13,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 )
 
+// NewTx opens a transaction off of the given db, returning that
+// transaction if an error didn't occur, together with a cleanup
+// function to be deferred.
+//
+// After opening this transaction, it executes the query
+//     SET CONSTRAINTS ALL DEFERRED
+// which aids in testing.
+//
+// The cleanup function rolls back the transaction only if
+// the test passed.
+func NewTx(t testing.TB, db *sql.DB) (*sql.Tx, func()) {
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Exec("SET CONSTRAINTS ALL DEFERRED")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return tx, func() {
+		if !t.Failed() {
+			_ = tx.Rollback()
+		}
+	}
+}
+
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) (*sql.DB, func()) {

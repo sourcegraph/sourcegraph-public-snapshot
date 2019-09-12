@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -311,11 +312,32 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		_, err = src.ListRepos(ctx)
+		results := make(chan repos.SourceResult)
+
+		go func() {
+			src.ListRepos(ctx, results)
+			close(results)
+		}()
+
+		err = nil
+		for res := range results {
+			if res.Err != nil {
+				err = res.Err
+				// Send error to user before waiting for all results, but drain
+				// the rest of the results to not leak a blocked goroutine
+				go func() {
+					for res = range results {
+					}
+				}()
+				break
+			}
+		}
+
 		if err != nil && ctx.Err() != nil {
 			// ignore if we took too long
 			err = nil
 		}
+
 		errch <- err
 	}()
 
@@ -432,21 +454,45 @@ func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
+	resp := protocol.StatusMessagesResponse{
+		Messages: []protocol.StatusMessage{},
+	}
+
 	notCloned, err := s.computeNotClonedCount(r.Context())
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := protocol.StatusMessagesResponse{
-		Messages: []protocol.StatusMessage{},
-	}
-
 	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			Type:    protocol.CloningStatusMessage,
+			Cloning: &protocol.CloningProgress{
+				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
+			},
 		})
+	}
+
+	if e := s.Syncer.LastSyncError(); e != nil {
+		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
+			for _, e := range multiErr.Errors {
+				if sourceErr, ok := e.(*repos.SourceError); ok {
+					resp.Messages = append(resp.Messages, protocol.StatusMessage{
+						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+							Message:           sourceErr.Err.Error(),
+							ExternalServiceId: sourceErr.ExtSvc.ID,
+						},
+					})
+				} else {
+					resp.Messages = append(resp.Messages, protocol.StatusMessage{
+						SyncError: &protocol.SyncError{Message: e.Error()},
+					})
+				}
+			}
+		} else {
+			resp.Messages = append(resp.Messages, protocol.StatusMessage{
+				SyncError: &protocol.SyncError{Message: e.Error()},
+			})
+		}
 	}
 
 	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
