@@ -71,10 +71,6 @@ async function main(): Promise<void> {
 
     // Create worker and start processing jobs
     await startWorker(jobFunctions)
-
-    if (LOG_READY) {
-        console.log('Listening for uploads')
-    }
 }
 
 /**
