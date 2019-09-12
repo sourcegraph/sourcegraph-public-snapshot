@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
-var grafanaURLFromEnv = env.Get("SRC_GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
+var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 
 // addDebugHandlers registers the reverse proxies to each services debug
 // endpoints.
@@ -36,7 +36,7 @@ func addDebugHandlers(r *mux.Router) {
 	if len(grafanaURLFromEnv) > 0 {
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
-			log.Printf("failed to parse SRC_GRAFANA_SERVER_URL=%s: %v. won't generate Grafana link",
+			log.Printf("failed to parse GRAFANA_SERVER_URL=%s: %v. won't generate Grafana link",
 				grafanaURLFromEnv, err)
 			// setting to empty string so no link gets created for it below
 			grafanaURLFromEnv = ""
