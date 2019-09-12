@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,8 +13,10 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
@@ -137,14 +141,16 @@ func TestCampaigns(t *testing.T) {
 		t.Fatalf("have orgs's campaign namespace id %q, want %q", have, want)
 	}
 
-	var listed struct {
-		First, All struct {
-			Nodes      []Campaign
-			TotalCount int
-			PageInfo   struct {
-				HasNextPage bool
-			}
+	type CampaignConnection struct {
+		Nodes      []Campaign
+		TotalCount int
+		PageInfo   struct {
+			HasNextPage bool
 		}
+	}
+
+	var listed struct {
+		First, All CampaignConnection
 	}
 
 	mustExec(ctx, t, schema, nil, &listed, `
@@ -187,6 +193,182 @@ func TestCampaigns(t *testing.T) {
 
 	if listed.All.PageInfo.HasNextPage {
 		t.Errorf("wrong page info: %+v", listed.All.PageInfo.HasNextPage)
+	}
+
+	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	externalService := &repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: `{
+			"url": "https://github.com",
+			"token": "TOKEN",
+			"repos": ["sourcegraph/sourcegraph"]
+		}`,
+	}
+
+	err = store.UpsertExternalServices(ctx, externalService)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	urn := fmt.Sprintf("extsvc:github:%d", externalService.ID)
+
+	repo := &repos.Repo{
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Description: "Code search and navigation tool (self-hosted)",
+		URI:         "github.com/sourcegraph/sourcegraph",
+		Enabled:     true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: "https://TOKEN@github.com/sourcegraph/sourcegraph",
+			},
+		},
+		Metadata: "{}",
+	}
+
+	err = store.UpsertRepos(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graphqlRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
+
+	type Changeset struct {
+		ID         string
+		Repository struct{ ID string }
+		Campaigns  CampaignConnection
+		CreatedAt  string
+		UpdatedAt  string
+	}
+
+	var result struct {
+		Changeset Changeset
+	}
+
+	input = map[string]interface{}{
+		"repository": graphqlRepoID,
+		"externalID": "999",
+	}
+
+	mustExec(ctx, t, schema, input, &result, `
+		fragment u on User { id, databaseID, siteAdmin }
+		fragment o on Org  { id, name }
+		fragment c on Campaign {
+			id, name, description, createdAt, updatedAt
+			author    { ...u }
+			namespace {
+				... on User { ...u }
+				... on Org  { ...o }
+			}
+		}
+		fragment n on CampaignConnection {
+			nodes { ...c }
+			totalCount
+			pageInfo { hasNextPage }
+		}
+		fragment cs on Changeset {
+			id
+			repository { id }
+			campaigns { ...n }
+			createdAt
+			updatedAt
+		}
+		mutation($repository: ID!, $externalID: String!) {
+			changeset: createChangeset(repository: $repository, externalID: $externalID) {
+				...cs
+			}
+		}
+	`)
+
+	if result.Changeset.ID == "" {
+		t.Fatalf("changeset id is blank")
+	}
+
+	if have, want := result.Changeset.Repository.ID, graphqlRepoID; have != want {
+		t.Fatalf("have changeset repo id %q, want %q", have, want)
+	}
+
+	type ChangesetConnection struct {
+		Nodes      []Changeset
+		TotalCount int
+		PageInfo   struct {
+			HasNextPage bool
+		}
+	}
+
+	type CampaignWithChangesets struct {
+		ID          string
+		Name        string
+		Description string
+		Author      User
+		CreatedAt   string
+		UpdatedAt   string
+		Namespace   UserOrg
+		Changesets  ChangesetConnection
+	}
+
+	var addChangesetResult struct{ Campaign CampaignWithChangesets }
+
+	input = map[string]interface{}{
+		"changeset": result.Changeset.ID,
+		"campaign":  campaigns.Admin.ID,
+	}
+
+	mustExec(ctx, t, schema, input, &addChangesetResult, `
+		fragment u on User { id, databaseID, siteAdmin }
+		fragment o on Org  { id, name }
+
+		fragment cs on Changeset {
+			id
+			repository { id }
+			createdAt
+			updatedAt
+			campaigns { nodes { id } }
+		}
+
+		fragment c on Campaign {
+			id, name, description, createdAt, updatedAt
+			author    { ...u }
+			namespace {
+				... on User { ...u }
+				... on Org  { ...o }
+			}
+			changesets {
+				nodes { ...cs }
+				totalCount
+				pageInfo { hasNextPage }
+			}
+		}
+		mutation($changeset: ID!, $campaign: ID!) {
+			campaign: addChangesetToCampaign(changeset: $changeset, campaign: $campaign) {
+				...c
+			}
+		}
+	`)
+
+	if addChangesetResult.Campaign.Changesets.TotalCount != 1 {
+		t.Fatalf(
+			"campaign changesets totalcount is wrong. got=%d",
+			addChangesetResult.Campaign.Changesets.TotalCount,
+		)
+	}
+
+	wantChangesetID := result.Changeset.ID
+	haveChangesetID := addChangesetResult.Campaign.Changesets.Nodes[0].ID
+	if haveChangesetID != wantChangesetID {
+		t.Errorf("wrong changesets added to campaign. want=%s, have=%s", wantChangesetID, haveChangesetID)
+	}
+
+	wantCampaignID := campaigns.Admin.ID
+	haveCampaignID := addChangesetResult.Campaign.Changesets.Nodes[0].Campaigns.Nodes[0].ID
+	if haveCampaignID != wantCampaignID {
+		t.Errorf("wrong campaign added to changeset. want=%s, have=%s", wantCampaignID, haveCampaignID)
 	}
 }
 

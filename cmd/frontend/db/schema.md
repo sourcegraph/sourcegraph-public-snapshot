@@ -33,18 +33,42 @@ Foreign-key constraints:
  namespace_org_id  | integer                  | 
  created_at        | timestamp with time zone | not null default now()
  updated_at        | timestamp with time zone | not null default now()
+ changeset_ids     | jsonb                    | not null default '{}'::jsonb
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
+    "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
     "campaigns_namespace_org_id" btree (namespace_org_id)
     "campaigns_namespace_user_id" btree (namespace_user_id)
 Check constraints:
+    "campaigns_changeset_ids_check" CHECK (jsonb_typeof(changeset_ids) = 'object'::text)
     "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
     "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
-Referenced by:
-    TABLE "threads" CONSTRAINT "threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.changesets"
+```
+    Column    |           Type           |                        Modifiers                        
+--------------+--------------------------+---------------------------------------------------------
+ id           | bigint                   | not null default nextval('changesets_id_seq'::regclass)
+ campaign_ids | jsonb                    | not null default '{}'::jsonb
+ repo_id      | integer                  | not null
+ created_at   | timestamp with time zone | not null default now()
+ updated_at   | timestamp with time zone | not null default now()
+ metadata     | jsonb                    | not null default '{}'::jsonb
+ external_id  | text                     | not null
+Indexes:
+    "changesets_pkey" PRIMARY KEY, btree (id)
+    "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
+Check constraints:
+    "changesets_campaign_ids_check" CHECK (jsonb_typeof(campaign_ids) = 'object'::text)
+    "changesets_external_id_check" CHECK (external_id <> ''::text)
+    "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+Foreign-key constraints:
+    "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -468,9 +492,9 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
+    TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
-    TABLE "threads" CONSTRAINT "threads_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -570,26 +594,6 @@ Indexes:
     "survey_responses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
-
-```
-
-# Table "public.threads"
-```
-   Column    |           Type           |                      Modifiers                       
--------------+--------------------------+------------------------------------------------------
- id          | bigint                   | not null default nextval('threads_id_seq'::regclass)
- campaign_id | integer                  | not null
- repo_id     | integer                  | not null
- created_at  | timestamp with time zone | not null default now()
- updated_at  | timestamp with time zone | not null default now()
- metadata    | jsonb                    | not null default '{}'::jsonb
-Indexes:
-    "threads_pkey" PRIMARY KEY, btree (id)
-Check constraints:
-    "threads_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
-Foreign-key constraints:
-    "threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
-    "threads_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 

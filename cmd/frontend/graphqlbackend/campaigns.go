@@ -14,6 +14,56 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 )
 
+func (r *schemaResolver) AddChangesetToCampaign(ctx context.Context, args *struct {
+	Changeset, Campaign graphql.ID
+}) (_ *campaignResolver, err error) {
+	// 🚨 SECURITY: Only site admins may modify changesets and campaigns for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	changesetID, err := unmarshalChangesetID(args.Changeset)
+	if err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.A8NStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err := tx.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	changeset, err := tx.GetChangeset(ctx, a8n.GetChangesetOpts{ID: changesetID})
+	if err != nil {
+		return nil, err
+	}
+
+	campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	changeset.CampaignIDs = append(changeset.CampaignIDs, campaign.ID)
+	if err = tx.UpdateChangeset(ctx, changeset); err != nil {
+		return nil, err
+	}
+
+	// TODO(tsenart): Sync change-set metadata from code-host.
+
+	return &campaignResolver{store: r.A8NStore, Campaign: campaign}, nil
+}
+
 func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 	Input struct {
 		Namespace   graphql.ID
@@ -61,7 +111,7 @@ func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 func (r *schemaResolver) Campaigns(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*campaignsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
+	// 🚨 SECURITY: Only site admins may read campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
@@ -92,13 +142,14 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]*campaignRes
 	}
 	resolvers := make([]*campaignResolver, 0, len(campaigns))
 	for _, c := range campaigns {
-		resolvers = append(resolvers, &campaignResolver{Campaign: c})
+		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
 	}
 	return resolvers, nil
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountCampaigns(ctx)
+	opts := a8n.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID}
+	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
 
@@ -117,12 +168,20 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campa
 	return r.campaigns, r.next, r.err
 }
 
-type campaignResolver struct{ *a8n.Campaign }
+type campaignResolver struct {
+	store *a8n.Store
+	*a8n.Campaign
+}
 
 const campaignIDKind = "Campaign"
 
 func marshalCampaignID(id int64) graphql.ID {
 	return relay.MarshalID(campaignIDKind, id)
+}
+
+func unmarshalCampaignID(id graphql.ID) (campaignID int64, err error) {
+	err = relay.UnmarshalSpec(id, &campaignID)
+	return
 }
 
 func (r *campaignResolver) ID() graphql.ID {
@@ -166,4 +225,16 @@ func (r *campaignResolver) CreatedAt() DateTime {
 
 func (r *campaignResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.Campaign.UpdatedAt}
+}
+
+func (r *campaignResolver) Changesets(ctx context.Context, args struct {
+	graphqlutil.ConnectionArgs
+}) *changesetsConnectionResolver {
+	return &changesetsConnectionResolver{
+		store: r.store,
+		opts: a8n.ListChangesetsOpts{
+			CampaignID: r.Campaign.ID,
+			Limit:      int(args.ConnectionArgs.GetFirst()),
+		},
+	}
 }
