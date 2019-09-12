@@ -87,7 +87,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     // The Sourcegraph URL input field is disabled until the Sourcegraph URL has been fetched.
     await retry(async () => {
         expect(
-            await driver.page.evaluate(() => document.querySelector('form#admin input#url')!.disabled)
+            await driver.page.evaluate(() => document.querySelector<HTMLInputElement>('form#admin input#url')!.disabled)
         ).toBe(false)
     })
     await driver.replaceText({ selector: 'form#admin input#url', newText: sourcegraphBaseUrl })
