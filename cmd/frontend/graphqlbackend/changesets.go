@@ -81,7 +81,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]*changesetR
 	}
 	resolvers := make([]*changesetResolver, 0, len(changesets))
 	for _, c := range changesets {
-		resolvers = append(resolvers, &changesetResolver{ChangeSet: c})
+		resolvers = append(resolvers, &changesetResolver{store: r.store, ChangeSet: c})
 	}
 	return resolvers, nil
 }

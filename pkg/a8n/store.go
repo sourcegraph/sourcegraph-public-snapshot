@@ -589,6 +589,7 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 
 	cs = make([]*Campaign, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+
 		var c Campaign
 		if err = scanCampaign(&c, sc); err != nil {
 			return 0, 0, err

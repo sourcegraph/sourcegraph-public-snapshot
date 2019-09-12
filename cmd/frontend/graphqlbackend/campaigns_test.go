@@ -330,6 +330,7 @@ func TestCampaigns(t *testing.T) {
 			repository { id }
 			createdAt
 			updatedAt
+			campaigns { nodes { id } }
 		}
 
 		fragment c on Campaign {
@@ -359,13 +360,16 @@ func TestCampaigns(t *testing.T) {
 		)
 	}
 
-	// TODO(mrnugget): we need to make sure the campaign has been added to
-	// changeset too
-	result.ChangeSet.Campaigns.Nodes = nil
-	wantChangesets := []ChangeSet{result.ChangeSet}
-	haveChangesets := addChangeSetResult.Campaign.Changesets.Nodes
-	if !reflect.DeepEqual(haveChangesets, wantChangesets) {
-		t.Errorf("wrong changesets added to campaign. diff=%s", cmp.Diff(haveChangesets, wantChangesets))
+	wantChangesetID := result.ChangeSet.ID
+	haveChangesetID := addChangeSetResult.Campaign.Changesets.Nodes[0].ID
+	if haveChangesetID != wantChangesetID {
+		t.Errorf("wrong changesets added to campaign. want=%s, have=%s", wantChangesetID, haveChangesetID)
+	}
+
+	wantCampaignID := campaigns.Admin.ID
+	haveCampaignID := addChangeSetResult.Campaign.Changesets.Nodes[0].Campaigns.Nodes[0].ID
+	if haveCampaignID != wantCampaignID {
+		t.Errorf("wrong campaign added to changeset. want=%s, have=%s", wantCampaignID, haveCampaignID)
 	}
 }
 

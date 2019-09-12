@@ -147,7 +147,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]*campaignRes
 	}
 	resolvers := make([]*campaignResolver, 0, len(campaigns))
 	for _, c := range campaigns {
-		resolvers = append(resolvers, &campaignResolver{Campaign: c})
+		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
 	}
 	return resolvers, nil
 }
