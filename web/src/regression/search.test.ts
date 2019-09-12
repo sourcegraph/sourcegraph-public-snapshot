@@ -126,7 +126,7 @@ describe('Search regression test suite', () => {
         // Close browser.
         afterAll(async () => driver && (await driver.close()))
 
-        test('Perform global text search for "alksdjflaksjdflkasjdf", expect 0 results.', async () => {
+        test('Perform global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
             await driver.page.waitForSelector('.e2e-search-results')
             await driver.page.waitForFunction(() => {
@@ -144,31 +144,42 @@ describe('Search regression test suite', () => {
                 return true
             })
         })
-        test('Perform global text search for "error type:", expect a few results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=%22error+type:%22')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
+        test('Global text search ("error type:") with a few results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 3)
         })
-        test('Perform global text search for "error", expect many results.', async () => {
+        test('Global text search excluding repository ("error type:") with a few results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"+-repo:google')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+            await driver.page.waitForFunction(() => {
+                const results = Array.from(document.querySelectorAll('.e2e-search-result'))
+                if (results.length === 0) {
+                    return false
+                }
+                const hasExcludedRepo = results.some(el => el.textContent && el.textContent.includes('google'))
+                if (hasExcludedRepo) {
+                    throw new Error('Results contain excluded repository')
+                }
+                return true
+            })
+        })
+        test('Global text search (error) with many results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
-        test('Perform global text search for "error", expect many results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-        })
-        test('Perform global text search for "error count:>1000", expect many results.', async () => {
+        test('Global text search (error count:>1000), expect many results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
-        test('Perform global text search for "repohasfile:copying", expect many results.', async () => {
+        test('Global text search (repohasfile:copying), expect many results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repohasfile:copying')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 2)
         })
-        test('Perform global text search for something with more than 1000 results and use count:1000', async () => {
+        test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
-        test('Perform global text search for a regular expression without indexing: "index:no ^func.*$", expect many results.', async () => {
+        test('Global text search for a regular expression without indexing: (index:no ^func.*$), expect many results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
@@ -176,31 +187,25 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repo:auth0/go-jwt-middleware$')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
         })
-        test('Perform a case-sensitive search.', async () => {
+        test('Single repository, case-sensitive search.', async () => {
             await driver.page.goto(
                 config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
             )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
         })
-        test('Perform a case-sensitive search.', async () => {
-            await driver.page.goto(
-                config.sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/adjust/go-wrk%24+String+case:yes'
-            )
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 2)
-        })
-        test('Search with fork:only', async () => {
+        test('Global text search, fork:only, few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+router')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 5)
         })
-        test('Search with fork:only', async () => {
+        test('Global text search, fork:only, 1 result', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+FORK_SENTINEL')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
         })
-        test('Search with fork:no', async () => {
+        test('Global text search, fork:no, 0 results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=fork:only+FORK_SENTINEL')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
-        test('Search on non-master branch of large repository', async () => {
+        test('Text search non-master branch, large repository, many results', async () => {
             // The string `var ExecutionEnvironment = require('ExecutionEnvironment');` occurs 10 times on this old branch, but 0 times in current master.
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
