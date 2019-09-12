@@ -137,7 +137,7 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     worker.on('start', () => console.log('Worker started'))
     worker.on('end', () => console.log('Worker ended'))
     worker.on('poll', () => console.log('Polling queue'))
-    worker.on('ping', () => console.log(`Pinging queue`))
+    worker.on('ping', () => console.log('Pinging queue'))
     worker.on('job', (_: string, job: Job<any>) => console.log(`Working on job ${JSON.stringify(job)}`))
     worker.on('success', (_: string, job: Job<any>, result: any) =>
         console.log(`Successfully completed ${JSON.stringify(job)} >> >> ${result}`)
