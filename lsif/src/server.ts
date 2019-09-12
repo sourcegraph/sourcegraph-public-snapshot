@@ -12,7 +12,7 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createDirectory, hasErrorCode, logErrorAndExit, readEnvInt, createDatabaseFilename } from './util'
-import { Queue, Scheduler } from 'node-resque'
+import { Queue, Scheduler, Job } from 'node-resque'
 import { wrap } from 'async-middleware'
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
@@ -179,6 +179,7 @@ async function main(): Promise<void> {
                         .on('finish', resolve) // unblock promise when done
                 })
 
+                console.log(`Enqueueing conversion job for ${repository}@${commit}`)
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
             }
@@ -256,7 +257,14 @@ async function setupQueue(): Promise<Queue> {
     exitHook(() => queue.end())
 
     const scheduler = new Scheduler({ connection: connectionOptions })
+    scheduler.on('start', () => console.log('Scheduler started'))
+    scheduler.on('end', () => console.log('Scheduler ended'))
+    scheduler.on('poll', () => console.log('Scheduler polling'))
+    scheduler.on('master', () => console.log('Scheduler has become master'))
+    scheduler.on('cleanStuckWorker', (workerName: string) => console.log(`Cleaning stuck worker ${workerName}`))
+    scheduler.on('transferredJob', (_: number, job: Job<any>) => console.log(`Transferring job ${JSON.stringify(job)}`))
     scheduler.on('error', logErrorAndExit)
+
     await scheduler.connect()
     exitHook(() => scheduler.end())
     scheduler.start().catch(logErrorAndExit)

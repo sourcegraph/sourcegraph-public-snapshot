@@ -8,7 +8,7 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { convertLsif } from './conversion'
 import { createDatabaseFilename, createDirectory, logErrorAndExit, readEnvInt } from './util'
-import { JobsHash, Worker } from 'node-resque'
+import { JobsHash, Worker, Job } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache } from './cache'
 import { CONNECTION_CACHE_CAPACITY_GAUGE } from './metrics'
@@ -103,6 +103,8 @@ function createConvertJob(
             // Add the new database to the correlation db
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         } catch (e) {
+            console.error(`Failed to convert ${repository}@${commit}: ${e && e.message}`)
+
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
             throw e
@@ -110,6 +112,7 @@ function createConvertJob(
 
         // Remove input
         await fs.unlink(filename)
+        console.log(`Successfully converted ${repository}@${commit}`)
     }
 }
 
@@ -131,7 +134,20 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     }
 
     const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs)
+    worker.on('start', () => console.log('Worker started'))
+    worker.on('end', () => console.log('Worker ended'))
+    worker.on('poll', () => console.log('Polling queue'))
+    worker.on('ping', () => console.log(`Pinging queue`))
+    worker.on('job', (_: string, job: Job<any>) => console.log(`Working on job ${JSON.stringify(job)}`))
+    worker.on('success', (_: string, job: Job<any>, result: any) =>
+        console.log(`Successfully completed ${JSON.stringify(job)} >> >> ${result}`)
+    )
+    worker.on('failure', (_: string, job: Job<any>, failure: any) =>
+        console.log(`Failed to perform ${JSON.stringify(job)} >> >> ${failure}`)
+    )
+    worker.on('cleaning_worker', (worker: string, pid: string) => console.log(`Cleaning old worker ${worker}:${pid}`))
     worker.on('error', logErrorAndExit)
+
     await worker.connect()
     exitHook(() => worker.end())
     worker.start().catch(logErrorAndExit)
