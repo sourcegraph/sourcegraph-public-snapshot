@@ -16,7 +16,7 @@ import {
     NATIVE_INTEGRATION_ACTIVATED,
     signalBrowserExtensionInstalled,
 } from '../../libs/sourcegraph/inject'
-import { DEFAULT_SOURCEGRAPH_URL, DEFAULT_ASSETS_URL } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -96,7 +96,9 @@ async function main(): Promise<void> {
         })
     }
 
-    subscriptions.add(injectCodeIntelligence({ sourcegraphURL, assetsURL: DEFAULT_ASSETS_URL }, IS_EXTENSION))
+    subscriptions.add(
+        injectCodeIntelligence({ sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) }, IS_EXTENSION)
+    )
 
     // Clean up susbscription if the native integration gets activated
     // later in the lifetime of the content script.
