@@ -200,6 +200,7 @@ func BenchmarkSearchResults(b *testing.B) {
 
 func BenchmarkIntegrationSearchResults(b *testing.B) {
 	dbtesting.SetupGlobalTestDB(b)
+
 	ctx := context.Background()
 
 	_, repos, zoektRepos := generateRepos(5000)

@@ -13,7 +13,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
@@ -29,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
@@ -72,8 +70,9 @@ func (r *schemaResolver) Search(args *struct {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
 	return &searchResolver{
-		query: q,
-		zoekt: IndexedSearch(),
+		query:        q,
+		zoekt:        search.Indexed(),
+		searcherURLs: search.SearcherURLs(),
 	}, nil
 }
 
@@ -98,7 +97,8 @@ type searchResolver struct {
 	repoOverLimit             bool
 	repoErr                   error
 
-	zoekt *searchbackend.Zoekt
+	zoekt        *searchbackend.Zoekt
+	searcherURLs *endpoint.Map
 }
 
 // rawQuery returns the original query string input.
@@ -409,7 +409,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
 		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-			return zoektIndexedRepos(ctx, IndexedSearch(), revs, nil)
+			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
 		}
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
 		if err != nil {
@@ -641,6 +641,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
+		SearcherURLs:    r.searcherURLs,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, err
@@ -833,38 +834,3 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 }
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
-
-var (
-	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-
-	searcherURLsOnce sync.Once
-	searcherURLs     *endpoint.Map
-
-	indexedSearchOnce sync.Once
-	indexedSearch     *searchbackend.Zoekt
-)
-
-func SearcherURLs() *endpoint.Map {
-	searcherURLsOnce.Do(func() {
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		} else {
-			searcherURLs = endpoint.New(searcherURL)
-		}
-	})
-	return searcherURLs
-}
-
-func IndexedSearch() *searchbackend.Zoekt {
-	indexedSearchOnce.Do(func() {
-		indexedSearch = &searchbackend.Zoekt{}
-		if zoektAddr != "" {
-			indexedSearch.Client = zoektrpc.Client(zoektAddr)
-		}
-		conf.Watch(func() {
-			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
-		})
-	})
-	return indexedSearch
-}
