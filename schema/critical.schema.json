@@ -44,7 +44,8 @@
     "externalURL": {
       "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`.",
       "type": "string",
-      "examples": ["https://sourcegraph.example.com"]
+      "examples": ["https://sourcegraph.example.com"],
+      "minLength": 1
     },
     "lightstepAccessToken": {
       "description": "Access token for sending traces to LightStep.",
