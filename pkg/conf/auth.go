@@ -25,12 +25,11 @@ func AuthProviderType(p schema.AuthProviders) string {
 	}
 }
 
-// AuthPublic reports whether the site is public. This leads to a significantly degraded user
-// experience, and as a result, is currently only supported on Sourcegraph.com.
-func AuthPublic() bool { return authPublic(Get()) }
-func authPublic(c *Unified) bool {
-	return envvar.SourcegraphDotComMode()
-}
+// AuthPublic reports whether the site is public. Because many core features rely on persisted user
+// settings, this leads to a degraded experience for most users. As a result, for self-hosted private
+// usage it is preferable for all users to have accounts. But on sourcegraph.com, allowing users to
+// opt-in to accounts remains worthwhile, despite the degraded UX.
+func AuthPublic() bool { return envvar.SourcegraphDotComMode() }
 
 // AuthAllowSignup reports whether the site allows signup. Currently only the builtin auth provider
 // allows signup. AuthAllowSignup returns true if auth.providers' builtin provider has allowSignup
