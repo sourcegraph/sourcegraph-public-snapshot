@@ -99,33 +99,30 @@ export class ExtWindow implements sourcegraph.Window {
         for (const update of data) {
             const { editorId } = update
             switch (update.type) {
-                case 'added':
-                    {
-                        const editor = new ExtCodeEditor(
-                            { editorId, ...update.editorData },
-                            this.proxy.codeEditor,
-                            this.documents
-                        )
-                        this.viewComponents.set(editorId, editor)
-                        if (update.editorData.isActive) {
-                            this.activeViewComponentChanges.next(editor)
-                        }
+                case 'added': {
+                    const editor = new ExtCodeEditor(
+                        { editorId, ...update.editorData },
+                        this.proxy.codeEditor,
+                        this.documents
+                    )
+                    this.viewComponents.set(editorId, editor)
+                    if (update.editorData.isActive) {
+                        this.activeViewComponentChanges.next(editor)
                     }
                     break
-                case 'updated':
-                    {
-                        const editor = this.viewComponents.get(editorId)
-                        if (!editor) {
-                            throw new Error(`Could not perform update: editor ${editorId} not found`)
-                        }
-                        editor.update(update.editorData)
+                }
+                case 'updated': {
+                    const editor = this.viewComponents.get(editorId)
+                    if (!editor) {
+                        throw new Error(`Could not perform update: editor ${editorId} not found`)
                     }
+                    editor.update(update.editorData)
                     break
-                case 'deleted':
-                    {
-                        this.viewComponents.delete(editorId)
-                    }
+                }
+                case 'deleted': {
+                    this.viewComponents.delete(editorId)
                     break
+                }
             }
         }
     }
@@ -176,7 +173,7 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
             }
         } else {
             this.activeWindow.update(editorUpdates)
-            if (this.activeWindow!.visibleViewComponents.length === 0) {
+            if (this.activeWindow.visibleViewComponents.length === 0) {
                 this.activeWindow = undefined
                 this.activeWindowChanges.next(undefined)
             }
