@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strconv"
 	"time"
@@ -17,13 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
-
-// GraphQLSchema is the parsed Schema with the root resolver attached. It is
-// exported since it is accessed in our httpapi.
-var GraphQLSchema *graphql.Schema
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
@@ -50,18 +46,14 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func init() {
-	var err error
-	GraphQLSchema, err = graphql.ParseSchema(
+func NewSchema(db *sql.DB) (*graphql.Schema, error) {
+	return graphql.ParseSchema(
 		Schema,
 		&schemaResolver{
-			A8NStore: a8n.NewStore(dbconn.Global),
+			A8NStore: a8n.NewStore(db),
 		},
 		graphql.Tracer(prometheusTracer{}),
 	)
-	if err != nil {
-		panic(err)
-	}
 }
 
 // EmptyResponse is a type that can be used in the return signature for graphql queries
