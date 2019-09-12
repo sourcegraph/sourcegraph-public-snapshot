@@ -151,7 +151,7 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 }
 
 var countChangesetsQueryFmtstr = `
--- source: pkg/a8n/store.go:ListChangesets
+-- source: pkg/a8n/store.go:CountChangesets
 SELECT COUNT(id)
 FROM changesets
 WHERE %s
@@ -502,7 +502,7 @@ func (s *Store) CountCampaigns(ctx context.Context, opts CountCampaignsOpts) (co
 }
 
 var countCampaignsQueryFmtstr = `
--- source: pkg/a8n/store.go:ListCampaigns
+-- source: pkg/a8n/store.go:CountCampaigns
 SELECT COUNT(id)
 FROM campaigns
 WHERE %s
