@@ -12,6 +12,6 @@ func init() {
 }
 
 func newTest() *httptestutil.Client {
-	mux := NewHandler(router.New(mux.NewRouter()))
+	mux := NewHandler(router.New(mux.NewRouter()), nil)
 	return httptestutil.NewTest(mux)
 }

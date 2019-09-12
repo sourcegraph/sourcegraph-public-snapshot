@@ -77,7 +77,7 @@ func TestStatusMessages(t *testing.T) {
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: GraphQLSchema,
+				Schema: mustParseGraphQLSchema(t, nil),
 				Query:  graphqlQuery,
 				ExpectedResult: `
 				{
@@ -124,7 +124,7 @@ func TestStatusMessages(t *testing.T) {
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: GraphQLSchema,
+				Schema: mustParseGraphQLSchema(t, nil),
 				Query:  graphqlQuery,
 				ExpectedResult: `
 					{
