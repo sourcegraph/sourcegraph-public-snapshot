@@ -124,7 +124,7 @@ async function main(): Promise<void> {
     const app = express()
     app.use(morgan('tiny'))
     app.use(errorHandler)
-    app.get('/ping', (_, res) => res.send({ pong: 'pong' }))
+    app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
     app.post(
@@ -171,7 +171,12 @@ async function main(): Promise<void> {
                         .pipe(es.split()) // split into lines
                         // Must check each line synchronously
                         // eslint-disable-next-line no-sync
-                        .pipe(es.mapSync(validateLine)) // validate each line
+                        .pipe(
+                            es.mapSync((text: string) => {
+                                validateLine(text) // validate each line
+                                return text
+                            })
+                        )
                         .on('error', reject) // catch validation error
                         .pipe(es.join('\n')) // join back into text
                         .pipe(zlib.createGzip()) // re-zip input
