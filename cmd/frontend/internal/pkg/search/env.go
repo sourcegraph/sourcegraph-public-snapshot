@@ -14,6 +14,7 @@ import (
 
 var (
 	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
+	zoektAddrs  = env.Get("INDEXED_SEARCH_SERVERS", "", "zoekt instances")
 	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
 
 	searcherURLsOnce sync.Once
@@ -21,6 +22,9 @@ var (
 
 	indexedSearchOnce sync.Once
 	indexedSearch     *backend.Zoekt
+
+	indicesOnce sync.Once
+	indices     *backend.Indices
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -45,4 +49,19 @@ func Indexed() *backend.Zoekt {
 		})
 	})
 	return indexedSearch
+}
+
+func Indices() *backend.Indices {
+	indicesOnce.Do(func() {
+		if zoektAddrs != "" {
+			indices = &backend.Indices{
+				Map: endpoint.New(zoektAddrs),
+			}
+		} else {
+			indices = &backend.Indices{
+				Map: nil,
+			}
+		}
+	})
+	return indices
 }
