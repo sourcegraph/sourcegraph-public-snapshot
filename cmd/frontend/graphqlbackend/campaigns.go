@@ -59,8 +59,6 @@ func (r *schemaResolver) AddChangesetToCampaign(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	// TODO(tsenart): Sync change-set metadata from code-host.
-
 	return &campaignResolver{store: r.A8NStore, Campaign: campaign}, nil
 }
 
