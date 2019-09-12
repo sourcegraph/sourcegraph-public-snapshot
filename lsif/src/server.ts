@@ -274,6 +274,43 @@ async function setupQueue(): Promise<Queue> {
     exitHook(() => scheduler.end())
     scheduler.start().catch(logErrorAndExit)
 
+    const inspectMetrics = async () => {
+        // queued [
+        //  {
+        //    class: 'convert',
+        //    queue: 'lsif',
+        //    args: [
+        //      'github.com/sourcegraph/codeintellify',
+        //      '1234567890123456789012345678901234567890',
+        //      '/Users/efritz/.sourcegraph/lsif-storage/uploads/aeb5bdf6-8dcd-4b70-b6bf-d78e447f01bb'
+        //    ]
+        //  }
+        // ]
+
+        // console.log('workers', await (queue as any).workers())
+        // console.log('stats', await (queue as any).stats())
+        // console.log('failedCount', await (queue as any).failedCount())
+
+        // console.log('queued', await (queue as any).queued('lsif', 0, -1))
+        // console.log('failed', await (queue as any).failed(0, -1))
+
+        // console.log(await (queue as any).cleanOldWorkers(10))
+        // console.log('allWorkingOn', await (queue as any).allWorkingOn())
+
+        // let stats = await queue.stats()
+        // let jobs = await queue.queued(q, start, stop)
+        // let length = await queue.length(q)
+
+        const data = await (queue as any).allWorkingOn()
+        for (const workerName of Object.keys(data)) {
+            console.log(data[workerName])
+        }
+    }
+
+    setInterval(() => {
+        inspectMetrics().catch(logErrorAndExit)
+    }, 1000)
+
     return queue
 }
 
