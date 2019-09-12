@@ -386,6 +386,9 @@ type Campaign implements Node {
 
     # The date and time when the campaign was updated.
     updatedAt: DateTime!
+
+    # The changesets in this campaign.
+    changesets(first: Int): ChangeSetConnection!
 }
 
 # A list of campaigns.
