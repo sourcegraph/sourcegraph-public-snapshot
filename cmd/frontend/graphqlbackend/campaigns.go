@@ -17,14 +17,9 @@ import (
 func (r *schemaResolver) AddChangeSetToCampaign(ctx context.Context, args *struct {
 	ChangeSet, Campaign graphql.ID
 }) (_ *campaignResolver, err error) {
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
-	}
-
-	// 🚨 SECURITY: Only site admins may create a changeset for now.
-	if !user.SiteAdmin {
-		return nil, backend.ErrMustBeSiteAdmin
+	// 🚨 SECURITY: Only site admins may modify changesets and campaigns for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
 
 	changesetID, err := unmarshalChangeSetID(args.ChangeSet)
@@ -116,7 +111,7 @@ func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 func (r *schemaResolver) Campaigns(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*campaignsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
+	// 🚨 SECURITY: Only site admins may read campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}

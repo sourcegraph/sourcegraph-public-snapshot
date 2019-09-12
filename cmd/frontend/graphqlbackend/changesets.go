@@ -6,9 +6,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -18,14 +16,9 @@ func (r *schemaResolver) CreateChangeSet(ctx context.Context, args *struct {
 	Repository graphql.ID
 	ExternalID string
 }) (_ *changesetResolver, err error) {
-	user, err := db.Users.GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
-	}
-
-	// 🚨 SECURITY: Only site admins may create a changeset for now.
-	if !user.SiteAdmin {
-		return nil, backend.ErrMustBeSiteAdmin
+	// 🚨 SECURITY: Only site admins may create changesets for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
 
 	repoID, err := unmarshalRepositoryID(args.Repository)
@@ -50,7 +43,7 @@ func (r *schemaResolver) CreateChangeSet(ctx context.Context, args *struct {
 func (r *schemaResolver) ChangeSets(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*changesetsConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
+	// 🚨 SECURITY: Only site admins may read changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
