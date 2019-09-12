@@ -104,7 +104,7 @@ export function createModelService(): ModelService {
     const models = new Map<string, TextModel>()
     const modelUpdates = new Subject<TextModelUpdate[]>()
     const activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
-    const languageRefs = new RefCount()
+    const languageRefs = new RefCount<string>()
     const getModel = (uri: string): TextModel => {
         const model = models.get(uri)
         if (!model) {
@@ -143,7 +143,7 @@ export function createModelService(): ModelService {
             modelUpdates.next([{ type: 'added', ...model }])
             // Update activeLanguages if no other existing model has the same language.
             if (languageRefs.increment(model.languageId)) {
-                activeLanguages.next(new Set(languageRefs.keys()))
+                activeLanguages.next(new Set<string>(languageRefs.keys()))
             }
         },
         updateModel: (uri, text) => {
@@ -160,7 +160,7 @@ export function createModelService(): ModelService {
             models.delete(uri)
             modelUpdates.next([{ type: 'deleted', uri }])
             if (languageRefs.decrement(model.languageId)) {
-                activeLanguages.next(new Set(languageRefs.keys()))
+                activeLanguages.next(new Set<string>(languageRefs.keys()))
             }
         },
     }
