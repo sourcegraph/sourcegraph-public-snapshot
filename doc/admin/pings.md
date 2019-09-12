@@ -18,3 +18,5 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 - Aggregate counts of current users using code host integrations
 - Aggregate counts of current users by product feature (site management, code search and navigation, code review, saved searches, diff searches)
 - Which extensions are activated
+
+To disable pings, please [contact support](https://about.sourcegraph.com/contact/).
