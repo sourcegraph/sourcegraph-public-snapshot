@@ -199,8 +199,12 @@ describe('Search regression test suite', () => {
                 { timeout: 500 }
             )
         })
-        test('Global text search for a regular expression without indexing: (index:no ^func.*$), expect many results.', async () => {
+        test('Global text search for a regular expression without indexed search: (index:no ^func.*$), expect many results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Global text search for a regular expression with only indexed search: (index:only ^func.*$), expect many results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:only+^func.*$')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Search for a repository by name.', async () => {
