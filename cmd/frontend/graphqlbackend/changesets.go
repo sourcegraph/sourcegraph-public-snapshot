@@ -143,11 +143,3 @@ func (r *changesetResolver) CreatedAt() DateTime {
 func (r *changesetResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.ChangeSet.UpdatedAt}
 }
-
-func issueURLToRepoURL(url string) string {
-	// TODO: here be dragons
-	// 1. Parse URL
-	// 2. Determine code host
-	// 3. According to which code host it is, go from issue URL to repoURL (i.e. cut off "issues/1")
-	return "github.com/sourcegraph/sourcegraph"
-}
