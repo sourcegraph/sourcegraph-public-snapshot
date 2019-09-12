@@ -379,5 +379,66 @@ func TestStore(t *testing.T) {
 				}
 			})
 		})
+
+		t.Run("Update", func(t *testing.T) {
+			for _, c := range changesets {
+				c.Metadata = []byte(`{"updated": true}`)
+
+				if c.RepoID != 0 {
+					c.RepoID++
+				}
+
+				now = now.Add(time.Second)
+				want := c
+				want.UpdatedAt = now
+
+				have := c.Clone()
+				if err := s.UpdateChangeSet(ctx, have); err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+
+				// Test that duplicates are not introduced.
+				have.CampaignIDs = append(have.CampaignIDs, have.CampaignIDs...)
+				if err := s.UpdateChangeSet(ctx, have); err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+
+				// Test we can add to the set.
+				have.CampaignIDs = append(have.CampaignIDs, 42)
+				want.CampaignIDs = append(want.CampaignIDs, 42)
+
+				if err := s.UpdateChangeSet(ctx, have); err != nil {
+					t.Fatal(err)
+				}
+
+				sort.Slice(have.CampaignIDs, func(a, b int) bool {
+					return have.CampaignIDs[a] < have.CampaignIDs[b]
+				})
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+
+				// Test we can remove from the set.
+				have.CampaignIDs = have.CampaignIDs[:0]
+				want.CampaignIDs = want.CampaignIDs[:0]
+
+				if err := s.UpdateChangeSet(ctx, have); err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
 	})
 }

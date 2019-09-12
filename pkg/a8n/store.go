@@ -295,6 +295,66 @@ func listChangeSetsQuery(opts *ListChangeSetsOpts) *sqlf.Query {
 	)
 }
 
+// UpdateChangeSet updates the given ChangeSet.
+func (s *Store) UpdateChangeSet(ctx context.Context, c *ChangeSet) error {
+	q, err := s.updateChangeSetQuery(c)
+	if err != nil {
+		return err
+	}
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanChangeSet(c, sc)
+		return int64(c.ID), 1, err
+	})
+}
+
+var updateChangeSetQueryFmtstr = `
+-- source: pkg/a8n/store.go:UpdateChangeSet
+UPDATE changesets
+SET (
+	repo_id,
+	created_at,
+	updated_at,
+	metadata,
+	campaign_ids,
+	external_id
+) = (%s, %s, %s, %s, %s, %s)
+WHERE id = %s
+RETURNING
+	id,
+	repo_id,
+	created_at,
+	updated_at,
+	metadata,
+	campaign_ids,
+	external_id
+`
+
+func (s *Store) updateChangeSetQuery(c *ChangeSet) (*sqlf.Query, error) {
+	metadata, err := metadataColumn(c.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	c.UpdatedAt = s.now()
+
+	return sqlf.Sprintf(
+		updateChangeSetQueryFmtstr,
+		c.RepoID,
+		c.CreatedAt,
+		c.UpdatedAt,
+		metadata,
+		campaignIDs,
+		c.ExternalID,
+		c.ID,
+	), nil
+}
+
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *Campaign) error {
 	q, err := s.createCampaignQuery(c)
