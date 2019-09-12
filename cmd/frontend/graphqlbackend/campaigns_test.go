@@ -92,14 +92,13 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	type Campaign struct {
-		ID           string
-		Name         string
-		Description  string
-		Author       User
-		CreatedAt    string
-		UpdatedAt    string
-		Namespace    UserOrg
-		ChangesetIDs []int64
+		ID          string
+		Name        string
+		Description string
+		Author      User
+		CreatedAt   string
+		UpdatedAt   string
+		Namespace   UserOrg
 	}
 
 	var campaigns struct{ Admin, Org Campaign }
