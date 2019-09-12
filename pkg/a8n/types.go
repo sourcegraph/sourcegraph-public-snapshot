@@ -2,7 +2,7 @@ package a8n
 
 import "time"
 
-// A Campaign of changesets (i.e. Changesets and Issues) over multiple Repos over time.
+// A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
 	ID              int64
 	Name            string
@@ -22,8 +22,8 @@ func (c *Campaign) Clone() *Campaign {
 	return &cc
 }
 
-// A Changeset is a sum type representing either a Changeset or an Issue
-// belonging to a Repository and a Campaign.
+// A Changeset is a changeset on a code host belonging to a Repository and many
+// Campaigns.
 type Changeset struct {
 	ID          int64
 	RepoID      int32
