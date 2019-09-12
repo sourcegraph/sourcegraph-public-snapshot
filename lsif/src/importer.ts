@@ -216,8 +216,8 @@ async function populateDefinitionsAndReferencesTables(
     //   (2) it stop us from re-iterating over the range data of the entire
     //       LSIF dump, which is by far the largest proportion of data.
 
-    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set<MonikerId>())
-    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set<MonikerId>())
+    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set())
+    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set())
 
     for (const range of correlator.rangeData.values()) {
         if (range.monikerIds.size === 0) {

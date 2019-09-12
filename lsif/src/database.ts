@@ -234,7 +234,7 @@ export class Database {
         resultData: DocumentPathRangeId[]
     ): Promise<lsp.Location[]> {
         // Group by document path so we only have to load each document once
-        const groupedResults = new DefaultMap<string, Set<RangeId>>(() => new Set<RangeId>())
+        const groupedResults = new DefaultMap<string, Set<RangeId>>(() => new Set())
 
         for (const { documentPath, rangeId } of resultData) {
             groupedResults.getOrDefault(documentPath).add(rangeId)
