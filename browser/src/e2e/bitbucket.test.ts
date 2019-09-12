@@ -88,7 +88,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     await retry(async () => {
         expect(
             await driver.page.evaluate(() => document.querySelector('form#admin input#url')!.disabled)
-        ).toBe(null)
+        ).toBe(false)
     })
     await driver.replaceText({ selector: 'form#admin input#url', newText: sourcegraphBaseUrl })
     await driver.page.click('form#admin input#submit')
