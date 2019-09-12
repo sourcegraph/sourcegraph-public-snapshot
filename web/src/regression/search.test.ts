@@ -145,8 +145,23 @@ describe('Search regression test suite', () => {
             })
         })
         test('Global text search ("error type:") with a few results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=%22error+type:%22')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 3)
+        })
+        test('Global text search excluding repository ("error type:") with a few results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"+-repo:google')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+            await driver.page.waitForFunction(() => {
+                const results = Array.from(document.querySelectorAll('.e2e-search-result'))
+                if (results.length === 0) {
+                    return false
+                }
+                const hasExcludedRepo = results.some(el => el.textContent && el.textContent.includes('google'))
+                if (hasExcludedRepo) {
+                    throw new Error('Results contain excluded repository')
+                }
+                return true
+            })
         })
         test('Global text search (error) with many results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=error')
