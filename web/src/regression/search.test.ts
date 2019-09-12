@@ -126,7 +126,7 @@ describe('Search regression test suite', () => {
         // Close browser.
         afterAll(async () => driver && (await driver.close()))
 
-        test('Perform global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
+        test('Global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
             await driver.page.waitForSelector('.e2e-search-results')
             await driver.page.waitForFunction(() => {
@@ -176,8 +176,28 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 2)
         })
         test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
+            // Reads the number of results from the text at the top of the results page
+            function getNumResults() {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                const matches = document.querySelector('body')!.textContent!.match(/([0-9]+)\+?\sresults?/)
+                if (!matches || matches.length < 2) {
+                    return null
+                }
+                const numResults = parseInt(matches[1], 10)
+                return isNaN(numResults) ? null : numResults
+            }
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+            await driver.page.addScriptTag({ content: `${getNumResults}` })
+
+            await driver.page.waitForFunction(() => getNumResults() !== null)
+            await driver.page.waitForFunction(
+                () => {
+                    const numResults = getNumResults()
+                    return numResults !== null && numResults > 1000
+                },
+                { timeout: 500 }
+            )
         })
         test('Global text search for a regular expression without indexing: (index:no ^func.*$), expect many results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=index:no+^func.*$')
