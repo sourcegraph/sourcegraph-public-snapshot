@@ -405,9 +405,9 @@ type CampaignConnection {
 
 # A Changeset's state
 enum ChangesetState {
-  OPEN
-  CLOSED
-  MERGED
+    OPEN
+    CLOSED
+    MERGED
 }
 
 # A changeset in a code host (e.g. a PR on Github)
