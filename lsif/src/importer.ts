@@ -202,15 +202,15 @@ async function populateResultChunksTable(
     chunkResults(correlator.definitionData)
     chunkResults(correlator.referenceData)
 
-    for (let id = 0; id < resultChunks.length; id++) {
+    for (const [id, resultChunk] of resultChunks.entries()) {
         // Empty chunk, no need to serialize as it will never be queried
-        if (resultChunks[id].paths.size === 0 && resultChunks[id].documentIdRangeIds.size === 0) {
+        if (resultChunk.paths.size === 0 && resultChunk.documentIdRangeIds.size === 0) {
             continue
         }
 
         const data = await encodeJSON({
-            documentPaths: resultChunks[id].paths,
-            documentIdRangeIds: resultChunks[id].documentIdRangeIds,
+            documentPaths: resultChunk.paths,
+            documentIdRangeIds: resultChunk.documentIdRangeIds,
         })
 
         // Encode and insert result chunk record
@@ -236,8 +236,8 @@ async function populateDefinitionsAndReferencesTables(
     //   (2) it stop us from re-iterating over the range data of the entire
     //       LSIF dump, which is by far the largest proportion of data.
 
-    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set<MonikerId>())
-    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set<MonikerId>())
+    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set())
+    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set())
 
     for (const range of correlator.rangeData.values()) {
         if (range.monikerIds.size === 0) {

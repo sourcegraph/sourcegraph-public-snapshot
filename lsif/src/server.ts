@@ -9,7 +9,7 @@ import * as zlib from 'mz/zlib'
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
  */
-const HTTP_PORT = readEnvInt('LSIF_HTTP_PORT', 3186)
+const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 
 /**
  * The number of SQLite connections that can be opened at once. This
@@ -104,9 +104,8 @@ async function main(): Promise<void> {
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 try {
-                    // TODO - is null needed here now?
                     const db = await backend.createDatabase(repository, commit)
-                    res.json((await db[cleanMethod](path, position)) || null)
+                    res.json(await db[cleanMethod](path, position))
                 } catch (e) {
                     if (hasErrorCode(e, ERRNOLSIFDATA)) {
                         throw Object.assign(e, { status: 404 })

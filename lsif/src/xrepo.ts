@@ -131,14 +131,8 @@ export class XrepoDatabase {
         // Test the bloom filter of each reference model concurrently
         const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, value)))
 
-        // Zip reference model results and the result of the bloom filter test together
-        const zip: { result: ReferenceModel; keep: boolean }[] = results.map((result, i) => ({
-            result,
-            keep: keepFlags[i],
-        }))
-
-        // Return the reference models that passed the bloom filter test
-        return zip.filter(({ keep }) => keep).map(({ result }) => result)
+        // Drop any result that did not pass bloom filter
+        return results.filter((_, i) => keepFlags[i])
     }
 
     /**

@@ -1,6 +1,6 @@
 import * as fs from 'mz/fs'
-import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
+import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
 import { createCommit, createLocation } from './test-utils'
@@ -12,15 +12,13 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('cpp-')
+        storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
         await backend.insertDump(input, 'five', createCommit('five'))
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all defs of `four` from main.cpp', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
