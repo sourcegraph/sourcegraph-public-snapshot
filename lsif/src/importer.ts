@@ -1,22 +1,12 @@
-import {
-    assertId,
-    hashKey,
-    mustGet,
-    readEnvInt
-} from './util';
-import { Correlator, ResultSetData, ResultSetId } from './correlator';
-import { DefaultMap } from './default-map';
-import {
-    Edge,
-    MonikerKind,
-    RangeId,
-    Vertex
-} from 'lsif-protocol';
-import { EntityManager } from 'typeorm';
-import { gzipJSON } from './encoding';
-import { isEqual, uniqWith } from 'lodash';
-import { Package, SymbolReferences } from './xrepo';
-import { TableInserter } from './inserter';
+import { assertId, hashKey, mustGet, readEnvInt } from './util'
+import { Correlator, ResultSetData, ResultSetId } from './correlator'
+import { DefaultMap } from './default-map'
+import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
+import { EntityManager } from 'typeorm'
+import { gzipJSON } from './encoding'
+import { isEqual, uniqWith } from 'lodash'
+import { Package, SymbolReferences } from './xrepo'
+import { TableInserter } from './inserter'
 import {
     DefinitionModel,
     MetaModel,

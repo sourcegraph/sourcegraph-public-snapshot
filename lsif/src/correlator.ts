@@ -334,7 +334,7 @@ export class Correlator {
      * @param edge The next edge.
      */
     private handleNextEdge(edge: next): void {
-        s     mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+        mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
