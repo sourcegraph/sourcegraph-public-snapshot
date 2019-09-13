@@ -2,14 +2,14 @@ import * as path from 'path'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import morgan from 'morgan'
-import promBundle from 'express-prom-bundle'
-import { createDirectory, logErrorAndExit, readEnvInt } from './util'
-import { JobsHash, Worker, Job } from 'node-resque'
-import { XrepoDatabase } from './xrepo'
+import promClient from 'prom-client'
+import { CONNECTION_CACHE_CAPACITY_GAUGE, JOB_DURATION_HISTOGRAM, JOB_EVENTS_COUNTER } from './metrics'
 import { ConnectionCache } from './cache'
-import { CONNECTION_CACHE_CAPACITY_GAUGE, JOB_EVENTS_COUNTER, JOB_DURATION_HISTOGRAM } from './metrics'
 import { createConvertJob, JobClasses } from './jobs'
+import { createDirectory, logErrorAndExit, readEnvInt } from './util'
+import { Job, JobsHash, Worker } from 'node-resque'
 import { JobMeta, RealWorker } from './queue'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -131,10 +131,16 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
  * Create an express server that only has /ping and /metric endpoints.
  */
 function startMetricsServer(): void {
+    // Create app + middleware
     const app = express()
     app.use(morgan('tiny'))
+
+    // Register endpoints
     app.get('/healthz', (_, res) => res.send('ok'))
-    app.use(promBundle({}))
+    app.get('/metrics', (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end(promClient.register.metrics())
+    })
 
     app.listen(WORKER_METRICS_PORT, () => {
         if (LOG_READY) {

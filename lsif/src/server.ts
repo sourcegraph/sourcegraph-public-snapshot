@@ -2,27 +2,31 @@ import * as definitionsSchema from './lsif.schema.json'
 import * as es from 'event-stream'
 import * as fs from 'mz/fs'
 import * as path from 'path'
+import * as url from 'url'
 import * as zlib from 'mz/zlib'
 import Ajv from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import morgan from 'morgan'
-import promBundle from 'express-prom-bundle'
+import onFinished from 'on-finished'
+import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createDirectory, hasErrorCode, logErrorAndExit, readEnvInt, createDatabaseFilename } from './util'
-import { Queue, Scheduler, Job } from 'node-resque'
+import { createDatabaseFilename, createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { Database } from './database.js'
+import { Job, Queue, Scheduler } from 'node-resque'
+import { RealQueue, rewriteJobMeta, WorkerMeta } from './queue.js'
 import { wrap } from 'async-middleware'
+import { XrepoDatabase } from './xrepo.js'
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
     DOCUMENT_CACHE_CAPACITY_GAUGE,
     RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
     QUEUE_SIZE_GAUGE,
+    HTTP_QUERY_DURATION_HISTOGRAM,
+    HTTP_UPLOAD_DURATION_HISTOGRAM,
 } from './metrics'
-import { XrepoDatabase } from './xrepo.js'
-import { Database } from './database.js'
-import { RealQueue, WorkerMeta, rewriteJobMeta } from './queue.js'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -88,13 +92,18 @@ async function main(): Promise<void> {
     // Create queue to publish jobs for worker
     const queue = await setupQueue()
 
+    // Create app + middleware
     const app = express()
     app.use(morgan('tiny'))
-    app.use(errorHandler)
-    addHealthEndpoint(app)
+    app.use(metricMiddleware)
+
+    // Register endpoints
+    addMetaEndpoints(app)
     addQueueEndpoints(app, queue)
-    app.use(promBundle({})) // Enable stats only for endpoints below
     addLsifEndpoints(app, queue)
+
+    // Error handler must be registered last
+    app.use(errorHandler)
 
     app.listen(HTTP_PORT, () => {
         if (LOG_READY) {
@@ -147,13 +156,18 @@ async function setupQueue(): Promise<RealQueue> {
 }
 
 /**
- * Add common healthz endpoint.
+ * Add common health and metrics endpoint.
  *
  * @param app The express app.
  */
-function addHealthEndpoint(app: express.Application): void {
+function addMetaEndpoints(app: express.Application): void {
     app.get('/healthz', (req: express.Request, res: express.Response): void => {
         res.send('ok')
+    })
+
+    app.get('/metrics', (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end(promClient.register.metrics())
     })
 }
 
@@ -372,9 +386,45 @@ function addLsifEndpoints(app: express.Application, queue: RealQueue): void {
 }
 
 /**
+ * Middleware function used to emit HTTP durations for LSIF functions. Originally
+ * we used an express bundle, but that did not allow us to have different histogram
+ * bucket for different endpoints, which makes half of the metrics useless in the
+ * presence of large uploads.
+ */
+function metricMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    let histogram: promClient.Histogram | undefined
+
+    switch (url.parse(req.url).pathname) {
+        case '/upload':
+            histogram = HTTP_UPLOAD_DURATION_HISTOGRAM
+            break
+
+        case '/exists':
+        case '/request':
+            histogram = HTTP_QUERY_DURATION_HISTOGRAM
+    }
+
+    if (histogram !== undefined) {
+        const labels = { status_code: 0 }
+        const end = histogram.startTimer(labels)
+
+        onFinished(res, () => {
+            labels.status_code = res.statusCode
+            end()
+        })
+    }
+
+    next()
+}
+
+/**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  */
 function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
+    if (res.headersSent) {
+        return next(err)
+    }
+
     if (err && err.status) {
         res.status(err.status).send({ message: err.message })
         return
