@@ -1,9 +1,9 @@
-import * as fs from 'mz/fs';
-import * as zlib from 'mz/zlib';
-import rmfr from 'rmfr';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import { createBackend } from './backend';
-import { createCommit, createLocation } from './test-utils';
+import * as fs from 'mz/fs'
+import * as zlib from 'mz/zlib'
+import rmfr from 'rmfr'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { createBackend } from './backend'
+import { createCommit, createLocation } from './test-utils'
 
 describe('Database', () => {
     let storageRoot!: string
