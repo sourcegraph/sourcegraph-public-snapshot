@@ -18,18 +18,6 @@ describe('Database', () => {
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
-    const createDatabase = (repository: string, commit: string): Database =>
-        new Database(
-            storageRoot,
-            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
-            connectionCache,
-            documentCache,
-            resultChunkCache,
-            repository,
-            commit,
-            createDatabaseFilename(storageRoot, repository, commit)
-        )
-
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
@@ -43,6 +31,18 @@ describe('Database', () => {
     })
 
     afterAll(async () => await rmfr(storageRoot))
+
+    const createDatabase = (repository: string, commit: string): Database =>
+        new Database(
+            storageRoot,
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
+            connectionCache,
+            documentCache,
+            resultChunkCache,
+            repository,
+            commit,
+            createDatabaseFilename(storageRoot, repository, commit)
+        )
 
     it('should find all refs of `foo`', async () => {
         const db = createDatabase(repository, commit)
