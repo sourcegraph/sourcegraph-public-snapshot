@@ -16,40 +16,40 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	ctx := context.Background()
 
 	var testCases = []struct {
-		name      string
-		userEvent *Event
-		err       string // Stringified error
+		name  string
+		event *Event
+		err   string // Stringified error
 	}{
 		{
-			name:      "EmptyName",
-			userEvent: &Event{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:       `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty"`,
+			name:  "EmptyName",
+			event: &Event{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
+			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty"`,
 		},
 		{
-			name:      "EmptyURL",
-			userEvent: &Event{Name: "test_event", UserID: 1, Source: "WEB"},
-			err:       `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_url_not_empty"`,
+			name:  "EmptyURL",
+			event: &Event{Name: "test_event", UserID: 1, Source: "WEB"},
+			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_url_not_empty"`,
 		},
 		{
-			name:      "InvalidUser",
-			userEvent: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
-			err:       `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_has_user"`,
+			name:  "InvalidUser",
+			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
+			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_has_user"`,
 		},
 		{
-			name:      "EmptySource",
-			userEvent: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
-			err:       `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty"`,
+			name:  "EmptySource",
+			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
+			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty"`,
 		},
 
 		{
-			name:      "ValidInsert",
-			userEvent: &Event{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:       "<nil>",
+			name:  "ValidInsert",
+			event: &Event{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
+			err:   "<nil>",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := EventLogs.Insert(ctx, tc.userEvent)
+			err := EventLogs.Insert(ctx, tc.event)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have %+v, want %+v", have, want)
