@@ -144,7 +144,7 @@ describe('Search regression test suite', () => {
                 return true
             })
         })
-        test('Global text search ("error type:") with a few results.', async () => {
+        test('Global text search with double-quoted string constant ("error type:") with a few results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 3)
         })
