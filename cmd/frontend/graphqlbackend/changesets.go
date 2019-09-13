@@ -206,3 +206,11 @@ func (r *changesetResolver) CreatedAt() DateTime {
 func (r *changesetResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.Changeset.UpdatedAt}
 }
+
+func (r *changesetResolver) Title() (string, error) {
+	return r.Changeset.Title()
+}
+
+func (r *changesetResolver) Body() (string, error) {
+	return r.Changeset.Body()
+}

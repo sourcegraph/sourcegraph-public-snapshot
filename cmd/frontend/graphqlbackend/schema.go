@@ -405,20 +405,26 @@ type CampaignConnection {
 
 # A changeset in a code host (e.g. a PR on Github)
 type Changeset implements Node {
-    # The unique ID for the campaign.
+    # The unique ID for the changeset.
     id: ID!
 
-    # The repository where this thread is defined.
+    # The repository where this changeset is defined.
     repository: Repository!
 
-    # The campaigns that have this thread in them.
+    # The campaigns that have this changeset in them.
     campaigns(first: Int): CampaignConnection!
 
-    # The date and time when the campaign was created.
+    # The date and time when the changeset was created.
     createdAt: DateTime!
 
-    # The date and time when the campaign was updated.
+    # The date and time when the changeset was updated.
     updatedAt: DateTime!
+
+    # The title of the changeset
+    title: String!
+
+    # The body of the changeset
+    body: String!
 }
 
 # A list of changesets.

@@ -2,6 +2,9 @@ package a8n
 
 import (
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
 // A Campaign of changesets over multiple Repos over time.
@@ -42,4 +45,22 @@ func (t *Changeset) Clone() *Changeset {
 	tt := *t
 	tt.CampaignIDs = t.CampaignIDs[:len(t.CampaignIDs):len(t.CampaignIDs)]
 	return &tt
+}
+
+func (t *Changeset) Title() (string, error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return m.Title, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
+
+func (t *Changeset) Body() (string, error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return m.Body, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
 }
