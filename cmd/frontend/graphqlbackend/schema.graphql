@@ -273,7 +273,18 @@ type Mutation {
     # Logs a user event.
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
     # Logs an event.
-    logEvent(event: String!, userCookieID: String!, url: String!, source: EventSource!, argument: String): EmptyResponse
+    logEvent(
+        # The name of the event.
+        event: String!
+        # The randomly generated unique user ID stored in a browser cookie.
+        userCookieID: String!
+        # The URL when the event was logged.
+        url: String!
+        # The source of the event.
+        source: EventSource!
+        # The additional argument information.
+        argument: String
+    ): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
     #
