@@ -3,7 +3,6 @@ module github.com/sourcegraph/sourcegraph
 go 1.13
 
 require (
-	cloud.google.com/go v0.45.1
 	cloud.google.com/go/pubsub v1.0.1
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/Depado/bfchroma v1.1.2 // indirect
@@ -86,7 +85,6 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-retryablehttp v0.6.2 // indirect
-	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/honeycombio/libhoney-go v1.12.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
@@ -95,7 +93,6 @@ require (
 	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/godirwalk v1.10.12
 	github.com/karrick/tparse v2.4.2+incompatible
-	github.com/keegancsmith/rpc v1.1.0
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8
