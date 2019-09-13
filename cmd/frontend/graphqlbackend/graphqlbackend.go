@@ -193,17 +193,21 @@ func (r *schemaResolver) Root() *schemaResolver {
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
-	n, err := NodeByID(ctx, args.ID)
+	n, err := NodeByID(ctx, r.A8NStore, args.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &NodeResolver{n}, nil
 }
 
-func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
+func NodeByID(ctx context.Context, s *a8n.Store, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case "Campaign":
+		return campaignByID(ctx, s, id)
+	case "Changeset":
+		return changesetByID(ctx, s, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

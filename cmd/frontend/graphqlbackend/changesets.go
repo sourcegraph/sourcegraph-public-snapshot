@@ -100,6 +100,25 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Chan
 	return r.changesets, r.next, r.err
 }
 
+func changesetByID(ctx context.Context, s *a8n.Store, id graphql.ID) (*changesetResolver, error) {
+	// 🚨 SECURITY: Only site admins may access changesets for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	changesetID, err := unmarshalChangesetID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	changeset, err := s.GetChangeset(ctx, a8n.GetChangesetOpts{ID: changesetID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &changesetResolver{store: s, Changeset: changeset}, nil
+}
+
 type changesetResolver struct {
 	store *a8n.Store
 	*a8n.Changeset
