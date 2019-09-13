@@ -208,7 +208,13 @@ export class Database {
         // operation.
 
         if (range.hoverResultId) {
-            return { contents: mustGet(document.hoverResults, range.hoverResultId, 'hoverResult') }
+            return {
+                contents: {
+                    kind: lsp.MarkupKind.Markdown,
+                    value: mustGet(document.hoverResults, range.hoverResultId, 'hoverResult'),
+                },
+                range: createRange(range),
+            }
         }
 
         return null
