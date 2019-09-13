@@ -286,8 +286,7 @@ func TestCampaigns(t *testing.T) {
 
 	{
 		want := Changeset{
-			ID:         "Q2hhbmdlc2V0OjE=",
-			Repository: struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
+			Repository: struct{ ID string }{ID: graphqlRepoID},
 			CreatedAt:  now.Format(time.RFC3339),
 			UpdatedAt:  now.Format(time.RFC3339),
 			Title:      "add extension filter to filter bar",
@@ -296,7 +295,11 @@ func TestCampaigns(t *testing.T) {
 		}
 
 		have := result.Changeset
+		if have.ID == "" {
+			t.Fatal("Changeset ID is empty")
+		}
 
+		want.ID = have.ID
 		if !reflect.DeepEqual(have, want) {
 			t.Fatal(cmp.Diff(have, want))
 		}
