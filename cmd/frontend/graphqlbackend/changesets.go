@@ -62,6 +62,12 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 	}
 
+	if err = r.A8NStore.CreateChangeset(ctx, changeset); err != nil {
+		return nil, err
+	}
+
+	// Only fetch metadata if this changeset didn't exist in the database.
+
 	src, err := repos.NewSource(es[0], r.HTTPFactory)
 	if err != nil {
 		return nil, err
@@ -77,7 +83,7 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err = r.A8NStore.CreateChangeset(ctx, changeset); err != nil {
+	if err = r.A8NStore.UpdateChangeset(ctx, changeset); err != nil {
 		return nil, err
 	}
 
