@@ -200,10 +200,10 @@ local makeRequestsPanel(titleValue, metricValue, timeRange, buckets, colors, met
 // histogram of their duration. This assumes a histogram metric is emitted
 // by Prometheus with a status_code label. See makeRequestsPanel for reference.
 // This will only display the requests that return a 200-level response.
-local makeHttpRequestsPanel(titleValue, metricValue, timeRange, buckets, colors) = makeRequestsPanel(
+local makeHttpRequestsPanel(titleValue, metricValue, timeRange, buckets, colors, metricFilter='') = makeRequestsPanel(
   titleValue=titleValue,
   metricValue=metricValue,
-  metricFilter='status_code=~"2.."',
+  metricFilter='status_code=~"2.."' + (if metricFilter == '' then '' else ',%s' % metricFilter),
   timeRange=timeRange,
   buckets=buckets,
   colors=colors,
@@ -216,7 +216,7 @@ local makeHttpRequestsPanel(titleValue, metricValue, timeRange, buckets, colors)
 // - titleValue: fill the placeholder in '%s error rate'
 // - metricValue: fills the placeholder in '%s_duration_seconds_bucket'
 //                and '%s_errors_total'
-local makeErrorRatePanel(titleValue, metricValue, timeRange) = makePanel(
+local makeErrorRatePanel(titleValue, metricValue, timeRange, metricFilter='') = makePanel(
   title='%s error rate' % titleValue,
   extra={
     lines: false,
@@ -234,10 +234,12 @@ local makeErrorRatePanel(titleValue, metricValue, timeRange) = makePanel(
   },
   targets=[
     prometheus.target(
-      'rate(%s_errors_total[%s]) / rate(%s_duration_seconds_count[%s])' % [
+      'rate(%s_errors_total%s[%s]) / rate(%s_duration_seconds_count%s[%s])' % [
         metricValue,
+        if metricFilter == '' then '' else '{%s}' % metricFilter,
         timeRange,
         metricValue,
+        if metricFilter == '' then '' else '{%s}' % metricFilter,
         timeRange,
       ],
       legendFormat='% of failing operations',
@@ -253,7 +255,7 @@ local makeErrorRatePanel(titleValue, metricValue, timeRange) = makePanel(
 //             the error types (e.g. ['4..', '5..']).
 // - colors: An array of colors that create series overrides for the given
 //           error pattern types.
-local makeHttpErrorRatePanel(titleValue, metricValue, timeRange, patterns, colors) = makePanel(
+local makeHttpErrorRatePanel(titleValue, metricValue, timeRange, patterns, colors, metricFilter='') = makePanel(
   title='%s error rate' % titleValue,
   extra={
     lines: false,
@@ -274,11 +276,13 @@ local makeHttpErrorRatePanel(titleValue, metricValue, timeRange, patterns, color
   },
   targets=std.map(
     function(statusCodePattern) prometheus.target(
-      'sum(rate(%s_duration_seconds_count{status_code=~"%s"}[%s])) / sum(rate(%s_duration_seconds_count[%s]))' % [
+      'sum(rate(%s_duration_seconds_count{status_code=~"%s"%s}[%s])) / sum(rate(%s_duration_seconds_count%s[%s]))' % [
         metricValue,
         statusCodePattern,
+        if metricFilter == '' then '' else ',%s' % metricFilter,
         timeRange,
         metricValue,
+        if metricFilter == '' then '' else '{%s}' % metricFilter,
         timeRange,
       ],
       legendFormat='%% of %s responses' % statusCodePattern,
@@ -318,10 +322,10 @@ local makeDurationPercentilesPanel(titleValue, metricValue, timeRange, percentil
 // a histogram metric is emitted by Prometheus with a status_code label. See
 // makeDurationPercentilesPanel for reference. This will only display the requests
 // that return a 200-level response.
-local makeHttpDurationPercentilesPanel(titleValue, metricValue, timeRange, percentiles, colors) = makeDurationPercentilesPanel(
+local makeHttpDurationPercentilesPanel(titleValue, metricValue, timeRange, percentiles, colors, metricFilter='') = makeDurationPercentilesPanel(
   titleValue=titleValue,
   metricValue=metricValue,
-  metricFilter='status_code=~"2.."',
+  metricFilter='status_code=~"2.."' + (if metricFilter == '' then '' else ',%s' % metricFilter),
   timeRange=timeRange,
   percentiles=percentiles,
   colors=colors,
