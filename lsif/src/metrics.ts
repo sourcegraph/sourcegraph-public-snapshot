@@ -122,7 +122,6 @@ export async function instrument<T>(
     try {
         return await fn()
     } catch (e) {
-        // TODO - log
         errorsCounter.inc()
         throw e
     } finally {
