@@ -17,6 +17,13 @@ import (
 
 var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
 
+func addNoGrafanaHandler(r *mux.Router) {
+	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
+	})
+	r.Handle("/grafana", adminOnly(noGrafana))
+}
+
 // addDebugHandlers registers the reverse proxies to each services debug
 // endpoints.
 func addDebugHandlers(r *mux.Router) {
@@ -24,22 +31,12 @@ func addDebugHandlers(r *mux.Router) {
 		addReverseProxyForService(svc, r)
 	}
 
-	// TODO(uwedeportivo): revisit this to make it less brittle (for example derive values from one declared place)
-	// NOTE: changing the link names or paths for the prometheus or grafana entries in this index
-	// requires making changes in other places so they can run behind a proxy:
-	//    - docker-images/grafana/config/grafana.ini: value for root_url key
-	//    - docker-images/grafana/config/grafana-single-container.ini: value for root_url key
-	//    - cmd/server/shared/shared.go: prometheus entry in Procfile, value for --web.external-url
-	//    - dev/prometheus.sh: value for --web.external-url
-	//  other deploy contexts also need appropriate adjustments
-
 	if len(grafanaURLFromEnv) > 0 {
 		grafanaURL, err := url.Parse(grafanaURLFromEnv)
 		if err != nil {
-			log.Printf("failed to parse GRAFANA_SERVER_URL=%s: %v. won't generate Grafana link",
+			log.Printf("failed to parse GRAFANA_SERVER_URL=%s: %v",
 				grafanaURLFromEnv, err)
-			// setting to empty string so no link gets created for it below
-			grafanaURLFromEnv = ""
+			addNoGrafanaHandler(r)
 		} else {
 			addReverseProxyForService(debugserver.Service{
 				Name:        "grafana",
@@ -47,6 +44,8 @@ func addDebugHandlers(r *mux.Router) {
 				DefaultPath: "",
 			}, r)
 		}
+	} else {
+		addNoGrafanaHandler(r)
 	}
 
 	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -62,10 +61,6 @@ func addDebugHandlers(r *mux.Router) {
 		// We do not support cluster deployments yet.
 		if len(debugserver.Services) == 0 {
 			fmt.Fprintf(w, `Instrumentation endpoint proxying for Sourcegraph cluster deployments is not yet available<br>`)
-		}
-
-		if len(grafanaURLFromEnv) > 0 {
-			fmt.Fprintf(w, `<a target="_blank" href="grafana">grafana</a><br>`)
 		}
 	})
 	r.Handle("/", adminOnly(index))
