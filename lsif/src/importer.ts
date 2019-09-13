@@ -1,16 +1,24 @@
-import { assertId, hashKey, mustGet, readEnvInt } from './util'
-import { Correlator, ResultSetData, ResultSetId } from './correlator'
-import { DefaultMap } from './default-map'
-import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
-import { encodeJSON } from './encoding'
-import { EntityManager } from 'typeorm'
-import { isEqual, uniqWith } from 'lodash'
-import { Package, SymbolReferences } from './xrepo'
-import { TableInserter } from './inserter'
+import {
+    assertId,
+    hashKey,
+    mustGet,
+    readEnvInt
+} from './util';
+import { Correlator, ResultSetData, ResultSetId } from './correlator';
+import { DefaultMap } from './default-map';
+import {
+    Edge,
+    MonikerKind,
+    RangeId,
+    Vertex
+} from 'lsif-protocol';
+import { EntityManager } from 'typeorm';
+import { gzipJSON } from './encoding';
+import { isEqual, uniqWith } from 'lodash';
+import { Package, SymbolReferences } from './xrepo';
+import { TableInserter } from './inserter';
 import {
     DefinitionModel,
-    DocumentData,
-    DocumentModel,
     MetaModel,
     MonikerData,
     PackageInformationData,
@@ -25,6 +33,8 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
+    DocumentData,
+    DocumentModel,
 } from './models.database'
 
 /**
@@ -148,7 +158,7 @@ async function populateDocumentsTable(
         // Encode and insert document record
         await documentInserter.insert({
             path: documentPath,
-            data: await encodeJSON({
+            data: await gzipJSON({
                 ranges: document.ranges,
                 hoverResults: document.hoverResults,
                 monikers: document.monikers,
@@ -208,7 +218,7 @@ async function populateResultChunksTable(
             continue
         }
 
-        const data = await encodeJSON({
+        const data = await gzipJSON({
             documentPaths: resultChunk.paths,
             documentIdRangeIds: resultChunk.documentIdRangeIds,
         })

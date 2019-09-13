@@ -268,7 +268,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
             // Each handle is roughly the same size.
             () => 1,
             // Close the underlying file handle on cache eviction.
-            (connection: Connection) => connection.close()
+            connection => connection.close()
         )
     }
 

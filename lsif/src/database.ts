@@ -2,7 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { mustGet, hashKey } from './util'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { decodeJSON } from './encoding'
+import { gunzipJSON } from './encoding'
 import { DefaultMap } from './default-map'
 import {
     DefinitionModel,
@@ -432,7 +432,7 @@ export class Database {
 
             return {
                 size: document.data.length,
-                data: await decodeJSON<DocumentData>(document.data),
+                data: await gunzipJSON<DocumentData>(document.data),
             }
         }
 
@@ -500,7 +500,7 @@ export class Database {
 
             return {
                 size: resultChunk.data.length,
-                data: await decodeJSON<ResultChunkData>(resultChunk.data),
+                data: await gunzipJSON<ResultChunkData>(resultChunk.data),
             }
         }
 

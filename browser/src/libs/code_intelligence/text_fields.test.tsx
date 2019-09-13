@@ -1,6 +1,6 @@
 import { uniqueId } from 'lodash'
 import { from, NEVER, Subject, Subscription } from 'rxjs'
-import { first, skip, take } from 'rxjs/operators'
+import { first } from 'rxjs/operators'
 import { Services } from '../../../../shared/src/api/client/services'
 import { CodeEditor } from '../../../../shared/src/api/client/services/editorService'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
@@ -62,13 +62,10 @@ describe('text_fields', () => {
 
             // Add text field.
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
@@ -89,14 +86,10 @@ describe('text_fields', () => {
             // Remove text field.
             textFieldElement.remove()
             mutations.next([{ addedNodes: [], removedNodes: [textFieldElement] }])
-            expect(
-                await from(services.editor.editors)
-                    .pipe(
-                        skip(1),
-                        first()
-                    )
-                    .toPromise()
-            ).toEqual([])
+            await from(services.editor.editorUpdates)
+                .pipe(first())
+                .toPromise()
+            expect(services.editor.editors.size).toEqual(0)
         })
     })
 })
