@@ -1,10 +1,10 @@
 import * as fs from 'mz/fs'
-import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
+import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
-import { Readable } from 'stream'
 import { createCommit, createLocation, createRemoteLocation } from './test-utils'
+import { Readable } from 'stream'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -13,7 +13,7 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('typescript-')
+        storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const inputs: { input: Readable; repository: string; commit: string }[] = []
 
@@ -30,9 +30,7 @@ describe('Database', () => {
         }
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all defs of `add` from repo a', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)

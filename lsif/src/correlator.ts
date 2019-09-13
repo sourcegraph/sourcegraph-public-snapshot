@@ -104,7 +104,7 @@ export class Correlator {
      * to via nextMoniker edges. This relation is symmetric such that if `a` is in
      * `MonikerSets[b]`, then `b` is in `monikerSets[a]`.
      */
-    public monikerSets = new DefaultMap<RangeId, Set<MonikerId>>(() => new Set<MonikerId>())
+    public monikerSets = new DefaultMap<RangeId, Set<MonikerId>>(() => new Set())
 
     /**
      * The set of exported moniker identifiers that have package information attached.
