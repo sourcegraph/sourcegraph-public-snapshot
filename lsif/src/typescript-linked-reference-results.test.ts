@@ -8,7 +8,6 @@ import { createCommit, createLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
-import { CodeLensResolveRequest } from 'vscode-languageserver-protocol'
 
 describe('Database', () => {
     let storageRoot!: string
