@@ -44,7 +44,7 @@ class Package {
 }
 
 /**
- * An entity within the xrepo database. This maps a given repository and commit
+ * An entity within the cross-repo database. This maps a given repository and commit
  * pair to the package that it provides to other projects.
  */
 @Entity({ name: 'packages' })
@@ -58,7 +58,7 @@ export class PackageModel extends Package {
 }
 
 /**
- * An entity within the xrepo database. This lists the dependencies of a given
+ * An entity within the cross-repo database. This lists the dependencies of a given
  * repository and commit pair to support find global reference operations.
  */
 @Entity({ name: 'references' })

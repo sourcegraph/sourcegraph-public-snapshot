@@ -19,7 +19,7 @@ describe('Database', () => {
     const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
-            new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
             connectionCache,
             documentCache,
             resultChunkCache,
@@ -30,7 +30,7 @@ describe('Database', () => {
 
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
-        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
         for (const { input, repository, commit } of createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)

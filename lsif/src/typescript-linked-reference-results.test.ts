@@ -22,7 +22,7 @@ describe('Database', () => {
     const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
-            new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
             connectionCache,
             documentCache,
             resultChunkCache,
@@ -33,7 +33,7 @@ describe('Database', () => {
 
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
-        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
         const input = fs
             .createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')

@@ -21,7 +21,7 @@ describe('Database', () => {
     const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
-            new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
             connectionCache,
             documentCache,
             resultChunkCache,
@@ -32,7 +32,7 @@ describe('Database', () => {
 
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
-        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
         const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
         const database = createDatabaseFilename(storageRoot, repository, commit)

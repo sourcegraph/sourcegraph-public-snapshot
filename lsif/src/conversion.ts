@@ -8,7 +8,7 @@ import { readline } from 'mz'
 
 /**
  * Populate a SQLite database with the given input stream. Returns the
- * data required to populate the correlation database.
+ * data required to populate the cross-repo database.
  *
  * @param input The input stream containing JSON-encoded LSIF data.
  * @param database The filepath of the database to populate.

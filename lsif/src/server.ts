@@ -83,11 +83,11 @@ async function main(): Promise<void> {
     await createDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
-    // Create xrepo database
+    // Create cross-repos database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
-    const filename = path.join(STORAGE_ROOT, 'correlation.db')
+    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
     const createDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {

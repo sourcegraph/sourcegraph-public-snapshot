@@ -297,9 +297,9 @@ export class Database {
 
     /**
      * Find the definition of the target moniker outside of the current database. If the
-     * moniker has attached package information, then the xrepo database is queried for
-     * the target package. That database is opened, and its def table is queried for the
-     * target moniker.
+     * moniker has attached package information, then the cross-repo database is queried
+     * for the target package. That database is opened, and its definitions table is queried
+     * for the target moniker.
      *
      * @param document The document containing the reference.
      * @param moniker The target moniker.
@@ -372,9 +372,9 @@ export class Database {
 
     /**
      * Find the references of the target moniker outside of the current database. If the moniker
-     * has attached package information, then the xrepo database is queried for the packages that
-     * require this particular moniker identifier. These databases are opened, and their ref tables
-     * are queried for the target moniker.
+     * has attached package information, then the cross-repo database is queried for the packages
+     * that require this particular moniker identifier. These databases are opened, and their
+     * references tables are queried for the target moniker.
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.

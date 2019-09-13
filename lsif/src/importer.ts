@@ -51,7 +51,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 /**
  * Correlate each vertex and edge together, then populate the provided entity manager
  * with the document, definition, and reference information. Returns the package and
- * external reference data needed to populate the xrepo database.
+ * external reference data needed to populate the cross-repos database.
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param elements The stream of vertex and edge objects composing the LSIF dump.
@@ -132,7 +132,7 @@ export async function importLsif(
     await definitionInserter.flush()
     await referenceInserter.flush()
 
-    // Return data to populate xrepo database
+    // Return data to populate cross-repo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }
 }
 

@@ -59,7 +59,7 @@ async function main(): Promise<void> {
 
     // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const filename = path.join(STORAGE_ROOT, 'correlation.db')
+    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
     const jobFunctions = {
@@ -80,9 +80,9 @@ async function main(): Promise<void> {
 /**
  * Create a job that takes a repository, commit, and filename containing the gzipped
  * input of an LSIF dump and converts it to a SQLite database. This will also populate
- * the correlation database for this dump.
+ * the cross-repo database for this dump.
  *
- * @param xrepoDatabase The correlation database.
+ * @param xrepoDatabase The cross-repo database.
  */
 function createConvertJob(
     xrepoDatabase: XrepoDatabase
@@ -100,7 +100,7 @@ function createConvertJob(
             // Move the temp file where it can be found by the server
             await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
 
-            // Add the new database to the correlation db
+            // Add the new database to the xrepo db
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         } catch (e) {
             // Don't leave busted artifacts
