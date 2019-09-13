@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -50,7 +51,9 @@ func NewSchema(db *sql.DB) (*graphql.Schema, error) {
 	return graphql.ParseSchema(
 		Schema,
 		&schemaResolver{
-			A8NStore: a8n.NewStore(db),
+			A8NStore: a8n.NewStoreWithClock(db, func() time.Time {
+				return time.Now().UTC().Truncate(time.Microsecond)
+			}),
 		},
 		graphql.Tracer(prometheusTracer{}),
 	)
@@ -184,7 +187,8 @@ type stringLogger interface {
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
 type schemaResolver struct {
-	A8NStore *a8n.Store
+	A8NStore    *a8n.Store
+	HTTPFactory *httpcli.Factory
 }
 
 // DEPRECATED
@@ -193,17 +197,21 @@ func (r *schemaResolver) Root() *schemaResolver {
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
-	n, err := NodeByID(ctx, args.ID)
+	n, err := NodeByID(ctx, r.A8NStore, args.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &NodeResolver{n}, nil
 }
 
-func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
+func NodeByID(ctx context.Context, s *a8n.Store, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case "Campaign":
+		return campaignByID(ctx, s, id)
+	case "Changeset":
+		return changesetByID(ctx, s, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

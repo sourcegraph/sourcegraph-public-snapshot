@@ -10,6 +10,7 @@ import {
 } from './location'
 import { Entry } from './registry'
 import { FIXTURE } from './registry.test'
+import { first } from 'rxjs/operators'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -33,17 +34,16 @@ class TestTextDocumentLocationProviderRegistry extends TextDocumentLocationProvi
 
 describe('TextDocumentLocationProviderRegistry', () => {
     describe('hasProvidersForActiveTextDocument', () => {
-        test('false if no position params', () => {
-            scheduler().run(({ cold, expectObservable }) => {
-                const registry = new TestTextDocumentLocationProviderRegistry(
-                    cold<Entry<TextDocumentRegistrationOptions, ProvideTextDocumentLocationSignature>[]>('a', {
-                        a: [{ provider: () => of(null), registrationOptions: { documentSelector: ['*'] } }],
-                    })
-                )
-                expectObservable(registry.hasProvidersForActiveTextDocument([])).toBe('a', {
-                    a: false,
-                })
-            })
+        test('false if no position params', async () => {
+            const registry = new TestTextDocumentLocationProviderRegistry(
+                of([{ provider: () => of(null), registrationOptions: { documentSelector: ['*'] } }])
+            )
+            expect(
+                await registry
+                    .hasProvidersForActiveTextDocument(undefined)
+                    .pipe(first())
+                    .toPromise()
+            ).toBe(false)
         })
 
         test('true if matching document', () => {
@@ -54,16 +54,14 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     })
                 )
                 expectObservable(
-                    registry.hasProvidersForActiveTextDocument([
-                        {
-                            isActive: true,
-                            editorId: 'editor#0',
-                            type: 'CodeEditor' as const,
-                            selections: [new Selection(1, 2, 3, 4).toPlain()],
-                            resource: 'u',
-                            model: { languageId: 'l' },
-                        },
-                    ])
+                    registry.hasProvidersForActiveTextDocument({
+                        isActive: true,
+                        editorId: 'editor#0',
+                        type: 'CodeEditor' as const,
+                        selections: [new Selection(1, 2, 3, 4).toPlain()],
+                        resource: 'u',
+                        model: { languageId: 'l' },
+                    })
                 ).toBe('a', {
                     a: true,
                 })
@@ -78,16 +76,14 @@ describe('TextDocumentLocationProviderRegistry', () => {
                     })
                 )
                 expectObservable(
-                    registry.hasProvidersForActiveTextDocument([
-                        {
-                            isActive: true,
-                            editorId: 'editor#0',
-                            type: 'CodeEditor' as const,
-                            selections: [new Selection(1, 2, 3, 4).toPlain()],
-                            resource: 'u',
-                            model: { languageId: 'l' },
-                        },
-                    ])
+                    registry.hasProvidersForActiveTextDocument({
+                        isActive: true,
+                        editorId: 'editor#0',
+                        type: 'CodeEditor' as const,
+                        selections: [new Selection(1, 2, 3, 4).toPlain()],
+                        resource: 'u',
+                        model: { languageId: 'l' },
+                    })
                 ).toBe('a', {
                     a: false,
                 })

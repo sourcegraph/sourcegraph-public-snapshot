@@ -1,5 +1,5 @@
 import * as comlink from '@sourcegraph/comlink'
-import { from, Subject, Subscription } from 'rxjs'
+import { from, merge, Subject, Subscription, of } from 'rxjs'
 import { concatMap } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
@@ -24,6 +24,8 @@ import {
     ShowMessageRequestParams,
     ShowNotificationParams,
 } from './services/notifications'
+import { TextModelUpdate } from './services/modelService'
+import { EditorUpdate } from './services/editorService'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -71,13 +73,31 @@ export async function createExtensionHostClientConnection(
 
     // Sync models and editors to the extension host
     subscription.add(
-        from(services.model.models)
-            .pipe(concatMap(models => proxy.documents.$acceptDocumentData(models)))
+        merge(
+            of(
+                [...services.model.models.entries()].map(
+                    ([uri, model]): TextModelUpdate => ({ type: 'added', uri, ...model })
+                )
+            ),
+            from(services.model.modelUpdates)
+        )
+            .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
             .subscribe()
     )
     subscription.add(
-        from(services.editor.editors)
-            .pipe(concatMap(editors => proxy.windows.$acceptWindowData({ editors })))
+        merge(
+            of(
+                [...services.editor.editors.entries()].map(
+                    ([editorId, editorData]): EditorUpdate => ({
+                        type: 'added',
+                        editorId,
+                        editorData,
+                    })
+                )
+            ),
+            from(services.editor.editorUpdates)
+        )
+            .pipe(concatMap(editorUpdates => proxy.windows.$acceptWindowData(editorUpdates)))
             .subscribe()
     )
 

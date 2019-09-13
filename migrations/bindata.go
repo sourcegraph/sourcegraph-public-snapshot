@@ -241,6 +241,8 @@
 // 1528395588_rename_threads_to_changesets.up.sql (774B)
 // 1528395589_add_external_id_to_schema.down.sql (73B)
 // 1528395589_add_external_id_to_schema.up.sql (210B)
+// 1528395590_add_external_service_type_to_changesets.down.sql (85B)
+// 1528395590_add_external_service_type_to_changesets.up.sql (411B)
 
 package migrations
 
@@ -5129,6 +5131,46 @@ func _1528395589_add_external_id_to_schemaUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395590_add_external_service_type_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\xa9\x2c\x48\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xce\xd0\xd0\x12\x55\x00\x00\x00")
+
+func _1528395590_add_external_service_type_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395590_add_external_service_type_to_changesetsDownSql,
+		"1528395590_add_external_service_type_to_changesets.down.sql",
+	)
+}
+
+func _1528395590_add_external_service_type_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395590_add_external_service_type_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395590_add_external_service_type_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x87, 0x82, 0xd5, 0xd3, 0x24, 0x73, 0x8d, 0x1e, 0xce, 0x3e, 0x50, 0x55, 0x73, 0x18, 0xa9, 0x66, 0x6a, 0x32, 0xa0, 0x2e, 0xb1, 0xcc, 0xb7, 0xdc, 0x1, 0x3a, 0xc4, 0xc9, 0xbe, 0xda, 0x1a, 0xe7}}
+	return a, nil
+}
+
+var __1528395590_add_external_service_type_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xc1\x4e\xc3\x30\x10\x44\xef\xfb\x15\xc3\xa9\x70\xc9\x0f\x44\x39\xb8\x89\x81\x80\x63\xa3\x64\x73\xb6\x42\xba\x82\x88\xca\xad\x62\x0b\x95\xbf\x47\x14\x55\xca\x21\xed\xcd\xd6\xd3\x1b\xcd\xec\x56\x3f\xd5\x36\x27\x52\x86\x75\x0b\x56\x5b\xa3\x31\x7e\x0e\xe1\x43\xa2\xa4\x08\x55\x55\x28\x9d\xe9\x1b\x0b\x39\x25\x99\xc3\xb0\xf7\x51\xe6\xef\x69\x14\x9f\x7e\x8e\x82\x24\xa7\x94\x13\xf5\x6f\x95\xe2\xa5\x49\x9d\x66\xc2\x15\xa9\xc0\x2c\xc7\x43\xb6\x0a\xe9\xb1\x75\xcd\xb2\xc2\x18\xe9\xc5\xd5\x96\x70\x96\xc8\x5d\x5e\xd9\xb4\x43\x81\x31\x66\x7f\x1f\x3f\xed\xae\x8e\x20\xe0\x1f\xdc\x1c\xd2\x69\x86\x75\x0c\xdb\x1b\x73\x33\xea\x7c\x11\xdb\x71\xab\x6a\xcb\x0b\xe6\x57\x73\x7d\x38\x24\xff\xbe\x1f\xc2\x17\x01\xe5\xb3\x2e\x5f\x71\xbf\x5e\xe0\xae\xc0\x66\xf3\x90\x13\x95\xae\x69\x6a\xce\xe9\x37\x00\x00\xff\xff\xd5\xb9\xa6\x5b\x9b\x01\x00\x00")
+
+func _1528395590_add_external_service_type_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395590_add_external_service_type_to_changesetsUpSql,
+		"1528395590_add_external_service_type_to_changesets.up.sql",
+	)
+}
+
+func _1528395590_add_external_service_type_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395590_add_external_service_type_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395590_add_external_service_type_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4f, 0x1c, 0x6f, 0xfb, 0xb3, 0x47, 0x7c, 0xe9, 0x6b, 0xa9, 0x1b, 0x8c, 0xdb, 0x8e, 0xe7, 0x24, 0x8a, 0xf, 0x59, 0x9c, 0xa8, 0xad, 0xdf, 0x33, 0x6e, 0x3a, 0x40, 0xb4, 0xac, 0x5a, 0x8e, 0x20}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5701,6 +5743,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395589_add_external_id_to_schema.down.sql": _1528395589_add_external_id_to_schemaDownSql,
 
 	"1528395589_add_external_id_to_schema.up.sql": _1528395589_add_external_id_to_schemaUpSql,
+
+	"1528395590_add_external_service_type_to_changesets.down.sql": _1528395590_add_external_service_type_to_changesetsDownSql,
+
+	"1528395590_add_external_service_type_to_changesets.up.sql": _1528395590_add_external_service_type_to_changesetsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5985,6 +6031,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395588_rename_threads_to_changesets.up.sql":              {_1528395588_rename_threads_to_changesetsUpSql, map[string]*bintree{}},
 	"1528395589_add_external_id_to_schema.down.sql":               {_1528395589_add_external_id_to_schemaDownSql, map[string]*bintree{}},
 	"1528395589_add_external_id_to_schema.up.sql":                 {_1528395589_add_external_id_to_schemaUpSql, map[string]*bintree{}},
+	"1528395590_add_external_service_type_to_changesets.down.sql": {_1528395590_add_external_service_type_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395590_add_external_service_type_to_changesets.up.sql":   {_1528395590_add_external_service_type_to_changesetsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

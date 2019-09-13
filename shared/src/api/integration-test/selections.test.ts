@@ -1,5 +1,5 @@
 import { from } from 'rxjs'
-import { distinctUntilChanged, filter, first, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import { isDefined } from '../../util/types'
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
@@ -10,9 +10,7 @@ describe('Selections (integration)', () => {
                 services: { editor: editorService },
                 extensionAPI,
             } = await integrationTestContext()
-            const editor = (await from(editorService.editors)
-                .pipe(first())
-                .toPromise())[0]
+            const editor = editorService.editors.get('editor#0')!
             const selectionChanges = from(extensionAPI.app.activeWindowChanges).pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
