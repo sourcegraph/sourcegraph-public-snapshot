@@ -4,6 +4,7 @@ package phabricator
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,9 @@ type Client struct {
 // This constructor needs a context because it calls the Conduit API to negotiate
 // capabilities as part of the dial process.
 func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Client, error) {
+	if cli == nil {
+		cli = http.DefaultClient
+	}
 	conn, err := gonduit.DialContext(ctx, url, &core.ClientOptions{
 		APIToken: token,
 		Client:   httpcli.HeadersMiddleware("User-Agent", "sourcegraph/phabricator-client")(cli),

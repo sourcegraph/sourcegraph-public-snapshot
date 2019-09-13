@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mergeMap, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { CodeEditor, EditorId } from '../../../../../shared/src/api/client/services/editorService'
+import { CodeEditorData, EditorId } from '../../../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
 import { COMMENT_URI_SCHEME } from '../../../../../shared/src/api/client/types/textDocument'
 import { EditorTextField } from '../../../../../shared/src/components/editorTextField/EditorTextField'
@@ -118,7 +118,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
             startWith(undefined),
             switchMap(
                 () =>
-                    new Observable<EditorId & { modelUri: CodeEditor['resource'] }>(sub => {
+                    new Observable<EditorId & { modelUri: CodeEditorData['resource'] }>(sub => {
                         const model: TextModel = {
                             uri: uniqueId(`${COMMENT_URI_SCHEME}://`),
                             languageId: 'plaintext',
@@ -134,7 +134,6 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         sub.next({ editorId: editor.editorId, modelUri: model.uri })
                         return () => {
                             this.props.extensionsController.services.editor.removeEditor(editor)
-                            this.props.extensionsController.services.model.removeModel(model.uri)
                         }
                     })
             )

@@ -20,7 +20,7 @@ func TestUser_UsageStatistics(t *testing.T) {
 	defer func() { usagestats.MockGetByUserID = nil }()
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: GraphQLSchema,
+			Schema: mustParseGraphQLSchema(t, nil),
 			Query: `
 				{
 					node(id: "VXNlcjox") {

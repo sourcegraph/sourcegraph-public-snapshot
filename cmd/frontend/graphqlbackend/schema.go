@@ -27,6 +27,10 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
+    # Creates a Changeset of a given repository in a code host (e.g. pull request on GitHub)
+    createChangeset(repository: ID!, externalID: String!): Changeset!
+    # Adds a Changeset to a Campaign.
+    addChangesetToCampaign(changeset: ID!, campaign: ID!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.
@@ -382,12 +386,61 @@ type Campaign implements Node {
 
     # The date and time when the campaign was updated.
     updatedAt: DateTime!
+
+    # The changesets in this campaign.
+    changesets(first: Int): ChangesetConnection!
 }
 
 # A list of campaigns.
 type CampaignConnection {
     # A list of campaigns.
     nodes: [Campaign!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A Changeset's state
+enum ChangesetState {
+    OPEN
+    CLOSED
+    MERGED
+}
+
+# A changeset in a code host (e.g. a PR on Github)
+type Changeset implements Node {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The repository where this changeset is defined.
+    repository: Repository!
+
+    # The campaigns that have this changeset in them.
+    campaigns(first: Int): CampaignConnection!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The title of the changeset
+    title: String!
+
+    # The body of the changeset
+    body: String!
+
+    # The state of the changeset
+    state: ChangesetState!
+}
+
+# A list of changesets.
+type ChangesetConnection {
+    # A list of campaigns.
+    nodes: [Changeset!]!
 
     # The total number of campaigns in the connection.
     totalCount: Int!

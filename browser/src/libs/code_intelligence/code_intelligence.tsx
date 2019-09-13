@@ -94,6 +94,7 @@ import {
 import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
+import { observeStorageKey } from '../../browser/storage'
 import { SourcegraphIntegrationURLs } from '../../platform/context'
 
 registerHighlightContributions()
@@ -863,16 +864,33 @@ export function injectCodeIntelligenceToCodeHost(
     )
     const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
     subscriptions.add(extensionsController)
+
+    let codeHostSubscription: Subscription
+    // In the browser extension, observe whether the `disableExtension` storage flag is set.
+    // In the native integration, this flag does not exist.
+    const extensionDisabled = isExtension ? observeStorageKey('sync', 'disableExtension') : of(false)
     subscriptions.add(
-        handleCodeHost({
-            mutations,
-            codeHost,
-            extensionsController,
-            platformContext,
-            showGlobalDebug,
-            sourcegraphURL,
-            telemetryService,
-            render: reactDOMRender,
+        extensionDisabled.subscribe(disableExtension => {
+            if (disableExtension) {
+                // We don't need to unsubscribe if the extension starts with disabled state.
+                if (codeHostSubscription) {
+                    codeHostSubscription.unsubscribe()
+                }
+                console.log('Browser extension is disabled')
+            } else {
+                codeHostSubscription = handleCodeHost({
+                    mutations,
+                    codeHost,
+                    extensionsController,
+                    platformContext,
+                    showGlobalDebug,
+                    sourcegraphURL,
+                    telemetryService,
+                    render: reactDOMRender,
+                })
+                subscriptions.add(codeHostSubscription)
+                console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
+            }
         })
     )
     return subscriptions
