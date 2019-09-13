@@ -51,21 +51,23 @@ Foreign-key constraints:
 
 # Table "public.changesets"
 ```
-    Column    |           Type           |                        Modifiers                        
---------------+--------------------------+---------------------------------------------------------
- id           | bigint                   | not null default nextval('changesets_id_seq'::regclass)
- campaign_ids | jsonb                    | not null default '{}'::jsonb
- repo_id      | integer                  | not null
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- metadata     | jsonb                    | not null default '{}'::jsonb
- external_id  | text                     | not null
+        Column         |           Type           |                        Modifiers                        
+-----------------------+--------------------------+---------------------------------------------------------
+ id                    | bigint                   | not null default nextval('changesets_id_seq'::regclass)
+ campaign_ids          | jsonb                    | not null default '{}'::jsonb
+ repo_id               | integer                  | not null
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | not null default now()
+ metadata              | jsonb                    | not null default '{}'::jsonb
+ external_id           | text                     | not null
+ external_service_type | text                     | not null
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
 Check constraints:
     "changesets_campaign_ids_check" CHECK (jsonb_typeof(campaign_ids) = 'object'::text)
     "changesets_external_id_check" CHECK (external_id <> ''::text)
+    "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Foreign-key constraints:
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE

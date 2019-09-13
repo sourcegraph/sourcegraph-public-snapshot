@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
@@ -244,16 +245,35 @@ func TestStore(t *testing.T) {
 	})
 
 	t.Run("Changesets", func(t *testing.T) {
+		githubActor := github.Actor{
+			AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+			Login:     "mrnugget",
+			URL:       "https://github.com/mrnugget",
+		}
+		githubPR := &github.PullRequest{
+			ID:           "FOOBARID",
+			Title:        "Fix a bunch of bugs",
+			Body:         "This fixes a bunch of bugs",
+			URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+			Number:       12345,
+			Author:       githubActor,
+			Participants: []github.Actor{githubActor},
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}
+
 		changesets := make([]*Changeset, 0, 3)
+
 		t.Run("Create", func(t *testing.T) {
 			for i := 0; i < cap(changesets); i++ {
 				th := &Changeset{
-					RepoID:      42,
-					CreatedAt:   now,
-					UpdatedAt:   now,
-					Metadata:    []byte("{}"),
-					CampaignIDs: []int64{int64(i) + 1},
-					ExternalID:  fmt.Sprintf("foobar-%d", i),
+					RepoID:              42,
+					CreatedAt:           now,
+					UpdatedAt:           now,
+					Metadata:            githubPR,
+					CampaignIDs:         []int64{int64(i) + 1},
+					ExternalID:          fmt.Sprintf("foobar-%d", i),
+					ExternalServiceType: "github",
 				}
 
 				want := th.Clone()
@@ -383,6 +403,7 @@ func TestStore(t *testing.T) {
 		t.Run("Update", func(t *testing.T) {
 			for _, c := range changesets {
 				c.Metadata = []byte(`{"updated": true}`)
+				c.ExternalServiceType = "gitlab"
 
 				if c.RepoID != 0 {
 					c.RepoID++
