@@ -29,7 +29,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 12 Sep 2019 13:28:03 GMT
+      - Fri, 13 Sep 2019 13:14:12 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -49,15 +49,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 7A8A:3ED74:5B7950:7035EF:5D7A47E2
+      - 92A1:2FC05:ADD62D:D39C62:5D7B9624
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4990"
+      - "4999"
       X-Ratelimit-Reset:
-      - "1568298454"
+      - "1568384052"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -91,7 +91,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 12 Sep 2019 13:28:03 GMT
+      - Fri, 13 Sep 2019 13:14:12 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -111,15 +111,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 7A8A:3ED74:5B795E:7035FE:5D7A47E3
+      - 92A1:2FC05:ADD651:D39C8D:5D7B9624
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4989"
+      - "4998"
       X-Ratelimit-Reset:
-      - "1568298454"
+      - "1568384052"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -140,7 +140,7 @@ interactions:
     body: '{"data":{"repository":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
       disableExtension flag for native integrations","body":"This flag should only
       be observed in the browser extension. Calling `observeStorageKey()` breaks native
-      integrations.","state":"OPEN","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"}]},"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-12T10:06:09Z"}}}}'
+      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/2946214?v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z"}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -155,7 +155,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 12 Sep 2019 13:28:03 GMT
+      - Fri, 13 Sep 2019 13:14:13 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -175,15 +175,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 7A8A:3ED74:5B796B:70360D:5D7A47E3
+      - 92A1:2FC05:ADD684:D39CC9:5D7B9624
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4988"
+      - "4997"
       X-Ratelimit-Reset:
-      - "1568298454"
+      - "1568384052"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK

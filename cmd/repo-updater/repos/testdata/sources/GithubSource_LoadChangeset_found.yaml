@@ -16,7 +16,7 @@ interactions:
     body: '{"data":{"repository":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
       disableExtension flag for native integrations","body":"This flag should only
       be observed in the browser extension. Calling `observeStorageKey()` breaks native
-      integrations.","state":"OPEN","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"}]},"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-12T10:06:09Z"}}}}'
+      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/2946214?v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z"}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -31,7 +31,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 12 Sep 2019 14:42:24 GMT
+      - Fri, 13 Sep 2019 13:15:37 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -51,7 +51,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 1EEB:1510F:3CA7951:4A298BE:5D7A594F
+      - DD23:1A715:18EA067:1E4F490:5D7B9679
       X-Oauth-Scopes:
       - repo
       X-Xss-Protection:
