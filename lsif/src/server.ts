@@ -152,14 +152,9 @@ async function setupQueue(): Promise<RealQueue> {
  * @param app The express app.
  */
 function addHealthEndpoint(app: express.Application): void {
-    app.get(
-        '/healthz',
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                res.send('ok')
-            }
-        )
-    )
+    app.get('/healthz', (req: express.Request, res: express.Response): void => {
+        res.send('ok')
+    })
 }
 
 /**
@@ -307,11 +302,6 @@ function addLsifEndpoints(app: express.Application, queue: RealQueue): void {
                 }
 
                 await new Promise((resolve, reject) => {
-                    if (1 < 2) {
-                        req.pipe(writeStream).on('finish', resolve)
-                        return
-                    }
-
                     req.pipe(zlib.createGunzip()) // unzip input
                         .pipe(es.split()) // split into lines
                         .pipe(

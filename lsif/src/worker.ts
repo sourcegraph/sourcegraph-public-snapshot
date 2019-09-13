@@ -95,6 +95,9 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
     worker.on('cleaning_worker', (worker: string, pid: string) => console.log(`Cleaning old worker ${worker}:${pid}`))
     worker.on('error', logErrorAndExit)
 
+    // Start a timer when accepting a job and end it when either
+    // succeeding or failing. This is fine as we're not using a
+    // multiWorker and only one job will be processed at a time.
     let end: (() => void) | undefined
 
     worker.on('job', (_: string, job: Job<any> & JobMeta) => {
@@ -105,15 +108,17 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
     worker.on('success', (_: string, job: Job<any> & JobMeta, result: any) => {
         console.log(`Completed job ${JSON.stringify(job)} >> ${result}`)
         JOB_EVENTS_COUNTER.labels(job.class, 'success').inc()
-        end && end()
-        end = undefined
+        if (end) {
+            end()
+        }
     })
 
     worker.on('failure', (_: string, job: Job<any> & JobMeta, failure: any) => {
         console.log(`Failed job ${JSON.stringify(job)} >> ${failure}`)
         JOB_EVENTS_COUNTER.labels(job.class, 'failure').inc()
-        end && end()
-        end = undefined
+        if (end) {
+            end()
+        }
     })
 
     // Start worker
