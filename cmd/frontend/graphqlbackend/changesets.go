@@ -2,12 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -35,7 +38,51 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// TODO(tsenart): Sync change-set metadata.
+	store := repos.NewDBStore(r.A8NStore.DB(), sql.TxOptions{})
+	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{
+		IDs: []uint32{uint32(repoID)},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rs) != 1 {
+		return nil, errors.Errorf("repo %q not found", args.Repository)
+	}
+
+	repo := rs[0]
+
+	es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		IDs: repo.ExternalServiceIDs(),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(es) == 0 {
+		return nil, errors.Errorf("repo %q has no external services", args.Repository)
+	}
+
+	src, err := repos.NewSource(es[0], r.HTTPFactory)
+	if err != nil {
+		return nil, err
+	}
+
+	css, ok := src.(repos.ChangesetSource)
+	if !ok {
+		return nil, errors.Errorf("unsupported repo type %q", repo.ExternalRepo.ServiceType)
+	}
+
+	err = css.LoadChangeset(ctx, &repos.Changeset{Changeset: changeset, Repo: repo})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = r.A8NStore.UpdateChangeset(ctx, changeset); err != nil {
+		return nil, err
+	}
 
 	return &changesetResolver{store: r.A8NStore, Changeset: changeset}, nil
 }

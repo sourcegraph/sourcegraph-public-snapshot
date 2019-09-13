@@ -1,16 +1,27 @@
 package github
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/pkg/errors"
+	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
@@ -89,4 +100,126 @@ func TestNewRepoCache_GitHubEnterprise(t *testing.T) {
 	if *got != *want {
 		t.Errorf("TestNewRepoCache_GitHubEnterprise: got %#v, want %#v", *got, *want)
 	}
+}
+
+var update = flag.Bool("update", false, "update testdata")
+
+func TestClient_GetPullRequest(t *testing.T) {
+	cli, save := newClient(t, "GetPullRequest")
+	defer save()
+
+	for _, tc := range []struct {
+		name          string
+		ctx           context.Context
+		repoWithOwner string
+		number        int
+		err           string
+	}{
+		{
+			name:          "non-existing-repo",
+			repoWithOwner: "whoisthis/sourcegraph",
+			number:        5550,
+			err:           "error in GraphQL response: Could not resolve to a Repository with the name 'sourcegraph'.",
+		},
+		{
+			name:          "non-existing-pr",
+			repoWithOwner: "sourcegraph/sourcegraph",
+			number:        0,
+			err:           "error in GraphQL response: Could not resolve to a PullRequest with the number of 0.",
+		},
+		{
+			name:          "success",
+			repoWithOwner: "sourcegraph/sourcegraph",
+			number:        5550,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			pr, err := cli.GetPullRequest(tc.ctx, tc.repoWithOwner, tc.number)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if pr == nil {
+				return
+			}
+
+			data, err := json.MarshalIndent(pr, " ", " ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			path := "testdata/golden/GetPullRequest-" + strconv.Itoa(tc.number)
+			if *update {
+				if err = ioutil.WriteFile(path, data, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(data), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
+	}
+}
+
+func newClient(t testing.TB, name string) (*Client, func()) {
+	t.Helper()
+
+	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
+
+	hc, err := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)).Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	uri, err := url.Parse("https://github.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cli := NewClient(
+		uri,
+		os.Getenv("GITHUB_TOKEN"),
+		hc,
+	)
+
+	return cli, func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	}
+}
+
+func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
+	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Hostname() == "github-proxy" {
+			req.URL.Host = "api.github.com"
+			req.URL.Scheme = "https"
+		}
+		return cli.Do(req)
+	})
 }

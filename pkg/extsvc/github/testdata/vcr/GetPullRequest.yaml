@@ -1,0 +1,191 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"query {\n\t  repository(owner: \"whoisthis\", name: \"sourcegraph\")
+      {\n\t\tpullRequest(number: 5550) {\n\t\t  id\n\t\t  title\n\t\t  body\n\t\t  state\n\t\t  url\n\t\t  number\n\t\t  author
+      {\n\t\t    avatarUrl\n\t\t\tlogin\n\t\t\turl\n\t\t  }\n\t\t  participants(first:
+      100) {\n\t\t\tnodes {\n\t\t\t  avatarUrl\n\t\t\t  login\n\t\t\t  url\n\t\t\t}\n\t\t  }\n\t\t  createdAt\n\t\t  updatedAt\n\t\t}\n\t  }\n\t}","variables":null}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"repository":null},"errors":[{"type":"NOT_FOUND","path":["repository"],"locations":[{"line":2,"column":4}],"message":"Could
+      not resolve to a Repository with the name ''sourcegraph''."}]}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - no-cache
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 12 Sep 2019 13:28:03 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repo
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; format=json
+      X-Github-Request-Id:
+      - 7A8A:3ED74:5B7950:7035EF:5D7A47E2
+      X-Oauth-Scopes:
+      - repo
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4990"
+      X-Ratelimit-Reset:
+      - "1568298454"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"query {\n\t  repository(owner: \"sourcegraph\", name: \"sourcegraph\")
+      {\n\t\tpullRequest(number: 0) {\n\t\t  id\n\t\t  title\n\t\t  body\n\t\t  state\n\t\t  url\n\t\t  number\n\t\t  author
+      {\n\t\t    avatarUrl\n\t\t\tlogin\n\t\t\turl\n\t\t  }\n\t\t  participants(first:
+      100) {\n\t\t\tnodes {\n\t\t\t  avatarUrl\n\t\t\t  login\n\t\t\t  url\n\t\t\t}\n\t\t  }\n\t\t  createdAt\n\t\t  updatedAt\n\t\t}\n\t  }\n\t}","variables":null}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"locations":[{"line":3,"column":3}],"message":"Could
+      not resolve to a PullRequest with the number of 0."}]}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - no-cache
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 12 Sep 2019 13:28:03 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repo
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; format=json
+      X-Github-Request-Id:
+      - 7A8A:3ED74:5B795E:7035FE:5D7A47E3
+      X-Oauth-Scopes:
+      - repo
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4989"
+      X-Ratelimit-Reset:
+      - "1568298454"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"query {\n\t  repository(owner: \"sourcegraph\", name: \"sourcegraph\")
+      {\n\t\tpullRequest(number: 5550) {\n\t\t  id\n\t\t  title\n\t\t  body\n\t\t  state\n\t\t  url\n\t\t  number\n\t\t  author
+      {\n\t\t    avatarUrl\n\t\t\tlogin\n\t\t\turl\n\t\t  }\n\t\t  participants(first:
+      100) {\n\t\t\tnodes {\n\t\t\t  avatarUrl\n\t\t\t  login\n\t\t\t  url\n\t\t\t}\n\t\t  }\n\t\t  createdAt\n\t\t  updatedAt\n\t\t}\n\t  }\n\t}","variables":null}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"repository":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
+      disableExtension flag for native integrations","body":"This flag should only
+      be observed in the browser extension. Calling `observeStorageKey()` breaks native
+      integrations.","state":"OPEN","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"}]},"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-12T10:06:09Z"}}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - no-cache
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 12 Sep 2019 13:28:03 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repo
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; format=json
+      X-Github-Request-Id:
+      - 7A8A:3ED74:5B796B:70360D:5D7A47E3
+      X-Oauth-Scopes:
+      - repo
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4988"
+      X-Ratelimit-Reset:
+      - "1568298454"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""

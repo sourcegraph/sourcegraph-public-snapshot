@@ -4,11 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
+	"flag"
+	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
@@ -19,8 +23,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var update = flag.Bool("update", false, "update testdata")
 
 func TestCampaigns(t *testing.T) {
 	if testing.Short() {
@@ -30,11 +39,15 @@ func TestCampaigns(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
+	cf, save := newGithubClientFactory(t, "test-campaigns")
+	defer save()
+
 	sr := schemaResolver{
-		A8NStore: a8n.NewStore(dbconn.Global),
+		A8NStore:    a8n.NewStore(dbconn.Global),
+		HTTPFactory: cf,
 	}
 
-	schema, err := graphql.ParseSchema(Schema, &sr)
+	s, err := graphql.ParseSchema(Schema, &sr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +64,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	mustExec(ctx, t, schema, nil, &users, `
+	mustExec(ctx, t, s, nil, &users, `
 		fragment u on User { id, databaseID, siteAdmin }
 		mutation {
 			admin: createUser(username: "admin") {
@@ -77,7 +90,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	ctx = actor.WithActor(ctx, actor.FromUser(users.Admin.DatabaseID))
-	mustExec(ctx, t, schema, nil, &orgs, `
+	mustExec(ctx, t, s, nil, &orgs, `
 		fragment o on Org { id, name }
 		mutation {
 			acme: createOrganization(name: "ACME") { ...o }
@@ -116,7 +129,7 @@ func TestCampaigns(t *testing.T) {
 		},
 	}
 
-	mustExec(ctx, t, schema, input, &campaigns, `
+	mustExec(ctx, t, s, input, &campaigns, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -153,7 +166,7 @@ func TestCampaigns(t *testing.T) {
 		First, All CampaignConnection
 	}
 
-	mustExec(ctx, t, schema, nil, &listed, `
+	mustExec(ctx, t, s, nil, &listed, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -199,11 +212,11 @@ func TestCampaigns(t *testing.T) {
 	externalService := &repos.ExternalService{
 		Kind:        "GITHUB",
 		DisplayName: "GitHub",
-		Config: `{
-			"url": "https://github.com",
-			"token": "TOKEN",
-			"repos": ["sourcegraph/sourcegraph"]
-		}`,
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repos: []string{"sourcegraph/sourcegraph"},
+		}),
 	}
 
 	err = store.UpsertExternalServices(ctx, externalService)
@@ -211,25 +224,14 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	urn := fmt.Sprintf("extsvc:github:%d", externalService.ID)
+	src, err := repos.NewGithubSource(externalService, cf)
+	if err != nil {
+		t.Fatal(t)
+	}
 
-	repo := &repos.Repo{
-		Name:        "github.com/sourcegraph/sourcegraph",
-		Description: "Code search and navigation tool (self-hosted)",
-		URI:         "github.com/sourcegraph/sourcegraph",
-		Enabled:     true,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-			ServiceType: "github",
-			ServiceID:   "https://github.com/",
-		},
-		Sources: map[string]*repos.SourceInfo{
-			urn: {
-				ID:       urn,
-				CloneURL: "https://TOKEN@github.com/sourcegraph/sourcegraph",
-			},
-		},
-		Metadata: "{}",
+	repo, err := src.GetRepo(ctx, "sourcegraph/sourcegraph")
+	if err != nil {
+		t.Fatal(t)
 	}
 
 	err = store.UpsertRepos(ctx, repo)
@@ -256,7 +258,7 @@ func TestCampaigns(t *testing.T) {
 		"externalID": "999",
 	}
 
-	mustExec(ctx, t, schema, input, &result, `
+	mustExec(ctx, t, s, input, &result, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -320,7 +322,7 @@ func TestCampaigns(t *testing.T) {
 		"campaign":  campaigns.Admin.ID,
 	}
 
-	mustExec(ctx, t, schema, input, &addChangesetResult, `
+	mustExec(ctx, t, s, input, &addChangesetResult, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 
@@ -426,4 +428,48 @@ func toJSON(t testing.TB, v interface{}) string {
 	}
 
 	return formatted
+}
+
+func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
+	t.Helper()
+
+	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+
+	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
+
+	hc := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec))
+
+	return hc, func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	}
+}
+
+func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
+	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Hostname() == "github-proxy" {
+			req.URL.Host = "api.github.com"
+			req.URL.Scheme = "https"
+		}
+		return cli.Do(req)
+	})
+}
+
+func marshalJSON(t testing.TB, v interface{}) string {
+	t.Helper()
+
+	bs, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(bs)
 }

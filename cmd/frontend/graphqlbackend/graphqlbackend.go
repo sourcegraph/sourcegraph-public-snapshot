@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -184,7 +185,8 @@ type stringLogger interface {
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
 type schemaResolver struct {
-	A8NStore *a8n.Store
+	A8NStore    *a8n.Store
+	HTTPFactory *httpcli.Factory
 }
 
 // DEPRECATED
