@@ -28,6 +28,12 @@ cp -a ./cmd/server/rootfs/. "$OUTPUT"
 bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
 
+echo "--- go env"
+go env
+
+echo "--- go mod verify"
+go mod verify
+
 echo "--- go build"
 for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
@@ -41,6 +47,7 @@ for pkg in $server_pkg \
     github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
 
     go build \
+      -x \
       -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
       -buildmode exe \
       -installsuffix netgo \
