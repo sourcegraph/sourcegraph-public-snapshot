@@ -1,9 +1,9 @@
-import * as fs from 'mz/fs'
-import * as rimraf from 'rimraf'
-import * as zlib from 'mz/zlib'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createBackend } from './backend'
-import { createCommit, createLocation } from './test-utils'
+import * as fs from 'mz/fs';
+import * as zlib from 'mz/zlib';
+import rmfr from 'rmfr';
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
+import { createBackend } from './backend';
+import { createCommit, createLocation } from './test-utils';
 
 describe('Database', () => {
     let storageRoot!: string
@@ -18,9 +18,7 @@ describe('Database', () => {
         await backend.insertDump(input, 'five', createCommit('five'))
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all defs of `four` from main.cpp', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
