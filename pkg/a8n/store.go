@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -717,16 +716,15 @@ func scanChangeset(t *Changeset, s scanner) error {
 		return err
 	}
 
-	typ := strings.ToLower(t.ExternalServiceType)
-	switch typ {
-	case "github":
+	switch t.ExternalServiceType {
+	case github.ServiceType:
 		t.Metadata = new(github.PullRequest)
 	default:
 		return nil
 	}
 
 	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
-		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", typ)
+		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.ExternalServiceType)
 	}
 
 	return nil
