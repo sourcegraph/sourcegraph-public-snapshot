@@ -11,8 +11,8 @@
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
     "event-stream": "^4.0.1",
-    "express": "^4.17.1",
     "express-prom-bundle": "^5.1.5",
+    "express": "^4.17.1",
     "ioredis": "^4.14.0",
     "lodash": "^4.17.15",
     "lsif-protocol": "0.4.3",
@@ -51,8 +51,8 @@
     "source-map-support": "^0.5.13",
     "tsc-watch": "^2.2.1",
     "tslint": "^5.18.0",
-    "typescript": "^3.5.3",
-    "typescript-json-schema": "^0.40.0"
+    "typescript-json-schema": "^0.40.0",
+    "typescript": "^3.5.3"
   },
   "scripts": {
     "build": "tsc",

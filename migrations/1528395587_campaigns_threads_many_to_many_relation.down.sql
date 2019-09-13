@@ -1,0 +1,9 @@
+BEGIN;
+
+ALTER TABLE campaigns DROP COLUMN thread_ids;
+ALTER TABLE threads DROP COLUMN campaign_ids;
+ALTER TABLE threads ADD COLUMN campaign_id integer
+NOT NULL REFERENCES campaigns(id) ON DELETE
+CASCADE DEFERRABLE INITIALLY IMMEDIATE;
+
+COMMIT;

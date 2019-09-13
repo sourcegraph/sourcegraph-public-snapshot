@@ -8,7 +8,7 @@ import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
-import { CodeEditor } from '../client/services/editorService'
+import { CodeEditorData } from '../client/services/editorService'
 import { TextModel } from '../client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
@@ -22,7 +22,7 @@ export function assertToJSON(a: any, expected: any): void {
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
     models?: readonly TextModel[]
-    editors: readonly Pick<CodeEditor, Exclude<keyof CodeEditor, 'editorId'>>[]
+    editors: readonly CodeEditorData[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
@@ -105,22 +105,24 @@ export async function integrationTestContext(
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
-    await Promise.all([
-        from(extensionAPI.workspace.openedTextDocuments)
-            .pipe(take(initModel.editors.length))
-            .toPromise(),
-        from(extensionAPI.app.activeWindowChanges)
-            .pipe(
-                first(isDefined),
-                switchMap(activeWindow =>
-                    from(activeWindow.activeViewComponentChanges).pipe(
-                        filter(isDefined),
-                        take(initModel.editors.length)
+    if (initModel.editors.length) {
+        await Promise.all([
+            from(extensionAPI.workspace.openedTextDocuments)
+                .pipe(take(initModel.editors.length))
+                .toPromise(),
+            from(extensionAPI.app.activeWindowChanges)
+                .pipe(
+                    first(isDefined),
+                    switchMap(activeWindow =>
+                        from(activeWindow.activeViewComponentChanges).pipe(
+                            filter(isDefined),
+                            take(initModel.editors.length)
+                        )
                     )
                 )
-            )
-            .toPromise(),
-    ])
+                .toPromise(),
+        ])
+    }
 
     return {
         client,

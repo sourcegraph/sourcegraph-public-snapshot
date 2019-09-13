@@ -1,5 +1,5 @@
 import { isEqual, mapValues } from 'lodash'
-import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable, from } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
@@ -7,6 +7,7 @@ import { Context, ContributionScope, getComputedContextProperty } from '../conte
 import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
 import { EditorService } from './editorService'
 import { SettingsService } from './settings'
+import { ModelService } from './modelService'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -34,7 +35,8 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     constructor(
-        private editorService: Pick<EditorService, 'editorsAndModels'>,
+        private editorService: Pick<EditorService, 'activeEditorUpdates'>,
+        private modelService: Pick<ModelService, 'getPartialModel'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}
@@ -110,11 +112,17 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            this.editorService.editorsAndModels,
+            from(this.editorService.activeEditorUpdates).pipe(
+                map(activeEditor =>
+                    activeEditor
+                        ? { ...activeEditor, model: this.modelService.getPartialModel(activeEditor.resource) }
+                        : undefined
+                )
+            ),
             this.settingsService.data,
             this.context,
         ]).pipe(
-            map(([multiContributions, editors, settings, context]) => {
+            map(([multiContributions, activeEditor, settings, context]) => {
                 // Merge in extra context.
                 if (extraContext) {
                     context = { ...context, ...extraContext }
@@ -122,7 +130,7 @@ export class ContributionRegistry {
 
                 // TODO(sqs): use {@link ContextService#observeValue}
                 const computedContext = {
-                    get: (key: string) => getComputedContextProperty(editors, settings, context, key, scope),
+                    get: (key: string) => getComputedContextProperty(activeEditor, settings, context, key, scope),
                 }
                 return multiContributions.flat().map(contributions => {
                     try {

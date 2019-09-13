@@ -5,7 +5,7 @@ import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { CodeEditorData, EditorId } from '../../client/services/editorService'
+import { CodeEditorData, EditorId, EditorUpdate } from '../../client/services/editorService'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
@@ -26,7 +26,7 @@ export class ExtWindow implements sourcegraph.Window {
     /** Map of editor key to editor. */
     private viewComponents = new Map<string, ExtCodeEditor>()
 
-    constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments, data: WindowData) {
+    constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments, data: EditorUpdate[]) {
         this.update(data)
     }
 
@@ -95,26 +95,36 @@ export class ExtWindow implements sourcegraph.Window {
     /**
      * Perform a delta update (update/add/delete) of this window's view components.
      */
-    public update(data: WindowData): void {
-        const seenEditorIds = new Set<string>()
-        for (const c of data.editors) {
-            seenEditorIds.add(c.editorId)
-            const existing = this.viewComponents.get(c.editorId)
-            if (existing) {
-                existing.update(c)
-            } else {
-                this.viewComponents.set(c.editorId, new ExtCodeEditor(c, this.proxy.codeEditor, this.documents))
+    public update(data: EditorUpdate[]): void {
+        for (const update of data) {
+            const { editorId } = update
+            switch (update.type) {
+                case 'added': {
+                    const editor = new ExtCodeEditor(
+                        { editorId, ...update.editorData },
+                        this.proxy.codeEditor,
+                        this.documents
+                    )
+                    this.viewComponents.set(editorId, editor)
+                    if (update.editorData.isActive) {
+                        this.activeViewComponentChanges.next(editor)
+                    }
+                    break
+                }
+                case 'updated': {
+                    const editor = this.viewComponents.get(editorId)
+                    if (!editor) {
+                        throw new Error(`Could not perform update: editor ${editorId} not found`)
+                    }
+                    editor.update(update.editorData)
+                    break
+                }
+                case 'deleted': {
+                    this.viewComponents.delete(editorId)
+                    break
+                }
             }
         }
-        for (const editorId of this.viewComponents.keys()) {
-            if (!seenEditorIds.has(editorId)) {
-                this.viewComponents.delete(editorId)
-            }
-        }
-
-        // Update active view component.
-        const active = data.editors.find(c => c.isActive)
-        this.activeViewComponentChanges.next(active ? this.viewComponents.get(active.editorId) : undefined)
     }
 
     public toJSON(): any {
@@ -124,7 +134,7 @@ export class ExtWindow implements sourcegraph.Window {
 
 /** @internal */
 export interface ExtWindowsAPI extends ProxyValue {
-    $acceptWindowData(windowData: WindowData | null): void
+    $acceptWindowData(editorUpdates: EditorUpdate[]): void
 }
 
 /**
@@ -154,14 +164,19 @@ export class ExtWindows implements ExtWindowsAPI, ProxyValue {
     }
 
     /** @internal */
-    public $acceptWindowData(windowData: WindowData | null): void {
-        if (windowData && this.activeWindow) {
-            // Update in-place, reusing same object so that object references from extensions to it
-            // (and subscriptions to it) remain valid.
-            this.activeWindow.update(windowData)
+    public $acceptWindowData(editorUpdates: EditorUpdate[]): void {
+        if (!this.activeWindow) {
+            const window = new ExtWindow(this.proxy, this.documents, editorUpdates)
+            if (window.visibleViewComponents.length) {
+                this.activeWindow = window
+                this.activeWindowChanges.next(this.activeWindow)
+            }
         } else {
-            this.activeWindow = windowData ? new ExtWindow(this.proxy, this.documents, windowData) : undefined
-            this.activeWindowChanges.next(this.activeWindow)
+            this.activeWindow.update(editorUpdates)
+            if (this.activeWindow.visibleViewComponents.length === 0) {
+                this.activeWindow = undefined
+                this.activeWindowChanges.next(undefined)
+            }
         }
     }
 }
