@@ -209,7 +209,13 @@ export class Database {
         // operation.
 
         if (range.hoverResultId) {
-            return { contents: mustGet(document.hoverResults, range.hoverResultId, 'hoverResult') }
+            return {
+                contents: {
+                    kind: lsp.MarkupKind.Markdown,
+                    value: mustGet(document.hoverResults, range.hoverResultId, 'hoverResult'),
+                },
+                range: createRange(range),
+            }
         }
 
         return null
@@ -235,17 +241,14 @@ export class Database {
         resultData: DocumentPathRangeId[]
     ): Promise<lsp.Location[]> {
         // Group by document path so we only have to load each document once
-        const groupedResults = new DefaultMap<string, Set<RangeId>>(() => new Set<RangeId>())
+        const groupedResults = new DefaultMap<string, Set<RangeId>>(() => new Set())
 
         for (const { documentPath, rangeId } of resultData) {
             groupedResults.getOrDefault(documentPath).add(rangeId)
         }
 
         let results: lsp.Location[] = []
-        for (const [documentPath, rangeIdSet] of groupedResults) {
-            // Sets are not mappable, use array
-            const rangeIds = Array.from(rangeIdSet)
-
+        for (const [documentPath, rangeIds] of groupedResults) {
             if (documentPath === path) {
                 // If the document path is this document, convert the locations directly
                 results = results.concat(mapRangesToLocations(document.ranges, path, rangeIds))
@@ -648,6 +651,11 @@ function createRange(result: {
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: string, ids: RangeId[]): lsp.Location[] {
-    return ids.map(id => lsp.Location.create(uri, createRange(mustGet(ranges, id, 'range'))))
+export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: string, ids: Set<RangeId>): lsp.Location[] {
+    const locations = []
+    for (const id of ids) {
+        locations.push(lsp.Location.create(uri, createRange(mustGet(ranges, id, 'range'))))
+    }
+
+    return locations
 }

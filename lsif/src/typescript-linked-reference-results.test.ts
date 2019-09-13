@@ -1,6 +1,6 @@
 import * as fs from 'mz/fs'
-import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
+import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
 import { createCommit, createLocation } from './test-utils'
@@ -15,14 +15,12 @@ describe('Database', () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const input = fs
-            .createReadStream('./test-data/typescript/linked-reference-results/data/test.lsif.gz')
+            .createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
             .pipe(zlib.createGunzip())
         await backend.insertDump(input, 'data', createCommit('data'))
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all refs of `foo`', async () => {
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
