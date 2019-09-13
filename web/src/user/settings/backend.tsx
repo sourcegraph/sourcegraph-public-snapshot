@@ -91,11 +91,10 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  *
  * Not used at all for public/sourcegraph.com usage.
  */
-export function logUserEvent(event: string): void {
+export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context && window.context.sourcegraphDotComMode) {
         return
     }
-    // This GraphQL API call will be deprecated.
     mutateGraphQL(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
@@ -115,6 +114,18 @@ export function logUserEvent(event: string): void {
             })
         )
         .subscribe()
+}
+
+/**
+ * Log a raw user action (used to allow site admins on a Sourcegraph instance
+ * to see a count of unique users on a daily, weekly, and monthly basis).
+ *
+ * Not used at all for public/sourcegraph.com usage.
+ */
+export function logEvent(event: string): void {
+    if (window.context && window.context.sourcegraphDotComMode) {
+        return
+    }
 
     mutateGraphQL(
         gql`
