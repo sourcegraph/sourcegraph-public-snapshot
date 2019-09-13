@@ -169,14 +169,14 @@ async function main(): Promise<void> {
                 await new Promise((resolve, reject) => {
                     req.pipe(zlib.createGunzip()) // unzip input
                         .pipe(es.split()) // split into lines
-                        // Must check each line synchronously
-                        // eslint-disable-next-line no-sync
                         .pipe(
+                            // Must check each line synchronously
+                            // eslint-disable-next-line no-sync
                             es.mapSync((text: string) => {
-                                validateLine(text)
+                                validateLine(text) // validate seach line
                                 return text
                             })
-                        ) // validate seach line
+                        )
                         .on('error', reject) // catch validation error
                         .pipe(es.join('\n')) // join back into text
                         .pipe(zlib.createGzip()) // re-zip input
