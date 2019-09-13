@@ -240,17 +240,20 @@ describe('Search regression test suite', () => {
         test('Global text search filtering by language', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=%5Cbfunc%5Cb+lang:js')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
-            const filenames = await driver.page.evaluate(() =>
-                Array.from(document.querySelectorAll('.e2e-search-result')).flatMap(el => {
-                    const header = el.querySelector('[data-testid="result-container-header"')
-                    if (!header || !header.textContent) {
-                        return []
-                    }
-                    const components = header.textContent.split(/\s/)
-                    return [components[components.length - 1]]
-                })
+            const filenames: string[] = await driver.page.evaluate(
+                () =>
+                    Array.from(document.querySelectorAll('.e2e-search-result'))
+                        .map(el => {
+                            const header = el.querySelector('[data-testid="result-container-header"')
+                            if (!header || !header.textContent) {
+                                return null
+                            }
+                            const components = header.textContent.split(/\s/)
+                            return components[components.length - 1]
+                        })
+                        .filter(el => el !== null) as string[]
             )
-            if (filenames.some(filename => filename.endsWith('.go'))) {
+            if (!filenames.every(filename => filename.endsWith('.js'))) {
                 throw new Error('found Go results when filtering for JavaScript')
             }
         })
