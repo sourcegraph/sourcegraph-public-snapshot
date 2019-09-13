@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/graph-gophers/graphql-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -30,7 +31,7 @@ var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186",
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -47,7 +48,7 @@ func NewHandler(m *mux.Router) http.Handler {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
-	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
+	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
 	lsifServerURL, err := url.Parse(lsifServerURLFromEnv)
 	if err != nil {
@@ -76,7 +77,7 @@ func NewHandler(m *mux.Router) http.Handler {
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router) http.Handler {
+func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -105,7 +106,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
-	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
+	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
 	m.Get(apirouter.SearchConfiguration).Handler(trace.TraceRoute(handler(serveSearchConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)

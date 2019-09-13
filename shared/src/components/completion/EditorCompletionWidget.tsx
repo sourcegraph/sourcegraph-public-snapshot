@@ -1,7 +1,7 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
 import React, { useEffect, useState } from 'react'
-import { from, merge, of } from 'rxjs'
+import { merge, of } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -20,6 +20,7 @@ import { asError, ErrorLike } from '../../util/errors'
 import { throttleTimeWindow } from '../../util/rxjs/throttleTimeWindow'
 import { getWordAtText } from '../../util/wordHelpers'
 import { CompletionWidget, CompletionWidgetProps } from './CompletionWidget'
+import { observeEditorAndModel } from '../../api/client/services/editorService'
 
 export interface EditorCompletionWidgetProps
     extends ExtensionsControllerProps,
@@ -47,7 +48,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
         typeof LOADING | CompletionList | null | ErrorLike
     >(null)
     useEffect(() => {
-        const subscription = from(editorService.observeEditorAndModel({ editorId }))
+        const subscription = observeEditorAndModel({ editorId }, editorService, modelService)
             .pipe(
                 debounceTime(0), // Debounce multiple synchronous changes so we only handle them once.
                 // These throttles are tweaked for maximum perceived responsiveness. They can
@@ -82,10 +83,10 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
             )
             .subscribe(setCompletionListOrError)
         return () => subscription.unsubscribe()
-    }, [completionItemsService, editorId, editorService, editorService.editors])
+    }, [completionItemsService, editorId, editorService, editorService.editors, modelService])
 
     const onSelectItem = async (item: CompletionItem): Promise<void> => {
-        const editor = await from(editorService.observeEditorAndModel({ editorId }))
+        const editor = await observeEditorAndModel({ editorId }, editorService, modelService)
             .pipe(first())
             .toPromise()
         const [sel, ...secondarySelections] = editor.selections

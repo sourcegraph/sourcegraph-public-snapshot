@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
@@ -160,14 +162,24 @@ func Main() error {
 		hooks.AfterDBInit()
 	}
 
+	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
+	// being initialized
+	if dbconn.Global == nil {
+		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
+	}
+	schema, err := graphqlbackend.NewSchema(dbconn.Global)
+	if err != nil {
+		return err
+	}
+
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(context.Background())
+	externalHandler, err := newExternalHTTPHandler(context.Background(), schema)
 	if err != nil {
 		return err
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler()
+	internalHandler := newInternalHTTPHandler(schema)
 
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}

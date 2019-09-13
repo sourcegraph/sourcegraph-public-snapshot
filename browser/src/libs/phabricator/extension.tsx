@@ -7,7 +7,7 @@ import { injectCodeIntelligence } from '../code_intelligence/inject'
 import { injectExtensionMarker } from '../sourcegraph/inject'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
 import { metaClickOverride } from './util'
-import { DEFAULT_ASSETS_URL } from '../../shared/util/context'
+import { getAssetsURL } from '../../shared/util/context'
 
 // Just for informational purposes (see getPlatformContext())
 window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
@@ -37,7 +37,7 @@ async function init(): Promise<void> {
         window.localStorage.getItem('SOURCEGRAPH_URL') ||
         window.SOURCEGRAPH_URL ||
         (await getSourcegraphURLFromConduit())
-    const assetsURL = DEFAULT_ASSETS_URL
+    const assetsURL = getAssetsURL(sourcegraphURL)
 
     // Backwards compat: Support Legacy Phabricator extension. Check that the Phabricator integration
     // passed the bundle url. Legacy Phabricator extensions inject CSS via the loader.js script

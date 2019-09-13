@@ -7,15 +7,16 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !IndexedSearch().Enabled() {
+	if !search.Indexed().Enabled() {
 		return nil
 	}
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: IndexedSearch().Client,
+		client: search.Indexed().Client,
 	}
 }
 
