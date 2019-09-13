@@ -65,7 +65,7 @@ async function main(): Promise<void> {
 
     // Create worker and start processing jobs
     await startWorker({
-        'convert': createConvertJob(STORAGE_ROOT, xrepoDatabase),
+        convert: createConvertJob(STORAGE_ROOT, xrepoDatabase),
     })
 }
 

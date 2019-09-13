@@ -124,7 +124,10 @@ async function setupQueue(): Promise<RealQueue> {
     exitHook(() => queue.end())
 
     // Update queue size metric on a timer
-    setInterval(() => queue.queued('lsif', 0, -1).then(jobs => QUEUE_SIZE_GAUGE.set(jobs.length), logErrorAndExit), 1000)
+    setInterval(
+        () => queue.queued('lsif', 0, -1).then(jobs => QUEUE_SIZE_GAUGE.set(jobs.length), logErrorAndExit),
+        1000
+    )
 
     // Create scheduler and attach loggers to the interesting events
     const scheduler = new Scheduler({ connection: connectionOptions })
@@ -143,16 +146,20 @@ async function setupQueue(): Promise<RealQueue> {
     return queue
 }
 
-
 /**
  * Add common healthz endpoint.
  *
  * @param app The express app.
  */
 function addHealthEndpoint(app: express.Application): void {
-    app.get('/healthz', wrap(async (req: express.Request, res: express.Response): Promise<void> => {
-        res.send('ok')
-    }))
+    app.get(
+        '/healthz',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                res.send('ok')
+            }
+        )
+    )
 }
 
 /**
@@ -162,34 +169,57 @@ function addHealthEndpoint(app: express.Application): void {
  * @param queue The queue containing LSIF jobs.
  */
 function addQueueEndpoints(app: express.Application, queue: RealQueue): void {
-    app.get('/queued', wrap(async (req: express.Request, res: express.Response): Promise<void> => {
-        const queuedJobs = await queue.queued('lsif', 0, -1)
+    app.get(
+        '/queued',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const queuedJobs = await queue.queued('lsif', 0, -1)
 
-        res.send(queuedJobs.map(job => ({
-            ...rewriteJobMeta(job),
-        })))
-    }))
+                res.send(
+                    queuedJobs.map(job => ({
+                        ...rewriteJobMeta(job),
+                    }))
+                )
+            }
+        )
+    )
 
-    app.get('/failed', wrap(async (req: express.Request, res: express.Response): Promise<void> => {
-        const failedJobs = await queue.failed(0, -1)
-        failedJobs.sort((a, b) => a.failed_at.localeCompare(b.failed_at))
+    app.get(
+        '/failed',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const failedJobs = await queue.failed(0, -1)
+                failedJobs.sort((a, b) => a.failed_at.localeCompare(b.failed_at))
 
-        res.send(failedJobs.map(job => ({
-            error: job.error,
-            failed_at: new Date(job.failed_at).toISOString(),
-            ...rewriteJobMeta(job.payload)
-        })))
-    }))
+                res.send(
+                    failedJobs.map(job => ({
+                        error: job.error,
+                        failed_at: new Date(job.failed_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
+            }
+        )
+    )
 
-    app.get('/active', wrap(async (req: express.Request, res: express.Response): Promise<void> => {
-        const workerMeta = Array.from(Object.values(await queue.allWorkingOn())).filter((x): x is WorkerMeta => x !== 'started')
-        workerMeta.sort((a, b) => a.run_at.localeCompare(b.run_at))
+    app.get(
+        '/active',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const workerMeta = Array.from(Object.values(await queue.allWorkingOn())).filter(
+                    (x): x is WorkerMeta => x !== 'started'
+                )
+                workerMeta.sort((a, b) => a.run_at.localeCompare(b.run_at))
 
-        res.send(workerMeta.map(job => ({
-            started_at: new Date(job.run_at).toISOString(),
-            ...rewriteJobMeta(job.payload)
-        })))
-    }))
+                res.send(
+                    workerMeta.map(job => ({
+                        started_at: new Date(job.run_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
+            }
+        )
+    )
 }
 
 /**
@@ -203,7 +233,6 @@ function addLsifEndpoints(app: express.Application, queue: RealQueue): void {
     const validator = new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
         oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }],
     })
-
 
     // Create cross-repos database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
@@ -238,102 +267,118 @@ function addLsifEndpoints(app: express.Application, queue: RealQueue): void {
         )
     }
 
-    app.post('/upload', wrap(async (req: express.Request, res: express.Response): Promise<void> => {
-        const { repository, commit } = req.query
-        checkRepository(repository)
-        checkCommit(commit)
+    app.post(
+        '/upload',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
 
-        let line = 0
-        const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
-        const writeStream = fs.createWriteStream(filename)
+                let line = 0
+                const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+                const writeStream = fs.createWriteStream(filename)
 
-        const throwValidationError = (text: string, errorText: string): never => {
-            throw Object.assign(
-                new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
-                { status: 422 }
-            )
-        }
+                const throwValidationError = (text: string, errorText: string): never => {
+                    throw Object.assign(
+                        new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
+                        { status: 422 }
+                    )
+                }
 
-        const validateLine = (text: string): void => {
-            if (text === '' || DISABLE_VALIDATION) {
-                return
+                const validateLine = (text: string): void => {
+                    if (text === '' || DISABLE_VALIDATION) {
+                        return
+                    }
+
+                    let data: any
+
+                    try {
+                        data = JSON.parse(text)
+                    } catch (e) {
+                        throwValidationError(text, 'Invalid JSON')
+                    }
+
+                    if (!validator(data)) {
+                        throwValidationError(text, 'Does not match a known vertex or edge shape')
+                    }
+
+                    line++
+                }
+
+                await new Promise((resolve, reject) => {
+                    if (1 < 2) {
+                        req.pipe(writeStream).on('finish', resolve)
+                        return
+                    }
+
+                    req.pipe(zlib.createGunzip()) // unzip input
+                        .pipe(es.split()) // split into lines
+                        .pipe(
+                            // Must check each line synchronously
+                            // eslint-disable-next-line no-sync
+                            es.mapSync((text: string) => {
+                                validateLine(text) // validate each line
+                                return text
+                            })
+                        )
+                        .on('error', reject) // catch validation error
+                        .pipe(es.join('\n')) // join back into text
+                        .pipe(zlib.createGzip()) // re-zip input
+                        .pipe(writeStream) // write to temp file
+                        .on('finish', resolve) // unblock promise when done
+                })
+
+                console.log(`Enqueueing conversion job for ${repository}@${commit}`)
+                await queue.enqueue('lsif', 'convert', [repository, commit, filename])
+                res.json(null)
             }
+        )
+    )
 
-            let data: any
+    app.post(
+        '/exists',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit, file } = req.query
+                checkRepository(repository)
+                checkCommit(commit)
 
-            try {
-                data = JSON.parse(text)
-            } catch (e) {
-                throwValidationError(text, 'Invalid JSON')
+                const db = await createDatabase(repository, commit)
+                if (!db) {
+                    res.json(false)
+                    return
+                }
+
+                const result = !file || (await db.exists(file))
+                res.json(result)
             }
+        )
+    )
 
-            if (!validator(data)) {
-                throwValidationError(text, 'Does not match a known vertex or edge shape')
-            }
+    app.post(
+        '/request',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit } = req.query
+                const { path, position, method } = req.body
+                checkRepository(repository)
+                checkCommit(commit)
+                checkMethod(method, ['definitions', 'references', 'hover'])
+                const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-            line++
-        }
-
-        await new Promise((resolve, reject) => {
-            if (1 < 2) {
-                req.pipe(writeStream).on('finish', resolve)
-                return
-            }
-
-            req.pipe(zlib.createGunzip()) // unzip input
-                .pipe(es.split()) // split into lines
-                .pipe(
-                    // Must check each line synchronously
-                    // eslint-disable-next-line no-sync
-                    es.mapSync((text: string) => {
-                        validateLine(text) // validate each line
-                        return text
+                const db = await createDatabase(repository, commit)
+                if (!db) {
+                    throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
+                        status: 404,
                     })
-                )
-                .on('error', reject) // catch validation error
-                .pipe(es.join('\n')) // join back into text
-                .pipe(zlib.createGzip()) // re-zip input
-                .pipe(writeStream) // write to temp file
-                .on('finish', resolve) // unblock promise when done
-        })
+                }
 
-        console.log(`Enqueueing conversion job for ${repository}@${commit}`)
-        await queue.enqueue('lsif', 'convert', [repository, commit, filename])
-        res.json(null)
-    }))
-
-    app.post('/exists', wrap(async (req: express.Request, res: express.Response): Promise<void> => {
-        const { repository, commit, file } = req.query
-        checkRepository(repository)
-        checkCommit(commit)
-
-        const db = await createDatabase(repository, commit)
-        if (!db) {
-            res.json(false)
-            return
-        }
-
-        const result = !file || (await db.exists(file))
-        res.json(result)
-    }))
-
-    app.post('/request', bodyParser.json({ limit: '1mb' }), wrap(async (req: express.Request, res: express.Response): Promise<void> => {
-        const { repository, commit } = req.query
-        const { path, position, method } = req.body
-        checkRepository(repository)
-        checkCommit(commit)
-        checkMethod(method, ['definitions', 'references', 'hover'])
-        const cleanMethod = method as 'definitions' | 'references' | 'hover'
-
-        const db = await createDatabase(repository, commit)
-        if (!db) {
-            throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
-                status: 404,
-            })
-        }
-
-        res.json(await db[cleanMethod](path, position))
-    }))
+                res.json(await db[cleanMethod](path, position))
+            }
+        )
+    )
 }
 
 /**

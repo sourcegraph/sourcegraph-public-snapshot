@@ -131,7 +131,6 @@ export const JOB_DURATION_HISTOGRAM = new promClient.Histogram({
     buckets: [0.2, 0.5, 1, 2, 5, 10, 30],
 })
 
-
 //
 // Helpers
 
