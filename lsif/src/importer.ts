@@ -3,8 +3,6 @@ import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { DefaultMap } from './default-map'
 import {
     DefinitionModel,
-    DocumentData,
-    DocumentModel,
     MetaModel,
     MonikerData,
     PackageInformationData,
@@ -19,9 +17,11 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
+    DocumentData,
+    DocumentModel,
 } from './models.database'
 import { Edge, MonikerKind, Vertex, RangeId } from 'lsif-protocol'
-import { encodeJSON } from './encoding'
+import { gzipJSON } from './encoding'
 import { EntityManager } from 'typeorm'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from './xrepo'
@@ -136,7 +136,7 @@ async function populateDocumentsTable(
         // Encode and insert document record
         await documentInserter.insert({
             path: documentPath,
-            data: await encodeJSON({
+            data: await gzipJSON({
                 ranges: document.ranges,
                 hoverResults: document.hoverResults,
                 monikers: document.monikers,
@@ -192,7 +192,7 @@ async function populateResultChunksTable(
             continue
         }
 
-        const data = await encodeJSON({
+        const data = await gzipJSON({
             documentPaths: resultChunk.paths,
             documentIdRangeIds: resultChunk.documentIdRangeIds,
         })

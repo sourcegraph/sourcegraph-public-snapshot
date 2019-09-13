@@ -1,5 +1,6 @@
 import { PrimaryGeneratedColumn, Column, Entity, Index } from 'typeorm'
 import { getBatchSize } from './util'
+import { EncodedBloomFilter } from './encoding'
 
 /**
  * The base class for `PackageModel` and `ReferenceModel` as they have nearly
@@ -75,6 +76,6 @@ export class ReferenceModel extends Package {
      * and commit imports from the given package. Testing this filter will prevent the
      * backend from opening databases that will yield no results for a particular symbol.
      */
-    @Column('text')
-    public filter!: string
+    @Column('blob')
+    public filter!: EncodedBloomFilter
 }
