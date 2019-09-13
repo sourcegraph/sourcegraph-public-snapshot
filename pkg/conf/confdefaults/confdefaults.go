@@ -19,10 +19,6 @@ import "github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 // override this configuration via *_CONFIG_FILE environment variables.
 var DevAndTesting = conftypes.RawUnified{
 	Critical: `{
-	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
-	// This is required to be configured for Sourcegraph to work correctly.
-	"externalURL": "http://localhost:3080",
-
 	"auth.providers": [
 		{
 			"type": "builtin",
