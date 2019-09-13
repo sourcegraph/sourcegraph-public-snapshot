@@ -73,16 +73,17 @@ export class Database {
      * @param position The current hover position.
      */
     public async definitions(path: string, position: lsp.Position): Promise<lsp.Location[]> {
-        const { document, range } = await this.getRangeByPosition(path, position)
-        if (!document || !range) {
+        const { document, ranges } = await this.getRangeByPosition(path, position)
+        if (!document || ranges.length === 0) {
             return []
         }
 
-        // First, we try to find the definition result attached to the range or one
-        // of the result sets to which the range is attached.
+        for (const range of ranges) {
+            if (!range.definitionResultId) {
+                continue
+            }
 
-        if (range.definitionResultId) {
-            // We have a definition result in this database.
+            // We have a definition result in this database, return this first.
             const definitionResults = await this.getResultById(range.definitionResultId)
 
             // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
@@ -94,30 +95,34 @@ export class Database {
             }
         }
 
-        // Otherwise, we fall back to a moniker search. We get all the monikers attached
-        // to the range or a result set to which the range is attached. We process each
-        // moniker sequentially in order of priority, where import monikers, if any exist,
-        // will be processed first.
+        // No definition result in this repo; fall back to a moniker search. First, we find
+        // the monikers for each range, from innermost to outermost, such that the set of
+        // monikers for reach range is sorted by priority. Then, we perform a search for
+        // each moniker, in sequence, until valid results are found.
 
-        for (const moniker of sortMonikers(
-            Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'moniker'))
-        )) {
-            if (moniker.kind === 'import') {
-                // This symbol was imported from another database. See if we have xrepo
-                // definition for it.
+        for (const range of ranges) {
+            const monikers = sortMonikers(
+                Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'moniker'))
+            )
 
-                const remoteDefinitions = await this.remoteDefinitions(document, moniker)
-                if (remoteDefinitions) {
-                    return remoteDefinitions
-                }
-            } else {
-                // This symbol was not imported from another database. We search the definitions
-                // table of our own database in case there was a definition that wasn't properly
-                // attached to a result set but did have the correct monikers attached.
+            for (const moniker of monikers) {
+                if (moniker.kind === 'import') {
+                    // This symbol was imported from another database. See if we have xrepo
+                    // definition for it.
 
-                const localDefinitions = await Database.monikerResults(this, DefinitionModel, moniker, path => path)
-                if (localDefinitions) {
-                    return localDefinitions
+                    const remoteDefinitions = await this.remoteDefinitions(document, moniker)
+                    if (remoteDefinitions) {
+                        return remoteDefinitions
+                    }
+                } else {
+                    // This symbol was not imported from another database. We search the definitions
+                    // table of our own database in case there was a definition that wasn't properly
+                    // attached to a result set but did have the correct monikers attached.
+
+                    const localDefinitions = await Database.monikerResults(this, DefinitionModel, moniker, path => path)
+                    if (localDefinitions) {
+                        return localDefinitions
+                    }
                 }
             }
         }
@@ -132,8 +137,8 @@ export class Database {
      * @param position The current hover position.
      */
     public async references(path: string, position: lsp.Position): Promise<lsp.Location[]> {
-        const { document, range } = await this.getRangeByPosition(path, position)
-        if (!document || !range) {
+        const { document, ranges } = await this.getRangeByPosition(path, position)
+        if (!document || ranges.length === 0) {
             return []
         }
 
@@ -142,49 +147,53 @@ export class Database {
         // First, we try to find the reference result attached to the range or one
         // of the result sets to which the range is attached.
 
-        if (range.referenceResultId) {
-            // We have references in this database.
-            locations = locations.concat(
-                await this.convertRangesToLspLocations(
-                    path,
-                    document,
-                    await this.getResultById(range.referenceResultId)
+        for (const range of ranges) {
+            if (range.referenceResultId) {
+                // We have references in this database.
+                locations = locations.concat(
+                    await this.convertRangesToLspLocations(
+                        path,
+                        document,
+                        await this.getResultById(range.referenceResultId)
+                    )
                 )
+            }
+        }
+
+        // Next, we do a moniker search in two stages, described below. We process the
+        // monikers for each range sequentially in order of priority for each stage, such
+        // that import monikers, if any exist, will be processed first.
+
+        for (const range of ranges) {
+            const monikers = sortMonikers(
+                Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'monikers'))
             )
-        }
 
-        // Next, we do a moniker search in two stages, described below. We process each
-        // moniker sequentially in order of priority for each stage, where import monikers,
-        // if any exist, will be processed first.
+            // Next, we search the references table of our own database - this search is necessary,
+            // but may be un-intuitive, but remember that a 'Find References' operation on a reference
+            // should also return references to the definition. These are not necessarily fully linked
+            // in the LSIF data.
 
-        const monikers = sortMonikers(
-            Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'monikers'))
-        )
-
-        // Next, we search the references table of our own database - this search is necessary,
-        // but may be un-intuitive, but remember that a 'Find References' operation on a reference
-        // should also return references to the definition. These are not necessarily fully linked
-        // in the LSIF data.
-
-        for (const moniker of monikers) {
-            locations = locations.concat(await Database.monikerResults(this, ReferenceModel, moniker, path => path))
-        }
-
-        // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
-        // the first moniker for which we received results. As we process monikers in an order that
-        // considers moniker schemes, the first one to get results should be the most desirable.
-
-        for (const moniker of monikers) {
-            if (moniker.kind === 'import') {
-                // Get locations in the defining package
-                locations = locations.concat(await this.remoteMoniker(document, moniker))
+            for (const moniker of monikers) {
+                locations = locations.concat(await Database.monikerResults(this, ReferenceModel, moniker, path => path))
             }
 
-            // Get locations in all packages
-            const remoteResults = await this.remoteReferences(document, moniker)
-            if (remoteResults) {
-                // TODO - determine source of duplication (and below)
-                return uniqWith(locations.concat(remoteResults), isEqual)
+            // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
+            // the first moniker for which we received results. As we process monikers in an order that
+            // considers moniker schemes, the first one to get results should be the most desirable.
+
+            for (const moniker of monikers) {
+                if (moniker.kind === 'import') {
+                    // Get locations in the defining package
+                    locations = locations.concat(await this.remoteMoniker(document, moniker))
+                }
+
+                // Get locations in all packages
+                const remoteResults = await this.remoteReferences(document, moniker)
+                if (remoteResults) {
+                    // TODO - determine source of duplication (and below)
+                    return uniqWith(locations.concat(remoteResults), isEqual)
+                }
             }
         }
 
@@ -198,22 +207,20 @@ export class Database {
      * @param position The current hover position.
      */
     public async hover(path: string, position: lsp.Position): Promise<lsp.Hover | null> {
-        const { document, range } = await this.getRangeByPosition(path, position)
-        if (!document || !range) {
+        const { document, ranges } = await this.getRangeByPosition(path, position)
+        if (!document || ranges.length === 0) {
             return null
         }
 
-        // Try to find the hover content attached to the range or one of the result sets to
-        // which the range is attached. There is no fall-back search via monikers for this
-        // operation.
-
-        if (range.hoverResultId) {
-            return {
-                contents: {
+        for (const range of ranges) {
+            if (range.hoverResultId) {
+                const contents = {
                     kind: lsp.MarkupKind.Markdown,
                     value: mustGet(document.hoverResults, range.hoverResultId, 'hoverResult'),
-                },
-                range: createRange(range),
+                }
+
+                // Return first defined hover result for the inner-most range
+                return { contents, range: createRange(range) }
             }
         }
 
@@ -442,9 +449,9 @@ export class Database {
     }
 
     /**
-     * Return a parsed document that describes the given path as well as the range
-     * from that document that contains the given position. Returns undefined for
-     * both values if one cannot be loaded.
+     * Return a parsed document that describes the given path as well as the ranges
+     * from that document that contains the given position. If multiple ranges are
+     * returned, then the inner-most ranges will occur before the outer-most ranges.
      *
      * @param path The path of the document.
      * @param position The user's hover position.
@@ -452,19 +459,13 @@ export class Database {
     private async getRangeByPosition(
         path: string,
         position: lsp.Position
-    ): Promise<{ document: DocumentData | undefined; range: RangeData | undefined }> {
+    ): Promise<{ document: DocumentData | undefined; ranges: RangeData[] }> {
         const document = await this.getDocumentByPath(path)
         if (!document) {
-            return { document: undefined, range: undefined }
+            return { document: undefined, ranges: [] }
         }
 
-        for (const range of document.ranges.values()) {
-            if (comparePosition(range, position) === 0) {
-                return { document, range }
-            }
-        }
-
-        return { document: undefined, range: undefined }
+        return { document, ranges: findRanges(document.ranges.values(), position) }
     }
 
     /**
@@ -559,6 +560,31 @@ export class Database {
             callback
         )
     }
+}
+
+/**
+ * Return the set of ranges that contain the given position. If multiple ranges
+ * are returned, then the inner-most ranges will occur before the outer-most
+ * ranges.
+ *
+ * @param ranges The set of possible ranges.
+ * @param position The user's hover position.
+ */
+export function findRanges(ranges: Iterable<RangeData>, position: lsp.Position): RangeData[] {
+    const filtered = []
+    for (const range of ranges) {
+        if (comparePosition(range, position) === 0) {
+            filtered.push(range)
+        }
+    }
+
+    return filtered.sort((a, b) => {
+        if (comparePosition(a, { line: b.startLine, character: b.startCharacter }) === 0) {
+            return +1
+        }
+
+        return -1
+    })
 }
 
 /**
