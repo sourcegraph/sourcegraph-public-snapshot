@@ -1,9 +1,8 @@
 import H from 'history'
 import { uniqueId } from 'lodash'
 import React, { createRef, useEffect, useLayoutEffect, useState } from 'react'
-import { from } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { EditorId } from '../../../shared/src/api/client/services/editorService'
+import { EditorId, observeEditorAndModel } from '../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../shared/src/api/client/services/modelService'
 import { PanelViewWithComponent } from '../../../shared/src/api/client/services/view'
 import { SNIPPET_URI_SCHEME } from '../../../shared/src/api/client/types/textDocument'
@@ -60,7 +59,6 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensi
         setEditorId(editor)
         return () => {
             extensionsController.services.editor.removeEditor(editor)
-            extensionsController.services.model.removeModel(model.uri)
         }
     }, [
         initialModelUriScheme,
@@ -84,11 +82,15 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensi
         if (!editorId) {
             return () => undefined
         }
-        const subscription = from(extensionsController.services.editor.observeEditorAndModel(editorId))
+        const subscription = observeEditorAndModel(
+            editorId,
+            extensionsController.services.editor,
+            extensionsController.services.model
+        )
             .pipe(map(editor => editor.model.text))
             .subscribe(text => setModelText(text || null))
         return () => subscription.unsubscribe()
-    }, [editorId, initialModelLanguageId, extensionsController.services.editor])
+    }, [editorId, initialModelLanguageId, extensionsController.services.editor, extensionsController.services.model])
     const allPanelViews: PanelViewWithComponent[] | null =
         initialModelLanguageId === 'markdown' && modelText !== null
             ? [...(panelViews || []), { title: 'Preview', content: modelText, priority: 0 }]

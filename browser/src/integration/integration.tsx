@@ -5,6 +5,7 @@ import React from 'react'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import { injectCodeIntelligence } from '../libs/code_intelligence/inject'
 import { EXTENSION_MARKER_ID, injectExtensionMarker, NATIVE_INTEGRATION_ACTIVATED } from '../libs/sourcegraph/inject'
+import { getAssetsURL } from '../shared/util/context'
 
 const IS_EXTENSION = false
 
@@ -21,11 +22,7 @@ function init(): void {
         throw new Error('window.SOURCEGRAPH_URL is undefined')
     }
 
-    // Allow the assetsURL to be configurable for code hosts that self-host the integration bundle
-    let assetsURL = window.SOURCEGRAPH_ASSETS_URL || new URL('/.assets/extension/', sourcegraphURL).href
-    if (!assetsURL.endsWith('/')) {
-        assetsURL += '/'
-    }
+    const assetsURL = getAssetsURL(sourcegraphURL)
 
     if (document.getElementById(EXTENSION_MARKER_ID) !== null) {
         // If the extension marker already exists, it means the browser extension is currently executing.

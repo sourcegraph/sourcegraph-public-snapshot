@@ -7,15 +7,27 @@ import { getWordAtText } from '../../../util/wordHelpers'
 export class ExtDocument implements sourcegraph.TextDocument {
     private _eol: string
     private _lines: string[]
+    public uri: string
+    public languageId: string
+    public text: string | undefined
 
     constructor(private model: Pick<sourcegraph.TextDocument, 'uri' | 'languageId' | 'text'>) {
         this._eol = getEOL(model.text || '')
         this._lines = model.text !== undefined ? model.text.split(this._eol) : []
+        this.uri = this.model.uri
+        this.languageId = this.model.languageId
+        this.text = this.model.text
     }
 
-    public readonly uri = this.model.uri
-    public readonly languageId = this.model.languageId
-    public readonly text = this.model.text
+    public update({ text }: Pick<sourcegraph.TextDocument, 'text'>): void {
+        this.model = {
+            ...this.model,
+            text,
+        }
+        this._eol = getEOL(text || '')
+        this._lines = text !== undefined ? text.split(this._eol) : []
+        this.text = text
+    }
 
     public offsetAt(position: sourcegraph.Position): number {
         this.throwIfNoModelText()

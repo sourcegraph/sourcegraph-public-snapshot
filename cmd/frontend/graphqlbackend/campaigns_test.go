@@ -2,21 +2,35 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"flag"
+	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var update = flag.Bool("update", false, "update testdata")
 
 func TestCampaigns(t *testing.T) {
 	if testing.Short() {
@@ -26,11 +40,20 @@ func TestCampaigns(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
-	sr := schemaResolver{
-		A8NStore: a8n.NewStore(dbconn.Global),
+	cf, save := newGithubClientFactory(t, "test-campaigns")
+	defer save()
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	schema, err := graphql.ParseSchema(Schema, &sr)
+	sr := schemaResolver{
+		A8NStore:    a8n.NewStoreWithClock(dbconn.Global, clock),
+		HTTPFactory: cf,
+	}
+
+	s, err := graphql.ParseSchema(Schema, &sr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +70,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	mustExec(ctx, t, schema, nil, &users, `
+	mustExec(ctx, t, s, nil, &users, `
 		fragment u on User { id, databaseID, siteAdmin }
 		mutation {
 			admin: createUser(username: "admin") {
@@ -73,7 +96,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	ctx = actor.WithActor(ctx, actor.FromUser(users.Admin.DatabaseID))
-	mustExec(ctx, t, schema, nil, &orgs, `
+	mustExec(ctx, t, s, nil, &orgs, `
 		fragment o on Org { id, name }
 		mutation {
 			acme: createOrganization(name: "ACME") { ...o }
@@ -112,7 +135,7 @@ func TestCampaigns(t *testing.T) {
 		},
 	}
 
-	mustExec(ctx, t, schema, input, &campaigns, `
+	mustExec(ctx, t, s, input, &campaigns, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -137,17 +160,19 @@ func TestCampaigns(t *testing.T) {
 		t.Fatalf("have orgs's campaign namespace id %q, want %q", have, want)
 	}
 
-	var listed struct {
-		First, All struct {
-			Nodes      []Campaign
-			TotalCount int
-			PageInfo   struct {
-				HasNextPage bool
-			}
+	type CampaignConnection struct {
+		Nodes      []Campaign
+		TotalCount int
+		PageInfo   struct {
+			HasNextPage bool
 		}
 	}
 
-	mustExec(ctx, t, schema, nil, &listed, `
+	var listed struct {
+		First, All CampaignConnection
+	}
+
+	mustExec(ctx, t, s, nil, &listed, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -187,6 +212,174 @@ func TestCampaigns(t *testing.T) {
 
 	if listed.All.PageInfo.HasNextPage {
 		t.Errorf("wrong page info: %+v", listed.All.PageInfo.HasNextPage)
+	}
+
+	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	externalService := &repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repos: []string{"sourcegraph/sourcegraph"},
+		}),
+	}
+
+	err = store.UpsertExternalServices(ctx, externalService)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	src, err := repos.NewGithubSource(externalService, cf)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	repo, err := src.GetRepo(ctx, "sourcegraph/sourcegraph")
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	err = store.UpsertRepos(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graphqlRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
+
+	type Changeset struct {
+		ID         string
+		Repository struct{ ID string }
+		Campaigns  CampaignConnection
+		CreatedAt  string
+		UpdatedAt  string
+		Title      string
+		Body       string
+		State      string
+	}
+
+	var result struct {
+		Changeset Changeset
+	}
+
+	input = map[string]interface{}{
+		"repository": graphqlRepoID,
+		"externalID": "999",
+	}
+
+	mustExec(ctx, t, s, input, &result, `
+		fragment cs on Changeset {
+			id
+			repository { id }
+			createdAt
+			updatedAt
+			title
+			body
+			state
+		}
+		mutation($repository: ID!, $externalID: String!) {
+			changeset: createChangeset(repository: $repository, externalID: $externalID) {
+				...cs
+			}
+		}
+	`)
+
+	{
+		want := Changeset{
+			Repository: struct{ ID string }{ID: graphqlRepoID},
+			CreatedAt:  now.Format(time.RFC3339),
+			UpdatedAt:  now.Format(time.RFC3339),
+			Title:      "add extension filter to filter bar",
+			Body:       "Enables adding extension filters to the filter bar by rendering the extension filter as filter chips inside the filter bar.\r\nWIP for https://github.com/sourcegraph/sourcegraph/issues/962\r\n\r\n> This PR updates the CHANGELOG.md file to describe any user-facing changes.\r\n.\r\n",
+			State:      "MERGED",
+		}
+
+		have := result.Changeset
+		if have.ID == "" {
+			t.Fatal("Changeset ID is empty")
+		}
+
+		want.ID = have.ID
+		if !reflect.DeepEqual(have, want) {
+			t.Fatal(cmp.Diff(have, want))
+		}
+	}
+
+	type ChangesetConnection struct {
+		Nodes      []Changeset
+		TotalCount int
+		PageInfo   struct {
+			HasNextPage bool
+		}
+	}
+
+	type CampaignWithChangesets struct {
+		ID          string
+		Name        string
+		Description string
+		Author      User
+		CreatedAt   string
+		UpdatedAt   string
+		Namespace   UserOrg
+		Changesets  ChangesetConnection
+	}
+
+	var addChangesetResult struct{ Campaign CampaignWithChangesets }
+
+	input = map[string]interface{}{
+		"changeset": result.Changeset.ID,
+		"campaign":  campaigns.Admin.ID,
+	}
+
+	mustExec(ctx, t, s, input, &addChangesetResult, `
+		fragment u on User { id, databaseID, siteAdmin }
+		fragment o on Org  { id, name }
+
+		fragment cs on Changeset {
+			id
+			repository { id }
+			createdAt
+			updatedAt
+			campaigns { nodes { id } }
+		}
+
+		fragment c on Campaign {
+			id, name, description, createdAt, updatedAt
+			author    { ...u }
+			namespace {
+				... on User { ...u }
+				... on Org  { ...o }
+			}
+			changesets {
+				nodes { ...cs }
+				totalCount
+				pageInfo { hasNextPage }
+			}
+		}
+		mutation($changeset: ID!, $campaign: ID!) {
+			campaign: addChangesetToCampaign(changeset: $changeset, campaign: $campaign) {
+				...c
+			}
+		}
+	`)
+
+	if addChangesetResult.Campaign.Changesets.TotalCount != 1 {
+		t.Fatalf(
+			"campaign changesets totalcount is wrong. got=%d",
+			addChangesetResult.Campaign.Changesets.TotalCount,
+		)
+	}
+
+	wantChangesetID := result.Changeset.ID
+	haveChangesetID := addChangesetResult.Campaign.Changesets.Nodes[0].ID
+	if haveChangesetID != wantChangesetID {
+		t.Errorf("wrong changesets added to campaign. want=%s, have=%s", wantChangesetID, haveChangesetID)
+	}
+
+	wantCampaignID := campaigns.Admin.ID
+	haveCampaignID := addChangesetResult.Campaign.Changesets.Nodes[0].Campaigns.Nodes[0].ID
+	if haveCampaignID != wantCampaignID {
+		t.Errorf("wrong campaign added to changeset. want=%s, have=%s", wantCampaignID, haveCampaignID)
 	}
 }
 
@@ -244,4 +437,48 @@ func toJSON(t testing.TB, v interface{}) string {
 	}
 
 	return formatted
+}
+
+func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
+	t.Helper()
+
+	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+
+	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mw := httpcli.NewMiddleware(githubProxyRedirectMiddleware)
+
+	hc := httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec))
+
+	return hc, func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	}
+}
+
+func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
+	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+		if req.URL.Hostname() == "github-proxy" {
+			req.URL.Host = "api.github.com"
+			req.URL.Scheme = "https"
+		}
+		return cli.Do(req)
+	})
+}
+
+func marshalJSON(t testing.TB, v interface{}) string {
+	t.Helper()
+
+	bs, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(bs)
 }

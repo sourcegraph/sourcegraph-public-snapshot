@@ -2,7 +2,9 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"reflect"
@@ -12,6 +14,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -26,6 +30,90 @@ func TestExampleRepositoryQuerySplit(t *testing.T) {
 	have := exampleRepositoryQuerySplit(q)
 	if want != have {
 		t.Errorf("unexpected example query for %s:\nwant: %s\nhave: %s", q, want, have)
+	}
+}
+
+func TestGithubSource_LoadChangeset(t *testing.T) {
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "found",
+			cs: &Changeset{
+				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				Changeset: &a8n.Changeset{ExternalID: "5550"},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_LoadChangeset_" + tc.name
+
+		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_TOKEN"),
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err = githubSrc.LoadChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			data, err := json.MarshalIndent(tc.cs.Changeset.Metadata, " ", " ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			path := "testdata/golden/" + tc.name
+			if update(tc.name) {
+				if err = ioutil.WriteFile(path, data, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(data), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
 	}
 }
 

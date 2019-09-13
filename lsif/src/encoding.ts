@@ -19,12 +19,16 @@ const BLOOM_FILTER_BITS = readEnvInt('BLOOM_FILTER_BITS', 64 * 1024)
 const BLOOM_FILTER_NUM_HASH_FUNCTIONS = readEnvInt('BLOOM_FILTER_NUM_HASH_FUNCTIONS', 16)
 
 /**
- * Create a bloom filter containing the given values and return it as a base64
- * encoded gzipped string.
+ * A type that describes a the encoded version of a bloom filter.
+ */
+export type EncodedBloomFilter = Buffer
+
+/**
+ * Create a bloom filter containing the given values and return an encoded verion.
  *
  * @param values The values to add to the bloom filter.
  */
-export function createFilter(values: string[]): Promise<string> {
+export function createFilter(values: string[]): Promise<EncodedBloomFilter> {
     const filter = new BloomFilter(BLOOM_FILTER_BITS, BLOOM_FILTER_NUM_HASH_FUNCTIONS)
     for (const value of values) {
         filter.add(value)
@@ -36,7 +40,7 @@ export function createFilter(values: string[]): Promise<string> {
     // Store the number of hash functions used to create this as it may change after
     // this value is serialized. We don't want to test with more hash functions than
     // it was created with, otherwise we'll get false negatives.
-    return encodeJSON({ numHashFunctions: BLOOM_FILTER_NUM_HASH_FUNCTIONS, buckets })
+    return gzipJSON({ numHashFunctions: BLOOM_FILTER_NUM_HASH_FUNCTIONS, buckets })
 }
 
 /**
@@ -47,45 +51,27 @@ export function createFilter(values: string[]): Promise<string> {
  * @param filter The encoded filter.
  * @param value The value to test membership.
  */
-export async function testFilter(filter: string, value: string): Promise<boolean> {
-    const { numHashFunctions, buckets } = await decodeJSON(filter)
+export async function testFilter(filter: EncodedBloomFilter, value: string): Promise<boolean> {
+    const { numHashFunctions, buckets } = await gunzipJSON(filter)
     return new BloomFilter(buckets, numHashFunctions).test(value)
 }
 
 /**
- * Return the base64-encoded gzipped JSON representation of `value`.
+ * Return the gzipped JSON representation of `value`.
  *
  * @param value The value to encode.
  */
-export function encodeJSON<T>(value: T): Promise<string> {
-    return b64gzip(dumpJSON(value))
+export function gzipJSON<T>(value: T): Promise<Buffer> {
+    return gzip(Buffer.from(dumpJSON(value)))
 }
 
 /**
- * Reverse the operation of `encodeJSON`.
+ * Reverse the operation of `gzipJSON`.
  *
  * @param value The value to decode.
  */
-export async function decodeJSON<T>(value: string): Promise<T> {
-    return parseJSON(await unb64gzip(value))
-}
-
-/**
- * Return the base64-encoded gzipped representation of `value`.
- *
- * @param value The value to encode.
- */
-async function b64gzip(value: string): Promise<string> {
-    return (await gzip(Buffer.from(value))).toString('base64')
-}
-
-/**
- * Reverse the operation of `b64gzip`.
- *
- * @param value The value to decode.
- */
-async function unb64gzip(value: string): Promise<string> {
-    return (await gunzip(Buffer.from(value, 'base64'))).toString()
+export async function gunzipJSON<T>(value: Buffer): Promise<T> {
+    return parseJSON((await gunzip(value)).toString())
 }
 
 /**

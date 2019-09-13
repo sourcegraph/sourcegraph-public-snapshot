@@ -5,6 +5,7 @@ import (
 	"regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
@@ -87,5 +88,6 @@ type Args struct {
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
 
-	Zoekt *searchbackend.Zoekt
+	Zoekt        *searchbackend.Zoekt
+	SearcherURLs *endpoint.Map
 }
