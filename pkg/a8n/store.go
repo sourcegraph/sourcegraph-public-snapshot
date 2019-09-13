@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
 // Store exposes methods to read and write a8n domain models
@@ -698,17 +700,36 @@ func closeErr(c io.Closer, err *error) {
 }
 
 func scanChangeset(t *Changeset, s scanner) error {
-	t.Metadata = json.RawMessage{}
-	return s.Scan(
+	var metadata json.RawMessage
+
+	err := s.Scan(
 		&t.ID,
 		&t.RepoID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
-		&t.Metadata,
+		&metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
 		&t.ExternalServiceType,
 	)
+
+	if err != nil {
+		return err
+	}
+
+	typ := strings.ToLower(t.ExternalServiceType)
+	switch typ {
+	case "github":
+		t.Metadata = new(github.PullRequest)
+	default:
+		return nil
+	}
+
+	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
+		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", typ)
+	}
+
+	return nil
 }
 
 func scanCampaign(c *Campaign, s scanner) error {
