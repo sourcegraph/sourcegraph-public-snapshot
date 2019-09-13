@@ -77,6 +77,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addWebApp,
+			addLSIFServer,
 			addSharedTests,
 			addPostgresBackcompat,
 			addGoTests,

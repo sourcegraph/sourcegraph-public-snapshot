@@ -73,6 +73,13 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
+// Tests the LSIF server.
+func addLSIFServer(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":jest:",
+		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
+		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
+}
+
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
@@ -246,7 +253,7 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 
 		cmdDir := func() string {
 			cmdDirByApp := map[string]string{
-				"lsif-server": "lsif/server",
+				"lsif-server": "lsif",
 			}
 			if cmdDir, ok := cmdDirByApp[app]; ok {
 				return cmdDir
