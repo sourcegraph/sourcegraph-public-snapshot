@@ -16,7 +16,7 @@ require (
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20190506164543-d2eda7129713 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
-	github.com/containerd/containerd v1.2.8 // indirect
+	github.com/containerd/containerd v1.2.9 // indirect
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/cosiner/argv v0.0.1 // indirect
@@ -43,7 +43,7 @@ require (
 	github.com/fatih/astrewrite v0.0.0-20190527122930-f5295d6854fb
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
-	github.com/felixge/httpsnoop v1.0.0
+	github.com/felixge/httpsnoop v1.0.1
 	github.com/gchaincl/sqlhooks v1.1.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
@@ -53,11 +53,11 @@ require (
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/glycerine/goconvey v0.0.0-20190410193231-58a59202ab31 // indirect
 	github.com/go-critic/go-critic v0.3.4 // indirect
-	github.com/go-delve/delve v1.3.0
+	github.com/go-delve/delve v1.3.1
 	github.com/go-redsync/redsync v1.3.0
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.3.0 // indirect
-	github.com/golang-migrate/migrate/v4 v4.6.1
+	github.com/golang-migrate/migrate/v4 v4.6.2
 	github.com/golang/gddo v0.0.0-20190815223733-287de01127ef
 	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6
 	github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6 // indirect
@@ -106,7 +106,7 @@ require (
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8
 	github.com/kevinburke/go-bindata v3.13.0+incompatible
-	github.com/klauspost/compress v1.8.1 // indirect
+	github.com/klauspost/compress v1.8.3 // indirect
 	github.com/klauspost/cpuid v1.2.1 // indirect
 	github.com/kr/text v0.1.0
 	github.com/kylelemons/godebug v1.1.0
@@ -185,6 +185,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/zenazn/goji v0.9.0 // indirect
+	go.opencensus.io v0.22.1 // indirect
 	go.starlark.net v0.0.0-20190820173200-988906f77f65 // indirect
 	go.uber.org/automaxprocs v1.2.0
 	golang.org/x/arch v0.0.0-20190815191158-8a70ba74b3a1 // indirect
@@ -198,7 +199,7 @@ require (
 	google.golang.org/api v0.9.0 // indirect
 	google.golang.org/appengine v1.6.2 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
-	google.golang.org/grpc v1.23.0 // indirect
+	google.golang.org/grpc v1.23.1 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
