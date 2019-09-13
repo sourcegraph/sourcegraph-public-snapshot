@@ -12,7 +12,7 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('cpp-')
+        storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
         await backend.insertDump(input, 'five', createCommit('five'))

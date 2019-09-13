@@ -13,7 +13,7 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('typescript-')
+        storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
         const inputs: { input: Readable; repository: string; commit: string }[] = []
 
