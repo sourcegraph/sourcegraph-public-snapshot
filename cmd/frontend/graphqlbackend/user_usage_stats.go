@@ -80,12 +80,13 @@ type logEventInput struct {
 func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Input *logEventInput
 }) (*EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() || !conf.EnableEventLogging() {
+	if envvar.SourcegraphDotComMode() || !conf.EventLoggingEnabled() {
 		return nil, nil
 	}
 
 	actor := actor.FromContext(ctx)
 	return nil, usagestats.LogEvent(
+		ctx,
 		args.Input.Event,
 		args.Input.URL,
 		actor.UID,

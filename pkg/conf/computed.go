@@ -311,7 +311,7 @@ func SearchSymbolsParallelism() int {
 	return val
 }
 
-func EnableEventLogging() bool {
+func EventLoggingEnabled() bool {
 	val := Get().ExperimentalFeatures.EventLogging
 	if val == "" {
 		return true
