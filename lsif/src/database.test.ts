@@ -63,19 +63,10 @@ describe('mapRangesToLocations', () => {
             monikerIds: new Set<MonikerId>(),
         })
 
-        expect(mapRangesToLocations(ranges, 'src/position.ts', [1, 2, 4])).toEqual([
-            lsp.Location.create('src/position.ts', {
-                start: { line: 1, character: 1 },
-                end: { line: 1, character: 2 },
-            }),
-            lsp.Location.create('src/position.ts', {
-                start: { line: 3, character: 1 },
-                end: { line: 3, character: 2 },
-            }),
-            lsp.Location.create('src/position.ts', {
-                start: { line: 2, character: 1 },
-                end: { line: 2, character: 2 },
-            }),
-        ])
+        const locations = mapRangesToLocations(ranges, 'src/position.ts', new Set([1, 2, 4]))
+        expect(locations).toContainEqual(lsp.Location.create('src/position.ts', { start: { line: 1, character: 1 }, end: { line: 1, character: 2 }, }))
+        expect(locations).toContainEqual(lsp.Location.create('src/position.ts', { start: { line: 3, character: 1 }, end: { line: 3, character: 2 }, }))
+        expect(locations).toContainEqual(lsp.Location.create('src/position.ts', { start: { line: 2, character: 1 }, end: { line: 2, character: 2 }, }))
+        expect(locations).toHaveLength(3)
     })
 })
