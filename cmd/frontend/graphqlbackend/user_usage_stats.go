@@ -69,16 +69,12 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	return nil, usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
 }
 
-type logEventInput struct {
+func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 	URL          string
 	Source       string
 	Argument     *string
-}
-
-func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
-	Input *logEventInput
 }) (*EmptyResponse, error) {
 	if envvar.SourcegraphDotComMode() || !conf.EventLoggingEnabled() {
 		return nil, nil
@@ -87,11 +83,11 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	actor := actor.FromContext(ctx)
 	return nil, usagestats.LogEvent(
 		ctx,
-		args.Input.Event,
-		args.Input.URL,
+		args.Event,
+		args.URL,
 		actor.UID,
-		args.Input.UserCookieID,
-		args.Input.Source,
-		args.Input.Argument,
+		args.UserCookieID,
+		args.Source,
+		args.Argument,
 	)
 }

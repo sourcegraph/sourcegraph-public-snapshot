@@ -62,7 +62,7 @@ export const logEvent = (
     requestGraphQL<GQL.IMutation>({
         request: gql`
             mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
-                logEvent(input: { event: $event, userCookieID: $userCookieID, url: $url, source: $source }) {
+                logEvent(event: $event, userCookieID: $userCookieID, url: $url, source: $source) {
                     alwaysNil
                 }
             }
