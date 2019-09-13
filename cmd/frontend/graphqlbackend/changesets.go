@@ -29,15 +29,6 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	changeset := &a8n.Changeset{
-		RepoID:     int32(repoID),
-		ExternalID: args.ExternalID,
-	}
-
-	if err = r.A8NStore.CreateChangeset(ctx, changeset); err != nil {
-		return nil, err
-	}
-
 	store := repos.NewDBStore(r.A8NStore.DB(), sql.TxOptions{})
 	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{
 		IDs: []uint32{uint32(repoID)},
@@ -64,6 +55,18 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 	if len(es) == 0 {
 		return nil, errors.Errorf("repo %q has no external services", args.Repository)
 	}
+
+	changeset := &a8n.Changeset{
+		RepoID:              int32(repo.ID),
+		ExternalID:          args.ExternalID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+	}
+
+	if err = r.A8NStore.CreateChangeset(ctx, changeset); err != nil {
+		return nil, err
+	}
+
+	// Only fetch metadata if this changeset didn't exist in the database.
 
 	src, err := repos.NewSource(es[0], r.HTTPFactory)
 	if err != nil {
@@ -208,4 +211,12 @@ func (r *changesetResolver) CreatedAt() DateTime {
 
 func (r *changesetResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.Changeset.UpdatedAt}
+}
+
+func (r *changesetResolver) Title() (string, error) {
+	return r.Changeset.Title()
+}
+
+func (r *changesetResolver) Body() (string, error) {
+	return r.Changeset.Body()
 }

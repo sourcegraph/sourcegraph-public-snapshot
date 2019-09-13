@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
 // Store exposes methods to read and write a8n domain models
@@ -92,9 +93,10 @@ INSERT INTO changesets (
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 )
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repo_id,
@@ -102,7 +104,8 @@ RETURNING
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 `
 
 func (s *Store) createChangesetQuery(t *Changeset) (*sqlf.Query, error) {
@@ -132,6 +135,7 @@ func (s *Store) createChangesetQuery(t *Changeset) (*sqlf.Query, error) {
 		metadata,
 		campaignIDs,
 		t.ExternalID,
+		t.ExternalServiceType,
 	), nil
 }
 
@@ -207,7 +211,8 @@ SELECT
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 FROM changesets
 WHERE %s
 LIMIT 1
@@ -264,7 +269,8 @@ SELECT
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 FROM changesets
 WHERE %s
 ORDER BY id ASC
@@ -317,8 +323,9 @@ SET (
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
-) = (%s, %s, %s, %s, %s, %s)
+	external_id,
+	external_service_type
+) = (%s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
 	id,
@@ -327,7 +334,8 @@ RETURNING
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 `
 
 func (s *Store) updateChangesetQuery(c *Changeset) (*sqlf.Query, error) {
@@ -351,6 +359,7 @@ func (s *Store) updateChangesetQuery(c *Changeset) (*sqlf.Query, error) {
 		metadata,
 		campaignIDs,
 		c.ExternalID,
+		c.ExternalServiceType,
 		c.ID,
 	), nil
 }
@@ -690,16 +699,35 @@ func closeErr(c io.Closer, err *error) {
 }
 
 func scanChangeset(t *Changeset, s scanner) error {
-	t.Metadata = json.RawMessage{}
-	return s.Scan(
+	var metadata json.RawMessage
+
+	err := s.Scan(
 		&t.ID,
 		&t.RepoID,
 		&t.CreatedAt,
 		&t.UpdatedAt,
-		&t.Metadata,
+		&metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
+		&t.ExternalServiceType,
 	)
+
+	if err != nil {
+		return err
+	}
+
+	switch t.ExternalServiceType {
+	case github.ServiceType:
+		t.Metadata = new(github.PullRequest)
+	default:
+		return nil
+	}
+
+	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
+		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.ExternalServiceType)
+	}
+
+	return nil
 }
 
 func scanCampaign(c *Campaign, s scanner) error {
