@@ -875,7 +875,6 @@ export function injectCodeIntelligenceToCodeHost(
                 // We don't need to unsubscribe if the extension starts with disabled state.
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
-                    subscriptions.remove(codeHostSubscription)
                 }
                 console.log('Browser extension is disabled')
             } else {
