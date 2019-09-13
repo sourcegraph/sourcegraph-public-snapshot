@@ -1,13 +1,14 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
-import { convertLsif } from './conversion'
+import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { convertLsif } from './conversion'
 import { createCommit, createLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
+import { CodeLensResolveRequest } from 'vscode-languageserver-protocol'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -35,19 +36,17 @@ describe('Database', () => {
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
 
         const input = fs
-            .createReadStream('./test-data/typescript/linked-references/data/test.lsif.gz')
+            .createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
             .pipe(zlib.createGunzip())
         const database = createDatabaseFilename(storageRoot, repository, commit)
         const { packages, references } = await convertLsif(input, database)
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all refs of `foo`', async () => {
-        const db = createDatabase('data', createCommit('data'))
+        const db = createDatabase(repository, commit)
 
         const positions = [
             { line: 1, character: 5 },

@@ -1,9 +1,9 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
-import { convertLsif } from './conversion'
+import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { convertLsif } from './conversion'
 import { createCommit, createLocation, createRemoteLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
@@ -29,7 +29,7 @@ describe('Database', () => {
         )
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('typescript-')
+        storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
 
         for (const { input, repository, commit } of createTestInputs()) {
@@ -39,9 +39,7 @@ describe('Database', () => {
         }
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all defs of `add` from repo a', async () => {
         const db = createDatabase('a', createCommit('a'))
