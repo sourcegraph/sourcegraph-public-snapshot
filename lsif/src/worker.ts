@@ -1,17 +1,15 @@
-import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
-import uuid from 'uuid'
-import { convertLsif } from './conversion'
-import { createDatabaseFilename, createDirectory, logErrorAndExit, readEnvInt } from './util'
+import { createDirectory, logErrorAndExit, readEnvInt } from './util'
 import { JobsHash, Worker, Job } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
 import { ConnectionCache } from './cache'
-import { CONNECTION_CACHE_CAPACITY_GAUGE } from './metrics'
+import { CONNECTION_CACHE_CAPACITY_GAUGE, JOB_EVENTS_COUNTER, JOB_DURATION_HISTOGRAM } from './metrics'
+import { createConvertJob, JobClasses } from './jobs'
+import { JobMeta, RealWorker } from './queue'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -62,54 +60,13 @@ async function main(): Promise<void> {
     const filename = path.join(STORAGE_ROOT, 'xrepo.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
-    const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
-    }
-
     // Start metrics server
     startMetricsServer()
 
     // Create worker and start processing jobs
-    await startWorker(jobFunctions)
-}
-
-/**
- * Create a job that takes a repository, commit, and filename containing the gzipped
- * input of an LSIF dump and converts it to a SQLite database. This will also populate
- * the cross-repo database for this dump.
- *
- * @param xrepoDatabase The cross-repo database.
- */
-function createConvertJob(
-    xrepoDatabase: XrepoDatabase
-): (repository: string, commit: string, filename: string) => Promise<void> {
-    return async (repository, commit, filename) => {
-        console.log(`Converting ${repository}@${commit}`)
-
-        const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
-        const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
-
-        try {
-            // Create database in a temp path
-            const { packages, references } = await convertLsif(input, tempFile)
-
-            // Move the temp file where it can be found by the server
-            await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
-
-            // Add the new database to the xrepo db
-            await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
-        } catch (e) {
-            console.error(`Failed to convert ${repository}@${commit}: ${e && e.message}`)
-
-            // Don't leave busted artifacts
-            await fs.unlink(tempFile)
-            throw e
-        }
-
-        // Remove input
-        await fs.unlink(filename)
-        console.log(`Successfully converted ${repository}@${commit}`)
-    }
+    await startWorker({
+        'convert': createConvertJob(STORAGE_ROOT, xrepoDatabase),
+    })
 }
 
 /**
@@ -117,7 +74,7 @@ function createConvertJob(
  *
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
-async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) => Promise<any> }): Promise<void> {
     const connectionOptions = {
         host: REDIS_HOST,
         port: REDIS_PORT,
@@ -125,25 +82,41 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     }
 
     const jobs: JobsHash = {}
-    for (const key of Object.keys(jobFunctions)) {
-        jobs[key] = { perform: jobFunctions[key] }
+    for (const [key, fn] of Object.entries(jobFunctions)) {
+        jobs[key] = { perform: fn }
     }
 
-    const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs)
+    // Create worker and attach loggers to the interesting events
+    const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs) as RealWorker
     worker.on('start', () => console.log('Worker started'))
     worker.on('end', () => console.log('Worker ended'))
     worker.on('poll', () => console.log('Polling queue'))
     worker.on('ping', () => console.log('Pinging queue'))
-    worker.on('job', (_: string, job: Job<any>) => console.log(`Working on job ${JSON.stringify(job)}`))
-    worker.on('success', (_: string, job: Job<any>, result: any) =>
-        console.log(`Successfully completed ${JSON.stringify(job)} >> >> ${result}`)
-    )
-    worker.on('failure', (_: string, job: Job<any>, failure: any) =>
-        console.log(`Failed to perform ${JSON.stringify(job)} >> >> ${failure}`)
-    )
     worker.on('cleaning_worker', (worker: string, pid: string) => console.log(`Cleaning old worker ${worker}:${pid}`))
     worker.on('error', logErrorAndExit)
 
+    let end: (() => void) | undefined
+
+    worker.on('job', (_: string, job: Job<any> & JobMeta) => {
+        console.log(`Working on job ${JSON.stringify(job)}`)
+        end = JOB_DURATION_HISTOGRAM.labels(job.class).startTimer()
+    })
+
+    worker.on('success', (_: string, job: Job<any> & JobMeta, result: any) => {
+        console.log(`Completed job ${JSON.stringify(job)} >> ${result}`)
+        JOB_EVENTS_COUNTER.labels(job.class, 'success').inc()
+        end && end()
+        end = undefined
+    })
+
+    worker.on('failure', (_: string, job: Job<any> & JobMeta, failure: any) => {
+        console.log(`Failed job ${JSON.stringify(job)} >> ${failure}`)
+        JOB_EVENTS_COUNTER.labels(job.class, 'failure').inc()
+        end && end()
+        end = undefined
+    })
+
+    // Start worker
     await worker.connect()
     exitHook(() => worker.end())
     worker.start().catch(logErrorAndExit)
