@@ -65,7 +65,7 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		return nil, errors.Errorf("repo %q has no external services", args.Repository)
 	}
 
-	src, err := repos.NewSource(es[0], nil)
+	src, err := repos.NewSource(es[0], r.HTTPFactory)
 	if err != nil {
 		return nil, err
 	}
