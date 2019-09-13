@@ -1,6 +1,15 @@
+import promClient from 'prom-client'
+import Yallist from 'yallist'
 import { Connection, createConnection, EntityManager } from 'typeorm'
 import { DocumentData, ResultChunkData } from './models.database'
-import Yallist from 'yallist'
+import {
+    CONNECTION_CACHE_EVENTS_COUNTER,
+    CONNECTION_CACHE_SIZE_GAUGE,
+    DOCUMENT_CACHE_SIZE_GAUGE,
+    DOCUMENT_CACHE_EVENTS_COUNTER,
+    RESULT_CHUNK_CACHE_SIZE_GAUGE,
+    RESULT_CHUNK_CACHE_EVENTS_COUNTER,
+} from './metrics'
 
 /**
  * A wrapper around a cache value promise.
@@ -39,6 +48,24 @@ interface CacheEntry<K, V> {
 }
 
 /**
+ * A bag of prometheus metric objects that apply to a particular
+ * instance of `GenericCache`.
+ */
+interface CacheMetrics {
+    /**
+     * A metric incremented on each cache insertion and decremented on
+     * each cache eviction.
+     */
+    sizeGauge: promClient.Gauge
+
+    /**
+     * A metric incremented on each cache hit, miss, and eviction. A `type`
+     * label is applied to differentiate the events.
+     */
+    eventsCounter: promClient.Counter
+}
+
+/**
  * A generic LRU cache. We use this instead of the `lru-cache` package
  * available in NPM so that we can handle async payloads in a more
  * first-class way as well as shedding some of the cruft around evictions.
@@ -67,11 +94,17 @@ export class GenericCache<K, V> {
      * all items in the cache, a function that determine the size of a
      * cache item from its resolved value, and a function that is called
      * when an item falls out of the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
+     * @param sizeFunction A function that determines the size of a cache item.
+     * @param disposeFunction A function that disposes of evicted cache items.
+     * @param metrics The bag of metrics to use for this instance of the cache.
      */
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
-        private disposeFunction: (value: V) => Promise<void> | void
+        private disposeFunction: (value: V) => Promise<void> | void,
+        private metrics: CacheMetrics
     ) {}
 
     /**
@@ -168,13 +201,20 @@ export class GenericCache<K, V> {
     private async getEntry(key: K, factory: () => Promise<V>): Promise<CacheEntry<K, V>> {
         const node = this.cache.get(key)
         if (node) {
-            // Found, move to head of list
+            // Move to head of list
             this.lruList.unshiftNode(node)
-            const entry = node.value
+
+            // Log cache event
+            this.metrics.eventsCounter.labels('hit').inc()
+
             // Ensure entry is locked before returning
+            const entry = node.value
             entry.readers++
             return entry
         }
+
+        // Log cache event
+        this.metrics.eventsCounter.labels('miss').inc()
 
         // Create promise and the entry that wraps it. We don't know the effective
         // size of the value until the promise resolves, so we put zero. We have a
@@ -219,6 +259,7 @@ export class GenericCache<K, V> {
         const size = this.sizeFunction(value)
         this.size += size
         entry.size = size
+        this.metrics.sizeGauge.inc(size)
 
         let node = this.lruList.tail
         while (this.size > this.max && node) {
@@ -235,6 +276,12 @@ export class GenericCache<K, V> {
 
                 this.removeNode(node, size)
                 await this.disposeFunction(await promise)
+
+                // Log cache event
+                this.metrics.eventsCounter.labels('eviction').inc()
+            } else {
+                // Log cache event
+                this.metrics.eventsCounter.labels('locked-eviction').inc()
             }
 
             node = prev
@@ -268,7 +315,11 @@ export class ConnectionCache extends GenericCache<string, Connection> {
             // Each handle is roughly the same size.
             () => 1,
             // Close the underlying file handle on cache eviction.
-            connection => connection.close()
+            connection => connection.close(),
+            {
+                sizeGauge: CONNECTION_CACHE_SIZE_GAUGE,
+                eventsCounter: CONNECTION_CACHE_EVENTS_COUNTER,
+            }
         )
     }
 
@@ -295,7 +346,8 @@ export class ConnectionCache extends GenericCache<string, Connection> {
                 type: 'sqlite',
                 name: database,
                 synchronize: true,
-                // logging: 'all',
+                logging: ['error', 'warn'],
+                maxQueryExecutionTime: 1000,
             })
 
         return this.withValue(database, factory, callback)
@@ -353,13 +405,17 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
     /**
      * Create a new `EncodedJsonCache` with the given maximum (soft) size for
      * all items in the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
+     * @param metrics The bag of metrics to use for this instance of the cache.
      */
-    constructor(max: number) {
+    constructor(max: number, metrics: CacheMetrics) {
         super(
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
-            (): Promise<void> => Promise.resolve()
+            () => {},
+            metrics
         )
     }
 }
@@ -368,13 +424,39 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
  * A cache of deserialized `DocumentData` values indexed by a string containing
  * the database path and the path of the document.
  */
-export class DocumentCache extends EncodedJsonCache<string, DocumentData> {}
+export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
+    /**
+     * Create a new `DocumentCache` with the given maximum (soft) size for
+     * all items in the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
+     */
+    constructor(max: number) {
+        super(max, {
+            sizeGauge: DOCUMENT_CACHE_SIZE_GAUGE,
+            eventsCounter: DOCUMENT_CACHE_EVENTS_COUNTER,
+        })
+    }
+}
 
 /**
  * A cache of deserialized `ResultChunkData` values indexed by a string containing
  * the database path and the chunk index.
  */
-export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> {}
+export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> {
+    /**
+     * Create a new `ResultChunkCache` with the given maximum (soft) size for
+     * all items in the cache.
+     *
+     * @param max The maximum size of the cache before an eviction.
+     */
+    constructor(max: number) {
+        super(max, {
+            sizeGauge: RESULT_CHUNK_CACHE_SIZE_GAUGE,
+            eventsCounter: RESULT_CHUNK_CACHE_EVENTS_COUNTER,
+        })
+    }
+}
 
 /**
  * Return a promise and a function pair. The promise resolves once the function is called.

@@ -1,8 +1,21 @@
 import { Connection, EntityManager } from 'typeorm'
-import { testFilter, createFilter } from './encoding'
 import { ConnectionCache } from './cache'
-import { ReferenceModel, PackageModel } from './models.xrepo'
+import { createFilter, testFilter } from './encoding'
+import { PackageModel, ReferenceModel } from './models.xrepo'
 import { TableInserter } from './inserter'
+import {
+    XREPO_INSERTION_ERRORS_COUNTER,
+    XREPO_INSERTION_DURATION_HISTOGRAM,
+    BLOOM_FILTER_EVENTS_COUNTER,
+    XREPO_QUERY_DURATION_HISTOGRAM,
+    XREPO_QUERY_ERRORS_COUNTER,
+    instrument,
+} from './metrics'
+
+const insertionMetrics = {
+    durationHistogram: XREPO_INSERTION_DURATION_HISTOGRAM,
+    errorsCounter: XREPO_INSERTION_ERRORS_COUNTER,
+}
 
 /**
  * Represents a package provided by a project or a package that is a dependency
@@ -86,7 +99,13 @@ export class XrepoDatabase {
             // We replace on conflict here: the first LSIF upload to provide a package will be
             // the repository and commit used in cross-repository jump-to-definition queries.
 
-            const inserter = new TableInserter(entityManager, PackageModel, PackageModel.BatchSize, true)
+            const inserter = new TableInserter(
+                entityManager,
+                PackageModel,
+                PackageModel.BatchSize,
+                insertionMetrics,
+                true
+            )
             for (const pkg of packages) {
                 await inserter.insert({ repository, commit, ...pkg })
             }
@@ -131,7 +150,11 @@ export class XrepoDatabase {
         // Test the bloom filter of each reference model concurrently
         const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, value)))
 
-        // Drop any result that did not pass bloom filter
+        for (const flag of keepFlags) {
+            // Record hit and miss counts
+            BLOOM_FILTER_EVENTS_COUNTER.labels(flag ? 'hit' : 'miss').inc()
+        }
+
         return results.filter((_, i) => keepFlags[i])
     }
 
@@ -145,7 +168,12 @@ export class XrepoDatabase {
      */
     public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new TableInserter(entityManager, ReferenceModel, ReferenceModel.BatchSize)
+            const inserter = new TableInserter(
+                entityManager,
+                ReferenceModel,
+                ReferenceModel.BatchSize,
+                insertionMetrics
+            )
             for (const reference of references) {
                 await inserter.insert({
                     repository,
@@ -191,7 +219,9 @@ export class XrepoDatabase {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], callback)
+        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], connection =>
+            instrument(XREPO_QUERY_DURATION_HISTOGRAM, XREPO_QUERY_ERRORS_COUNTER, () => callback(connection))
+        )
     }
 
     /**

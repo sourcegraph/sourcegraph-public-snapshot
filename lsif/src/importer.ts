@@ -1,5 +1,6 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
+import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_ERRORS_COUNTER } from './metrics'
 import { DefaultMap } from './default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
@@ -89,24 +90,44 @@ export async function importLsif(
     const numResults = correlator.definitionData.size + correlator.referenceData.size
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
 
+    const inserterMetrics = {
+        durationHistogram: DATABASE_INSERTION_DURATION_HISTOGRAM,
+        errorsCounter: DATABASE_INSERTION_ERRORS_COUNTER,
+    }
+
     // Insert metadata
-    const metaInserter = new TableInserter(entityManager, MetaModel, MetaModel.BatchSize)
+    const metaInserter = new TableInserter(entityManager, MetaModel, MetaModel.BatchSize, inserterMetrics)
     await populateMetadataTable(correlator, metaInserter, numResultChunks)
     await metaInserter.flush()
 
     // Insert documents
-    const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize)
+    const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize, inserterMetrics)
     await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
     await documentInserter.flush()
 
     // Insert result chunks
-    const resultChunkInserter = new TableInserter(entityManager, ResultChunkModel, ResultChunkModel.BatchSize)
+    const resultChunkInserter = new TableInserter(
+        entityManager,
+        ResultChunkModel,
+        ResultChunkModel.BatchSize,
+        inserterMetrics
+    )
     await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
     await resultChunkInserter.flush()
 
     // Insert definitions and references
-    const definitionInserter = new TableInserter(entityManager, DefinitionModel, DefinitionModel.BatchSize)
-    const referenceInserter = new TableInserter(entityManager, ReferenceModel, ReferenceModel.BatchSize)
+    const definitionInserter = new TableInserter(
+        entityManager,
+        DefinitionModel,
+        DefinitionModel.BatchSize,
+        inserterMetrics
+    )
+    const referenceInserter = new TableInserter(
+        entityManager,
+        ReferenceModel,
+        ReferenceModel.BatchSize,
+        inserterMetrics
+    )
     await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
     await definitionInserter.flush()
     await referenceInserter.flush()

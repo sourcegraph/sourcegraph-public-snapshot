@@ -1,10 +1,17 @@
+import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
 import express from 'express'
+import morgan from 'morgan'
+import promBundle from 'express-prom-bundle'
+import {
+    CONNECTION_CACHE_CAPACITY_GAUGE,
+    DOCUMENT_CACHE_CAPACITY_GAUGE,
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
+} from './metrics'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { ERRNOLSIFDATA, createBackend } from './backend'
+import { createBackend, ERRNOLSIFDATA } from './backend'
 import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
-import * as zlib from 'mz/zlib'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -16,17 +23,17 @@ const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
  * value may be exceeded for a short period if many handles are held
  * at once.
  */
-const CONNECTION_CACHE_SIZE = readEnvInt('CONNECTION_CACHE_SIZE', 1000)
+const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
 
 /**
  * The maximum number of documents that can be held in memory at once.
  */
-const DOCUMENT_CACHE_SIZE = readEnvInt('DOCUMENT_CACHE_SIZE', 1000)
+const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * The maximum number of result chunks that can be held in memory at once.
  */
-const RESULT_CHUNK_CACHE_SIZE = readEnvInt('RESULT_CHUNK_CACHE_SIZE', 1000)
+const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -42,16 +49,28 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_SIZE)
-    const documentCache = new DocumentCache(DOCUMENT_CACHE_SIZE)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_SIZE)
+    // Update cache capacities on startup
+    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
+    DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
+    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
+
+    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
+    const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
+    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
     const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
     const app = express()
+    app.use(morgan('tiny'))
     app.use(errorHandler)
 
     app.get('/ping', (_, res) => {
         res.send({ pong: 'pong' })
     })
+
+    app.use(
+        promBundle({
+            // TODO - tune histogram buckets or switch to summary
+        })
+    )
 
     app.post(
         '/upload',

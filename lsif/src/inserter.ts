@@ -1,5 +1,23 @@
+import promClient from 'prom-client'
 import { EntityManager } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
+import { instrument } from './metrics'
+
+/**
+ * A bag of prometheus metric objects that apply to a particular instance of
+ * `TableInserter`.
+ */
+interface TableInserterMetrics {
+    /**
+     * A histogram that is observed on each round-trip to the database.
+     */
+    durationHistogram: promClient.Histogram
+
+    /**
+     * A counter that increments on each error that occurs during an insertion.
+     */
+    errorsCounter: promClient.Counter
+}
 
 /**
  * A batch inserter for a SQLite table. Inserting hundreds or thousands of rows in
@@ -26,12 +44,14 @@ export class TableInserter<T, M extends new () => T> {
      * @param entityManager A transactional SQLite entity manager.
      * @param model The model object constructor.
      * @param maxBatchSize The maximum number of records that can be inserted at once.
+     * @param metrics The bag of metrics to use for this instance of the inserter.
      * @param ignoreConflicts Whether or not to ignore conflicting data on unique constraint violations.
      */
     constructor(
         private entityManager: EntityManager,
         private model: M,
         private maxBatchSize: number,
+        private metrics: TableInserterMetrics,
         private ignoreConflicts: boolean = false
     ) {}
 
@@ -75,7 +95,7 @@ export class TableInserter<T, M extends new () => T> {
             query = query.onConflict('do nothing')
         }
 
-        await query.execute()
+        await instrument(this.metrics.durationHistogram, this.metrics.errorsCounter, () => query.execute())
 
         this.batch = []
     }

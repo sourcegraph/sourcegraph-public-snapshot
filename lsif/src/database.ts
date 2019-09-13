@@ -1,9 +1,14 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { mustGet, hashKey } from './util'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
+import { DATABASE_QUERY_DURATION_HISTOGRAM, DATABASE_QUERY_ERRORS_COUNTER, instrument } from './metrics'
 import { gunzipJSON } from './encoding'
 import { DefaultMap } from './default-map'
+import { hashKey, mustGet } from './util'
+import { isEqual, uniqWith } from 'lodash'
+import { makeFilename } from './backend'
+import { PackageModel } from './models.xrepo'
+import { XrepoDatabase } from './xrepo'
 import {
     DefinitionModel,
     DocumentData,
@@ -18,10 +23,6 @@ import {
     DefinitionReferenceResultId,
     RangeId,
 } from './models.database'
-import { isEqual, uniqWith } from 'lodash'
-import { makeFilename } from './backend'
-import { PackageModel } from './models.xrepo'
-import { XrepoDatabase } from './xrepo'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -557,7 +558,8 @@ export class Database {
         return await this.connectionCache.withConnection(
             this.databasePath,
             [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
-            callback
+            connection =>
+                instrument(DATABASE_QUERY_DURATION_HISTOGRAM, DATABASE_QUERY_ERRORS_COUNTER, () => callback(connection))
         )
     }
 }
