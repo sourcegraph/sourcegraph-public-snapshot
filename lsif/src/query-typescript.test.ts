@@ -1,10 +1,10 @@
-import * as fs from 'mz/fs';
-import * as zlib from 'mz/zlib';
-import rmfr from 'rmfr';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import { createBackend } from './backend';
-import { createCommit, createLocation, createRemoteLocation } from './test-utils';
-import { Readable } from 'stream';
+import * as fs from 'mz/fs'
+import * as zlib from 'mz/zlib'
+import rmfr from 'rmfr'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { createBackend } from './backend'
+import { createCommit, createLocation, createRemoteLocation } from './test-utils'
+import { Readable } from 'stream'
 
 describe('Database', () => {
     let storageRoot!: string

@@ -368,13 +368,13 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
  * A cache of deserialized `DocumentData` values indexed by a string containing
  * the database path and the path of the document.
  */
-export class DocumentCache extends EncodedJsonCache<string, DocumentData> { }
+export class DocumentCache extends EncodedJsonCache<string, DocumentData> {}
 
 /**
  * A cache of deserialized `ResultChunkData` values indexed by a string containing
  * the database path and the chunk index.
  */
-export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> { }
+export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> {}
 
 /**
  * Return a promise and a function pair. The promise resolves once the function is called.
