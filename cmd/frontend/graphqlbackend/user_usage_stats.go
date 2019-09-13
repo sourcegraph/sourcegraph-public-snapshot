@@ -58,7 +58,18 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
-type logUserEventInput struct {
+func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
+	Event        string
+	UserCookieID string
+}) (*EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+	actor := actor.FromContext(ctx)
+	return nil, usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+}
+
+type logEventInput struct {
 	Event        string
 	UserCookieID string
 	URL          string
@@ -66,27 +77,20 @@ type logUserEventInput struct {
 	Argument     *string
 }
 
-func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
-	Input *logUserEventInput
+func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
+	Input *logEventInput
 }) (*EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() {
+	if envvar.SourcegraphDotComMode() || !conf.EnableEventLogging() {
 		return nil, nil
 	}
-	actor := actor.FromContext(ctx)
-	err := usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.Input.UserCookieID, args.Input.Event)
-	if err != nil {
-		return nil, err
-	}
 
-	if conf.EnableEventLogging() {
-		return nil, usagestats.LogEvent(
-			args.Input.Event,
-			args.Input.URL,
-			actor.UID,
-			args.Input.UserCookieID,
-			args.Input.Source,
-			args.Input.Argument,
-		)
-	}
-	return nil, nil
+	actor := actor.FromContext(ctx)
+	return nil, usagestats.LogEvent(
+		args.Input.Event,
+		args.Input.URL,
+		actor.UID,
+		args.Input.UserCookieID,
+		args.Input.Source,
+		args.Input.Argument,
+	)
 }

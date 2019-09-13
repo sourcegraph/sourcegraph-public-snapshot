@@ -95,15 +95,36 @@ export function logUserEvent(event: string): void {
     if (window.context && window.context.sourcegraphDotComMode) {
         return
     }
+    // This GraphQL API call will be deprecated.
     mutateGraphQL(
         gql`
-            mutation logUserEvent($event: String!, $userCookieID: String!, $url: String!, $source: UserEventSource!) {
-                logUserEvent(input: { event: $event, userCookieID: $userCookieID, url: $url, source: $source }) {
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+                logUserEvent(event: $event, userCookieID: $userCookieID) {
                     alwaysNil
                 }
             }
         `,
-        { event, userCookieID: eventLogger.getAnonUserID(), url: window.location.href, source: GQL.UserEventSource.WEB }
+        { event, userCookieID: eventLogger.getAnonUserID() }
+    )
+        .pipe(
+            map(({ data, errors }) => {
+                if (!data || (errors && errors.length > 0)) {
+                    throw createAggregateError(errors)
+                }
+                return
+            })
+        )
+        .subscribe()
+
+    mutateGraphQL(
+        gql`
+            mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
+                logEvent(input: { event: $event, userCookieID: $userCookieID, url: $url, source: $source }) {
+                    alwaysNil
+                }
+            }
+        `,
+        { event, userCookieID: eventLogger.getAnonUserID(), url: window.location.href, source: GQL.EventSource.WEB }
     )
         .pipe(
             map(({ data, errors }) => {

@@ -19,20 +19,41 @@ export const logUserEvent = (
     if (url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
+    // This GraphQL API call will be deprecated.
     requestGraphQL<GQL.IMutation>({
         request: gql`
-            mutation logUserEvent($event: String!, $userCookieID: String!, $url: String!, $source: UserEventSource!) {
-                logUserEvent(input: { event: $event, userCookieID: $userCookieID, url: $url, source: $source }) {
+            mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+                logUserEvent(event: $event, userCookieID: $userCookieID) {
                     alwaysNil
                 }
             }
         `,
-        variables: { event, userCookieID: uid, url, source: GQL.UserEventSource.CODEHOSTINTEGRATION },
+        variables: { event, userCookieID: uid },
         mightContainPrivateInfo: false,
     }).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
             // (e.g., if CODEINTELINTEGRATION user events aren't yet supported).
+            // However, end users shouldn't experience this failure, as their admin is
+            // responsible for updating the instance, and has been (or will be) notified
+            // that an upgrade is available via site-admin messaging.
+        },
+    })
+
+    requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
+                logEvent(input: { event: $event, userCookieID: $userCookieID, url: $url, source: $source }) {
+                    alwaysNil
+                }
+            }
+        `,
+        variables: { event, userCookieID: uid, url, source: GQL.EventSource.CODEHOSTINTEGRATION },
+        mightContainPrivateInfo: false,
+    }).subscribe({
+        error: error => {
+            // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
+            // (i.e. the new GraphQL API `logEvent` hasn't been added).
             // However, end users shouldn't experience this failure, as their admin is
             // responsible for updating the instance, and has been (or will be) notified
             // that an upgrade is available via site-admin messaging.

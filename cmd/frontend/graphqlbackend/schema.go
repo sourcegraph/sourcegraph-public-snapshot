@@ -269,7 +269,10 @@ type Mutation {
         date: String
     ): GitCommit
     # Logs a user event.
-    logUserEvent(input: LogUserEventInput!): EmptyResponse
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+        @deprecated(reason: "use logEvent instead")
+    # Logs an event.
+    logEvent(input: LogEventInput!): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
     #
@@ -618,14 +621,14 @@ input MarkdownOptions {
     alwaysNil: String
 }
 
-# The sources of user events would come from.
-enum UserEventSource {
+# The sources of events would come from.
+enum EventSource {
     WEB
     CODEHOSTINTEGRATION
 }
 
-# Input for Mutation.logUserEvent, which contains fields needed for logging a user event.
-input LogUserEventInput {
+# Input for Mutation.logEvent, which contains fields needed for logging an event.
+input LogEventInput {
     # The name of the event.
     event: String!
     # The unique user ID stored in the cookie.
@@ -633,7 +636,7 @@ input LogUserEventInput {
     # The URL which event happens.
     url: String!
     # The source of the event happens.
-    source: UserEventSource!
+    source: EventSource!
     # The additional argument information.
     argument: String
 }
@@ -3121,6 +3124,29 @@ type UserUsageStatistics {
     lastActiveTime: String
     # The last time the user was active on a code host integration.
     lastActiveCodeHostIntegrationTime: String
+}
+
+# A user event.
+enum UserEvent {
+    PAGEVIEW
+    SEARCHQUERY
+    CODEINTEL
+    CODEINTELREFS
+    CODEINTELINTEGRATION
+    CODEINTELINTEGRATIONREFS
+
+    # Product stages
+    STAGEMANAGE
+    STAGEPLAN
+    STAGECODE
+    STAGEREVIEW
+    STAGEVERIFY
+    STAGEPACKAGE
+    STAGEDEPLOY
+    STAGECONFIGURE
+    STAGEMONITOR
+    STAGESECURE
+    STAGEAUTOMATE
 }
 
 # A period of time in which a set of users have been active.

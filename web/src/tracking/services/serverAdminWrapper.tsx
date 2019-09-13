@@ -1,6 +1,6 @@
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { authenticatedUser } from '../../auth'
 import { logUserEvent } from '../../user/settings/backend'
-import { UserEvent } from '../../../../shared/src/backend/userEvents'
 
 class ServerAdminWrapper {
     /**
@@ -20,10 +20,10 @@ class ServerAdminWrapper {
     }
 
     public trackPageView(eventAction: string): void {
-        logUserEvent(UserEvent.PAGEVIEW)
+        logUserEvent(GQL.UserEvent.PAGEVIEW)
         if (this.isAuthenicated) {
             if (eventAction === 'ViewRepository' || eventAction === 'ViewBlob' || eventAction === 'ViewTree') {
-                logUserEvent(UserEvent.STAGECODE)
+                logUserEvent(GQL.UserEvent.STAGECODE)
             }
         }
     }
@@ -31,18 +31,18 @@ class ServerAdminWrapper {
     public trackAction(eventAction: string): void {
         if (this.isAuthenicated) {
             if (eventAction === 'SearchResultsQueried') {
-                logUserEvent(UserEvent.SEARCHQUERY)
-                logUserEvent(UserEvent.STAGECODE)
+                logUserEvent(GQL.UserEvent.SEARCHQUERY)
+                logUserEvent(GQL.UserEvent.STAGECODE)
             } else if (
                 eventAction === 'goToDefinition' ||
                 eventAction === 'goToDefinition.preloaded' ||
                 eventAction === 'hover'
             ) {
-                logUserEvent(UserEvent.CODEINTEL)
+                logUserEvent(GQL.UserEvent.CODEINTEL)
             } else if (eventAction === 'SavedSearchEmailClicked' || eventAction === 'SavedSearchSlackClicked') {
-                logUserEvent(UserEvent.STAGEVERIFY)
+                logUserEvent(GQL.UserEvent.STAGEVERIFY)
             } else if (eventAction === 'DiffSearchResultsQueried') {
-                logUserEvent(UserEvent.STAGEMONITOR)
+                logUserEvent(GQL.UserEvent.STAGEMONITOR)
             }
         }
     }

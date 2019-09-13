@@ -2,12 +2,12 @@ import { noop } from 'lodash'
 import { Observable, ReplaySubject } from 'rxjs'
 import { take } from 'rxjs/operators'
 import uuid from 'uuid'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
 import { storage } from '../../browser/storage'
 import { isInPage } from '../../context'
 import { logUserEvent } from '../backend/userEvents'
-import { UserEvent } from '../../../../shared/src/backend/userEvents'
 import { observeSourcegraphURL } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
@@ -70,7 +70,7 @@ export class EventLogger implements TelemetryService {
      *
      * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
-    public async logCodeIntelligenceEvent(event: UserEvent): Promise<void> {
+    public async logCodeIntelligenceEvent(event: GQL.UserEvent): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logUserEvent(event, anonUserId, sourcegraphURL, this.requestGraphQL)
@@ -88,10 +88,10 @@ export class EventLogger implements TelemetryService {
             case 'goToDefinition':
             case 'goToDefinition.preloaded':
             case 'hover':
-                await this.logCodeIntelligenceEvent(UserEvent.CODEINTELINTEGRATION)
+                await this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATION)
                 break
             case 'findReferences':
-                await this.logCodeIntelligenceEvent(UserEvent.CODEINTELINTEGRATIONREFS)
+                await this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATIONREFS)
                 break
         }
     }

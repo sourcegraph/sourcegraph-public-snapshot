@@ -2,6 +2,7 @@ package usagestats
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -61,9 +62,7 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event 
 		return nil
 	}
 
-	// Log a warning instead of an error because we have a new code path that adds metrics to Postgres and this codepath accepts arbitrary strings.
-	log15.Warn("usagestats.LogActivity: unknown user event", "event", event)
-	return nil
+	return fmt.Errorf("unknown user event %s", event)
 }
 
 // Custom event handlers
