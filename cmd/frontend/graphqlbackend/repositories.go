@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -114,7 +115,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed map[string]*zoekt.Repository
-		searchIndexEnabled := IndexedSearch().Enabled()
+		searchIndexEnabled := search.Indexed().Enabled()
 		isIndexed := func(repo api.RepoName) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
@@ -126,7 +127,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
 			var err error
-			indexed, err = IndexedSearch().ListAll(listCtx)
+			indexed, err = search.Indexed().ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return

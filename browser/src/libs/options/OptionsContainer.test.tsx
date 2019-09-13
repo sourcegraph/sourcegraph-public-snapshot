@@ -8,17 +8,21 @@ import { OptionsContainer, OptionsContainerProps } from './OptionsContainer'
 describe('OptionsContainer', () => {
     const stubs: Pick<
         OptionsContainerProps,
+        | 'isActivated'
         | 'fetchCurrentTabStatus'
         | 'ensureValidSite'
+        | 'toggleExtensionDisabled'
         | 'toggleFeatureFlag'
         | 'featureFlags'
         | 'hasPermissions'
         | 'requestPermissions'
     > = {
+        isActivated: true,
         hasPermissions: () => Promise.resolve(true),
         requestPermissions: noop,
         fetchCurrentTabStatus: () => Promise.resolve(undefined),
         ensureValidSite: (url: string) => new Observable<void>(),
+        toggleExtensionDisabled: (isActivated: boolean) => Promise.resolve(undefined),
         toggleFeatureFlag: noop,
         featureFlags: [],
     }

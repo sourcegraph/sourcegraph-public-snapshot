@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
 )
 
 var mockSearchRepositories func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error)
@@ -61,7 +60,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
 	if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-		repos, err = reposToAdd(ctx, args.Zoekt, repos, args.Pattern)
+		repos, err = reposToAdd(ctx, args, repos)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -82,10 +81,10 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search.RepositoryRevisions, pattern *search.PatternInfo) ([]*search.RepositoryRevisions, error) {
+func reposToAdd(ctx context.Context, args *search.Args, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
 	matchingIDs := make(map[api.RepoID]bool)
-	if len(pattern.FilePatternsReposMustInclude) > 0 {
-		for _, pattern := range pattern.FilePatternsReposMustInclude {
+	if len(args.Pattern.FilePatternsReposMustInclude) > 0 {
+		for _, pattern := range args.Pattern.FilePatternsReposMustInclude {
 			// The high FileMatchLimit here is to make sure we get all the repo matches we can. Setting it to
 			// len(repos) could mean we miss some repos since there could be for example len(repos) file matches in
 			// the first repo and some more in other repos.
@@ -94,7 +93,11 @@ func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search
 			if err != nil {
 				return nil, err
 			}
-			newArgs := search.Args{Pattern: &p, Repos: repos, Query: q, UseFullDeadline: true, Zoekt: zoekt}
+			newArgs := *args
+			newArgs.Pattern = &p
+			newArgs.Repos = repos
+			newArgs.Query = q
+			newArgs.UseFullDeadline = true
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
 				return nil, err
@@ -110,14 +113,18 @@ func reposToAdd(ctx context.Context, zoekt *searchbackend.Zoekt, repos []*search
 		}
 	}
 
-	if len(pattern.FilePatternsReposMustExclude) > 0 {
-		for _, pattern := range pattern.FilePatternsReposMustExclude {
+	if len(args.Pattern.FilePatternsReposMustExclude) > 0 {
+		for _, pattern := range args.Pattern.FilePatternsReposMustExclude {
 			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err
 			}
-			newArgs := search.Args{Pattern: &p, Repos: repos, Query: q, UseFullDeadline: true, Zoekt: zoekt}
+			newArgs := *args
+			newArgs.Pattern = &p
+			newArgs.Repos = repos
+			newArgs.Query = q
+			newArgs.UseFullDeadline = true
 			matches, _, err := searchFilesInRepos(ctx, &newArgs)
 			if err != nil {
 				return nil, err

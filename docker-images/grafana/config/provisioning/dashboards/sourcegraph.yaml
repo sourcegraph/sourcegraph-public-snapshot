@@ -7,3 +7,10 @@ providers:
     type: file
     options:
       path: /sg_config_grafana/provisioning/dashboards
+  - name: "sourcegraph_additional"
+    orgId: 1
+    folder: ""
+    type: file
+    options:
+        path: /sg_grafana_additional_dashboards
+

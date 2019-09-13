@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -143,6 +144,24 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 // ExternalServices returns a singleton slice containing the external service.
 func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
+}
+
+// LoadChangeset loads the latest state of the given Changeset from the codehost.
+func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+	repo := cs.Repo.Metadata.(*github.Repository)
+
+	number, err := strconv.Atoi(cs.ExternalID)
+	if err != nil {
+		return err
+	}
+
+	pr, err := s.client.GetPullRequest(ctx, repo.NameWithOwner, number)
+	if err != nil {
+		return err
+	}
+
+	cs.Changeset.Metadata = pr
+	return nil
 }
 
 // GetRepo returns the Github repository with the given name and owner
