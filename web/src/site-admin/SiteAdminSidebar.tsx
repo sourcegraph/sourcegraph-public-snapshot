@@ -52,7 +52,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
             Instrumentation
         </a>
         <a href="/-/debug/grafana" className={SIDEBAR_BUTTON_CLASS}>
-            Monitor
+            Monitoring
         </a>
     </div>
 )
