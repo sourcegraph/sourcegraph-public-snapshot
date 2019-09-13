@@ -163,7 +163,7 @@ var logStageEvent = func(userID int32, event string, isAuthenticated bool) error
 	return c.Send("HSET", key, keyFromStage(event), now.Format(time.RFC3339))
 }
 
-// LogEvent logs user activity with event information.
+// LogEvent logs users events.
 func LogEvent(name, url string, userID int32, userCookieID, source string, argument *string) error {
 	info := &db.Event{
 		Name:            name,
