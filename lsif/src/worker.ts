@@ -35,7 +35,7 @@ const REDIS_PORT = readEnvInt('REDIS_PORT', 6379)
  * value may be exceeded for a short period if many handles are held
  * at once.
  */
-const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 1024 * 1024 * 1024)
+const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
 
 /**
  * The maximum number of documents that can be held in memory at once.
