@@ -206,6 +206,8 @@ func NodeByID(ctx context.Context, s *a8n.Store, id graphql.ID) (Node, error) {
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return campaignByID(ctx, s, id)
+	case "Changeset":
+		return changesetByID(ctx, s, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
