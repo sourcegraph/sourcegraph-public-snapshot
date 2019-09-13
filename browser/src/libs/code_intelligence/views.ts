@@ -1,5 +1,5 @@
-import { asyncScheduler, defer, from, Subscription, OperatorFunction, Subscribable, NextObserver, Subject } from 'rxjs'
-import { concatAll, filter, mergeMap, observeOn, tap, mapTo, first } from 'rxjs/operators'
+import { asyncScheduler, defer, from, Observable, OperatorFunction, Subscription } from 'rxjs'
+import { concatAll, filter, mergeMap, observeOn, tap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../shared/src/util/types'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
 
@@ -34,28 +34,11 @@ export interface ViewResolver<V extends View> {
 }
 
 /**
- * Represents the state of a view tracked by {@link trackViews}.
- */
-interface ViewState<V extends View> {
-    /**
-     * The view as emitted to consumers.
-     */
-    view: ViewWithSubscriptions<V>
-    /**
-     * Used to signal the view is close enough to the viewport to be emitted.
-     */
-    visibilitySpy: Subscribable<void> & NextObserver<void>
-}
-
-/**
  * Find all the views (e.g., code views) on a page using view resolvers (defined in
  * {@link CodeHost}).
  *
- * Emits every view that gets added and that is contained (even partially) in the viewport,
- * or within 4000px of the viewport's top/bottom edges.
- *
- * Views are emitted as {@link ViewWithSubscriptions}.
- * When a view gets removed from the page, its resources are freed.
+ * Emits every view that gets added as a {@link ViewWithSubscriptions},
+ * and frees a view's resources when it gets removed from the page.
  *
  * At any given time, there can be any number of views on a page.
  *
@@ -66,25 +49,7 @@ export function trackViews<V extends View>(
 ): OperatorFunction<MutationRecordLike[], ViewWithSubscriptions<V>> {
     return mutations =>
         defer(() => {
-            const viewStates = new Map<HTMLElement, ViewState<V>>()
-
-            /**
-             * Observes code views, and emits once on {@link ViewState#visibilitySpy}
-             * when a code view intersects with the specified bounding rectangle.
-             */
-            const intersectionObserver = new IntersectionObserver(
-                (entries, observer) => {
-                    for (const entry of entries) {
-                        const viewState = viewStates.get(entry.target as HTMLElement)
-                        if (!viewState || !entry.isIntersecting) {
-                            continue
-                        }
-                        viewState.visibilitySpy.next()
-                        observer.unobserve(entry.target)
-                    }
-                },
-                { rootMargin: '4000px 0px' }
-            )
+            const viewStates = new Map<HTMLElement, ViewWithSubscriptions<V>>()
             return mutations.pipe(
                 observeOn(asyncScheduler),
                 concatAll(),
@@ -94,13 +59,13 @@ export function trackViews<V extends View>(
                         if (!(node instanceof HTMLElement)) {
                             continue
                         }
-                        const viewState = viewStates.get(node)
-                        if (viewState) {
-                            viewState.view.subscriptions.unsubscribe()
+                        const view = viewStates.get(node)
+                        if (view) {
+                            view.subscriptions.unsubscribe()
                             viewStates.delete(node)
                             continue
                         }
-                        for (const [viewElement, { view }] of viewStates.entries()) {
+                        for (const [viewElement, view] of viewStates.entries()) {
                             if (node.contains(viewElement)) {
                                 view.subscriptions.unsubscribe()
                                 viewStates.delete(viewElement)
@@ -130,27 +95,60 @@ export function trackViews<V extends View>(
                                 ),
                                 filter(isDefined),
                                 filter(view => !viewStates.has(view.element)),
-                                mergeMap(view => {
-                                    const visibilitySpy = new Subject<void>()
-                                    viewStates.set(view.element, {
-                                        view,
-                                        visibilitySpy,
-                                    })
-                                    // Observe changes to the visibility of the view's element,
-                                    // and emit the view when the element is in or close enough to the viewport.
-                                    intersectionObserver.observe(view.element)
-                                    view.subscriptions.add(() => {
-                                        intersectionObserver.unobserve(view.element)
-                                    })
-                                    return visibilitySpy.pipe(
-                                        first(),
-                                        mapTo(view)
-                                    )
+                                tap(view => {
+                                    viewStates.set(view.element, view)
                                 })
                             )
                         )
                     )
                 )
             )
+        })
+}
+
+export type IntersectionObserverCallbackLike = (
+    entries: Pick<IntersectionObserverEntry, 'target' | 'isIntersecting'>[],
+    obs: Pick<IntersectionObserver, 'unobserve'>
+) => void
+
+export type IntersectionObserverLike = Pick<IntersectionObserver, 'observe' | 'unobserve' | 'disconnect'>
+
+/**
+ * An operator function that delays emitting views until they intersect with the viewport.
+ *
+ */
+export function delayUntilIntersecting<T extends View>(
+    options: IntersectionObserverInit,
+    createIntersectionObserver = (
+        cb: IntersectionObserverCallbackLike,
+        options: IntersectionObserverInit
+    ): IntersectionObserverLike => new IntersectionObserver(cb, options)
+): OperatorFunction<ViewWithSubscriptions<T>, ViewWithSubscriptions<T>> {
+    return views =>
+        new Observable(viewObserver => {
+            const subscriptions = new Subscription()
+            const delayedViews = new Map<HTMLElement, ViewWithSubscriptions<T>>()
+            const intersectionObserver = createIntersectionObserver((entries, obs) => {
+                for (const entry of entries) {
+                    const target = entry.target as HTMLElement
+                    if (entry.isIntersecting && delayedViews.get(target)) {
+                        viewObserver.next(delayedViews.get(target))
+                        obs.unobserve(entry.target)
+                        delayedViews.delete(target)
+                    }
+                }
+            }, options)
+            subscriptions.add(() => intersectionObserver.disconnect())
+            subscriptions.add(
+                views.subscribe(view => {
+                    delayedViews.set(view.element, view)
+                    intersectionObserver.observe(view.element)
+                    view.subscriptions.add(() => {
+                        delayedViews.delete(view.element)
+                        intersectionObserver.unobserve(view.element)
+                    })
+                })
+            )
+            return subscriptions
         })
 }

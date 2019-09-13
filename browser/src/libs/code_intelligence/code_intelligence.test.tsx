@@ -26,6 +26,7 @@ import {
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { IntersectionObserverCallbackLike } from './views'
 
 const RENDER = jest.fn()
 
@@ -57,6 +58,21 @@ const createMockPlatformContext = (
 })
 
 describe('code_intelligence', () => {
+    // Mock the global IntersectionObserver constructor with an implementation that
+    // will immediately signal all observed elements as intersecting.
+    beforeAll(() => {
+        ;(window as any).IntersectionObserver = class MockIntersectionObserver {
+            constructor(private cb: IntersectionObserverCallbackLike) {}
+
+            public observe(target: Element) {
+                this.cb([{ target, isIntersecting: true }], this)
+            }
+
+            public unobserve = jest.fn()
+            public disconnect = jest.fn()
+        }
+    })
+
     beforeEach(() => {
         document.body.innerHTML = ''
     })

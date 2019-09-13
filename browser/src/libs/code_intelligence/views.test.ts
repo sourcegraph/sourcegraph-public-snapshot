@@ -1,9 +1,15 @@
-import { from, Observable, of, Subject, Subscription } from 'rxjs'
+import { from, Observable, of, Subject, Subscription, NEVER } from 'rxjs'
 import { bufferCount, map, switchMap, toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { createBarrier } from '../../../../shared/src/api/integration-test/testHelpers'
 import { MutationRecordLike } from '../../shared/util/dom'
-import { trackViews, ViewResolver } from './views'
+import {
+    trackViews,
+    ViewResolver,
+    IntersectionObserverCallbackLike,
+    delayUntilIntersecting,
+    ViewWithSubscriptions,
+} from './views'
 
 const FIXTURE_HTML = `
     <div id="parent">
@@ -248,5 +254,96 @@ describe('trackViews()', () => {
         const unsubscribed = new Promise(resolve => view.subscriptions.add(resolve))
         mutations.next([{ addedNodes: [], removedNodes: [testElement] }])
         await unsubscribed
+    })
+})
+
+describe('delayUntilIntersecting()', () => {
+    let subscriptions = new Subscription()
+
+    beforeEach(() => {
+        document.body.innerHTML = FIXTURE_HTML
+    })
+
+    afterAll(() => {
+        subscriptions.unsubscribe()
+        subscriptions = new Subscription()
+        document.body.innerHTML = ''
+    })
+
+    test('delays emitting views until they intersect and stops observing views as soon as they intersect', () => {
+        let observerCallback: IntersectionObserverCallbackLike = jest.fn()
+        const views = ['1', '2', '3'].map(
+            (id: string): ViewWithSubscriptions<{ element: HTMLElement }> => ({
+                element: document.getElementById(id)!,
+                subscriptions: new Subscription(),
+            })
+        )
+        const emittedViews: string[] = []
+        const observe = sinon.spy()
+        const unobserve = sinon.spy()
+        subscriptions.add(
+            from(views)
+                .pipe(
+                    delayUntilIntersecting({}, cb => {
+                        observerCallback = cb
+                        return {
+                            observe,
+                            unobserve,
+                            disconnect: sinon.spy(),
+                        }
+                    })
+                )
+                .subscribe(view => {
+                    emittedViews.push(view.element.id)
+                })
+        )
+        sinon.assert.calledThrice(observe)
+        expect(emittedViews.length).toBe(0)
+        sinon.assert.notCalled(unobserve)
+        observerCallback([{ target: document.getElementById('2')!, isIntersecting: true }], { unobserve })
+        observerCallback(
+            [
+                { target: document.getElementById('3')!, isIntersecting: true },
+                { target: document.getElementById('1')!, isIntersecting: true },
+            ],
+            { unobserve }
+        )
+        sinon.assert.calledThrice(unobserve)
+        expect(emittedViews).toStrictEqual(['2', '3', '1'])
+    })
+
+    test('disconnects from the intersection observer on unsubscription', () => {
+        const disconnect = sinon.spy()
+        subscriptions.add(
+            NEVER.pipe(
+                delayUntilIntersecting({}, () => ({
+                    observe: sinon.spy(),
+                    unobserve: sinon.spy(),
+                    disconnect,
+                }))
+            ).subscribe()
+        )
+        subscriptions.unsubscribe()
+        sinon.assert.calledOnce(disconnect)
+    })
+
+    test('stops observing a view when its subscriptions are unsubscribed from', () => {
+        const unobserve = sinon.spy((target: HTMLElement) => {})
+        const element = document.getElementById('1')!
+        const view = { element, subscriptions: new Subscription() }
+        subscriptions.add(
+            of(view)
+                .pipe(
+                    delayUntilIntersecting({}, () => ({
+                        observe: sinon.spy(),
+                        unobserve,
+                        disconnect: sinon.spy(),
+                    }))
+                )
+                .subscribe()
+        )
+        view.subscriptions.unsubscribe()
+        sinon.assert.calledOnce(unobserve)
+        sinon.assert.calledWith(unobserve, element)
     })
 })
