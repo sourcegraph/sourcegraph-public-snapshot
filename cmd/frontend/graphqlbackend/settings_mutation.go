@@ -43,7 +43,7 @@ type settingsMutation struct {
 func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
 	Input *settingsMutationGroupInput
 }) (*settingsMutation, error) {
-	subject, err := settingsSubjectByID(ctx, args.Input.Subject)
+	subject, err := settingsSubjectByID(ctx, r.A8NStore, args.Input.Subject)
 	if err != nil {
 		return nil, err
 	}

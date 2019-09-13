@@ -87,7 +87,7 @@ func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 		AuthorID:    user.ID,
 	}
 
-	node, err := NodeByID(ctx, args.Input.Namespace)
+	node, err := NodeByID(ctx, r.A8NStore, args.Input.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (r *schemaResolver) CreateCampaign(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return &campaignResolver{Campaign: campaign}, nil
+	return &campaignResolver{store: r.A8NStore, Campaign: campaign}, nil
 }
 
 func (r *schemaResolver) Campaigns(ctx context.Context, args *struct {
@@ -166,6 +166,25 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campa
 		r.campaigns, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
 	})
 	return r.campaigns, r.next, r.err
+}
+
+func campaignByID(ctx context.Context, s *a8n.Store, id graphql.ID) (*campaignResolver, error) {
+	// 🚨 SECURITY: Only site admins may access campaigns for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	campaign, err := s.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{store: s, Campaign: campaign}, nil
 }
 
 type campaignResolver struct {
