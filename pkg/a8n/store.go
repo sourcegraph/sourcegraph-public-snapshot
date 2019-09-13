@@ -22,9 +22,15 @@ type Store struct {
 
 // NewStore returns a new Store backed by the given db.
 func NewStore(db dbutil.DB) *Store {
-	return &Store{db: db, now: func() time.Time {
+	return NewStoreWithClock(db, func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
-	}}
+	})
+}
+
+// NewStoreWithClock returns a new Store backed by the given db and
+// clock for timestamps.
+func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
+	return &Store{db: db, now: clock}
 }
 
 // Transact returns a Store whose methods operate within the context of a transaction.

@@ -403,6 +403,13 @@ type CampaignConnection {
     pageInfo: PageInfo!
 }
 
+# A Changeset's state
+enum ChangesetState {
+    OPEN
+    CLOSED
+    MERGED
+}
+
 # A changeset in a code host (e.g. a PR on Github)
 type Changeset implements Node {
     # The unique ID for the changeset.
@@ -425,6 +432,9 @@ type Changeset implements Node {
 
     # The body of the changeset
     body: String!
+
+    # The state of the changeset
+    state: ChangesetState!
 }
 
 # A list of changesets.

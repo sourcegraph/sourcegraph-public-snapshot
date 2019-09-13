@@ -51,7 +51,9 @@ func NewSchema(db *sql.DB) (*graphql.Schema, error) {
 	return graphql.ParseSchema(
 		Schema,
 		&schemaResolver{
-			A8NStore: a8n.NewStore(db),
+			A8NStore: a8n.NewStoreWithClock(db, func() time.Time {
+				return time.Now().UTC().Truncate(time.Microsecond)
+			}),
 		},
 		graphql.Tracer(prometheusTracer{}),
 	)

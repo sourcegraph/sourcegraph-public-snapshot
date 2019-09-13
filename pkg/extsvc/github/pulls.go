@@ -18,6 +18,7 @@ type PullRequest struct {
 	ID           string
 	Title        string
 	Body         string
+	State        string
 	URL          string
 	Number       int
 	Author       Actor

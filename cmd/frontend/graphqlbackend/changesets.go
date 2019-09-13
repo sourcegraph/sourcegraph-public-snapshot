@@ -220,3 +220,7 @@ func (r *changesetResolver) Title() (string, error) {
 func (r *changesetResolver) Body() (string, error) {
 	return r.Changeset.Body()
 }
+
+func (r *changesetResolver) State() (a8n.ChangesetState, error) {
+	return r.Changeset.State()
+}

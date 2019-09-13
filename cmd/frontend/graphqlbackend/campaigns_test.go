@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
@@ -42,8 +43,13 @@ func TestCampaigns(t *testing.T) {
 	cf, save := newGithubClientFactory(t, "test-campaigns")
 	defer save()
 
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
 	sr := schemaResolver{
-		A8NStore:    a8n.NewStore(dbconn.Global),
+		A8NStore:    a8n.NewStoreWithClock(dbconn.Global, clock),
 		HTTPFactory: cf,
 	}
 
@@ -247,6 +253,9 @@ func TestCampaigns(t *testing.T) {
 		Campaigns  CampaignConnection
 		CreatedAt  string
 		UpdatedAt  string
+		Title      string
+		Body       string
+		State      string
 	}
 
 	var result struct {
@@ -259,27 +268,14 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	mustExec(ctx, t, s, input, &result, `
-		fragment u on User { id, databaseID, siteAdmin }
-		fragment o on Org  { id, name }
-		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt
-			author    { ...u }
-			namespace {
-				... on User { ...u }
-				... on Org  { ...o }
-			}
-		}
-		fragment n on CampaignConnection {
-			nodes { ...c }
-			totalCount
-			pageInfo { hasNextPage }
-		}
 		fragment cs on Changeset {
 			id
 			repository { id }
-			campaigns { ...n }
 			createdAt
 			updatedAt
+			title
+			body
+			state
 		}
 		mutation($repository: ID!, $externalID: String!) {
 			changeset: createChangeset(repository: $repository, externalID: $externalID) {
@@ -288,12 +284,25 @@ func TestCampaigns(t *testing.T) {
 		}
 	`)
 
-	if result.Changeset.ID == "" {
-		t.Fatalf("changeset id is blank")
-	}
+	{
+		want := Changeset{
+			Repository: struct{ ID string }{ID: graphqlRepoID},
+			CreatedAt:  now.Format(time.RFC3339),
+			UpdatedAt:  now.Format(time.RFC3339),
+			Title:      "add extension filter to filter bar",
+			Body:       "Enables adding extension filters to the filter bar by rendering the extension filter as filter chips inside the filter bar.\r\nWIP for https://github.com/sourcegraph/sourcegraph/issues/962\r\n\r\n> This PR updates the CHANGELOG.md file to describe any user-facing changes.\r\n.\r\n",
+			State:      "MERGED",
+		}
 
-	if have, want := result.Changeset.Repository.ID, graphqlRepoID; have != want {
-		t.Fatalf("have changeset repo id %q, want %q", have, want)
+		have := result.Changeset
+		if have.ID == "" {
+			t.Fatal("Changeset ID is empty")
+		}
+
+		want.ID = have.ID
+		if !reflect.DeepEqual(have, want) {
+			t.Fatal(cmp.Diff(have, want))
+		}
 	}
 
 	type ChangesetConnection struct {

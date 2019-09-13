@@ -2,6 +2,7 @@
   "ID": "MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0",
   "Title": "Fix disableExtension flag for native integrations",
   "Body": "This flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
+  "State": "MERGED",
   "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550",
   "Number": 5550,
   "Author": {
@@ -14,8 +15,18 @@
     "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
     "Login": "lguychard",
     "URL": "https://github.com/lguychard"
+   },
+   {
+    "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
+    "Login": "unknwon",
+    "URL": "https://github.com/unknwon"
+   },
+   {
+    "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
+    "Login": "felixfbecker",
+    "URL": "https://github.com/felixfbecker"
    }
   ],
   "CreatedAt": "2019-09-12T10:06:09Z",
-  "UpdatedAt": "2019-09-12T10:06:09Z"
+  "UpdatedAt": "2019-09-13T09:44:39Z"
  }
