@@ -10,8 +10,8 @@ import (
 
 type eventLogs struct{}
 
-// UserEvent contains information needed for logging a user event.
-type UserEvent struct {
+// Event contains information needed for logging an event.
+type Event struct {
 	Name            string
 	URL             string
 	UserID          uint32
@@ -20,7 +20,7 @@ type UserEvent struct {
 	Source          string
 }
 
-func (*eventLogs) Insert(ctx context.Context, e *UserEvent) error {
+func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 	_, err := dbconn.Global.ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version) VALUES($1, $2, $3, $4, $5, $6, $7)",

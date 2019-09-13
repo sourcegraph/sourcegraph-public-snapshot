@@ -269,8 +269,7 @@ type Mutation {
         date: String
     ): GitCommit
     # Logs a user event.
-    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
-        @deprecated(reason: "use logEvent instead")
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
     # Logs an event.
     logEvent(input: LogEventInput!): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
