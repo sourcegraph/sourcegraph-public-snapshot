@@ -33,6 +33,7 @@ import {
     contains,
     RangeId,
 } from 'lsif-protocol'
+import { DisjointSet } from './disjoint-set'
 
 /**
  * Identifiers of result set vertices.
@@ -100,11 +101,14 @@ export class Correlator {
     public referenceData = new Map<ReferenceResultId, DefaultMap<DocumentId, RangeId[]>>()
 
     /**
-     * A mapping for the relation from moniker to the set of monikers that they are related
-     * to via nextMoniker edges. This relation is symmetric such that if `a` is in
-     * `MonikerSets[b]`, then `b` is in `monikerSets[a]`.
+     * A disjoint set of monikers linked by `nextMoniker` edges.
      */
-    public monikerSets = new DefaultMap<RangeId, Set<MonikerId>>(() => new Set())
+    public linkedMonikers = new DisjointSet<MonikerId>()
+
+    /**
+     * A disjoint set of reference results linked by `item` edges.
+     */
+    public linkedReferenceResults = new DisjointSet<ReferenceResultId>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
@@ -291,8 +295,12 @@ export class Correlator {
             const documentMap = mustGet(this.referenceData, edge.outV, 'referenceResult')
             const rangeIds = documentMap.getOrDefault(edge.document)
             for (const inV of edge.inVs) {
-                mustGet(this.rangeData, inV, 'range')
-                rangeIds.push(inV)
+                if (this.referenceData.has(inV)) {
+                    this.linkedReferenceResults.union(edge.outV, inV)
+                } else {
+                    mustGet(this.rangeData, inV, 'range')
+                    rangeIds.push(inV)
+                }
             }
 
             return
@@ -308,7 +316,7 @@ export class Correlator {
      * @param edge The moniker edge.
      */
     private handleMonikerEdge(edge: moniker): void {
-        const source = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const source = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -326,7 +334,7 @@ export class Correlator {
      * @param edge The next edge.
      */
     private handleNextEdge(edge: next): void {
-        mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -346,8 +354,7 @@ export class Correlator {
     private handleNextMonikerEdge(edge: nextMoniker): void {
         mustGet(this.monikerData, edge.inV, 'moniker')
         mustGet(this.monikerData, edge.outV, 'moniker')
-        this.monikerSets.getOrDefault(edge.inV).add(edge.outV) // Forward direction
-        this.monikerSets.getOrDefault(edge.outV).add(edge.inV) // Backwards direction
+        this.linkedMonikers.union(edge.inV, edge.outV)
     }
 
     /**
@@ -378,7 +385,7 @@ export class Correlator {
      * @param edge The textDocument/definition edge.
      */
     private handleDefinitionEdge(edge: textDocument_definition): void {
-        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -390,31 +397,13 @@ export class Correlator {
     }
 
     /**
-     * Sets the hover result of the specified range or result set. Ensures all referenced
-     * vertices are defined.
-     *
-     * @param edge The textDocument/hover edge.
-     */
-    private handleHoverEdge(edge: textDocument_hover): void {
-        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
-            this.rangeData,
-            this.resultSetData,
-            edge.outV,
-            'range/resultSet'
-        )
-
-        mustGet(this.hoverData, edge.inV, 'hoverResult')
-        outV.hoverResultId = edge.inV
-    }
-
-    /**
      * Sets the reference result of the specified range or result set. Ensures all
      * referenced vertices are defined.
      *
      * @param edge The textDocument/references edge.
      */
     private handleReferenceEdge(edge: textDocument_references): void {
-        const outV = mustGetFromEither<RangeId | ResultSetId, RangeData | ResultSetData>(
+        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -423,6 +412,24 @@ export class Correlator {
 
         mustGet(this.referenceData, edge.inV, 'referenceResult')
         outV.referenceResultId = edge.inV
+    }
+
+    /**
+     * Sets the hover result of the specified range or result set. Ensures all referenced
+     * vertices are defined.
+     *
+     * @param edge The textDocument/hover edge.
+     */
+    private handleHoverEdge(edge: textDocument_hover): void {
+        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+            this.rangeData,
+            this.resultSetData,
+            edge.outV,
+            'range/resultSet'
+        )
+
+        mustGet(this.hoverData, edge.inV, 'hoverResult')
+        outV.hoverResultId = edge.inV
     }
 }
 

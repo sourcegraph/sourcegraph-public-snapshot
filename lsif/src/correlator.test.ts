@@ -54,7 +54,7 @@ describe('Correlator', () => {
         expect(c.documentPaths).toEqual(new Map([['2', 'sub/path/index.ts']]))
     })
 
-    it('should item outV endpoint type', () => {
+    it('should determine type of item relation the outV property', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
@@ -116,6 +116,50 @@ describe('Correlator', () => {
 
         const refs = c.referenceData.get('5')
         expect(refs && refs.get('2')).toEqual(['3'])
+    })
+
+    it('should correlate linked reference results', () => {
+        const c = new Correlator()
+
+        c.insert({
+            id: '2',
+            type: ElementTypes.vertex,
+            label: VertexLabels.referenceResult,
+        })
+
+        c.insert({
+            id: '3',
+            type: ElementTypes.vertex,
+            label: VertexLabels.referenceResult,
+        })
+
+        c.insert({
+            id: '4',
+            type: ElementTypes.vertex,
+            label: VertexLabels.referenceResult,
+        })
+
+        c.insert({
+            id: '5',
+            type: ElementTypes.edge,
+            label: EdgeLabels.item,
+            outV: '2',
+            inVs: ['3', '4'],
+            document: '1',
+        })
+
+        c.insert({
+            id: '6',
+            type: ElementTypes.edge,
+            label: EdgeLabels.item,
+            outV: '4',
+            inVs: ['3'],
+            document: '1',
+        })
+
+        expect(c.linkedReferenceResults.extractSet('2')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedReferenceResults.extractSet('3')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedReferenceResults.extractSet('4')).toEqual(new Set(['2', '3', '4']))
     })
 
     it('should normalize hover results', () => {
@@ -197,7 +241,7 @@ describe('Correlator', () => {
         expect(c.exportedMonikers).toEqual(new Set(['1']))
     })
 
-    it('should correlate next monikers', () => {
+    it('should correlate monikers', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
@@ -257,9 +301,9 @@ describe('Correlator', () => {
 
         const range = c.rangeData.get('1')
         expect(range && range.monikerIds).toEqual(new Set(['2']))
-        expect(c.monikerSets.get('2')).toEqual(new Set(['3']))
-        expect(c.monikerSets.get('3')).toEqual(new Set(['2', '4']))
-        expect(c.monikerSets.get('4')).toEqual(new Set(['3']))
+        expect(c.linkedMonikers.extractSet('2')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedMonikers.extractSet('3')).toEqual(new Set(['2', '3', '4']))
+        expect(c.linkedMonikers.extractSet('4')).toEqual(new Set(['2', '3', '4']))
     })
 })
 

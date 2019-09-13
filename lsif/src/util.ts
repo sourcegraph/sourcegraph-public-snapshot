@@ -48,7 +48,12 @@ export function mustGet<K, V>(map: Map<K, V>, key: K, elementType: string): V {
  * @param key The key to search for.
  * @param elementType The type of element (used for exception message).
  */
-export function mustGetFromEither<K, V>(map1: Map<K, V>, map2: Map<K, V>, key: K, elementType: string): V {
+export function mustGetFromEither<K1, V1, K2, V2>(
+    map1: Map<K1, V1>,
+    map2: Map<K2, V2>,
+    key: K1 & K2,
+    elementType: string
+): V1 | V2 {
     for (const map of [map1, map2]) {
         const value = map.get(key)
         if (value !== undefined) {
