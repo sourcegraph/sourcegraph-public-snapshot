@@ -40,5 +40,7 @@ cat << EOF > 'repo/tsconfig.json'
 EOF
 
 mkdir -p data
-${LSIF_TSC} -p repo/tsconfig.json --noContents --out ./data/test.lsif
+cd repo
+${LSIF_TSC} -p tsconfig.json --noContents --out ../data/data.lsif
+cd -
 gzip ./data/*.lsif

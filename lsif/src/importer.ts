@@ -51,7 +51,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 /**
  * Correlate each vertex and edge together, then populate the provided entity manager
  * with the document, definition, and reference information. Returns the package and
- * external reference data needed to populate the xrepo database.
+ * external reference data needed to populate the cross-repos database.
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param elements The stream of vertex and edge objects composing the LSIF dump.
@@ -132,7 +132,7 @@ export async function importLsif(
     await definitionInserter.flush()
     await referenceInserter.flush()
 
-    // Return data to populate xrepo database
+    // Return data to populate cross-repo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }
 }
 
@@ -223,15 +223,15 @@ async function populateResultChunksTable(
     chunkResults(correlator.definitionData)
     chunkResults(correlator.referenceData)
 
-    for (let id = 0; id < resultChunks.length; id++) {
+    for (const [id, resultChunk] of resultChunks.entries()) {
         // Empty chunk, no need to serialize as it will never be queried
-        if (resultChunks[id].paths.size === 0 && resultChunks[id].documentIdRangeIds.size === 0) {
+        if (resultChunk.paths.size === 0 && resultChunk.documentIdRangeIds.size === 0) {
             continue
         }
 
         const data = await encodeJSON({
-            documentPaths: resultChunks[id].paths,
-            documentIdRangeIds: resultChunks[id].documentIdRangeIds,
+            documentPaths: resultChunk.paths,
+            documentIdRangeIds: resultChunk.documentIdRangeIds,
         })
 
         // Encode and insert result chunk record
@@ -257,8 +257,8 @@ async function populateDefinitionsAndReferencesTables(
     //   (2) it stop us from re-iterating over the range data of the entire
     //       LSIF dump, which is by far the largest proportion of data.
 
-    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set<MonikerId>())
-    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set<MonikerId>())
+    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set())
+    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set())
 
     for (const range of correlator.rangeData.values()) {
         if (range.monikerIds.size === 0) {

@@ -1,9 +1,9 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
-import { convertLsif } from './conversion'
+import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { convertLsif } from './conversion'
 import { createCommit, createLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
@@ -21,7 +21,7 @@ describe('Database', () => {
     const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
-            new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
             connectionCache,
             documentCache,
             resultChunkCache,
@@ -31,8 +31,8 @@ describe('Database', () => {
         )
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('cpp-')
-        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
+        storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
         const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
         const database = createDatabaseFilename(storageRoot, repository, commit)
@@ -40,26 +40,24 @@ describe('Database', () => {
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all defs of `four` from main.cpp', async () => {
-        const db = createDatabase('five', createCommit('five'))
+        const db = createDatabase(repository, commit)
         const definitions = await db.definitions('main.cpp', { line: 12, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('main.cpp', 6, 4, 6, 4)])
     })
 
     it('should find all defs of `five` from main.cpp', async () => {
-        const db = createDatabase('five', createCommit('five'))
+        const db = createDatabase(repository, commit)
         const definitions = await db.definitions('main.cpp', { line: 11, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('five.cpp', 2, 4, 2, 4)])
     })
 
     it('should find all refs of `five` from main.cpp', async () => {
-        const db = createDatabase('five', createCommit('five'))
+        const db = createDatabase(repository, commit)
         const references = await db.references('main.cpp', { line: 11, character: 3 })
 
         // TODO - should the definition be in this result set?

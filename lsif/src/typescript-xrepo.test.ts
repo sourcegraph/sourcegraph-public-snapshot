@@ -1,9 +1,9 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as rimraf from 'rimraf'
 import * as zlib from 'mz/zlib'
-import { convertLsif } from './conversion'
+import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { convertLsif } from './conversion'
 import { createCommit, createLocation, createRemoteLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
@@ -19,7 +19,7 @@ describe('Database', () => {
     const createDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
-            new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db')),
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
             connectionCache,
             documentCache,
             resultChunkCache,
@@ -29,8 +29,8 @@ describe('Database', () => {
         )
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('typescript-')
-        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'correlation.db'))
+        storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
         for (const { input, repository, commit } of createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
@@ -39,9 +39,7 @@ describe('Database', () => {
         }
     })
 
-    afterAll(() => {
-        rimraf.sync(storageRoot)
-    })
+    afterAll(async () => await rmfr(storageRoot))
 
     it('should find all defs of `add` from repo a', async () => {
         const db = createDatabase('a', createCommit('a'))
