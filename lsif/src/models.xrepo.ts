@@ -1,5 +1,6 @@
 import { PrimaryGeneratedColumn, Column, Entity, Index } from 'typeorm'
 import { getBatchSize } from './util'
+import { EncodedBloomFilter } from './encoding'
 
 /**
  * The base class for `PackageModel` and `ReferenceModel` as they have nearly
