@@ -620,7 +620,7 @@ input MarkdownOptions {
     alwaysNil: String
 }
 
-# The sources of events would come from.
+# The product sources where events can come from.
 enum EventSource {
     WEB
     CODEHOSTINTEGRATION
@@ -630,11 +630,11 @@ enum EventSource {
 input LogEventInput {
     # The name of the event.
     event: String!
-    # The unique user ID stored in the cookie.
+    # The randomly generated unique user ID stored in a browser cookie.
     userCookieID: String!
-    # The URL which event happens.
+    # The URL when the event was logged.
     url: String!
-    # The source of the event happens.
+    # The source of the event.
     source: EventSource!
     # The additional argument information.
     argument: String
