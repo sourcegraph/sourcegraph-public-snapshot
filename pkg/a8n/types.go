@@ -1,6 +1,8 @@
 package a8n
 
-import "time"
+import (
+	"time"
+)
 
 // A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
@@ -25,13 +27,14 @@ func (c *Campaign) Clone() *Campaign {
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
-	ID          int64
-	RepoID      int32
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Metadata    interface{}
-	CampaignIDs []int64
-	ExternalID  string
+	ID                  int64
+	RepoID              int32
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	Metadata            interface{}
+	CampaignIDs         []int64
+	ExternalID          string
+	ExternalServiceType string
 }
 
 // Clone returns a clone of a Changeset.

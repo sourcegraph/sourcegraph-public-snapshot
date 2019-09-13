@@ -29,15 +29,6 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	changeset := &a8n.Changeset{
-		RepoID:     int32(repoID),
-		ExternalID: args.ExternalID,
-	}
-
-	if err = r.A8NStore.CreateChangeset(ctx, changeset); err != nil {
-		return nil, err
-	}
-
 	store := repos.NewDBStore(r.A8NStore.DB(), sql.TxOptions{})
 	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{
 		IDs: []uint32{uint32(repoID)},
@@ -65,6 +56,12 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		return nil, errors.Errorf("repo %q has no external services", args.Repository)
 	}
 
+	changeset := &a8n.Changeset{
+		RepoID:              int32(repo.ID),
+		ExternalID:          args.ExternalID,
+		ExternalServiceType: repo.ExternalRepo.ServiceType,
+	}
+
 	src, err := repos.NewSource(es[0], r.HTTPFactory)
 	if err != nil {
 		return nil, err
@@ -80,7 +77,7 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err = r.A8NStore.UpdateChangeset(ctx, changeset); err != nil {
+	if err = r.A8NStore.CreateChangeset(ctx, changeset); err != nil {
 		return nil, err
 	}
 

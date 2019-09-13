@@ -92,9 +92,10 @@ INSERT INTO changesets (
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 )
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repo_id,
@@ -102,7 +103,8 @@ RETURNING
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 `
 
 func (s *Store) createChangesetQuery(t *Changeset) (*sqlf.Query, error) {
@@ -132,6 +134,7 @@ func (s *Store) createChangesetQuery(t *Changeset) (*sqlf.Query, error) {
 		metadata,
 		campaignIDs,
 		t.ExternalID,
+		t.ExternalServiceType,
 	), nil
 }
 
@@ -207,7 +210,8 @@ SELECT
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 FROM changesets
 WHERE %s
 LIMIT 1
@@ -264,7 +268,8 @@ SELECT
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 FROM changesets
 WHERE %s
 ORDER BY id ASC
@@ -317,8 +322,9 @@ SET (
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
-) = (%s, %s, %s, %s, %s, %s)
+	external_id,
+	external_service_type
+) = (%s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
 	id,
@@ -327,7 +333,8 @@ RETURNING
 	updated_at,
 	metadata,
 	campaign_ids,
-	external_id
+	external_id,
+	external_service_type
 `
 
 func (s *Store) updateChangesetQuery(c *Changeset) (*sqlf.Query, error) {
@@ -351,6 +358,7 @@ func (s *Store) updateChangesetQuery(c *Changeset) (*sqlf.Query, error) {
 		metadata,
 		campaignIDs,
 		c.ExternalID,
+		c.ExternalServiceType,
 		c.ID,
 	), nil
 }
@@ -699,6 +707,7 @@ func scanChangeset(t *Changeset, s scanner) error {
 		&t.Metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
+		&t.ExternalServiceType,
 	)
 }
 

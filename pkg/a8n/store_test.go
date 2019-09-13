@@ -248,12 +248,13 @@ func TestStore(t *testing.T) {
 		t.Run("Create", func(t *testing.T) {
 			for i := 0; i < cap(changesets); i++ {
 				th := &Changeset{
-					RepoID:      42,
-					CreatedAt:   now,
-					UpdatedAt:   now,
-					Metadata:    []byte("{}"),
-					CampaignIDs: []int64{int64(i) + 1},
-					ExternalID:  fmt.Sprintf("foobar-%d", i),
+					RepoID:              42,
+					CreatedAt:           now,
+					UpdatedAt:           now,
+					Metadata:            []byte("{}"),
+					CampaignIDs:         []int64{int64(i) + 1},
+					ExternalID:          fmt.Sprintf("foobar-%d", i),
+					ExternalServiceType: "github",
 				}
 
 				want := th.Clone()
@@ -383,6 +384,7 @@ func TestStore(t *testing.T) {
 		t.Run("Update", func(t *testing.T) {
 			for _, c := range changesets {
 				c.Metadata = []byte(`{"updated": true}`)
+				c.ExternalServiceType = "gitlab"
 
 				if c.RepoID != 0 {
 					c.RepoID++
