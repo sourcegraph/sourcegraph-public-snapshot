@@ -1,3 +1,23 @@
 # Life of a search query
 
-WIP
+This document describes how our backend systems serve search results to clients. There are multiple kinds of searches (e.g. code, repository, file, symbol, diff, commit), but this document will focus on code searches.
+
+## Clients
+
+There are a few ways to perform a search with Sourcegraph:
+
+1. Typing a query into the search bar of the Sourcegraph web application.
+2. Typing a query into your browser's location bar after configuring a [browser search engine shortcut](https://docs.sourcegraph.com/integration/browser_search_engine).
+3. Using the [src CLI command](https://github.com/sourcegraph/src-cli).
+
+In all cases, clients use the [search query](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%5Cbsearch%5C%28+file:schema.graphql) in our GraphQL API that is exposed by our [frontend](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend) service.
+
+## Frontend
+
+The frontend implements the GraphQL search resolver [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+"func+%28r+*schemaResolver%29+Search%28").
+
+First, the frontend [resolves which repositories need to be searched](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22func+%28r+*searchResolver%29+resolveRepositories%28%22). It parses the query for any repository filters and then queries the database for the list of repositories that match those filters. If no filters are provided then all repositories are searched, as long as the number of repositories doesn't exceed the configured limit. Private instances default to an unlimited number of repositories, but sourcegraph.com has smaller configured limit (`"maxReposToSearch": 400` at the time of writing, but you can check the [site config for the current value](https://sourcegraph.com/site-admin/configuration)) becuase it isn't cost effective for us to to search/index all open source code on GitHub.
+
+Next, the frontend [queries zoekt to determine which repositories are indexed](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+"zoektIndexedRepos%28"+file:textsearch%5C.go). It concurrently [queries zoekt](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22zoektSearchHEAD%28%22+file:textsearch%5C.go) for indexed repositories and [queries searcher](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22searchFilesInRepo%28%22+file:textsearch%5C.go) for non-indexed repositories.
+
+
