@@ -21,13 +21,12 @@ class ServerAdminWrapper {
 
     public trackPageView(eventAction: string): void {
         logUserEvent(GQL.UserEvent.PAGEVIEW)
-        logEvent('PageView')
         if (this.isAuthenicated) {
             if (eventAction === 'ViewRepository' || eventAction === 'ViewBlob' || eventAction === 'ViewTree') {
                 logUserEvent(GQL.UserEvent.STAGECODE)
             }
-            logEvent(eventAction)
         }
+        logEvent(eventAction)
     }
 
     public trackAction(eventAction: string): void {
@@ -46,8 +45,8 @@ class ServerAdminWrapper {
             } else if (eventAction === 'DiffSearchResultsQueried') {
                 logUserEvent(GQL.UserEvent.STAGEMONITOR)
             }
-            logEvent(eventAction)
         }
+        logEvent(eventAction)
     }
 }
 

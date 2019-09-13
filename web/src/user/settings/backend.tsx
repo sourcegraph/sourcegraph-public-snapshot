@@ -90,6 +90,8 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  * to see a count of unique users on a daily, weekly, and monthly basis).
  *
  * Not used at all for public/sourcegraph.com usage.
+ *
+ * This function will be deprecated.
  */
 export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context && window.context.sourcegraphDotComMode) {

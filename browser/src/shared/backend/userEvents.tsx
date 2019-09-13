@@ -8,6 +8,8 @@ import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
  * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
  *
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
+ *
+ * This function will be deprecated.
  */
 export const logUserEvent = (
     event: GQL.UserEvent,
