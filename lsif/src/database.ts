@@ -83,7 +83,7 @@ export class Database {
                 continue
             }
 
-            // We have a definition result in this database, return this first.s
+            // We have a definition result in this database, return this first.
             const definitionResults = await this.getResultById(range.definitionResultId)
 
             // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
