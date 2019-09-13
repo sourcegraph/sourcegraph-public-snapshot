@@ -9,14 +9,14 @@
 
 ## Building dashboards
 
-Run `jsonnet` to execute a `.jsonnet` file and produce a JSON payload on standard out. This should be redirected to the correct directory for provisioned dashboards. For example,
+Run `jsonnet` to execute a `.jsonnet` file and produce a JSON payload on standard out. This should be redirected to the correct directory for provisioned dashboards. For example:
 
 ```
-jsonnet -J /path/to/grafonnet-lib ./lsif.jsonnet > ../../../docker-images/grafana/config/provisioning/dashboards/sourcegraph/lsif.json
+jsonnet -J /path/to/grafonnet-lib ./dashboard.jsonnet > ../../../docker-images/grafana/config/provisioning/dashboards/sourcegraph/dashboard.json
 ```
 
 ## Libsonnet
 
 The `common.libsonnet` file should be imported and used as a base for creating panels and graphs. It handles some common functionality around visualizing metrics conforming to [the](https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services/) [RED](https://www.weave.works/blog/the-red-method-key-metrics-for-microservices-architecture/) [method](https://thenewstack.io/monitoring-microservices-red-method/).
 
-See the inline documentation for usage, and the implementation of `lsif.jsonnet` for a concrete example.
+See the inline documentation for usage, or existing dashboard that imports it for an example.

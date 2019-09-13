@@ -1,9 +1,10 @@
 import { of } from 'rxjs'
-import { CodeEditorWithModel, EditorId } from '../../api/client/services/editorService'
+import { EditorId, CodeEditorData } from '../../api/client/services/editorService'
 import { EditorTextFieldUtils } from './EditorTextField'
 import { Selection } from '@sourcegraph/extension-api-types'
 import * as sinon from 'sinon'
 import { noop } from 'lodash'
+import { TextModel } from '../../api/client/services/modelService'
 
 describe('EditorTextFieldUtils', () => {
     describe('getEditorDataFromElement', () => {
@@ -97,12 +98,10 @@ describe('EditorTextFieldUtils', () => {
             const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    observeEditorAndModel: () =>
-                        of<CodeEditorWithModel>({
-                            editorId: 'e',
+                    observeEditor: () =>
+                        of<CodeEditorData>({
                             type: 'CodeEditor',
                             resource: 'u',
-                            model: { uri: 'u', languageId: 'l', text: 'xyz' },
                             selections: [
                                 {
                                     anchor: { line: 0, character: 2 },
@@ -114,6 +113,9 @@ describe('EditorTextFieldUtils', () => {
                             ],
                             isActive: true,
                         }),
+                },
+                {
+                    observeModel: () => of<TextModel>({ uri: 'u', languageId: 'l', text: 'xyz' }),
                 },
                 { editorId: 'e' },
                 setValue,
@@ -132,12 +134,10 @@ describe('EditorTextFieldUtils', () => {
             const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    observeEditorAndModel: () =>
-                        of<CodeEditorWithModel>({
-                            editorId: 'e',
+                    observeEditor: () =>
+                        of<CodeEditorData>({
                             type: 'CodeEditor',
                             resource: 'u',
-                            model: { uri: 'u', languageId: 'l', text: 'xyz' },
                             selections: [
                                 {
                                     anchor: { line: 0, character: 3 },
@@ -149,6 +149,9 @@ describe('EditorTextFieldUtils', () => {
                             ],
                             isActive: true,
                         }),
+                },
+                {
+                    observeModel: () => of<TextModel>({ uri: 'u', languageId: 'l', text: 'xyz' }),
                 },
                 { editorId: 'e' },
                 setValue,

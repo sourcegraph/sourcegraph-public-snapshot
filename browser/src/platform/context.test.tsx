@@ -1,5 +1,5 @@
 import { gql } from '../../../shared/src/graphql/graphql'
-import { DEFAULT_SOURCEGRAPH_URL, DEFAULT_ASSETS_URL } from '../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../shared/util/context'
 import { createPlatformContext } from './context'
 
 describe('Platform Context', () => {
@@ -13,7 +13,7 @@ describe('Platform Context', () => {
                 },
                 {
                     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    assetsURL: DEFAULT_ASSETS_URL,
+                    assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL),
                 },
                 false
             )

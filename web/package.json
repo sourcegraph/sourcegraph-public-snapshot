@@ -5,9 +5,9 @@
   "description": "The Sourcegraph web app",
   "license": "MIT",
   "scripts": {
-    "test": "jest --testPathIgnorePatterns e2e",
+    "test": "jest --testPathIgnorePatterns e2e --testPathIgnorePatterns regression",
     "test-e2e": "jest --coverage=false --runInBand ./e2e/e2e.test",
-    "test-regression": "jest --coverage=false --runInBand ./e2e/regression.test",
+    "test-regression": "jest --coverage=false --runInBand ./regression/",
     "test-e2e-sgdev": "env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} jest --coverage=false --runInBand ./e2e/e2e.test",
     "build": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp build",
     "watch": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watch",
@@ -28,5 +28,8 @@
     {
       "path": "../ui/assets/scripts/app.bundle.js"
     }
-  ]
+  ],
+  "jest": {
+    "testURL": "http://localhost:3080"
+  }
 }

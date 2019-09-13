@@ -1,4 +1,4 @@
-import { createFilter, testFilter, encodeJSON, decodeJSON } from './encoding'
+import { createFilter, testFilter, gzipJSON, gunzipJSON } from './encoding'
 
 describe('testFilter', () => {
     it('should test set membership', async () => {
@@ -11,7 +11,7 @@ describe('testFilter', () => {
     })
 })
 
-describe('encodeJSON', () => {
+describe('gzipJSON', () => {
     it('should preserve maps', async () => {
         const m = new Map<string, number>([['a', 1], ['b', 2], ['c', 3]])
 
@@ -21,8 +21,8 @@ describe('encodeJSON', () => {
             baz: m,
         }
 
-        const encoded = await encodeJSON(value)
-        const decoded = await decodeJSON(encoded)
+        const encoded = await gzipJSON(value)
+        const decoded = await gunzipJSON(encoded)
         expect(decoded).toEqual(value)
     })
 
@@ -35,8 +35,8 @@ describe('encodeJSON', () => {
             baz: s,
         }
 
-        const encoded = await encodeJSON(value)
-        const decoded = await decodeJSON(encoded)
+        const encoded = await gzipJSON(value)
+        const decoded = await gunzipJSON(encoded)
         expect(decoded).toEqual(value)
     })
 })

@@ -1,5 +1,5 @@
 import { Location } from '@sourcegraph/extension-api-types'
-import { from, Observable } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
@@ -45,22 +45,22 @@ export class TextDocumentLocationProviderRegistry<
      *
      * @param editors The code editors in {@link EditorService}.
      */
-    public hasProvidersForActiveTextDocument(editors: readonly CodeEditorWithPartialModel[]): Observable<boolean> {
+    public hasProvidersForActiveTextDocument(
+        activeEditor: CodeEditorWithPartialModel | undefined
+    ): Observable<boolean> {
+        if (!activeEditor) {
+            return of(false)
+        }
         return this.entries.pipe(
-            map(entries => {
-                const activeEditor = editors.find(({ isActive }) => isActive)
-                if (!activeEditor) {
-                    return false
-                }
-                return (
+            map(
+                entries =>
                     entries.filter(({ registrationOptions }) =>
                         match(registrationOptions.documentSelector, {
                             uri: activeEditor.resource,
                             languageId: activeEditor.model.languageId,
                         })
                     ).length > 0
-                )
-            })
+            )
         )
     }
 }

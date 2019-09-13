@@ -1,4 +1,4 @@
-import { DEFAULT_SOURCEGRAPH_URL, DEFAULT_ASSETS_URL } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
 import { initializeExtensions } from './extensions'
 
 describe('Extensions controller', () => {
@@ -11,7 +11,7 @@ describe('Extensions controller', () => {
             },
             {
                 sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                assetsURL: DEFAULT_ASSETS_URL,
+                assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL),
             },
             false
         )

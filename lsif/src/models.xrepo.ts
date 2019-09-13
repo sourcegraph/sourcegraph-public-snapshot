@@ -75,6 +75,6 @@ export class ReferenceModel extends Package {
      * and commit imports from the given package. Testing this filter will prevent the
      * backend from opening databases that will yield no results for a particular symbol.
      */
-    @Column('text')
-    public filter!: string
+    @Column('blob')
+    public filter!: EncodedBloomFilter
 }

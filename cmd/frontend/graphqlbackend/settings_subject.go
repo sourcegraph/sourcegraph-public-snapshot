@@ -6,12 +6,13 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
-func (schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
-	return settingsSubjectByID(ctx, args.ID)
+func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
+	return settingsSubjectByID(ctx, r.A8NStore, args.ID)
 }
 
 var errUnknownSettingsSubject = errors.New("unknown settings subject")
@@ -26,8 +27,8 @@ type settingsSubject struct {
 
 // settingsSubjectByID fetches the settings subject with the given ID. If the ID refers to a node
 // that is not a valid settings subject, an error is returned.
-func settingsSubjectByID(ctx context.Context, id graphql.ID) (*settingsSubject, error) {
-	resolver, err := NodeByID(ctx, id)
+func settingsSubjectByID(ctx context.Context, s *a8n.Store, id graphql.ID) (*settingsSubject, error) {
+	resolver, err := NodeByID(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

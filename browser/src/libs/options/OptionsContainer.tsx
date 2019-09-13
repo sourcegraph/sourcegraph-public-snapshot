@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, share, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, map, share, switchMap, concatMap } from 'rxjs/operators'
 import { ERAUTHREQUIRED } from '../../../../shared/src/backend/errors'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
@@ -9,11 +9,13 @@ import { ConnectionErrors } from './ServerURLForm'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
+    isActivated: boolean
     ensureValidSite: (url: string) => Observable<any>
     fetchCurrentTabStatus: () => Promise<OptionsMenuProps['currentTabStatus']>
     hasPermissions: (url: string) => Promise<boolean>
     requestPermissions: (url: string) => void
     setSourcegraphURL: (url: string) => Promise<void>
+    toggleExtensionDisabled: (isActivated: boolean) => Promise<void>
     toggleFeatureFlag: (key: string) => void
     featureFlags: { key: string; value: boolean }[]
 }
@@ -21,13 +23,21 @@ export interface OptionsContainerProps {
 interface OptionsContainerState
     extends Pick<
         OptionsMenuProps,
-        'status' | 'sourcegraphURL' | 'connectionError' | 'isSettingsOpen' | 'urlHasPermissions' | 'currentTabStatus'
+        | 'status'
+        | 'sourcegraphURL'
+        | 'connectionError'
+        | 'isSettingsOpen'
+        | 'isActivated'
+        | 'urlHasPermissions'
+        | 'currentTabStatus'
     > {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
     private version = getExtensionVersion()
 
     private urlUpdates = new Subject<string>()
+
+    private activationClicks = new Subject<boolean>()
 
     private subscriptions = new Subscription()
 
@@ -37,6 +47,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         this.state = {
             status: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
+            isActivated: props.isActivated,
             urlHasPermissions: false,
             connectionError: undefined,
             isSettingsOpen: false,
@@ -100,7 +111,13 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
     public componentDidMount(): void {
         this.urlUpdates.next(this.state.sourcegraphURL)
+        this.subscriptions.add(
+            this.activationClicks
+                .pipe(concatMap(isActivated => this.props.toggleExtensionDisabled(isActivated)))
+                .subscribe()
+        )
     }
+
     public componentDidUpdate(): void {
         this.urlUpdates.next(this.props.sourcegraphURL)
     }
@@ -116,9 +133,11 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                 version={this.version}
                 onURLChange={this.handleURLChange}
                 onURLSubmit={this.handleURLSubmit}
+                isActivated={this.props.isActivated}
                 toggleFeatureFlag={this.props.toggleFeatureFlag}
                 featureFlags={this.props.featureFlags}
                 onSettingsClick={this.handleSettingsClick}
+                onToggleActivationClick={this.handleToggleActivationClick}
                 requestPermissions={this.props.requestPermissions}
             />
         )
@@ -137,4 +156,6 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             isSettingsOpen: !state.isSettingsOpen,
         }))
     }
+
+    private handleToggleActivationClick = (value: boolean) => this.activationClicks.next(value)
 }
