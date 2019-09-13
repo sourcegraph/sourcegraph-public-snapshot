@@ -33,7 +33,7 @@ const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 102
 /**
  * The maximum number of result chunks that can be held in memory at once.
  */
-const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITy', 1024 * 1024 * 1024)
+const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
