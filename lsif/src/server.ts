@@ -169,14 +169,14 @@ async function main(): Promise<void> {
                 await new Promise((resolve, reject) => {
                     req.pipe(zlib.createGunzip()) // unzip input
                         .pipe(es.split()) // split into lines
+                        // Must check each line synchronously
+                        // eslint-disable-next-line no-sync
                         .pipe(
-                            // Must check each line synchronously
-                            // eslint-disable-next-line no-sync
                             es.mapSync((text: string) => {
-                                validateLine(text) // validate each line
+                                validateLine(text)
                                 return text
                             })
-                        )
+                        ) // validate seach line
                         .on('error', reject) // catch validation error
                         .pipe(es.join('\n')) // join back into text
                         .pipe(zlib.createGzip()) // re-zip input
@@ -260,6 +260,42 @@ async function setupQueue(): Promise<Queue> {
     queue.on('error', logErrorAndExit)
     await queue.connect()
     exitHook(() => queue.end())
+
+    const inspectMetrics = async () => {
+        // queued [
+        //  {
+        //    class: 'convert',
+        //    queue: 'lsif',
+        //    args: [
+        //      'github.com/sourcegraph/codeintellify',
+        //      '1234567890123456789012345678901234567890',
+        //      '/Users/efritz/.sourcegraph/lsif-storage/uploads/aeb5bdf6-8dcd-4b70-b6bf-d78e447f01bb'
+        //    ]
+        //  }
+        // ]
+
+        // console.log('workers', await (queue as any).workers())
+        // console.log('stats', await (queue as any).stats())
+        // console.log('failedCount', await (queue as any).failedCount())
+
+        // console.log('queued', await (queue as any).queued('lsif', 0, -1))
+        // console.log('failed', await (queue as any).failed(0, -1))
+
+        // console.log(await (queue as any).cleanOldWorkers(10))
+        // console.log('allWorkingOn', await (queue as any).allWorkingOn())
+
+        // let stats = await queue.stats()
+        // let jobs = await queue.queued(q, start, stop)
+        // let length = await queue.length(q)
+
+        const data = await (queue as any).allWorkingOn()
+        for (const i in Object.keys(data)) {
+            const workerName = Object.keys(data)[i]
+            console.log(data[workerName])
+        }
+    }
+
+    setInterval(() => { inspectMetrics().catch(logErrorAndExit) }, 1000)
 
     const scheduler = new Scheduler({ connection: connectionOptions })
     scheduler.on('start', () => console.log('Scheduler started'))
