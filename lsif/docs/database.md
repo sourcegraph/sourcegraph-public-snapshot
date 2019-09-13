@@ -51,7 +51,7 @@ The last value is used in order to achieve a consistent hash of identifiers that
 
 **`documents` table**
 
-This table is populated with a gzipped, base64-encoded JSON payload that represents the ranges as well as each range's definition, reference, and hover result identifiers. The table is indexed on the path of the document relative to the project root.
+This table is populated with a gzipped JSON payload that represents the ranges as well as each range's definition, reference, and hover result identifiers. The table is indexed on the path of the document relative to the project root.
 
 | path   | data                         |
 | ------ | ---------------------------- |
@@ -149,7 +149,7 @@ The `ranges` field holds a map from range identifier range data including the ex
 
 Originally, definition and reference results were stored inline in the document payload. However, this caused document payloads to be come massive in some circumstances (for instance, where the reference result of a frequently used symbol includes multiple ranges in every document of the project). In order to keep each row to a manageable and cacheable size, the definition and reference results were moved into a separate table. The size of each result chunk can then be controlled by varying _how many_ result chunks there are available in a database. It may also be worth noting here that hover result and monikers are best left inlined, as normalizing the former would require another SQL lookup on hover queries, and normalizing the latter would require a SQL lookup per moniker attached to a range; normalizing either does not have a large effect on the size of the document payload.
 
-This table is populated with gzipped, base64-encoded JSON payloads that contains a mapping from definition result or reference result identifiers to the set of ranges that compose that result. A definition or reference result may be referred to by many documents, which is why it is encoded separately. The table is indexed on the common hash of each definition and reference result id inserted in this chunk.
+This table is populated with gzipped JSON payloads that contains a mapping from definition result or reference result identifiers to the set of ranges that compose that result. A definition or reference result may be referred to by many documents, which is why it is encoded separately. The table is indexed on the common hash of each definition and reference result id inserted in this chunk.
 
 | id  | data                         |
 | --- | ---------------------------- |

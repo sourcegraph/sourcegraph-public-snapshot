@@ -1,5 +1,5 @@
-import { from } from 'rxjs'
-import { distinctUntilChanged, filter, map, switchMap, take, toArray } from 'rxjs/operators'
+import { from, of } from 'rxjs'
+import { filter, map, switchMap, take, toArray, first } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
 import { isDefined } from '../../util/types'
 import { TextModel } from '../client/services/modelService'
@@ -32,6 +32,7 @@ describe('Windows (integration)', () => {
                 roots: [],
                 editors: [],
             })
+            expect(extensionAPI.app.activeWindow).toBeUndefined()
             modelService.addModel({
                 uri: 'u',
                 languageId: 'l',
@@ -43,13 +44,13 @@ describe('Windows (integration)', () => {
                 selections: [],
                 isActive: true,
             })
-            const values = await from(extensionAPI.app.activeWindowChanges)
+            await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
-                    take(1),
-                    toArray()
+                    filter(isDefined),
+                    first()
                 )
                 .toPromise()
-            assertToJSON(values.map(w => !!w), [true])
+            expect(extensionAPI.app.activeWindow).toBeTruthy()
         })
     })
 
@@ -115,15 +116,15 @@ describe('Windows (integration)', () => {
             } = await integrationTestContext()
 
             modelService.addModel({
-                uri: 'file:///inactive',
-                languageId: 'inactive',
-                text: 'inactive',
+                uri: 'u2',
+                languageId: 'l2',
+                text: 't2',
             })
             editorService.addEditor({
                 type: 'CodeEditor',
-                resource: 'file:///inactive',
+                resource: 'u2',
                 selections: [],
-                isActive: false,
+                isActive: true,
             })
             await from(extensionAPI.app.activeWindowChanges)
                 .pipe(
@@ -141,7 +142,7 @@ describe('Windows (integration)', () => {
                 },
                 {
                     type: 'CodeEditor' as const,
-                    document: { uri: 'file:///inactive', languageId: 'inactive', text: 'inactive' },
+                    document: { uri: 'u2', languageId: 'l2', text: 't2' },
                 },
             ] as ViewComponent[])
         })
@@ -196,9 +197,9 @@ describe('Windows (integration)', () => {
                     selections: [],
                     isActive: true,
                 })
-                const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
+                const values = await from(extensionAPI.app.activeWindowChanges)
                     .pipe(
-                        distinctUntilChanged(),
+                        switchMap(activeWindow => (activeWindow ? activeWindow.activeViewComponentChanges : of(null))),
                         take(4),
                         toArray()
                     )

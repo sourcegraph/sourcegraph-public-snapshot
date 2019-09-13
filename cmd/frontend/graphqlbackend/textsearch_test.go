@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
@@ -267,9 +268,10 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
-		Query: q,
-		Zoekt: zoekt,
+		Repos:        makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
+		Query:        q,
+		Zoekt:        zoekt,
+		SearcherURLs: endpoint.New("test"),
 	}
 	results, common, err := searchFilesInRepos(context.Background(), args)
 	if err != nil {
@@ -296,9 +298,10 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		Repos: makeRepositoryRevisions("foo/no-rev@dev"),
-		Query: q,
-		Zoekt: zoekt,
+		Repos:        makeRepositoryRevisions("foo/no-rev@dev"),
+		Query:        q,
+		Zoekt:        zoekt,
+		SearcherURLs: endpoint.New("test"),
 	}
 	_, _, err = searchFilesInRepos(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
@@ -329,7 +332,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		FilePatternsReposMustInclude: []string{"main"},
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, gitserver.Repo{Name: "foo/one", URL: "http://example.com/foo/one"}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,7 +340,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		t.Errorf("expected repo to be searched, got shouldn't be searched")
 	}
 
-	shouldBeSearched, err = repoShouldBeSearched(context.Background(), info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, gitserver.Repo{Name: "foo/no-filematch", URL: "http://example.com/foo/no-filematch"}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -758,11 +761,4 @@ func Benchmark_zoektIndexedRepos(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _, _ = zoektIndexedRepos(ctx, z, repos, nil)
 	}
-}
-
-func init() {
-	// Set both URLs to something that will fail in tests. We shouldn't be
-	// contacting them in tests.
-	zoektAddr = "127.0.0.1:101010"
-	searcherURL = "http://127.0.0.1:101010"
 }

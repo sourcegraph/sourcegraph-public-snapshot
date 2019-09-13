@@ -15,7 +15,7 @@ export type PackageInformationId = Id
 /**
  * A type that describes a gzipped and JSON-encoded value of type `T`.
  */
-export type JSONEncoded<T> = string
+export type JSONEncoded<T> = Buffer
 
 /**
  * A type of hashed value created by hashing a value of type `T` and performing
@@ -84,7 +84,7 @@ export class DocumentModel {
     /**
      * The JSON-encoded document data.
      */
-    @Column('text')
+    @Column('blob')
     public data!: JSONEncoded<DocumentData>
 }
 
@@ -111,7 +111,7 @@ export class ResultChunkModel {
     /**
      * The JSON-encoded chunk data.
      */
-    @Column('text')
+    @Column('blob')
     public data!: JSONEncoded<ResultChunkData>
 }
 

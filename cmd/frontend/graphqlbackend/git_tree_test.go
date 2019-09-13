@@ -59,7 +59,7 @@ func TestGitTree(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: GraphQLSchema,
+			Schema: mustParseGraphQLSchema(t, nil),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

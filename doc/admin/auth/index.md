@@ -57,8 +57,6 @@ Site configuration example:
 }
 ```
 
-The top-level `auth.public` [critical configuration](../config/critical_config.md) option (default `false`) controls whether anonymous users are allowed to access and use the site without being signed in.
-
 ## GitHub
 
 > Note: GitHub authentication is currently beta.
