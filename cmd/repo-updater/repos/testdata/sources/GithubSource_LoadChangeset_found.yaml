@@ -2,10 +2,16 @@
 version: 1
 interactions:
 - request:
-    body: '{"query":"query {\n\t  repository(owner: \"sourcegraph\", name: \"sourcegraph\")
-      {\n\t\tpullRequest(number: 5550) {\n\t\t  id\n\t\t  title\n\t\t  body\n\t\t  state\n\t\t  url\n\t\t  number\n\t\t  author
-      {\n\t\t    avatarUrl\n\t\t\tlogin\n\t\t\turl\n\t\t  }\n\t\t  participants(first:
-      100) {\n\t\t\tnodes {\n\t\t\t  avatarUrl\n\t\t\t  login\n\t\t\t  url\n\t\t\t}\n\t\t  }\n\t\t  createdAt\n\t\t  updatedAt\n\t\t}\n\t  }\n\t}","variables":null}'
+    body: '{"query":"\n\t\tfragment actor on Actor { avatarUrl, login, url }\n\t\tquery
+      {\n\t\t  repository(owner: \"sourcegraph\", name: \"sourcegraph\") {\n\t\t\tpullRequest(number:
+      5550) {\n\t\t\t  id, title, body, state, url, number, createdAt, updatedAt\n\t\t\t  author
+      { ...actor }\n\t\t\t  participants(first: 100) { nodes { ...actor } }\n\t\t\t  reviews(first:
+      100) {\n\t\t\t\tnodes {\n\t\t\t\t  body, state, url, createdAt, submittedAt\n\t\t\t\t  author
+      { ...actor }\n\t\t\t\t  commit {\n\t\t\t\t\toid, message, committedDate, pushedDate,
+      url\n\t\t\t\t\tcommitter {\n\t\t\t\t\t  avatarUrl, email, name\n\t\t\t\t\t  user
+      { ...actor }\n\t\t\t\t\t}\n\t\t\t\t\tstatus {\n\t\t\t\t\t  state\n\t\t\t\t\t  contexts
+      {\n\t\t\t\t\t\tavatarUrl, context, description, state, targetUrl, createdAt\n\t\t\t\t\t\tcreator
+      { ...actor }\n\t\t\t\t\t  }\n\t\t\t\t\t}\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t  }\n\t\t\t}\n\t\t  }\n\t\t}\n\t","variables":null}'
     form: {}
     headers:
       Content-Type:
@@ -16,7 +22,21 @@ interactions:
     body: '{"data":{"repository":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
       disableExtension flag for native integrations","body":"This flag should only
       be observed in the browser extension. Calling `observeStorageKey()` breaks native
-      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/2946214?v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z"}}}}'
+      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z","author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/2946214?v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"reviews":{"nodes":[{"body":"Thanks
+      for the fix! The chaining logic looks brilliant to me (as a non-FE dev).","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086","createdAt":"2019-09-12T15:57:28Z","submittedAt":"2019-09-12T15:57:27Z","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/2946214?v=4","login":"unknwon","url":"https://github.com/unknwon"},"commit":{"oid":"36734225c6bf58fb5c499b1489def2a7b65af45d","message":"Fix
+      disableExtension flag for native integrations\n\nThis flag should only be observed
+      in the browser extension. Calling `observeStorageKey()` breaks native integrations.","committedDate":"2019-09-12T10:05:39Z","pushedDate":"2019-09-12T10:05:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d","committer":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
+      Guychard","user":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"}},"status":{"state":"SUCCESS","contexts":[{"avatarUrl":"https://avatars1.githubusercontent.com/oa/46194?s=40&u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31&v=4","context":"buildkite/sourcegraph","description":"Build
+      #42686 passed (15 minutes, 37 seconds)","state":"SUCCESS","targetUrl":"https://buildkite.com/sourcegraph/sourcegraph/builds/42686","createdAt":"2019-09-12T10:21:27Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}},{"avatarUrl":"https://avatars2.githubusercontent.com/in/398?s=40&v=4","context":"percy/Sourcegraph","description":"Visual
+      review automatically approved, no visual changes found.","state":"SUCCESS","targetUrl":"https://percy.io/Sourcegraph/Sourcegraph/builds/2575964?utm_campaign=Sourcegraph&utm_content=Sourcegraph&utm_source=github_status_public","createdAt":"2019-09-12T10:21:17Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/in/398?v=4","login":"percy","url":"https://github.com/apps/percy"}}]}}},{"body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355","createdAt":"2019-09-12T16:18:08Z","submittedAt":"2019-09-12T16:18:58Z","author":{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"commit":{"oid":"36734225c6bf58fb5c499b1489def2a7b65af45d","message":"Fix
+      disableExtension flag for native integrations\n\nThis flag should only be observed
+      in the browser extension. Calling `observeStorageKey()` breaks native integrations.","committedDate":"2019-09-12T10:05:39Z","pushedDate":"2019-09-12T10:05:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d","committer":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
+      Guychard","user":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"}},"status":{"state":"SUCCESS","contexts":[{"avatarUrl":"https://avatars1.githubusercontent.com/oa/46194?s=40&u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31&v=4","context":"buildkite/sourcegraph","description":"Build
+      #42686 passed (15 minutes, 37 seconds)","state":"SUCCESS","targetUrl":"https://buildkite.com/sourcegraph/sourcegraph/builds/42686","createdAt":"2019-09-12T10:21:27Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}},{"avatarUrl":"https://avatars2.githubusercontent.com/in/398?s=40&v=4","context":"percy/Sourcegraph","description":"Visual
+      review automatically approved, no visual changes found.","state":"SUCCESS","targetUrl":"https://percy.io/Sourcegraph/Sourcegraph/builds/2575964?utm_campaign=Sourcegraph&utm_content=Sourcegraph&utm_source=github_status_public","createdAt":"2019-09-12T10:21:17Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/in/398?v=4","login":"percy","url":"https://github.com/apps/percy"}}]}}},{"body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287892741","createdAt":"2019-09-13T09:01:10Z","submittedAt":"2019-09-13T09:01:10Z","author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"commit":{"oid":"111be496f5b94e92842adf4b344f3d8ebecb9c0a","message":"No
+      need to explicitly remove the subscription","committedDate":"2019-09-13T09:00:49Z","pushedDate":"2019-09-13T09:00:57Z","url":"https://github.com/sourcegraph/sourcegraph/commit/111be496f5b94e92842adf4b344f3d8ebecb9c0a","committer":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
+      Guychard","user":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"}},"status":{"state":"FAILURE","contexts":[{"avatarUrl":"https://avatars1.githubusercontent.com/oa/46194?s=40&u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31&v=4","context":"buildkite/sourcegraph","description":"Build
+      #42779 failed (10 minutes, 9 seconds)","state":"FAILURE","targetUrl":"https://buildkite.com/sourcegraph/sourcegraph/builds/42779","createdAt":"2019-09-13T09:11:12Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}}]}}}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -31,7 +51,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 13 Sep 2019 13:15:37 GMT
+      - Sat, 14 Sep 2019 16:11:34 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -51,7 +71,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - DD23:1A715:18EA067:1E4F490:5D7B9679
+      - BFF6:1E672:2726314:2FA3D2B:5D7D1135
       X-Oauth-Scopes:
       - repo
       X-Xss-Protection:
