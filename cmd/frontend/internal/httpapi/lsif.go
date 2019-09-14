@@ -165,21 +165,23 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 
 func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(r.URL.Query().Get("repository")))
-		if err != nil {
-			http.Error(w, "Unknown repository.", http.StatusUnauthorized)
-			return
-		}
+		if conf.Get().LsifEnforceAuth {
+			repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(r.URL.Query().Get("repository")))
+			if err != nil {
+				http.Error(w, "Unknown repository.", http.StatusUnauthorized)
+				return
+			}
 
-		lsifUploadSecret, err := getLSIFUploadSecret()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+			lsifUploadSecret, err := getLSIFUploadSecret()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-		if !isValidUploadToken(repo.ExternalRepo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
-			http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
-			return
+			if !isValidUploadToken(repo.ExternalRepo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
+				http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
+				return
+			}
 		}
 
 		r.URL.Path = "upload"
