@@ -243,6 +243,8 @@
 // 1528395589_add_external_id_to_schema.up.sql (210B)
 // 1528395590_add_external_service_type_to_changesets.down.sql (85B)
 // 1528395590_add_external_service_type_to_changesets.up.sql (411B)
+// 1528395591_create_events_logging_table.down.sql (50B)
+// 1528395591_create_events_logging_table.up.sql (1.192kB)
 
 package migrations
 
@@ -5171,6 +5173,46 @@ func _1528395590_add_external_service_type_to_changesetsUpSql() (*asset, error) 
 	return a, nil
 }
 
+var __1528395591_create_events_logging_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xfd\xdb\xa4\x84\x32\x00\x00\x00")
+
+func _1528395591_create_events_logging_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395591_create_events_logging_tableDownSql,
+		"1528395591_create_events_logging_table.down.sql",
+	)
+}
+
+func _1528395591_create_events_logging_tableDownSql() (*asset, error) {
+	bytes, err := _1528395591_create_events_logging_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395591_create_events_logging_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x7c, 0x55, 0xd, 0xe0, 0x3a, 0x6, 0x9, 0x6e, 0xf6, 0x44, 0x4b, 0x3a, 0x6, 0x1f, 0x74, 0x63, 0x63, 0x1b, 0x18, 0xd9, 0x2b, 0xa7, 0x33, 0x6c, 0x25, 0x98, 0x50, 0xa, 0x95, 0x57, 0xcc, 0xd2}}
+	return a, nil
+}
+
+var __1528395591_create_events_logging_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x93\xcd\x6e\xc2\x30\x10\x84\xef\x79\x8a\xed\x89\x44\xea\xa1\xf7\x88\x83\x49\xb6\x60\x91\x38\xc8\x18\x15\x7a\xb1\x22\x6a\x01\x2a\xb1\x51\x7e\xa8\x78\xfb\x8a\x84\x40\x20\x50\x54\xe0\xc6\x32\xf3\xd9\xec\x8c\x7b\xd8\xa7\xcc\xb5\x2c\x8f\x23\x11\x08\x82\xf4\x02\x04\xb5\x55\x3a\x97\x6b\xb3\xc8\xc0\xb6\x00\x00\x56\x5f\xd0\xfa\xf4\x68\x7f\x8c\x9c\x92\x00\x58\x24\x80\x4d\x82\x00\x46\x9c\x86\x84\xcf\x60\x88\xb3\xd7\xd2\xa7\xe3\x44\x5d\xfa\x04\x4e\xc5\xd1\x52\xc9\x8a\x74\xdd\xc2\x5f\x93\x65\x2a\x95\x17\x57\xa1\x4c\x60\x1f\xf9\x85\x32\xd6\x46\xef\x12\x53\x64\xf2\xe4\xb9\x02\xcc\x4c\x91\xce\xd5\xdd\x73\xe3\x74\x51\x24\x4a\xe7\x77\x64\x5b\x95\x66\x2b\xa3\xef\xd1\xf2\x55\xa2\xb2\x3c\x4e\x36\x4d\x19\x0d\x71\x2c\x48\x38\x82\x0f\x2a\x06\xe5\x57\xf8\x8c\x18\x9e\x56\xeb\xe3\x3b\x99\x04\x02\xb4\xf9\xb1\x1d\xcb\x71\x2d\x8b\x04\x02\x79\x3b\x30\xe2\xfb\xe0\x45\x6c\x2c\x38\xa1\x4c\x34\x7e\x91\xf3\xa5\x9a\x7f\xcb\x7d\x24\x52\x9b\x5c\xaa\x64\x93\xef\xc0\x1b\xa0\x37\x04\xbb\x0c\xea\xa5\x0b\x9d\x8e\xe3\x3e\x4a\x2e\xd2\x75\x1b\xbc\x8f\xf6\x49\xee\x32\xae\x62\xac\x91\x76\x9d\x69\x17\xde\x80\x30\xff\x4a\xda\xd5\x89\x10\x71\xb0\x1b\xa3\x5b\xea\x7f\x89\x2b\xf4\xe3\xff\xa6\xea\x5c\x7b\x51\x87\x2e\x3e\xb9\xab\x43\x07\xdb\xf8\xba\x9c\x35\xbf\x7e\xf0\x94\xf9\x38\x6d\x72\xca\x26\x44\xac\x31\x2a\xcb\xe1\xb8\x37\x1d\xf5\x66\xce\x4d\x87\xe9\x1f\xbe\xd3\x43\x38\x77\x1e\xe7\xe5\x35\xa3\x30\xa4\xc2\xb5\x7e\x03\x00\x00\xff\xff\x35\x8a\xe2\x67\xa8\x04\x00\x00")
+
+func _1528395591_create_events_logging_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395591_create_events_logging_tableUpSql,
+		"1528395591_create_events_logging_table.up.sql",
+	)
+}
+
+func _1528395591_create_events_logging_tableUpSql() (*asset, error) {
+	bytes, err := _1528395591_create_events_logging_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395591_create_events_logging_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xde, 0x6c, 0x17, 0xb3, 0x52, 0x73, 0xe6, 0xad, 0x6f, 0x9, 0xc1, 0x31, 0x56, 0x7c, 0x56, 0x3a, 0xf, 0xff, 0x97, 0x1, 0x63, 0x61, 0x1b, 0x5a, 0x30, 0xb7, 0x9c, 0xb, 0x29, 0x69, 0xdc, 0x9f}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5747,6 +5789,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395590_add_external_service_type_to_changesets.down.sql": _1528395590_add_external_service_type_to_changesetsDownSql,
 
 	"1528395590_add_external_service_type_to_changesets.up.sql": _1528395590_add_external_service_type_to_changesetsUpSql,
+
+	"1528395591_create_events_logging_table.down.sql": _1528395591_create_events_logging_tableDownSql,
+
+	"1528395591_create_events_logging_table.up.sql": _1528395591_create_events_logging_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -6033,6 +6079,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395589_add_external_id_to_schema.up.sql":                 {_1528395589_add_external_id_to_schemaUpSql, map[string]*bintree{}},
 	"1528395590_add_external_service_type_to_changesets.down.sql": {_1528395590_add_external_service_type_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395590_add_external_service_type_to_changesets.up.sql":   {_1528395590_add_external_service_type_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395591_create_events_logging_table.down.sql":             {_1528395591_create_events_logging_tableDownSql, map[string]*bintree{}},
+	"1528395591_create_events_logging_table.up.sql":               {_1528395591_create_events_logging_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
