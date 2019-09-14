@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
@@ -223,4 +224,12 @@ func (r *changesetResolver) Body() (string, error) {
 
 func (r *changesetResolver) State() (a8n.ChangesetState, error) {
 	return r.Changeset.State()
+}
+
+func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
+	url, err := r.Changeset.URL()
+	if err != nil {
+		return nil, err
+	}
+	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }

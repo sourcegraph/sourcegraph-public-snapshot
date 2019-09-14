@@ -22,6 +22,7 @@ func TestChangesetMetadata(t *testing.T) {
 		Body:         "This fixes a bunch of bugs",
 		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
 		Number:       12345,
+		State:        "MERGED",
 		Author:       githubActor,
 		Participants: []github.Actor{githubActor},
 		CreatedAt:    now,
@@ -54,5 +55,23 @@ func TestChangesetMetadata(t *testing.T) {
 
 	if want, have := githubPR.Body, body; want != have {
 		t.Errorf("changeset body wrong. want=%q, have=%q", want, have)
+	}
+
+	state, err := changeset.State()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want, have := ChangesetStateMerged, state; want != have {
+		t.Errorf("changeset state wrong. want=%q, have=%q", want, have)
+	}
+
+	url, err := changeset.URL()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want, have := githubPR.URL, url; want != have {
+		t.Errorf("changeset url wrong. want=%q, have=%q", want, have)
 	}
 }

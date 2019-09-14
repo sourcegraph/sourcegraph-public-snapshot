@@ -448,6 +448,9 @@ type Changeset implements Node {
 
     # The state of the changeset
     state: ChangesetState!
+
+    # The external URL of the changeset on the code host
+    externalURL: ExternalLink!
 }
 
 # A list of changesets.

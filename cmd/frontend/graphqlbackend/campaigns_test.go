@@ -248,14 +248,18 @@ func TestCampaigns(t *testing.T) {
 	graphqlRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
 
 	type Changeset struct {
-		ID         string
-		Repository struct{ ID string }
-		Campaigns  CampaignConnection
-		CreatedAt  string
-		UpdatedAt  string
-		Title      string
-		Body       string
-		State      string
+		ID          string
+		Repository  struct{ ID string }
+		Campaigns   CampaignConnection
+		CreatedAt   string
+		UpdatedAt   string
+		Title       string
+		Body        string
+		State       string
+		ExternalURL struct {
+			URL         string
+			ServiceType string
+		}
 	}
 
 	var result struct {
@@ -276,6 +280,10 @@ func TestCampaigns(t *testing.T) {
 			title
 			body
 			state
+			externalURL {
+				url
+				serviceType
+			}
 		}
 		mutation($repository: ID!, $externalID: String!) {
 			changeset: createChangeset(repository: $repository, externalID: $externalID) {
@@ -292,6 +300,10 @@ func TestCampaigns(t *testing.T) {
 			Title:      "add extension filter to filter bar",
 			Body:       "Enables adding extension filters to the filter bar by rendering the extension filter as filter chips inside the filter bar.\r\nWIP for https://github.com/sourcegraph/sourcegraph/issues/962\r\n\r\n> This PR updates the CHANGELOG.md file to describe any user-facing changes.\r\n.\r\n",
 			State:      "MERGED",
+			ExternalURL: struct{ URL, ServiceType string }{
+				URL:         "https://github.com/sourcegraph/sourcegraph/pull/999",
+				ServiceType: "github",
+			},
 		}
 
 		have := result.Changeset
