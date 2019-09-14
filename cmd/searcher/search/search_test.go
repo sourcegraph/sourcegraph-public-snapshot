@@ -283,8 +283,8 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:        "test",
-				IncludePattern: "[c-a]",
+				Pattern:         "test",
+				IncludePatterns: []string{"[c-a]"},
 			},
 		},
 
