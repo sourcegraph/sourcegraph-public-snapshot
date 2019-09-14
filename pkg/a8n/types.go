@@ -104,3 +104,13 @@ func (t *Changeset) State() (s ChangesetState, err error) {
 
 	return s, nil
 }
+
+// URL of a Changeset.
+func (t *Changeset) URL() (s string, err error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return m.URL, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
