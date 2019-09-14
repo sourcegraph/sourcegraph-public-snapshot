@@ -260,6 +260,7 @@ func TestCampaigns(t *testing.T) {
 			URL         string
 			ServiceType string
 		}
+		ReviewState string
 	}
 
 	var result struct {
@@ -284,6 +285,7 @@ func TestCampaigns(t *testing.T) {
 				url
 				serviceType
 			}
+			reviewState
 		}
 		mutation($repository: ID!, $externalID: String!) {
 			changeset: createChangeset(repository: $repository, externalID: $externalID) {
@@ -304,6 +306,7 @@ func TestCampaigns(t *testing.T) {
 				URL:         "https://github.com/sourcegraph/sourcegraph/pull/999",
 				ServiceType: "github",
 			},
+			ReviewState: "APPROVED",
 		}
 
 		have := result.Changeset
