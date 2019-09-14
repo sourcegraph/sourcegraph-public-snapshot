@@ -271,7 +271,20 @@ type Mutation {
         date: String
     ): GitCommit
     # Logs a user event.
-    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
+    # Logs an event.
+    logEvent(
+        # The name of the event.
+        event: String!
+        # The randomly generated unique user ID stored in a browser cookie.
+        userCookieID: String!
+        # The URL when the event was logged.
+        url: String!
+        # The source of the event.
+        source: EventSource!
+        # The additional argument information.
+        argument: String
+    ): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
     #
@@ -639,6 +652,12 @@ input MarkdownOptions {
 
     # A dummy null value (empty input types are not allowed yet).
     alwaysNil: String
+}
+
+# The product sources where events can come from.
+enum EventSource {
+    WEB
+    CODEHOSTINTEGRATION
 }
 
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user

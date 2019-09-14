@@ -7,7 +7,7 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
 import { storage } from '../../browser/storage'
 import { isInPage } from '../../context'
-import { logUserEvent } from '../backend/userEvents'
+import { logUserEvent, logEvent } from '../backend/userEvents'
 import { observeSourcegraphURL } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
@@ -70,10 +70,11 @@ export class EventLogger implements TelemetryService {
      *
      * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
      */
-    public async logCodeIntelligenceEvent(event: GQL.UserEvent): Promise<void> {
+    public async logCodeIntelligenceEvent(event: string, userEvent: GQL.UserEvent): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
-        logUserEvent(event, anonUserId, sourcegraphURL, this.requestGraphQL)
+        logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
+        logEvent(event, anonUserId, sourcegraphURL, this.requestGraphQL)
     }
 
     /**
@@ -88,10 +89,10 @@ export class EventLogger implements TelemetryService {
             case 'goToDefinition':
             case 'goToDefinition.preloaded':
             case 'hover':
-                await this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATION)
+                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATION)
                 break
             case 'findReferences':
-                await this.logCodeIntelligenceEvent(GQL.UserEvent.CODEINTELINTEGRATIONREFS)
+                await this.logCodeIntelligenceEvent(eventName, GQL.UserEvent.CODEINTELINTEGRATIONREFS)
                 break
         }
     }

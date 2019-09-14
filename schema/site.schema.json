@@ -54,6 +54,12 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "eventLogging": {
+          "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         }
       },
       "group": "Experimental",

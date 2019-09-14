@@ -1,6 +1,6 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { authenticatedUser } from '../../auth'
-import { logUserEvent } from '../../user/settings/backend'
+import { logUserEvent, logEvent } from '../../user/settings/backend'
 
 class ServerAdminWrapper {
     /**
@@ -26,6 +26,7 @@ class ServerAdminWrapper {
                 logUserEvent(GQL.UserEvent.STAGECODE)
             }
         }
+        logEvent(eventAction)
     }
 
     public trackAction(eventAction: string): void {
@@ -45,6 +46,7 @@ class ServerAdminWrapper {
                 logUserEvent(GQL.UserEvent.STAGEMONITOR)
             }
         }
+        logEvent(eventAction)
     }
 }
 
