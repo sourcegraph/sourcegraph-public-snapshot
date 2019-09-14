@@ -81,6 +81,12 @@ const SiteSchemaJSON = `{
       "type": "string",
       "group": "Security"
     },
+    "lsifEnforceAuth": {
+      "description": "Whether or not LSIF uploads will be blocked unless a valid LSIF upload token is provided.",
+      "type": "boolean",
+      "default": false,
+      "group": "Security"
+    },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
       "type": "boolean",
