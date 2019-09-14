@@ -49,6 +49,28 @@ func (s ChangesetState) Valid() bool {
 	}
 }
 
+// ChangesetReviewState defines the possible states of a Changeset's review.
+type ChangesetReviewState string
+
+// ChangesetReviewState constants.
+const (
+	ChangesetReviewStateApproved         ChangesetReviewState = "APPROVED"
+	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
+	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
+)
+
+// Valid returns true if the given Changeset is valid.
+func (s ChangesetReviewState) Valid() bool {
+	switch s {
+	case ChangesetReviewStateApproved,
+		ChangesetReviewStateChangesRequested,
+		ChangesetReviewStatePending:
+		return true
+	default:
+		return false
+	}
+}
+
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
@@ -110,6 +132,33 @@ func (t *Changeset) URL() (s string, err error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return m.URL, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
+
+// ReviewState of a Changeset.
+func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		states := map[ChangesetReviewState]bool{}
+		for _, r := range m.Reviews {
+			states[ChangesetReviewState(r.State)] = true
+		}
+
+		// If any review requested changes, that state takes precedence over all
+		// other review states, followed by explicit approval. Everything else is
+		// considered pending.
+		for _, state := range [...]ChangesetReviewState{
+			ChangesetReviewStateChangesRequested,
+			ChangesetReviewStateApproved,
+		} {
+			if states[state] {
+				return state, nil
+			}
+		}
+
+		return ChangesetReviewStatePending, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
