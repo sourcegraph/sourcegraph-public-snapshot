@@ -165,13 +165,13 @@ func lsifVerifyHandler(w http.ResponseWriter, r *http.Request) {
 
 func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if conf.Get().LsifEnforceAuth {
-			repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(r.URL.Query().Get("repository")))
-			if err != nil {
-				http.Error(w, "Unknown repository.", http.StatusUnauthorized)
-				return
-			}
+		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(r.URL.Query().Get("repository")))
+		if err != nil {
+			http.Error(w, "Unknown repository.", http.StatusUnauthorized)
+			return
+		}
 
+		if conf.Get().LsifEnforceAuth {
 			lsifUploadSecret, err := getLSIFUploadSecret()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
