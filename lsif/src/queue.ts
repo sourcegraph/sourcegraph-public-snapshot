@@ -98,9 +98,10 @@ export interface WorkerMeta {
 }
 
 /**
- * TODO
+ * Rewrite a job payload to return to the uer. This rewrites the arguments
+ * array from a positional list into an object with meaningful names.
  *
- * @param job TODO
+ * @param job The job to rewrite.
  */
 export function rewriteJobMeta(job: JobMeta): any {
     const argumentTransformers = {
