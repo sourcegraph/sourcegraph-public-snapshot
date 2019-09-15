@@ -17,7 +17,7 @@ local percentileColors = ['#7eb26d', '#cca300', '#bf1b00'];
 local buckets = ['0.2', '0.5', '1', '2', '5', '10', '30', '+Inf'];
 
 // The histogram bucket sfor HTTP requests
-local httpBuckets = ['0.03', '0.1', '0.3', '1.5', '10', '+Inf'];
+local httpBuckets = ['0.2', '0.5', '1', '2', '5', '10', '30', '+Inf'];
 
 // Colors to pair to buckets defined above (green to red)
 local bucketColors = ['#96d98d', '#56a64b', '#37872d', '#e0b400', '#f2cc0c', '#ffee52', '#fa6400', '#c4162a'];
@@ -31,7 +31,6 @@ local errorColors = ['#7eb26d', '#cca300'];
 // The classes of jobs performed by the LSIF worker
 local jobClasses = ['convert'];
 
-
 //
 // Utils
 
@@ -40,8 +39,6 @@ local titleCase(val) = '%s%s' % [std.asciiUpper(std.substr(val, 0, 1)), std.subs
 
 //
 // Standard Panels
-
-// TODO - these are now a different guy :)
 
 // Apply defaults defined above to panel constructors
 local makeHttpRequestsPanel(titleValue, metricValue, metricFilter='') = common.makeHttpRequestsPanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange, buckets=httpBuckets, colors=bucketColors);
@@ -52,12 +49,12 @@ local makeErrorRatePanel(titleValue, metricValue, metricFilter='') = common.make
 local makeDurationPercentilesPanel(titleValue, metricValue, metricFilter='') = common.makeDurationPercentilesPanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange, percentiles=percentiles, colors=percentileColors);
 
 // Make panels
-local httpUploadRequestsPanel = makeHttpRequestsPanel(titleValue='server requests', metricValue='http_request', metricFilter='path="/upload"');
-local httpUploadErrorRatePanel = makeHttpErrorRatePanel(titleValue='Server', metricValue='http_request', metricFilter='path="/upload"');
-local httpUploadDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Server request', metricValue='http_request', metricFilter='path="/upload"');
-local httpLsifQueryRequestsPanel = makeHttpRequestsPanel(titleValue='server requests', metricValue='http_request', metricFilter='path!="/upload"');
-local httpLsifQueryErrorRatePanel = makeHttpErrorRatePanel(titleValue='Server', metricValue='http_request', metricFilter='path!="/upload"');
-local httpLsifQueryDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Server request', metricValue='http_request', metricFilter='path!="/upload"');
+local httpUploadRequestsPanel = makeHttpRequestsPanel(titleValue='server requests', metricValue='lsif_http_upload_request');
+local httpUploadErrorRatePanel = makeHttpErrorRatePanel(titleValue='Server', metricValue='lsif_http_upload_request');
+local httpUploadDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Server request', metricValue='lsif_http_upload_request');
+local httpLsifQueryRequestsPanel = makeHttpRequestsPanel(titleValue='server requests', metricValue='lsif_http_query_request');
+local httpLsifQueryErrorRatePanel = makeHttpErrorRatePanel(titleValue='Server', metricValue='lsif_http_query_request');
+local httpLsifQueryDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Server request', metricValue='lsif_http_query_request');
 local databaseQueryRequestsPanel = makeRequestsPanel(titleValue='database queries', metricValue='lsif_database_query');
 local databaseQueryErrorRatePanel = makeErrorRatePanel(titleValue='Database query', metricValue='lsif_database_query');
 local databaseQueryDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Database query', metricValue='lsif_database_query');
@@ -150,11 +147,11 @@ local bloomFilterEventsPanel = common.makePanel(
 // Dashboard Construction
 
 common.makeDashboard(title='LSIF')
-.addRow(title='Upload requests', panels=[httpUploadRequestsPanel, httpUploadErrorRatePanel, httpUploadDurationPercentilesPanel])
-.addRow(title='HTTP requests', panels=[httpLsifQueryRequestsPanel, httpLsifQueryErrorRatePanel, httpLsifQueryDurationPercentilesPanel])
+.addRow(title='HTTP uploads', panels=[httpUploadRequestsPanel, httpUploadErrorRatePanel, httpUploadDurationPercentilesPanel])
+.addRow(title='HTTP queries', panels=[httpLsifQueryRequestsPanel, httpLsifQueryErrorRatePanel, httpLsifQueryDurationPercentilesPanel])
 .addRow(title='Queue and job stats', panels=[queueSizePanel, jobEventsPanel] + durationPanelsByJob)
 .addRow(title='Database queries', panels=[databaseQueryRequestsPanel, databaseQueryErrorRatePanel, databaseQueryDurationPercentilesPanel])
-.addRow(title='Xrepo queries', panels=[xrepoQueryRequestsPanel, xrepoQueryErrorRatePanel, xrepoQueryDurationPercentilesPanel])
+.addRow(title='Crosss-repo queries', panels=[xrepoQueryRequestsPanel, xrepoQueryErrorRatePanel, xrepoQueryDurationPercentilesPanel])
 .addRow(title='Database insertions', panels=[databaseInsertionRequestsPanel, databaseInsertionErrorRatePanel, databaseInsertionDurationPercentilesPanel])
-.addRow(title='Xrepo insertions', panels=[xrepoInsertionRequestsPanel, xrepoInsertionErrorRatePanel, xrepoInsertionDurationPercentilesPanel])
+.addRow(title='Crosss-repo insertions', panels=[xrepoInsertionRequestsPanel, xrepoInsertionErrorRatePanel, xrepoInsertionDurationPercentilesPanel])
 .addRow(title='Caches and Filters', panels=[cacheUtilizationPanel, connectionCacheEventsPanel, documentCacheEventsPanel, resultChunkCacheEventsPanel, bloomFilterEventsPanel])
