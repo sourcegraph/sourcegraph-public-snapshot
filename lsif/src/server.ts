@@ -1,7 +1,6 @@
 import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
 import express from 'express'
-import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
@@ -59,7 +58,6 @@ async function main(): Promise<void> {
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
     const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
     const app = express()
-    app.use(morgan('tiny'))
     app.use(errorHandler)
 
     app.get('/ping', (_, res) => {
