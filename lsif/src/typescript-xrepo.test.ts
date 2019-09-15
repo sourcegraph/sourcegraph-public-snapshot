@@ -1,9 +1,8 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './conversion'
+import { convertLsif } from './importer'
 import { createCommit, createLocation, createRemoteLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
@@ -184,9 +183,7 @@ function createTestInputs(): {
 
     const inputs = []
     for (const repository of repositories) {
-        const input = fs
-            .createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
-            .pipe(zlib.createGunzip())
+        const input = fs.createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
         const commit = createCommit(repository)
         inputs.push({ input, repository, commit })
     }

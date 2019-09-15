@@ -1,9 +1,8 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './conversion'
+import { convertLsif } from './importer'
 import { createCommit, createLocation } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
@@ -19,12 +18,10 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
-        storageRoot = await fs.promises.mkdtemp('typescript-')
+        storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
-        const input = fs
-            .createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
-            .pipe(zlib.createGunzip())
+        const input = fs.createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
         const { packages, references } = await convertLsif(input, database)
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)

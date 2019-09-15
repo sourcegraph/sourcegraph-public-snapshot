@@ -1,9 +1,7 @@
 import * as definitionsSchema from './lsif.schema.json'
-import * as es from 'event-stream'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as url from 'url'
-import * as zlib from 'mz/zlib'
 import Ajv from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
@@ -14,11 +12,12 @@ import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createDatabaseFilename, createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
-import { Database } from './database.js'
+import { Database } from './database'
 import { Job, Queue, Scheduler } from 'node-resque'
-import { RealQueue, rewriteJobMeta, WorkerMeta } from './queue.js'
+import { RealQueue, rewriteJobMeta, WorkerMeta } from './queue'
+import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
-import { XrepoDatabase } from './xrepo.js'
+import { XrepoDatabase } from './xrepo'
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
     DOCUMENT_CACHE_CAPACITY_GAUGE,
@@ -284,55 +283,16 @@ function addLsifEndpoints(app: express.Application, queue: RealQueue): void {
                 checkRepository(repository)
                 checkCommit(commit)
 
-                let line = 0
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
-                const writeStream = fs.createWriteStream(filename)
+                const output = fs.createWriteStream(filename)
 
-                const throwValidationError = (text: string, errorText: string): never => {
-                    throw Object.assign(
-                        new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
-                        { status: 422 }
-                    )
+                try {
+                    await validateLsifInput(req, output, DISABLE_VALIDATION ? undefined : validator)
+                } catch (e) {
+                    throw Object.assign(e, { status: 422 })
                 }
 
-                const validateLine = (text: string): void => {
-                    if (text === '' || DISABLE_VALIDATION) {
-                        return
-                    }
-
-                    let data: any
-
-                    try {
-                        data = JSON.parse(text)
-                    } catch (e) {
-                        throwValidationError(text, 'Invalid JSON')
-                    }
-
-                    if (!validator(data)) {
-                        throwValidationError(text, 'Does not match a known vertex or edge shape')
-                    }
-
-                    line++
-                }
-
-                await new Promise((resolve, reject) => {
-                    req.pipe(zlib.createGunzip()) // unzip input
-                        .pipe(es.split()) // split into lines
-                        .pipe(
-                            // Must check each line synchronously
-                            // eslint-disable-next-line no-sync
-                            es.mapSync((text: string) => {
-                                validateLine(text) // validate each line
-                                return text
-                            })
-                        )
-                        .on('error', reject) // catch validation error
-                        .pipe(es.join('\n')) // join back into text
-                        .pipe(zlib.createGzip()) // re-zip input
-                        .pipe(writeStream) // write to temp file
-                        .on('finish', resolve) // unblock promise when done
-                })
-
+                // Enqueue input job
                 console.log(`Enqueueing conversion job for ${repository}@${commit}`)
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)

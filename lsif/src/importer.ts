@@ -1,12 +1,15 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
+import { createConnection } from './connection'
 import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_ERRORS_COUNTER } from './metrics'
 import { DefaultMap } from './default-map'
-import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
+import { MonikerKind, RangeId } from 'lsif-protocol'
 import { Package, SymbolReferences } from './xrepo'
+import { processLsifInput } from './input'
+import { Readable } from 'stream'
 import { TableInserter } from './inserter'
 import {
     DefinitionModel,
@@ -49,32 +52,48 @@ const RESULTS_PER_RESULT_CHUNK = readEnvInt('RESULTS_PER_RESULT_CHUNK', 500)
 const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 
 /**
+ * Populate a SQLite database with the given input stream. Returns the
+ * data required to populate the cross-repo database.
+ *
+ * @param input The input stream containing JSON-encoded LSIF data.
+ * @param database The path of the database file to populate.
+ */
+export async function convertLsif(
+    input: Readable,
+    database: string
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    const connection = await createConnection(database, [
+        DefinitionModel,
+        DocumentModel,
+        MetaModel,
+        ReferenceModel,
+        ResultChunkModel,
+    ])
+
+    try {
+        await connection.query('PRAGMA synchronous = OFF')
+        await connection.query('PRAGMA journal_mode = OFF')
+
+        return await connection.transaction(entityManager => importLsif(entityManager, input))
+    } finally {
+        await connection.close()
+    }
+}
+
+/**
  * Correlate each vertex and edge together, then populate the provided entity manager
  * with the document, definition, and reference information. Returns the package and
  * external reference data needed to populate the cross-repos database.
  *
  * @param entityManager A transactional SQLite entity manager.
- * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ * @param input The input stream containing JSON-encoded LSIF data.
  */
-export async function importLsif(
+async function importLsif(
     entityManager: EntityManager,
-    elements: AsyncIterable<Vertex | Edge>
+    input: Readable
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const correlator = new Correlator()
-
-    let line = 0
-    for await (const element of elements) {
-        try {
-            correlator.insert(element)
-        } catch (e) {
-            throw Object.assign(
-                new Error(`Failed to process line #${line + 1} (${JSON.stringify(element)}): ${e && e.message}`),
-                { status: 422 }
-            )
-        }
-
-        line++
-    }
+    await processLsifInput(input, element => correlator.insert(element))
 
     if (correlator.lsifVersion === undefined) {
         throw new Error('No metadata defined.')

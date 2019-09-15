@@ -1,8 +1,7 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import uuid from 'uuid'
-import { convertLsif } from './conversion'
+import { convertLsif } from './importer'
 import { createDatabaseFilename } from './util'
 import { XrepoDatabase } from './xrepo'
 
@@ -26,7 +25,7 @@ export function createConvertJob(
     return async (repository, commit, filename) => {
         console.log(`Converting ${repository}@${commit}`)
 
-        const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
+        const input = fs.createReadStream(filename)
         const tempFile = path.join(storageRoot, 'tmp', uuid.v4())
 
         try {
