@@ -225,6 +225,8 @@
 // 1528395580_create_user_permissions_table.up.sql (331B)
 // 1528395581_allows_dots_in_usernames.down.sql (349B)
 // 1528395581_allows_dots_in_usernames.up.sql (355B)
+// 1528395582_dummy-since-old-build-does-not-work.down.sql (411B)
+// 1528395582_dummy-since-old-build-does-not-work.up.sql (411B)
 
 package migrations
 
@@ -4793,6 +4795,46 @@ func _1528395581_allows_dots_in_usernamesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395582_dummySinceOldBuildDoesNotWorkDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\x8f\x31\x6f\xc2\x30\x10\x85\xf7\xfc\x8a\xd7\xb5\x2a\x61\x87\x09\x4a\x5a\x22\x95\x52\x11\x86\x6e\xe8\x12\x1f\xb6\x55\xc7\x8e\xec\x4b\x22\xfe\x7d\x15\x40\xa5\xdb\x49\xf7\xee\x7b\xdf\xad\x8b\xf7\xf2\x73\x99\x65\xb3\x19\x4a\x9f\x38\x0a\x5a\xab\x23\x89\x0d\x1e\x86\x23\xe7\xa8\x98\x71\x28\x56\x9b\x5d\x91\xb7\x2a\xc7\xd6\x6a\xe3\xac\x36\x92\x16\xd3\x11\x9e\xb1\x72\x23\x5d\x12\xfa\xc4\x28\xdf\x50\x7c\x97\xd5\xb1\xca\xc1\x7a\x81\xcd\x61\xff\x85\xe3\x6a\xfd\x51\x3c\x36\xd0\x2e\xd4\xe4\x4e\x8a\xbb\x53\x17\xed\x40\xc2\xcb\x3f\x90\x7b\xb4\x27\xb4\x7d\x12\xd4\x8c\x9a\x9a\x9f\x91\xa2\x9a\x35\xa1\xed\x48\x6c\xed\x38\xc7\xde\x29\x0c\x1c\xd3\x35\x19\xce\xa8\x42\x1f\x1b\xd6\x91\x3a\x73\xa5\x01\x9e\x59\x41\xc2\x44\xa0\xda\xf1\x34\x46\x26\x35\x1f\xa3\x15\x46\x17\xd2\xbf\x57\xf3\xbb\xc1\xd6\x26\x09\xd1\x36\xe4\xdc\x05\x23\x83\xd4\x60\x13\x2b\x90\x26\xeb\x93\x40\x22\xf9\x44\xcd\xcd\x2f\x59\xdf\xf0\x94\x12\x13\x7a\x6d\x04\x62\xf8\xde\x7d\x03\x33\x9c\xad\x23\xc5\x0b\x0c\x79\xe5\x58\xc1\x4a\x8e\x6d\x18\x79\xe0\xf8\x02\x2b\x50\x81\x13\x7c\x90\x27\xcc\xcf\xd4\x70\x47\xae\xcd\xb2\xd7\xfd\x6e\x57\x1e\x97\xd9\x6f\x00\x00\x00\xff\xff\x35\xf2\x37\x95\x9b\x01\x00\x00")
+
+func _1528395582_dummySinceOldBuildDoesNotWorkDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_dummySinceOldBuildDoesNotWorkDownSql,
+		"1528395582_dummy-since-old-build-does-not-work.down.sql",
+	)
+}
+
+func _1528395582_dummySinceOldBuildDoesNotWorkDownSql() (*asset, error) {
+	bytes, err := _1528395582_dummySinceOldBuildDoesNotWorkDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_dummy-since-old-build-does-not-work.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9a, 0xf1, 0xc2, 0x2d, 0xbd, 0xa, 0xc5, 0x3f, 0x68, 0xcb, 0x5c, 0x1d, 0x14, 0xe, 0x9c, 0x4a, 0x4, 0x64, 0xa9, 0x95, 0x5b, 0x4e, 0xe8, 0xc8, 0x6c, 0xfc, 0x85, 0x8c, 0xcf, 0xfe, 0xbb, 0x32}}
+	return a, nil
+}
+
+var __1528395582_dummySinceOldBuildDoesNotWorkUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\x8f\x31\x6f\xc2\x30\x10\x85\xf7\xfc\x8a\xd7\xb5\x2a\x61\x87\x09\x4a\x5a\x22\x95\x52\x11\x86\x6e\xe8\x12\x1f\xb6\x55\xc7\x8e\xec\x4b\x22\xfe\x7d\x15\x40\xa5\xdb\x49\xf7\xee\x7b\xdf\xad\x8b\xf7\xf2\x73\x99\x65\xb3\x19\x4a\x9f\x38\x0a\x5a\xab\x23\x89\x0d\x1e\x86\x23\xe7\xa8\x98\x71\x28\x56\x9b\x5d\x91\xb7\x2a\xc7\xd6\x6a\xe3\xac\x36\x92\x16\xd3\x11\x9e\xb1\x72\x23\x5d\x12\xfa\xc4\x28\xdf\x50\x7c\x97\xd5\xb1\xca\xc1\x7a\x81\xcd\x61\xff\x85\xe3\x6a\xfd\x51\x3c\x36\xd0\x2e\xd4\xe4\x4e\x8a\xbb\x53\x17\xed\x40\xc2\xcb\x3f\x90\x7b\xb4\x27\xb4\x7d\x12\xd4\x8c\x9a\x9a\x9f\x91\xa2\x9a\x35\xa1\xed\x48\x6c\xed\x38\xc7\xde\x29\x0c\x1c\xd3\x35\x19\xce\xa8\x42\x1f\x1b\xd6\x91\x3a\x73\xa5\x01\x9e\x59\x41\xc2\x44\xa0\xda\xf1\x34\x46\x26\x35\x1f\xa3\x15\x46\x17\xd2\xbf\x57\xf3\xbb\xc1\xd6\x26\x09\xd1\x36\xe4\xdc\x05\x23\x83\xd4\x60\x13\x2b\x90\x26\xeb\x93\x40\x22\xf9\x44\xcd\xcd\x2f\x59\xdf\xf0\x94\x12\x13\x7a\x6d\x04\x62\xf8\xde\x7d\x03\x33\x9c\xad\x23\xc5\x0b\x0c\x79\xe5\x58\xc1\x4a\x8e\x6d\x18\x79\xe0\xf8\x02\x2b\x50\x81\x13\x7c\x90\x27\xcc\xcf\xd4\x70\x47\xae\xcd\xb2\xd7\xfd\x6e\x57\x1e\x97\xd9\x6f\x00\x00\x00\xff\xff\x35\xf2\x37\x95\x9b\x01\x00\x00")
+
+func _1528395582_dummySinceOldBuildDoesNotWorkUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_dummySinceOldBuildDoesNotWorkUpSql,
+		"1528395582_dummy-since-old-build-does-not-work.up.sql",
+	)
+}
+
+func _1528395582_dummySinceOldBuildDoesNotWorkUpSql() (*asset, error) {
+	bytes, err := _1528395582_dummySinceOldBuildDoesNotWorkUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_dummy-since-old-build-does-not-work.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9a, 0xf1, 0xc2, 0x2d, 0xbd, 0xa, 0xc5, 0x3f, 0x68, 0xcb, 0x5c, 0x1d, 0x14, 0xe, 0x9c, 0x4a, 0x4, 0x64, 0xa9, 0x95, 0x5b, 0x4e, 0xe8, 0xc8, 0x6c, 0xfc, 0x85, 0x8c, 0xcf, 0xfe, 0xbb, 0x32}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5333,6 +5375,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395581_allows_dots_in_usernames.down.sql": _1528395581_allows_dots_in_usernamesDownSql,
 
 	"1528395581_allows_dots_in_usernames.up.sql": _1528395581_allows_dots_in_usernamesUpSql,
+
+	"1528395582_dummy-since-old-build-does-not-work.down.sql": _1528395582_dummySinceOldBuildDoesNotWorkDownSql,
+
+	"1528395582_dummy-since-old-build-does-not-work.up.sql": _1528395582_dummySinceOldBuildDoesNotWorkUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5601,6 +5647,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395580_create_user_permissions_table.up.sql":             {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
 	"1528395581_allows_dots_in_usernames.down.sql":                {_1528395581_allows_dots_in_usernamesDownSql, map[string]*bintree{}},
 	"1528395581_allows_dots_in_usernames.up.sql":                  {_1528395581_allows_dots_in_usernamesUpSql, map[string]*bintree{}},
+	"1528395582_dummy-since-old-build-does-not-work.down.sql":     {_1528395582_dummySinceOldBuildDoesNotWorkDownSql, map[string]*bintree{}},
+	"1528395582_dummy-since-old-build-does-not-work.up.sql":       {_1528395582_dummySinceOldBuildDoesNotWorkUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
