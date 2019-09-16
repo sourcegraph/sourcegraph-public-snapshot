@@ -27,8 +27,8 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Creates a Changeset of a given repository in a code host (e.g. pull request on GitHub)
-    createChangeset(repository: ID!, externalID: String!): Changeset!
+    # Creates a list of Changesets of a given repository in a code host (e.g. pull request on GitHub)
+    createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
     # Adds a Changeset to a Campaign.
     addChangesetToCampaign(changeset: ID!, campaign: ID!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
@@ -428,6 +428,12 @@ enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
     PENDING
+}
+
+# The input to the createChangesets mutation.
+input CreateChangesetInput {
+    repository: ID!
+    externalID: String!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
