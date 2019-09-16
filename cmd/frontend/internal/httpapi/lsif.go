@@ -171,15 +171,17 @@ func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, 
 			return
 		}
 
-		lsifUploadSecret, err := getLSIFUploadSecret()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		if conf.Get().LsifEnforceAuth {
+			lsifUploadSecret, err := getLSIFUploadSecret()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-		if !isValidUploadToken(repo.ExternalRepo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
-			http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
-			return
+			if !isValidUploadToken(repo.ExternalRepo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
+				http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
+				return
+			}
 		}
 
 		r.URL.Path = "upload"

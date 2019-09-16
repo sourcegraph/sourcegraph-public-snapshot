@@ -16,6 +16,7 @@ var (
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}
+	EventLogs                 = &eventLogs{}
 
 	SurveyResponses = &surveyResponses{}
 

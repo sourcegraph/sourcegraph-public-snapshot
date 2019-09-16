@@ -59,6 +59,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "eventLogging": {
+          "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         }
       },
       "group": "Experimental",
@@ -79,6 +85,12 @@ const SiteSchemaJSON = `{
     "lsifUploadSecret": {
       "description": "Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.",
       "type": "string",
+      "group": "Security"
+    },
+    "lsifEnforceAuth": {
+      "description": "Whether or not LSIF uploads will be blocked unless a valid LSIF upload token is provided.",
+      "type": "boolean",
+      "default": false,
       "group": "Security"
     },
     "disableAutoGitUpdates": {
