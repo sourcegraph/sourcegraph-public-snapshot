@@ -141,7 +141,6 @@ describe('Search regression test suite', () => {
         beforeAll(
             async () => {
                 driver = await createAndInitializeDriver()
-
                 gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.username)
                 await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
                 await ensureExternalService(gqlClient, {
