@@ -430,6 +430,13 @@ enum ChangesetState {
     MERGED
 }
 
+# The state of a Changeset Review
+enum ChangesetReviewState {
+    APPROVED
+    CHANGES_REQUESTED
+    PENDING
+}
+
 # A changeset in a code host (e.g. a PR on Github)
 type Changeset implements Node {
     # The unique ID for the changeset.
@@ -458,6 +465,9 @@ type Changeset implements Node {
 
     # The external URL of the changeset on the code host
     externalURL: ExternalLink!
+
+    # The review state of this changeset.
+    reviewState: ChangesetReviewState!
 }
 
 # A list of changesets.
