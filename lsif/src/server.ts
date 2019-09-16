@@ -130,10 +130,8 @@ async function setupQueue(): Promise<RealQueue> {
     const emitQueueSizeMetric = (): void => {
         queue
             .queued('lsif', 0, -1)
-            .then(
-                jobs => QUEUE_SIZE_GAUGE.set(jobs.length),
-                e => logger.error('Failed to get queued jobs', { error: e && e.message })
-            )
+            .then(jobs => QUEUE_SIZE_GAUGE.set(jobs.length))
+            .catch(e => logger.error('Failed to get queued jobs', { error: e && e.message }))
     }
 
     // Update queue size metric on a timer
