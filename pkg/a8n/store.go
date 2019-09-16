@@ -78,71 +78,129 @@ func (s *Store) Done(errs ...*error) {
 // instantiated with.
 func (s *Store) DB() dbutil.DB { return s.db }
 
-// CreateChangeset creates the given Changeset.
-func (s *Store) CreateChangeset(ctx context.Context, t *Changeset) error {
-	q, err := s.createChangesetQuery(t)
+// CreateChangesets creates the given Changesets.
+func (s *Store) CreateChangesets(ctx context.Context, cs ...*Changeset) error {
+	q, err := s.createChangesetsQuery(cs)
 	if err != nil {
 		return err
 	}
 
+	i := -1
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanChangeset(t, sc)
-		return int64(t.ID), 1, err
+		i++
+		err = scanChangeset(cs[i], sc)
+		return int64(cs[i].ID), 1, err
 	})
 }
 
-var createChangesetQueryFmtstr = `
--- source: pkg/a8n/store.go:CreateChangeset
-INSERT INTO changesets (
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
+var createChangesetsQueryFmtstr = `
+-- source: pkg/a8n/store.go:CreateChangesets
+WITH batch AS (
+  SELECT * FROM ROWS FROM (
+  json_to_recordset(%s)
+  AS (
+      id                    bigint,
+      repo_id               integer,
+      created_at            timestamptz,
+      updated_at            timestamptz,
+      metadata              jsonb,
+      campaign_ids          jsonb,
+      external_id           text,
+      external_service_type text
+    )
+  )
+  WITH ORDINALITY
+),
+
+inserted AS (
+  INSERT INTO changesets (
+    repo_id,
+    created_at,
+    updated_at,
+    metadata,
+    campaign_ids,
+    external_id,
+    external_service_type
+  )
+  SELECT
+    repo_id,
+    created_at,
+    updated_at,
+    metadata,
+    campaign_ids,
+    external_id,
+    external_service_type
+  FROM batch
+  RETURNING changesets.*
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s)
-RETURNING
-	id,
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
+
+SELECT
+  inserted.id,
+  inserted.repo_id,
+  inserted.created_at,
+  inserted.updated_at,
+  inserted.metadata,
+  inserted.campaign_ids,
+  inserted.external_id,
+  inserted.external_service_type
+FROM inserted
+LEFT JOIN batch ON batch.repo_id = inserted.repo_id
+AND batch.external_id = inserted.external_id
+ORDER BY batch.ordinality
 `
 
-func (s *Store) createChangesetQuery(t *Changeset) (*sqlf.Query, error) {
-	metadata, err := metadataColumn(t.Metadata)
+func (s *Store) createChangesetsQuery(cs []*Changeset) (*sqlf.Query, error) {
+	type record struct {
+		ID                  int64           `json:"id"`
+		RepoID              int32           `json:"repo_id"`
+		CreatedAt           time.Time       `json:"created_at"`
+		UpdatedAt           time.Time       `json:"updated_at"`
+		Metadata            json.RawMessage `json:"metadata"`
+		CampaignIDs         json.RawMessage `json:"campaign_ids"`
+		ExternalID          string          `json:"external_id"`
+		ExternalServiceType string          `json:"external_service_type"`
+	}
+
+	now := s.now()
+	records := make([]record, 0, len(cs))
+
+	for _, c := range cs {
+		metadata, err := metadataColumn(c.Metadata)
+		if err != nil {
+			return nil, err
+		}
+
+		campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		if c.CreatedAt.IsZero() {
+			c.CreatedAt = now
+		}
+
+		if c.UpdatedAt.IsZero() {
+			c.UpdatedAt = c.CreatedAt
+		}
+
+		records = append(records, record{
+			ID:                  c.ID,
+			RepoID:              c.RepoID,
+			CreatedAt:           c.CreatedAt,
+			UpdatedAt:           c.UpdatedAt,
+			Metadata:            metadata,
+			CampaignIDs:         campaignIDs,
+			ExternalID:          c.ExternalID,
+			ExternalServiceType: c.ExternalServiceType,
+		})
+	}
+
+	batch, err := json.MarshalIndent(records, "    ", "    ")
 	if err != nil {
 		return nil, err
 	}
 
-	campaignIDs, err := jsonSetColumn(t.CampaignIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	if t.CreatedAt.IsZero() {
-		t.CreatedAt = s.now()
-	}
-
-	if t.UpdatedAt.IsZero() {
-		t.UpdatedAt = t.CreatedAt
-	}
-
-	return sqlf.Sprintf(
-		createChangesetQueryFmtstr,
-		t.RepoID,
-		t.CreatedAt,
-		t.UpdatedAt,
-		metadata,
-		campaignIDs,
-		t.ExternalID,
-		t.ExternalServiceType,
-	), nil
+	return sqlf.Sprintf(createChangesetsQueryFmtstr, string(batch)), nil
 }
 
 // CountChangesetsOpts captures the query options needed for

@@ -276,17 +276,20 @@ func TestStore(t *testing.T) {
 					ExternalServiceType: "github",
 				}
 
-				want := th.Clone()
-				have := th
+				changesets = append(changesets, th)
+			}
 
-				err := s.CreateChangeset(ctx, have)
-				if err != nil {
-					t.Fatal(err)
-				}
+			err := s.CreateChangesets(ctx, changesets...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
+			for _, have := range changesets {
 				if have.ID == 0 {
 					t.Fatal("id should not be zero")
 				}
+
+				want := have.Clone()
 
 				want.ID = have.ID
 				want.CreatedAt = now
@@ -295,8 +298,6 @@ func TestStore(t *testing.T) {
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatal(diff)
 				}
-
-				changesets = append(changesets, th)
 			}
 		})
 
