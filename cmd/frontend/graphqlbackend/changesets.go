@@ -34,7 +34,6 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{
 		IDs: []uint32{uint32(repoID)},
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +47,6 @@ func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
 	es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
 		IDs: repo.ExternalServiceIDs(),
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -232,4 +230,8 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 		return nil, err
 	}
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
+}
+
+func (r *changesetResolver) ReviewState() (a8n.ChangesetReviewState, error) {
+	return r.Changeset.ReviewState()
 }
