@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
-	github.com/certifi/gocertifi v0.0.0-20190105021324-abcd57078448 // indirect
+	github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
 	github.com/coreos/go-semver v0.3.0
@@ -172,12 +172,6 @@ require (
 )
 
 replace (
-	// Workaround for:
-	//
-	//  go: github.com/certifi/gocertifi@v0.0.0-20190105021324-abcd57078448: invalid pseudo-version: does not match version-control timestamp (2019-01-05T02:10:04Z)
-	//
-	github.com/certifi/gocertifi => github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448
-
 	// Workaround for:
 	//
 	//  go: github.com/daviddengcn/go-colortext@v0.0.0-20190211032704-186a3d44e920: invalid pseudo-version: does not match
