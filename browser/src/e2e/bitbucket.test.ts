@@ -99,7 +99,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  * Runs initial setup for the Bitbucket instance.
  */
 async function init(driver: Driver): Promise<void> {
-    await driver.ensureLoggedIn()
+    await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     if (TEST_NATIVE_INTEGRATION) {
         await configureSourcegraphIntegration(driver)
     } else {

@@ -6,6 +6,7 @@ import { regressionTestInit, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureExternalService, waitForRepos } from './util/api'
+import { ensureLoggedInOrCreateUser } from './util/helpers'
 
 const testRepoSlugs = [
     'auth0/go-jwt-middleware',
@@ -140,8 +141,8 @@ describe('Search regression test suite', () => {
         beforeAll(
             async () => {
                 driver = await createAndInitializeDriver()
-
                 gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.username)
+                await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
                     uniqueDisplayName: 'GitHub (search-regression-test)',
@@ -159,7 +160,7 @@ describe('Search regression test suite', () => {
         )
 
         // Close browser.
-        afterAll(async () => driver && (await driver.close()))
+        afterAll(() => driver && driver.close())
 
         test('Global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')

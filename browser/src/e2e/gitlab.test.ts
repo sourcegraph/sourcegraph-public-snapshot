@@ -21,7 +21,7 @@ jest.setTimeout(1000 * 60 * 1000)
  * Runs initial setup for the Gitlab instance.
  */
 async function init(driver: Driver): Promise<void> {
-    await driver.ensureLoggedIn()
+    await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     await driver.setExtensionSourcegraphUrl()
     await driver.ensureHasExternalService({
         kind: ExternalServiceKind.GITLAB,
