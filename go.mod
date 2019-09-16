@@ -3,7 +3,6 @@ module github.com/sourcegraph/sourcegraph
 require (
 	cloud.google.com/go v0.44.0
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/OpenPeeDeeP/depguard v1.0.0 // indirect
 	github.com/RoaringBitmap/roaring v0.4.18
 	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
@@ -39,20 +38,14 @@ require (
 	github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 // indirect
 	github.com/gin-gonic/gin v1.3.0 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
-	github.com/go-critic/go-critic v0.3.4 // indirect
 	github.com/go-delve/delve v1.2.0
 	github.com/go-redsync/redsync v1.0.1
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate/v4 v4.2.3
 	github.com/golang/gddo v0.0.0-20181116215533-9bd4a3295021
 	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6
-	github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6 // indirect
-	github.com/golangci/go-tools v0.0.0-20190124090046-35a9f45a5db0 // indirect
 	github.com/golangci/gocyclo v0.0.0-20180528144436-0a533e8fa43d // indirect
-	github.com/golangci/gofmt v0.0.0-20181222123516-0b8337e80d98 // indirect
-	github.com/golangci/golangci-lint v1.17.1
-	github.com/golangci/gosec v0.0.0-20180901114220-8afd9cbb6cfb // indirect
-	github.com/golangci/lint-1 v0.0.0-20181222135242-d2cdd8c08219 // indirect
+	github.com/golangci/golangci-lint v1.18.0
 	github.com/golangci/revgrep v0.0.0-20180812185044-276a5c0a1039 // indirect
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
@@ -144,12 +137,11 @@ require (
 	github.com/stripe/stripe-go v0.0.0-20181128170521-1436b6008c5e
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt v1.1.1
-	github.com/timakin/bodyclose v0.0.0-20190721030226-87058b9bfcec // indirect
 	github.com/uber-go/atomic v1.3.2 // indirect
 	github.com/uber/gonduit v0.3.2
 	github.com/uber/jaeger-client-go v2.14.0+incompatible
 	github.com/uber/jaeger-lib v1.5.0
-	github.com/ugorji/go/codec v1.1.7 // indirect
+	github.com/ugorji/go v1.1.7 // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
@@ -164,7 +156,7 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20190812073006-9eafafc0a87e
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190809145639-6d4652c779c4
+	golang.org/x/tools v0.0.0-20190909030654-5b82db07426d
 	google.golang.org/grpc v1.22.1 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
