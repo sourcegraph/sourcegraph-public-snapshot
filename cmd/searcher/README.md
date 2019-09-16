@@ -1,0 +1,7 @@
+# searcher
+
+Provides on-demand search for repositories. It scans through a git archive fetched from gitserver to find results.
+
+This service should be scaled up the more on-demand searches that need to be done at once. For a search the frontend will scatter the search for each repo@commit across the replicas. The frontend will then gather the results. Like gitserver this is an IO and compute bound service. However, its state is a cache which can be lost at anytime.
+
+[Life of a search query](../../doc/dev/architecture/life-of-a-search-query.md)
