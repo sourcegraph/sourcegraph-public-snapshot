@@ -149,7 +149,7 @@ require (
 	github.com/uber/gonduit v0.3.2
 	github.com/uber/jaeger-client-go v2.14.0+incompatible
 	github.com/uber/jaeger-lib v1.5.0
-	github.com/ugorji/go v1.1.7 // indirect
+	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
@@ -180,7 +180,6 @@ require (
 )
 
 replace (
-
 	// Workaround for:
 	//
 	//  go: github.com/certifi/gocertifi@v0.0.0-20190105021324-abcd57078448: invalid pseudo-version: does not match version-control timestamp (2019-01-05T02:10:04Z)
@@ -205,13 +204,16 @@ replace (
 	//  go: github.com/golangci/golangci-lint@v1.17.1 requires
 	//      github.com/golangci/ineffassign@v0.0.0-20180808204949-42439a7714cc: invalid pseudo-version: does not match version-control timestamp (2019-06-09T21:28:57Z)
 	//
-	github.com/golangci/golangci-lint => github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc
+	github.com/golangci/ineffassign => github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc
+	github.com/golangci/lint-1 => github.com/golangci/lint-1 v0.0.0-20190420132249-ee948d087217
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190915220358-2890d2b74833
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/kevinburke/differ => github.com/kevinburke/differ v0.0.0-20180721181420-bdfd927653c8
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/sourcegraph/docsite => github.com/sourcegraph/docsite v0.0.0-20190509234210-7aba76ce11c0
+
+	github.com/stvp/tempredis => github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
 
