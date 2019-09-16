@@ -183,6 +183,11 @@ replace (
 
 	// Workaround for:
 	//
+	//  go: github.com/certifi/gocertifi@v0.0.0-20190105021324-abcd57078448: invalid pseudo-version: does not match version-control timestamp (2019-01-05T02:10:04Z)
+	//
+	github.com/certifi/gocertifi => github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448
+	// Workaround for:
+	//
 	//  go: github.com/golangci/golangci-lint@v1.17.1 requires
 	//      github.com/go-critic/go-critic@v0.0.0-20181204210945-1df300866540: invalid pseudo-version: does not match version-control timestamp (2019-05-26T07:48:19Z)
 	//
@@ -199,7 +204,6 @@ replace (
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
-
 )
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
