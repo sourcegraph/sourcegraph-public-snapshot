@@ -69,6 +69,30 @@ local xrepoInsertionErrorRatePanel = makeErrorRatePanel(titleValue='Xrepo insert
 local xrepoInsertionDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Xrepo insertion', metricValue='lsif_xrepo_insertion');
 
 //
+// Process Metrics
+
+local cpuPanel = common.makePanel(
+  title='CPU utilization',
+  targets=[
+    prometheus.target('sum(rate(lsif_process_cpu_user_seconds_total[1m])) by (instance)', legendFormat='user, {{instance}}'),
+    prometheus.target('sum(rate(lsif_process_cpu_system_seconds_total[1m])) by (instance)', legendFormat='system, {{instance}}'),
+    prometheus.target('sum(rate(lsif_process_cpu_seconds_total[1m])) by (instance)', legendFormat='combined, {{instance}}'),
+  ],
+);
+
+local memoryPanel = common.makePanel(
+  title='Average memory usage',
+  extra={
+    yaxes: common.makeYAxes({
+      format: 'decmbytes',
+    }),
+  },
+  targets=[
+    prometheus.target('avg(lsif_nodejs_external_memory_bytes / 1024 / 1024) by (instance)', legendFormat='memory usage of {{instance}}'),
+  ],
+);
+
+//
 // Queue and Jobs Panels
 
 local queueSizePanel = common.makePanel(
@@ -147,6 +171,7 @@ local bloomFilterEventsPanel = common.makePanel(
 // Dashboard Construction
 
 common.makeDashboard(title='LSIF')
+.addRow(title='Process metrics', panels=[cpuPanel, memoryPanel])
 .addRow(title='HTTP uploads', panels=[httpUploadRequestsPanel, httpUploadErrorRatePanel, httpUploadDurationPercentilesPanel])
 .addRow(title='HTTP queries', panels=[httpLsifQueryRequestsPanel, httpLsifQueryErrorRatePanel, httpLsifQueryDurationPercentilesPanel])
 .addRow(title='Queue and job stats', panels=[queueSizePanel, jobEventsPanel] + durationPanelsByJob)
