@@ -26,6 +26,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The `statusIndicator` feature flag has been removed from the site configuration's `experimentalFeatures` section. The status indicator has been enabled by default since 3.6.0 and you can now safely remove the feature flag from your configuration.
 
+## 3.7.2
+
+### Added
+
+- A [migration guide for Sourcegraph v3.7+](doc/admin/migration/3_7.md).
+
+### Fixed
+
+- Fixed an issue where some repositories with very long symbol names would fail to index after v3.7.
+- We now retain one prior search index version after an upgrade, meaning upgrading AND downgrading from v3.6.2 <-> v3.7.2 is now 100% seamless and involves no downtime or negated search performance while repositories reindex. Please refer to the [v3.7+ migration guide](doc/admin/migration/3_7.md) for details.
+
 ## 3.7.1
 
 ### Fixed
