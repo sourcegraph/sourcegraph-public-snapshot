@@ -866,28 +866,32 @@ export function injectCodeIntelligenceToCodeHost(
     subscriptions.add(extensionsController)
 
     let codeHostSubscription: Subscription
-    observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
-        if (disableExtension) {
-            // We don't need to unsubscribe if the extension starts with disabled state.
-            if (codeHostSubscription) {
-                codeHostSubscription.unsubscribe()
-                subscriptions.remove(codeHostSubscription)
+    // In the browser extension, observe whether the `disableExtension` storage flag is set.
+    // In the native integration, this flag does not exist.
+    const extensionDisabled = isExtension ? observeStorageKey('sync', 'disableExtension') : of(false)
+    subscriptions.add(
+        extensionDisabled.subscribe(disableExtension => {
+            if (disableExtension) {
+                // We don't need to unsubscribe if the extension starts with disabled state.
+                if (codeHostSubscription) {
+                    codeHostSubscription.unsubscribe()
+                }
+                console.log('Browser extension is disabled')
+            } else {
+                codeHostSubscription = handleCodeHost({
+                    mutations,
+                    codeHost,
+                    extensionsController,
+                    platformContext,
+                    showGlobalDebug,
+                    sourcegraphURL,
+                    telemetryService,
+                    render: reactDOMRender,
+                })
+                subscriptions.add(codeHostSubscription)
+                console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
             }
-            console.log('Browser extension is disabled')
-        } else {
-            codeHostSubscription = handleCodeHost({
-                mutations,
-                codeHost,
-                extensionsController,
-                platformContext,
-                showGlobalDebug,
-                sourcegraphURL,
-                telemetryService,
-                render: reactDOMRender,
-            })
-            subscriptions.add(codeHostSubscription)
-            console.log('Browser extension is enabled')
-        }
-    })
+        })
+    )
     return subscriptions
 }

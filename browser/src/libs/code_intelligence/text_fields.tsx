@@ -96,6 +96,7 @@ function synchronizeTextField(
     subscriptions.add(
         EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
             editorService,
+            modelService,
             editor,
             text => {
                 element.value = text
