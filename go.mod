@@ -180,12 +180,18 @@ require (
 )
 
 replace (
-
 	// Workaround for:
 	//
 	//  go: github.com/certifi/gocertifi@v0.0.0-20190105021324-abcd57078448: invalid pseudo-version: does not match version-control timestamp (2019-01-05T02:10:04Z)
 	//
 	github.com/certifi/gocertifi => github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448
+
+	// Workaround for:
+	//
+	//  go: github.com/daviddengcn/go-colortext@v0.0.0-20190211032704-186a3d44e920: invalid pseudo-version: does not match
+	//
+	github.com/daviddengcn/go-colortext => github.com/daviddengcn/go-colortext v0.0.0-20180409174941-186a3d44e920
+
 	// Workaround for:
 	//
 	//  go: github.com/golangci/golangci-lint@v1.17.1 requires
