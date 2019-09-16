@@ -16,7 +16,7 @@
     "lodash": "^4.17.15",
     "lsif-protocol": "0.4.3",
     "mz": "^2.7.0",
-    "node-resque": "^5.5.6",
+    "node-resque": "^5.5.7",
     "on-finished": "^2.3.0",
     "on-headers": "^1.0.2",
     "prom-client": "^11.5.3",
