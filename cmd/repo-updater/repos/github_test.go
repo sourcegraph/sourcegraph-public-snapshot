@@ -33,24 +33,30 @@ func TestExampleRepositoryQuerySplit(t *testing.T) {
 	}
 }
 
-func TestGithubSource_LoadChangeset(t *testing.T) {
+func TestGithubSource_LoadChangesets(t *testing.T) {
 	testCases := []struct {
 		name string
-		cs   *Changeset
+		cs   []*Changeset
 		err  string
 	}{
 		{
 			name: "found",
-			cs: &Changeset{
-				Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-				Changeset: &a8n.Changeset{ExternalID: "5550"},
+			cs: []*Changeset{
+				{
+					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+					Changeset: &a8n.Changeset{ExternalID: "5550"},
+				},
+				{
+					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "tsenart/vegeta"}},
+					Changeset: &a8n.Changeset{ExternalID: "50"},
+				},
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
-		tc.name = "GithubSource_LoadChangeset_" + tc.name
+		tc.name = "GithubSource_LoadChangesets_" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
 			// The GithubSource uses the github.Client under the hood, which
@@ -82,7 +88,7 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err = githubSrc.LoadChangeset(ctx, tc.cs)
+			err = githubSrc.LoadChangesets(ctx, tc.cs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -91,7 +97,12 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 				return
 			}
 
-			data, err := json.MarshalIndent(tc.cs.Changeset.Metadata, " ", " ")
+			meta := make([]*github.PullRequest, 0, len(tc.cs))
+			for _, cs := range tc.cs {
+				meta = append(meta, cs.Changeset.Metadata.(*github.PullRequest))
+			}
+
+			data, err := json.MarshalIndent(meta, " ", " ")
 			if err != nil {
 				t.Fatal(err)
 			}
