@@ -1,5 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
+import { logger } from './logger'
 import { DefinitionReferenceResultId } from './models.database'
 import { Id } from 'lsif-protocol'
 
@@ -133,8 +134,9 @@ export async function createDirectory(path: string): Promise<void> {
  * @param e The error value.
  */
 export function logErrorAndExit(e: any): void {
-    console.error(e)
-    setTimeout(() => process.exit(1), 100)
+    logger.on('finish', () => process.exit(1))
+    logger.error(e)
+    logger.end()
 }
 
 /**

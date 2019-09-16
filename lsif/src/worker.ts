@@ -1,8 +1,8 @@
 import * as path from 'path'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import morgan from 'morgan'
 import promClient from 'prom-client'
+import { logger } from './logger'
 import { CONNECTION_CACHE_CAPACITY_GAUGE, JOB_DURATION_HISTOGRAM, JOB_EVENTS_COUNTER } from './metrics'
 import { ConnectionCache } from './cache'
 import { createConvertJob, JobClasses } from './jobs'
@@ -32,11 +32,6 @@ const REDIS_PORT = readEnvInt('REDIS_PORT', 6379)
  * at once.
  */
 const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
-
-/**
- * Whether or not to log a message when the HTTP server is ready and listening.
- */
-const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
 
 /**
  * Where on the file system to store LSIF files.
@@ -86,14 +81,17 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
         jobs[key] = { perform: fn }
     }
 
-    // Create worker and attach loggers to the interesting events
+    // Create worker and log the interesting events
     const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs) as RealWorker
-    worker.on('start', () => console.log('Worker started'))
-    worker.on('end', () => console.log('Worker ended'))
-    worker.on('poll', () => console.log('Polling queue'))
-    worker.on('ping', () => console.log('Pinging queue'))
-    worker.on('cleaning_worker', (worker: string, pid: string) => console.log(`Cleaning old worker ${worker}:${pid}`))
+    worker.on('start', () => logger.debug('Started worker'))
+    worker.on('end', () => logger.debug('Ended worker'))
+    worker.on('poll', () => logger.debug('Polling queue'))
+    worker.on('ping', () => logger.debug('Pinging queue'))
     worker.on('error', logErrorAndExit)
+
+    worker.on('cleaning_worker', (worker: string, pid: string) =>
+        logger.debug('Cleaning old worker', { worker: `${worker}:${pid}` })
+    )
 
     // Start a timer when accepting a job and end it when either
     // succeeding or failing. This is fine as we're not using a
@@ -101,12 +99,12 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
     let end: (() => void) | undefined
 
     worker.on('job', (_: string, job: Job<any> & JobMeta) => {
-        console.log(`Working on job ${JSON.stringify(job)}`)
+        logger.debug('Working on job', { job })
         end = JOB_DURATION_HISTOGRAM.labels(job.class).startTimer()
     })
 
     worker.on('success', (_: string, job: Job<any> & JobMeta, result: any) => {
-        console.log(`Completed job ${JSON.stringify(job)} >> ${result}`)
+        logger.debug('Completed job', { job, result })
         JOB_EVENTS_COUNTER.labels(job.class, 'success').inc()
         if (end) {
             end()
@@ -114,7 +112,7 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
     })
 
     worker.on('failure', (_: string, job: Job<any> & JobMeta, failure: any) => {
-        console.log(`Failed job ${JSON.stringify(job)} >> ${failure}`)
+        logger.debug('Failed job', { job, failure })
         JOB_EVENTS_COUNTER.labels(job.class, 'failure').inc()
         if (end) {
             end()
@@ -131,9 +129,8 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
  * Create an express server that only has /ping and /metric endpoints.
  */
 function startMetricsServer(): void {
-    // Create app + middleware
+    // Create app
     const app = express()
-    app.use(morgan('tiny'))
 
     // Register endpoints
     app.get('/healthz', (_, res) => res.send('ok'))
@@ -143,9 +140,7 @@ function startMetricsServer(): void {
     })
 
     app.listen(WORKER_METRICS_PORT, () => {
-        if (LOG_READY) {
-            console.log(`Listening for HTTP requests on port ${WORKER_METRICS_PORT}`)
-        }
+        logger.debug('Serving worker metrics', { port: WORKER_METRICS_PORT })
     })
 }
 

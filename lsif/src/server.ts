@@ -1,19 +1,19 @@
 import * as definitionsSchema from './lsif.schema.json'
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as url from 'url'
 import Ajv from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import morgan from 'morgan'
 import onFinished from 'on-finished'
+import onHeaders from 'on-headers'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createDatabaseFilename, createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
 import { Database } from './database'
 import { Job, Queue, Scheduler } from 'node-resque'
+import { logger } from './logger'
 import { RealQueue, rewriteJobMeta, WorkerMeta } from './queue'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
@@ -60,11 +60,6 @@ const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 102
 const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
- * Whether or not to log a message when the HTTP server is ready and listening.
- */
-const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
-
-/**
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
@@ -93,8 +88,8 @@ async function main(): Promise<void> {
 
     // Create app + middleware
     const app = express()
-    app.use(morgan('tiny'))
     app.use(metricMiddleware)
+    app.use(loggingMiddleware)
 
     // Register endpoints
     addMetaEndpoints(app)
@@ -105,9 +100,7 @@ async function main(): Promise<void> {
     app.use(errorHandler)
 
     app.listen(HTTP_PORT, () => {
-        if (LOG_READY) {
-            console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
-        }
+        logger.debug('Serving LSIF data', { port: HTTP_PORT })
     })
 }
 
@@ -139,12 +132,12 @@ async function setupQueue(): Promise<RealQueue> {
 
     // Create scheduler and attach loggers to the interesting events
     const scheduler = new Scheduler({ connection: connectionOptions })
-    scheduler.on('start', () => console.log('Scheduler started'))
-    scheduler.on('end', () => console.log('Scheduler ended'))
-    scheduler.on('poll', () => console.log('Scheduler polling'))
-    scheduler.on('master', () => console.log('Scheduler has become master'))
-    scheduler.on('cleanStuckWorker', (workerName: string) => console.log(`Cleaning stuck worker ${workerName}`))
-    scheduler.on('transferredJob', (_: number, job: Job<any>) => console.log(`Transferring job ${JSON.stringify(job)}`))
+    scheduler.on('start', () => logger.debug('Started scheduler'))
+    scheduler.on('end', () => logger.debug('Ended scheduler'))
+    scheduler.on('poll', () => logger.debug('Checking for stuck workers'))
+    scheduler.on('master', () => logger.debug('Scheduler has become master'))
+    scheduler.on('cleanStuckWorker', (worker: string) => logger.debug('Cleaning stuck worker', { worker }))
+    scheduler.on('transferredJob', (_: number, job: Job<any>) => logger.debug('Transferring job', { job }))
     scheduler.on('error', logErrorAndExit)
 
     await scheduler.connect()
@@ -293,7 +286,7 @@ function addLsifEndpoints(app: express.Application, queue: RealQueue): void {
                 }
 
                 // Enqueue input job
-                console.log(`Enqueueing conversion job for ${repository}@${commit}`)
+                logger.info('Enqueueing conversion job', { repository, commit })
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
             }
@@ -354,7 +347,7 @@ function addLsifEndpoints(app: express.Application, queue: RealQueue): void {
 function metricMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
     let histogram: promClient.Histogram | undefined
 
-    switch (url.parse(req.url).pathname) {
+    switch (req.path) {
         case '/upload':
             histogram = HTTP_UPLOAD_DURATION_HISTOGRAM
             break
@@ -365,11 +358,11 @@ function metricMiddleware(req: express.Request, res: express.Response, next: exp
     }
 
     if (histogram !== undefined) {
-        const labels = { status_code: 0 }
+        const labels = { code: 0 }
         const end = histogram.startTimer(labels)
 
         onFinished(res, () => {
-            labels.status_code = res.statusCode
+            labels.code = res.statusCode
             end()
         })
     }
@@ -378,19 +371,52 @@ function metricMiddleware(req: express.Request, res: express.Response, next: exp
 }
 
 /**
+ * A pair of seconds and nanoseconds representing the output of
+ * the nodejs high-resolution timer.
+ */
+type HrTime = [number, number]
+
+/**
+ * Middleware function used to log requests and the corresponding
+ * response status code and wall time taken to process the request
+ * (to the point where headers are emitted).
+ */
+function loggingMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    const start = process.hrtime()
+    let end: HrTime | undefined
+
+    onHeaders(res, () => {
+        end = process.hrtime()
+    })
+
+    onFinished(res, () => {
+        const responseTime = end ? `${((end[0] - start[0]) * 1e3 + (end[1] - start[1]) * 1e-6).toFixed(3)}ms` : ''
+
+        logger.debug('request', {
+            method: req.method,
+            path: req.path,
+            statusCode: res.statusCode,
+            responseTime,
+        })
+    })
+
+    next()
+}
+
+/**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  */
-function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
+function errorHandler(e: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
     if (res.headersSent) {
-        return next(err)
+        return next(e)
     }
 
-    if (err && err.status) {
-        res.status(err.status).send({ message: err.message })
+    if (e && e.status) {
+        res.status(e.status).send({ message: e.message })
         return
     }
 
-    console.error(err)
+    logger.error('Uncaught exception', { error: e && e.message })
     res.status(500).send({ message: 'Unknown error' })
 }
 

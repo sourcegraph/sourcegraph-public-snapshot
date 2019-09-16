@@ -3,6 +3,7 @@ import * as path from 'path'
 import uuid from 'uuid'
 import { convertLsif } from './importer'
 import { createDatabaseFilename } from './util'
+import { logger } from './logger'
 import { XrepoDatabase } from './xrepo'
 
 /**
@@ -23,7 +24,8 @@ export function createConvertJob(
     xrepoDatabase: XrepoDatabase
 ): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
-        console.log(`Converting ${repository}@${commit}`)
+        const jobLogger = logger.child({ repository, commit })
+        jobLogger.info('Converting')
 
         const input = fs.createReadStream(filename)
         const tempFile = path.join(storageRoot, 'tmp', uuid.v4())
@@ -38,15 +40,16 @@ export function createConvertJob(
             // Add the new database to the xrepo db
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         } catch (e) {
-            console.error(`Failed to convert ${repository}@${commit}: ${e && e.message}`)
+            jobLogger.error('Failed conversion', { repository, commit, error: e && e.message })
 
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
             throw e
         }
 
+        jobLogger.info('Successfully converted')
+
         // Remove input
         await fs.unlink(filename)
-        console.log(`Successfully converted ${repository}@${commit}`)
     }
 }
