@@ -6,7 +6,7 @@ import { logger, initLogger } from './logger'
 import { CONNECTION_CACHE_CAPACITY_GAUGE, JOB_DURATION_HISTOGRAM, JOB_EVENTS_COUNTER } from './metrics'
 import { ConnectionCache } from './cache'
 import { createConvertJob, JobClasses } from './jobs'
-import { createDirectory, logErrorAndExit, readEnvInt } from './util'
+import { createDirectory, readEnvInt } from './util'
 import { Job, JobsHash, Worker } from 'node-resque'
 import { JobMeta, RealWorker } from './queue'
 import { XrepoDatabase } from './xrepo'
@@ -93,7 +93,7 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
     worker.on('end', () => logger.debug('Ended worker'))
     worker.on('poll', () => logger.debug('Polling queue'))
     worker.on('ping', () => logger.debug('Pinging queue'))
-    worker.on('error', logErrorAndExit)
+    worker.on('error', e => logger.error('Worker error', e && e.message))
 
     worker.on('cleaning_worker', (worker: string, pid: string) =>
         logger.debug('Cleaning old worker', { worker: `${worker}:${pid}` })
@@ -128,7 +128,7 @@ async function startWorker(jobFunctions: { [K in JobClasses]: (...args: any[]) =
     // Start worker
     await worker.connect()
     exitHook(() => worker.end())
-    worker.start().catch(logErrorAndExit)
+    worker.start().catch(e => logger.error('Failed to start worker', e && e.message))
 }
 
 /**
@@ -150,4 +150,4 @@ function startMetricsServer(): void {
     })
 }
 
-main().catch(logErrorAndExit)
+main().catch(e => logger.error('Failed to start process', e && e.message))

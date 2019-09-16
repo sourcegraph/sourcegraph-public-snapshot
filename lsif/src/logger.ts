@@ -93,7 +93,7 @@ function logfmtFormat(info: TransformableInfo, opts?: any): TransformableInfo {
  * Wrap the formatter function in a class acceptable to Winston.
  */
 class Formatter {
-    transform = LOG_FORMAT === 'condensed' ? condensedFormat : logfmtFormat
+    public transform = LOG_FORMAT === 'condensed' ? condensedFormat : logfmtFormat
 }
 
 /**

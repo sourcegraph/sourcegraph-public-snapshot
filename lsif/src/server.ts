@@ -10,7 +10,7 @@ import onHeaders from 'on-headers'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createDatabaseFilename, createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { createDatabaseFilename, createDirectory, hasErrorCode, readEnvInt } from './util'
 import { Database } from './database'
 import { Job, Queue, Scheduler } from 'node-resque'
 import { logger, initLogger } from './logger'
@@ -126,15 +126,21 @@ async function setupQueue(): Promise<RealQueue> {
 
     // Create and start queue
     const queue = new Queue({ connection: connectionOptions }) as RealQueue
-    queue.on('error', logErrorAndExit)
+    queue.on('error', e => logger.error('Queue error', e && e.message))
     await queue.connect()
     exitHook(() => queue.end())
 
+    const emitQueueSizeMetric = (): void => {
+        queue
+            .queued('lsif', 0, -1)
+            .then(
+                jobs => QUEUE_SIZE_GAUGE.set(jobs.length),
+                e => logger.error('Failed to get queued jobs', { error: e && e.message })
+            )
+    }
+
     // Update queue size metric on a timer
-    setInterval(
-        () => queue.queued('lsif', 0, -1).then(jobs => QUEUE_SIZE_GAUGE.set(jobs.length), logErrorAndExit),
-        1000
-    )
+    setInterval(emitQueueSizeMetric, 1000)
 
     // Create scheduler and attach loggers to the interesting events
     const scheduler = new Scheduler({ connection: connectionOptions })
@@ -144,11 +150,11 @@ async function setupQueue(): Promise<RealQueue> {
     scheduler.on('master', () => logger.debug('Scheduler has become master'))
     scheduler.on('cleanStuckWorker', (worker: string) => logger.debug('Cleaning stuck worker', { worker }))
     scheduler.on('transferredJob', (_: number, job: Job<any>) => logger.debug('Transferring job', { job }))
-    scheduler.on('error', logErrorAndExit)
+    scheduler.on('error', e => logger.error('Scheduler error', e && e.message))
 
     await scheduler.connect()
     exitHook(() => scheduler.end())
-    scheduler.start().catch(logErrorAndExit)
+    scheduler.start().catch(e => logger.error('Failed to start scheduler', e && e.message))
 
     return queue
 }
@@ -457,4 +463,4 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(logErrorAndExit)
+main().catch(e => logger.error('Failed to start process', e && e.message))
