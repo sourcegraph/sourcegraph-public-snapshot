@@ -402,6 +402,9 @@ func TestStore(t *testing.T) {
 		})
 
 		t.Run("Update", func(t *testing.T) {
+			want := make([]*Changeset, 0, len(changesets))
+			have := make([]*Changeset, 0, len(changesets))
+
 			for _, c := range changesets {
 				c.Metadata = []byte(`{"updated": true}`)
 				c.ExternalServiceType = "gitlab"
@@ -411,55 +414,64 @@ func TestStore(t *testing.T) {
 				}
 
 				now = now.Add(time.Second)
-				want := c
-				want.UpdatedAt = now
+				c.UpdatedAt = now
+				have = append(have, c.Clone())
+				want = append(want, c)
+			}
 
-				have := c.Clone()
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
 
+			for i := range have {
 				// Test that duplicates are not introduced.
-				have.CampaignIDs = append(have.CampaignIDs, have.CampaignIDs...)
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+				have[i].CampaignIDs = append(have[i].CampaignIDs, have[i].CampaignIDs...)
+			}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			for i := range have {
 				// Test we can add to the set.
-				have.CampaignIDs = append(have.CampaignIDs, 42)
-				want.CampaignIDs = append(want.CampaignIDs, 42)
+				have[i].CampaignIDs = append(have[i].CampaignIDs, 42)
+				want[i].CampaignIDs = append(want[i].CampaignIDs, 42)
+			}
 
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
-				sort.Slice(have.CampaignIDs, func(a, b int) bool {
-					return have.CampaignIDs[a] < have.CampaignIDs[b]
+			for i := range have {
+				sort.Slice(have[i].CampaignIDs, func(a, b int) bool {
+					return have[i].CampaignIDs[a] < have[i].CampaignIDs[b]
 				})
 
-				if diff := cmp.Diff(have, want); diff != "" {
+				if diff := cmp.Diff(have[i], want[i]); diff != "" {
 					t.Fatal(diff)
 				}
+			}
 
+			for i := range have {
 				// Test we can remove from the set.
-				have.CampaignIDs = have.CampaignIDs[:0]
-				want.CampaignIDs = want.CampaignIDs[:0]
+				have[i].CampaignIDs = have[i].CampaignIDs[:0]
+				want[i].CampaignIDs = want[i].CampaignIDs[:0]
+			}
 
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	})
