@@ -180,6 +180,7 @@ github.com/glycerine/goconvey v0.0.0-20180728074245-46e3a41ad493/go.mod h1:Ogl1T
 github.com/go-critic/go-critic v0.0.0-20181204210945-1df300866540/go.mod h1:+sE8vrLDS2M0pZkBk0wy6+nLdKexVDrl/jBqQOTDThA=
 github.com/go-critic/go-critic v0.3.4 h1:FYaiaLjX0Nqei80KPhm4CyFQUBbmJwSrHxQ73taaGBc=
 github.com/go-critic/go-critic v0.3.4/go.mod h1:AHR42Lk/E/aOznsrYdMYeIQS5RH10HZHSqP+rD6AJrc=
+github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540/go.mod h1:+sE8vrLDS2M0pZkBk0wy6+nLdKexVDrl/jBqQOTDThA=
 github.com/go-delve/delve v1.2.0 h1:uwGyfYO0WsWqbnDWvxCBKOr2qFLpii3tLxwM+fTJs70=
 github.com/go-delve/delve v1.2.0/go.mod h1:yP+LD36s/ud5nm4lsQY0TwNhYu2PAwk6xItz+442j74=
 github.com/go-ini/ini v1.25.4/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=
@@ -280,6 +281,7 @@ github.com/golangci/gosec v0.0.0-20180901114220-8afd9cbb6cfb h1:Bi7BYmZVg4C+mKGi
 github.com/golangci/gosec v0.0.0-20180901114220-8afd9cbb6cfb/go.mod h1:ON/c2UR0VAAv6ZEAFKhjCLplESSmRFfZcDLASbI1GWo=
 github.com/golangci/ineffassign v0.0.0-20180808204949-42439a7714cc h1:XRFao922N8F3EcIXBSNX8Iywk+GI0dxD/8FicMX2D/c=
 github.com/golangci/ineffassign v0.0.0-20180808204949-42439a7714cc/go.mod h1:e5tpTHCfVze+7EpLEozzMB3eafxo2KT5veNg1k6byQU=
+github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc/go.mod h1:e5tpTHCfVze+7EpLEozzMB3eafxo2KT5veNg1k6byQU=
 github.com/golangci/lint-1 v0.0.0-20180610141402-ee948d087217/go.mod h1:66R6K6P6VWk9I95jvqGxkqJxVWGFy9XlDwLwVz1RCFg=
 github.com/golangci/lint-1 v0.0.0-20181222135242-d2cdd8c08219 h1:utua3L2IbQJmauC5IXdEA547bcoU5dozgQAfc8Onsg4=
 github.com/golangci/lint-1 v0.0.0-20181222135242-d2cdd8c08219/go.mod h1:/X8TswGSh1pIozq4ZwCfxS0WA5JGXguxk94ar/4c87Y=

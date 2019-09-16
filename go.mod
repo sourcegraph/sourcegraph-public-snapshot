@@ -102,8 +102,6 @@ require (
 	github.com/mattn/goreman v0.2.1
 	github.com/mcuadros/go-version v0.0.0-20180611085657-6d5863ca60fa
 	github.com/microcosm-cc/bluemonday v1.0.2
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
@@ -182,13 +180,30 @@ require (
 )
 
 replace (
+
+	// Workaround for:
+	//
+	//  go: github.com/golangci/golangci-lint@v1.17.1 requires
+	//      github.com/go-critic/go-critic@v0.0.0-20181204210945-1df300866540: invalid pseudo-version: does not match version-control timestamp (2019-05-26T07:48:19Z)
+	//
+	github.com/go-critic/go-critic => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
+
+	// Workaround for:
+	//
+	//  go: github.com/golangci/golangci-lint@v1.17.1 requires
+	//      github.com/golangci/ineffassign@v0.0.0-20180808204949-42439a7714cc: invalid pseudo-version: does not match version-control timestamp (2019-06-09T21:28:57Z)
+	//
+	github.com/golangci/golangci-lint => github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190915220358-2890d2b74833
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
+
 )
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 
 replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
+
+go 1.13
