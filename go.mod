@@ -211,6 +211,7 @@ replace (
 	github.com/kevinburke/differ => github.com/kevinburke/differ v0.0.0-20180721181420-bdfd927653c8
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
+	github.com/sourcegraph/docsite => github.com/sourcegraph/docsite v0.0.0-20190509234210-7aba76ce11c0
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
 
