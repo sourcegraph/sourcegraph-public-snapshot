@@ -1,5 +1,5 @@
 import winston from 'winston'
-import { TransformableInfo, } from 'logform';
+import { TransformableInfo } from 'logform'
 import { MESSAGE } from 'triple-beam'
 
 /**
@@ -23,10 +23,10 @@ const NO_COLOR = !!process.env.NO_COLOR
  * NO_COLOR is not enabled.
  */
 const colors: { [k: string]: (text: string) => string } = {
-    'error': NO_COLOR ? text => text : text => `\x1b[31m${text}\x1b[0m`,
-    'warn': NO_COLOR ? text => text : text => `\x1b[33m${text}\x1b[0m`,
-    'info': NO_COLOR ? text => text : text => `\x1b[36m${text}\x1b[0m`,
-    'debug': NO_COLOR ? text => text : text => `\x1b[2m${text}\x1b[0m`,
+    error: NO_COLOR ? text => text : text => `\x1b[31m${text}\x1b[0m`,
+    warn: NO_COLOR ? text => text : text => `\x1b[33m${text}\x1b[0m`,
+    info: NO_COLOR ? text => text : text => `\x1b[36m${text}\x1b[0m`,
+    debug: NO_COLOR ? text => text : text => `\x1b[2m${text}\x1b[0m`,
 }
 
 /**
@@ -54,9 +54,9 @@ function condensedFormat(info: TransformableInfo, opts?: any): TransformableInfo
  */
 function logfmtFormat(info: TransformableInfo, opts?: any): TransformableInfo {
     const pairs = []
-    pairs.push(["t", info.timestamp ? info.timestamp : new Date().toISOString()])
-    pairs.push(["lvl", info.level])
-    pairs.push(["msg", info.message])
+    pairs.push(['t', info.timestamp ? info.timestamp : new Date().toISOString()])
+    pairs.push(['lvl', info.level])
+    pairs.push(['msg', info.message])
 
     const additionalPairs = []
     for (const [key, value] of Object.entries(info)) {
@@ -81,8 +81,12 @@ function logfmtFormat(info: TransformableInfo, opts?: any): TransformableInfo {
         return needsQuotes ? `"${strValue}"` : strValue
     }
 
-    info[MESSAGE] = pairs.map(([k, v]) => [k, quote(v)]).map(([k, v]) => `${k}=${v}`).join(' ')
-    return info;
+    info[MESSAGE] = pairs
+        .map(([k, v]) => [k, quote(v)])
+        .map(([k, v]) => `${k}=${v}`)
+        .join(' ')
+
+    return info
 }
 
 /**
@@ -108,8 +112,6 @@ export function initLogger(service: string): void {
         level: LOG_LEVEL,
         format: new Formatter(),
         defaultMeta: { service },
-        transports: [
-            new winston.transports.Console({}),
-        ],
+        transports: [new winston.transports.Console({})],
     })
 }
