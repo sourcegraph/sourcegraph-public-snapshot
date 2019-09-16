@@ -28,5 +28,5 @@ To decide what to index [zoekt-sourcegraph-indexserver](https://sourcegraph.com/
 
 ## Searcher (non-indexed search)
 
-
+Searcher is a horizontally scalable stateless service that performs non-indexed code search. Each [search requests](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:search/search.go+"s.search") is for a single repository. To search multiple repositories, the frontend makes one concurrent request per repository) by first [fetching ]
 
