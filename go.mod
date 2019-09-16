@@ -180,6 +180,7 @@ require (
 )
 
 replace (
+
 	// Workaround for:
 	//
 	//  go: github.com/certifi/gocertifi@v0.0.0-20190105021324-abcd57078448: invalid pseudo-version: does not match version-control timestamp (2019-01-05T02:10:04Z)
@@ -207,6 +208,7 @@ replace (
 	github.com/golangci/golangci-lint => github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc
 	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20190915220358-2890d2b74833
 	github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
+	github.com/kevinburke/differ => github.com/kevinburke/differ v0.0.0-20180721181420-bdfd927653c8
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

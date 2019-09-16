@@ -420,6 +420,7 @@ github.com/keegancsmith/sqlf v1.1.0 h1:lQ2YFRqdEyjDZ/OHsh417gs/2Fz+Jc7qEM7kRrc3o
 github.com/keegancsmith/sqlf v1.1.0/go.mod h1:p1owj38vs/HG0UcZlyhFnXA57SgHejZiHGJBj6XWPxo=
 github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513 h1:xa9SZfAid/jlS3kjwAvVDQFpe6t8SiS0Vl/H51BZYww=
 github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513/go.mod h1:MhGoae1pr+JFXxDAYx3b0fMn1xtr1ly9dHa0+KHHon4=
+github.com/kevinburke/differ v0.0.0-20180721181420-bdfd927653c8/go.mod h1:I7eBHoOOU9N76qKli6iiqWZqh7iyxraK7SgR+kbDgW4=
 github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8 h1:XCAOLCXtvhcmu7F5N3y85a4c3S/y8z+LPINdLIbpluA=
 github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8/go.mod h1:I7eBHoOOU9N76qKli6iiqWZqh7iyxraK7SgR+kbDgW4=
 github.com/kevinburke/go-bindata v3.12.0+incompatible h1:D7FWZ35UwzkoC+MEcR8Kgo9Dh/7lmHQUT4VDtAuNGaU=
