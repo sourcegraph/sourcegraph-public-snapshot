@@ -20,6 +20,7 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
+import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 
 interface Props
     extends SettingsCascadeProps,
@@ -62,10 +63,9 @@ export class NavLinks extends React.PureComponent<Props> {
                     </li>
                 )}
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
+                    // TODO: only show these on enterprise
                     <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            Explore
-                        </Link>
+                        <CampaignsNavItem />
                     </li>
                 )}
                 {!this.props.authenticatedUser && (
