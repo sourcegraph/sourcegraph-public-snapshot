@@ -2,9 +2,6 @@ import promClient from 'prom-client'
 
 // TODO - split these by process
 
-// Collect process metrics
-promClient.collectDefaultMetrics({ prefix: 'lsif_' })
-
 //
 // HTTP Metrics
 
