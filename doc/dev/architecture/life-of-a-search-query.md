@@ -20,16 +20,13 @@ First, the frontend [resolves which repositories need to be searched](https://so
 
 Next, the frontend [determines which repositories are indexed by zoekt](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+"zoektIndexedRepos%28"+file:textsearch%5C.go) by consulting an in-memory cache that is kept up-to-date with regular asynchronous polling. It concurrently [queries zoekt](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22zoektSearchHEAD%28%22+file:textsearch%5C.go) for indexed repositories and [queries searcher](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22searchFilesInRepo%28%22+file:textsearch%5C.go) for non-indexed repositories.
 
-
 ## Zoekt (indexed search)
 
-zoekt-webserver [serves search requests](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+"serveSearchErr%28") by [iterating through matches in the index](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+"func+%28d+*indexData%29+Search").
-
+zoekt-webserver [serves search requests](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+"serveSearchErr%28") by [iterating through matches in the index](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+"func+%28d+*indexData%29+Search"). It watches the index directory and loads/unloads index files as they come and go.
 
 To decide what to index [zoekt-sourcegraph-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) sends an [HTTP Get request to the frontend internal API](https://sourcegraph.com/search?q=r:github.com/sourcegraph/+%22/repos/list%22+-file:%28test%7Cspec%29+) for a list of repository names to index. For each repository the indexserver will compare what Sourcegraph wants indexed (commit, configuration, etc.) to what is already indexed on disk and will start an index job for anything that is missing. It fetches git data by calling [another internal frontend API](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+"func+tarballURL") which [redirects to the archive on gitserver](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+"func+serveGitTar%28"+).
 
-[zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver) watches the index directory and loads/unloads index files as they come and go.
-
 ## Searcher (non-indexed search)
+
 
 
