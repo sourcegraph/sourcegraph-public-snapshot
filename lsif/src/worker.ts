@@ -2,7 +2,7 @@ import * as path from 'path'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import promClient from 'prom-client'
-import { logger } from './logger'
+import { logger, initLogger } from './logger'
 import { CONNECTION_CACHE_CAPACITY_GAUGE, JOB_DURATION_HISTOGRAM, JOB_EVENTS_COUNTER } from './metrics'
 import { ConnectionCache } from './cache'
 import { createConvertJob, JobClasses } from './jobs'
@@ -42,6 +42,9 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
+    // Initialize logger
+    initLogger('lsif-worker')
+
     // Update cache capacities on startup
     CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
 

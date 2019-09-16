@@ -13,7 +13,7 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createDatabaseFilename, createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
 import { Database } from './database'
 import { Job, Queue, Scheduler } from 'node-resque'
-import { logger } from './logger'
+import { logger, initLogger } from './logger'
 import { RealQueue, rewriteJobMeta, WorkerMeta } from './queue'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
@@ -73,6 +73,9 @@ const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
+    // Initialize logger
+    initLogger('lsif-server')
+
     // Update cache capacities on startup
     CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
     DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
