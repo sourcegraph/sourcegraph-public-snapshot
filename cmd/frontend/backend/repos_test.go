@@ -2,6 +2,7 @@ package backend
 
 import (
 	"flag"
+	"os"
 	"reflect"
 	"testing"
 
@@ -95,9 +96,10 @@ func TestRepos_Add(t *testing.T) {
 	}
 }
 
-func init() {
+func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
+	os.Exit(m.Run())
 }
