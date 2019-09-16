@@ -58,7 +58,7 @@ func ComputeConfig() Config {
 	}
 
 	var mustIncludeCommits []string
-	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
+	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" && !taggedRelease {
 		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
 		for i := range mustIncludeCommits {
 			mustIncludeCommits[i] = strings.TrimSpace(mustIncludeCommits[i])
