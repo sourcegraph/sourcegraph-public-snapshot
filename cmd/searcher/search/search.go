@@ -223,7 +223,7 @@ func validateParams(p *protocol.Request) error {
 	if len(p.Commit) != 40 {
 		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
-	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 && p.IncludePattern == "" {
+	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
 		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
 	}
 	return nil

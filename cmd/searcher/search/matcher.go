@@ -129,7 +129,7 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		RegExp:        p.PathPatternsAreRegExps,
 		CaseSensitive: p.PathPatternsAreCaseSensitive,
 	}
-	matchPath, err := pathmatch.CompilePathPatterns(p.AllIncludePatterns(), p.ExcludePattern, pathOptions)
+	matchPath, err := pathmatch.CompilePathPatterns(p.IncludePatterns, p.ExcludePattern, pathOptions)
 	if err != nil {
 		return nil, err
 	}

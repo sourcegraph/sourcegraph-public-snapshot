@@ -180,26 +180,13 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		tr.Finish()
 	}()
 
-	// Combine IncludePattern and IncludePatterns.
-	//
-	// NOTE: This makes it easier to (in the future) remove support for
-	// IncludePattern from searcher and only have it consult IncludePatterns.
-	// We still need to send IncludePattern (because searcher isn't guaranteed
-	// to be upgraded yet).
-	var includePatterns []string
-	if p.IncludePattern != "" {
-		includePatterns = append(includePatterns, p.IncludePattern)
-	}
-	includePatterns = append(includePatterns, p.IncludePatterns...)
-
 	q := url.Values{
 		"Repo":            []string{string(repo.Name)},
 		"URL":             []string{repo.URL},
 		"Commit":          []string{string(commit)},
 		"Pattern":         []string{p.Pattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
-		"IncludePatterns": includePatterns,
-		"IncludePattern":  []string{p.IncludePattern},
+		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
