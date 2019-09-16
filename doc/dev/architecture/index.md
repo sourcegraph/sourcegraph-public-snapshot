@@ -37,6 +37,4 @@ Our backend is composed of multiple services:
 Here are some guides to help you understand how multiple systems fit together:
 
 - [Life of a search query](life-of-a-search-query.md)
-
-
-
+- TODO: Life of a repository (i.e. how does code end up on gitserver?)
