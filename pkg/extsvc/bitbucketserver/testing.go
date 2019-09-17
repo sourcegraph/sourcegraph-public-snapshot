@@ -1,12 +1,14 @@
 package bitbucketserver
 
 import (
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
 
+	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 )
@@ -21,6 +23,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	rec.SetMatcher(ignoreHostMatcher)
 
 	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
@@ -51,4 +54,17 @@ var normalizer = regexp.MustCompile("[^A-Za-z0-9-]+")
 
 func normalize(path string) string {
 	return normalizer.ReplaceAllLiteralString(path, "-")
+}
+
+func ignoreHostMatcher(r *http.Request, i cassette.Request) bool {
+	if r.Method != i.Method {
+		return false
+	}
+	u, err := url.Parse(i.URL)
+	if err != nil {
+		return false
+	}
+	u.Host = r.URL.Host
+	u.Scheme = r.URL.Scheme
+	return r.URL.String() == u.String()
 }
