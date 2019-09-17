@@ -130,7 +130,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  * Runs initial setup for the Phabricator instance.
  */
 async function init(driver: Driver): Promise<void> {
-    await driver.ensureLoggedIn()
+    await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({
         kind: ExternalServiceKind.GITHUB,

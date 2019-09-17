@@ -47,7 +47,15 @@ type EnterTextMethod = 'type' | 'paste'
 export class Driver {
     constructor(public browser: puppeteer.Browser, public page: puppeteer.Page) {}
 
-    public async ensureLoggedIn(): Promise<void> {
+    public async ensureLoggedIn({
+        username,
+        password,
+        email,
+    }: {
+        username: string
+        password: string
+        email?: string
+    }): Promise<void> {
         await this.page.goto(sourcegraphBaseUrl)
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
@@ -56,16 +64,18 @@ export class Driver {
         })
         const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
-            await this.page.type('input[name=email]', 'test@test.com')
-            await this.page.type('input[name=username]', 'test')
-            await this.page.type('input[name=password]', 'test')
+            if (email) {
+                await this.page.type('input[name=email]', email)
+            }
+            await this.page.type('input[name=username]', username)
+            await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation()
+            await this.page.waitForNavigation({ timeout: 1000 })
         } else if (url.pathname === '/sign-in') {
-            await this.page.type('input', 'test')
-            await this.page.type('input[name=password]', 'test')
+            await this.page.type('input', username)
+            await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation()
+            await this.page.waitForNavigation({ timeout: 1000 })
         }
     }
 
