@@ -746,6 +746,15 @@ func pick(a *Repo, b *Repo) (keep, discard *Repo) {
 // Repos is an utility type with convenience methods for operating on lists of Repos.
 type Repos []*Repo
 
+// IDs returns the list of ids from all Repos.
+func (rs Repos) IDs() []uint32 {
+	ids := make([]uint32, len(rs))
+	for i := range rs {
+		ids[i] = rs[i].ID
+	}
+	return ids
+}
+
 // Names returns the list of names from all Repos.
 func (rs Repos) Names() []string {
 	names := make([]string, len(rs))

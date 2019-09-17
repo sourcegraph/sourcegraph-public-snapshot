@@ -146,21 +146,31 @@ func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-// LoadChangeset loads the latest state of the given Changeset from the codehost.
-func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	repo := cs.Repo.Metadata.(*github.Repository)
+// LoadChangesets loads the latest state of the given Changesets from the codehost.
+func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	prs := make([]*github.PullRequest, len(cs))
+	for i := range cs {
+		repo := cs[i].Repo.Metadata.(*github.Repository)
+		number, err := strconv.Atoi(cs[i].ExternalID)
+		if err != nil {
+			return err
+		}
 
-	number, err := strconv.Atoi(cs.ExternalID)
+		prs[i] = &github.PullRequest{
+			RepoWithOwner: repo.NameWithOwner,
+			Number:        number,
+		}
+	}
+
+	err := s.client.LoadPullRequests(ctx, prs...)
 	if err != nil {
 		return err
 	}
 
-	pr, err := s.client.GetPullRequest(ctx, repo.NameWithOwner, number)
-	if err != nil {
-		return err
+	for i := range cs {
+		cs[i].Changeset.Metadata = prs[i]
 	}
 
-	cs.Changeset.Metadata = pr
 	return nil
 }
 

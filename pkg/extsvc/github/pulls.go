@@ -3,6 +3,8 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -62,78 +64,114 @@ type StatusContext struct {
 
 // PullRequest is a GitHub pull request.
 type PullRequest struct {
-	ID           string
-	Title        string
-	Body         string
-	State        string
-	URL          string
-	Number       int
-	Author       Actor
-	Participants []Actor
-	Reviews      []Review
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	RepoWithOwner string `json:"-"`
+	ID            string
+	Title         string
+	Body          string
+	State         string
+	URL           string
+	Number        int
+	Author        Actor
+	Participants  []Actor
+	Reviews       []Review
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
-// GetPullRequest gets a PullRequest of the given repo with the given id.
-func (c *Client) GetPullRequest(ctx context.Context, repoWithOwner string, number int) (*PullRequest, error) {
-	owner, repo, err := SplitRepositoryNameWithOwner(repoWithOwner)
-	if err != nil {
-		return nil, err
+// LoadPullRequests loads a list of PullRequests from Github.
+func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
+	type repository struct {
+		Owner string
+		Name  string
+		PRs   map[string]*PullRequest
 	}
 
-	query := fmt.Sprintf(`
+	labeled := map[string]*repository{}
+	for _, pr := range prs {
+		owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
+		if err != nil {
+			return err
+		}
+
+		repoLabel := owner + "_" + repo
+		r, ok := labeled[repoLabel]
+		if !ok {
+			r = &repository{
+				Owner: owner,
+				Name:  repo,
+				PRs:   map[string]*PullRequest{},
+			}
+			labeled[repoLabel] = r
+		}
+
+		prLabel := repoLabel + "_" + strconv.Itoa(pr.Number)
+		r.PRs[prLabel] = pr
+	}
+
+	var q strings.Builder
+	q.WriteString(`
 		fragment actor on Actor { avatarUrl, login, url }
-		query {
-		  repository(owner: %q, name: %q) {
-			pullRequest(number: %d) {
-			  id, title, body, state, url, number, createdAt, updatedAt
+		fragment pr on PullRequest {
+		  id, title, body, state, url, number, createdAt, updatedAt
+		  author { ...actor }
+		  participants(first: 100) { nodes { ...actor } }
+		  reviews(first: 100) {
+			nodes {
+			  body, state, url, createdAt, submittedAt
 			  author { ...actor }
-			  participants(first: 100) { nodes { ...actor } }
-			  reviews(first: 100) {
-				nodes {
-				  body, state, url, createdAt, submittedAt
-				  author { ...actor }
-				  commit {
-					oid, message, committedDate, pushedDate, url
-					committer {
-					  avatarUrl, email, name
-					  user { ...actor }
-					}
-					status {
-					  state
-					  contexts {
-						avatarUrl, context, description, state, targetUrl, createdAt
-						creator { ...actor }
-					  }
-					}
+			  commit {
+				oid, message, committedDate, pushedDate, url
+				committer {
+				  avatarUrl, email, name
+				  user { ...actor }
+				}
+				status {
+				  state
+				  contexts {
+					avatarUrl, context, description, state, targetUrl, createdAt
+					creator { ...actor }
 				  }
 				}
 			  }
 			}
 		  }
 		}
-	`, owner, repo, number)
+		query {
+	`)
 
-	var pr PullRequest
-	var r struct {
-		Repository struct {
-			PullRequest struct {
-				*PullRequest
-				Participants struct{ Nodes *[]Actor }
-				Reviews      struct{ Nodes *[]Review }
-			}
+	for repoLabel, r := range labeled {
+		q.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) {\n",
+			repoLabel, r.Owner, r.Name))
+
+		for prLabel, pr := range r.PRs {
+			q.WriteString(fmt.Sprintf("%s: pullRequest(number: %d) { ...pr }\n",
+				prLabel, pr.Number,
+			))
+		}
+
+		q.WriteString("}\n")
+	}
+
+	q.WriteString("}")
+
+	var results map[string]map[string]*struct {
+		PullRequest
+		Participants struct{ Nodes []Actor }
+		Reviews      struct{ Nodes []Review }
+	}
+
+	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	if err != nil {
+		return err
+	}
+
+	for repoLabel, prs := range results {
+		for prLabel, pr := range prs {
+			pr.PullRequest.Participants = pr.Participants.Nodes
+			pr.PullRequest.Reviews = pr.Reviews.Nodes
+			*labeled[repoLabel].PRs[prLabel] = pr.PullRequest
 		}
 	}
 
-	r.Repository.PullRequest.PullRequest = &pr
-	r.Repository.PullRequest.Participants.Nodes = &pr.Participants
-	r.Repository.PullRequest.Reviews.Nodes = &pr.Reviews
-
-	err = c.requestGraphQL(ctx, "", query, nil, &r)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pr, nil
+	return nil
 }

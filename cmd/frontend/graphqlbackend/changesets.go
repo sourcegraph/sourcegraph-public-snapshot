@@ -11,82 +11,150 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func (r *schemaResolver) CreateChangeset(ctx context.Context, args *struct {
+type createChangesetInput struct {
 	Repository graphql.ID
 	ExternalID string
-}) (_ *changesetResolver, err error) {
+}
+
+func (r *schemaResolver) CreateChangesets(ctx context.Context, args *struct {
+	Input []createChangesetInput
+}) (_ []*changesetResolver, err error) {
 	// 🚨 SECURITY: Only site admins may create changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	repoID, err := unmarshalRepositoryID(args.Repository)
+	var repoIDs []uint32
+	repoSet := map[uint32]*repos.Repo{}
+	cs := make([]*a8n.Changeset, 0, len(args.Input))
+
+	for _, c := range args.Input {
+		repoID, err := unmarshalRepositoryID(c.Repository)
+		if err != nil {
+			return nil, err
+		}
+
+		id := uint32(repoID)
+		if _, ok := repoSet[id]; !ok {
+			repoSet[id] = nil
+			repoIDs = append(repoIDs, id)
+		}
+
+		cs = append(cs, &a8n.Changeset{
+			RepoID:     int32(id),
+			ExternalID: c.ExternalID,
+		})
+	}
+
+	tx, err := r.A8NStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	store := repos.NewDBStore(r.A8NStore.DB(), sql.TxOptions{})
-	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{
-		IDs: []uint32{uint32(repoID)},
-	})
+	defer tx.Done(&err)
+
+	store := repos.NewDBStore(tx.DB(), sql.TxOptions{})
+
+	rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(rs) != 1 {
-		return nil, errors.Errorf("repo %q not found", args.Repository)
+	for _, r := range rs {
+		repoSet[r.ID] = r
 	}
 
-	repo := rs[0]
+	for id, r := range repoSet {
+		if r == nil {
+			return nil, errors.Errorf("repo %v not found", marshalRepositoryID(api.RepoID(id)))
+		}
+	}
 
-	es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-		IDs: repo.ExternalServiceIDs(),
-	})
+	for _, c := range cs {
+		c.ExternalServiceType = repoSet[uint32(c.RepoID)].ExternalRepo.ServiceType
+	}
+
+	if err = tx.CreateChangesets(ctx, cs...); err != nil {
+		return nil, err
+	}
+
+	tx.Done()
+
+	// Only fetch metadata if none of these changesets existed before.
+	// We do this outside of a transaction.
+
+	store = repos.NewDBStore(r.A8NStore.DB(), sql.TxOptions{})
+	es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(es) == 0 {
-		return nil, errors.Errorf("repo %q has no external services", args.Repository)
+	byRepo := make(map[uint32]int64, len(rs))
+	for _, r := range rs {
+		eids := r.ExternalServiceIDs()
+		for _, id := range eids {
+			if _, ok := byRepo[r.ID]; !ok {
+				byRepo[r.ID] = id
+				break
+			}
+		}
 	}
 
-	changeset := &a8n.Changeset{
-		RepoID:              int32(repo.ID),
-		ExternalID:          args.ExternalID,
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
+	type batch struct {
+		repos.ChangesetSource
+		Changesets []*repos.Changeset
 	}
 
-	if err = r.A8NStore.CreateChangeset(ctx, changeset); err != nil {
+	batches := make(map[int64]*batch, len(es))
+	for _, e := range es {
+		src, err := repos.NewSource(e, r.HTTPFactory)
+		if err != nil {
+			return nil, err
+		}
+
+		css, ok := src.(repos.ChangesetSource)
+		if !ok {
+			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
+		}
+
+		batches[e.ID] = &batch{ChangesetSource: css}
+	}
+
+	for _, c := range cs {
+		repoID := uint32(c.RepoID)
+		b := batches[byRepo[repoID]]
+		b.Changesets = append(b.Changesets, &repos.Changeset{
+			Changeset: c,
+			Repo:      repoSet[repoID],
+		})
+	}
+
+	for _, b := range batches {
+		if err = b.LoadChangesets(ctx, b.Changesets...); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = r.A8NStore.UpdateChangesets(ctx, cs...); err != nil {
 		return nil, err
 	}
 
-	// Only fetch metadata if this changeset didn't exist in the database.
-
-	src, err := repos.NewSource(es[0], r.HTTPFactory)
-	if err != nil {
-		return nil, err
+	csr := make([]*changesetResolver, len(cs))
+	for i := range cs {
+		csr[i] = &changesetResolver{
+			store:     r.A8NStore,
+			Changeset: cs[i],
+			repo:      repoSet[uint32(cs[i].RepoID)],
+		}
 	}
 
-	css, ok := src.(repos.ChangesetSource)
-	if !ok {
-		return nil, errors.Errorf("unsupported repo type %q", repo.ExternalRepo.ServiceType)
-	}
-
-	err = css.LoadChangeset(ctx, &repos.Changeset{Changeset: changeset, Repo: repo})
-	if err != nil {
-		return nil, err
-	}
-
-	if err = r.A8NStore.UpdateChangeset(ctx, changeset); err != nil {
-		return nil, err
-	}
-
-	return &changesetResolver{store: r.A8NStore, Changeset: changeset}, nil
+	return csr, nil
 }
 
 func (r *schemaResolver) Changesets(ctx context.Context, args *struct {
@@ -171,6 +239,7 @@ func changesetByID(ctx context.Context, s *a8n.Store, id graphql.ID) (*changeset
 type changesetResolver struct {
 	store *a8n.Store
 	*a8n.Changeset
+	repo *repos.Repo
 }
 
 const changesetIDKind = "Changeset"
@@ -189,6 +258,21 @@ func (r *changesetResolver) ID() graphql.ID {
 }
 
 func (r *changesetResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	if r.repo != nil {
+		return &RepositoryResolver{
+			repo: &types.Repo{
+				ID:           api.RepoID(r.repo.ID),
+				ExternalRepo: r.repo.ExternalRepo,
+				Name:         api.RepoName(r.repo.Name),
+				RepoFields: &types.RepoFields{
+					URI:         r.repo.URI,
+					Description: r.repo.Description,
+					Language:    r.repo.Language,
+					Fork:        r.repo.Fork,
+				},
+			},
+		}, nil
+	}
 	return repositoryByIDInt32(ctx, api.RepoID(r.Changeset.RepoID))
 }
 
