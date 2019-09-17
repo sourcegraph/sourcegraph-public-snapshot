@@ -573,7 +573,7 @@ describe('e2e test suite', () => {
                         'toAxiosCancelToken',
                         'source',
                     ],
-                    symbolTypes: ['constant', 'constant', 'constant', 'function', 'function', 'function', 'constant'],
+                    symbolTypes: ['constant', 'constant', 'function', 'function', 'function', 'constant'],
                 },
                 {
                     name: 'lists symbols in file for Java',
