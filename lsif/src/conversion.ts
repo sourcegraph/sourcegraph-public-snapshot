@@ -1,14 +1,8 @@
-import { createConnection } from './connection';
-import {
-    DefinitionModel,
-    DocumentModel,
-    MetaModel,
-    ReferenceModel,
-    ResultChunkModel
-} from './models.database';
-import { Package, SymbolReferences } from './xrepo';
-import { Readable } from 'stream';
-import { importLsif } from './importer';
+import { createConnection } from './connection'
+import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
+import { Package, SymbolReferences } from './xrepo'
+import { Readable } from 'stream'
+import { importLsif } from './importer'
 
 /**
  * Populate a SQLite database with the given input stream. Returns the

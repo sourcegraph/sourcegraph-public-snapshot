@@ -1,12 +1,12 @@
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import rmfr from 'rmfr';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import { convertLsif } from './conversion';
-import { createCommit, createLocation } from './test-utils';
-import { createDatabaseFilename } from './util';
-import { Database } from './database';
-import { XrepoDatabase } from './xrepo';
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import rmfr from 'rmfr'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { convertLsif } from './conversion'
+import { createCommit, createLocation } from './test-utils'
+import { createDatabaseFilename } from './util'
+import { Database } from './database'
+import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {
     let storageRoot!: string

@@ -1,17 +1,15 @@
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import * as zlib from 'mz/zlib';
-import exitHook from 'async-exit-hook';
-import express from 'express';
-import morgan from 'morgan';
-import promBundle from 'express-prom-bundle';
-import { ensureDirectory, logErrorAndExit, readEnvInt, createDatabaseFilename } from './util';
-import { JobsHash, Worker } from 'node-resque';
-import { ConnectionCache, } from './cache'
-import { connectionCacheCapacityGauge } from './metrics';
-import { XrepoDatabase } from './xrepo';
-import { convertLsif } from './conversion';
-import uuid from 'uuid';
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import exitHook from 'async-exit-hook'
+import express from 'express'
+import promBundle from 'express-prom-bundle'
+import uuid from 'uuid'
+import { ConnectionCache } from './cache'
+import { connectionCacheCapacityGauge } from './metrics'
+import { convertLsif } from './conversion'
+import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
+import { JobsHash, Worker } from 'node-resque'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -142,7 +140,6 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
  */
 function startMetricsServer(): void {
     const app = express()
-    app.use(morgan('tiny'))
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 

@@ -1,23 +1,20 @@
-import * as definitionsSchema from './lsif.schema.json';
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import Ajv, { ValidateFunction } from 'ajv';
-import bodyParser from 'body-parser';
-import exitHook from 'async-exit-hook';
-import express from 'express';
-import promBundle from 'express-prom-bundle';
-import uuid from 'uuid';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics.js';
-import {
-    ensureDirectory,
-    hasErrorCode,
-    logErrorAndExit,
-    readEnvInt
-} from './util';
-import { Queue, Scheduler } from 'node-resque';
-import { validateLsifInput } from './input';
-import { wrap } from 'async-middleware';
+import * as definitionsSchema from './lsif.schema.json'
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import Ajv, { ValidateFunction } from 'ajv'
+import bodyParser from 'body-parser'
+import exitHook from 'async-exit-hook'
+import express from 'express'
+import promBundle from 'express-prom-bundle'
+import uuid from 'uuid'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
+import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { Database } from './database.js'
+import { Queue, Scheduler } from 'node-resque'
+import { validateLsifInput } from './input'
+import { wrap } from 'async-middleware'
+import { XrepoDatabase } from './xrepo.js'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
