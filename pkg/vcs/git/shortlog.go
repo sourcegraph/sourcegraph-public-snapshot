@@ -108,11 +108,10 @@ func lenientParseAddress(address string) (*mail.Address, error) {
 		if p == -1 {
 			return addr, err
 		}
-		name := strings.TrimSpace(address[:p])
-		address = strings.TrimSpace(address[p:])
-		address = strings.TrimPrefix(address, "<")
-		address = strings.TrimSuffix(address, ">")
-		return &mail.Address{Name: name, Address: address}, nil
+		return &mail.Address{
+			Name:    strings.TrimSpace(address[:p]),
+			Address: strings.Trim(address[p:], " <>"),
+		}, nil
 	}
 	return addr, err
 }
