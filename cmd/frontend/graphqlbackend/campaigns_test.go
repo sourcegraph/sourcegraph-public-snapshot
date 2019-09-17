@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -264,15 +265,11 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	var result struct {
-		Changeset Changeset
+		Changesets []Changeset
 	}
 
-	input = map[string]interface{}{
-		"repository": graphqlRepoID,
-		"externalID": "999",
-	}
-
-	mustExec(ctx, t, s, input, &result, `
+	in := fmt.Sprintf(`[{repository: %q, externalID: %q}]`, graphqlRepoID, "999")
+	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment cs on Changeset {
 			id
 			repository { id }
@@ -287,34 +284,40 @@ func TestCampaigns(t *testing.T) {
 			}
 			reviewState
 		}
-		mutation($repository: ID!, $externalID: String!) {
-			changeset: createChangeset(repository: $repository, externalID: $externalID) {
+		mutation() {
+			changesets: createChangesets(input: %s) {
 				...cs
 			}
 		}
-	`)
+	`, string(in)))
 
 	{
-		want := Changeset{
-			Repository: struct{ ID string }{ID: graphqlRepoID},
-			CreatedAt:  now.Format(time.RFC3339),
-			UpdatedAt:  now.Format(time.RFC3339),
-			Title:      "add extension filter to filter bar",
-			Body:       "Enables adding extension filters to the filter bar by rendering the extension filter as filter chips inside the filter bar.\r\nWIP for https://github.com/sourcegraph/sourcegraph/issues/962\r\n\r\n> This PR updates the CHANGELOG.md file to describe any user-facing changes.\r\n.\r\n",
-			State:      "MERGED",
-			ExternalURL: struct{ URL, ServiceType string }{
-				URL:         "https://github.com/sourcegraph/sourcegraph/pull/999",
-				ServiceType: "github",
+		want := []Changeset{
+			{
+				Repository: struct{ ID string }{ID: graphqlRepoID},
+				CreatedAt:  now.Format(time.RFC3339),
+				UpdatedAt:  now.Format(time.RFC3339),
+				Title:      "add extension filter to filter bar",
+				Body:       "Enables adding extension filters to the filter bar by rendering the extension filter as filter chips inside the filter bar.\r\nWIP for https://github.com/sourcegraph/sourcegraph/issues/962\r\n\r\n> This PR updates the CHANGELOG.md file to describe any user-facing changes.\r\n.\r\n",
+				State:      "MERGED",
+				ExternalURL: struct{ URL, ServiceType string }{
+					URL:         "https://github.com/sourcegraph/sourcegraph/pull/999",
+					ServiceType: "github",
+				},
+				ReviewState: "APPROVED",
 			},
-			ReviewState: "APPROVED",
 		}
 
-		have := result.Changeset
-		if have.ID == "" {
-			t.Fatal("Changeset ID is empty")
+		have := make([]Changeset, 0, len(result.Changesets))
+		for _, c := range result.Changesets {
+			if c.ID == "" {
+				t.Fatal("Changeset ID is empty")
+			}
+
+			c.ID = ""
+			have = append(have, c)
 		}
 
-		want.ID = have.ID
 		if !reflect.DeepEqual(have, want) {
 			t.Fatal(cmp.Diff(have, want))
 		}
@@ -339,14 +342,14 @@ func TestCampaigns(t *testing.T) {
 		Changesets  ChangesetConnection
 	}
 
-	var addChangesetResult struct{ Campaign CampaignWithChangesets }
+	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
 
-	input = map[string]interface{}{
-		"changeset": result.Changeset.ID,
-		"campaign":  campaigns.Admin.ID,
+	changesetIDs := make([]string, 0, len(result.Changesets))
+	for _, c := range result.Changesets {
+		changesetIDs = append(changesetIDs, c.ID)
 	}
 
-	mustExec(ctx, t, s, input, &addChangesetResult, `
+	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 
@@ -371,30 +374,47 @@ func TestCampaigns(t *testing.T) {
 				pageInfo { hasNextPage }
 			}
 		}
-		mutation($changeset: ID!, $campaign: ID!) {
-			campaign: addChangesetToCampaign(changeset: $changeset, campaign: $campaign) {
+		mutation() {
+			campaign: addChangesetsToCampaign(campaign: %q, changesets: %s) {
 				...c
 			}
 		}
-	`)
+	`, campaigns.Admin.ID, marshalJSON(t, changesetIDs)))
 
-	if addChangesetResult.Campaign.Changesets.TotalCount != 1 {
-		t.Fatalf(
-			"campaign changesets totalcount is wrong. got=%d",
-			addChangesetResult.Campaign.Changesets.TotalCount,
-		)
+	{
+		have := addChangesetsResult.Campaign.Changesets.TotalCount
+		want := len(changesetIDs)
+
+		if have != want {
+			t.Fatalf(
+				"want campaign changesets totalcount %d, have=%d",
+				want, have,
+			)
+		}
 	}
 
-	wantChangesetID := result.Changeset.ID
-	haveChangesetID := addChangesetResult.Campaign.Changesets.Nodes[0].ID
-	if haveChangesetID != wantChangesetID {
-		t.Errorf("wrong changesets added to campaign. want=%s, have=%s", wantChangesetID, haveChangesetID)
+	{
+		var have []string
+		want := changesetIDs
+
+		for _, n := range addChangesetsResult.Campaign.Changesets.Nodes {
+			have = append(have, n.ID)
+		}
+
+		if !reflect.DeepEqual(have, want) {
+			t.Errorf("wrong changesets added to campaign. want=%v, have=%v", want, have)
+		}
 	}
 
-	wantCampaignID := campaigns.Admin.ID
-	haveCampaignID := addChangesetResult.Campaign.Changesets.Nodes[0].Campaigns.Nodes[0].ID
-	if haveCampaignID != wantCampaignID {
-		t.Errorf("wrong campaign added to changeset. want=%s, have=%s", wantCampaignID, haveCampaignID)
+	{
+		have := map[string]bool{}
+		for _, cs := range addChangesetsResult.Campaign.Changesets.Nodes {
+			have[cs.Campaigns.Nodes[0].ID] = true
+		}
+
+		if !have[campaigns.Admin.ID] || len(have) != 1 {
+			t.Errorf("wrong campaign added to changeset. want=%v, have=%v", campaigns.Admin.ID, have)
+		}
 	}
 }
 

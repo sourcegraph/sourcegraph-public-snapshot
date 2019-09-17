@@ -2,12 +2,8 @@ import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
-import {
-    CONNECTION_CACHE_CAPACITY_GAUGE,
-    DOCUMENT_CACHE_CAPACITY_GAUGE,
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
-} from './metrics'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createBackend, ERRNOLSIFDATA } from './backend'
 import { hasErrorCode, readEnvInt } from './util'
 import { wrap } from 'async-middleware'
@@ -49,9 +45,9 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  */
 async function main(): Promise<void> {
     // Update cache capacities on startup
-    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
-    DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)

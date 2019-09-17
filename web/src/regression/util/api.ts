@@ -113,3 +113,62 @@ export async function ensureExternalService(
         )
         .toPromise()
 }
+
+export async function getUser(gqlClient: GraphQLClient, username: string): Promise<GQL.IUser | null> {
+    const user = await gqlClient
+        .queryGraphQL(
+            gql`
+                query User($username: String!) {
+                    user(username: $username) {
+                        __typename
+                        id
+                        username
+                        displayName
+                        url
+                        settingsURL
+                        avatarURL
+                        viewerCanAdminister
+                        siteAdmin
+                        createdAt
+                        emails {
+                            email
+                            verified
+                        }
+                        organizations {
+                            nodes {
+                                id
+                                displayName
+                                name
+                            }
+                        }
+                    }
+                }
+            `,
+            { username }
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ user }) => user)
+        )
+        .toPromise()
+    return user
+}
+
+export async function deleteUser(gqlClient: GraphQLClient, username: string): Promise<void> {
+    const user = await getUser(gqlClient, username)
+    if (!user) {
+        throw new Error(`Fetched user ${username} was null`)
+    }
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation DeleteUser($user: ID!, $hard: Boolean) {
+                    deleteUser(user: $user, hard: $hard) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { hard: false, user: user.id }
+        )
+        .toPromise()
+}
