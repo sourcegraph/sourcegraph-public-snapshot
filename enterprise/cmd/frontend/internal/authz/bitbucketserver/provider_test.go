@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,6 +26,11 @@ import (
 var update = flag.Bool("update", false, "update testdata")
 
 func TestProvider_Validate(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "http://127.0.0.1:7990"
+	}
+
 	for _, tc := range []struct {
 		name     string
 		client   func(*bitbucketserver.Client)
@@ -37,7 +43,7 @@ func TestProvider_Validate(t *testing.T) {
 			name:   "problems-when-authenticated-as-non-admin",
 			client: func(c *bitbucketserver.Client) { c.Oauth = nil },
 			problems: []string{
-				`Bitbucket API HTTP error: code=401 url="http://127.0.0.1:7990/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
+				`Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
 			},
 		},
 	} {
@@ -49,6 +55,10 @@ func TestProvider_Validate(t *testing.T) {
 
 			if tc.client != nil {
 				tc.client(p.client)
+			}
+
+			for i := range tc.problems {
+				tc.problems[i] = strings.ReplaceAll(tc.problems[i], "${INSTANCEURL}", instanceURL)
 			}
 
 			problems := p.Validate()
