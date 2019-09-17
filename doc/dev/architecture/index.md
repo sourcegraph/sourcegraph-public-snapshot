@@ -38,7 +38,7 @@ Our backend is composed of multiple services:
 Here are some guides to help you understand how multiple systems fit together:
 
 - [Life of a search query](life-of-a-search-query.md)
-- TODO
+- Future topics we will cover here:
   - Life of a repository (i.e. how does code end up on gitserver?)
   - Sourcegraph extension architecture
   - Web app and browser extension architecture
