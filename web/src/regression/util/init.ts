@@ -20,8 +20,8 @@ export function regressionTestInit(): void {
  * timeouts is under 5s. Otherwise, the timeout error will be a cryptic Jest timeout error, instead
  * of an error pointing to the timed-out Puppeteer command.
  */
-export async function createAndInitializeDriver(): Promise<Driver> {
-    const driver = await createDriverForTest()
+export async function createAndInitializeDriver(sourcegraphBaseUrl: string): Promise<Driver> {
+    const driver = await createDriverForTest({ sourcegraphBaseUrl })
     driver.page.setDefaultNavigationTimeout(5 * 1000) // 5s navigation timeout
     return driver
 }

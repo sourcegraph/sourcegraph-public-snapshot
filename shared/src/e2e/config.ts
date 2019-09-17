@@ -13,7 +13,7 @@ export interface Config {
 }
 
 export interface ConfigField {
-    envVar?: string
+    envVar: string
     description?: string
     defaultValue?: string
 }
@@ -62,25 +62,22 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
             if (!field) {
                 return ''
             }
-            const info = []
-            if (field.envVar) {
-                info.push(`environment variable: ${field.envVar}`)
+            const info = [field.envVar]
+            if (field.defaultValue) {
+                info.push(`default value: ${field.defaultValue}`)
             }
             if (field.description) {
                 info.push(`description: ${field.description}`)
             }
-            if (field.defaultValue) {
-                info.push(`default value: ${field.defaultValue}`)
-            }
-            return `(${info.join(', ')})`
+            return `${info.join(', ')}`
         }
-        // const fieldInfo = k => `- ${k}`
-        throw new Error(`FAIL: Required config was not provided. The following keys were missing:
+        throw new Error(`FAIL: Required config was not provided. These environment variables were missing:
 
-${missingKeys.map(k => `- ${k} ${fieldInfo(k)}`).join('\n')}
+${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
 
-Please set the appropriate environment variables or add these entries to the config file
-specified by the environment variable CONFIG_FILE`)
+The recommended way to set them is to install direnv (https://direnv.net) and
+create a .envrc file at the root of this repository.
+`)
     }
 
     return pick(config, required)
