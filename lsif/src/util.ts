@@ -104,7 +104,7 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
  *
  * @param path The directory path.
  */
-export async function createDirectory(path: string): Promise<void> {
+export async function ensureDirectory(path: string): Promise<void> {
     try {
         await fs.mkdir(path)
     } catch (e) {

@@ -79,9 +79,9 @@ async function main(): Promise<void> {
     RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
-    await createDirectory(STORAGE_ROOT)
-    await createDirectory(path.join(STORAGE_ROOT, 'tmp'))
-    await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
+    await ensureDirectory(STORAGE_ROOT)
+    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
+    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
