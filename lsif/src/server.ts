@@ -1,25 +1,21 @@
 import * as definitionsSchema from './lsif.schema.json'
-import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import Ajv, { ValidateFunction } from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
-import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend, ERRNOLSIFDATA } from './backend'
 import { ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
-import { LineStream } from 'byline'
 import { Queue, Scheduler } from 'node-resque'
+import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
 import {
     CONNECTION_CACHE_CAPACITY_GAUGE,
     DOCUMENT_CACHE_CAPACITY_GAUGE,
     RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
 } from './metrics'
-import { Transform } from 'stream'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -107,57 +103,11 @@ async function main(): Promise<void> {
                 checkRepository(repository)
                 checkCommit(commit)
 
-                let line = 0
-                const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
-                const writeStream = fs.createWriteStream(filename)
-
-                const createValidationError = (text: string, errorText: string): Error => Object.assign(
-                    new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
-                    { status: 422 }
-                )
-
-                const validateLine = (text: string): void => {
-                    if (DISABLE_VALIDATION) {
-                        return
-                    }
-
-                    let data: any
-
-                    try {
-                        data = JSON.parse(text)
-                    } catch (e) {
-                        throw createValidationError(text, 'Invalid JSON')
-                    }
-
-                    if (!validator(data)) {
-                        throw createValidationError(text, 'Does not match a known vertex or edge shape')
-                    }
-
-                    line++
+                try {
+                    await validateLsifInput(req, output, DISABLE_VALIDATION ? undefined : validator)
+                } catch (e) {
+                    throw Object.assign(e, { status: 422 })
                 }
-
-                const transform = new Transform({
-                    objectMode: true,
-                    transform: (line, _, done) => {
-                        validateLine(line)
-                        done(null, `${line}\n`)
-                    },
-                })
-
-                await new Promise((resolve, reject) => {
-                    const lineStream = new LineStream()
-                    req.pipe(zlib.createGunzip())
-                        .on('error', reject)
-                        .pipe(lineStream)
-
-                    lineStream
-                        .pipe(transform)
-                        .on('error', reject)
-                        .pipe(zlib.createGzip())
-                        .pipe(writeStream)
-                        .on('error', reject)
-                        .on('finish', resolve)
-                })
 
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)

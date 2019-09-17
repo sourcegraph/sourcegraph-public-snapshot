@@ -2,12 +2,13 @@ import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_ERRORS_COUNTER } from './metrics'
 import { DefaultMap } from './default-map'
-import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from './xrepo'
 import { TableInserter } from './inserter'
+import { Readable } from 'stream'
+import { MonikerKind, RangeId } from 'lsif-protocol'
 import {
     DefinitionModel,
     DocumentData,
@@ -27,6 +28,7 @@ import {
     PackageInformationId,
     HoverResultId,
 } from './models.database'
+import { processLsifInput } from './input'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -54,27 +56,14 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  * external reference data needed to populate the xrepo database.
  *
  * @param entityManager A transactional SQLite entity manager.
- * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ * @param input The stream of vertex and edge objects composing the LSIF dump.
  */
 export async function importLsif(
     entityManager: EntityManager,
-    elements: AsyncIterable<Vertex | Edge>
+    input: Readable
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const correlator = new Correlator()
-
-    let line = 0
-    for await (const element of elements) {
-        try {
-            correlator.insert(element)
-        } catch (e) {
-            throw Object.assign(
-                new Error(`Failed to process line #${line + 1} (${JSON.stringify(element)}): ${e && e.message}`),
-                { status: 422 }
-            )
-        }
-
-        line++
-    }
+    await processLsifInput(input, element => correlator.insert(element))
 
     if (correlator.lsifVersion === undefined) {
         throw new Error('No metadata defined.')

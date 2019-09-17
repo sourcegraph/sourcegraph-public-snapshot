@@ -1,11 +1,9 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import uuid from 'uuid'
-import * as readline from 'mz/readline'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { Database } from './database'
 import { DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel } from './models.database'
-import { Edge, Vertex } from 'lsif-protocol'
 import { hasErrorCode } from './util'
 import { importLsif } from './importer'
 import { Readable } from 'stream'
@@ -48,7 +46,7 @@ export class Backend {
             const { packages, references } = await this.connectionCache.withTransactionalEntityManager(
                 outFile,
                 [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
-                entityManager => importLsif(entityManager, parseLines(readline.createInterface({ input }))),
+                entityManager => importLsif(entityManager, input),
                 async connection => {
                     await connection.query('PRAGMA synchronous = OFF')
                     await connection.query('PRAGMA journal_mode = OFF')
@@ -106,27 +104,6 @@ export class Backend {
  */
 export function makeFilename(storageRoot: string, repository: string, commit: string): string {
     return path.join(storageRoot, `${encodeURIComponent(repository)}.lsif.db`)
-}
-
-/**
- * Converts streaming JSON input into an iterable of vertex and edge objects.
- *
- * @param lines The stream of raw, uncompressed JSON lines.
- */
-async function* parseLines(lines: AsyncIterable<string>): AsyncIterable<Vertex | Edge> {
-    let i = 0
-    for await (const line of lines) {
-        try {
-            yield JSON.parse(line)
-        } catch (e) {
-            throw Object.assign(
-                new Error(`Failed to process line #${i + 1} (${JSON.stringify(line)}): Invalid JSON.`),
-                { status: 422 }
-            )
-        }
-
-        i++
-    }
 }
 
 export async function createBackend(
