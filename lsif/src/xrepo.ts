@@ -1,20 +1,19 @@
+import {
+    bloomFilterEventsCounter,
+    instrument,
+    xrepoInsertionDurationHistogram,
+    xrepoQueryDurationHistogram,
+    xrepoQueryErrorsCounter,
+} from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { ConnectionCache } from './cache'
 import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel } from './models.xrepo'
 import { TableInserter } from './inserter'
-import {
-    xrepoInsertionErrorsCounter,
-    xrepoInsertionDurationHistogram,
-    bloomFilterEventsCounter,
-    xrepoQueryDurationHistogram,
-    instrument,
-    xrepoQueryErrorsCounter,
-} from './metrics'
 
 const insertionMetrics = {
     durationHistogram: xrepoInsertionDurationHistogram,
-    errorsCounter: xrepoInsertionErrorsCounter,
+    errorsCounter: xrepoQueryErrorsCounter,
 }
 
 /**
@@ -66,7 +65,7 @@ export class XrepoDatabase {
      * @param connectionCache The cache of SQLite connections.
      * @param database The filename of the database.
      */
-    constructor(private connectionCache: ConnectionCache, private database: string) {}
+    constructor(private connectionCache: ConnectionCache, private database: string) { }
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.

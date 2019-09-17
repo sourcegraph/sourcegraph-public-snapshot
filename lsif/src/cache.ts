@@ -1,15 +1,15 @@
 import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, createConnection, EntityManager } from 'typeorm'
-import { DocumentData, ResultChunkData } from './models.database'
 import {
     connectionCacheEventsCounter,
     connectionCacheSizeGauge,
-    documentCacheSizeGauge,
     documentCacheEventsCounter,
-    resultChunkCacheSizeGauge,
+    documentCacheSizeGauge,
     resultChunkCacheEventsCounter,
+    resultChunkCacheSizeGauge,
 } from './metrics'
+import { DocumentData, ResultChunkData } from './models.database'
 
 /**
  * A wrapper around a cache value promise.
@@ -105,7 +105,7 @@ export class GenericCache<K, V> {
         private sizeFunction: (value: V) => number,
         private disposeFunction: (value: V) => Promise<void> | void,
         private metrics: CacheMetrics
-    ) {}
+    ) { }
 
     /**
      * Check if `key` exists in the cache. If it does not, create a value
@@ -414,7 +414,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
-            () => {},
+            () => { },
             metrics
         )
     }

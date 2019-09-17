@@ -2,8 +2,8 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter, instrument } from './metrics'
-import { gunzipJSON } from './encoding'
 import { DefaultMap } from './default-map'
+import { gunzipJSON } from './encoding'
 import { hashKey, mustGet } from './util'
 import { isEqual, uniqWith } from 'lodash'
 import { makeFilename } from './backend'
@@ -56,7 +56,7 @@ export class Database {
         private repository: string,
         private commit: string,
         private databasePath: string
-    ) {}
+    ) { }
 
     /**
      * Determine if data exists for a particular document in this database.
