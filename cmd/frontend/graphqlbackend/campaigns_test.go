@@ -308,12 +308,14 @@ func TestCampaigns(t *testing.T) {
 			},
 		}
 
-		have := result.Changesets
-		for i, c := range have {
+		have := make([]Changeset, 0, len(result.Changesets))
+		for _, c := range result.Changesets {
 			if c.ID == "" {
 				t.Fatal("Changeset ID is empty")
 			}
+
 			c.ID = ""
+			have = append(have, c)
 		}
 
 		if !reflect.DeepEqual(have, want) {
@@ -411,7 +413,7 @@ func TestCampaigns(t *testing.T) {
 		}
 
 		if !have[campaigns.Admin.ID] || len(have) != 1 {
-			t.Errorf("wrong campaign added to changeset. want=%s, have=%s", campaigns.Admin.ID, have)
+			t.Errorf("wrong campaign added to changeset. want=%v, have=%v", campaigns.Admin.ID, have)
 		}
 	}
 }
