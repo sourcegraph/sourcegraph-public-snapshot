@@ -56,7 +56,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  * external reference data needed to populate the xrepo database.
  *
  * @param entityManager A transactional SQLite entity manager.
- * @param input The stream of vertex and edge objects composing the LSIF dump.
+ * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
  */
 export async function importLsif(
     entityManager: EntityManager,
