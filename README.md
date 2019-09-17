@@ -29,7 +29,7 @@
 - Git
 - Go (1.13 or later)
 - Docker
-- PostgreSQL (version 11.4)
+- PostgreSQL (v11 or higher)
 - Node.js (version 8 or 10)
 - Redis
 - Yarn
