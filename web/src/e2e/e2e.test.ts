@@ -567,7 +567,6 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
                     symbolNames: [
                         'createAbortError',
-                        'Object',
                         'isAbortError',
                         'throwIfCancelled',
                         'tryCancel',
@@ -704,7 +703,7 @@ describe('e2e test suite', () => {
                     name: 'highlights correct line for Typescript',
                     filePath:
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
-                    index: 3,
+                    index: 2,
                     line: 17,
                 },
             ]
