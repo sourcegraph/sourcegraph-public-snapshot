@@ -6,7 +6,6 @@ import Ajv, { ValidateFunction } from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
@@ -96,7 +95,6 @@ async function main(): Promise<void> {
     const validator = createInputValidator()
 
     const app = express()
-    app.use(morgan('tiny'))
     app.use(errorHandler)
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))

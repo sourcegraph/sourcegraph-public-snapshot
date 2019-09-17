@@ -104,33 +104,33 @@ func TestNewRepoCache_GitHubEnterprise(t *testing.T) {
 
 var update = flag.Bool("update", false, "update testdata")
 
-func TestClient_GetPullRequest(t *testing.T) {
-	cli, save := newClient(t, "GetPullRequest")
+func TestClient_LoadPullRequests(t *testing.T) {
+	cli, save := newClient(t, "LoadPullRequests")
 	defer save()
 
-	for _, tc := range []struct {
-		name          string
-		ctx           context.Context
-		repoWithOwner string
-		number        int
-		err           string
+	for i, tc := range []struct {
+		name string
+		ctx  context.Context
+		prs  []*PullRequest
+		err  string
 	}{
 		{
-			name:          "non-existing-repo",
-			repoWithOwner: "whoisthis/sourcegraph",
-			number:        5550,
-			err:           "error in GraphQL response: Could not resolve to a Repository with the name 'sourcegraph'.",
+			name: "non-existing-repo",
+			prs:  []*PullRequest{{RepoWithOwner: "whoisthis/sourcegraph", Number: 5550}},
+			err:  "error in GraphQL response: Could not resolve to a Repository with the name 'sourcegraph'.",
 		},
 		{
-			name:          "non-existing-pr",
-			repoWithOwner: "sourcegraph/sourcegraph",
-			number:        0,
-			err:           "error in GraphQL response: Could not resolve to a PullRequest with the number of 0.",
+			name: "non-existing-pr",
+			prs:  []*PullRequest{{RepoWithOwner: "sourcegraph/sourcegraph", Number: 0}},
+			err:  "error in GraphQL response: Could not resolve to a PullRequest with the number of 0.",
 		},
 		{
-			name:          "success",
-			repoWithOwner: "sourcegraph/sourcegraph",
-			number:        5550,
+			name: "success",
+			prs: []*PullRequest{
+				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5550},
+				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5551},
+				{RepoWithOwner: "tsenart/vegeta", Number: 50},
+			},
 		},
 	} {
 		tc := tc
@@ -143,21 +143,21 @@ func TestClient_GetPullRequest(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			pr, err := cli.GetPullRequest(tc.ctx, tc.repoWithOwner, tc.number)
+			err := cli.LoadPullRequests(tc.ctx, tc.prs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
-			if pr == nil {
+			if err != nil {
 				return
 			}
 
-			data, err := json.MarshalIndent(pr, " ", " ")
+			data, err := json.MarshalIndent(tc.prs, " ", " ")
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			path := "testdata/golden/GetPullRequest-" + strconv.Itoa(tc.number)
+			path := "testdata/golden/LoadPullRequests-" + strconv.Itoa(i)
 			if *update {
 				if err = ioutil.WriteFile(path, data, 0640); err != nil {
 					t.Fatalf("failed to update golden file %q: %s", path, err)

@@ -133,7 +133,11 @@ func (r *symbolResolver) ContainerName() *string {
 }
 
 func (r *symbolResolver) Kind() string /* enum SymbolKind */ {
-	return strings.ToUpper(ctagsKindToLSPSymbolKind(r.symbol.Kind).String())
+	kind := ctagsKindToLSPSymbolKind(r.symbol.Kind)
+	if kind == 0 {
+		return "UNKNOWN"
+	}
+	return strings.ToUpper(kind.String())
 }
 
 func (r *symbolResolver) Language() string { return r.language }

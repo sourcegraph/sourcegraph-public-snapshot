@@ -26,11 +26,10 @@ func TestStore(t *testing.T) {
 	tx, done := dbtest.NewTx(t, d)
 	defer done()
 
-	s := NewStore(tx)
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	s.now = func() time.Time {
+	s := NewStoreWithClock(tx, func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
-	}
+	})
 
 	ctx := context.Background()
 
@@ -276,17 +275,20 @@ func TestStore(t *testing.T) {
 					ExternalServiceType: "github",
 				}
 
-				want := th.Clone()
-				have := th
+				changesets = append(changesets, th)
+			}
 
-				err := s.CreateChangeset(ctx, have)
-				if err != nil {
-					t.Fatal(err)
-				}
+			err := s.CreateChangesets(ctx, changesets...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
+			for _, have := range changesets {
 				if have.ID == 0 {
 					t.Fatal("id should not be zero")
 				}
+
+				want := have.Clone()
 
 				want.ID = have.ID
 				want.CreatedAt = now
@@ -295,8 +297,6 @@ func TestStore(t *testing.T) {
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatal(diff)
 				}
-
-				changesets = append(changesets, th)
 			}
 		})
 
@@ -371,6 +371,23 @@ func TestStore(t *testing.T) {
 					}
 				}
 			}
+
+			{
+				ids := make([]int64, len(changesets))
+				for i := range changesets {
+					ids[i] = changesets[i].ID
+				}
+
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := changesets
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
 		})
 
 		t.Run("Get", func(t *testing.T) {
@@ -401,6 +418,10 @@ func TestStore(t *testing.T) {
 		})
 
 		t.Run("Update", func(t *testing.T) {
+			want := make([]*Changeset, 0, len(changesets))
+			have := make([]*Changeset, 0, len(changesets))
+
+			now = now.Add(time.Second)
 			for _, c := range changesets {
 				c.Metadata = []byte(`{"updated": true}`)
 				c.ExternalServiceType = "gitlab"
@@ -409,56 +430,65 @@ func TestStore(t *testing.T) {
 					c.RepoID++
 				}
 
-				now = now.Add(time.Second)
-				want := c
-				want.UpdatedAt = now
+				have = append(have, c.Clone())
 
-				have := c.Clone()
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+				c.UpdatedAt = now
+				want = append(want, c)
+			}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			for i := range have {
 				// Test that duplicates are not introduced.
-				have.CampaignIDs = append(have.CampaignIDs, have.CampaignIDs...)
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+				have[i].CampaignIDs = append(have[i].CampaignIDs, have[i].CampaignIDs...)
+			}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			for i := range have {
 				// Test we can add to the set.
-				have.CampaignIDs = append(have.CampaignIDs, 42)
-				want.CampaignIDs = append(want.CampaignIDs, 42)
+				have[i].CampaignIDs = append(have[i].CampaignIDs, 42)
+				want[i].CampaignIDs = append(want[i].CampaignIDs, 42)
+			}
 
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
-				sort.Slice(have.CampaignIDs, func(a, b int) bool {
-					return have.CampaignIDs[a] < have.CampaignIDs[b]
+			for i := range have {
+				sort.Slice(have[i].CampaignIDs, func(a, b int) bool {
+					return have[i].CampaignIDs[a] < have[i].CampaignIDs[b]
 				})
 
-				if diff := cmp.Diff(have, want); diff != "" {
+				if diff := cmp.Diff(have[i], want[i]); diff != "" {
 					t.Fatal(diff)
 				}
+			}
 
+			for i := range have {
 				// Test we can remove from the set.
-				have.CampaignIDs = have.CampaignIDs[:0]
-				want.CampaignIDs = want.CampaignIDs[:0]
+				have[i].CampaignIDs = have[i].CampaignIDs[:0]
+				want[i].CampaignIDs = want[i].CampaignIDs[:0]
+			}
 
-				if err := s.UpdateChangeset(ctx, have); err != nil {
-					t.Fatal(err)
-				}
+			if err := s.UpdateChangesets(ctx, have...); err != nil {
+				t.Fatal(err)
+			}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
-				}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	})

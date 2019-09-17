@@ -3,6 +3,8 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -13,73 +15,163 @@ type Actor struct {
 	URL       string
 }
 
-// PullRequest is a GitHub pull request.
-type PullRequest struct {
-	ID           string
-	Title        string
-	Body         string
-	State        string
-	URL          string
-	Number       int
-	Author       Actor
-	Participants []Actor
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+// A GitActor represents an actor in a Git commit (ie. an author or committer).
+type GitActor struct {
+	AvatarURL string
+	Email     string
+	Name      string
+	User      *Actor
 }
 
-// GetPullRequest gets a PullRequest of the given repo with the given id.
-func (c *Client) GetPullRequest(ctx context.Context, repoWithOwner string, number int) (*PullRequest, error) {
-	owner, repo, err := SplitRepositoryNameWithOwner(repoWithOwner)
-	if err != nil {
-		return nil, err
+// A Review of a PullRequest.
+type Review struct {
+	Body        string
+	State       string
+	URL         string
+	Author      Actor
+	Commit      Commit
+	CreatedAt   time.Time
+	SubmittedAt time.Time
+}
+
+// A Commit in a Repository.
+type Commit struct {
+	OID           string
+	Message       string
+	URL           string
+	Committer     GitActor
+	Status        Status
+	CommittedDate time.Time
+	PushedDate    time.Time
+}
+
+// A Status represents a Commit status.
+type Status struct {
+	Contexts []StatusContext // The individual status contexts for this commit.
+	State    string          // The combined commit status.
+}
+
+// A StatusContext represents an individual commit status context
+type StatusContext struct {
+	AvatarURL   string
+	Context     string
+	Description string
+	State       string
+	TargetURL   string
+	CreatedAt   time.Time
+	Creator     Actor
+}
+
+// PullRequest is a GitHub pull request.
+type PullRequest struct {
+	RepoWithOwner string `json:"-"`
+	ID            string
+	Title         string
+	Body          string
+	State         string
+	URL           string
+	Number        int
+	Author        Actor
+	Participants  []Actor
+	Reviews       []Review
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+// LoadPullRequests loads a list of PullRequests from Github.
+func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
+	type repository struct {
+		Owner string
+		Name  string
+		PRs   map[string]*PullRequest
 	}
 
-	query := fmt.Sprintf(`query {
-	  repository(owner: %q, name: %q) {
-		pullRequest(number: %d) {
-		  id
-		  title
-		  body
-		  state
-		  url
-		  number
-		  author {
-		    avatarUrl
-			login
-			url
-		  }
-		  participants(first: 100) {
+	labeled := map[string]*repository{}
+	for _, pr := range prs {
+		owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
+		if err != nil {
+			return err
+		}
+
+		repoLabel := owner + "_" + repo
+		r, ok := labeled[repoLabel]
+		if !ok {
+			r = &repository{
+				Owner: owner,
+				Name:  repo,
+				PRs:   map[string]*PullRequest{},
+			}
+			labeled[repoLabel] = r
+		}
+
+		prLabel := repoLabel + "_" + strconv.Itoa(pr.Number)
+		r.PRs[prLabel] = pr
+	}
+
+	var q strings.Builder
+	q.WriteString(`
+		fragment actor on Actor { avatarUrl, login, url }
+		fragment pr on PullRequest {
+		  id, title, body, state, url, number, createdAt, updatedAt
+		  author { ...actor }
+		  participants(first: 100) { nodes { ...actor } }
+		  reviews(first: 100) {
 			nodes {
-			  avatarUrl
-			  login
-			  url
+			  body, state, url, createdAt, submittedAt
+			  author { ...actor }
+			  commit {
+				oid, message, committedDate, pushedDate, url
+				committer {
+				  avatarUrl, email, name
+				  user { ...actor }
+				}
+				status {
+				  state
+				  contexts {
+					avatarUrl, context, description, state, targetUrl, createdAt
+					creator { ...actor }
+				  }
+				}
+			  }
 			}
 		  }
-		  createdAt
-		  updatedAt
 		}
-	  }
-	}`, owner, repo, number)
+		query {
+	`)
 
-	var pr PullRequest
-	var r struct {
-		Repository struct {
-			PullRequest struct {
-				*PullRequest
-				Participants struct {
-					Nodes *[]Actor
-				}
-			}
+	for repoLabel, r := range labeled {
+		q.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) {\n",
+			repoLabel, r.Owner, r.Name))
+
+		for prLabel, pr := range r.PRs {
+			q.WriteString(fmt.Sprintf("%s: pullRequest(number: %d) { ...pr }\n",
+				prLabel, pr.Number,
+			))
 		}
+
+		q.WriteString("}\n")
 	}
 
-	r.Repository.PullRequest.PullRequest = &pr
-	r.Repository.PullRequest.Participants.Nodes = &pr.Participants
+	q.WriteString("}")
 
-	err = c.requestGraphQL(ctx, "", query, nil, &r)
+	var results map[string]map[string]*struct {
+		PullRequest
+		Participants struct{ Nodes []Actor }
+		Reviews      struct{ Nodes []Review }
+	}
+
+	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &pr, nil
+	for repoLabel, prs := range results {
+		for prLabel, pr := range prs {
+			pr.PullRequest.Participants = pr.Participants.Nodes
+			pr.PullRequest.Reviews = pr.Reviews.Nodes
+			*labeled[repoLabel].PRs[prLabel] = pr.PullRequest
+		}
+	}
+
+	return nil
 }
