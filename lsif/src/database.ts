@@ -56,7 +56,7 @@ export class Database {
         private repository: string,
         private commit: string,
         private databasePath: string
-    ) {}
+    ) { }
 
     /**
      * Determine if data exists for a particular document in this database.

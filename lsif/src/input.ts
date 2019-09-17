@@ -30,36 +30,33 @@ export function validateLsifInput(
     }
 
     let line = 0
-    const validateLine = (text: string): void => {
-        line++
-        try {
-            if (text !== '' && !validator(JSON.parse(text))) {
-                // TODO - use errors from ajv here
-                throw new Error('Does not match a known vertex or edge shape.')
-            }
-        } catch (e) {
-            throw Object.assign(new Error(`Failed to process line #${line} (${text}): ${e && e.message}`))
-        }
-    }
-
-    const lineStream = new LineStream({
-        keepEmptyLines: true,
-    })
-
     const transform = new Transform({
         objectMode: true,
         transform: (data, _, cb) => {
-            try {
-                validateLine(`${data}`)
-            } catch (e) {
-                return cb(e)
+            line++
+
+            const text = `${data}`
+            if (text === '') {
+                return cb(null, `\n`)
             }
 
-            return cb(null, `${data}\n`)
+            try {
+                if (!validator(JSON.parse(text)) && validator.errors) {
+                    throw new Error(validator.errors.map(e => e.message).join(', '))
+                }
+            } catch (e) {
+                return cb(new Error(`Failed to validate line #${line}(${text}): ${e && e.message}`))
+            }
+
+            return cb(null, `${data} \n`)
         },
     })
 
     return new Promise((resolve, reject) => {
+        const lineStream = new LineStream({
+            keepEmptyLines: true,
+        })
+
         input
             .pipe(zlib.createGunzip())
             .on('error', reject)
@@ -85,35 +82,31 @@ export function validateLsifInput(
  */
 export function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
     let line = 0
-    const processLine = (text: string): void => {
-        line++
-        if (text !== '') {
-            try {
-                process(JSON.parse(text))
-            } catch (e) {
-                throw Object.assign(new Error(`Failed to process line #${line} (${text}): ${e && e.message}`))
-            }
-        }
-    }
-
-    const lineStream = new LineStream({
-        keepEmptyLines: true,
-    })
-
     const transform = new Writable({
         objectMode: true,
         write: (data, _, cb) => {
+            line++
+
+            const text = `${data}`
+            if (text === '') {
+                return cb(null)
+            }
+
             try {
-                processLine(`${data}`)
+                process(JSON.parse(text))
             } catch (e) {
-                return cb(e)
+                return cb(new Error(`Failed to process line #${line} (${text}): ${e && e.message} `))
             }
 
             return cb(null)
-        },
+        }
     })
 
     return new Promise((resolve, reject) => {
+        const lineStream = new LineStream({
+            keepEmptyLines: true,
+        })
+
         input
             .pipe(zlib.createGunzip())
             .on('error', reject)
