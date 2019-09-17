@@ -186,8 +186,8 @@ async function setupQueue(): Promise<Queue> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
-        host: host,
-        port: parseInt(port),
+        host,
+        port: parseInt(port, 10),
         namespace: 'lsif',
     }
 
