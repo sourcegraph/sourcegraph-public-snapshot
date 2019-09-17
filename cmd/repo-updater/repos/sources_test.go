@@ -658,30 +658,20 @@ func TestSources_ListRepos(t *testing.T) {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
-					haveNames := rs.Names()
-					var haveURIs []string
-					for _, r := range rs {
-						haveURIs = append(haveURIs, r.URI)
-					}
+					have := rs.Names()
+					sort.Strings(have)
 
-					var wantNames, wantURIs []string
+					var want []string
 					switch s.Kind {
 					case "GITLAB":
-						wantNames = []string{
-							"gitlab.com/sg-test/repo",
-							"gitlab.com/sg-test/repo-gitrepo",
-						}
-						wantURIs = []string{
+						want = []string{
 							"gitlab.com/sg-test/repo",
 							"gitlab.com/sg-test/repo-gitrepo",
 						}
 					}
 
-					if !reflect.DeepEqual(haveNames, wantNames) {
-						t.Error(cmp.Diff(haveNames, wantNames))
-					}
-					if !reflect.DeepEqual(haveURIs, wantURIs) {
-						t.Error(cmp.Diff(haveURIs, wantURIs))
+					if !reflect.DeepEqual(have, want) {
+						t.Error(cmp.Diff(have, want))
 					}
 				}
 			},
