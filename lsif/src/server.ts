@@ -159,7 +159,8 @@ async function main(): Promise<void> {
                     return
                 }
 
-                const result = !file || (await db.exists(file))
+                // If filename supplied, ensure we have data for it
+                const result = file ? (await db.exists(file)) : true
                 res.json(result)
             }
         )
