@@ -26,7 +26,7 @@
                             </button>
                         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.6.2"}} {{$previousReleaseVersion := "3.6"}} {{$currentReleaseRevspec := "v3.7.1"}} {{$currentReleaseVersion := "3.7"}} {{$nextReleaseVersion := "master"}}
+                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.6.2"}} {{$previousReleaseVersion := "3.6"}} {{$currentReleaseRevspec := "v3.7.2"}} {{$currentReleaseVersion := "3.7"}} {{$nextReleaseVersion := "master"}}
                             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -153,8 +153,9 @@
                             <li><a href="/admin/migration">Migration guides</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
-                                    <li><a href="/admin/migration/opengrok">Migrating from Oracle OpenGrok to Sourcegraph for code search</a></li>
-                                    <li><a href="/admin/migration/3_0">Migrating to Sourcegraph 3.0.1+</a></li>
+                                    <li><a href="/admin/migration/opengrok">Oracle OpenGrok migration guide</a></li>
+                                    <li><a href="/admin/migration/3_0">v3.0.1+ migration guide</a></li>
+                                    <li><a href="/admin/migration/3_7">v3.7.2+ migration guide</a></li>
                                 </ul>
                             </li>
                             <li><a href="/admin/monitoring_and_tracing">Monitoring and tracing</a></li>

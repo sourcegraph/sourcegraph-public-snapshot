@@ -116,7 +116,7 @@ export function createDatabaseFilename(storageRoot: string, repository: string, 
  *
  * @param path The directory path.
  */
-export async function createDirectory(path: string): Promise<void> {
+export async function ensureDirectory(path: string): Promise<void> {
     try {
         await fs.mkdir(path)
     } catch (e) {

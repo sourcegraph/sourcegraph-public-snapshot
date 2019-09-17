@@ -1,6 +1,5 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './conversion'
@@ -22,7 +21,7 @@ describe('Database', () => {
         storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
-        const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
+        const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
         const { packages, references } = await convertLsif(input, database)
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)

@@ -3,12 +3,12 @@ import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { DocumentData, ResultChunkData } from './models.database'
 import {
-    CONNECTION_CACHE_EVENTS_COUNTER,
-    CONNECTION_CACHE_SIZE_GAUGE,
-    DOCUMENT_CACHE_SIZE_GAUGE,
-    DOCUMENT_CACHE_EVENTS_COUNTER,
-    RESULT_CHUNK_CACHE_SIZE_GAUGE,
-    RESULT_CHUNK_CACHE_EVENTS_COUNTER,
+    connectionCacheEventsCounter,
+    connectionCacheSizeGauge,
+    documentCacheSizeGauge,
+    documentCacheEventsCounter,
+    resultChunkCacheSizeGauge,
+    resultChunkCacheEventsCounter,
 } from './metrics'
 import { createConnection } from './connection'
 
@@ -318,8 +318,8 @@ export class ConnectionCache extends GenericCache<string, Connection> {
             // Close the underlying file handle on cache eviction.
             connection => connection.close(),
             {
-                sizeGauge: CONNECTION_CACHE_SIZE_GAUGE,
-                eventsCounter: CONNECTION_CACHE_EVENTS_COUNTER,
+                sizeGauge: connectionCacheSizeGauge,
+                eventsCounter: connectionCacheEventsCounter,
             }
         )
     }
@@ -415,8 +415,8 @@ export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
      */
     constructor(max: number) {
         super(max, {
-            sizeGauge: DOCUMENT_CACHE_SIZE_GAUGE,
-            eventsCounter: DOCUMENT_CACHE_EVENTS_COUNTER,
+            sizeGauge: documentCacheSizeGauge,
+            eventsCounter: documentCacheEventsCounter,
         })
     }
 }
@@ -434,8 +434,8 @@ export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> 
      */
     constructor(max: number) {
         super(max, {
-            sizeGauge: RESULT_CHUNK_CACHE_SIZE_GAUGE,
-            eventsCounter: RESULT_CHUNK_CACHE_EVENTS_COUNTER,
+            sizeGauge: resultChunkCacheSizeGauge,
+            eventsCounter: resultChunkCacheEventsCounter,
         })
     }
 }

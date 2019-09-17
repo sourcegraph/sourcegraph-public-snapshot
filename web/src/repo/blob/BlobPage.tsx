@@ -113,6 +113,7 @@ interface State {
     blobOrError?: GQL.IGitBlob | ErrorLike
 }
 
+// eslint-disable-next-line react/no-unsafe
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
     private extendHighlightingTimeoutClicks = new Subject<void>()
@@ -171,14 +172,16 @@ export class BlobPage extends React.PureComponent<Props, State> {
         this.propsUpdates.next(this.props)
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        this.propsUpdates.next(this.props)
+    // Use UNSAFE_componentWillReceiveProps to avoid this.state.blobOrError being out of sync
+    // with props (see https://github.com/sourcegraph/sourcegraph/issues/5575).
+    public UNSAFE_componentWillReceiveProps(nextProps: Props): void {
+        this.propsUpdates.next(nextProps)
         if (
-            this.props.repoName !== prevProps.repoName ||
-            this.props.commitID !== prevProps.commitID ||
-            this.props.filePath !== prevProps.filePath ||
+            this.props.repoName !== nextProps.repoName ||
+            this.props.commitID !== nextProps.commitID ||
+            this.props.filePath !== nextProps.filePath ||
             ToggleRenderedFileMode.getModeFromURL(this.props.location) !==
-                ToggleRenderedFileMode.getModeFromURL(prevProps.location)
+                ToggleRenderedFileMode.getModeFromURL(nextProps.location)
         ) {
             this.logViewEvent()
         }

@@ -27,10 +27,10 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Creates a Changeset of a given repository in a code host (e.g. pull request on GitHub)
-    createChangeset(repository: ID!, externalID: String!): Changeset!
-    # Adds a Changeset to a Campaign.
-    addChangesetToCampaign(changeset: ID!, campaign: ID!): Campaign!
+    # Creates a list of Changesets of a given repository in a code host (e.g. pull request on GitHub)
+    createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
+    # Adds a list of Changesets to a Campaign.
+    addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.
@@ -269,7 +269,20 @@ type Mutation {
         date: String
     ): GitCommit
     # Logs a user event.
-    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
+    # Logs an event.
+    logEvent(
+        # The name of the event.
+        event: String!
+        # The randomly generated unique user ID stored in a browser cookie.
+        userCookieID: String!
+        # The URL when the event was logged.
+        url: String!
+        # The source of the event.
+        source: EventSource!
+        # The additional argument information.
+        argument: String
+    ): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
     #
@@ -410,6 +423,22 @@ enum ChangesetState {
     MERGED
 }
 
+# The state of a Changeset Review
+enum ChangesetReviewState {
+    APPROVED
+    CHANGES_REQUESTED
+    PENDING
+}
+
+# The input to the createChangesets mutation.
+input CreateChangesetInput {
+    # The repository ID that this Changeset belongs to.
+    repository: ID!
+    # The external ID that uniquely identifies this Changeset in the above repository.
+    # Github: PR number
+    externalID: String!
+}
+
 # A changeset in a code host (e.g. a PR on Github)
 type Changeset implements Node {
     # The unique ID for the changeset.
@@ -435,6 +464,12 @@ type Changeset implements Node {
 
     # The state of the changeset
     state: ChangesetState!
+
+    # The external URL of the changeset on the code host
+    externalURL: ExternalLink!
+
+    # The review state of this changeset.
+    reviewState: ChangesetReviewState!
 }
 
 # A list of changesets.
@@ -632,6 +667,12 @@ input MarkdownOptions {
 
     # A dummy null value (empty input types are not allowed yet).
     alwaysNil: String
+}
+
+# The product sources where events can come from.
+enum EventSource {
+    WEB
+    CODEHOSTINTEGRATION
 }
 
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user

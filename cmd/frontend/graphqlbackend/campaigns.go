@@ -14,22 +14,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 )
 
-func (r *schemaResolver) AddChangesetToCampaign(ctx context.Context, args *struct {
-	Changeset, Campaign graphql.ID
+func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *struct {
+	Campaign   graphql.ID
+	Changesets []graphql.ID
 }) (_ *campaignResolver, err error) {
 	// 🚨 SECURITY: Only site admins may modify changesets and campaigns for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	changesetID, err := unmarshalChangesetID(args.Changeset)
+	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
 		return nil, err
 	}
 
-	campaignID, err := unmarshalCampaignID(args.Campaign)
-	if err != nil {
-		return nil, err
+	changesetIDs := make([]int64, 0, len(args.Changesets))
+	set := map[int64]struct{}{}
+	for _, changesetID := range args.Changesets {
+		id, err := unmarshalChangesetID(changesetID)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := set[id]; !ok {
+			changesetIDs = append(changesetIDs, id)
+			set[id] = struct{}{}
+		}
 	}
 
 	tx, err := r.A8NStore.Transact(ctx)
@@ -44,18 +54,26 @@ func (r *schemaResolver) AddChangesetToCampaign(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	changeset, err := tx.GetChangeset(ctx, a8n.GetChangesetOpts{ID: changesetID})
+	changesets, _, err := tx.ListChangesets(ctx, a8n.ListChangesetsOpts{IDs: changesetIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+	for _, c := range changesets {
+		delete(set, c.ID)
+		c.CampaignIDs = append(c.CampaignIDs, campaign.ID)
+	}
+
+	if len(set) > 0 {
+		return nil, errors.Errorf("changesets %v not found", set)
+	}
+
+	if err = tx.UpdateChangesets(ctx, changesets...); err != nil {
 		return nil, err
 	}
 
-	changeset.CampaignIDs = append(changeset.CampaignIDs, campaign.ID)
-	if err = tx.UpdateChangeset(ctx, changeset); err != nil {
+	campaign.ChangesetIDs = append(campaign.ChangesetIDs, changesetIDs...)
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
 		return nil, err
 	}
 

@@ -1,26 +1,23 @@
-import * as definitionsSchema from './lsif.schema.json'
-import * as es from 'event-stream'
-import * as fs from 'mz/fs'
-import * as path from 'path'
-import * as zlib from 'mz/zlib'
-import Ajv, { ValidateFunction } from 'ajv'
-import bodyParser from 'body-parser'
-import exitHook from 'async-exit-hook'
-import express from 'express'
-import morgan from 'morgan'
-import promBundle from 'express-prom-bundle'
-import uuid from 'uuid'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createDirectory, hasErrorCode, logErrorAndExit, readEnvInt, createDatabaseFilename } from './util'
-import { Queue, Scheduler } from 'node-resque'
-import { wrap } from 'async-middleware'
+import * as definitionsSchema from './lsif.schema.json';
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import Ajv, { ValidateFunction } from 'ajv';
+import bodyParser from 'body-parser';
+import exitHook from 'async-exit-hook';
+import express from 'express';
+import promBundle from 'express-prom-bundle';
+import uuid from 'uuid';
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
+import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics.js';
 import {
-    CONNECTION_CACHE_CAPACITY_GAUGE,
-    DOCUMENT_CACHE_CAPACITY_GAUGE,
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
-} from './metrics'
-import { XrepoDatabase } from './xrepo.js'
-import { Database } from './database.js'
+    ensureDirectory,
+    hasErrorCode,
+    logErrorAndExit,
+    readEnvInt
+} from './util';
+import { Queue, Scheduler } from 'node-resque';
+import { validateLsifInput } from './input';
+import { wrap } from 'async-middleware';
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -74,14 +71,14 @@ const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
  */
 async function main(): Promise<void> {
     // Update cache capacities on startup
-    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
-    DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
-    await createDirectory(STORAGE_ROOT)
-    await createDirectory(path.join(STORAGE_ROOT, 'tmp'))
-    await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
+    await ensureDirectory(STORAGE_ROOT)
+    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
+    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repos database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
@@ -122,7 +119,6 @@ async function main(): Promise<void> {
     const validator = createInputValidator()
 
     const app = express()
-    app.use(morgan('tiny'))
     app.use(errorHandler)
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
@@ -135,54 +131,14 @@ async function main(): Promise<void> {
                 checkRepository(repository)
                 checkCommit(commit)
 
-                let line = 0
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
-                const writeStream = fs.createWriteStream(filename)
+                const output = fs.createWriteStream(filename)
 
-                const throwValidationError = (text: string, errorText: string): never => {
-                    throw Object.assign(
-                        new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
-                        { status: 422 }
-                    )
+                try {
+                    await validateLsifInput(req, output, DISABLE_VALIDATION ? undefined : validator)
+                } catch (e) {
+                    throw Object.assign(e, { status: 422 })
                 }
-
-                const validateLine = (text: string): void => {
-                    if (text === '' || DISABLE_VALIDATION) {
-                        return
-                    }
-
-                    let data: any
-
-                    try {
-                        data = JSON.parse(text)
-                    } catch (e) {
-                        throwValidationError(text, 'Invalid JSON')
-                    }
-
-                    if (!validator(data)) {
-                        throwValidationError(text, 'Does not match a known vertex or edge shape')
-                    }
-
-                    line++
-                }
-
-                await new Promise((resolve, reject) => {
-                    req.pipe(zlib.createGunzip()) // unzip input
-                        .pipe(es.split()) // split into lines
-                        .pipe(
-                            // Must check each line synchronously
-                            // eslint-disable-next-line no-sync
-                            es.mapSync((text: string) => {
-                                validateLine(text) // validate each line
-                                return text
-                            })
-                        )
-                        .on('error', reject) // catch validation error
-                        .pipe(es.join('\n')) // join back into text
-                        .pipe(zlib.createGzip()) // re-zip input
-                        .pipe(writeStream) // write to temp file
-                        .on('finish', resolve) // unblock promise when done
-                })
 
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
@@ -264,7 +220,7 @@ async function setupQueue(): Promise<Queue> {
     scheduler.on('error', logErrorAndExit)
     await scheduler.connect()
     exitHook(() => scheduler.end())
-    scheduler.start().catch(logErrorAndExit)
+    await scheduler.start()
 
     return queue
 }

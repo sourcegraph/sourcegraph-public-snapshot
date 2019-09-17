@@ -90,6 +90,8 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  * to see a count of unique users on a daily, weekly, and monthly basis).
  *
  * Not used at all for public/sourcegraph.com usage.
+ *
+ * This function will be deprecated.
  */
 export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context && window.context.sourcegraphDotComMode) {
@@ -104,6 +106,38 @@ export function logUserEvent(event: GQL.UserEvent): void {
             }
         `,
         { event, userCookieID: eventLogger.getAnonUserID() }
+    )
+        .pipe(
+            map(({ data, errors }) => {
+                if (!data || (errors && errors.length > 0)) {
+                    throw createAggregateError(errors)
+                }
+                return
+            })
+        )
+        .subscribe()
+}
+
+/**
+ * Log a raw user action (used to allow site admins on a Sourcegraph instance
+ * to see a count of unique users on a daily, weekly, and monthly basis).
+ *
+ * Not used at all for public/sourcegraph.com usage.
+ */
+export function logEvent(event: string): void {
+    if (window.context && window.context.sourcegraphDotComMode) {
+        return
+    }
+
+    mutateGraphQL(
+        gql`
+            mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
+                logEvent(event: $event, userCookieID: $userCookieID, url: $url, source: $source) {
+                    alwaysNil
+                }
+            }
+        `,
+        { event, userCookieID: eventLogger.getAnonUserID(), url: window.location.href, source: GQL.EventSource.WEB }
     )
         .pipe(
             map(({ data, errors }) => {

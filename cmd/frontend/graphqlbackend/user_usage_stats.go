@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
@@ -66,4 +67,27 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	}
 	actor := actor.FromContext(ctx)
 	return nil, usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+}
+
+func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
+	Event        string
+	UserCookieID string
+	URL          string
+	Source       string
+	Argument     *string
+}) (*EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() || !conf.EventLoggingEnabled() {
+		return nil, nil
+	}
+
+	actor := actor.FromContext(ctx)
+	return nil, usagestats.LogEvent(
+		ctx,
+		args.Event,
+		args.URL,
+		actor.UID,
+		args.UserCookieID,
+		args.Source,
+		args.Argument,
+	)
 }

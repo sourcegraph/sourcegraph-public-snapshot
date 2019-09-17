@@ -1,17 +1,17 @@
-import * as fs from 'mz/fs'
-import * as path from 'path'
-import * as zlib from 'mz/zlib'
-import exitHook from 'async-exit-hook'
-import express from 'express'
-import morgan from 'morgan'
-import promBundle from 'express-prom-bundle'
-import uuid from 'uuid'
-import { convertLsif } from './conversion'
-import { createDatabaseFilename, createDirectory, logErrorAndExit, readEnvInt } from './util'
-import { JobsHash, Worker } from 'node-resque'
-import { XrepoDatabase } from './xrepo'
-import { ConnectionCache } from './cache'
-import { CONNECTION_CACHE_CAPACITY_GAUGE } from './metrics'
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import * as zlib from 'mz/zlib';
+import exitHook from 'async-exit-hook';
+import express from 'express';
+import morgan from 'morgan';
+import promBundle from 'express-prom-bundle';
+import { ensureDirectory, logErrorAndExit, readEnvInt, createDatabaseFilename } from './util';
+import { JobsHash, Worker } from 'node-resque';
+import { ConnectionCache, } from './cache'
+import { connectionCacheCapacityGauge } from './metrics';
+import { XrepoDatabase } from './xrepo';
+import { convertLsif } from './conversion';
+import uuid from 'uuid';
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -50,12 +50,12 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  */
 async function main(): Promise<void> {
     // Update cache capacities on startup
-    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
 
     // Ensure storage roots exist
-    await createDirectory(STORAGE_ROOT)
-    await createDirectory(path.join(STORAGE_ROOT, 'tmp'))
-    await createDirectory(path.join(STORAGE_ROOT, 'uploads'))
+    await ensureDirectory(STORAGE_ROOT)
+    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
+    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
@@ -90,7 +90,7 @@ function createConvertJob(
     return async (repository, commit, filename) => {
         console.log(`Converting ${repository}@${commit}`)
 
-        const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
+        const input = fs.createReadStream(filename)
         const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
 
         try {
@@ -134,11 +134,11 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     worker.on('error', logErrorAndExit)
     await worker.connect()
     exitHook(() => worker.end())
-    worker.start().catch(logErrorAndExit)
+    await worker.start()
 }
 
 /**
- * Create an express server that only has /ping and /metric endpoints.
+ * Create an express server that only has /healthz and /metric endpoints.
  */
 function startMetricsServer(): void {
     const app = express()

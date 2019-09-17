@@ -1,13 +1,12 @@
-import * as fs from 'mz/fs'
-import * as path from 'path'
-import * as zlib from 'mz/zlib'
-import rmfr from 'rmfr'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './conversion'
-import { createCommit, createLocation } from './test-utils'
-import { createDatabaseFilename } from './util'
-import { Database } from './database'
-import { XrepoDatabase } from './xrepo'
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import rmfr from 'rmfr';
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
+import { convertLsif } from './conversion';
+import { createCommit, createLocation } from './test-utils';
+import { createDatabaseFilename } from './util';
+import { Database } from './database';
+import { XrepoDatabase } from './xrepo';
 
 describe('Database', () => {
     let storageRoot!: string
@@ -22,9 +21,7 @@ describe('Database', () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
-        const input = fs
-            .createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
-            .pipe(zlib.createGunzip())
+        const input = fs.createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
         const { packages, references } = await convertLsif(input, database)
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)

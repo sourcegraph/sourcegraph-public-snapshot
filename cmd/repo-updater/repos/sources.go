@@ -87,9 +87,9 @@ type Source interface {
 	ExternalServices() ExternalServices
 }
 
-// A ChangesetSource can load the latest state of a Changeset.
+// A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
-	LoadChangeset(context.Context, *Changeset) error
+	LoadChangesets(context.Context, ...*Changeset) error
 }
 
 // A SourceResult is sent by a Source over a channel for each repository it

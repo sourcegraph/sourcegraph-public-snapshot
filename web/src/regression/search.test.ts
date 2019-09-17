@@ -6,6 +6,7 @@ import { regressionTestInit, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureExternalService, waitForRepos } from './util/api'
+import { ensureLoggedInOrCreateUser } from './util/helpers'
 
 const testRepoSlugs = [
     'auth0/go-jwt-middleware',
@@ -83,6 +84,40 @@ const testRepoSlugs = [
     'facebook/react',
 ]
 
+// Reads the number of results from the text at the top of the results page
+function getNumResults() {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const matches = document.querySelector('body')!.textContent!.match(/([0-9]+)\+?\sresults?/)
+    if (!matches || matches.length < 2) {
+        return null
+    }
+    const numResults = parseInt(matches[1], 10)
+    return isNaN(numResults) ? null : numResults
+}
+
+/**
+ * Returns true if "No results" message is present, throws an error if there are search results,
+ * and returns false otherwise.
+ */
+function hasNoResultsOrError(): boolean {
+    if (document.querySelectorAll('.e2e-search-result').length > 0) {
+        throw new Error('Expected "No results", but there were search results.')
+    }
+
+    const resultsElem = document.querySelector('.e2e-search-results')
+    if (!resultsElem) {
+        return false
+    }
+    const resultsText = (resultsElem as HTMLElement).innerText
+    if (!resultsText) {
+        return false
+    }
+    if (resultsText.includes('No results')) {
+        return true
+    }
+    return false
+}
+
 describe('Search regression test suite', () => {
     regressionTestInit()
     const config = getConfig(['sudoToken', 'username', 'gitHubToken', 'sourcegraphBaseUrl'])
@@ -107,6 +142,7 @@ describe('Search regression test suite', () => {
             async () => {
                 driver = await createAndInitializeDriver()
                 gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.username)
+                await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
                     uniqueDisplayName: 'GitHub (search-regression-test)',
@@ -124,25 +160,11 @@ describe('Search regression test suite', () => {
         )
 
         // Close browser.
-        afterAll(async () => driver && (await driver.close()))
+        afterAll(() => driver && driver.close())
 
         test('Global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
-            await driver.page.waitForSelector('.e2e-search-results')
-            await driver.page.waitForFunction(() => {
-                const resultsElem = document.querySelector('.e2e-search-results')
-                if (!resultsElem) {
-                    return false
-                }
-                const resultsText = (resultsElem as HTMLElement).innerText
-                if (!resultsText) {
-                    return false
-                }
-                if (!resultsText.includes('No results')) {
-                    throw new Error('Expected "No results" message, but didn\'t find it')
-                }
-                return true
-            })
+            await driver.page.waitForFunction(hasNoResultsOrError)
         })
         test('Global text search with double-quoted string constant ("error type:") with a few results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q="error+type:%5Cn"')
@@ -176,20 +198,9 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 2)
         })
         test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
-            // Reads the number of results from the text at the top of the results page
-            function getNumResults() {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                const matches = document.querySelector('body')!.textContent!.match(/([0-9]+)\+?\sresults?/)
-                if (!matches || matches.length < 2) {
-                    return null
-                }
-                const numResults = parseInt(matches[1], 10)
-                return isNaN(numResults) ? null : numResults
-            }
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
             await driver.page.addScriptTag({ content: `${getNumResults}` })
-
             await driver.page.waitForFunction(() => getNumResults() !== null)
             await driver.page.waitForFunction(
                 () => {
@@ -209,7 +220,10 @@ describe('Search regression test suite', () => {
         })
         test('Search for a repository by name.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repo:auth0/go-jwt-middleware$')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
+            await driver.page.waitForFunction(() => {
+                const results = document.querySelectorAll('.e2e-search-result')
+                return results.length === 1 && (results.item(0).textContent || '').includes('go-jwt-middleware')
+            })
         })
         test('Single repository, case-sensitive search.', async () => {
             await driver.page.goto(
@@ -256,6 +270,41 @@ describe('Search regression test suite', () => {
             if (!filenames.every(filename => filename.endsWith('.js'))) {
                 throw new Error('found Go results when filtering for JavaScript')
             }
+        })
+        test('Global search for a filename with 0 results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:asdfasdf.go')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
+        test('Global search for a filename with a few results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:router.go')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 5)
+        })
+        test('Global search for a filename with many results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:doc.go')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.waitForFunction(() => getNumResults() !== null)
+            await driver.page.waitForFunction(
+                () => {
+                    const numResults = getNumResults()
+                    return numResults !== null && numResults > 25
+                },
+                { timeout: 500 }
+            )
+        })
+        test('Global symbol search with many results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+test+count:100')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.waitForFunction(() => (getNumResults() || 0) >= 100)
+        })
+        test('Global symbol search with 0 results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+asdfasdf')
+            await driver.page.waitForFunction(hasNoResultsOrError)
+        })
+        test('Global symbol search ("type:symbol ^newroute count:100") with a few results', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 2)
         })
     })
 })

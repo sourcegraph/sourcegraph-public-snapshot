@@ -1,14 +1,13 @@
-import * as fs from 'mz/fs'
-import * as path from 'path'
-import * as zlib from 'mz/zlib'
-import rmfr from 'rmfr'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './conversion'
-import { createCommit, createLocation, createRemoteLocation } from './test-utils'
-import { createDatabaseFilename } from './util'
-import { Database } from './database'
-import { Readable } from 'stream'
-import { XrepoDatabase } from './xrepo'
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import rmfr from 'rmfr';
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
+import { convertLsif } from './conversion';
+import { createCommit, createLocation, createRemoteLocation } from './test-utils';
+import { createDatabaseFilename } from './util';
+import { Database } from './database';
+import { Readable } from 'stream';
+import { XrepoDatabase } from './xrepo';
 
 describe('Database', () => {
     let storageRoot!: string
@@ -19,6 +18,13 @@ describe('Database', () => {
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
+        const inputs: { input: Readable; repository: string; commit: string }[] = []
+
+        for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
+            const input = fs.createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
+            const commit = createCommit(repository)
+            inputs.push({ input, repository, commit })
+        }
 
         for (const { input, repository, commit } of createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
@@ -184,9 +190,7 @@ function createTestInputs(): {
 
     const inputs = []
     for (const repository of repositories) {
-        const input = fs
-            .createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
-            .pipe(zlib.createGunzip())
+        const input = fs.createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
         const commit = createCommit(repository)
         inputs.push({ input, repository, commit })
     }

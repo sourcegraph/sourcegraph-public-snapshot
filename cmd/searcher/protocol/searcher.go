@@ -86,10 +86,6 @@ type PatternInfo struct {
 	// and IncludePatterns are case sensitive.
 	PathPatternsAreCaseSensitive bool
 
-	// IncludePattern, if specified, will be appended to IncludePatterns.
-	// Deprecated: Use IncludePatterns instead.
-	IncludePattern string
-
 	// FileMatchLimit limits the number of files with matches that are returned.
 	FileMatchLimit int
 
@@ -100,21 +96,6 @@ type PatternInfo struct {
 	// PatternMatchesPath is whether a file whose path matches Pattern (but whose contents don't) should be
 	// considered a match.
 	PatternMatchesPath bool
-}
-
-// AllIncludePatterns returns all include patterns (including the deprecated
-// single p.IncludePattern).
-func (p *PatternInfo) AllIncludePatterns() []string {
-	if p.IncludePattern == "" {
-		return p.IncludePatterns
-	}
-	if len(p.IncludePatterns) == 0 {
-		return []string{p.IncludePattern}
-	}
-	all := make([]string, 1+len(p.IncludePatterns))
-	copy(all, p.IncludePatterns)
-	all[len(all)-1] = p.IncludePattern
-	return all
 }
 
 func (p *PatternInfo) String() string {
@@ -148,7 +129,7 @@ func (p *PatternInfo) String() string {
 	if p.ExcludePattern != "" {
 		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
 	}
-	if incs := p.AllIncludePatterns(); len(incs) > 0 {
+	if incs := p.IncludePatterns; len(incs) > 0 {
 		for _, inc := range incs {
 			args = append(args, fmt.Sprintf("%s:%q", path, inc))
 		}
