@@ -135,7 +135,7 @@ describe('Search regression test suite', () => {
     describe('Search over a dozen repositories', () => {
         beforeAll(
             async () => {
-                config = getConfig(['sudoToken', 'username', 'gitHubToken', 'sourcegraphBaseUrl'])
+                config = getConfig(['sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl'])
                 if (new URL(window.location.href).origin !== new URL(config.sourcegraphBaseUrl).origin) {
                     throw new Error(
                         `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${config.sourcegraphBaseUrl}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
