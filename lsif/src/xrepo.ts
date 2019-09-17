@@ -87,29 +87,67 @@ export class XrepoDatabase {
     }
 
     /**
-     * Correlate a `repository` and `commit` with a set of unique packages.
+     * Correlate a `repository` and `commit` with a set of unique packages it defines and
+     * with  the the names referenced from a particular dependent package.
      *
-     * @param repository The repository that defines the given package.
-     * @param commit The commit of the that defines the given package.
-     * @param packages The package list (scheme, name, and version).
+     * @param repository The repository being updated.
+     * @param commit The commit of the being updated.
+     * @param packages The list of packages that this repository defines (scheme, name, and version).
+     * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      */
-    public async addPackages(repository: string, commit: string, packages: Package[]): Promise<void> {
+    public async addPackagesAndReferences(
+        repository: string,
+        commit: string,
+        packages: Package[],
+        references: SymbolReferences[]
+    ): Promise<void> {
         return await this.withTransactionalEntityManager(async entityManager => {
-            // We replace on conflict here: the first LSIF upload to provide a package will be
-            // the repository and commit used in cross-repository jump-to-definition queries.
-
-            const inserter = new TableInserter(
+            const packageInserter = new TableInserter(
                 entityManager,
                 PackageModel,
                 PackageModel.BatchSize,
                 insertionMetrics,
-                true
+                true // Do nothing on conflict
             )
+
+            const referenceInserter = new TableInserter(
+                entityManager,
+                ReferenceModel,
+                ReferenceModel.BatchSize,
+                insertionMetrics
+            )
+
+            // Remove all previous package data for this repo/commit
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(PackageModel)
+                .where({ repository, commit })
+                .execute()
+
+            // Remove all previous reference data for this repo/commit
+            await entityManager
+                .createQueryBuilder()
+                .delete()
+                .from(ReferenceModel)
+                .where({ repository, commit })
+                .execute()
+
             for (const pkg of packages) {
-                await inserter.insert({ repository, commit, ...pkg })
+                await packageInserter.insert({ repository, commit, ...pkg })
             }
 
-            await inserter.flush()
+            for (const reference of references) {
+                await referenceInserter.insert({
+                    repository,
+                    commit,
+                    filter: await createFilter(reference.identifiers),
+                    ...reference.package,
+                })
+            }
+
+            await packageInserter.flush()
+            await referenceInserter.flush()
         })
     }
 
@@ -155,60 +193,6 @@ export class XrepoDatabase {
         }
 
         return results.filter((_, i) => keepFlags[i])
-    }
-
-    /**
-     * Correlate the given `repository` and `commit` with the the names referenced from a
-     * particular remote package.
-     *
-     * @param repository The repository that depends on the given package.
-     * @param commit The commit that depends on the given package.
-     * @param references The package data (scheme, name, and version) and the symbols that the package references.
-     */
-    public async addReferences(repository: string, commit: string, references: SymbolReferences[]): Promise<void> {
-        return await this.withTransactionalEntityManager(async entityManager => {
-            const inserter = new TableInserter(
-                entityManager,
-                ReferenceModel,
-                ReferenceModel.BatchSize,
-                insertionMetrics
-            )
-            for (const reference of references) {
-                await inserter.insert({
-                    repository,
-                    commit,
-                    filter: await createFilter(reference.identifiers),
-                    ...reference.package,
-                })
-            }
-
-            await inserter.flush()
-        })
-    }
-
-    /**
-     * Remove references to the given repository and commit from both packages and
-     * references table.
-     *
-     * @param repository The repository.
-     * @param commit The commit.
-     */
-    public async clearCommit(repository: string, commit: string): Promise<void> {
-        return await this.withTransactionalEntityManager(async entityManager => {
-            await entityManager
-                .createQueryBuilder()
-                .delete()
-                .from(PackageModel)
-                .where({ repository, commit })
-                .execute()
-
-            await entityManager
-                .createQueryBuilder()
-                .delete()
-                .from(ReferenceModel)
-                .where({ repository, commit })
-                .execute()
-        })
     }
 
     /**

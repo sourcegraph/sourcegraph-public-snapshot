@@ -52,9 +52,6 @@ export class Backend {
             }
         }
 
-        // Remove old data from xrepo database
-        await this.xrepoDatabase.clearCommit(repository, commit)
-
         // Remove any connection in the cache to the file we just removed
         await this.connectionCache.bustKey(outFile)
 
@@ -68,11 +65,8 @@ export class Backend {
             }
         )
 
-        // These needs to be done in sequence as SQLite can only have one
-        // write txn at a time without causing the other one to abort with
-        // a weird error.
-        await this.xrepoDatabase.addPackages(repository, commit, packages)
-        await this.xrepoDatabase.addReferences(repository, commit, references)
+        // Update cross-repository database
+        await this.xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
     }
 
     /**
