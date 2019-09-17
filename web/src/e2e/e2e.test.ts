@@ -46,7 +46,7 @@ describe('e2e test suite', () => {
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
         ]
-        await driver.ensureLoggedIn()
+        await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: ExternalServiceKind.GITHUB,
