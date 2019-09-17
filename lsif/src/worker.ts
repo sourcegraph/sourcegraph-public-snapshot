@@ -128,7 +128,7 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     worker.on('error', logErrorAndExit)
     await worker.connect()
     exitHook(() => worker.end())
-    worker.start().catch(logErrorAndExit)
+    await worker.start()
 }
 
 /**
