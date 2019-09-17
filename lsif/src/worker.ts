@@ -3,11 +3,13 @@ import * as path from 'path'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
-import { Backend, createBackend } from './backend'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
-import { ensureDirectory, logErrorAndExit, readEnvInt } from './util'
+import uuid from 'uuid'
+import { ConnectionCache } from './cache'
+import { connectionCacheCapacityGauge } from './metrics'
+import { convertLsif } from './importer'
+import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
 import { JobsHash, Worker } from 'node-resque'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -34,16 +36,6 @@ const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_END
 const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
 
 /**
- * The maximum number of documents that can be held in memory at once.
- */
-const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
-
-/**
- * The maximum number of result chunks that can be held in memory at once.
- */
-const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
-
-/**
  * Whether or not to log a message when the HTTP server is ready and listening.
  */
 const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
@@ -59,8 +51,6 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 async function main(): Promise<void> {
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
-    documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
-    resultChunkCacheCapacityGauge.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -69,12 +59,11 @@ async function main(): Promise<void> {
 
     // Create backend
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
-    const backend = await createBackend(STORAGE_ROOT, connectionCache, documentCache, resultChunkCache)
+    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
+    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
     const jobFunctions = {
-        convert: createConvertJob(backend),
+        convert: createConvertJob(xrepoDatabase),
     }
 
     // Start metrics server
@@ -89,16 +78,37 @@ async function main(): Promise<void> {
 }
 
 /**
- * Create a job that takes a repository, commit, and input filename as input and converts
- * the convents of the file into a SQLite database.
+ * Create a job that takes a repository, commit, and filename containing the gzipped
+ * input of an LSIF dump and converts it to a SQLite database. This will also populate
+ * the cross-repo database for this dump.
  *
- * @param backend The backend instance.
+ * @param xrepoDatabase The cross-repo database.
  */
-function createConvertJob(backend: Backend): (repository: string, commit: string, filename: string) => Promise<void> {
+function createConvertJob(
+    xrepoDatabase: XrepoDatabase
+): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
         console.log(`Converting ${repository}@${commit}`)
+
         const input = fs.createReadStream(filename)
-        await backend.insertDump(input, repository, commit)
+        const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
+
+        try {
+            // Create database in a temp path
+            const { packages, references } = await convertLsif(input, tempFile)
+
+            // Move the temp file where it can be found by the server
+            await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
+
+            // Add the new database to the xrepo db
+            await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+        } catch (e) {
+            // Don't leave busted artifacts
+            await fs.unlink(tempFile)
+            throw e
+        }
+
+        // Remove input
         await fs.unlink(filename)
     }
 }
