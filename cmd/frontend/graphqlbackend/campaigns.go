@@ -35,8 +35,11 @@ func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *stru
 		if err != nil {
 			return nil, err
 		}
-		changesetIDs = append(changesetIDs, id)
-		set[id] = struct{}{}
+
+		if _, ok := set[id]; !ok {
+			changesetIDs = append(changesetIDs, id)
+			set[id] = struct{}{}
+		}
 	}
 
 	tx, err := r.A8NStore.Transact(ctx)
