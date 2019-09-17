@@ -55,7 +55,6 @@ describe('e2e test suite', () => {
                 url: 'https://github.com',
                 token: gitHubToken,
                 repos: repoSlugs,
-                repositoryQuery: ['none'],
             }),
             ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
         })
