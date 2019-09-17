@@ -113,15 +113,15 @@ async function main(): Promise<void> {
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const writeStream = fs.createWriteStream(filename)
 
-                const throwValidationError = (text: string, errorText: string): never => {
-                    throw Object.assign(
+                const createValidationError = (text: string, errorText: string): Error => {
+                    return Object.assign(
                         new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
                         { status: 422 }
                     )
                 }
 
                 const validateLine = (text: string): void => {
-                    if (text === '' || DISABLE_VALIDATION) {
+                    if (DISABLE_VALIDATION) {
                         return
                     }
 
@@ -249,7 +249,7 @@ async function setupQueue(): Promise<Queue> {
     scheduler.on('error', logErrorAndExit)
     await scheduler.connect()
     exitHook(() => scheduler.end())
-    scheduler.start().catch(logErrorAndExit)
+    await scheduler.start()
 
     return queue
 }
