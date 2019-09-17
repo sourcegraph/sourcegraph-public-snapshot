@@ -37,7 +37,7 @@ export function validateLsifInput(
 
             const text = `${data}`
             if (text === '') {
-                return cb(null, `\n`)
+                return cb(null, '\n')
             }
 
             try {
@@ -99,7 +99,7 @@ export function processLsifInput(input: Readable, process: (element: Vertex | Ed
             }
 
             return cb(null)
-        }
+        },
     })
 
     return new Promise((resolve, reject) => {
