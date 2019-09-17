@@ -291,6 +291,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
+	Cursor     int64
 	Limit      int
 	CampaignID int64
 	IDs        []int64
@@ -343,7 +344,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 	opts.Limit++
 
-	var preds []*sqlf.Query
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("id >= %s", opts.Cursor),
+	}
+
 	if opts.CampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
 	}
@@ -356,10 +360,6 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 			}
 		}
 		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(
@@ -651,6 +651,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 // listing campaigns.
 type ListCampaignsOpts struct {
 	ChangesetID int64
+	Cursor      int64
 	Limit       int
 }
 
@@ -660,7 +661,6 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 
 	cs = make([]*Campaign, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-
 		var c Campaign
 		if err = scanCampaign(&c, sc); err != nil {
 			return 0, 0, err
@@ -701,13 +701,12 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 	opts.Limit++
 
-	var preds []*sqlf.Query
-	if opts.ChangesetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_ids ? %s", opts.ChangesetID))
 	}
 
 	return sqlf.Sprintf(
