@@ -1,6 +1,6 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
-import { DATABASE_INSERTION_DURATION_HISTOGRAM, DATABASE_INSERTION_ERRORS_COUNTER } from './metrics'
+import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './metrics'
 import { DefaultMap } from './default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
@@ -91,8 +91,8 @@ export async function importLsif(
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
 
     const inserterMetrics = {
-        durationHistogram: DATABASE_INSERTION_DURATION_HISTOGRAM,
-        errorsCounter: DATABASE_INSERTION_ERRORS_COUNTER,
+        durationHistogram: databaseInsertionDurationHistogram,
+        errorsCounter: databaseInsertionErrorsCounter,
     }
 
     // Insert metadata
