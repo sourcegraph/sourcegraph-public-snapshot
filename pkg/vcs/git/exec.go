@@ -85,7 +85,7 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 		data, err = ioutil.ReadAll(sr)
 		if err == nil {
 			complete = true
-		} else if err != nil && err != context.DeadlineExceeded {
+		} else if err != context.DeadlineExceeded {
 			data = bytes.TrimSpace(data)
 			if isBadObjectErr(string(data), "") || isInvalidRevisionRangeError(string(data), "") {
 				return nil, true, &gitserver.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: "UNKNOWN"}
