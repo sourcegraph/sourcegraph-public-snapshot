@@ -86,7 +86,7 @@ async function main(): Promise<void> {
     const filename = path.join(STORAGE_ROOT, 'xrepo.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
-    const createDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+    const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
         const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
 
         try {
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const db = await createDatabase(repository, commit)
+                const db = await loadDatabase(repository, commit)
                 if (!db) {
                     res.json(false)
                     return
@@ -177,7 +177,7 @@ async function main(): Promise<void> {
                 checkMethod(method, ['definitions', 'references', 'hover'])
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-                const db = await createDatabase(repository, commit)
+                const db = await loadDatabase(repository, commit)
                 if (!db) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,

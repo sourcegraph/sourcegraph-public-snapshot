@@ -29,7 +29,7 @@ describe('Database', () => {
 
     afterAll(async () => await rmfr(storageRoot))
 
-    const createDatabase = (repository: string, commit: string): Database =>
+    const loadDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
             new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
@@ -42,7 +42,7 @@ describe('Database', () => {
         )
 
     it('should find all refs of `foo`', async () => {
-        const db = createDatabase(repository, commit)
+        const db = loadDatabase(repository, commit)
 
         const positions = [
             { line: 1, character: 5 },

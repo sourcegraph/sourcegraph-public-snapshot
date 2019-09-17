@@ -29,7 +29,7 @@ describe('Database', () => {
 
     afterAll(async () => await rmfr(storageRoot))
 
-    const createDatabase = (repository: string, commit: string): Database =>
+    const loadDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
             new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
@@ -42,21 +42,21 @@ describe('Database', () => {
         )
 
     it('should find all defs of `four` from main.cpp', async () => {
-        const db = createDatabase(repository, commit)
+        const db = loadDatabase(repository, commit)
         const definitions = await db.definitions('main.cpp', { line: 12, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('main.cpp', 6, 4, 6, 4)])
     })
 
     it('should find all defs of `five` from main.cpp', async () => {
-        const db = createDatabase(repository, commit)
+        const db = loadDatabase(repository, commit)
         const definitions = await db.definitions('main.cpp', { line: 11, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('five.cpp', 2, 4, 2, 4)])
     })
 
     it('should find all refs of `five` from main.cpp', async () => {
-        const db = createDatabase(repository, commit)
+        const db = loadDatabase(repository, commit)
         const references = await db.references('main.cpp', { line: 11, character: 3 })
 
         // TODO - should the definition be in this result set?
