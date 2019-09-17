@@ -111,12 +111,10 @@ async function main(): Promise<void> {
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const writeStream = fs.createWriteStream(filename)
 
-                const createValidationError = (text: string, errorText: string): Error => {
-                    return Object.assign(
-                        new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
-                        { status: 422 }
-                    )
-                }
+                const createValidationError = (text: string, errorText: string): Error => Object.assign(
+                    new Error(`Failed to process line #${line + 1} (${JSON.stringify(text)}): ${errorText}.`),
+                    { status: 422 }
+                )
 
                 const validateLine = (text: string): void => {
                     if (DISABLE_VALIDATION) {
