@@ -32,20 +32,18 @@ export function validateLsifInput(
     let line = 0
     const transform = new Transform({
         objectMode: true,
-        transform: (data, _, cb) => {
+        transform: (data: Buffer, _: string, cb: (error: Error | null, data?: string) => void): void => {
             line++
-
-            const text = `${data}`
-            if (text === '') {
+            if (data.length === 0) {
                 return cb(null, '\n')
             }
 
             try {
-                if (!validator(JSON.parse(text)) && validator.errors) {
+                if (!validator(JSON.parse(data.toString())) && validator.errors) {
                     throw new Error(validator.errors.map(e => e.message).join(', '))
                 }
             } catch (e) {
-                return cb(new Error(`Failed to validate line #${line} (${text}): ${e && e.message}`))
+                return cb(new Error(`Failed to validate line #${line} (${data}): ${e && e.message}`))
             }
 
             return cb(null, `${data}\n`)
@@ -84,21 +82,19 @@ export function processLsifInput(input: Readable, process: (element: Vertex | Ed
     let line = 0
     const transform = new Writable({
         objectMode: true,
-        write: (data, _, cb) => {
+        write: (data: Buffer, _: string, cb: (error?: Error | null) => void): void => {
             line++
-
-            const text = `${data}`
-            if (text === '') {
-                return cb(null)
+            if (data.length === 0) {
+                return cb()
             }
 
             try {
-                process(JSON.parse(text))
+                process(JSON.parse(data.toString()))
             } catch (e) {
-                return cb(new Error(`Failed to process line #${line} (${text}): ${e && e.message} `))
+                return cb(new Error(`Failed to process line #${line} (${data}): ${e && e.message} `))
             }
 
-            return cb(null)
+            return cb()
         },
     })
 
