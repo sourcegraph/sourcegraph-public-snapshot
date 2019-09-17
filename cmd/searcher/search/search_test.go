@@ -97,7 +97,7 @@ main.go:6:	fmt.Println("Hello world")
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.md"}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -109,7 +109,7 @@ abc.txt:1:w
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "\\.md", PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -119,10 +119,10 @@ README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.{MD,go}", PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: `\.(MD|go)`, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
 
@@ -283,8 +283,8 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:        "test",
-				IncludePattern: "[c-a]",
+				Pattern:         "test",
+				IncludePatterns: []string{"[c-a]"},
 			},
 		},
 
@@ -306,7 +306,7 @@ func TestSearch_badrequest(t *testing.T) {
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:                "test",
-				IncludePattern:         "**",
+				IncludePatterns:        []string{"**"},
 				PathPatternsAreRegExps: true,
 			},
 		},
@@ -351,7 +351,6 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
 		"IncludePatterns": p.IncludePatterns,
-		"IncludePattern":  []string{p.IncludePattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
 	}
 	if p.IsRegExp {

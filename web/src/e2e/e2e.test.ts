@@ -46,7 +46,7 @@ describe('e2e test suite', () => {
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
         ]
-        await driver.ensureLoggedIn()
+        await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: ExternalServiceKind.GITHUB,
@@ -567,14 +567,13 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
                     symbolNames: [
                         'createAbortError',
-                        'Object',
                         'isAbortError',
                         'throwIfCancelled',
                         'tryCancel',
                         'toAxiosCancelToken',
                         'source',
                     ],
-                    symbolTypes: ['constant', 'constant', 'constant', 'function', 'function', 'function', 'constant'],
+                    symbolTypes: ['constant', 'constant', 'function', 'function', 'function', 'constant'],
                 },
                 {
                     name: 'lists symbols in file for Java',
@@ -704,7 +703,7 @@ describe('e2e test suite', () => {
                     name: 'highlights correct line for Typescript',
                     filePath:
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
-                    index: 3,
+                    index: 2,
                     line: 17,
                 },
             ]
@@ -1134,7 +1133,7 @@ describe('e2e test suite', () => {
             expect(label).toEqual('Code')
         })
 
-        test('Clicking search results tabs updates query and URL', async () => {
+        test.skip('Clicking search results tabs updates query and URL', async () => {
             for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
                 await driver.page.click(`.e2e-search-result-tab-${searchType}`)
                 await driver.assertWindowLocation(`/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}`)

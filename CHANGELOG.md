@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - A toggle button for browser extension to quickly enable/disable the core functionality without actually enable/disable the entire extension in the browser extension manager.
+- Tabs to easily toggle between the different search result types on the search results page.
 
 ### Changed
 

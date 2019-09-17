@@ -355,22 +355,22 @@ func ctagsSymbolCharacter(s protocol.Symbol) int {
 
 func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
-	switch kind {
+	switch strings.ToLower(kind) {
 	case "file":
 		return lsp.SKFile
 	case "module":
 		return lsp.SKModule
 	case "namespace":
 		return lsp.SKNamespace
-	case "package", "packageName", "subprogspec":
+	case "package", "packagename", "subprogspec":
 		return lsp.SKPackage
 	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
-	case "method", "methodSpec":
+	case "method", "methodspec":
 		return lsp.SKMethod
 	case "property":
 		return lsp.SKProperty
-	case "field", "member", "anonMember":
+	case "field", "member", "anonmember", "recordfield":
 		return lsp.SKField
 	case "constructor":
 		return lsp.SKConstructor
@@ -378,9 +378,9 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKEnum
 	case "interface":
 		return lsp.SKInterface
-	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonMethod":
+	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonmethod":
 		return lsp.SKFunction
-	case "variable", "var", "functionVar", "define", "alias":
+	case "variable", "var", "functionvar", "define", "alias", "val":
 		return lsp.SKVariable
 	case "constant", "const":
 		return lsp.SKConstant
@@ -398,7 +398,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKKey
 	case "null":
 		return lsp.SKNull
-	case "enum member", "enumConstant":
+	case "enum member", "enumconstant":
 		return lsp.SKEnumMember
 	case "struct":
 		return lsp.SKStruct

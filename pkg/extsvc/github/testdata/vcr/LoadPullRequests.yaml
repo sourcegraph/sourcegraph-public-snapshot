@@ -2,16 +2,17 @@
 version: 1
 interactions:
 - request:
-    body: '{"query":"\n\t\tfragment actor on Actor { avatarUrl, login, url }\n\t\tquery
-      {\n\t\t  repository(owner: \"whoisthis\", name: \"sourcegraph\") {\n\t\t\tpullRequest(number:
-      5550) {\n\t\t\t  id, title, body, state, url, number, createdAt, updatedAt\n\t\t\t  author
-      { ...actor }\n\t\t\t  participants(first: 100) { nodes { ...actor } }\n\t\t\t  reviews(first:
-      100) {\n\t\t\t\tnodes {\n\t\t\t\t  body, state, url, createdAt, submittedAt\n\t\t\t\t  author
-      { ...actor }\n\t\t\t\t  commit {\n\t\t\t\t\toid, message, committedDate, pushedDate,
-      url\n\t\t\t\t\tcommitter {\n\t\t\t\t\t  avatarUrl, email, name\n\t\t\t\t\t  user
-      { ...actor }\n\t\t\t\t\t}\n\t\t\t\t\tstatus {\n\t\t\t\t\t  state\n\t\t\t\t\t  contexts
-      {\n\t\t\t\t\t\tavatarUrl, context, description, state, targetUrl, createdAt\n\t\t\t\t\t\tcreator
-      { ...actor }\n\t\t\t\t\t  }\n\t\t\t\t\t}\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t  }\n\t\t\t}\n\t\t  }\n\t\t}\n\t","variables":null}'
+    body: '{"query":"\n\t\tfragment actor on Actor { avatarUrl, login, url }\n\t\tfragment
+      pr on PullRequest {\n\t\t  id, title, body, state, url, number, createdAt, updatedAt\n\t\t  author
+      { ...actor }\n\t\t  participants(first: 100) { nodes { ...actor } }\n\t\t  reviews(first:
+      100) {\n\t\t\tnodes {\n\t\t\t  body, state, url, createdAt, submittedAt\n\t\t\t  author
+      { ...actor }\n\t\t\t  commit {\n\t\t\t\toid, message, committedDate, pushedDate,
+      url\n\t\t\t\tcommitter {\n\t\t\t\t  avatarUrl, email, name\n\t\t\t\t  user {
+      ...actor }\n\t\t\t\t}\n\t\t\t\tstatus {\n\t\t\t\t  state\n\t\t\t\t  contexts
+      {\n\t\t\t\t\tavatarUrl, context, description, state, targetUrl, createdAt\n\t\t\t\t\tcreator
+      { ...actor }\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t  }\n\t\t\t}\n\t\t  }\n\t\t}\n\t\tquery
+      {\n\twhoisthis_sourcegraph: repository(owner: \"whoisthis\", name: \"sourcegraph\")
+      {\nwhoisthis_sourcegraph_5550: pullRequest(number: 5550) { ...pr }\n}\n}","variables":null}'
     form: {}
     headers:
       Content-Type:
@@ -19,7 +20,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repository":null},"errors":[{"type":"NOT_FOUND","path":["repository"],"locations":[{"line":4,"column":5}],"message":"Could
+    body: '{"data":{"whoisthis_sourcegraph":null},"errors":[{"type":"NOT_FOUND","path":["whoisthis_sourcegraph"],"locations":[{"line":29,"column":2}],"message":"Could
       not resolve to a Repository with the name ''sourcegraph''."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -35,7 +36,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Sat, 14 Sep 2019 16:08:34 GMT
+      - Mon, 16 Sep 2019 18:20:02 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -55,31 +56,32 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 05A3:1E672:271CC30:2F98303:5D7D1081
+      - 085D:354F4:2D7E331:375B3D7:5D7FD252
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4990"
+      - "4999"
       X-Ratelimit-Reset:
-      - "1568480717"
+      - "1568661602"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\n\t\tfragment actor on Actor { avatarUrl, login, url }\n\t\tquery
-      {\n\t\t  repository(owner: \"sourcegraph\", name: \"sourcegraph\") {\n\t\t\tpullRequest(number:
-      0) {\n\t\t\t  id, title, body, state, url, number, createdAt, updatedAt\n\t\t\t  author
-      { ...actor }\n\t\t\t  participants(first: 100) { nodes { ...actor } }\n\t\t\t  reviews(first:
-      100) {\n\t\t\t\tnodes {\n\t\t\t\t  body, state, url, createdAt, submittedAt\n\t\t\t\t  author
-      { ...actor }\n\t\t\t\t  commit {\n\t\t\t\t\toid, message, committedDate, pushedDate,
-      url\n\t\t\t\t\tcommitter {\n\t\t\t\t\t  avatarUrl, email, name\n\t\t\t\t\t  user
-      { ...actor }\n\t\t\t\t\t}\n\t\t\t\t\tstatus {\n\t\t\t\t\t  state\n\t\t\t\t\t  contexts
-      {\n\t\t\t\t\t\tavatarUrl, context, description, state, targetUrl, createdAt\n\t\t\t\t\t\tcreator
-      { ...actor }\n\t\t\t\t\t  }\n\t\t\t\t\t}\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t  }\n\t\t\t}\n\t\t  }\n\t\t}\n\t","variables":null}'
+    body: '{"query":"\n\t\tfragment actor on Actor { avatarUrl, login, url }\n\t\tfragment
+      pr on PullRequest {\n\t\t  id, title, body, state, url, number, createdAt, updatedAt\n\t\t  author
+      { ...actor }\n\t\t  participants(first: 100) { nodes { ...actor } }\n\t\t  reviews(first:
+      100) {\n\t\t\tnodes {\n\t\t\t  body, state, url, createdAt, submittedAt\n\t\t\t  author
+      { ...actor }\n\t\t\t  commit {\n\t\t\t\toid, message, committedDate, pushedDate,
+      url\n\t\t\t\tcommitter {\n\t\t\t\t  avatarUrl, email, name\n\t\t\t\t  user {
+      ...actor }\n\t\t\t\t}\n\t\t\t\tstatus {\n\t\t\t\t  state\n\t\t\t\t  contexts
+      {\n\t\t\t\t\tavatarUrl, context, description, state, targetUrl, createdAt\n\t\t\t\t\tcreator
+      { ...actor }\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t  }\n\t\t\t}\n\t\t  }\n\t\t}\n\t\tquery
+      {\n\tsourcegraph_sourcegraph: repository(owner: \"sourcegraph\", name: \"sourcegraph\")
+      {\nsourcegraph_sourcegraph_0: pullRequest(number: 0) { ...pr }\n}\n}","variables":null}'
     form: {}
     headers:
       Content-Type:
@@ -87,7 +89,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"locations":[{"line":5,"column":4}],"message":"Could
+    body: '{"data":{"sourcegraph_sourcegraph":{"sourcegraph_sourcegraph_0":null}},"errors":[{"type":"NOT_FOUND","path":["sourcegraph_sourcegraph","sourcegraph_sourcegraph_0"],"locations":[{"line":30,"column":1}],"message":"Could
       not resolve to a PullRequest with the number of 0."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -103,7 +105,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Sat, 14 Sep 2019 16:08:34 GMT
+      - Mon, 16 Sep 2019 18:20:02 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -123,31 +125,34 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 05A3:1E672:271CC50:2F9832C:5D7D1082
+      - 085D:354F4:2D7E35C:375B40A:5D7FD252
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4989"
+      - "4998"
       X-Ratelimit-Reset:
-      - "1568480717"
+      - "1568661602"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\n\t\tfragment actor on Actor { avatarUrl, login, url }\n\t\tquery
-      {\n\t\t  repository(owner: \"sourcegraph\", name: \"sourcegraph\") {\n\t\t\tpullRequest(number:
-      5550) {\n\t\t\t  id, title, body, state, url, number, createdAt, updatedAt\n\t\t\t  author
-      { ...actor }\n\t\t\t  participants(first: 100) { nodes { ...actor } }\n\t\t\t  reviews(first:
-      100) {\n\t\t\t\tnodes {\n\t\t\t\t  body, state, url, createdAt, submittedAt\n\t\t\t\t  author
-      { ...actor }\n\t\t\t\t  commit {\n\t\t\t\t\toid, message, committedDate, pushedDate,
-      url\n\t\t\t\t\tcommitter {\n\t\t\t\t\t  avatarUrl, email, name\n\t\t\t\t\t  user
-      { ...actor }\n\t\t\t\t\t}\n\t\t\t\t\tstatus {\n\t\t\t\t\t  state\n\t\t\t\t\t  contexts
-      {\n\t\t\t\t\t\tavatarUrl, context, description, state, targetUrl, createdAt\n\t\t\t\t\t\tcreator
-      { ...actor }\n\t\t\t\t\t  }\n\t\t\t\t\t}\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t  }\n\t\t\t}\n\t\t  }\n\t\t}\n\t","variables":null}'
+    body: '{"query":"\n\t\tfragment actor on Actor { avatarUrl, login, url }\n\t\tfragment
+      pr on PullRequest {\n\t\t  id, title, body, state, url, number, createdAt, updatedAt\n\t\t  author
+      { ...actor }\n\t\t  participants(first: 100) { nodes { ...actor } }\n\t\t  reviews(first:
+      100) {\n\t\t\tnodes {\n\t\t\t  body, state, url, createdAt, submittedAt\n\t\t\t  author
+      { ...actor }\n\t\t\t  commit {\n\t\t\t\toid, message, committedDate, pushedDate,
+      url\n\t\t\t\tcommitter {\n\t\t\t\t  avatarUrl, email, name\n\t\t\t\t  user {
+      ...actor }\n\t\t\t\t}\n\t\t\t\tstatus {\n\t\t\t\t  state\n\t\t\t\t  contexts
+      {\n\t\t\t\t\tavatarUrl, context, description, state, targetUrl, createdAt\n\t\t\t\t\tcreator
+      { ...actor }\n\t\t\t\t  }\n\t\t\t\t}\n\t\t\t  }\n\t\t\t}\n\t\t  }\n\t\t}\n\t\tquery
+      {\n\tsourcegraph_sourcegraph: repository(owner: \"sourcegraph\", name: \"sourcegraph\")
+      {\nsourcegraph_sourcegraph_5550: pullRequest(number: 5550) { ...pr }\nsourcegraph_sourcegraph_5551:
+      pullRequest(number: 5551) { ...pr }\n}\ntsenart_vegeta: repository(owner: \"tsenart\",
+      name: \"vegeta\") {\ntsenart_vegeta_50: pullRequest(number: 50) { ...pr }\n}\n}","variables":null}'
     form: {}
     headers:
       Content-Type:
@@ -155,7 +160,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"repository":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
+    body: '{"data":{"sourcegraph_sourcegraph":{"sourcegraph_sourcegraph_5550":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
       disableExtension flag for native integrations","body":"This flag should only
       be observed in the browser extension. Calling `observeStorageKey()` breaks native
       integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z","author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars3.githubusercontent.com/u/2946214?v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"reviews":{"nodes":[{"body":"Thanks
@@ -172,7 +177,30 @@ interactions:
       review automatically approved, no visual changes found.","state":"SUCCESS","targetUrl":"https://percy.io/Sourcegraph/Sourcegraph/builds/2575964?utm_campaign=Sourcegraph&utm_content=Sourcegraph&utm_source=github_status_public","createdAt":"2019-09-12T10:21:17Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/in/398?v=4","login":"percy","url":"https://github.com/apps/percy"}}]}}},{"body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287892741","createdAt":"2019-09-13T09:01:10Z","submittedAt":"2019-09-13T09:01:10Z","author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"},"commit":{"oid":"111be496f5b94e92842adf4b344f3d8ebecb9c0a","message":"No
       need to explicitly remove the subscription","committedDate":"2019-09-13T09:00:49Z","pushedDate":"2019-09-13T09:00:57Z","url":"https://github.com/sourcegraph/sourcegraph/commit/111be496f5b94e92842adf4b344f3d8ebecb9c0a","committer":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
       Guychard","user":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1741180?v=4","login":"lguychard","url":"https://github.com/lguychard"}},"status":{"state":"FAILURE","contexts":[{"avatarUrl":"https://avatars1.githubusercontent.com/oa/46194?s=40&u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31&v=4","context":"buildkite/sourcegraph","description":"Build
-      #42779 failed (10 minutes, 9 seconds)","state":"FAILURE","targetUrl":"https://buildkite.com/sourcegraph/sourcegraph/builds/42779","createdAt":"2019-09-13T09:11:12Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}}]}}}]}}}}}'
+      #42779 failed (10 minutes, 9 seconds)","state":"FAILURE","targetUrl":"https://buildkite.com/sourcegraph/sourcegraph/builds/42779","createdAt":"2019-09-13T09:11:12Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}}]}}}]}},"sourcegraph_sourcegraph_5551":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODMzMTA3","title":"graphql:
+      Remove init() and inject parsed Schema where needed","body":"After running into
+      nil panics because the schema was parsed _before_\r\n`dbconn.Global` was initialized,
+      this changes the code so that we can\r\ninject a database connection into the
+      schema constructor.\r\n\r\nPreviously all stores in the `db` package used `dbconn.Global`
+      and there\r\nwas an implicit order of the calls (first the `dbconn.Global` was\r\ninitialized,
+      then the stores were called, ...).\r\n\r\nThis makes the initialization order
+      explicit by changing the `Main()`\r\nfunction in the `cli` package to first
+      set up a database connection and\r\nthen parse the schema and then set up the
+      handlers.\r\n","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5551","number":5551,"createdAt":"2019-09-12T10:15:39Z","updatedAt":"2019-09-12T10:41:41Z","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars2.githubusercontent.com/u/67471?v=4","login":"tsenart","url":"https://github.com/tsenart"}]},"reviews":{"nodes":[{"body":"","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/5551#pullrequestreview-287333738","createdAt":"2019-09-12T10:28:39Z","submittedAt":"2019-09-12T10:28:39Z","author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/67471?v=4","login":"tsenart","url":"https://github.com/tsenart"},"commit":{"oid":"b453eefd560dbedcc7bcead53e21be50b483998c","message":"graphql:
+      Remove init() and inject parsed Schema where needed\n\nAfter running into nil
+      panics because the schema was parsed _before_\n`dbconn.Global` was initialized,
+      this changes the code so that we can\ninject a database connection into the
+      schema constructor.\n\nPreviously all stores in the `db` package used `dbconn.Global`
+      and there\nwas an implicit order of the calls (first the `dbconn.Global` was\ninitialized,
+      then the stores were called, ...).\n\nThis makes the initialization order explicit
+      by changing the `Main()`\nfunction in the `cli` package to first set up a database
+      connection and\nthen parse the schema and then set up the handlers.","committedDate":"2019-09-12T10:08:42Z","pushedDate":"2019-09-12T10:14:27Z","url":"https://github.com/sourcegraph/sourcegraph/commit/b453eefd560dbedcc7bcead53e21be50b483998c","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","email":"mrnugget@gmail.com","name":"Thorsten
+      Ball","user":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}},"status":{"state":"SUCCESS","contexts":[{"avatarUrl":"https://avatars1.githubusercontent.com/oa/46194?s=40&u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31&v=4","context":"buildkite/sourcegraph","description":"Build
+      #42689 passed (15 minutes, 7 seconds)","state":"SUCCESS","targetUrl":"https://buildkite.com/sourcegraph/sourcegraph/builds/42689","createdAt":"2019-09-12T10:29:40Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/u/10532611?v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}},{"avatarUrl":"https://avatars2.githubusercontent.com/in/398?s=40&v=4","context":"percy/Sourcegraph","description":"Visual
+      review automatically approved, no visual changes found.","state":"SUCCESS","targetUrl":"https://percy.io/Sourcegraph/Sourcegraph/builds/2575995?utm_campaign=Sourcegraph&utm_content=Sourcegraph&utm_source=github_status_public","createdAt":"2019-09-12T10:29:34Z","creator":{"avatarUrl":"https://avatars0.githubusercontent.com/in/398?v=4","login":"percy","url":"https://github.com/apps/percy"}}]}}}]}}},"tsenart_vegeta":{"tsenart_vegeta_50":{"id":"MDExOlB1bGxSZXF1ZXN0MTMxMjUxNjg=","title":"Statistics
+      for response-headers, added headers-option to report","body":"With the header-option,
+      it is possible to create statistics of 1 or more response-headers.\n\nI used
+      it, to analyze how our load-balancing performs under heavy load.\n","state":"CLOSED","url":"https://github.com/tsenart/vegeta/pull/50","number":50,"createdAt":"2014-03-03T18:08:45Z","updatedAt":"2014-03-06T11:11:42Z","author":{"avatarUrl":"https://avatars2.githubusercontent.com/u/214626?v=4","login":"hpbuniat","url":"https://github.com/hpbuniat"},"participants":{"nodes":[{"avatarUrl":"https://avatars2.githubusercontent.com/u/214626?v=4","login":"hpbuniat","url":"https://github.com/hpbuniat"},{"avatarUrl":"https://avatars2.githubusercontent.com/u/67471?v=4","login":"tsenart","url":"https://github.com/tsenart"}]},"reviews":{"nodes":[]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -187,7 +215,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Sat, 14 Sep 2019 16:08:34 GMT
+      - Mon, 16 Sep 2019 18:20:03 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -207,15 +235,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 05A3:1E672:271CC80:2F98363:5D7D1082
+      - 085D:354F4:2D7E37B:375B440:5D7FD252
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4988"
+      - "4997"
       X-Ratelimit-Reset:
-      - "1568480717"
+      - "1568661602"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
