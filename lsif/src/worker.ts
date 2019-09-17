@@ -16,14 +16,16 @@ import { JobsHash, Worker } from 'node-resque'
 const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187)
 
 /**
- * The host running the redis instance containing work queues. Defaults to localhost.
+ * The host and port running the redis instance containing work queues.
+ *
+ * Set addresses. Prefer in this order:
+ *   - Specific envvar REDIS_STORE_ENDPOINT
+ *   - Fallback envvar REDIS_ENDPOINT
+ *   - redis-store:6379
+ *
+ *  Additionally keep this logic in sync with pkg/redispool/redispool.go and cmd/server/redis.go
  */
-const REDIS_HOST = process.env.REDIS_HOST || 'localhost'
-
-/**
- * The port of the redis instance containing work queues. Defaults to 6379.
- */
-const REDIS_PORT = readEnvInt('REDIS_PORT', 6379)
+const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_ENDPOINT || 'redis-store:6379'
 
 /**
  * The number of SQLite connections that can be opened at once. This
@@ -108,9 +110,11 @@ function createConvertJob(backend: Backend): (repository: string, commit: string
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
 async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+    const [host, port] = REDIS_ENDPOINT.split(':', 2)
+
     const connectionOptions = {
-        host: REDIS_HOST,
-        port: REDIS_PORT,
+        host: host,
+        port: parseInt(port),
         namespace: 'lsif',
     }
 
