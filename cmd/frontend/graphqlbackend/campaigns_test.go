@@ -313,12 +313,11 @@ func TestCampaigns(t *testing.T) {
 			if c.ID == "" {
 				t.Fatal("Changeset ID is empty")
 			}
+			c.ID = ""
+		}
 
-			have := c
-			want[i].ID = have.ID
-			if !reflect.DeepEqual(have, want[i]) {
-				t.Fatal(cmp.Diff(have, want[i]))
-			}
+		if !reflect.DeepEqual(have, want) {
+			t.Fatal(cmp.Diff(have, want))
 		}
 	}
 
@@ -341,14 +340,14 @@ func TestCampaigns(t *testing.T) {
 		Changesets  ChangesetConnection
 	}
 
-	var addChangesetResult struct{ Campaign CampaignWithChangesets }
+	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
 
-	input = map[string]interface{}{
-		"changeset": result.Changesets[0].ID,
-		"campaign":  campaigns.Admin.ID,
+	changesetIDs := make([]string, 0, len(result.Changesets))
+	for _, c := range result.Changesets {
+		changesetIDs = append(changesetIDs, c.ID)
 	}
 
-	mustExec(ctx, t, s, input, &addChangesetResult, `
+	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 
@@ -373,30 +372,47 @@ func TestCampaigns(t *testing.T) {
 				pageInfo { hasNextPage }
 			}
 		}
-		mutation($changeset: ID!, $campaign: ID!) {
-			campaign: addChangesetToCampaign(changeset: $changeset, campaign: $campaign) {
+		mutation() {
+			campaign: addChangesetsToCampaign(campaign: %q, changesets: %s) {
 				...c
 			}
 		}
-	`)
+	`, campaigns.Admin.ID, marshalJSON(t, changesetIDs)))
 
-	if addChangesetResult.Campaign.Changesets.TotalCount != 1 {
-		t.Fatalf(
-			"campaign changesets totalcount is wrong. got=%d",
-			addChangesetResult.Campaign.Changesets.TotalCount,
-		)
+	{
+		have := addChangesetsResult.Campaign.Changesets.TotalCount
+		want := len(changesetIDs)
+
+		if have != want {
+			t.Fatalf(
+				"want campaign changesets totalcount %d, have=%d",
+				want, have,
+			)
+		}
 	}
 
-	wantChangesetID := result.Changesets[0].ID
-	haveChangesetID := addChangesetResult.Campaign.Changesets.Nodes[0].ID
-	if haveChangesetID != wantChangesetID {
-		t.Errorf("wrong changesets added to campaign. want=%s, have=%s", wantChangesetID, haveChangesetID)
+	{
+		var have []string
+		want := changesetIDs
+
+		for _, n := range addChangesetsResult.Campaign.Changesets.Nodes {
+			have = append(have, n.ID)
+		}
+
+		if !reflect.DeepEqual(have, want) {
+			t.Errorf("wrong changesets added to campaign. want=%v, have=%v", want, have)
+		}
 	}
 
-	wantCampaignID := campaigns.Admin.ID
-	haveCampaignID := addChangesetResult.Campaign.Changesets.Nodes[0].Campaigns.Nodes[0].ID
-	if haveCampaignID != wantCampaignID {
-		t.Errorf("wrong campaign added to changeset. want=%s, have=%s", wantCampaignID, haveCampaignID)
+	{
+		have := map[string]bool{}
+		for _, cs := range addChangesetsResult.Campaign.Changesets.Nodes {
+			have[cs.Campaigns.Nodes[0].ID] = true
+		}
+
+		if !have[campaigns.Admin.ID] || len(have) != 1 {
+			t.Errorf("wrong campaign added to changeset. want=%s, have=%s", campaigns.Admin.ID, have)
+		}
 	}
 }
 

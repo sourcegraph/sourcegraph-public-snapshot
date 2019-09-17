@@ -29,8 +29,8 @@ scalar JSONValue
 type Mutation {
     # Creates a list of Changesets of a given repository in a code host (e.g. pull request on GitHub)
     createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
-    # Adds a Changeset to a Campaign.
-    addChangesetToCampaign(changeset: ID!, campaign: ID!): Campaign!
+    # Adds a list of Changesets to a Campaign.
+    addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.

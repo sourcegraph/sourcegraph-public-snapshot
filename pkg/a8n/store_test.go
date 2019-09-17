@@ -371,6 +371,23 @@ func TestStore(t *testing.T) {
 					}
 				}
 			}
+
+			{
+				ids := make([]int64, len(changesets))
+				for i := range changesets {
+					ids[i] = changesets[i].ID
+				}
+
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: ids})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := changesets
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
 		})
 
 		t.Run("Get", func(t *testing.T) {

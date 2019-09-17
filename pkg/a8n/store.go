@@ -293,6 +293,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 type ListChangesetsOpts struct {
 	Limit      int
 	CampaignID int64
+	IDs        []int64
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -345,6 +346,16 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
+	}
+
+	if len(opts.IDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.IDs))
+		for _, id := range opts.IDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	if len(preds) == 0 {
