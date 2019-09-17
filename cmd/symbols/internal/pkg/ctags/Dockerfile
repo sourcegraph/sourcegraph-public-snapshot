@@ -1,6 +1,6 @@
 FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
 
-ENV CTAGS_VERSION=1a94658c2cb47304d0e9811d49e0a5f48bdb3a0a
+ENV CTAGS_VERSION=03f933a96d3ef87adbf9d167462d45ce69577edb
 
 # hadolint ignore=DL3003,DL3018,DL4006
 RUN apk --no-cache add --virtual build-deps curl jansson-dev libseccomp-dev linux-headers autoconf pkgconfig make automake gcc g++ binutils && \
