@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig, intro, Config } from '../../../shared/src/e2e/config'
+import { getConfig, Config } from '../../../shared/src/e2e/config'
 import { regressionTestInit, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
