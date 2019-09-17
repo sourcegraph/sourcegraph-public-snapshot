@@ -2026,7 +2026,7 @@ invariant@^2.2.4:
   dependencies:
     loose-envify "^1.0.0"
 
-ioredis@^4.14.0:
+ioredis@^4.14.0, ioredis@^4.14.1:
   version "4.14.1"
   resolved "https://registry.npmjs.org/ioredis/-/ioredis-4.14.1.tgz#b73ded95fcf220f106d33125a92ef6213aa31318"
   integrity sha512-94W+X//GHM+1GJvDk6JPc+8qlM7Dul+9K+lg3/aHixPN7ZGkW6qlvX0DG6At9hWtH2v3B32myfZqWoANUJYGJA==
@@ -3148,12 +3148,12 @@ node-pre-gyp@^0.12.0:
     semver "^5.3.0"
     tar "^4"
 
-node-resque@^5.5.6:
-  version "5.5.6"
-  resolved "https://registry.npmjs.org/node-resque/-/node-resque-5.5.6.tgz#fc6f1cc9f30028ebaf21c9f7775dc6fc4d7830fc"
-  integrity sha512-2hjFRXE6bh9i+F88yHciUsU21Xv9rjGSGeaZmpNwzQrMnlZ5a61M4NbFqr6hB1P3/SmFOeGFg23+6dk4SlB+rg==
+node-resque@^5.5.7:
+  version "5.5.7"
+  resolved "https://registry.npmjs.org/node-resque/-/node-resque-5.5.7.tgz#9d3f389b75aec35db54da8a0cbce3703c3668251"
+  integrity sha512-7WcPqQigfVhz9k9LEluRBuyePWtpBIl3/NI6qHO+juWL1voA09MJyWBSZcsi+uxb+FbKWmzBz6+92XARmEz9zA==
   dependencies:
-    ioredis "^4.14.0"
+    ioredis "^4.14.1"
 
 nopt@^4.0.1:
   version "4.0.1"
