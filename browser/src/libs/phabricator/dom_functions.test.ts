@@ -1,41 +1,45 @@
 import { startCase } from 'lodash'
-import { Omit } from 'utility-types'
 import { DOMFunctionsTest, testDOMFunctions } from '../code_intelligence/code_intelligence_test_utils'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 
-type PhabricatorPage = 'commit' | 'differential'
+type PhabricatorPage = 'commit' | 'differential' | 'differential-2019.21.0-r25'
 
-interface PhabricatorCodeViewFixture
-    extends Omit<DOMFunctionsTest, 'htmlFixturePath' | 'firstCharacterIsDiffIndicator'> {}
+interface PhabricatorCodeViewFixture extends Pick<DOMFunctionsTest, 'lineCases'> {}
 
 describe('Phabricator DOM functions', () => {
     describe('diffDOMFunctions', () => {
-        const DIFF_FIXTURES: Record<PhabricatorPage, PhabricatorCodeViewFixture> = {
-            commit: {
+        const DIFF_FIXTURES: Record<PhabricatorPage, (view: 'split' | 'unified') => PhabricatorCodeViewFixture> = {
+            commit: () => ({
                 lineCases: [
                     { diffPart: 'head', lineNumber: 3 }, // not changed
                     { diffPart: 'head', lineNumber: 7 }, // added
                     { diffPart: 'base', lineNumber: 10 }, // removed
                 ],
-            },
-            differential: {
+            }),
+            differential: () => ({
                 lineCases: [
                     { diffPart: 'head', lineNumber: 9 }, // not changed
                     { diffPart: 'head', lineNumber: 10 }, // added
                     // TODO test case for removed line
                 ],
-            },
+            }),
+            'differential-2019.21.0-r25': view => ({
+                lineCases: [
+                    { diffPart: 'head', lineNumber: 29 }, // not changed
+                    { diffPart: 'head', lineNumber: 64, firstCharacterIsDiffIndicator: view === 'unified' }, // added
+                    { diffPart: 'base', lineNumber: 34, firstCharacterIsDiffIndicator: view === 'unified' }, // removed
+                ],
+            }),
         }
         for (const [page, testCase] of Object.entries(DIFF_FIXTURES)) {
             describe(`${startCase(page)} Page`, () => {
-                for (const view of ['split', 'unified']) {
+                for (const view of ['split', 'unified'] as ('split' | 'unified')[]) {
                     const htmlFixturePath = `${__dirname}/__fixtures__/code-views/${page}/${view}.html`
                     describe(`${startCase(view)} view`, () => {
                         // https://phabricator.sgdev.org/D3#diff-7ddfb3e0
                         testDOMFunctions(diffDomFunctions, {
-                            ...testCase,
                             htmlFixturePath,
-                            firstCharacterIsDiffIndicator: false,
+                            ...testCase(view),
                         })
                     })
                 }
@@ -49,7 +53,6 @@ describe('Phabricator DOM functions', () => {
         testDOMFunctions(diffusionDOMFns, {
             htmlFixturePath,
             lineCases: [{ lineNumber: 1 }, { lineNumber: 10 }],
-            firstCharacterIsDiffIndicator: false,
         })
     })
 })

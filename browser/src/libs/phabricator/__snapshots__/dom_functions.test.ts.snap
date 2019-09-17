@@ -84,6 +84,90 @@ Object {
 }
 `;
 
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Split view line number 29 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Split view line number 29 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Split view line number 34 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.old.old-full.annotated:nth-child(2)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Split view line number 34 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+Object {
+  "content": "if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.old.old-full.annotated:nth-child(2)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Split view line number 64 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.new.new-full.annotated:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Split view line number 64 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+Object {
+  "content": "func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.new.new-full.annotated:nth-child(5)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Unified view line number 29 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.right.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Unified view line number 29 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+Object {
+  "content": "resp := &Response{ID: req.ID}",
+  "selector": "TR:nth-child(5) > TD.right.annotated",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Unified view line number 34 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "-     if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.left.old.old-full:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Unified view line number 34 in base diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+Object {
+  "content": "-     if e, ok := err.(*Error); ok {",
+  "selector": "TR:nth-child(10) > TD.left.old.old-full:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Unified view line number 64 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "+ func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.right.new.new-full:nth-child(4)",
+}
+`;
+
+exports[`Phabricator DOM functions diffDOMFunctions Differential 2019 21 0 R 25 Page Unified view line number 64 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+Object {
+  "content": "+ func randoasfasfafsm_1(size int) error {",
+  "selector": "TR:nth-child(34) > TD.right.new.new-full:nth-child(4)",
+}
+`;
+
 exports[`Phabricator DOM functions diffDOMFunctions Differential Page Split view line number 9 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "​    Println(\\"hello world\\")",
