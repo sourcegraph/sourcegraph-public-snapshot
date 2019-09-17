@@ -26,11 +26,10 @@ func TestStore(t *testing.T) {
 	tx, done := dbtest.NewTx(t, d)
 	defer done()
 
-	s := NewStore(tx)
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	s.now = func() time.Time {
+	s := NewStoreWithClock(tx, func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
-	}
+	})
 
 	ctx := context.Background()
 
@@ -405,6 +404,7 @@ func TestStore(t *testing.T) {
 			want := make([]*Changeset, 0, len(changesets))
 			have := make([]*Changeset, 0, len(changesets))
 
+			now = now.Add(time.Second)
 			for _, c := range changesets {
 				c.Metadata = []byte(`{"updated": true}`)
 				c.ExternalServiceType = "gitlab"
@@ -413,9 +413,9 @@ func TestStore(t *testing.T) {
 					c.RepoID++
 				}
 
-				now = now.Add(time.Second)
-				c.UpdatedAt = now
 				have = append(have, c.Clone())
+
+				c.UpdatedAt = now
 				want = append(want, c)
 			}
 
