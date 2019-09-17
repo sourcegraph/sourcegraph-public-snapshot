@@ -108,7 +108,8 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
  * @param commit The repository commit.
  */
 export function createDatabaseFilename(storageRoot: string, repository: string, commit: string): string {
-    return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+    // return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+    return path.join(storageRoot, `${encodeURIComponent(repository)}.lsif.db`)
 }
 
 /**
