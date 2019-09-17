@@ -1,5 +1,4 @@
 import * as definitionsSchema from './lsif.schema.json'
-import * as es from 'event-stream'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as zlib from 'mz/zlib'
@@ -13,6 +12,7 @@ import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend, ERRNOLSIFDATA } from './backend'
 import { createDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { LineStream } from 'byline'
 import { Queue, Scheduler } from 'node-resque'
 import { wrap } from 'async-middleware'
 import {
@@ -20,6 +20,7 @@ import {
     DOCUMENT_CACHE_CAPACITY_GAUGE,
     RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
 } from './metrics'
+import { Transform } from 'stream'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -129,32 +130,37 @@ async function main(): Promise<void> {
                     try {
                         data = JSON.parse(text)
                     } catch (e) {
-                        throwValidationError(text, 'Invalid JSON')
+                        throw createValidationError(text, 'Invalid JSON')
                     }
 
                     if (!validator(data)) {
-                        throwValidationError(text, 'Does not match a known vertex or edge shape')
+                        throw createValidationError(text, 'Does not match a known vertex or edge shape')
                     }
 
                     line++
                 }
 
+                const transform = new Transform({
+                    objectMode: true,
+                    transform: (line, _, done) => {
+                        validateLine(line)
+                        done(null, `${line}\n`)
+                    },
+                })
+
                 await new Promise((resolve, reject) => {
-                    req.pipe(zlib.createGunzip()) // unzip input
-                        .pipe(es.split()) // split into lines
-                        .pipe(
-                            // Must check each line synchronously
-                            // eslint-disable-next-line no-sync
-                            es.mapSync((text: string) => {
-                                validateLine(text) // validate each line
-                                return text
-                            })
-                        )
-                        .on('error', reject) // catch validation error
-                        .pipe(es.join('\n')) // join back into text
-                        .pipe(zlib.createGzip()) // re-zip input
-                        .pipe(writeStream) // write to temp file
-                        .on('finish', resolve) // unblock promise when done
+                    const lineStream = new LineStream()
+                    req.pipe(zlib.createGunzip())
+                        .on('error', reject)
+                        .pipe(lineStream)
+
+                    lineStream
+                        .pipe(transform)
+                        .on('error', reject)
+                        .pipe(zlib.createGzip())
+                        .pipe(writeStream)
+                        .on('error', reject)
+                        .on('finish', resolve)
                 })
 
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
