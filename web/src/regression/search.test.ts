@@ -257,5 +257,33 @@ describe('Search regression test suite', () => {
                 throw new Error('found Go results when filtering for JavaScript')
             }
         })
+        test('Indexed multiline search, many results', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/search?q=repo:%5Egithub%5C.com/facebook/react%24+componentDidMount%5C%28%5C%29+%7B%5Cn%5Cs*this'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Non-indexed multiline search, many results', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/search?q=repo:%5Egithub%5C.com/facebook/react%24+componentDidMount%5C%28%5C%29+%7B%5Cn%5Cs*this+index:no'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Indexed multiline search, 0 results', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/search?q=repo:%5Egithub%5C.com/facebook/react%24+componentDidMount%5C%28%5C%29+%7B%5Cn%5Cs*this%5C.props%5C.sourcegraph%5C%28'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
+        test('Non-indexed multiline search, 0 results', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/search?q=repo:%5Egithub%5C.com/facebook/react%24+componentDidMount%5C%28%5C%29+%7B%5Cn%5Cs*this%5C.props%5C.sourcegraph%5C%28+index:no'
+            )
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
     })
 })
