@@ -41,6 +41,9 @@ export const useCampaignByID = (campaign: GQL.ID): undefined | GQL.ICampaign | n
                                     repository {
                                         name
                                     }
+                                    externalURL {
+                                        url
+                                    }
                                     createdAt
                                 }
                             }
