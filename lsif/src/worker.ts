@@ -1,6 +1,5 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
@@ -98,7 +97,7 @@ async function main(): Promise<void> {
 function createConvertJob(backend: Backend): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
         console.log(`Converting ${repository}@${commit}`)
-        const input = fs.createReadStream(filename).pipe(zlib.createGunzip())
+        const input = fs.createReadStream(filename)
         await backend.insertDump(input, repository, commit)
         await fs.unlink(filename)
     }
