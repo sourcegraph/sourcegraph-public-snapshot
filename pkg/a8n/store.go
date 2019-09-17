@@ -78,71 +78,122 @@ func (s *Store) Done(errs ...*error) {
 // instantiated with.
 func (s *Store) DB() dbutil.DB { return s.db }
 
-// CreateChangeset creates the given Changeset.
-func (s *Store) CreateChangeset(ctx context.Context, t *Changeset) error {
-	q, err := s.createChangesetQuery(t)
+// CreateChangesets creates the given Changesets.
+func (s *Store) CreateChangesets(ctx context.Context, cs ...*Changeset) error {
+	q, err := s.createChangesetsQuery(cs)
 	if err != nil {
 		return err
 	}
 
+	i := -1
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanChangeset(t, sc)
-		return int64(t.ID), 1, err
+		i++
+		err = scanChangeset(cs[i], sc)
+		return int64(cs[i].ID), 1, err
 	})
 }
 
-var createChangesetQueryFmtstr = `
--- source: pkg/a8n/store.go:CreateChangeset
-INSERT INTO changesets (
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
+const changesetBatchQueryPrefix = `
+WITH batch AS (
+  SELECT * FROM ROWS FROM (
+  json_to_recordset(%s)
+  AS (
+      id                    bigint,
+      repo_id               integer,
+      created_at            timestamptz,
+      updated_at            timestamptz,
+      metadata              jsonb,
+      campaign_ids          jsonb,
+      external_id           text,
+      external_service_type text
+    )
+  )
+  WITH ORDINALITY
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s)
-RETURNING
-	id,
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
 `
 
-func (s *Store) createChangesetQuery(t *Changeset) (*sqlf.Query, error) {
-	metadata, err := metadataColumn(t.Metadata)
+var createChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
+-- source: pkg/a8n/store.go:CreateChangesets
+changed AS (
+  INSERT INTO changesets (
+    repo_id,
+    created_at,
+    updated_at,
+    metadata,
+    campaign_ids,
+    external_id,
+    external_service_type
+  )
+  SELECT
+    repo_id,
+    created_at,
+    updated_at,
+    metadata,
+    campaign_ids,
+    external_id,
+    external_service_type
+  FROM batch
+  RETURNING changesets.*
+)
+` + batchChangesetsQuerySuffix
+
+func (s *Store) createChangesetsQuery(cs []*Changeset) (*sqlf.Query, error) {
+	now := s.now()
+	for _, c := range cs {
+		if c.CreatedAt.IsZero() {
+			c.CreatedAt = now
+		}
+
+		if c.UpdatedAt.IsZero() {
+			c.UpdatedAt = c.CreatedAt
+		}
+	}
+	return batchChangesetsQuery(createChangesetsQueryFmtstr, cs)
+}
+
+func batchChangesetsQuery(fmtstr string, cs []*Changeset) (*sqlf.Query, error) {
+	type record struct {
+		ID                  int64           `json:"id"`
+		RepoID              int32           `json:"repo_id"`
+		CreatedAt           time.Time       `json:"created_at"`
+		UpdatedAt           time.Time       `json:"updated_at"`
+		Metadata            json.RawMessage `json:"metadata"`
+		CampaignIDs         json.RawMessage `json:"campaign_ids"`
+		ExternalID          string          `json:"external_id"`
+		ExternalServiceType string          `json:"external_service_type"`
+	}
+
+	records := make([]record, 0, len(cs))
+
+	for _, c := range cs {
+		metadata, err := metadataColumn(c.Metadata)
+		if err != nil {
+			return nil, err
+		}
+
+		campaignIDs, err := jsonSetColumn(c.CampaignIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, record{
+			ID:                  c.ID,
+			RepoID:              c.RepoID,
+			CreatedAt:           c.CreatedAt,
+			UpdatedAt:           c.UpdatedAt,
+			Metadata:            metadata,
+			CampaignIDs:         campaignIDs,
+			ExternalID:          c.ExternalID,
+			ExternalServiceType: c.ExternalServiceType,
+		})
+	}
+
+	batch, err := json.MarshalIndent(records, "    ", "    ")
 	if err != nil {
 		return nil, err
 	}
 
-	campaignIDs, err := jsonSetColumn(t.CampaignIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	if t.CreatedAt.IsZero() {
-		t.CreatedAt = s.now()
-	}
-
-	if t.UpdatedAt.IsZero() {
-		t.UpdatedAt = t.CreatedAt
-	}
-
-	return sqlf.Sprintf(
-		createChangesetQueryFmtstr,
-		t.RepoID,
-		t.CreatedAt,
-		t.UpdatedAt,
-		metadata,
-		campaignIDs,
-		t.ExternalID,
-		t.ExternalServiceType,
-	), nil
+	return sqlf.Sprintf(fmtstr, string(batch)), nil
 }
 
 // CountChangesetsOpts captures the query options needed for
@@ -242,6 +293,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 type ListChangesetsOpts struct {
 	Limit      int
 	CampaignID int64
+	IDs        []int64
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -296,6 +348,16 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
 	}
 
+	if len(opts.IDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.IDs))
+		for _, id := range opts.IDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -307,67 +369,61 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	)
 }
 
-// UpdateChangeset updates the given Changeset.
-func (s *Store) UpdateChangeset(ctx context.Context, c *Changeset) error {
-	q, err := s.updateChangesetQuery(c)
+// UpdateChangesets updates the given Changesets.
+func (s *Store) UpdateChangesets(ctx context.Context, cs ...*Changeset) error {
+	q, err := s.updateChangesetsQuery(cs)
 	if err != nil {
 		return err
 	}
 
+	i := -1
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanChangeset(c, sc)
-		return int64(c.ID), 1, err
+		i++
+		err = scanChangeset(cs[i], sc)
+		return int64(cs[i].ID), 1, err
 	})
 }
 
-var updateChangesetQueryFmtstr = `
--- source: pkg/a8n/store.go:UpdateChangeset
-UPDATE changesets
-SET (
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
-) = (%s, %s, %s, %s, %s, %s, %s)
-WHERE id = %s
-RETURNING
-	id,
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
+const updateChangesetsQueryFmtstr = changesetBatchQueryPrefix + `,
+-- source: pkg/a8n/store.go:UpdateChangesets
+changed AS (
+  UPDATE changesets
+  SET
+    repo_id               = batch.repo_id,
+    created_at            = batch.created_at,
+    updated_at            = batch.updated_at,
+    metadata              = batch.metadata,
+    campaign_ids          = batch.campaign_ids,
+    external_id           = batch.external_id,
+    external_service_type = batch.external_service_type
+  FROM batch
+  WHERE changesets.id = batch.id
+  RETURNING changesets.*
+)
+` + batchChangesetsQuerySuffix
+
+const batchChangesetsQuerySuffix = `
+SELECT
+  changed.id,
+  changed.repo_id,
+  changed.created_at,
+  changed.updated_at,
+  changed.metadata,
+  changed.campaign_ids,
+  changed.external_id,
+  changed.external_service_type
+FROM changed
+LEFT JOIN batch ON batch.repo_id = changed.repo_id
+AND batch.external_id = changed.external_id
+ORDER BY batch.ordinality
 `
 
-func (s *Store) updateChangesetQuery(c *Changeset) (*sqlf.Query, error) {
-	metadata, err := metadataColumn(c.Metadata)
-	if err != nil {
-		return nil, err
+func (s *Store) updateChangesetsQuery(cs []*Changeset) (*sqlf.Query, error) {
+	now := s.now()
+	for _, c := range cs {
+		c.UpdatedAt = now
 	}
-
-	campaignIDs, err := jsonSetColumn(c.CampaignIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	c.UpdatedAt = s.now()
-
-	return sqlf.Sprintf(
-		updateChangesetQueryFmtstr,
-		c.RepoID,
-		c.CreatedAt,
-		c.UpdatedAt,
-		metadata,
-		campaignIDs,
-		c.ExternalID,
-		c.ExternalServiceType,
-		c.ID,
-	), nil
+	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
 }
 
 // CreateCampaign creates the given Campaign.
