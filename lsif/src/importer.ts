@@ -53,7 +53,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 /**
  * Correlate each vertex and edge together, then populate the provided entity manager
  * with the document, definition, and reference information. Returns the package and
- * external reference data needed to populate the cross-repos database.
+ * external reference data needed to populate the cross-repo database.
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
