@@ -7,7 +7,7 @@ import { pick } from 'lodash'
  */
 export interface Config {
     sudoToken: string
-    username: string
+    sudoUsername: string
     gitHubToken: string
     sourcegraphBaseUrl: string
 }
@@ -21,16 +21,22 @@ export interface ConfigField {
 const configFields: { [K in keyof Config]: ConfigField } = {
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
+        description:
+            'An access token with "site-admin:sudo" permissions. This will be used to impersonate users in requests.',
     },
-    username: {
-        envVar: 'SOURCEGRAPH_USERNAME',
+    sudoUsername: {
+        envVar: 'SOURCEGRAPH_SUDO_USER',
+        description: 'The site-admin-level username that will be impersonated with the sudo access token.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
+        description: 'A GitHub token that will be used to authenticate a GitHub external service.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
         defaultValue: 'http://localhost:3080',
+        description:
+            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
     },
 }
 

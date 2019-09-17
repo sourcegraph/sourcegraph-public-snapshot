@@ -121,7 +121,7 @@ function hasNoResultsOrError(): boolean {
 }
 
 describe('Search regression test suite', () => {
-    let config: Pick<Config, 'sudoToken' | 'username' | 'gitHubToken' | 'sourcegraphBaseUrl'>
+    let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl'>
     let driver: Driver
     let gqlClient: GraphQLClient
     regressionTestInit()
@@ -142,7 +142,7 @@ describe('Search regression test suite', () => {
                     )
                 }
                 driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
-                gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.username)
+                gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.sudoUsername)
                 await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
