@@ -288,6 +288,33 @@ describe('e2e test suite', () => {
 
             expect(blob).toBe('README\n\nchange')
         })
+
+        const bbsURL = process.env.BITBUCKET_SERVER_URL
+        const bbsToken = process.env.BITBUCKET_SERVER_TOKEN
+        const bbsUsername = process.env.BITBUCKET_SERVER_USERNAME
+
+        const testIfBBSCredentialsSet = bbsURL && bbsToken && bbsUsername ? test : test.skip.bind(test)
+
+        testIfBBSCredentialsSet('Bitbucket Server', async () => {
+            await driver.ensureHasExternalService({
+                kind: ExternalServiceKind.BITBUCKETSERVER,
+                displayName: 'e2e-bitbucket-server',
+                config: JSON.stringify({
+                    url: bbsURL,
+                    token: bbsToken,
+                    username: bbsUsername,
+                    repos: ['SOURCEGRAPH/jsonrpc2'],
+                    repositoryPathPattern: 'bbs/{projectKey}/{repositorySlug}',
+                }),
+            })
+            await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
+            const blob: string = await (await driver.page.waitFor(() => {
+                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                return elem && elem.textContent
+            })).jsonValue()
+
+            expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
+        })
     })
 
     describe('Visual tests', () => {
