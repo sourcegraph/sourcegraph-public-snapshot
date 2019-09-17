@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"database/sql"
-	"sort"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -319,15 +318,4 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 
 func (r *changesetResolver) ReviewState() (a8n.ChangesetReviewState, error) {
 	return r.Changeset.ReviewState()
-}
-
-func marshalRepoSet(ids map[uint32]struct{}) (gids []graphql.ID) {
-	gids = make([]graphql.ID, 0, len(ids))
-	for id := range ids {
-		gids = append(gids, marshalRepositoryID(api.RepoID(id)))
-	}
-	sort.Slice(gids, func(i, j int) bool {
-		return gids[i] < gids[j]
-	})
-	return gids
 }
