@@ -11,6 +11,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -30,6 +31,7 @@ type Syncer struct {
 	lastSyncErrMu sync.Mutex
 
 	store   Store
+	a8n     *a8n.Store
 	sourcer Sourcer
 	syncs   chan *SyncResult
 	now     func() time.Time
@@ -98,7 +100,7 @@ func (s *Syncer) Sync(ctx context.Context) (r *SyncResult, err error) {
 	}
 
 	var sourced Repos
-	if sourced, err = s.sourced(ctx); err != nil {
+	if sourced, _, err = s.sourced(ctx); err != nil {
 		return nil, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -318,21 +320,43 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context) ([]*Repo, []*Changeset, error) {
 	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	cs, err := s.listAllChangesets(ctx)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	srcs, err := s.sourcer(svcs...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 
-	return listAll(ctx, srcs)
+	rs, err := listAllRepos(ctx, srcs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return rs, nil, nil
+}
+
+func (s *Syncer) listAllChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {
+	for cursor := int64(-1); cursor != 0; {
+		opts := a8n.ListChangesetsOpts{Cursor: cursor, Limit: 1000}
+		cs, next, err := s.a8n.ListChangesets(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		all, cursor = append(all, cs...), next
+	}
+	return
 }
 
 func (s *Syncer) setOrResetLastSyncErr(perr *error) {
