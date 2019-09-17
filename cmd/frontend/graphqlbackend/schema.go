@@ -432,7 +432,10 @@ enum ChangesetReviewState {
 
 # The input to the createChangesets mutation.
 input CreateChangesetInput {
+    # The repository ID that this Changeset belongs to.
     repository: ID!
+    # The external ID that uniquely identifies this Changeset in the above repository.
+    # Github: PR number
     externalID: String!
 }
 
