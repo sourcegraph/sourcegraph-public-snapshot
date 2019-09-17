@@ -22,7 +22,6 @@ export function regressionTestInit(): void {
  */
 export async function createAndInitializeDriver(): Promise<Driver> {
     const driver = await createDriverForTest()
-    await driver.ensureLoggedIn()
     driver.page.setDefaultNavigationTimeout(5 * 1000) // 5s navigation timeout
     return driver
 }
