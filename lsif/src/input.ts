@@ -45,10 +45,10 @@ export function validateLsifInput(
                     throw new Error(validator.errors.map(e => e.message).join(', '))
                 }
             } catch (e) {
-                return cb(new Error(`Failed to validate line #${line}(${text}): ${e && e.message}`))
+                return cb(new Error(`Failed to validate line #${line} (${text}): ${e && e.message}`))
             }
 
-            return cb(null, `${data} \n`)
+            return cb(null, `${data}\n`)
         },
     })
 
