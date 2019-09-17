@@ -1,20 +1,19 @@
+import {
+    bloomFilterEventsCounter,
+    instrument,
+    xrepoInsertionDurationHistogram,
+    xrepoQueryDurationHistogram,
+    xrepoQueryErrorsCounter,
+} from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { ConnectionCache } from './cache'
 import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel } from './models.xrepo'
 import { TableInserter } from './inserter'
-import {
-    XREPO_INSERTION_ERRORS_COUNTER,
-    XREPO_INSERTION_DURATION_HISTOGRAM,
-    BLOOM_FILTER_EVENTS_COUNTER,
-    XREPO_QUERY_DURATION_HISTOGRAM,
-    XREPO_QUERY_ERRORS_COUNTER,
-    instrument,
-} from './metrics'
 
 const insertionMetrics = {
-    durationHistogram: XREPO_INSERTION_DURATION_HISTOGRAM,
-    errorsCounter: XREPO_INSERTION_ERRORS_COUNTER,
+    durationHistogram: xrepoInsertionDurationHistogram,
+    errorsCounter: xrepoQueryErrorsCounter,
 }
 
 /**
@@ -152,7 +151,7 @@ export class XrepoDatabase {
 
         for (const flag of keepFlags) {
             // Record hit and miss counts
-            BLOOM_FILTER_EVENTS_COUNTER.labels(flag ? 'hit' : 'miss').inc()
+            bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
         }
 
         return results.filter((_, i) => keepFlags[i])
@@ -220,7 +219,7 @@ export class XrepoDatabase {
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], connection =>
-            instrument(XREPO_QUERY_DURATION_HISTOGRAM, XREPO_QUERY_ERRORS_COUNTER, () => callback(connection))
+            instrument(xrepoQueryDurationHistogram, xrepoQueryErrorsCounter, () => callback(connection))
         )
     }
 
