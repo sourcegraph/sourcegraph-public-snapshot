@@ -3,7 +3,6 @@ import * as path from 'path'
 import * as zlib from 'mz/zlib'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
 import { Backend, createBackend } from './backend'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
@@ -132,7 +131,6 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
  */
 function startMetricsServer(): void {
     const app = express()
-    app.use(morgan('tiny'))
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
