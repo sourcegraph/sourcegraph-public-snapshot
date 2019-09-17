@@ -123,8 +123,8 @@ func main() {
 		server.GithubDotComSource = src
 	}
 
-	diffs := make(chan repos.Diff)
-	syncer := repos.NewSyncer(store, src, diffs, clock)
+	syncs := make(chan *repos.SyncResult)
+	syncer := repos.NewSyncer(store, src, syncs, clock)
 	syncer.FailFullSync = envvar.SourcegraphDotComMode()
 	server.Syncer = syncer
 
@@ -136,21 +136,21 @@ func main() {
 
 	// Start new repo syncer updates scheduler relay thread.
 	go func() {
-		for diff := range diffs {
-			if len(diff.Added) > 0 {
-				log15.Debug("syncer.sync", "diff.added", diff.Added.Names())
+		for r := range syncs {
+			if len(r.Repos.Added) > 0 {
+				log15.Debug("syncer.sync", "diff.added", r.Repos.Added.Names())
 			}
 
-			if len(diff.Modified) > 0 {
-				log15.Debug("syncer.sync", "diff.modified", diff.Modified.Names())
+			if len(r.Repos.Modified) > 0 {
+				log15.Debug("syncer.sync", "diff.modified", r.Repos.Modified.Names())
 			}
 
-			if len(diff.Deleted) > 0 {
-				log15.Debug("syncer.sync", "diff.deleted", diff.Deleted.Names())
+			if len(r.Repos.Deleted) > 0 {
+				log15.Debug("syncer.sync", "diff.deleted", r.Repos.Deleted.Names())
 			}
 
 			if !envvar.SourcegraphDotComMode() {
-				rs := diff.Repos()
+				rs := r.Repos.Repos()
 				if !conf.Get().DisableAutoGitUpdates {
 					scheduler.Update(rs...)
 				}

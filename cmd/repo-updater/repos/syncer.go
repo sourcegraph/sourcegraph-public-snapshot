@@ -31,7 +31,7 @@ type Syncer struct {
 
 	store   Store
 	sourcer Sourcer
-	diffs   chan Diff
+	syncs   chan *SyncResult
 	now     func() time.Time
 
 	syncSignal chan struct{}
@@ -43,13 +43,13 @@ type Syncer struct {
 func NewSyncer(
 	store Store,
 	sourcer Sourcer,
-	diffs chan Diff,
+	syncs chan *SyncResult,
 	now func() time.Time,
 ) *Syncer {
 	return &Syncer{
 		store:      store,
 		sourcer:    sourcer,
-		diffs:      diffs,
+		syncs:      syncs,
 		now:        now,
 		syncSignal: make(chan struct{}, 1),
 	}
@@ -80,26 +80,33 @@ func (s *Syncer) TriggerSync() {
 	}
 }
 
+// A SyncResult is returned by Sync and contains information about
+// what a given sync run has done.
+type SyncResult struct {
+	Repos      Diff         // Diff of repos synced
+	Changesets []*Changeset // Latest state of all changesets.
+}
+
 // Sync synchronizes the repositories.
-func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
+func (s *Syncer) Sync(ctx context.Context) (r *SyncResult, err error) {
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")
-	defer save(&diff, &err)
+	defer func() { save(r, &err) }()
 	defer s.setOrResetLastSyncErr(&err)
 
 	if s.FailFullSync {
-		return Diff{}, errors.New("Syncer is not enabled")
+		return nil, errors.New("Syncer is not enabled")
 	}
 
 	var sourced Repos
 	if sourced, err = s.sourced(ctx); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
+		return nil, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
 	store := s.store
 	if tr, ok := s.store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer.sync.transact")
+			return nil, errors.Wrap(err, "syncer.sync.transact")
 		}
 		defer txs.Done(&err)
 		store = txs
@@ -107,39 +114,39 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 
 	var stored Repos
 	if stored, err = store.ListRepos(ctx, StoreListReposArgs{}); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
+		return nil, errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
-	diff = NewDiff(sourced, stored)
-	upserts := s.upserts(diff)
+	r = &SyncResult{Repos: NewDiff(sourced, stored)}
+	upserts := s.upserts(r.Repos)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
+		return r, errors.Wrap(err, "syncer.sync.store.upsert-repos")
 	}
 
-	if s.diffs != nil {
-		s.diffs <- diff
+	if s.syncs != nil {
+		s.syncs <- r
 	}
 
-	return diff, nil
+	return r, nil
 }
 
 // SyncSubset runs the syncer on a subset of the stored repositories. It will
 // only sync the repositories with the same name or external service spec as
 // sourcedSubset repositories.
-func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff Diff, err error) {
+func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (r *SyncResult, err error) {
 	ctx, save := s.observe(ctx, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
-	defer save(&diff, &err)
+	defer func() { save(r, &err) }()
 
 	if len(sourcedSubset) == 0 {
-		return Diff{}, nil
+		return nil, nil
 	}
 
 	store := s.store
 	if tr, ok := s.store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer.syncsubset.transact")
+			return nil, errors.Wrap(err, "syncer.syncsubset.transact")
 		}
 		defer txs.Done(&err)
 		store = txs
@@ -152,21 +159,21 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 		UseOr:         true,
 	}
 	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.list-repos")
+		return nil, errors.Wrap(err, "syncer.syncsubset.store.list-repos")
 	}
 
-	diff = NewDiff(sourcedSubset, storedSubset)
-	upserts := s.upserts(diff)
+	r = &SyncResult{Repos: NewDiff(sourcedSubset, storedSubset)}
+	upserts := s.upserts(r.Repos)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
+		return r, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
 	}
 
-	if s.diffs != nil {
-		s.diffs <- diff
+	if s.syncs != nil {
+		s.syncs <- r
 	}
 
-	return diff, nil
+	return r, nil
 }
 
 func (s *Syncer) upserts(diff Diff) []*Repo {
@@ -348,30 +355,32 @@ func (s *Syncer) LastSyncError() error {
 	return s.lastSyncErr
 }
 
-func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
+func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*SyncResult, *error)) {
 	began := s.now()
 	tr, ctx := trace.New(ctx, family, title)
 
-	return ctx, func(d *Diff, err *error) {
+	return ctx, func(r *SyncResult, err *error) {
 		now := s.now()
 		took := s.now().Sub(began).Seconds()
 
-		fields := make([]otlog.Field, 0, 7)
-		for state, repos := range map[string]Repos{
-			"added":      d.Added,
-			"modified":   d.Modified,
-			"deleted":    d.Deleted,
-			"unmodified": d.Unmodified,
-		} {
-			fields = append(fields, otlog.Int(state+".count", len(repos)))
-			if state != "unmodified" {
-				fields = append(fields,
-					otlog.Object(state+".repos", repos.Names()))
+		if r != nil {
+			fields := make([]otlog.Field, 0, 7)
+			for state, repos := range map[string]Repos{
+				"added":      r.Repos.Added,
+				"modified":   r.Repos.Modified,
+				"deleted":    r.Repos.Deleted,
+				"unmodified": r.Repos.Unmodified,
+			} {
+				fields = append(fields, otlog.Int(state+".count", len(repos)))
+				if state != "unmodified" {
+					fields = append(fields,
+						otlog.Object(state+".repos", repos.Names()))
+				}
+				syncedTotal.WithLabelValues(state).Add(float64(len(repos)))
 			}
-			syncedTotal.WithLabelValues(state).Add(float64(len(repos)))
-		}
 
-		tr.LogFields(fields...)
+			tr.LogFields(fields...)
+		}
 
 		lastSync.WithLabelValues().Set(float64(now.Unix()))
 

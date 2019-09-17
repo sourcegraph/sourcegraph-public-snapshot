@@ -218,7 +218,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		stored  repos.Repos
 		ctx     context.Context
 		now     func() time.Time
-		diff    repos.Diff
+		result  *repos.SyncResult
 		err     string
 	}
 
@@ -245,10 +245,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				store:  s,
 				stored: repos.Repos{},
 				now:    clock.Now,
-				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
+				result: &repos.SyncResult{Repos: repos.Diff{Added: repos.Repos{tc.repo.With(
 					repos.Opt.RepoCreatedAt(clock.Time(1)),
 					repos.Opt.RepoSources(tc.svc.Clone().URN()),
-				)}},
+				)}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -259,9 +259,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.ExternalRepo.ID = ""
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
+				result: &repos.SyncResult{Repos: repos.Diff{Modified: repos.Repos{
 					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
-				}},
+				}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -273,10 +273,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				store:  s,
 				stored: repos.Repos{tc.repo.Clone()},
 				now:    clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
+				result: &repos.SyncResult{Repos: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
 					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
-				)}},
+				)}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -287,7 +287,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				store:  s,
 				stored: repos.Repos{tc.repo.Clone()},
 				now:    clock.Now,
-				diff:   repos.Diff{Unmodified: repos.Repos{tc.repo.Clone()}},
+				result: &repos.SyncResult{Repos: repos.Diff{Unmodified: repos.Repos{tc.repo.Clone()}}},
 				err:    "<nil>",
 			},
 			testCase{
@@ -298,9 +298,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				store:  s,
 				stored: repos.Repos{tc.repo.With(repos.Opt.RepoDeletedAt(clock.Time(0)))},
 				now:    clock.Now,
-				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
+				result: &repos.SyncResult{Repos: repos.Diff{Added: repos.Repos{tc.repo.With(
 					repos.Opt.RepoCreatedAt(clock.Time(1)),
-				)}},
+				)}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -313,9 +313,9 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)},
 				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
+				result: &repos.SyncResult{Repos: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
-				)}},
+				)}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -326,10 +326,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)},
 				now: clock.Now,
-				diff: repos.Diff{Deleted: repos.Repos{tc.repo.With(
+				result: &repos.SyncResult{Repos: repos.Diff{Deleted: repos.Repos{tc.repo.With(
 					repos.Opt.RepoDeletedAt(clock.Time(1)),
 					repos.Opt.RepoEnabled(true),
-				)}},
+				)}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -340,10 +340,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.Name = "old-name"
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
+				result: &repos.SyncResult{Repos: repos.Diff{Modified: repos.Repos{
 					tc.repo.With(
 						repos.Opt.RepoModifiedAt(clock.Time(1))),
-				}},
+				}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -362,7 +362,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					}),
 				},
 				now: clock.Now,
-				diff: repos.Diff{
+				result: &repos.SyncResult{Repos: repos.Diff{
 					Deleted: repos.Repos{
 						tc.repo.With(func(r *repos.Repo) {
 							r.Enabled = true
@@ -377,7 +377,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 							func(r *repos.Repo) { r.ExternalRepo.ID = "another-id" },
 						),
 					},
-				},
+				}},
 				err: "<nil>",
 			},
 			testCase{
@@ -392,7 +392,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					tc.repo.With(repos.Opt.RepoExternalID("another-id")),
 				},
 				now: clock.Now,
-				diff: repos.Diff{
+				result: &repos.SyncResult{Repos: repos.Diff{
 					Added: repos.Repos{
 						tc.repo.With(
 							repos.Opt.RepoCreatedAt(clock.Time(1)),
@@ -407,7 +407,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 							r.UpdatedAt = clock.Time(0)
 						}),
 					},
-				},
+				}},
 				err: "<nil>",
 			},
 			testCase{
@@ -423,7 +423,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					tc.repo.With(repos.Opt.RepoExternalID("")),   // same name as sourced
 				}.With(repos.Opt.RepoCreatedAt(clock.Time(1))),
 				now: clock.Now,
-				diff: repos.Diff{
+				result: &repos.SyncResult{Repos: repos.Diff{
 					Modified: repos.Repos{
 						tc.repo.With(
 							repos.Opt.RepoCreatedAt(clock.Time(1)),
@@ -439,7 +439,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 							r.CreatedAt = clock.Time(0)
 						}),
 					},
-				},
+				}},
 				err: "<nil>",
 			},
 			testCase{
@@ -452,10 +452,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					r.DeletedAt = clock.Time(0)
 				})},
 				now: clock.Now,
-				diff: repos.Diff{Added: repos.Repos{
+				result: &repos.SyncResult{Repos: repos.Diff{Added: repos.Repos{
 					tc.repo.With(
 						repos.Opt.RepoCreatedAt(clock.Time(1))),
-				}},
+				}}},
 				err: "<nil>",
 			},
 			testCase{
@@ -482,7 +482,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 						r.ExternalRepo.ID = "2"
 					}),
 				},
-				diff: repos.Diff{
+				result: &repos.SyncResult{Repos: repos.Diff{
 					Modified: repos.Repos{
 						tc.repo.With(func(r *repos.Repo) {
 							r.Name = "foo"
@@ -495,7 +495,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 							r.UpdatedAt = clock.Time(0)
 						}),
 					},
-				},
+				}},
 				err: "<nil>",
 			},
 			testCase{
@@ -507,7 +507,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				store:  s,
 				stored: repos.Repos{tc.repo.With(repos.Opt.RepoName(strings.ToUpper(tc.repo.Name)))},
 				now:    clock.Now,
-				diff:   repos.Diff{Modified: repos.Repos{tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(0)))}},
+				result: &repos.SyncResult{Repos: repos.Diff{Modified: repos.Repos{tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(0)))}}},
 				err:    "<nil>",
 			},
 			func() testCase {
@@ -538,10 +538,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					store:  s,
 					stored: repos.Repos{tc.repo.Clone()},
 					now:    clock.Now,
-					diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
+					result: &repos.SyncResult{Repos: repos.Diff{Modified: repos.Repos{tc.repo.With(
 						repos.Opt.RepoModifiedAt(clock.Time(1)),
 						repos.Opt.RepoMetadata(update),
-					)}},
+					)}}},
 					err: "<nil>",
 				}
 			}(),
@@ -585,7 +585,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
-				diff, err := syncer.Sync(ctx)
+				r, err := syncer.Sync(ctx)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -599,10 +599,10 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					name       string
 					have, want repos.Repos
 				}{
-					{"added", diff.Added, tc.diff.Added},
-					{"deleted", diff.Deleted, tc.diff.Deleted},
-					{"modified", diff.Modified, tc.diff.Modified},
-					{"unmodified", diff.Unmodified, tc.diff.Unmodified},
+					{"added", r.Repos.Added, tc.result.Repos.Added},
+					{"deleted", r.Repos.Deleted, tc.result.Repos.Deleted},
+					{"modified", r.Repos.Modified, tc.result.Repos.Modified},
+					{"unmodified", r.Repos.Unmodified, tc.result.Repos.Unmodified},
 				} {
 					t.Logf("diff.%s", d.name)
 					repos.Assert.ReposEqual(d.want...)(t, d.have)
@@ -610,7 +610,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 
 				if st != nil {
 					var want repos.Repos
-					want.Concat(diff.Added, diff.Modified, diff.Unmodified)
+					want.Concat(r.Repos.Added, r.Repos.Modified, r.Repos.Unmodified)
 					sort.Sort(want)
 
 					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
