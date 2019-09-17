@@ -490,8 +490,12 @@ func diff(b1, b2 string) (string, error) {
 	defer os.Remove(f2.Name())
 	defer f2.Close()
 
-	f1.WriteString(b1)
-	f2.WriteString(b2)
+	if _, err := f1.WriteString(b1); err != nil {
+		return "", err
+	}
+	if _, err := f2.WriteString(b2); err != nil {
+		return "", err
+	}
 
 	data, err := exec.Command("diff", "-u", "--label=want", f1.Name(), "--label=got", f2.Name()).CombinedOutput()
 	if len(data) > 0 {

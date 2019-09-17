@@ -142,21 +142,6 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 	}, nil
 }
 
-// Copy returns a copied version of rg that is safe to use from another
-// goroutine.
-func (rg *readerGrep) Copy() *readerGrep {
-	var reCopy *regexp.Regexp
-	if rg.re != nil {
-		reCopy = rg.re.Copy()
-	}
-	return &readerGrep{
-		re:               reCopy,
-		ignoreCase:       rg.ignoreCase,
-		matchPath:        rg.matchPath.Copy(),
-		literalSubstring: rg.literalSubstring,
-	}
-}
-
 // matchString returns whether rg's regexp pattern matches s. It is intended to be
 // used to match file paths.
 func (rg *readerGrep) matchString(s string) bool {
@@ -382,7 +367,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, file
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
-		go func(rg *readerGrep) {
+		go func() {
 			defer wg.Done()
 
 			for {
@@ -439,7 +424,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, file
 					matchesmu.Unlock()
 				}
 			}
-		}(rg.Copy())
+		}()
 	}
 
 	wg.Wait()
