@@ -9,15 +9,30 @@ import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
 import { ChangesetList } from './changesets/ChangeSetList'
-import { changesetStatusColorClasses } from './changesets/colors'
+import {
+    changesetStatusColorClasses,
+    changesetReviewStateColors,
+    changesetStageLabels,
+} from './changesets/presentation'
 import { Link } from '../../../../../shared/src/components/Link'
+import { groupBy } from 'lodash'
 
 interface Props {
     /** The campaign ID. */
     campaignID: GQL.ID
 }
 
-const changesetProgressSequence = [GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED, GQL.ChangesetState.OPEN]
+const changesetStages: (GQL.ChangesetState | GQL.ChangesetReviewState)[] = [
+    GQL.ChangesetState.MERGED,
+    GQL.ChangesetState.CLOSED,
+    GQL.ChangesetReviewState.APPROVED,
+    GQL.ChangesetReviewState.CHANGES_REQUESTED,
+    GQL.ChangesetReviewState.PENDING,
+]
+const changesetStageColors: Record<GQL.ChangesetReviewState | GQL.ChangesetState, string> = {
+    ...changesetReviewStateColors,
+    ...changesetStatusColorClasses,
+}
 
 /**
  * The area for a single campaign.
@@ -33,6 +48,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({ campaignID }) 
     }
 
     const changeSetCount = campaign.changesets.nodes.length
+
+    const changesetsByStage = groupBy(campaign.changesets.nodes, changeset =>
+        // For open changesets, group by review state
+        changeset.state !== GQL.ChangesetState.OPEN ? changeset.state : changeset.reviewState
+    )
 
     return (
         <>
@@ -54,26 +74,26 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({ campaignID }) 
             <h3>
                 Changesets <span className="badge badge-secondary badge-pill">{campaign.changesets.nodes.length}</span>
             </h3>
-            {campaign.changesets.nodes.length > 0 && (
+            {changeSetCount > 0 && (
                 <div>
                     <div className="progress rounded mb-2">
-                        {changesetProgressSequence.map(state => {
-                            const count = campaign.changesets.nodes.filter(changeset => changeset.state === state)
-                                .length
+                        {changesetStages.map(stage => {
+                            const changesetsInStage = changesetsByStage[stage] || []
+                            const count = changesetsInStage.length
                             return (
                                 count > 0 && (
                                     <div
                                         // Needed for dynamic width
                                         // eslint-disable-next-line react/forbid-dom-props
                                         style={{ width: (count / changeSetCount) * 100 + '%' }}
-                                        className={`progress-bar bg-${changesetStatusColorClasses[state]}`}
+                                        className={`progress-bar bg-${changesetStageColors[stage]}`}
                                         role="progressbar"
                                         aria-valuemin={0}
                                         aria-valuenow={count}
                                         aria-valuemax={changeSetCount}
-                                        key={state}
+                                        key={stage}
                                     >
-                                        {count} {state}
+                                        {count} {changesetStageLabels[stage]}
                                     </div>
                                 )
                             )

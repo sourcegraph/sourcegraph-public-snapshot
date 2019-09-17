@@ -37,6 +37,7 @@ export const useCampaignByID = (campaign: GQL.ID): undefined | GQL.ICampaign | n
                                     title
                                     body
                                     state
+                                    reviewState
                                     repository {
                                         name
                                     }
