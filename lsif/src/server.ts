@@ -6,16 +6,12 @@ import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics.js'
 import { createBackend, ERRNOLSIFDATA } from './backend'
 import { ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
 import { Queue, Scheduler } from 'node-resque'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
-import {
-    CONNECTION_CACHE_CAPACITY_GAUGE,
-    DOCUMENT_CACHE_CAPACITY_GAUGE,
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
-} from './metrics'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -69,9 +65,9 @@ const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
  */
 async function main(): Promise<void> {
     // Update cache capacities on startup
-    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
-    DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)

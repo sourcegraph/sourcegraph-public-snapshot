@@ -1,7 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { DATABASE_QUERY_DURATION_HISTOGRAM, DATABASE_QUERY_ERRORS_COUNTER, instrument } from './metrics'
+import { databaseQueryDurationHistogram, databaseQueryErrorsCounter, instrument } from './metrics'
 import { gunzipJSON } from './encoding'
 import { DefaultMap } from './default-map'
 import { hashKey, mustGet } from './util'
@@ -559,7 +559,7 @@ export class Database {
             this.databasePath,
             [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
             connection =>
-                instrument(DATABASE_QUERY_DURATION_HISTOGRAM, DATABASE_QUERY_ERRORS_COUNTER, () => callback(connection))
+                instrument(databaseQueryDurationHistogram, databaseQueryErrorsCounter, () => callback(connection))
         )
     }
 }

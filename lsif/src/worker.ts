@@ -7,13 +7,9 @@ import morgan from 'morgan'
 import promBundle from 'express-prom-bundle'
 import { Backend, createBackend } from './backend'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { ensureDirectory, logErrorAndExit, readEnvInt } from './util'
 import { JobsHash, Worker } from 'node-resque'
-import {
-    CONNECTION_CACHE_CAPACITY_GAUGE,
-    DOCUMENT_CACHE_CAPACITY_GAUGE,
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE,
-} from './metrics'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -62,9 +58,9 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  */
 async function main(): Promise<void> {
     // Update cache capacities on startup
-    CONNECTION_CACHE_CAPACITY_GAUGE.set(CONNECTION_CACHE_CAPACITY)
-    DOCUMENT_CACHE_CAPACITY_GAUGE.set(DOCUMENT_CACHE_CAPACITY)
-    RESULT_CHUNK_CACHE_CAPACITY_GAUGE.set(RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
