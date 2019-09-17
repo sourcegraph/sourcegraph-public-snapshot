@@ -132,7 +132,7 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
 }
 
 /**
- * Create an express server that only has /ping and /metric endpoints.
+ * Create an express server that only has /healthz and /metric endpoints.
  */
 function startMetricsServer(): void {
     const app = express()
