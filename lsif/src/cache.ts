@@ -105,7 +105,7 @@ export class GenericCache<K, V> {
         private sizeFunction: (value: V) => number,
         private disposeFunction: (value: V) => Promise<void> | void,
         private metrics: CacheMetrics
-    ) { }
+    ) {}
 
     /**
      * Check if `key` exists in the cache. If it does not, create a value
@@ -414,7 +414,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
-            () => { },
+            () => {},
             metrics
         )
     }
