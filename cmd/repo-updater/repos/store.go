@@ -58,6 +58,8 @@ type StoreListReposArgs struct {
 type StoreListExternalServicesArgs struct {
 	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
+	// RepoIDs that the listed external services own.
+	RepoIDs []uint32
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 }
@@ -167,6 +169,12 @@ AND %s
 ORDER BY id ASC LIMIT %s
 `
 
+const listRepoExternalServiceIDsSubquery = `
+SELECT DISTINCT(split_part(jsonb_object_keys(sources), ':', 3)::bigint) repo_external_service_ids
+FROM repo
+WHERE id IN (%s)
+`
+
 func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuery {
 	var preds []*sqlf.Query
 
@@ -178,6 +186,17 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 			}
 		}
 		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	} else if len(args.RepoIDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(args.RepoIDs))
+		for _, id := range args.RepoIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf(
+			"id IN ("+listRepoExternalServiceIDsSubquery+")",
+			sqlf.Join(ids, ","),
+		))
 	}
 
 	if len(args.Kinds) > 0 {
