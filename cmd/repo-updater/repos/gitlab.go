@@ -4,28 +4,31 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc     *ExternalService
-	config  *schema.GitLabConnection
-	exclude map[string]bool
-	baseURL *url.URL // URL with path /api/v4 (no trailing slash)
-	client  *gitlab.Client
+	svc                *ExternalService
+	config             *schema.GitLabConnection
+	exclude            map[string]bool
+	baseURL            *url.URL // URL with path /api/v4 (no trailing slash)
+	regexpReplacements []*regexpReplacement
+	client             *gitlab.Client
 }
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
@@ -73,12 +76,26 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		}
 	}
 
+	// Validate user-defined regexes.
+	rps := make([]*regexpReplacement, len(c.ReplaceAllInRepositoryName))
+	for i, rr := range c.ReplaceAllInRepositoryName {
+		r, err := regexp.Compile(rr.Regex)
+		if err != nil {
+			return nil, fmt.Errorf("compile regex %q: %v", rr.Regex, err)
+		}
+		rps[i] = &regexpReplacement{
+			regexp:      r,
+			replacement: rr.Replacement,
+		}
+	}
+
 	return &GitLabSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		baseURL: baseURL,
-		client:  gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
+		svc:                svc,
+		config:             c,
+		exclude:            exclude,
+		baseURL:            baseURL,
+		regexpReplacements: rps,
+		client:             gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
 	}, nil
 }
 
@@ -96,15 +113,19 @@ func (s GitLabSource) ExternalServices() ExternalServices {
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 	urn := s.svc.URN()
 	return &Repo{
-		Name: string(reposource.GitLabRepoName(
-			s.config.RepositoryPathPattern,
-			s.baseURL.Hostname(),
-			proj.PathWithNamespace,
+		Name: string(s.replaceAllInRepoName(
+			reposource.GitLabRepoName(
+				s.config.RepositoryPathPattern,
+				s.baseURL.Hostname(),
+				proj.PathWithNamespace,
+			),
 		)),
-		URI: string(reposource.GitLabRepoName(
-			"",
-			s.baseURL.Hostname(),
-			proj.PathWithNamespace,
+		URI: string(s.replaceAllInRepoName(
+			reposource.GitLabRepoName(
+				"",
+				s.baseURL.Hostname(),
+				proj.PathWithNamespace,
+			),
 		)),
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,
@@ -119,6 +140,16 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		},
 		Metadata: proj,
 	}
+}
+
+// replaceAllInRepoName uses regexp defined to find and replace all matches with their replacements
+// in given repository name.
+func (s GitLabSource) replaceAllInRepoName(name api.RepoName) api.RepoName {
+	str := string(name)
+	for _, rp := range s.regexpReplacements {
+		str = rp.regexp.ReplaceAllString(str, rp.replacement)
+	}
+	return api.RepoName(str)
 }
 
 // authenticatedRemoteURL returns the GitLab projects's Git remote URL with the configured GitLab personal access

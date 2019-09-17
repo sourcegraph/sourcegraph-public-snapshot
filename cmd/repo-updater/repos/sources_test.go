@@ -627,6 +627,71 @@ func TestSources_ListRepos(t *testing.T) {
 	{
 		svcs := ExternalServices{
 			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "sg-test.d/repo-git"},
+						{Name: "sg-test.d/repo-gitrepo"},
+					},
+					ReplaceAllInRepositoryName: []*schema.GitLabRegexReplacement{
+						{
+							Regex:       "\\.d/",
+							Replacement: "/",
+						},
+						{
+							Regex:       "-git$",
+							Replacement: "",
+						},
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "replaceAllInRepositoryName updates the repo name",
+			svcs: svcs,
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					haveNames := rs.Names()
+					var haveURIs []string
+					for _, r := range rs {
+						haveURIs = append(haveURIs, r.URI)
+					}
+
+					var wantNames, wantURIs []string
+					switch s.Kind {
+					case "GITLAB":
+						wantNames = []string{
+							"gitlab.com/sg-test/repo",
+							"gitlab.com/sg-test/repo-gitrepo",
+						}
+						wantURIs = []string{
+							"gitlab.com/sg-test/repo",
+							"gitlab.com/sg-test/repo-gitrepo",
+						}
+					}
+
+					if !reflect.DeepEqual(haveNames, wantNames) {
+						t.Error(cmp.Diff(haveNames, wantNames))
+					}
+					if !reflect.DeepEqual(haveURIs, wantURIs) {
+						t.Error(cmp.Diff(haveURIs, wantURIs))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
