@@ -13,6 +13,7 @@ import { ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './ut
 import { Queue, Scheduler } from 'node-resque'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
+import uuid from 'uuid'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
