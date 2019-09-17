@@ -1,10 +1,12 @@
 import * as definitionsSchema from './lsif.schema.json'
+import * as fs from 'mz/fs'
 import * as path from 'path'
 import Ajv, { ValidateFunction } from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
+import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics.js'
 import { createBackend, ERRNOLSIFDATA } from './backend'
@@ -98,6 +100,9 @@ async function main(): Promise<void> {
                 const { repository, commit } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
+
+                const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+                const output = fs.createWriteStream(filename)
 
                 try {
                     await validateLsifInput(req, output, DISABLE_VALIDATION ? undefined : validator)
