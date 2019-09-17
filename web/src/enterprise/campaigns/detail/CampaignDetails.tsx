@@ -8,7 +8,7 @@ import { useCampaignByID } from './useCampaignByID'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
-import { ChangesetList } from './changesets/ChangeSetList'
+import { ChangesetList } from './changesets/ChangesetList'
 import {
     changesetStatusColorClasses,
     changesetReviewStateColors,
