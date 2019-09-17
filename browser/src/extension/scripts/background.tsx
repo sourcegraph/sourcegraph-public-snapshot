@@ -62,11 +62,7 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
                 variables,
                 baseUrl,
                 headers: getHeaders(),
-                requestOptions: {
-                    crossDomain: true,
-                    withCredentials: true,
-                    async: true,
-                },
+                credentials: 'include',
             })
         )
     )

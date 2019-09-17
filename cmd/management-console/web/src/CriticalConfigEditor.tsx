@@ -4,13 +4,11 @@ import * as _monaco from 'monaco-editor'
 
 import { truncate } from 'lodash'
 import * as React from 'react'
-import { from, interval, Observable, of, Subject, Subscription, timer } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
-import { catchError, delay, distinctUntilChanged, mapTo, startWith, takeUntil } from 'rxjs/operators'
+import { from, Subscription, timer } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
+import { switchMap } from 'rxjs/operators'
 import './CriticalConfigEditor.scss'
 import { MonacoEditor } from './MonacoEditor'
-
-const DEBUG_LOADING_STATE_DELAY = 0 // ms
 
 /**
  * Amount of time to wait before showing the loading indicator.
@@ -294,12 +292,9 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
 
     private configEditor?: _monaco.editor.ICodeEditor
 
-    private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
-
         // Periodically rerender our component in case our request takes longer
         // than `WAIT_BEFORE_SHOWING_LOADER` and we need to show the loading
         // indicator.
@@ -307,24 +302,27 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
 
         // Load the initial critical config.
         this.subscriptions.add(
-            ajax('/api/get')
+            fromFetch('/api/get')
                 .pipe(
-                    delay(DEBUG_LOADING_STATE_DELAY),
-                    catchError(err => of(err.xhr))
-                )
-                .subscribe(resp => {
-                    if (resp.status !== 200) {
-                        const msg = 'error saving: ' + resp.status
-                        console.error(msg)
-                        alert(msg) // TODO(slimsag): Better general error state here.
-                        return
-                    }
-
-                    const config = resp.response as Configuration
-                    this.setState({
-                        criticalConfig: config,
-                        content: config.Contents,
+                    switchMap(response => {
+                        if (response.status !== 200) {
+                            throw new Error(`Error saving: ${response.status} ${response.statusText}`)
+                        }
+                        return response.json()
                     })
+                )
+                .subscribe({
+                    next: (config: Configuration) => {
+                        this.setState({
+                            criticalConfig: config,
+                            content: config.Contents,
+                        })
+                    },
+                    error: error => {
+                        console.error(error)
+                        alert(error.message) // TODO(slimsag): Better general error state here.
+                        return
+                    },
                 })
         )
     }
