@@ -1,6 +1,6 @@
 # gitserver
 
-Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater
+Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, go through repo-updater.
 
 gitserver exposes an "exec" API over HTTP for running git commands against
 clones of repositories. gitserver also exposes APIs for the management of
