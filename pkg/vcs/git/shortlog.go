@@ -25,6 +25,10 @@ type PersonCount struct {
 	Count int32
 }
 
+func (p *PersonCount) String() string {
+	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
+}
+
 // ShortLog returns the per-author commit statistics of the repo.
 func ShortLog(ctx context.Context, repo gitserver.Repo, opt ShortLogOptions) ([]*PersonCount, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ShortLog")
@@ -52,7 +56,10 @@ func ShortLog(ctx context.Context, repo gitserver.Repo, opt ShortLogOptions) ([]
 	if err != nil {
 		return nil, fmt.Errorf("exec `git shortlog -sne` failed: %v", err)
 	}
+	return parseShortLog(out)
+}
 
+func parseShortLog(out []byte) ([]*PersonCount, error) {
 	out = bytes.TrimSpace(out)
 	if len(out) == 0 {
 		return nil, nil
@@ -60,10 +67,12 @@ func ShortLog(ctx context.Context, repo gitserver.Repo, opt ShortLogOptions) ([]
 	lines := bytes.Split(out, []byte{'\n'})
 	results := make([]*PersonCount, len(lines))
 	for i, line := range lines {
+		// example line: "1125\tJane Doe <jane@sourcegraph.com>"
 		match := logEntryPattern.FindSubmatch(line)
 		if match == nil {
 			return nil, fmt.Errorf("invalid git shortlog line: %q", line)
 		}
+		// example match: ["1125\tJane Doe <jane@sourcegraph.com>" "1125" "Jane Doe <jane@sourcegraph.com>"]
 		count, err := strconv.Atoi(string(match[1]))
 		if err != nil {
 			return nil, err
