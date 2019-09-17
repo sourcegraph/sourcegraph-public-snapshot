@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/mail"
 	"strconv"
+	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -77,7 +78,7 @@ func parseShortLog(out []byte) ([]*PersonCount, error) {
 		if err != nil {
 			return nil, err
 		}
-		addr, err := mail.ParseAddress(string(match[2]))
+		addr, err := lenientParseAddress(string(match[2]))
 		if err != nil || addr == nil {
 			addr = &mail.Address{Name: string(match[2])}
 		}
@@ -88,4 +89,30 @@ func parseShortLog(out []byte) ([]*PersonCount, error) {
 		}
 	}
 	return results, nil
+}
+
+// lenientParseAddress is just like mail.ParseAddress, except that it treats
+// the following somewhat-common malformed syntax where a user has misconfigured
+// their email address as their name:
+//
+// 	foo@gmail.com <foo@gmail.com>
+//
+// As a valid name, whereas mail.ParseAddress would return an error:
+//
+// 	mail: expected single address, got "<foo@gmail.com>"
+//
+func lenientParseAddress(address string) (*mail.Address, error) {
+	addr, err := mail.ParseAddress(address)
+	if err != nil && strings.Contains(err.Error(), "expected single address") {
+		p := strings.LastIndex(address, "<")
+		if p == -1 {
+			return addr, err
+		}
+		name := strings.TrimSpace(address[:p])
+		address = strings.TrimSpace(address[p:])
+		address = strings.TrimPrefix(address, "<")
+		address = strings.TrimSuffix(address, ">")
+		return &mail.Address{Name: name, Address: address}, nil
+	}
+	return addr, err
 }
