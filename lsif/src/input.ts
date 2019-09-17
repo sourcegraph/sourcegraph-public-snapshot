@@ -80,7 +80,7 @@ export function validateLsifInput(
  */
 export function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
     let line = 0
-    const transform = new Writable({
+    const output = new Writable({
         objectMode: true,
         write: (data: Buffer, _: string, cb: (error?: Error | null) => void): void => {
             line++
@@ -109,7 +109,7 @@ export function processLsifInput(input: Readable, process: (element: Vertex | Ed
             .pipe(lineStream)
 
         lineStream
-            .pipe(transform)
+            .pipe(output)
             .on('error', reject)
             .on('finish', resolve)
     })
