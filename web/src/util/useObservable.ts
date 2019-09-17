@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Observable, Observer, Subject } from 'rxjs'
 
 export function useObservable<T>(observable: Observable<T>, deps: readonly unknown[]): T | undefined {
@@ -22,7 +22,11 @@ export function useEventObservable<T, R>(
     transform: (events: Observable<T>) => Observable<R>,
     deps: readonly unknown[]
 ): [Observer<T>['next'], R | undefined] {
-    const events = new Subject<T>()
-    const value = useObservable(events.pipe(transform), deps)
+    const { events, observable } = useMemo(() => {
+        const events = new Subject<T>()
+        const observable = events.pipe(transform)
+        return { events, observable }
+    }, deps) // eslint-disable-line react-hooks/exhaustive-deps
+    const value = useObservable(observable, deps)
     return [events.next.bind(events), value]
 }
