@@ -14,7 +14,7 @@ import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCa
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { Database } from './database.js'
 import { createLogger } from './logger'
-import { Job, Queue, Scheduler } from 'node-resque'
+import { Queue, Scheduler } from 'node-resque'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'

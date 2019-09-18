@@ -9,7 +9,7 @@ import { connectionCacheCapacityGauge } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { createLogger } from './logger'
-import { Job, JobsHash, Worker } from 'node-resque'
+import { JobsHash, Worker } from 'node-resque'
 import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
 
