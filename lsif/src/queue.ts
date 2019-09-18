@@ -56,6 +56,8 @@ export interface Queue extends Omit<ResqueQueue, 'enqueue'> {
  * callback types. Theses types are under-defined in @types/node-resque.
  */
 export interface Worker extends Omit<ResqueWorker, 'on'> {
+    // This rule wants to incorrectly combine events with distinct callback types.
+    /* eslint-disable @typescript-eslint/unified-signatures */
     on(event: 'start' | 'end' | 'pause', cb: () => void): this
     on(event: 'cleaning_worker', cb: (worker: string, pid: string) => void): this
     on(event: 'poll', cb: (queue: string) => void): this
