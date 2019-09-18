@@ -7,16 +7,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
+type Validator func(Unified) (problems []string)
+
 // ContributeValidator adds the site configuration validator function to the validation process. It
 // is called to validate site configuration. Any strings it returns are shown as validation
 // problems.
 //
 // It may only be called at init time.
-func ContributeValidator(f func(Unified) (problems []string)) {
+func ContributeValidator(f Validator) {
 	contributedValidators = append(contributedValidators, f)
 }
 
-var contributedValidators []func(Unified) []string
+var contributedValidators []Validator
 
 func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems []string, err error) {
 	var cfg Unified
