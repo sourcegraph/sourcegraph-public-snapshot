@@ -34,7 +34,7 @@ type Syncer struct {
 	Diffs   chan Diff
 	Now     func() time.Time
 
-	syncSignal chan struct{}
+	syncSignal signal
 }
 
 // NewSyncer returns a new Syncer that syncs stored repos with
@@ -47,11 +47,10 @@ func NewSyncer(
 	now func() time.Time,
 ) *Syncer {
 	return &Syncer{
-		Store:      store,
-		Sourcer:    sourcer,
-		Diffs:      diffs,
-		Now:        now,
-		syncSignal: make(chan struct{}, 1),
+		Store:   store,
+		Sourcer: sourcer,
+		Diffs:   diffs,
+		Now:     now,
 	}
 }
 
@@ -64,7 +63,7 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 
 		select {
 		case <-time.After(interval):
-		case <-s.syncSignal:
+		case <-s.syncSignal.Watch():
 		}
 	}
 
@@ -74,10 +73,7 @@ func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 // TriggerSync will run Sync as soon as the current Sync has finished running
 // or if no Sync is running.
 func (s *Syncer) TriggerSync() {
-	select {
-	case s.syncSignal <- struct{}{}:
-	default:
-	}
+	s.syncSignal.Trigger()
 }
 
 // Sync synchronizes the repositories.
@@ -398,4 +394,28 @@ func (rs byExternalRepoSpecSet) Less(i, j int) bool {
 		return false
 	}
 	return iSet
+}
+
+type signal struct {
+	once sync.Once
+	c    chan struct{}
+}
+
+func (s *signal) init() {
+	s.once.Do(func() {
+		s.c = make(chan struct{}, 1)
+	})
+}
+
+func (s *signal) Trigger() {
+	s.init()
+	select {
+	case s.c <- struct{}{}:
+	default:
+	}
+}
+
+func (s *signal) Watch() <-chan struct{} {
+	s.init()
+	return s.c
 }
