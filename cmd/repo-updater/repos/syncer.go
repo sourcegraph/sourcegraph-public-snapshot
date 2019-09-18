@@ -29,10 +29,10 @@ type Syncer struct {
 	lastSyncErr   error
 	lastSyncErrMu sync.Mutex
 
-	store   Store
-	sourcer Sourcer
-	diffs   chan Diff
-	now     func() time.Time
+	Store   Store
+	Sourcer Sourcer
+	Diffs   chan Diff
+	Now     func() time.Time
 
 	syncSignal chan struct{}
 }
@@ -47,10 +47,10 @@ func NewSyncer(
 	now func() time.Time,
 ) *Syncer {
 	return &Syncer{
-		store:      store,
-		sourcer:    sourcer,
-		diffs:      diffs,
-		now:        now,
+		Store:      store,
+		Sourcer:    sourcer,
+		Diffs:      diffs,
+		Now:        now,
 		syncSignal: make(chan struct{}, 1),
 	}
 }
@@ -95,8 +95,8 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
-	store := s.store
-	if tr, ok := s.store.(Transactor); ok {
+	store := s.Store
+	if tr, ok := s.Store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer.sync.transact")
@@ -117,8 +117,8 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
 	}
 
-	if s.diffs != nil {
-		s.diffs <- diff
+	if s.Diffs != nil {
+		s.Diffs <- diff
 	}
 
 	return diff, nil
@@ -135,8 +135,8 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 		return Diff{}, nil
 	}
 
-	store := s.store
-	if tr, ok := s.store.(Transactor); ok {
+	store := s.Store
+	if tr, ok := s.Store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer.syncsubset.transact")
@@ -162,15 +162,15 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
 	}
 
-	if s.diffs != nil {
-		s.diffs <- diff
+	if s.Diffs != nil {
+		s.Diffs <- diff
 	}
 
 	return diff, nil
 }
 
 func (s *Syncer) upserts(diff Diff) []*Repo {
-	now := s.now()
+	now := s.Now()
 	upserts := make([]*Repo, 0, len(diff.Added)+len(diff.Deleted)+len(diff.Modified))
 
 	for _, repo := range diff.Deleted {
@@ -312,12 +312,12 @@ func merge(o, n *Repo) {
 }
 
 func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
-	svcs, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
+	svcs, err := s.Store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
 		return nil, err
 	}
 
-	srcs, err := s.sourcer(svcs...)
+	srcs, err := s.Sourcer(svcs...)
 	if err != nil {
 		return nil, err
 	}
@@ -349,12 +349,12 @@ func (s *Syncer) LastSyncError() error {
 }
 
 func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
-	began := s.now()
+	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(d *Diff, err *error) {
-		now := s.now()
-		took := s.now().Sub(began).Seconds()
+		now := s.Now()
+		took := s.Now().Sub(began).Seconds()
 
 		fields := make([]otlog.Field, 0, 7)
 		for state, repos := range map[string]Repos{
