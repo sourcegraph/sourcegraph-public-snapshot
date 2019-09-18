@@ -1,9 +1,10 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
-import { sourcegraphBaseUrl, createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
+import { getConfig } from '../../../shared/src/e2e/config'
 
 // By default, these tests run against a local Bitbucket instance and a local Sourcegraph instance.
 // You can run them against other instances by setting the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -15,6 +16,8 @@ const TEST_NATIVE_INTEGRATION = Boolean(process.env.TEST_NATIVE_INTEGRATION)
 const REPO_PATH_PREFIX = new URL(BITBUCKET_BASE_URL).hostname
 
 const BITBUCKET_INTEGRATION_JAR_URL = 'https://storage.googleapis.com/sourcegraph-for-bitbucket-server/latest.jar'
+
+const { sourcegraphBaseUrl } = getConfig(['sourcegraphBaseUrl'])
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -126,7 +129,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
 
     beforeAll(async () => {
         try {
-            driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION })
+            driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
             await init(driver)
         } catch (err) {
             console.error(err)

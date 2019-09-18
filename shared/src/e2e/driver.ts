@@ -8,7 +8,6 @@ import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
-import { getConfig } from './config'
 import * as path from 'path'
 
 /**
@@ -20,11 +19,6 @@ export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventNam
 export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
     ? realPercySnapshot
     : () => Promise.resolve()
-
-/**
- * Used in the external service configuration.
- */
-export const { gitHubToken, sourcegraphBaseUrl } = getConfig(['gitHubToken', 'sourcegraphBaseUrl'])
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
@@ -45,7 +39,7 @@ type SelectTextMethod = 'selectall' | 'keyboard'
 type EnterTextMethod = 'type' | 'paste'
 
 export class Driver {
-    constructor(public browser: puppeteer.Browser, public page: puppeteer.Page) {}
+    constructor(public browser: puppeteer.Browser, public page: puppeteer.Page, public sourcegraphBaseUrl: string) {}
 
     public async ensureLoggedIn({
         username,
@@ -56,7 +50,7 @@ export class Driver {
         password: string
         email?: string
     }): Promise<void> {
-        await this.page.goto(sourcegraphBaseUrl)
+        await this.page.goto(this.sourcegraphBaseUrl)
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
@@ -70,12 +64,12 @@ export class Driver {
             await this.page.type('input[name=username]', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 1000 })
+            await this.page.waitForNavigation({ timeout: 5000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 1000 })
+            await this.page.waitForNavigation({ timeout: 5000 })
         }
     }
 
@@ -85,7 +79,7 @@ export class Driver {
     public async setExtensionSourcegraphUrl(): Promise<void> {
         await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
         await this.page.waitForSelector('.e2e-sourcegraph-url')
-        await this.replaceText({ selector: '.e2e-sourcegraph-url', newText: sourcegraphBaseUrl })
+        await this.replaceText({ selector: '.e2e-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
         await this.page.waitForFunction(
             () => {
@@ -171,7 +165,7 @@ export class Driver {
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
-        await this.page.goto(sourcegraphBaseUrl + '/site-admin/external-services')
+        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
         await this.page.waitFor('.e2e-filtered-connection')
         await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
@@ -203,10 +197,12 @@ export class Driver {
         if (ensureRepos) {
             // Clone the repositories
             for (const slug of ensureRepos) {
-                await this.page.goto(sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
+                await this.page.goto(
+                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
+                )
                 await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
-                await this.page.goto(`${sourcegraphBaseUrl}/${slug}`)
+                await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
         }
     }
@@ -225,14 +221,14 @@ export class Driver {
     }
 
     public async assertWindowLocation(location: string, isAbsolute = false): Promise<any> {
-        const url = isAbsolute ? location : sourcegraphBaseUrl + location
+        const url = isAbsolute ? location : this.sourcegraphBaseUrl + location
         await retry(async () => {
             expect(await this.page.evaluate(() => window.location.href)).toEqual(url)
         })
     }
 
     public async assertWindowLocationPrefix(locationPrefix: string, isAbsolute = false): Promise<any> {
-        const prefix = isAbsolute ? locationPrefix : sourcegraphBaseUrl + locationPrefix
+        const prefix = isAbsolute ? locationPrefix : this.sourcegraphBaseUrl + locationPrefix
         await retry(async () => {
             const loc: string = await this.page.evaluate(() => window.location.href)
             expect(loc.startsWith(prefix)).toBeTruthy()
@@ -290,10 +286,10 @@ export class Driver {
             (await this.page.evaluate(
                 sourcegraphBaseUrl =>
                     location.href.startsWith(sourcegraphBaseUrl) && (window as any).context.xhrHeaders,
-                sourcegraphBaseUrl
+                this.sourcegraphBaseUrl
             )) || {}
         const response = await this.makeRequest<GraphQLResult<T>>({
-            url: `${sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+            url: `${this.sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
             init: {
                 method: 'POST',
                 body: JSON.stringify({ query: request, variables }),
@@ -406,9 +402,11 @@ function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Nod
 interface DriverOptions {
     /** If true, load the Sourcegraph browser extension. */
     loadExtension?: boolean
+
+    sourcegraphBaseUrl: string
 }
 
-export async function createDriverForTest({ loadExtension }: DriverOptions = {}): Promise<Driver> {
+export async function createDriverForTest({ loadExtension, sourcegraphBaseUrl }: DriverOptions): Promise<Driver> {
     const args = ['--window-size=1280,1024']
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
@@ -440,5 +438,5 @@ export async function createDriverForTest({ loadExtension }: DriverOptions = {})
             util.inspect(message, { colors: true, depth: 2, breakLength: Infinity })
         )
     })
-    return new Driver(browser, page)
+    return new Driver(browser, page, sourcegraphBaseUrl)
 }

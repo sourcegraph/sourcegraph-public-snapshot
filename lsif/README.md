@@ -9,7 +9,7 @@ We support the following LSIF indexers.
 - [lsif-node](https://github.com/sourcegraph/lsif-node)
 - [lsif-go](https://github.com/sourcegraph/lsif-go)
 - [lsif-py](https://github.com/sourcegraph/lsif-py)
-- [lssif-cpp](https://github.com/sourcegraph/lssif-cpp)
+- [lsif-cpp](https://github.com/sourcegraph/lsif-cpp)
 
 ### Architecture
 
