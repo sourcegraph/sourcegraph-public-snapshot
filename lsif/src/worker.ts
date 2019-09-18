@@ -8,10 +8,11 @@ import { ConnectionCache } from './cache'
 import { connectionCacheCapacityGauge } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
-import { JobsHash, Worker, Job } from 'node-resque'
-import { XrepoDatabase } from './xrepo'
-import { initLogger, logger } from './logger'
+import { createLogger } from './logger'
 import { JobClass } from './queue'
+import { JobsHash, Worker } from 'node-resque'
+import { Logger } from 'winston'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -44,11 +45,10 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
+ *
+ * @param logger The application logger instance.
  */
-async function main(): Promise<void> {
-    // Initialize logger
-    initLogger('lsif-workers')
-
+async function main(logger: Logger): Promise<void> {
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
 
@@ -63,11 +63,11 @@ async function main(): Promise<void> {
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
     // Start metrics server
-    startMetricsServer()
+    startMetricsServer(logger)
 
     // Create worker and start processing jobs
-    await startWorker({
-        convert: createConvertJob(xrepoDatabase),
+    await startWorker(logger, {
+        convert: createConvertJob(xrepoDatabase, logger),
     })
 }
 
@@ -77,9 +77,11 @@ async function main(): Promise<void> {
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
+ * @param logger The worker's logger instance.
  */
 function createConvertJob(
-    xrepoDatabase: XrepoDatabase
+    xrepoDatabase: XrepoDatabase,
+    logger: Logger
 ): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
         const jobLogger = logger.child({ jobId: uuid.v4(), repository, commit })
@@ -102,7 +104,7 @@ function createConvertJob(
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
             xrepoTimer.done({ message: 'populated cross-repo database', level: 'debug' })
         } catch (e) {
-            jobLogger.error('failed to convert LSIF data', { error: e && e.message })
+            jobLogger.error('failed to convert LSIF data', { error: e })
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
             throw e
@@ -118,9 +120,13 @@ function createConvertJob(
 /**
  * Connect to redis and begin processing work with the given hash of job functions.
  *
+ * @param logger The worker's logger instance.
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
-async function startWorker(jobFunctions: { [K in JobClass]: (...args: any[]) => Promise<any> }): Promise<void> {
+async function startWorker(
+    logger: Logger,
+    jobFunctions: { [K in JobClass]: (...args: any[]) => Promise<any> }
+): Promise<void> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -140,21 +146,13 @@ async function startWorker(jobFunctions: { [K in JobClass]: (...args: any[]) => 
     worker.on('end', () => logger.debug('worker ended'))
     worker.on('poll', () => logger.debug('worker polling queue'))
     worker.on('ping', () => logger.debug('worker pinging queue'))
-    worker.on('error', e => logger.error('worker error', { error: e && e.message }))
-
-    worker.on('cleaning_worker', (worker: string, pid: string) =>
+    worker.on('job', (_, job) => logger.debug('worker accepted job', { job }))
+    worker.on('success', (_, job, result) => logger.debug('worker completed job', { job, result }))
+    worker.on('failure', (_, job, failure) => logger.debug('worker failed job', { job, failure }))
+    worker.on('cleaning_worker', (worker, pid) =>
         logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
     )
-
-    worker.on('job', (_: string, job: Job<any>) => logger.debug('worker accepted job', { job }))
-
-    worker.on('success', (_: string, job: Job<any>, result: any) =>
-        logger.debug('worker completed job', { job, result })
-    )
-
-    worker.on('failure', (_: string, job: Job<any>, failure: any) =>
-        logger.debug('worker failed job', { job, failure })
-    )
+    worker.on('error', e => logger.error('worker error', { error: e }))
 
     await worker.connect()
     exitHook(() => worker.end())
@@ -163,13 +161,21 @@ async function startWorker(jobFunctions: { [K in JobClass]: (...args: any[]) => 
 
 /**
  * Create an express server that only has /healthz and /metric endpoints.
+ *
+ * @param logger The worker's logger instance.
  */
-function startMetricsServer(): void {
+function startMetricsServer(logger: Logger): void {
     const app = express()
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
-    app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
+    app.listen(WORKER_METRICS_PORT, () =>
+        logger.debug('listening', { port: WORKER_METRICS_PORT, foo: [1, 2, 3], bar: { logger } })
+    )
 }
 
-main().catch(e => logger.error('failed to start process', { error: e && e.message }))
+// Initialize logger
+const appLogger = createLogger('lsif-workers')
+
+// Launch!
+main(appLogger).catch(e => appLogger.error('failed to start process', { error: e }))

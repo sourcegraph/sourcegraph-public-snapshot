@@ -12,9 +12,10 @@ import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
+import { createLogger } from './logger'
 import { Database } from './database.js'
-import { initLogger, logger } from './logger'
-import { Job, Queue as ResqueQueue, Scheduler } from 'node-resque'
+import { Queue as ResqueQueue, Scheduler } from 'node-resque'
+import { Logger } from 'winston'
 import { Queue, rewriteJobMeta, WorkerMeta } from './queue'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
@@ -66,11 +67,10 @@ const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
+ *
+ * @param logger The application logger instance.
  */
-async function main(): Promise<void> {
-    // Initialize logger
-    initLogger('lsif-server')
-
+async function main(logger: Logger): Promise<void> {
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
     documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
@@ -82,19 +82,19 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create queue to publish jobs for worker
-    const queue = await setupQueue()
+    const queue = await setupQueue(logger)
 
     const app = express()
-    app.use(loggingMiddleware)
+    app.use(loggingMiddleware(logger))
     app.use(promBundle({}))
 
     // Register endpoints
-    addMetaEndpoints(app)
-    addQueueEndpoints(app, queue)
-    addLsifEndpoints(app, queue)
+    app.use(metaEndpoints())
+    app.use(lsifEndpoints(queue, logger))
+    app.use(queueEndpoints(queue, logger))
 
     // Error handler must be registered last
-    app.use(errorHandler)
+    app.use(errorHandler(logger))
 
     app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
 }
@@ -105,8 +105,10 @@ async function main(): Promise<void> {
  * always be up with a responsive system. The schedulers will do their own
  * master election via a redis key and will check for dead workers attached
  * to the queue.
+ *
+ * @param logger The server's logger instance.
  */
-async function setupQueue(): Promise<Queue> {
+async function setupQueue(logger: Logger): Promise<Queue> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -117,7 +119,7 @@ async function setupQueue(): Promise<Queue> {
 
     // Create queue and log the interesting events
     const queue = new ResqueQueue({ connection: connectionOptions }) as Queue
-    queue.on('error', e => logger.error('queue error', { error: e && e.message }))
+    queue.on('error', e => logger.error('queue error', { error: e }))
     await queue.connect()
     exitHook(() => queue.end())
 
@@ -127,9 +129,9 @@ async function setupQueue(): Promise<Queue> {
     scheduler.on('end', () => logger.debug('scheduler ended'))
     scheduler.on('poll', () => logger.debug('scheduler checking for stuck workers'))
     scheduler.on('master', () => logger.debug('scheduler became master'))
-    scheduler.on('cleanStuckWorker', (worker: string) => logger.debug('scheduler cleaning stuck worker', { worker }))
-    scheduler.on('transferredJob', (_: number, job: Job<any>) => logger.debug('scheduler transferring job', { job }))
-    scheduler.on('error', e => logger.error('scheduler error', { error: e && e.message }))
+    scheduler.on('cleanStuckWorker', worker => logger.debug('scheduler cleaning stuck worker', { worker }))
+    scheduler.on('transferredJob', (_, job) => logger.debug('scheduler transferring job', { job }))
+    scheduler.on('error', e => logger.error('scheduler error', { error: e }))
 
     await scheduler.connect()
     exitHook(() => scheduler.end())
@@ -139,83 +141,22 @@ async function setupQueue(): Promise<Queue> {
 }
 
 /**
- * Add health endpoint.
- *
- * @param app The express app.
+ * Create a router containing health endpoint.
  */
-function addMetaEndpoints(app: express.Application): void {
-    app.get('/healthz', (req: express.Request, res: express.Response): void => {
-        res.send('ok')
-    })
+function metaEndpoints(): express.Router {
+    const router = express.Router()
+    router.get('/healthz', (_, res) => res.send('ok'))
+    return router
 }
 
 /**
- * Add endpoints to the HTTP API to view/control the worker queue.
- *
- * @param app The express app.
+ * Create a router containing the LSIF upload and query endpoints.
  * @param queue The queue containing LSIF jobs.
+ * @param logger The server's logger instance.
  */
-function addQueueEndpoints(app: express.Application, queue: Queue): void {
-    app.get(
-        '/queued',
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const queuedJobs = await queue.queued('lsif', 0, -1)
+function lsifEndpoints(queue: Queue, logger: Logger): express.Router {
+    const router = express.Router()
 
-                res.send(
-                    queuedJobs.map(job => ({
-                        ...rewriteJobMeta(job),
-                    }))
-                )
-            }
-        )
-    )
-
-    app.get(
-        '/failed',
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const failedJobs = await queue.failed(0, -1)
-                failedJobs.sort((a, b) => a.failed_at.localeCompare(b.failed_at))
-
-                res.send(
-                    failedJobs.map(job => ({
-                        error: job.error,
-                        failed_at: new Date(job.failed_at).toISOString(),
-                        ...rewriteJobMeta(job.payload),
-                    }))
-                )
-            }
-        )
-    )
-
-    app.get(
-        '/active',
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const workerMeta = Array.from(Object.values(await queue.allWorkingOn())).filter(
-                    (x): x is WorkerMeta => x !== 'started'
-                )
-                workerMeta.sort((a, b) => a.run_at.localeCompare(b.run_at))
-
-                res.send(
-                    workerMeta.map(job => ({
-                        started_at: new Date(job.run_at).toISOString(),
-                        ...rewriteJobMeta(job.payload),
-                    }))
-                )
-            }
-        )
-    )
-}
-
-/**
- * Add endpoints to the HTTP API to upload and query LSIF dumps.
- *
- * @param app The express app.
- * @param queue The queue containing LSIF jobs.
- */
-function addLsifEndpoints(app: express.Application, queue: Queue): void {
     // Create cross-repo database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
@@ -254,7 +195,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue): void {
         )
     }
 
-    app.post(
+    router.post(
         '/upload',
         wrap(
             async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
@@ -279,7 +220,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue): void {
         )
     )
 
-    app.post(
+    router.post(
         '/exists',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
@@ -300,7 +241,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue): void {
         )
     )
 
-    app.post(
+    router.post(
         '/request',
         bodyParser.json({ limit: '1mb' }),
         wrap(
@@ -323,12 +264,76 @@ function addLsifEndpoints(app: express.Application, queue: Queue): void {
             }
         )
     )
+
+    return router
 }
 
 /**
- * Create a json schema validation function that can validate each line of an
+ * Add endpoints to the HTTP API to view/control the worker queue.
+ *
+ * @param queue The queue containing LSIF jobs.
+ * @param logger The server's logger instance.
+ */
+function queueEndpoints(queue: Queue, logger: Logger): express.Router {
+    const router = express.Router()
+
+    router.get(
+        '/queued',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const queuedJobs = await queue.queued('lsif', 0, -1)
+
+                res.send(
+                    queuedJobs.map(job => ({
+                        ...rewriteJobMeta(job),
+                    }))
+                )
+            }
+        )
+    )
+
+    router.get(
+        '/failed',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const failedJobs = await queue.failed(0, -1)
+                failedJobs.sort((a, b) => a.failed_at.localeCompare(b.failed_at))
+
+                res.send(
+                    failedJobs.map(job => ({
+                        error: job.error,
+                        failed_at: new Date(job.failed_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
+            }
+        )
+    )
+
+    router.get(
+        '/active',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const workerMeta = Array.from(Object.values(await queue.allWorkingOn())).filter(
+                    (x): x is WorkerMeta => x !== 'started'
+                )
+                workerMeta.sort((a, b) => a.run_at.localeCompare(b.run_at))
+
+                res.send(
+                    workerMeta.map(job => ({
+                        started_at: new Date(job.run_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
+            }
+        )
+    )
+
+    return router
+}
+
+/**
  * A pair of seconds and nanoseconds representing the output of
- * LSIF dump input.
  * the nodejs high-resolution timer.
  */
 type HrTime = [number, number]
@@ -337,45 +342,56 @@ type HrTime = [number, number]
  * Middleware function used to log requests and the corresponding
  * response status code and wall time taken to process the request
  * (to the point where headers are emitted).
+ *
+ * @param logger The server's logger instance.
  */
-function loggingMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    const start = process.hrtime()
-    let end: HrTime | undefined
+function loggingMiddleware(
+    logger: Logger
+): (req: express.Request, res: express.Response, next: express.NextFunction) => void {
+    return (req: express.Request, res: express.Response, next: express.NextFunction): void => {
+        const start = process.hrtime()
+        let end: HrTime | undefined
 
-    onHeaders(res, () => {
-        end = process.hrtime()
-    })
-
-    onFinished(res, () => {
-        const responseTime = end ? `${((end[0] - start[0]) * 1e3 + (end[1] - start[1]) * 1e-6).toFixed(3)}ms` : ''
-
-        logger.debug('request', {
-            method: req.method,
-            path: req.path,
-            statusCode: res.statusCode,
-            responseTime,
+        onHeaders(res, () => {
+            end = process.hrtime()
         })
-    })
 
-    next()
+        onFinished(res, () => {
+            const responseTime = end ? `${((end[0] - start[0]) * 1e3 + (end[1] - start[1]) * 1e-6).toFixed(3)}ms` : ''
+
+            logger.debug('request', {
+                method: req.method,
+                path: req.path,
+                statusCode: res.statusCode,
+                responseTime,
+            })
+        })
+
+        next()
+    }
 }
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
+ *
+ * @param logger The server's logger instance.
  */
-function errorHandler(e: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
-    if (res.headersSent) {
-        res.status(e.status).send({ message: e.message })
-        return next(e)
-    }
+function errorHandler(
+    logger: Logger
+): (e: any, req: express.Request, res: express.Response, next: express.NextFunction) => void {
+    return (e: any, req: express.Request, res: express.Response, next: express.NextFunction): void => {
+        if (res.headersSent) {
+            return next(e)
+        }
 
-    if (e && e.status) {
-        res.status(e.status).send({ message: e.message })
-        return
-    }
+        if (e && e.status) {
+            res.status(e.status).send({ message: e.message })
+            return
+        }
 
-    logger.error('uncaught exception', { error: e && e.message })
-    res.status(500).send({ message: 'Unknown error' })
+        logger.error('uncaught exception', { error: e })
+        res.status(500).send({ message: 'Unknown error' })
+    }
 }
 
 /**
@@ -409,4 +425,8 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(e => logger.error('failed to start process', { error: e && e.message }))
+// Initialize logger
+const appLogger = createLogger('lsif-server')
+
+// Run app!
+main(appLogger).catch(e => appLogger.error('failed to start process', { error: e }))

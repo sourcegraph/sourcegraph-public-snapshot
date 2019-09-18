@@ -124,8 +124,13 @@ func main() {
 	}
 
 	diffs := make(chan repos.Diff)
-	syncer := repos.NewSyncer(store, src, diffs, clock)
-	syncer.FailFullSync = envvar.SourcegraphDotComMode()
+	syncer := &repos.Syncer{
+		FailFullSync: envvar.SourcegraphDotComMode(),
+		Store:        store,
+		Sourcer:      src,
+		Diffs:        diffs,
+		Now:          clock,
+	}
 	server.Syncer = syncer
 
 	if !envvar.SourcegraphDotComMode() {
