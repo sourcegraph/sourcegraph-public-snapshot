@@ -10,7 +10,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/RoaringBitmap/roaring v0.4.20
 	github.com/alecthomas/chroma v0.6.6 // indirect
-	github.com/aws/aws-sdk-go-v2 v0.11.0
+	github.com/aws/aws-sdk-go-v2 v0.12.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20190905060710-a5e0173ced67 // indirect
@@ -22,12 +22,12 @@ require (
 	github.com/crewjam/saml v0.0.0-20190521120225-344d075952c9
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20190211032704-186a3d44e920
-	github.com/dghubble/gologin v2.1.0+incompatible
+	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dhui/dktest v0.3.1 // indirect
 	github.com/dlclark/regexp2 v1.2.0 // indirect
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v0.7.3-0.20190817195342-4760db040282
+	github.com/docker/docker v0.12.0
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emersion/go-imap v1.0.0
 	github.com/emersion/go-sasl v0.0.0-20190817083125-240c8404624e // indirect
@@ -52,7 +52,7 @@ require (
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/glycerine/goconvey v0.0.0-20190410193231-58a59202ab31 // indirect
 	github.com/go-delve/delve v1.3.1
-	github.com/go-redsync/redsync v1.3.0
+	github.com/go-redsync/redsync v1.3.1
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.3.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.6.2
@@ -71,7 +71,7 @@ require (
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/google/zoekt v0.0.0-20190910091447-b1730d8e0cc4
-	github.com/gopherjs/gopherjs v0.0.0-20190910122728-9d188e94fb99 // indirect
+	github.com/gopherjs/gopherjs d3ddacdb130f // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.6.1
 	github.com/gorilla/handlers v1.4.2
@@ -81,23 +81,23 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/goware/urlx v0.3.1
-	github.com/graph-gophers/graphql-go v0.0.0-20190902214650-641ae197eec7
+	github.com/graph-gophers/graphql-go 38a077bc812d
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-retryablehttp v0.6.2 // indirect
-	github.com/honeycombio/libhoney-go v1.12.0
+	github.com/honeycombio/libhoney-go v1.12.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/godirwalk v1.10.12
-	github.com/karrick/tparse v2.4.2+incompatible
+	github.com/karrick/tparse v2.7.0+incompatible
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8
 	github.com/kevinburke/go-bindata v3.13.0+incompatible
-	github.com/klauspost/compress v1.8.3 // indirect
+	github.com/klauspost/compress v1.8.4 // indirect
 	github.com/klauspost/cpuid v1.2.1 // indirect
 	github.com/kr/text v0.1.0
 	github.com/kylelemons/godebug v1.1.0
@@ -126,7 +126,7 @@ require (
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.1.0
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4 // indirect
-	github.com/prometheus/procfs v0.0.4 // indirect
+	github.com/prometheus/procfs v0.0.5 // indirect
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/segmentio/fasthash v1.0.1
@@ -160,16 +160,16 @@ require (
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stretchr/testify v1.4.0 // indirect
-	github.com/stripe/stripe-go v63.0.0+incompatible
+	github.com/stripe/stripe-go v63.1.0+incompatible
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt v1.1.1
 	github.com/uber-go/atomic v1.4.0 // indirect
 	github.com/uber/gonduit v0.4.0
-	github.com/uber/jaeger-client-go v2.17.0+incompatible
+	github.com/uber/jaeger-client-go v2.18.1+incompatible
 	github.com/uber/jaeger-lib v2.1.1+incompatible
 	github.com/ugorji/go v1.1.7 // indirect
 	github.com/ultraware/funlen v0.0.2 // indirect
-	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
+	github.com/vmihailenco/msgpack v4.2.0 // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
@@ -181,17 +181,17 @@ require (
 	go.uber.org/automaxprocs v1.2.0
 	golang.org/x/arch v0.0.0-20190909030613-46d78d1859ac // indirect
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
-	golang.org/x/exp v0.0.0-20190912063710-ac5d2bfcbfe0 // indirect
+	golang.org/x/exp a05e19747a03 // indirect
 	golang.org/x/lint v0.0.0-20190909230951-414d861bb4ac // indirect
-	golang.org/x/net v0.0.0-20190912160710-24e19bdeb0f2
+	golang.org/x/net c8589233b77d
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20190912141932-bc967efca4b8
+	golang.org/x/sys b4ddaad3f8a3
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190912215617-3720d1ec3678
+	golang.org/x/tools 905c8ffbfa41
 	google.golang.org/api v0.10.0 // indirect
 	google.golang.org/appengine v1.6.2 // indirect
-	google.golang.org/genproto v0.0.0-20190911173649-1774047e7e51 // indirect
+	google.golang.org/genproto f660b8655731 // indirect
 	google.golang.org/grpc v1.23.1 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
@@ -201,7 +201,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
-	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f // indirect
+	mvdan.cc/unparam b83a221c10a2 // indirect
 	sourcegraph.com/sqs/pbtypes v1.0.0 // indirect
 )
 
@@ -216,7 +216,7 @@ replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.2
 
 replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
 
-replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
+replace github.com/golang/lint => golang.org/x/lint 414d861bb4ac
 
 replace github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8 => github.com/kevinburke/differ v0.0.0-20180721181420-bdfd927653c8
 
