@@ -37,23 +37,6 @@ type Syncer struct {
 	syncSignal signal
 }
 
-// NewSyncer returns a new Syncer that syncs stored repos with
-// the repos yielded by the configured sources, retrieved by the given sourcer.
-// Each completed sync results in a diff that is sent to the given diffs channel.
-func NewSyncer(
-	store Store,
-	sourcer Sourcer,
-	diffs chan Diff,
-	now func() time.Time,
-) *Syncer {
-	return &Syncer{
-		Store:   store,
-		Sourcer: sourcer,
-		Diffs:   diffs,
-		Now:     now,
-	}
-}
-
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
