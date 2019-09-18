@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -19,13 +18,13 @@ func validateConfig(contents string, validators ...func(schema.CriticalConfigura
 		return fmt.Errorf("invalid JSON: %v", errs)
 	}
 
-	c := conf.Unified{}
-	if err := json.Unmarshal(p, &c.Critical); err != nil {
+	c := schema.CriticalConfiguration{}
+	if err := json.Unmarshal(p, &c); err != nil {
 		return fmt.Errorf("unmarshal JSON: %v", err)
 	}
 
 	for _, v := range validators {
-		err := v(c.Critical)
+		err := v(c)
 		if err != nil {
 			return err
 		}
