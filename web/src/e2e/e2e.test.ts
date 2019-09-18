@@ -1,18 +1,15 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import {
-    sourcegraphBaseUrl,
-    createDriverForTest,
-    Driver,
-    gitHubToken,
-    percySnapshot,
-} from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { getConfig } from '../../../shared/src/e2e/config'
+
+const { gitHubToken, sourcegraphBaseUrl } = getConfig(['gitHubToken', 'sourcegraphBaseUrl'])
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -66,7 +63,7 @@ describe('e2e test suite', () => {
             MockDate.reset()
 
             // Start browser.
-            driver = await createDriverForTest()
+            driver = await createDriverForTest({ sourcegraphBaseUrl })
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2
