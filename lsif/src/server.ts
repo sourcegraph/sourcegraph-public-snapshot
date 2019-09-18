@@ -127,8 +127,8 @@ async function setupQueue(logger: Logger): Promise<Queue> {
     scheduler.on('end', () => logger.debug('scheduler ended'))
     scheduler.on('poll', () => logger.debug('scheduler checking for stuck workers'))
     scheduler.on('master', () => logger.debug('scheduler became master'))
-    scheduler.on('cleanStuckWorker', (worker: string) => logger.debug('scheduler cleaning stuck worker', { worker }))
-    scheduler.on('transferredJob', (_: number, job: Job<any>) => logger.debug('scheduler transferring job', { job }))
+    scheduler.on('cleanStuckWorker', worker => logger.debug('scheduler cleaning stuck worker', { worker }))
+    scheduler.on('transferredJob', (_, job) => logger.debug('scheduler transferring job', { job }))
     scheduler.on('error', e => logger.error('scheduler error', { error: e && e.message }))
 
     await scheduler.connect()

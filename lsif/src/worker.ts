@@ -147,21 +147,13 @@ async function startWorker(
     worker.on('end', () => logger.debug('worker ended'))
     worker.on('poll', () => logger.debug('worker polling queue'))
     worker.on('ping', () => logger.debug('worker pinging queue'))
-    worker.on('error', e => logger.error('worker error', { error: e && e.message }))
-
-    worker.on('cleaning_worker', (worker: string, pid: string) =>
+    worker.on('job', (_, job) => logger.debug('worker accepted job', { job }))
+    worker.on('success', (_, job, result) => logger.debug('worker completed job', { job, result }))
+    worker.on('failure', (_, job, failure) => logger.debug('worker failed job', { job, failure }))
+    worker.on('cleaning_worker', (worker, pid) =>
         logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
     )
-
-    worker.on('job', (_: string, job: Job<any>) => logger.debug('worker accepted job', { job }))
-
-    worker.on('success', (_: string, job: Job<any>, result: any) =>
-        logger.debug('worker completed job', { job, result })
-    )
-
-    worker.on('failure', (_: string, job: Job<any>, failure: any) =>
-        logger.debug('worker failed job', { job, failure })
-    )
+    worker.on('error', e => logger.error('worker error', { error: e && e.message }))
 
     await worker.connect()
     exitHook(() => worker.end())
