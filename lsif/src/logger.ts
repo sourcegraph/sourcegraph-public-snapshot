@@ -8,8 +8,7 @@ import { MESSAGE } from 'triple-beam'
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
 
 /**
- * A log format flag. Can be 'condensed' or 'logfmt'. uses 'logfmt'
- * by default.
+ * A log format flag. Can be 'condensed' or 'logfmt'. Default is 'logfmt'.
  */
 const LOG_FORMAT = process.env.LOG_FORMAT
 
