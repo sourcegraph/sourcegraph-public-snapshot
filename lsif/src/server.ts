@@ -1,29 +1,24 @@
-import * as definitionsSchema from './lsif.schema.json';
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import Ajv from 'ajv';
-import bodyParser from 'body-parser';
-import exitHook from 'async-exit-hook';
-import express from 'express';
-import onFinished from 'on-finished';
-import onHeaders from 'on-headers';
-import promClient from 'prom-client';
-import uuid from 'uuid';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import {
-    createDatabaseFilename,
-    ensureDirectory,
-    hasErrorCode,
-    readEnvInt
-} from './util';
-import { createLogger } from './logger';
-import { Database } from './database.js';
-import { Logger } from 'winston';
-import { Queue, rewriteJobMeta, WorkerMeta } from './queue';
-import { Queue as ResqueQueue, Scheduler } from 'node-resque';
-import { validateLsifInput } from './input';
-import { wrap } from 'async-middleware';
-import { XrepoDatabase } from './xrepo.js';
+import * as definitionsSchema from './lsif.schema.json'
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import Ajv from 'ajv'
+import bodyParser from 'body-parser'
+import exitHook from 'async-exit-hook'
+import express from 'express'
+import onFinished from 'on-finished'
+import onHeaders from 'on-headers'
+import promClient from 'prom-client'
+import uuid from 'uuid'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
+import { createLogger } from './logger'
+import { Database } from './database.js'
+import { Logger } from 'winston'
+import { Queue, rewriteJobMeta, WorkerMeta } from './queue'
+import { Queue as ResqueQueue, Scheduler } from 'node-resque'
+import { validateLsifInput } from './input'
+import { wrap } from 'async-middleware'
+import { XrepoDatabase } from './xrepo.js'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,

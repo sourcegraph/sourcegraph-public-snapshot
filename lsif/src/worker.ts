@@ -1,18 +1,18 @@
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import exitHook from 'async-exit-hook';
-import express from 'express';
-import promClient from 'prom-client';
-import uuid from 'uuid';
-import { ConnectionCache } from './cache';
-import { connectionCacheCapacityGauge, jobDurationHistogram, jobEventsCounter } from './metrics';
-import { convertLsif } from './importer';
-import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util';
-import { createLogger } from './logger';
-import { JobClass, Worker } from './queue';
-import { JobsHash, Worker as ResqueWorker } from 'node-resque';
-import { Logger } from 'winston';
-import { XrepoDatabase } from './xrepo';
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import exitHook from 'async-exit-hook'
+import express from 'express'
+import promClient from 'prom-client'
+import uuid from 'uuid'
+import { ConnectionCache } from './cache'
+import { connectionCacheCapacityGauge, jobDurationHistogram, jobEventsCounter } from './metrics'
+import { convertLsif } from './importer'
+import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { createLogger } from './logger'
+import { JobClass, Worker } from './queue'
+import { JobsHash, Worker as ResqueWorker } from 'node-resque'
+import { Logger } from 'winston'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.

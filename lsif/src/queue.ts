@@ -6,7 +6,7 @@ import { Queue as ResqueQueue, Worker as ResqueWorker, Job } from 'node-resque'
 export type JobClass = 'convert'
 
 /**
- * This type provides additional methods defined in node-resque but not
+ * This interface provides additional methods defined in node-resque but not
  * defined in @types/node-resque. These methods are used to control the
  * queue via the HTTP API and emit metrics. Additionally, we ensure that
  * the enqueue method supplies only a job class that is defined above.
@@ -52,13 +52,19 @@ export interface Queue extends Omit<ResqueQueue, 'enqueue'> {
 }
 
 /**
- * This type updates the type of job, success, and failure callbacks of the
- * node-resque Worker class. These types are ill-defined in @types/node-resque.
+ * This interface updates the type of the `job` parameter in several event
+ * callback types. Theses types are under-defined in @types/node-resque.
  */
-export interface Worker extends ResqueWorker {
-    on(event: 'job', cb: (queue: string, job: Job<any> & JobMeta) => void): Worker
-    on(event: 'success', cb: (queue: string, job: Job<any> & JobMeta, result: any) => void): Worker
-    on(event: 'failure', cb: (queue: string, job: Job<any> & JobMeta, failure: any) => void): Worker
+export interface Worker extends Omit<ResqueWorker, 'on'> {
+    on(event: 'start' | 'end' | 'pause', cb: () => void): this
+    on(event: 'cleaning_worker', cb: (worker: string, pid: string) => void): this
+    on(event: 'poll', cb: (queue: string) => void): this
+    on(event: 'ping', cb: (time: number) => void): this
+    on(event: 'job', cb: (queue: string, job: Job<any> & JobMeta) => void): this
+    on(event: 'reEnqueue', cb: (queue: string, job: Job<any> & JobMeta, plugin: string) => void): this
+    on(event: 'success', cb: (queue: string, job: Job<any> & JobMeta, result: any) => void): this
+    on(event: 'failure', cb: (queue: string, job: Job<any> & JobMeta, failure: any) => void): this
+    on(event: 'error', cb: (error: Error, queue: string, job: Job<any> & JobMeta) => void): this
 }
 
 /**
