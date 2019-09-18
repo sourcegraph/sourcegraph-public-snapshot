@@ -174,11 +174,11 @@ describe('Database', () => {
     })
 })
 
-async function createTestInputs(): {
+async function createTestInputs(): Promise<{
     input: Readable
     repository: string
     commit: string
-}[] {
+}[]> {
     const repositories = ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']
 
     const inputs = []
