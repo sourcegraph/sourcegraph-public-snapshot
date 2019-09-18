@@ -1,28 +1,23 @@
-import * as definitionsSchema from './lsif.schema.json';
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import Ajv from 'ajv';
-import bodyParser from 'body-parser';
-import exitHook from 'async-exit-hook';
-import express from 'express';
-import onFinished from 'on-finished';
-import onHeaders from 'on-headers';
-import promBundle from 'express-prom-bundle';
-import uuid from 'uuid';
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics';
-import {
-    createDatabaseFilename,
-    ensureDirectory,
-    hasErrorCode,
-    readEnvInt
-} from './util';
-import { Database } from './database.js';
-import { initLogger, logger } from './logger';
-import { Job, Queue, Scheduler } from 'node-resque';
-import { validateLsifInput } from './input';
-import { wrap } from 'async-middleware';
-import { XrepoDatabase } from './xrepo.js';
+import * as definitionsSchema from './lsif.schema.json'
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import Ajv from 'ajv'
+import bodyParser from 'body-parser'
+import exitHook from 'async-exit-hook'
+import express from 'express'
+import onFinished from 'on-finished'
+import onHeaders from 'on-headers'
+import promBundle from 'express-prom-bundle'
+import uuid from 'uuid'
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
+import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
+import { Database } from './database.js'
+import { initLogger, logger } from './logger'
+import { Job, Queue, Scheduler } from 'node-resque'
+import { validateLsifInput } from './input'
+import { wrap } from 'async-middleware'
+import { XrepoDatabase } from './xrepo.js'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -126,12 +121,12 @@ async function setupQueue(): Promise<Queue> {
 
     // Create scheduler log the interesting events
     const scheduler = new Scheduler({ connection: connectionOptions })
-    scheduler.on('start', () => logger.debug('started scheduler'))
-    scheduler.on('end', () => logger.debug('ended scheduler'))
-    scheduler.on('poll', () => logger.debug('checking for stuck workers'))
-    scheduler.on('master', () => logger.debug('scheduler has become master'))
-    scheduler.on('cleanStuckWorker', (worker: string) => logger.debug('cleaning stuck worker', { worker }))
-    scheduler.on('transferredJob', (_: number, job: Job<any>) => logger.debug('transferring job', { job }))
+    scheduler.on('start', () => logger.debug('scheduler started'))
+    scheduler.on('end', () => logger.debug('scheduler ended'))
+    scheduler.on('poll', () => logger.debug('scheduler checking for stuck workers'))
+    scheduler.on('master', () => logger.debug('scheduler became master'))
+    scheduler.on('cleanStuckWorker', (worker: string) => logger.debug('scheduler cleaning stuck worker', { worker }))
+    scheduler.on('transferredJob', (_: number, job: Job<any>) => logger.debug('scheduler transferring job', { job }))
     scheduler.on('error', e => logger.error('scheduler error', { error: e && e.message }))
 
     await scheduler.connect()
@@ -352,4 +347,4 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(e => logger.error('failed to start process', e && e.message))
+main().catch(e => logger.error('failed to start process', { error: e && e.message }))

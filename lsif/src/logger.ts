@@ -35,9 +35,9 @@ const colors: { [k: string]: (text: string) => string } = {
  */
 const replacerPairs: [RegExp, string][] = [
     [new RegExp('\\\\', 'g'), '\\\\'],
-    [new RegExp('\n', 'g'), '\\n'],
-    [new RegExp('\r', 'g'), '\\r'],
-    [new RegExp('\t', 'g'), '\\t'],
+    [new RegExp('\\n', 'g'), '\\n'],
+    [new RegExp('\\r', 'g'), '\\r'],
+    [new RegExp('\\t', 'g'), '\\t'],
     [new RegExp('"', 'g'), '\\"'],
 ]
 

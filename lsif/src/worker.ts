@@ -7,9 +7,10 @@ import uuid from 'uuid'
 import { ConnectionCache } from './cache'
 import { connectionCacheCapacityGauge } from './metrics'
 import { convertLsif } from './importer'
-import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
-import { JobsHash, Worker } from 'node-resque'
+import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { JobsHash, Worker, Job } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
+import { initLogger, logger } from './logger'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -36,11 +37,6 @@ const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_END
 const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
 
 /**
- * Whether or not to log a message when the HTTP server is ready and listening.
- */
-const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
-
-/**
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
@@ -49,6 +45,9 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
+    // Initialize logger
+    initLogger('lsif-workers')
+
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
 
@@ -71,10 +70,6 @@ async function main(): Promise<void> {
 
     // Create worker and start processing jobs
     await startWorker(jobFunctions)
-
-    if (LOG_READY) {
-        console.log('Listening for uploads')
-    }
 }
 
 /**
@@ -88,7 +83,8 @@ function createConvertJob(
     xrepoDatabase: XrepoDatabase
 ): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
-        console.log(`Converting ${repository}@${commit}`)
+        const jobLogger = logger.child({ repository, commit })
+        jobLogger.info('converting LSIF data')
 
         const input = fs.createReadStream(filename)
         const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
@@ -103,10 +99,13 @@ function createConvertJob(
             // Add the new database to the xrepo db
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         } catch (e) {
+            jobLogger.error('failed to convert LSIF data', { error: e && e.message })
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
             throw e
         }
+
+        jobLogger.info('successfully converted LSIF data')
 
         // Remove input
         await fs.unlink(filename)
@@ -132,8 +131,30 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
         jobs[key] = { perform: jobFunctions[key] }
     }
 
+    // Create worker and log the interesting events
     const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs)
-    worker.on('error', logErrorAndExit)
+    worker.on('start', () => logger.debug('worker started'))
+    worker.on('end', () => logger.debug('worker ended'))
+    worker.on('poll', () => logger.debug('worker polling queue'))
+    worker.on('ping', () => logger.debug('worker pinging queue'))
+    worker.on('error', e => logger.error('worker error', { error: e && e.message }))
+
+    worker.on('cleaning_worker', (worker: string, pid: string) =>
+        logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
+    )
+
+    worker.on('job', (_: string, job: Job<any>) =>
+        logger.debug('worker accepted job', { job })
+    )
+
+    worker.on('success', (_: string, job: Job<any>, result: any) =>
+        logger.debug('worker completed job', { job, result })
+    )
+
+    worker.on('failure', (_: string, job: Job<any>, failure: any) =>
+        logger.debug('worker failed job', { job, failure })
+    )
+
     await worker.connect()
     exitHook(() => worker.end())
     await worker.start()
@@ -147,11 +168,7 @@ function startMetricsServer(): void {
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
-    app.listen(WORKER_METRICS_PORT, () => {
-        if (LOG_READY) {
-            console.log(`Listening for HTTP requests on port ${WORKER_METRICS_PORT}`)
-        }
-    })
+    app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
 }
 
-main().catch(logErrorAndExit)
+main().catch(e => logger.error('failed to start process', { error: e && e.message }))
