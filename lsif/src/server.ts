@@ -1,20 +1,28 @@
-import * as definitionsSchema from './lsif.schema.json'
-import * as fs from 'mz/fs'
-import * as path from 'path'
-import Ajv, { ValidateFunction } from 'ajv'
-import bodyParser from 'body-parser'
-import exitHook from 'async-exit-hook'
-import express from 'express'
-import promBundle from 'express-prom-bundle'
-import uuid from 'uuid'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
-import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
-import { Database } from './database.js'
-import { Queue, Scheduler } from 'node-resque'
-import { validateLsifInput } from './input'
-import { wrap } from 'async-middleware'
-import { XrepoDatabase } from './xrepo.js'
+import * as definitionsSchema from './lsif.schema.json';
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import Ajv from 'ajv';
+import bodyParser from 'body-parser';
+import exitHook from 'async-exit-hook';
+import express from 'express';
+import onFinished from 'on-finished';
+import onHeaders from 'on-headers';
+import promBundle from 'express-prom-bundle';
+import uuid from 'uuid';
+import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache';
+import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics';
+import {
+    createDatabaseFilename,
+    ensureDirectory,
+    hasErrorCode,
+    readEnvInt
+} from './util';
+import { Database } from './database.js';
+import { initLogger, logger } from './logger';
+import { Job, Queue, Scheduler } from 'node-resque';
+import { validateLsifInput } from './input';
+import { wrap } from 'async-middleware';
+import { XrepoDatabase } from './xrepo.js';
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -51,11 +59,6 @@ const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 102
 const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
- * Whether or not to log a message when the HTTP server is ready and listening.
- */
-const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
-
-/**
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
@@ -69,6 +72,9 @@ const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
+    // Initialize logger
+    initLogger('lsif-server')
+
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
     documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
@@ -79,6 +85,80 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
+    // Create queue to publish jobs for worker
+    const queue = await setupQueue()
+
+    const app = express()
+    app.use(loggingMiddleware)
+    app.use(promBundle({}))
+
+    // Register endpoints
+    addMetaEndpoints(app)
+    addLsifEndpoints(app, queue)
+
+    // Error handler must be registered last
+    app.use(errorHandler)
+
+    app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
+}
+
+/**
+ * Connect and start an active connection to the worker queue. We also run a
+ * node-resque scheduler on each server instance, as these are guaranteed to
+ * always be up with a responsive system. The schedulers will do their own
+ * master election via a redis key and will check for dead workers attached
+ * to the queue.
+ */
+async function setupQueue(): Promise<Queue> {
+    const [host, port] = REDIS_ENDPOINT.split(':', 2)
+
+    const connectionOptions = {
+        host,
+        port: parseInt(port, 10),
+        namespace: 'lsif',
+    }
+
+    // Create queue and log the interesting events
+    const queue = new Queue({ connection: connectionOptions })
+    queue.on('error', e => logger.error('queue error', { error: e && e.message }))
+    await queue.connect()
+    exitHook(() => queue.end())
+
+    // Create scheduler log the interesting events
+    const scheduler = new Scheduler({ connection: connectionOptions })
+    scheduler.on('start', () => logger.debug('started scheduler'))
+    scheduler.on('end', () => logger.debug('ended scheduler'))
+    scheduler.on('poll', () => logger.debug('checking for stuck workers'))
+    scheduler.on('master', () => logger.debug('scheduler has become master'))
+    scheduler.on('cleanStuckWorker', (worker: string) => logger.debug('cleaning stuck worker', { worker }))
+    scheduler.on('transferredJob', (_: number, job: Job<any>) => logger.debug('transferring job', { job }))
+    scheduler.on('error', e => logger.error('scheduler error', { error: e && e.message }))
+
+    await scheduler.connect()
+    exitHook(() => scheduler.end())
+    await scheduler.start()
+
+    return queue
+}
+
+/**
+ * Add health endpoint.
+ *
+ * @param app The express app.
+ */
+function addMetaEndpoints(app: express.Application): void {
+    app.get('/healthz', (req: express.Request, res: express.Response): void => {
+        res.send('ok')
+    })
+}
+
+/**
+ * Add endpoints to the HTTP API to upload and query LSIF dumps.
+ *
+ * @param app The express app.
+ * @param queue The queue containing LSIF jobs.
+ */
+function addLsifEndpoints(app: express.Application, queue: Queue): void {
     // Create cross-repo database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
@@ -86,6 +166,12 @@ async function main(): Promise<void> {
     const filename = path.join(STORAGE_ROOT, 'xrepo.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
+    // Compile the JSON schema used for validation
+    const validator = new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
+        oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }],
+    })
+
+    // Factory function to open a database for a given repository/commit
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
         const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
 
@@ -111,17 +197,6 @@ async function main(): Promise<void> {
         )
     }
 
-    // Create queue to publish jobs for worker
-    const queue = await setupQueue()
-
-    // Compile the JSON schema used for validation
-    const validator = createInputValidator()
-
-    const app = express()
-    app.use(errorHandler)
-    app.get('/healthz', (_, res) => res.send('ok'))
-    app.use(promBundle({}))
-
     app.post(
         '/upload',
         wrap(
@@ -139,6 +214,8 @@ async function main(): Promise<void> {
                     throw Object.assign(e, { status: 422 })
                 }
 
+                // Enqueue convert job
+                logger.info('enqueueing conversion job', { repository, commit })
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
             }
@@ -189,65 +266,58 @@ async function main(): Promise<void> {
             }
         )
     )
-
-    app.listen(HTTP_PORT, () => {
-        if (LOG_READY) {
-            console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
-        }
-    })
-}
-
-/**
- * Connect and start an active connection to the worker queue. We also run a
- * node-resque scheduler on each server instance, as these are guaranteed to
- * always be up with a responsive system. The schedulers will do their own
- * master election via a redis key and will check for dead workers attached
- * to the queue.
- */
-async function setupQueue(): Promise<Queue> {
-    const [host, port] = REDIS_ENDPOINT.split(':', 2)
-
-    const connectionOptions = {
-        host,
-        port: parseInt(port, 10),
-        namespace: 'lsif',
-    }
-
-    const queue = new Queue({ connection: connectionOptions })
-    queue.on('error', logErrorAndExit)
-    await queue.connect()
-    exitHook(() => queue.end())
-
-    const scheduler = new Scheduler({ connection: connectionOptions })
-    scheduler.on('error', logErrorAndExit)
-    await scheduler.connect()
-    exitHook(() => scheduler.end())
-    await scheduler.start()
-
-    return queue
 }
 
 /**
  * Create a json schema validation function that can validate each line of an
+ * A pair of seconds and nanoseconds representing the output of
  * LSIF dump input.
+ * the nodejs high-resolution timer.
  */
-function createInputValidator(): ValidateFunction {
-    // Compile schema with defs as a reference
-    return new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
-        oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }],
+type HrTime = [number, number]
+
+/**
+ * Middleware function used to log requests and the corresponding
+ * response status code and wall time taken to process the request
+ * (to the point where headers are emitted).
+ */
+function loggingMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    const start = process.hrtime()
+    let end: HrTime | undefined
+
+    onHeaders(res, () => {
+        end = process.hrtime()
     })
+
+    onFinished(res, () => {
+        const responseTime = end ? `${((end[0] - start[0]) * 1e3 + (end[1] - start[1]) * 1e-6).toFixed(3)}ms` : ''
+
+        logger.debug('request', {
+            method: req.method,
+            path: req.path,
+            statusCode: res.statusCode,
+            responseTime,
+        })
+    })
+
+    next()
 }
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  */
-function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
-    if (err && err.status) {
-        res.status(err.status).send({ message: err.message })
+function errorHandler(e: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
+    if (res.headersSent) {
+        res.status(e.status).send({ message: e.message })
+        return next(e)
+    }
+
+    if (e && e.status) {
+        res.status(e.status).send({ message: e.message })
         return
     }
 
-    console.error(err)
+    logger.error('uncaught exception', { error: e && e.message })
     res.status(500).send({ message: 'Unknown error' })
 }
 
@@ -282,4 +352,4 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(logErrorAndExit)
+main().catch(e => logger.error('failed to start process', e && e.message))
