@@ -45,11 +45,8 @@ export function useEventObservable<T, R>(
     transform: (events: Observable<T>) => Observable<R>,
     deps: readonly unknown[]
 ): [Observer<T>['next'], R | undefined] {
-    const { events, observable } = useMemo(() => {
-        const events = new Subject<T>()
-        const observable = events.pipe(transform)
-        return { events, observable }
-    }, deps) // eslint-disable-line react-hooks/exhaustive-deps
+    const events = useMemo(() => new Subject<T>(), [])
+    const observable = useMemo(() => events.pipe(transform), deps) // eslint-disable-line react-hooks/exhaustive-deps
     const value = useObservable(observable, deps)
     return [events.next.bind(events), value]
 }
