@@ -21,7 +21,7 @@
       },
       "id": 2,
       "panels": [],
-      "title": "HTTP requests",
+      "title": "Process metrics",
       "type": "row"
     },
     {
@@ -34,7 +34,7 @@
       "format": "short",
       "gridPos": {
         "h": 6,
-        "w": 8,
+        "w": 12,
         "x": 0,
         "y": 1
       },
@@ -53,41 +53,234 @@
       "points": false,
       "renderer": "flot",
       "repeat": null,
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(lsif_process_cpu_user_seconds_total[1m])) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "user, {{instance}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(lsif_process_cpu_system_seconds_total[1m])) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "system, {{instance}}",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(lsif_process_cpu_seconds_total[1m])) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "combined, {{instance}}",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "CPU utilization",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg(lsif_nodejs_external_memory_bytes / 1024 / 1024) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "memory usage of {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Average memory usage",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decmbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 5,
+      "panels": [],
+      "title": "Upload requests",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "id": 6,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
       "seriesOverrides": [
         {
-          "alias": "≤ 0.03s",
+          "alias": "≤ 0.2s",
           "color": "#96d98d",
           "fillBelowTo": "",
+          "zindex": 8
+        },
+        {
+          "alias": "≤ 0.5s",
+          "color": "#56a64b",
+          "fillBelowTo": "≤ 0.2s",
+          "zindex": 7
+        },
+        {
+          "alias": "≤ 1s",
+          "color": "#37872d",
+          "fillBelowTo": "≤ 0.5s",
           "zindex": 6
         },
         {
-          "alias": "≤ 0.1s",
-          "color": "#56a64b",
-          "fillBelowTo": "≤ 0.03s",
+          "alias": "≤ 2s",
+          "color": "#e0b400",
+          "fillBelowTo": "≤ 1s",
           "zindex": 5
         },
         {
-          "alias": "≤ 0.3s",
-          "color": "#37872d",
-          "fillBelowTo": "≤ 0.1s",
+          "alias": "≤ 5s",
+          "color": "#f2cc0c",
+          "fillBelowTo": "≤ 2s",
           "zindex": 4
         },
         {
-          "alias": "≤ 1.5s",
-          "color": "#e0b400",
-          "fillBelowTo": "≤ 0.3s",
+          "alias": "≤ 10s",
+          "color": "#ffee52",
+          "fillBelowTo": "≤ 5s",
           "zindex": 3
         },
         {
-          "alias": "≤ 10s",
-          "color": "#f2cc0c",
-          "fillBelowTo": "≤ 1.5s",
+          "alias": "≤ 30s",
+          "color": "#fa6400",
+          "fillBelowTo": "≤ 10s",
           "zindex": 2
         },
         {
           "alias": "≤ +Infs",
-          "color": "#ffee52",
-          "fillBelowTo": "≤ 10s",
+          "color": "#c4162a",
+          "fillBelowTo": "≤ 30s",
           "zindex": 1
         }
       ],
@@ -96,7 +289,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(http_request_duration_seconds_bucket{status_code=~\"2..\"}[1m])",
+          "expr": "rate(lsif_http_upload_request_duration_seconds_bucket{code=~\"2..\"}[1m])",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "≤ {{le}}s",
@@ -106,7 +299,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Number of server requests by duration",
+      "title": "Number of upload requests by duration",
       "tooltip": {
         "sort": 2
       },
@@ -150,9 +343,9 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 1
+        "y": 8
       },
-      "id": 4,
+      "id": 7,
       "legend": {
         "show": false
       },
@@ -183,14 +376,14 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(http_request_duration_seconds_count{status_code=~\"5..\"}[1m])) / sum(rate(http_request_duration_seconds_count[1m]))",
+          "expr": "sum(rate(lsif_http_upload_request_duration_seconds_count{code=~\"5..\"}[1m])) / sum(rate(lsif_http_upload_request_duration_seconds_count[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "% of 5.. responses",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_request_duration_seconds_count{status_code=~\"4..\"}[1m])) / sum(rate(http_request_duration_seconds_count[1m]))",
+          "expr": "sum(rate(lsif_http_upload_request_duration_seconds_count{code=~\"4..\"}[1m])) / sum(rate(lsif_http_upload_request_duration_seconds_count[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "% of 4.. responses",
@@ -200,7 +393,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Server error rate",
+      "title": "Upload error rate",
       "tooltip": {
         "common": false
       },
@@ -244,9 +437,9 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 1
+        "y": 8
       },
-      "id": 5,
+      "id": 8,
       "legend": {
         "show": false
       },
@@ -289,21 +482,21 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{status_code=~\"2..\"}[1m]))",
+          "expr": "histogram_quantile(0.5, rate(lsif_http_upload_request_duration_seconds_bucket{code=~\"2..\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "0.5p",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.9, rate(http_request_duration_seconds_bucket{status_code=~\"2..\"}[1m]))",
+          "expr": "histogram_quantile(0.9, rate(lsif_http_upload_request_duration_seconds_bucket{code=~\"2..\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "0.9p",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{status_code=~\"2..\"}[1m]))",
+          "expr": "histogram_quantile(0.99, rate(lsif_http_upload_request_duration_seconds_bucket{code=~\"2..\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "0.99p",
@@ -313,7 +506,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Server request duration percentiles",
+      "title": "Upload request duration percentiles",
       "tooltip": {
         "sort": 2
       },
@@ -351,9 +544,768 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 14
       },
-      "id": 6,
+      "id": 9,
+      "panels": [],
+      "title": "Query requests",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "id": 10,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [
+        {
+          "alias": "≤ 0.2s",
+          "color": "#96d98d",
+          "fillBelowTo": "",
+          "zindex": 8
+        },
+        {
+          "alias": "≤ 0.5s",
+          "color": "#56a64b",
+          "fillBelowTo": "≤ 0.2s",
+          "zindex": 7
+        },
+        {
+          "alias": "≤ 1s",
+          "color": "#37872d",
+          "fillBelowTo": "≤ 0.5s",
+          "zindex": 6
+        },
+        {
+          "alias": "≤ 2s",
+          "color": "#e0b400",
+          "fillBelowTo": "≤ 1s",
+          "zindex": 5
+        },
+        {
+          "alias": "≤ 5s",
+          "color": "#f2cc0c",
+          "fillBelowTo": "≤ 2s",
+          "zindex": 4
+        },
+        {
+          "alias": "≤ 10s",
+          "color": "#ffee52",
+          "fillBelowTo": "≤ 5s",
+          "zindex": 3
+        },
+        {
+          "alias": "≤ 30s",
+          "color": "#fa6400",
+          "fillBelowTo": "≤ 10s",
+          "zindex": 2
+        },
+        {
+          "alias": "≤ +Infs",
+          "color": "#c4162a",
+          "fillBelowTo": "≤ 30s",
+          "zindex": 1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(lsif_http_query_request_duration_seconds_bucket{code=~\"2..\"}[1m])",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "≤ {{le}}s",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Number of query requests by duration",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "id": 11,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": false,
+      "linewidth": 1,
+      "links": [],
+      "max": 1,
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [
+        {
+          "alias": "% of 5.. responses",
+          "color": "#7eb26d"
+        },
+        {
+          "alias": "% of 4.. responses",
+          "color": "#cca300"
+        }
+      ],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(lsif_http_query_request_duration_seconds_count{code=~\"5..\"}[1m])) / sum(rate(lsif_http_query_request_duration_seconds_count[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "% of 5.. responses",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(lsif_http_query_request_duration_seconds_count{code=~\"4..\"}[1m])) / sum(rate(lsif_http_query_request_duration_seconds_count[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "% of 4.. responses",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Query error rate",
+      "tooltip": {
+        "common": false
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "percentunit",
+          "label": null,
+          "logBase": 1,
+          "max": 1,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "id": 12,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [
+        {
+          "alias": "0.5p",
+          "color": "#7eb26d",
+          "fill": 3,
+          "fillBelowTo": "",
+          "zindex": 3
+        },
+        {
+          "alias": "0.9p",
+          "color": "#cca300",
+          "fill": 1,
+          "fillBelowTo": "0.5p",
+          "zindex": 2
+        },
+        {
+          "alias": "0.99p",
+          "color": "#bf1b00",
+          "fill": 1,
+          "fillBelowTo": "0.9p",
+          "zindex": 1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, rate(lsif_http_query_request_duration_seconds_bucket{code=~\"2..\"}[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "0.5p",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.9, rate(lsif_http_query_request_duration_seconds_bucket{code=~\"2..\"}[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "0.9p",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(lsif_http_query_request_duration_seconds_bucket{code=~\"2..\"}[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "0.99p",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Query request duration percentiles",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 13,
+      "panels": [],
+      "title": "Queue and job stats",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 22
+      },
+      "id": 14,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "lsif_queue_size",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "queue size",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Queue size",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 22
+      },
+      "id": 15,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(lsif_job_events_total{type=\"success\"}[1m])) by (class)",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "{{class}} success",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(lsif_job_events_total{type=\"failure\"}[1m])) by (class)",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "{{class}} failure",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Job events",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 22
+      },
+      "id": 16,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [
+        {
+          "alias": "≤ 0.2s",
+          "color": "#96d98d",
+          "fillBelowTo": "",
+          "zindex": 8
+        },
+        {
+          "alias": "≤ 0.5s",
+          "color": "#56a64b",
+          "fillBelowTo": "≤ 0.2s",
+          "zindex": 7
+        },
+        {
+          "alias": "≤ 1s",
+          "color": "#37872d",
+          "fillBelowTo": "≤ 0.5s",
+          "zindex": 6
+        },
+        {
+          "alias": "≤ 2s",
+          "color": "#e0b400",
+          "fillBelowTo": "≤ 1s",
+          "zindex": 5
+        },
+        {
+          "alias": "≤ 5s",
+          "color": "#f2cc0c",
+          "fillBelowTo": "≤ 2s",
+          "zindex": 4
+        },
+        {
+          "alias": "≤ 10s",
+          "color": "#ffee52",
+          "fillBelowTo": "≤ 5s",
+          "zindex": 3
+        },
+        {
+          "alias": "≤ 30s",
+          "color": "#fa6400",
+          "fillBelowTo": "≤ 10s",
+          "zindex": 2
+        },
+        {
+          "alias": "≤ +Infs",
+          "color": "#c4162a",
+          "fillBelowTo": "≤ 30s",
+          "zindex": 1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "rate(lsif_job_duration_seconds_bucket{class=\"convert\"}[1m])",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "≤ {{le}}s",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Number of convert jobs by duration",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "format": "short",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 22
+      },
+      "id": 17,
+      "legend": {
+        "show": false
+      },
+      "legend_show": false,
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "min": 0,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "repeat": null,
+      "seriesOverrides": [
+        {
+          "alias": "0.5p",
+          "color": "#7eb26d",
+          "fill": 3,
+          "fillBelowTo": "",
+          "zindex": 3
+        },
+        {
+          "alias": "0.9p",
+          "color": "#cca300",
+          "fill": 1,
+          "fillBelowTo": "0.5p",
+          "zindex": 2
+        },
+        {
+          "alias": "0.99p",
+          "color": "#bf1b00",
+          "fill": 1,
+          "fillBelowTo": "0.9p",
+          "zindex": 1
+        }
+      ],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, rate(lsif_job_duration_seconds_bucket{class=\"convert\"}[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "0.5p",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.9, rate(lsif_job_duration_seconds_bucket{class=\"convert\"}[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "0.9p",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(lsif_job_duration_seconds_bucket{class=\"convert\"}[1m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "0.99p",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Convert jobs duration percentiles",
+      "tooltip": {
+        "sort": 2
+      },
+      "transparent": true,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 18,
       "panels": [],
       "title": "Database queries",
       "type": "row"
@@ -370,9 +1322,9 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 8
+        "y": 29
       },
-      "id": 7,
+      "id": 19,
       "legend": {
         "show": false
       },
@@ -496,9 +1448,9 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 8
+        "y": 29
       },
-      "id": 8,
+      "id": 20,
       "legend": {
         "show": false
       },
@@ -579,9 +1531,9 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 8
+        "y": 29
       },
-      "id": 9,
+      "id": 21,
       "legend": {
         "show": false
       },
@@ -686,11 +1638,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 35
       },
-      "id": 10,
+      "id": 22,
       "panels": [],
-      "title": "Xrepo queries",
+      "title": "Cross-repo queries",
       "type": "row"
     },
     {
@@ -705,9 +1657,9 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 15
+        "y": 36
       },
-      "id": 11,
+      "id": 23,
       "legend": {
         "show": false
       },
@@ -831,9 +1783,9 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 15
+        "y": 36
       },
-      "id": 12,
+      "id": 24,
       "legend": {
         "show": false
       },
@@ -914,9 +1866,9 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 15
+        "y": 36
       },
-      "id": 13,
+      "id": 25,
       "legend": {
         "show": false
       },
@@ -1021,9 +1973,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 42
       },
-      "id": 14,
+      "id": 26,
       "panels": [],
       "title": "Database insertions",
       "type": "row"
@@ -1040,9 +1992,9 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 22
+        "y": 43
       },
-      "id": 15,
+      "id": 27,
       "legend": {
         "show": false
       },
@@ -1166,9 +2118,9 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 22
+        "y": 43
       },
-      "id": 16,
+      "id": 28,
       "legend": {
         "show": false
       },
@@ -1249,9 +2201,9 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 22
+        "y": 43
       },
-      "id": 17,
+      "id": 29,
       "legend": {
         "show": false
       },
@@ -1356,11 +2308,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 49
       },
-      "id": 18,
+      "id": 30,
       "panels": [],
-      "title": "Xrepo insertions",
+      "title": "Cross-repo insertions",
       "type": "row"
     },
     {
@@ -1375,9 +2327,9 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 29
+        "y": 50
       },
-      "id": 19,
+      "id": 31,
       "legend": {
         "show": false
       },
@@ -1501,9 +2453,9 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 29
+        "y": 50
       },
-      "id": 20,
+      "id": 32,
       "legend": {
         "show": false
       },
@@ -1584,9 +2536,9 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 29
+        "y": 50
       },
-      "id": 21,
+      "id": 33,
       "legend": {
         "show": false
       },
@@ -1691,9 +2643,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 56
       },
-      "id": 22,
+      "id": 34,
       "panels": [],
       "title": "Caches and Filters",
       "type": "row"
@@ -1710,9 +2662,9 @@
         "h": 6,
         "w": 4.7999999999999998,
         "x": 0,
-        "y": 36
+        "y": 57
       },
-      "id": 23,
+      "id": 35,
       "legend": {
         "show": false
       },
@@ -1802,9 +2754,9 @@
         "h": 6,
         "w": 4.7999999999999998,
         "x": 4.7999999999999998,
-        "y": 36
+        "y": 57
       },
-      "id": 24,
+      "id": 36,
       "legend": {
         "show": false
       },
@@ -1900,9 +2852,9 @@
         "h": 6,
         "w": 4.7999999999999998,
         "x": 9.5999999999999996,
-        "y": 36
+        "y": 57
       },
-      "id": 25,
+      "id": 37,
       "legend": {
         "show": false
       },
@@ -1998,9 +2950,9 @@
         "h": 6,
         "w": 4.7999999999999998,
         "x": 14.399999999999999,
-        "y": 36
+        "y": 57
       },
-      "id": 26,
+      "id": 38,
       "legend": {
         "show": false
       },
@@ -2096,9 +3048,9 @@
         "h": 6,
         "w": 4.7999999999999998,
         "x": 19.199999999999999,
-        "y": 36
+        "y": 57
       },
-      "id": 27,
+      "id": 39,
       "legend": {
         "show": false
       },
