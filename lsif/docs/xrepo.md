@@ -1,4 +1,4 @@
-# Cross-repo data model
+# LSIF cross-repo data model
 
 This document outlines the data model used to correlate multiple LSIF dumps. The definition of the cross-repo database tables can be found in `models.xrepo.ts`.
 
