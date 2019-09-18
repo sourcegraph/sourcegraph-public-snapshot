@@ -1,7 +1,7 @@
-import * as fs from 'mz/fs';
-import * as path from 'path';
-import { lsp } from 'lsif-protocol';
-import { Readable } from 'stream';
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import { lsp } from 'lsif-protocol'
+import { Readable } from 'stream'
 
 /**
  * Return a filesystem read stream for the given test file. This will cover
@@ -10,7 +10,7 @@ import { Readable } from 'stream';
  * @param filename The path relative to test-data directory.
  */
 export async function getTestData(filename: string): Promise<Readable> {
-    return fs.createReadStream(path.join(await fs.exists('lsif') ? 'lsif' : '', 'test-data', filename))
+    return fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
 }
 
 export function createLocation(

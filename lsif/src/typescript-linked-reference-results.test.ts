@@ -14,7 +14,9 @@ describe('Database', () => {
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const input = (await getTestData('typescript/linked-reference-results/data/data.lsif.gz')).pipe(zlib.createGunzip())
+        const input = (await getTestData('typescript/linked-reference-results/data/data.lsif.gz')).pipe(
+            zlib.createGunzip()
+        )
         await backend.insertDump(input, 'data', createCommit('data'))
     })
 
