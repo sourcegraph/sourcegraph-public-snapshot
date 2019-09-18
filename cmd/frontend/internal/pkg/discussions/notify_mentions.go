@@ -272,7 +272,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			ThreadTitle:           n.thread.Title,
 			CommentAuthorUsername: commentAuthor.Username,
 			CommentContents:       n.comment.Contents,
-			CommentContentsHTML:   template.HTML(markdown.Render(n.comment.Contents, nil)),
+			CommentContentsHTML:   template.HTML(markdown.Render(n.comment.Contents)),
 			URL:                   url.String(),
 			UniqueValue:           fmt.Sprint(n.comment.ID),
 			CanReply:              conf.CanReadEmail(),

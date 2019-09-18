@@ -1,18 +1,15 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import {
-    sourcegraphBaseUrl,
-    createDriverForTest,
-    Driver,
-    gitHubToken,
-    percySnapshot,
-} from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { getConfig } from '../../../shared/src/e2e/config'
+
+const { gitHubToken, sourcegraphBaseUrl } = getConfig(['gitHubToken', 'sourcegraphBaseUrl'])
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -55,7 +52,6 @@ describe('e2e test suite', () => {
                 url: 'https://github.com',
                 token: gitHubToken,
                 repos: repoSlugs,
-                repositoryQuery: ['none'],
             }),
             ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
         })
@@ -67,7 +63,7 @@ describe('e2e test suite', () => {
             MockDate.reset()
 
             // Start browser.
-            driver = await createDriverForTest()
+            driver = await createDriverForTest({ sourcegraphBaseUrl })
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2
@@ -279,6 +275,7 @@ describe('e2e test suite', () => {
                         password: awsCodeCommitPassword,
                     },
                 }),
+                ensureRepos: ['aws/test'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
             const blob: string = await (await driver.page.waitFor(() => {
@@ -287,6 +284,34 @@ describe('e2e test suite', () => {
             })).jsonValue()
 
             expect(blob).toBe('README\n\nchange')
+        })
+
+        const bbsURL = process.env.BITBUCKET_SERVER_URL
+        const bbsToken = process.env.BITBUCKET_SERVER_TOKEN
+        const bbsUsername = process.env.BITBUCKET_SERVER_USERNAME
+
+        const testIfBBSCredentialsSet = bbsURL && bbsToken && bbsUsername ? test : test.skip.bind(test)
+
+        testIfBBSCredentialsSet('Bitbucket Server', async () => {
+            await driver.ensureHasExternalService({
+                kind: ExternalServiceKind.BITBUCKETSERVER,
+                displayName: 'e2e-bitbucket-server',
+                config: JSON.stringify({
+                    url: bbsURL,
+                    token: bbsToken,
+                    username: bbsUsername,
+                    repos: ['SOURCEGRAPH/jsonrpc2'],
+                    repositoryPathPattern: 'bbs/{projectKey}/{repositorySlug}',
+                }),
+                ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
+            })
+            await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
+            const blob: string = await (await driver.page.waitFor(() => {
+                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                return elem && elem.textContent
+            })).jsonValue()
+
+            expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
         })
     })
 
@@ -1133,8 +1158,9 @@ describe('e2e test suite', () => {
             expect(label).toEqual('Code')
         })
 
-        test.skip('Clicking search results tabs updates query and URL', async () => {
+        test('Clicking search results tabs updates query and URL', async () => {
             for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
+                await driver.page.waitForSelector(`.e2e-search-result-tab-${searchType}`)
                 await driver.page.click(`.e2e-search-result-tab-${searchType}`)
                 await driver.assertWindowLocation(`/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}`)
             }

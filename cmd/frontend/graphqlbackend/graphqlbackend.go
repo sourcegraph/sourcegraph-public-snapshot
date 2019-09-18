@@ -169,20 +169,6 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-// stringLogger describes something that can log strings, list them and also
-// clean up to make sure they don't use too much storage space.
-type stringLogger interface {
-	// Log stores the given string s.
-	Log(ctx context.Context, s string) error
-
-	// Top returns the top n most frequently occurring strings.
-	// The returns are parallel slices for the unique strings and their associated counts.
-	Top(ctx context.Context, n int32) ([]string, []int32, error)
-
-	// Cleanup removes old entries such that there are no more than limit remaining.
-	Cleanup(ctx context.Context, limit int) error
-}
-
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.

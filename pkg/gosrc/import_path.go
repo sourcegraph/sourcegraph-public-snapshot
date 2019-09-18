@@ -31,7 +31,7 @@ var errNoMatch = errors.New("no match")
 func ResolveImportPath(client *http.Client, importPath string) (*Directory, error) {
 	if d, err := resolveStaticImportPath(importPath); err == nil {
 		return d, nil
-	} else if err != nil && err != errNoMatch {
+	} else if err != errNoMatch {
 		return nil, err
 	}
 	return resolveDynamicImportPath(client, importPath)

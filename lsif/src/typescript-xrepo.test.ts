@@ -3,7 +3,7 @@ import * as path from 'path'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
-import { createCommit, createLocation, createRemoteLocation } from './test-utils'
+import { createCommit, createLocation, createRemoteLocation, getTestData } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { Readable } from 'stream'
@@ -18,15 +18,8 @@ describe('Database', () => {
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
-        const inputs: { input: Readable; repository: string; commit: string }[] = []
 
-        for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
-            const input = fs.createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
-            const commit = createCommit(repository)
-            inputs.push({ input, repository, commit })
-        }
-
-        for (const { input, repository, commit } of createTestInputs()) {
+        for (const { input, repository, commit } of await createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
             const { packages, references } = await convertLsif(input, database)
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
@@ -181,7 +174,7 @@ describe('Database', () => {
     })
 })
 
-function createTestInputs(): {
+async function createTestInputs(): {
     input: Readable
     repository: string
     commit: string
@@ -190,7 +183,7 @@ function createTestInputs(): {
 
     const inputs = []
     for (const repository of repositories) {
-        const input = fs.createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
+        const input = await getTestData(`typescript/xrepo/data/${repository}.lsif.gz`)
         const commit = createCommit(repository)
         inputs.push({ input, repository, commit })
     }

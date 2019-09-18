@@ -3,7 +3,7 @@ import * as path from 'path'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
-import { createCommit, createLocation } from './test-utils'
+import { createCommit, createLocation, getTestData } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
@@ -21,7 +21,7 @@ describe('Database', () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
         const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
-        const input = fs.createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
+        const input = await getTestData('typescript/linked-reference-results/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
         const { packages, references } = await convertLsif(input, database)
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)

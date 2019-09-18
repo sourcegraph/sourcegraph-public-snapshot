@@ -168,33 +168,6 @@ func logger(h http.Handler) http.HandlerFunc {
 	})
 }
 
-// handleDefault shows the root page with links to config and repos.
-func handleDefault(tvars *templateVars, w http.ResponseWriter) {
-	t1 := `
-<p><a href="/config">config</a></p>
-{{if .Repos}}
-{{range .Repos}}
-<div><a href="{{.}}">{{.}}</a></div>{{end}}
-{{else}}
-<div>No git repos found.</div>
-{{end}}
-`
-	err := func() error {
-		t2, err := template.New("linkspage").Parse(t1)
-		if err != nil {
-			return errors.Wrap(err, "parsing template for links page")
-		}
-		if err := t2.Execute(w, tvars); err != nil {
-			return errors.Wrap(err, "executing links page template")
-		}
-		return nil
-	}()
-	if err != nil {
-		log.Println(err)
-		_, _ = w.Write([]byte(err.Error()))
-	}
-}
-
 // handleConfig shows the config for pasting into sourcegraph.
 func handleConfig(tvars *templateVars, w http.ResponseWriter) {
 	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
