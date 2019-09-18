@@ -55,10 +55,18 @@ export interface Queue extends Omit<ResqueQueue, 'enqueue'> {
  * This type updates the type of job, success, and failure callbacks of the
  * node-resque Worker class. These types are ill-defined in @types/node-resque.
  */
-export interface Worker extends ResqueWorker {
-    on(event: 'job', cb: (queue: string, job: Job<any> & JobMeta) => void): Worker
-    on(event: 'success', cb: (queue: string, job: Job<any> & JobMeta, result: any) => void): Worker
-    on(event: 'failure', cb: (queue: string, job: Job<any> & JobMeta, failure: any) => void): Worker
+export interface Worker extends Omit<ResqueWorker, 'on'> {
+    // This rule wants to incorrectly combine events with distinct callback types.
+    /* eslint-disable @typescript-eslint/unified-signatures */
+    on(event: 'start' | 'end' | 'pause', cb: () => void): this
+    on(event: 'cleaning_worker', cb: (worker: string, pid: string) => void): this
+    on(event: 'poll', cb: (queue: string) => void): this
+    on(event: 'ping', cb: (time: number) => void): this
+    on(event: 'job', cb: (queue: string, job: Job<any> & JobMeta) => void): this
+    on(event: 'reEnqueue', cb: (queue: string, job: Job<any> & JobMeta, plugin: string) => void): this
+    on(event: 'success', cb: (queue: string, job: Job<any> & JobMeta, result: any) => void): this
+    on(event: 'failure', cb: (queue: string, job: Job<any> & JobMeta, failure: any) => void): this
+    on(event: 'error', cb: (error: Error, queue: string, job: Job<any> & JobMeta) => void): this
 }
 
 /**
