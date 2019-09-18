@@ -88,8 +88,8 @@ async function main(logger: Logger): Promise<void> {
     app.use(promBundle({}))
 
     // Register endpoints
-    addMetaEndpoints(app)
-    addLsifEndpoints(app, queue, logger)
+    app.use(metaEndpoints(app))
+    app.use(lsifEndpoints(app, queue, logger))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -139,24 +139,25 @@ async function setupQueue(logger: Logger): Promise<Queue> {
 }
 
 /**
- * Add health endpoint.
- *
- * @param app The express app.
+ * Create a router containing health endpoint.
  */
-function addMetaEndpoints(app: express.Application): void {
-    app.get('/healthz', (req: express.Request, res: express.Response): void => {
+function metaEndpoints(): express.Router {
+    const router = express.Router()
+    router.get('/healthz', (req: express.Request, res: express.Response): void => {
         res.send('ok')
     })
+
+    return router
 }
 
 /**
- * Add endpoints to the HTTP API to upload and query LSIF dumps.
- *
- * @param app The express app.
+ s* Create a router containing the LSIF upload and query endpoints.
  * @param queue The queue containing LSIF jobs.
  * @param logger The server's logger instance.
  */
-function addLsifEndpoints(app: express.Application, queue: Queue, logger: Logger): void {
+function lsifEndpoints(app: express.Application, queue: Queue, logger: Logger): express.Router {
+    const router = expres.Router()
+
     // Create cross-repo database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
@@ -195,7 +196,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue, logger: Logger
         )
     }
 
-    app.post(
+    router.post(
         '/upload',
         wrap(
             async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
@@ -220,7 +221,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue, logger: Logger
         )
     )
 
-    app.post(
+    router.post(
         '/exists',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
@@ -241,7 +242,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue, logger: Logger
         )
     )
 
-    app.post(
+    router.post(
         '/request',
         bodyParser.json({ limit: '1mb' }),
         wrap(
@@ -264,6 +265,8 @@ function addLsifEndpoints(app: express.Application, queue: Queue, logger: Logger
             }
         )
     )
+
+    return router
 }
 
 /**
