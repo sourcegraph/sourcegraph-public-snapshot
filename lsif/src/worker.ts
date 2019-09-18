@@ -105,7 +105,7 @@ function createConvertJob(
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
             xrepoTimer.done({ message: 'populated cross-repo database', level: 'debug' })
         } catch (e) {
-            jobLogger.error('failed to convert LSIF data', { error: e && e.message })
+            jobLogger.error('failed to convert LSIF data', { error: e })
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
             throw e
@@ -153,7 +153,7 @@ async function startWorker(
     worker.on('cleaning_worker', (worker, pid) =>
         logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
     )
-    worker.on('error', e => logger.error('worker error', { error: e && e.message }))
+    worker.on('error', e => logger.error('worker error', { error: e }))
 
     await worker.connect()
     exitHook(() => worker.end())
@@ -170,11 +170,13 @@ function startMetricsServer(logger: Logger): void {
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
-    app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
+    app.listen(WORKER_METRICS_PORT, () =>
+        logger.debug('listening', { port: WORKER_METRICS_PORT, foo: [1, 2, 3], bar: { logger } })
+    )
 }
 
 // Initialize logger
 const appLogger = createLogger('lsif-workers')
 
 // Launch!
-main(appLogger).catch(e => appLogger.error('failed to start process', { error: e && e.message }))
+main(appLogger).catch(e => appLogger.error('failed to start process', { error: e }))

@@ -117,7 +117,7 @@ async function setupQueue(logger: Logger): Promise<Queue> {
 
     // Create queue and log the interesting events
     const queue = new Queue({ connection: connectionOptions })
-    queue.on('error', e => logger.error('queue error', { error: e && e.message }))
+    queue.on('error', e => logger.error('queue error', { error: e }))
     await queue.connect()
     exitHook(() => queue.end())
 
@@ -129,7 +129,7 @@ async function setupQueue(logger: Logger): Promise<Queue> {
     scheduler.on('master', () => logger.debug('scheduler became master'))
     scheduler.on('cleanStuckWorker', worker => logger.debug('scheduler cleaning stuck worker', { worker }))
     scheduler.on('transferredJob', (_, job) => logger.debug('scheduler transferring job', { job }))
-    scheduler.on('error', e => logger.error('scheduler error', { error: e && e.message }))
+    scheduler.on('error', e => logger.error('scheduler error', { error: e }))
 
     await scheduler.connect()
     exitHook(() => scheduler.end())
@@ -326,7 +326,7 @@ function errorHandler(
             return
         }
 
-        logger.error('uncaught exception', { error: e && e.message })
+        logger.error('uncaught exception', { error: e })
         res.status(500).send({ message: 'Unknown error' })
     }
 }
@@ -366,4 +366,4 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
 const appLogger = createLogger('lsif-server')
 
 // Run app!
-main(appLogger).catch(e => appLogger.error('failed to start process', { error: e && e.message }))
+main(appLogger).catch(e => appLogger.error('failed to start process', { error: e }))
