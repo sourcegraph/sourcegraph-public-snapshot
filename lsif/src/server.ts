@@ -178,12 +178,7 @@ function addQueueEndpoints(app: express.Application, queue: Queue): void {
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const queuedJobs = await queue.queued('lsif', 0, -1)
-
-                res.send(
-                    queuedJobs.map(job => ({
-                        ...rewriteJobMeta(job),
-                    }))
-                )
+                res.send(queuedJobs.map(job => ({ ...rewriteJobMeta(job) })))
             }
         )
     )
