@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -50,7 +51,7 @@ type AlertFuncArgs struct {
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	args := AlertFuncArgs{
 		IsAuthenticated: actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:     (backend.CheckCurrentUserIsSiteAdmin(ctx) == nil),
+		IsSiteAdmin:     backend.CheckCurrentUserIsSiteAdmin(ctx) == nil,
 	}
 
 	var alerts []*Alert
@@ -74,8 +75,9 @@ func init() {
 		if len(messages) > 0 || err != nil {
 			return []*Alert{
 				{
-					TypeValue:    AlertTypeWarning,
-					MessageValue: "[**Update site configuration**](/site-admin/configuration) to resolve problems.",
+					TypeValue: AlertTypeWarning,
+					MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems.` +
+						"\n* " + strings.Join(messages, "\n* "),
 				},
 			}
 		}
