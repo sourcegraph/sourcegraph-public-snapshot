@@ -10,6 +10,7 @@ import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { initLogger, logger } from './logger'
 import { Job, JobsHash, Worker as ResqueWorker } from 'node-resque'
+import { JobClass, JobMeta, Worker } from './queue'
 import { XrepoDatabase } from './xrepo'
 
 /**
@@ -61,15 +62,13 @@ async function main(): Promise<void> {
     const filename = path.join(STORAGE_ROOT, 'xrepo.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
-    const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
-    }
-
     // Start metrics server
     startMetricsServer()
 
     // Create worker and start processing jobs
-    await startWorker(jobFunctions)
+    await startWorker({
+        convert: createConvertJob(xrepoDatabase),
+    })
 }
 
 /**
@@ -121,7 +120,7 @@ function createConvertJob(
  *
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
-async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+async function startWorker(jobFunctions: { [K in JobClass]: (...args: any[]) => Promise<any> }): Promise<void> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -131,12 +130,12 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     }
 
     const jobs: JobsHash = {}
-    for (const key of Object.keys(jobFunctions)) {
-        jobs[key] = { perform: jobFunctions[key] }
+    for (const [key, fn] of Object.entries(jobFunctions)) {
+        jobs[key] = { perform: fn }
     }
 
     // Create worker and log the interesting events
-    const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs)
+    const worker = new ResqueWorker({ connection: connectionOptions, queues: ['lsif'] }, jobs) as Worker
     worker.on('start', () => logger.debug('worker started'))
     worker.on('end', () => logger.debug('worker ended'))
     worker.on('poll', () => logger.debug('worker polling queue'))
@@ -152,12 +151,12 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     // multiWorker and only one job will be processed at a time.
     let end: (() => void) | undefined
 
-    worker.on('job', (_: string, job: Job<any> & { class: string }) => {
+    worker.on('job', (_: string, job: Job<any> & JobMeta) => {
         logger.debug('worker accepted job', { job })
         end = jobDurationHistogram.labels(job.class).startTimer()
     })
 
-    worker.on('success', (_: string, job: Job<any> & { class: string }, result: any) => {
+    worker.on('success', (_: string, job: Job<any> & JobMeta, result: any) => {
         logger.debug('worker completed job', { job, result })
         jobEventsCounter.labels(job.class, 'success').inc()
         if (end) {
@@ -165,7 +164,7 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
         }
     })
 
-    worker.on('failure', (_: string, job: Job<any> & { class: string }, failure: any) => {
+    worker.on('failure', (_: string, job: Job<any> & JobMeta, failure: any) => {
         logger.debug('worker failed job', { job, failure })
         jobEventsCounter.labels(job.class, 'failure').inc()
         if (end) {
