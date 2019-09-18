@@ -3,7 +3,7 @@ import * as path from 'path'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
-import { createCommit, createLocation, createRemoteLocation } from './test-utils'
+import { createCommit, createLocation, createRemoteLocation, createSilentLogger } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { Readable } from 'stream'
@@ -28,7 +28,7 @@ describe('Database', () => {
 
         for (const { input, repository, commit } of createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
-            const { packages, references } = await convertLsif(input, database)
+            const { packages, references } = await convertLsif(input, database, createSilentLogger())
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         }
     })

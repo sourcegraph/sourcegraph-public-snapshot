@@ -3,7 +3,7 @@ import * as path from 'path'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
-import { createCommit, createLocation } from './test-utils'
+import { createCommit, createLocation, createSilentLogger } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
@@ -23,7 +23,7 @@ describe('Database', () => {
 
         const input = fs.createReadStream('./test-data/typescript/linked-reference-results/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
-        const { packages, references } = await convertLsif(input, database)
+        const { packages, references } = await convertLsif(input, database, createSilentLogger())
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
     })
 
