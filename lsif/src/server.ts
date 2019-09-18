@@ -14,8 +14,8 @@ import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCa
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { Database } from './database.js'
 import { initLogger, logger } from './logger'
-import { Job, Queue, Scheduler } from 'node-resque'
-import { RealQueue, rewriteJobMeta, WorkerMeta } from './queue'
+import { Job, Queue as ResqueQueue, Scheduler } from 'node-resque'
+import { Queue, rewriteJobMeta, WorkerMeta } from './queue'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
@@ -106,7 +106,7 @@ async function main(): Promise<void> {
  * master election via a redis key and will check for dead workers attached
  * to the queue.
  */
-async function setupQueue(): Promise<RealQueue> {
+async function setupQueue(): Promise<Queue> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -116,7 +116,7 @@ async function setupQueue(): Promise<RealQueue> {
     }
 
     // Create queue and log the interesting events
-    const queue = new Queue({ connection: connectionOptions }) as RealQueue
+    const queue = new ResqueQueue({ connection: connectionOptions }) as Queue
     queue.on('error', e => logger.error('queue error', { error: e && e.message }))
     await queue.connect()
     exitHook(() => queue.end())
@@ -155,7 +155,7 @@ function addMetaEndpoints(app: express.Application): void {
  * @param app The express app.
  * @param queue The queue containing LSIF jobs.
  */
-function addQueueEndpoints(app: express.Application, queue: RealQueue): void {
+function addQueueEndpoints(app: express.Application, queue: Queue): void {
     app.get(
         '/queued',
         wrap(

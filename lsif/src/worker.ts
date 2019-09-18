@@ -11,6 +11,7 @@ import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { JobsHash, Worker, Job } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
 import { initLogger, logger } from './logger'
+import { JobClass } from './queue'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -61,15 +62,13 @@ async function main(): Promise<void> {
     const filename = path.join(STORAGE_ROOT, 'xrepo.db')
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
-    const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
-    }
-
     // Start metrics server
     startMetricsServer()
 
     // Create worker and start processing jobs
-    await startWorker(jobFunctions)
+    await startWorker({
+        convert: createConvertJob(xrepoDatabase),
+    })
 }
 
 /**
@@ -121,7 +120,7 @@ function createConvertJob(
  *
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
-async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+async function startWorker(jobFunctions: { [K in JobClass]: (...args: any[]) => Promise<any> }): Promise<void> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -131,8 +130,8 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
     }
 
     const jobs: JobsHash = {}
-    for (const key of Object.keys(jobFunctions)) {
-        jobs[key] = { perform: jobFunctions[key] }
+    for (const [key, fn] of Object.entries(jobFunctions)) {
+        jobs[key] = { perform: fn }
     }
 
     // Create worker and log the interesting events

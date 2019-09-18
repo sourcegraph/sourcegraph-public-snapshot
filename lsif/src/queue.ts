@@ -1,16 +1,26 @@
-import { Queue, Worker, Job } from 'node-resque'
+import { Queue as ResqueQueue, Worker as ResqueWorker, Job } from 'node-resque'
 
 /**
  * The names of jobs performed by the LSIF worker.
  */
-export type JobClasses = 'convert'
+export type JobClass = 'convert'
 
 /**
  * This type provides additional methods defined in node-resque but not
  * defined in @types/node-resque. These methods are used to control the
- * queue via the HTTP API and emit metrics.
+ * queue via the HTTP API and emit metrics. Additionally, we ensure that
+ * the enqueue method supplies only a job class that is defined above.
  */
-export type RealQueue = Queue & {
+export type Queue = Omit<ResqueQueue, 'enqueue'> & {
+    /**
+     * Enqueue a job for a worker.
+     *
+     * @param queue The name of the queue.
+     * @param jobName The name of the job class.
+     * @param args The positional arguments supplied to the worker.
+     */
+    enqueue(queue: string, jobName: JobClass, args: any[]): Promise<void>
+
     /**
      * Return basic stats about the queue.
      */
@@ -45,7 +55,7 @@ export type RealQueue = Queue & {
  * This type updates the type of job, success, and failure callbacks of the
  * node-resque Worker class. These types are ill-defined in @types/node-resque.
  */
-export type RealWorker = Worker & {
+export type Worker = ResqueWorker & {
     on(event: 'job', cb: (queue: string, job: Job<any> & JobMeta) => void): Worker
     on(event: 'success', cb: (queue: string, job: Job<any> & JobMeta, result: any) => void): Worker
     on(event: 'failure', cb: (queue: string, job: Job<any> & JobMeta, failure: any) => void): Worker
@@ -58,7 +68,7 @@ export interface JobMeta {
     /**
      * The type of the job.
      */
-    class: JobClasses
+    class: JobClass
 
     /**
      * The arguments of the job.
@@ -102,16 +112,20 @@ export interface WorkerMeta {
 }
 
 /**
+ * Transformers that convert positional arguments for a job into an object
+ * with named properties.
+ */
+const argumentTransformers: { [K in JobClass]: (args: any[]) => { [K: string]: any } } = {
+    convert: (args: any[]) => ({ repository: args[0], commit: args[1] }),
+}
+
+/**
  * Rewrite a job payload to return to the uer. This rewrites the arguments
  * array from a positional list into an object with meaningful names.
  *
  * @param job The job to rewrite.
  */
 export function rewriteJobMeta(job: JobMeta): any {
-    const argumentTransformers = {
-        convert: (args: any[]) => ({ repository: args[0], commit: args[1] }),
-    }
-
     return {
         class: job.class,
         args: argumentTransformers[job.class](job.args),
