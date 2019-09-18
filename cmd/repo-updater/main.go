@@ -129,6 +129,7 @@ func main() {
 		Store:        store,
 		Sourcer:      src,
 		Synced:       synced,
+		Logger:       log15.Root(),
 		Now:          clock,
 	}
 	server.Syncer = syncer

@@ -32,6 +32,7 @@ type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
 	Synced  chan Repos
+	Logger  log15.Logger
 	Now     func() time.Time
 
 	syncSignal signal
@@ -40,8 +41,8 @@ type Syncer struct {
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
-		if _, err := s.Sync(ctx); err != nil {
-			log15.Error("Syncer", "error", err)
+		if _, err := s.Sync(ctx); err != nil && s.Logger != nil {
+			s.Logger.Error("Syncer", "error", err)
 		}
 
 		select {
@@ -346,6 +347,10 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 			if state != "unmodified" {
 				fields = append(fields,
 					otlog.Object(state+".repos", repos.Names()))
+
+				if len(repos) > 0 && s.Logger != nil {
+					s.Logger.Debug(family, "diff."+state, repos.Names())
+				}
 			}
 			syncedTotal.WithLabelValues(state).Add(float64(len(repos)))
 		}
