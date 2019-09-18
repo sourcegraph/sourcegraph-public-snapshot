@@ -2,15 +2,15 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import promBundle from 'express-prom-bundle'
+import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache } from './cache'
 import { connectionCacheCapacityGauge } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
-import { JobsHash, Worker, Job } from 'node-resque'
-import { XrepoDatabase } from './xrepo'
 import { initLogger, logger } from './logger'
+import { Job, JobsHash, Worker } from 'node-resque'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -168,7 +168,10 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
 function startMetricsServer(): void {
     const app = express()
     app.get('/healthz', (_, res) => res.send('ok'))
-    app.use(promBundle({}))
+    app.get('/metrics', (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end(promClient.register.metrics())
+    })
 
     app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
 }

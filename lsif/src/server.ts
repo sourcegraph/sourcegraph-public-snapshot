@@ -7,10 +7,16 @@ import exitHook from 'async-exit-hook'
 import express from 'express'
 import onFinished from 'on-finished'
 import onHeaders from 'on-headers'
-import promBundle from 'express-prom-bundle'
+import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
+import {
+    connectionCacheCapacityGauge,
+    documentCacheCapacityGauge,
+    HTTP_QUERY_DURATION_HISTOGRAM,
+    HTTP_UPLOAD_DURATION_HISTOGRAM,
+    resultChunkCacheCapacityGauge,
+} from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { Database } from './database.js'
 import { initLogger, logger } from './logger'
@@ -85,7 +91,7 @@ async function main(): Promise<void> {
 
     const app = express()
     app.use(loggingMiddleware)
-    app.use(promBundle({}))
+    app.use(metricsMiddleware)
 
     // Register endpoints
     addMetaEndpoints(app)
@@ -292,6 +298,37 @@ function loggingMiddleware(req: express.Request, res: express.Response, next: ex
             responseTime,
         })
     })
+
+    next()
+}
+
+/**
+ * Middleware function used to emit HTTP durations for LSIF functions. Originally
+ * we used an express bundle, but that did not allow us to have different histogram
+ * bucket for different endpoints, which makes half of the metrics useless in the
+ * presence of large uploads.
+ */
+function metricsMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    let histogram: promClient.Histogram | undefined
+    switch (req.path) {
+        case '/upload':
+            histogram = HTTP_UPLOAD_DURATION_HISTOGRAM
+            break
+
+        case '/exists':
+        case '/request':
+            histogram = HTTP_QUERY_DURATION_HISTOGRAM
+    }
+
+    if (histogram !== undefined) {
+        const labels = { code: 0 }
+        const end = histogram.startTimer(labels)
+
+        onFinished(res, () => {
+            labels.code = res.statusCode
+            end()
+        })
+    }
 
     next()
 }
