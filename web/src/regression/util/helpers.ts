@@ -24,7 +24,7 @@ export async function ensureLoggedInOrCreateUser({
         await driver.ensureLoggedIn({ username, password })
         return
     } catch (err) {
-        console.log(`Login failed, will attempt to create user ${JSON.stringify(username)}`)
+        console.log(`Login failed (error: ${err.message}), will attempt to create user ${JSON.stringify(username)}`)
     }
 
     // If there's an error, try to create the user

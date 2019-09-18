@@ -7,21 +7,8 @@ import (
 	gfm "github.com/shurcooL/github_flavored_markdown"
 )
 
-// Options represents option for rendering Markdown content.
-type Options struct {
-	// TODO(slimsag): add option for controlling relative links here.
-}
-
-// DefaultOptions is the default options for rendering Markdown content.
-var DefaultOptions = Options{}
-
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
-//
-// When nil, options will default to DefaultOptions.
-func Render(content string, options *Options) string {
-	if options == nil {
-		options = &DefaultOptions
-	}
+func Render(content string) string {
 	unsafeHTML := gfm.Markdown([]byte(content))
 
 	p := bluemonday.UGCPolicy()

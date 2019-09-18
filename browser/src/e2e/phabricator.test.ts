@@ -1,9 +1,10 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
-import { sourcegraphBaseUrl, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { PhabricatorMapping } from '../browser/types'
 import { isEqual } from 'lodash'
+import { getConfig } from '../../../shared/src/e2e/config'
 
 // By default, these tests run against a local Phabricator instance and a local Sourcegraph instance.
 // To run them against phabricator.sgdev.org and umami.sgdev.org, set the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -14,6 +15,7 @@ const PHABRICATOR_PASSWORD = process.env.PHABRICATOR_PASSWORD || 'sourcegraph'
 const TEST_NATIVE_INTEGRATION = Boolean(
     process.env.TEST_NATIVE_INTEGRATION && JSON.parse(process.env.TEST_NATIVE_INTEGRATION)
 )
+const { gitHubToken, sourcegraphBaseUrl } = getConfig(['gitHubToken', 'sourcegraphBaseUrl'])
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -134,7 +136,7 @@ async function init(driver: Driver): Promise<void> {
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({
         kind: ExternalServiceKind.GITHUB,
-        displayName: 'Github (phabricator)',
+        displayName: 'GitHub (phabricator)',
         config: JSON.stringify({
             url: 'https://github.com',
             token: gitHubToken,
@@ -158,7 +160,7 @@ describe('Sourcegraph Phabricator extension', () => {
 
     beforeAll(async () => {
         try {
-            driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION })
+            driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
             await init(driver)
         } catch (err) {
             console.error(err)

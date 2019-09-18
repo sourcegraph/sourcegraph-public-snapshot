@@ -1,6 +1,22 @@
-import { Logger, transports, createLogger } from 'winston'
+import * as fs from 'mz/fs'
+import * as path from 'path'
+import { createLogger, Logger, transports } from 'winston'
 import { lsp } from 'lsif-protocol'
+import { Readable } from 'stream'
 
+/**
+ * Return a filesystem read stream for the given test file. This will cover
+ * the cases where `yarn test` is ran from the root or from the lsif directory.
+ *
+ * @param filename The path relative to test-data directory.
+ */
+export async function getTestData(filename: string): Promise<Readable> {
+    return fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
+}
+
+/**
+ * Create a logger that emits no data to stdout/stderr.
+ */
 export function createSilentLogger(): Logger {
     const transport = new transports.Console({})
     transport.silent = true

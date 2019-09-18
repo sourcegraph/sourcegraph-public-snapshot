@@ -11,5 +11,5 @@ func (m *markdownResolver) Text() string {
 }
 
 func (m *markdownResolver) HTML() string {
-	return markdown.Render(m.text, nil)
+	return markdown.Render(m.text)
 }
