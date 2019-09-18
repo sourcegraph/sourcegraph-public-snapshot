@@ -218,16 +218,15 @@ func (s *Syncer) syncSourcedRepo(ctx context.Context, state *syncRunState, r *Re
 	}
 
 	var (
-		txs              TxStore
-		closeTransaction = false
-		store            = s.store
+		txs   TxStore
+		store = s.store
 	)
 	if tr, ok := s.store.(Transactor); ok {
 		if txs, err = tr.Transact(ctx); err != nil {
 			return errors.Wrap(err, "syncer.syncsubset.transact")
 		}
-		closeTransaction = true
 		store = txs
+		defer txs.Done(&err)
 	}
 
 	merged := false
@@ -319,10 +318,6 @@ func (s *Syncer) syncSourcedRepo(ctx context.Context, state *syncRunState, r *Re
 	for _, r := range diff.ReposExceptDeleted() {
 		state.byID[r.ExternalRepo] = r
 		state.byName[strings.ToLower(r.Name)] = r
-	}
-
-	if closeTransaction {
-		txs.Done(&err)
 	}
 
 	return nil
