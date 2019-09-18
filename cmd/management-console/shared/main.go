@@ -11,16 +11,17 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/shared/internal/tlscertgen"
 	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const port = "2633"
@@ -224,6 +226,11 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err = validateCriticalConfig(args.Contents); err != nil {
+		httpError(w, errors.Wrap(err, "Invalid critical configuration found").Error(), "bad_request")
+		return
+	}
+
 	critical, err := confdb.CriticalCreateIfUpToDate(r.Context(), &lastIDInt32, args.Contents)
 	if err != nil {
 		if err == confdb.ErrNewerEdit {
@@ -243,6 +250,31 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 		logger.Error("json response encoding failed", "error", err)
 		httpError(w, errors.Wrap(err, "Error encoding JSON response").Error(), "internal_error")
 	}
+}
+
+// validateCriticalConfig validates if critical config is both syntactically and semantically correct.
+func validateCriticalConfig(contents string) error {
+	p, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(errs) > 0 {
+		return fmt.Errorf("invalid JSON: %v", errs)
+	}
+
+	var c struct {
+		ExternalURL string `json:"externalURL"`
+	}
+	if err := json.Unmarshal(p, &c); err != nil {
+		return fmt.Errorf("unmarshal JSON: %v", err)
+	}
+
+	// ExternalURL must be a non-empty valid URL with schema.
+	if c.ExternalURL == "" {
+		return errors.New(`"externalURL": value cannot be empty`)
+	} else if !strings.HasPrefix(c.ExternalURL, "http://") && !strings.HasPrefix(c.ExternalURL, "https://") {
+		return errors.New(`"externalURL": must start with http:// or https://"`)
+	} else if _, err := url.Parse(c.ExternalURL); err != nil {
+		return fmt.Errorf(`"externalURL": %v`, err)
+	}
+	return nil
 }
 
 // HSTSMiddleware effectively instructs browsers to change all HTTP requests to
