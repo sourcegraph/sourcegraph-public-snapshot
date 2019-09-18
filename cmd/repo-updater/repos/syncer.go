@@ -79,8 +79,13 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 		return Diff{}, errors.New("Syncer is not enabled")
 	}
 
+	streamingInsert, err := s.streamingInsert(ctx)
+	if err != nil {
+		return Diff{}, errors.Wrap(err, "syncer.sync.streaming")
+	}
+
 	var sourced Repos
-	if sourced, err = s.sourced(ctx); err != nil {
+	if sourced, err = s.sourced(ctx, streamingInsert); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -123,6 +128,25 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 	if len(sourcedSubset) == 0 {
 		return Diff{}, nil
 	}
+	return s.syncSubset(ctx, false, sourcedSubset...)
+}
+
+// insertIfNew is a specialization of SyncSubset. It will insert sourcedRepo
+// if there are no related repositories, otherwise does nothing.
+func (s *Syncer) insertIfNew(ctx context.Context, sourcedRepo *Repo) (err error) {
+	var diff Diff
+
+	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", sourcedRepo.Name)
+	defer save(&diff, &err)
+
+	diff, err = s.syncSubset(ctx, true, sourcedRepo)
+	return err
+}
+
+func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset ...*Repo) (diff Diff, err error) {
+	if insertOnly && len(sourcedSubset) != 1 {
+		return Diff{}, errors.Errorf("syncer.syncsubset.insertOnly can only handle one sourced repo, given %d repos", len(sourcedSubset))
+	}
 
 	store := s.Store
 	if tr, ok := s.Store.(Transactor); ok {
@@ -142,6 +166,10 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 	}
 	if storedSubset, err = store.ListRepos(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.list-repos")
+	}
+
+	if insertOnly && len(storedSubset) > 0 {
+		return Diff{}, nil
 	}
 
 	diff = NewDiff(sourcedSubset, storedSubset)
@@ -300,7 +328,7 @@ func merge(o, n *Repo) {
 	o.Update(n)
 }
 
-func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
+func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, error) {
 	svcs, err := s.Store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
 	if err != nil {
 		return nil, err
@@ -314,7 +342,44 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 
-	return listAll(ctx, srcs)
+	return listAll(ctx, srcs, observe...)
+}
+
+func (s *Syncer) streamingInsert(ctx context.Context) (func(*Repo), error) {
+	// syncSubset requires querying the store for related repositories, and
+	// will do nothing if there are any related repositories. Most
+	// repositories will already have related repos, so to avoid that cost we
+	// ask the store for all repositories and only do syncsubset if it might
+	// be an insert.
+	ids, err := s.storedExternalIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(r *Repo) {
+		// We know this won't be an insert.
+		if _, ok := ids[r.ExternalRepo]; ok {
+			return
+		}
+
+		err := s.insertIfNew(ctx, r)
+		if err != nil && s.Logger != nil {
+			// Best-effort, final syncer will handle this repo if this failed.
+			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
+		}
+	}, nil
+}
+
+func (s *Syncer) storedExternalIDs(ctx context.Context) (map[api.ExternalRepoSpec]struct{}, error) {
+	stored, err := s.Store.ListRepos(ctx, StoreListReposArgs{})
+	if err != nil {
+		return nil, errors.Wrap(err, "syncer.storedExternalIDs")
+	}
+	ids := make(map[api.ExternalRepoSpec]struct{}, len(stored))
+	for _, r := range stored {
+		ids[r.ExternalRepo] = struct{}{}
+	}
+	return ids, nil
 }
 
 func (s *Syncer) setOrResetLastSyncErr(perr *error) {
