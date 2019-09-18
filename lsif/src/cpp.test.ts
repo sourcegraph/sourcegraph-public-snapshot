@@ -3,7 +3,7 @@ import * as zlib from 'mz/zlib'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
-import { createCommit, createLocation } from './test-utils'
+import { createCommit, createLocation, getTestData } from './test-utils'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -14,7 +14,7 @@ describe('Database', () => {
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
         const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const input = fs.createReadStream('./test-data/cpp/data/data.lsif.gz').pipe(zlib.createGunzip())
+        const input = (await getTestData('cpp/data/data.lsif.gz')).pipe(zlib.createGunzip())
         await backend.insertDump(input, 'five', createCommit('five'))
     })
 

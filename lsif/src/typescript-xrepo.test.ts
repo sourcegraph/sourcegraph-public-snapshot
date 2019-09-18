@@ -3,7 +3,7 @@ import * as zlib from 'mz/zlib'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createBackend } from './backend'
-import { createCommit, createLocation, createRemoteLocation } from './test-utils'
+import { createCommit, createLocation, createRemoteLocation, getTestData } from './test-utils'
 import { Readable } from 'stream'
 
 describe('Database', () => {
@@ -18,9 +18,7 @@ describe('Database', () => {
         const inputs: { input: Readable; repository: string; commit: string }[] = []
 
         for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
-            const input = fs
-                .createReadStream(`./test-data/typescript/xrepo/data/${repository}.lsif.gz`)
-                .pipe(zlib.createGunzip())
+            const input = (await getTestData(`typescript/xrepo/data/${repository}.lsif.gz`)).pipe(zlib.createGunzip())
             const commit = createCommit(repository)
             inputs.push({ input, repository, commit })
         }
