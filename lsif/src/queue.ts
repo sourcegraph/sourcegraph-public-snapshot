@@ -11,7 +11,7 @@ export type JobClass = 'convert'
  * queue via the HTTP API and emit metrics. Additionally, we ensure that
  * the enqueue method supplies only a job class that is defined above.
  */
-export type Queue = Omit<ResqueQueue, 'enqueue'> & {
+export interface Queue extends Omit<ResqueQueue, 'enqueue'> {
     /**
      * Enqueue a job for a worker.
      *
