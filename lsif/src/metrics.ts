@@ -128,6 +128,27 @@ export const bloomFilterEventsCounter = new promClient.Counter({
 })
 
 //
+// Job ansd Queue Metrics
+
+export const QUEUE_SIZE_GAUGE = new promClient.Gauge({
+    name: 'lsif_queue_size',
+    help: 'The current number of items in the work-queue.',
+})
+
+export const JOB_EVENTS_COUNTER = new promClient.Counter({
+    name: 'lsif_job_events_total',
+    help: 'The total number of jobs success and failures.',
+    labelNames: ['class', 'type'],
+})
+
+export const JOB_DURATION_HISTOGRAM = new promClient.Histogram({
+    name: 'lsif_job_duration_seconds',
+    help: 'Total time spent on jobs.',
+    labelNames: ['class'],
+    buckets: [0.2, 0.5, 1, 2, 5, 10, 30],
+})
+
+//
 // Helpers
 
 export async function instrument<T>(

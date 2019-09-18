@@ -16,6 +16,7 @@ import {
     HTTP_QUERY_DURATION_HISTOGRAM,
     HTTP_UPLOAD_DURATION_HISTOGRAM,
     resultChunkCacheCapacityGauge,
+    QUEUE_SIZE_GAUGE,
 } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { Database } from './database.js'
@@ -124,6 +125,16 @@ async function setupQueue(): Promise<Queue> {
     queue.on('error', e => logger.error('queue error', { error: e && e.message }))
     await queue.connect()
     exitHook(() => queue.end())
+
+    const emitQueueSizeMetric = (): void => {
+        (queue as any)
+            .queued('lsif', 0, -1)
+            .then(jobs => QUEUE_SIZE_GAUGE.set(jobs.length))
+            .catch(e => logger.error('failed to get queued jobs', { error: e && e.message }))
+    }
+
+    // Update queue size metric on a timer
+    setInterval(emitQueueSizeMetric, 1000)
 
     // Create scheduler log the interesting events
     const scheduler = new Scheduler({ connection: connectionOptions })

@@ -5,11 +5,11 @@ import express from 'express'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache } from './cache'
-import { connectionCacheCapacityGauge } from './metrics'
+import { connectionCacheCapacityGauge, JOB_DURATION_HISTOGRAM, JOB_EVENTS_COUNTER } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { initLogger, logger } from './logger'
-import { Job, JobsHash, Worker } from 'node-resque'
+import { Job, JobsHash, Worker as ResqueWorker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
 
 /**
@@ -147,15 +147,31 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
         logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
     )
 
-    worker.on('job', (_: string, job: Job<any>) => logger.debug('worker accepted job', { job }))
+    // Start a timer when accepting a job and end it when either
+    // succeeding or failing. This is fine as we're not using a
+    // multiWorker and only one job will be processed at a time.
+    let end: (() => void) | undefined
 
-    worker.on('success', (_: string, job: Job<any>, result: any) =>
+    worker.on('job', (_: string, job: Job<any> & { class: string }) => {
+        logger.debug('worker accepted job', { job })
+        end = JOB_DURATION_HISTOGRAM.labels(job.class).startTimer()
+    })
+
+    worker.on('success', (_: string, job: Job<any> & { class: string }, result: any) => {
         logger.debug('worker completed job', { job, result })
-    )
+        JOB_EVENTS_COUNTER.labels(job.class, 'success').inc()
+        if (end) {
+            end()
+        }
+    })
 
-    worker.on('failure', (_: string, job: Job<any>, failure: any) =>
+    worker.on('failure', (_: string, job: Job<any> & { class: string }, failure: any) => {
         logger.debug('worker failed job', { job, failure })
-    )
+        JOB_EVENTS_COUNTER.labels(job.class, 'failure').inc()
+        if (end) {
+            end()
+        }
+    })
 
     await worker.connect()
     exitHook(() => worker.end())
