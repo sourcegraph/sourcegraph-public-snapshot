@@ -88,8 +88,8 @@ async function main(logger: Logger): Promise<void> {
     app.use(promBundle({}))
 
     // Register endpoints
-    app.use(metaEndpoints(app))
-    app.use(lsifEndpoints(app, queue, logger))
+    app.use(metaEndpoints())
+    app.use(lsifEndpoints(queue, logger))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -143,20 +143,17 @@ async function setupQueue(logger: Logger): Promise<Queue> {
  */
 function metaEndpoints(): express.Router {
     const router = express.Router()
-    router.get('/healthz', (req: express.Request, res: express.Response): void => {
-        res.send('ok')
-    })
-
+    router.get('/healthz', (_, res) => res.send('ok'))
     return router
 }
 
 /**
- s* Create a router containing the LSIF upload and query endpoints.
+ * Create a router containing the LSIF upload and query endpoints.
  * @param queue The queue containing LSIF jobs.
  * @param logger The server's logger instance.
  */
-function lsifEndpoints(app: express.Application, queue: Queue, logger: Logger): express.Router {
-    const router = expres.Router()
+function lsifEndpoints(queue: Queue, logger: Logger): express.Router {
+    const router = express.Router()
 
     // Create cross-repo database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
