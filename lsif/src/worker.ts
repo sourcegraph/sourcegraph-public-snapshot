@@ -49,6 +49,9 @@ async function main(): Promise<void> {
     // Initialize logger
     initLogger('lsif-workers')
 
+    // Collect process metrics
+    promClient.collectDefaultMetrics({ prefix: 'lsif_' })
+
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
 
