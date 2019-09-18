@@ -264,9 +264,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue): void {
 }
 
 /**
- * Create a json schema validation function that can validate each line of an
  * A pair of seconds and nanoseconds representing the output of
- * LSIF dump input.
  * the nodejs high-resolution timer.
  */
 type HrTime = [number, number]
