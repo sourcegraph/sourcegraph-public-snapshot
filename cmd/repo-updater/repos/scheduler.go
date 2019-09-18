@@ -427,14 +427,6 @@ func (s *updateScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerI
 	return &result
 }
 
-func (s *updateScheduler) UpdateQueueLen() int {
-	s.updateQueue.mu.Lock()
-	queueLen := len(s.updateQueue.index)
-	s.updateQueue.mu.Unlock()
-
-	return queueLen
-}
-
 // updateQueue is a priority queue of repos to update.
 // A repo can't have more than one location in the queue.
 type updateQueue struct {

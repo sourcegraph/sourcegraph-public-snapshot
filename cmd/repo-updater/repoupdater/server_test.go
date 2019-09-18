@@ -1042,13 +1042,6 @@ type fakeScheduler struct {
 	queue repos.Repos
 }
 
-func (s *fakeScheduler) UpdateQueueLen() int {
-	if s.queue != nil {
-		return s.queue.Len()
-	}
-	return 0
-}
-
 func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
 func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
