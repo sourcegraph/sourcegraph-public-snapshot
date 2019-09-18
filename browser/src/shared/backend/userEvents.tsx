@@ -9,7 +9,7 @@ import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
  *
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  *
- * @deprecated This function will be deprecated along with this code path.
+ * @deprecated Use logEvent
  */
 export const logUserEvent = (
     event: GQL.UserEvent,

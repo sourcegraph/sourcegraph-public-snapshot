@@ -91,7 +91,7 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  *
  * Not used at all for public/sourcegraph.com usage.
  *
- * @deprecated This function will be deprecated along with this code path.
+ * @deprecated Use logEvent
  */
 export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context && window.context.sourcegraphDotComMode) {
