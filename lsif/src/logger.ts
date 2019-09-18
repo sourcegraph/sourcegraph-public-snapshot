@@ -1,6 +1,7 @@
 import { createLogger as _createLogger, Logger, transports } from 'winston'
 import { MESSAGE } from 'triple-beam'
 import { TransformableInfo, format, Format } from 'logform'
+import { inspect } from 'util'
 
 /**
  * The maximum level log message to output.
@@ -32,6 +33,27 @@ export function createLogger(service: string): Logger {
  * may be some minor differences in stringifying values (float/nil conversions).
  */
 function createLogfmtFormatter(): Format {
+    const replacerPairs: [RegExp, string][] = [
+        [/\\/g, '\\\\'],
+        [/\n/g, '\\n'],
+        [/\r/g, '\\r'],
+        [/\t/g, '\\t'],
+        [/"/g, '\\"'],
+    ]
+
+    const quote = (value: any): string => {
+        // Inspect values except for strings so we don't quote them unnecessarily
+        let strValue = typeof value === 'string' ? value : inspect(value, { compact: false })
+
+        // Escape common character codes
+        for (const [pattern, substitute] of replacerPairs) {
+            strValue = strValue.replace(pattern, substitute)
+        }
+
+        // Quote the value if it contains logfmt-specific characters
+        return [' ', '=', '"'].some(c => strValue.includes(c)) ? `"${strValue}"` : strValue
+    }
+
     const transform = (info: TransformableInfo): TransformableInfo => {
         const pairs = []
         pairs.push(['t', info.timestamp ? info.timestamp : new Date().toISOString()])
@@ -60,6 +82,23 @@ function createLogfmtFormatter(): Format {
  * closely match the condensed output used in the Go codebase.
  */
 function createCondensedFormatter(): Format {
+    // Inspect values except for strings so we don't quote them unnecessarily
+    const quote = (value: any): string => (typeof value === 'string' ? value : inspect(value, { compact: false }))
+
+    const transform = (info: TransformableInfo): TransformableInfo => {
+        const pairs = []
+        for (const [key, value] of Object.entries(info)) {
+            if (key !== 'level' && key !== 'message') {
+                pairs.push([key, value])
+            }
+        }
+
+        pairs.sort((a, b) => a[0].localeCompare(b[0]))
+        const attributes = pairs.map(([k, v]) => `${k}: ${quote(v)}`).join(', ')
+        info[MESSAGE] = `${info.level} ${info.message}, ${attributes}`
+        return info
+    }
+
     const uppercase = {
         transform: (info: TransformableInfo) => {
             info.level = info.level.toUpperCase()
@@ -74,69 +113,6 @@ function createCondensedFormatter(): Format {
         error: 'red',
     }
 
-    const transform = (info: TransformableInfo): TransformableInfo => {
-        const pairs = []
-        for (const [key, value] of Object.entries(info)) {
-            if (key !== 'level' && key !== 'message') {
-                pairs.push([key, value])
-            }
-        }
-
-        pairs.sort((a, b) => a[0].localeCompare(b[0]))
-        info[MESSAGE] = `${info.level} ${info.message}, ${pairs.map(([k, v]) => `${k}: ${quote(v)}`).join(', ')}`
-        return info
-    }
-
     // Need to upper case level before colorization or we destroy ANSI codes
     return format.combine(uppercase, format.colorize({ level: true, colors }), { transform })
-}
-
-/**
- * Pair of regular expressions and their substitute when quoting a
- * logged string value.
- */
-const replacerPairs: [RegExp, string][] = [
-    [/\\/g, '\\\\'],
-    [/\n/g, '\\n'],
-    [/\r/g, '\\r'],
-    [/\t/g, '\\t'],
-    [/"/g, '\\"'],
-]
-
-/**
- * Quote a value to log.
- *
- * @param value An arbitrary value.
- */
-function quote(value: any): string {
-    // Stringify or jsonify, depending on type
-    let strValue = shouldSerialize(value) ? JSON.stringify(value, undefined, 0) : `${value}`
-
-    // Re-escape common escaped characters
-    for (const [pattern, substitute] of replacerPairs) {
-        strValue = strValue.replace(pattern, substitute)
-    }
-
-    // Quote the value if it contains logfmt-specific characters
-    return [' ', '=', '"'].some(c => strValue.includes(c)) ? `"${strValue}"` : strValue
-}
-
-/**
- * Determines if JSON.stringify needs to be called on a value for logging.
- *
- * @param value An arbitrary value.
- */
-function shouldSerialize(value: any): boolean {
-    if (value === undefined || value === null) {
-        return false
-    }
-
-    switch (typeof value) {
-        case 'boolean':
-        case 'number':
-        case 'string':
-            return false
-        default:
-            return true
-    }
 }
