@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
@@ -64,6 +65,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
+
+	a8nStore := a8n.NewStore(db)
 
 	var store repos.Store
 	{
@@ -123,13 +126,20 @@ func main() {
 		server.GithubDotComSource = src
 	}
 
+	changesetSyncer := &repos.ChangesetSyncer{
+		A8NStore:    a8nStore,
+		ReposStore:  store,
+		HTTPFactory: cf,
+	}
+
 	diffs := make(chan repos.Diff)
 	syncer := &repos.Syncer{
-		FailFullSync: envvar.SourcegraphDotComMode(),
-		Store:        store,
-		Sourcer:      src,
-		Diffs:        diffs,
-		Now:          clock,
+		FailFullSync:    envvar.SourcegraphDotComMode(),
+		Store:           store,
+		Sourcer:         src,
+		Diffs:           diffs,
+		Now:             clock,
+		ChangesetSyncer: changesetSyncer,
 	}
 	server.Syncer = syncer
 

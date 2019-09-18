@@ -29,10 +29,11 @@ type Syncer struct {
 	lastSyncErr   error
 	lastSyncErrMu sync.Mutex
 
-	Store   Store
-	Sourcer Sourcer
-	Diffs   chan Diff
-	Now     func() time.Time
+	Store           Store
+	Sourcer         Sourcer
+	Diffs           chan Diff
+	Now             func() time.Time
+	ChangesetSyncer *ChangesetSyncer
 
 	syncSignal signal
 }
@@ -40,6 +41,10 @@ type Syncer struct {
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
+		if s.ChangesetSyncer != nil {
+			s.runChangesetsSync(ctx)
+		}
+
 		if _, err := s.Sync(ctx); err != nil {
 			log15.Error("Syncer", "error", err)
 		}
@@ -304,7 +309,7 @@ func (s *Syncer) sourced(ctx context.Context) ([]*Repo, error) {
 	ctx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 
-	return listAll(ctx, srcs)
+	return listAllRepos(ctx, srcs)
 }
 
 func (s *Syncer) setOrResetLastSyncErr(perr *error) {
@@ -363,6 +368,22 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 		}
 
 		tr.Finish()
+	}
+}
+
+func (s *Syncer) runChangesetsSync(ctx context.Context) {
+	cs, err := s.ChangesetSyncer.listAllChangesets(ctx)
+	if err != nil {
+		log15.Error("Syncer.ChangesetSyncer.listAllChangesets", "error", err)
+		return
+	}
+
+	if len(cs) == 0 {
+		return
+	}
+
+	if err := s.ChangesetSyncer.Sync(ctx, cs...); err != nil {
+		log15.Error("Syncer.ChangesetSyncer.Sync", "error", err)
 	}
 }
 
