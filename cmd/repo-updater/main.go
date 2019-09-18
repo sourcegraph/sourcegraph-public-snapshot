@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -33,6 +34,8 @@ import (
 const port = "3182"
 
 func main() {
+	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
+
 	ctx := context.Background()
 	env.Lock()
 	env.HandleHelpFlag()
@@ -125,13 +128,14 @@ func main() {
 
 	synced := make(chan repos.Repos)
 	syncer := &repos.Syncer{
-		FailFullSync: envvar.SourcegraphDotComMode(),
-		Store:        store,
-		Sourcer:      src,
-		Synced:       synced,
-		SubsetSynced: make(chan repos.Repos),
-		Logger:       log15.Root(),
-		Now:          clock,
+		FailFullSync:     envvar.SourcegraphDotComMode(),
+		Store:            store,
+		Sourcer:          src,
+		DisableStreaming: !streamingSyncer,
+		Synced:           synced,
+		SubsetSynced:     make(chan repos.Repos),
+		Logger:           log15.Root(),
+		Now:              clock,
 	}
 	server.Syncer = syncer
 

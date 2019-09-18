@@ -22,6 +22,10 @@ type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
 
+	// DisableStreaming if true will prevent the syncer from streaming in new
+	// sourced repositories into the store.
+	DisableStreaming bool
+
 	// FailFullSync prevents Sync from running. This should only be true for
 	// Sourcegraph.com
 	FailFullSync bool
@@ -352,6 +356,11 @@ func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, 
 }
 
 func (s *Syncer) streamingInsert(ctx context.Context) (func(*Repo), error) {
+	if s.DisableStreaming {
+		// Return noop
+		return func(*Repo) {}, nil
+	}
+
 	// syncSubset requires querying the store for related repositories, and
 	// will do nothing if there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
