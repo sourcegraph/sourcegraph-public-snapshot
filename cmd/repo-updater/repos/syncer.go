@@ -50,7 +50,7 @@ type Syncer struct {
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
-		if _, err := s.Sync(ctx); err != nil && s.Logger != nil {
+		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
@@ -70,30 +70,32 @@ func (s *Syncer) TriggerSync() {
 }
 
 // Sync synchronizes the repositories.
-func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
+func (s *Syncer) Sync(ctx context.Context) (err error) {
+	var diff Diff
+
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")
 	defer save(&diff, &err)
 	defer s.setOrResetLastSyncErr(&err)
 
 	if s.FailFullSync {
-		return Diff{}, errors.New("Syncer is not enabled")
+		return errors.New("Syncer is not enabled")
 	}
 
 	streamingInsert, err := s.streamingInsert(ctx)
 	if err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.streaming")
+		return errors.Wrap(err, "syncer.sync.streaming")
 	}
 
 	var sourced Repos
 	if sourced, err = s.sourced(ctx, streamingInsert); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.sourced")
+		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
 	store := s.Store
 	if tr, ok := s.Store.(Transactor); ok {
 		var txs TxStore
 		if txs, err = tr.Transact(ctx); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer.sync.transact")
+			return errors.Wrap(err, "syncer.sync.transact")
 		}
 		defer txs.Done(&err)
 		store = txs
@@ -101,34 +103,38 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 
 	var stored Repos
 	if stored, err = store.ListRepos(ctx, StoreListReposArgs{}); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.store.list-repos")
+		return errors.Wrap(err, "syncer.sync.store.list-repos")
 	}
 
 	diff = NewDiff(sourced, stored)
 	upserts := s.upserts(diff)
 
 	if err = store.UpsertRepos(ctx, upserts...); err != nil {
-		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
+		return errors.Wrap(err, "syncer.sync.store.upsert-repos")
 	}
 
 	if s.Synced != nil {
 		s.Synced <- diff.Repos()
 	}
 
-	return diff, nil
+	return nil
 }
 
 // SyncSubset runs the syncer on a subset of the stored repositories. It will
 // only sync the repositories with the same name or external service spec as
 // sourcedSubset repositories.
-func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff Diff, err error) {
+func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (err error) {
+	var diff Diff
+
 	ctx, save := s.observe(ctx, "Syncer.SyncSubset", strings.Join(Repos(sourcedSubset).Names(), " "))
 	defer save(&diff, &err)
 
 	if len(sourcedSubset) == 0 {
-		return Diff{}, nil
+		return nil
 	}
-	return s.syncSubset(ctx, false, sourcedSubset...)
+
+	diff, err = s.syncSubset(ctx, false, sourcedSubset...)
+	return err
 }
 
 // insertIfNew is a specialization of SyncSubset. It will insert sourcedRepo

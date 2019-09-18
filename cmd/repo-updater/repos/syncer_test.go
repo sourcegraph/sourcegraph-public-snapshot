@@ -74,7 +74,7 @@ func TestSyncer_Sync(t *testing.T) {
 				Sourcer: tc.sourcer,
 				Now:     now,
 			}
-			_, err := syncer.Sync(ctx)
+			err := syncer.Sync(ctx)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have error %q, want %q", have, want)
@@ -593,7 +593,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					Sourcer: tc.sourcer,
 					Now:     now,
 				}
-				_, err := syncer.Sync(ctx)
+				err := syncer.Sync(ctx)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -738,7 +738,7 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 					Store: st,
 					Now:   clock.Now,
 				}
-				_, err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
+				err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
 				if err != nil {
 					t.Fatal(err)
 				}
