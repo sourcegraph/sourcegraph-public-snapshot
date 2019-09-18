@@ -83,7 +83,8 @@ function createConvertJob(
     xrepoDatabase: XrepoDatabase
 ): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
-        const jobLogger = logger.child({ repository, commit })
+        const jobLogger = logger.child({ jobId: uuid.v4(), repository, commit })
+        const jobTimer = jobLogger.startTimer()
         jobLogger.info('converting LSIF data')
 
         const input = fs.createReadStream(filename)
@@ -91,13 +92,16 @@ function createConvertJob(
 
         try {
             // Create database in a temp path
-            const { packages, references } = await convertLsif(input, tempFile)
+            const { packages, references } = await convertLsif(input, tempFile, jobLogger)
 
             // Move the temp file where it can be found by the server
             await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
 
             // Add the new database to the xrepo db
+            const xrepoTimer = jobLogger.startTimer()
+            jobLogger.debug('populating cross-repo database')
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+            xrepoTimer.done({ message: 'populated cross-repo database', level: 'debug' })
         } catch (e) {
             jobLogger.error('failed to convert LSIF data', { error: e && e.message })
             // Don't leave busted artifacts
@@ -105,7 +109,7 @@ function createConvertJob(
             throw e
         }
 
-        jobLogger.info('successfully converted LSIF data')
+        jobTimer.done({ message: 'converted LSIF data', level: 'info' })
 
         // Remove input
         await fs.unlink(filename)
@@ -143,9 +147,7 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
         logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
     )
 
-    worker.on('job', (_: string, job: Job<any>) =>
-        logger.debug('worker accepted job', { job })
-    )
+    worker.on('job', (_: string, job: Job<any>) => logger.debug('worker accepted job', { job }))
 
     worker.on('success', (_: string, job: Job<any>, result: any) =>
         logger.debug('worker completed job', { job, result })
