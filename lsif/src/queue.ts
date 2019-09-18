@@ -55,7 +55,7 @@ export interface Queue extends Omit<ResqueQueue, 'enqueue'> {
  * This type updates the type of job, success, and failure callbacks of the
  * node-resque Worker class. These types are ill-defined in @types/node-resque.
  */
-export type Worker = ResqueWorker & {
+export interface Worker extends ResqueWorker {
     on(event: 'job', cb: (queue: string, job: Job<any> & JobMeta) => void): Worker
     on(event: 'success', cb: (queue: string, job: Job<any> & JobMeta, result: any) => void): Worker
     on(event: 'failure', cb: (queue: string, job: Job<any> & JobMeta, failure: any) => void): Worker
