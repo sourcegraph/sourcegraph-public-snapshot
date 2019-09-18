@@ -1176,7 +1176,7 @@ describe('e2e test suite', () => {
                 await dialog.accept()
             })
             await driver.page.click('.e2e-delete-saved-search-button')
-            await driver.page.waitFor(() => !document.querySelector(`.e2e-saved-search-list-page-row`))
+            await driver.page.waitFor(() => !document.querySelector('.e2e-saved-search-list-page-row'))
             const nodes = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
             )
