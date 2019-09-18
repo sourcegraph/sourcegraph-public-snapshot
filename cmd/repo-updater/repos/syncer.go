@@ -23,6 +23,9 @@ type Syncer struct {
 	// Sourcegraph.com
 	FailFullSync bool
 
+	// SubsetSynced if non-nil is sent Repos synced by SubsetSync.
+	SubsetSynced chan Repos
+
 	// lastSyncErr contains the last error returned by the Sourcer in each
 	// Sync. It's reset with each Sync and if the sync produced no error, it's
 	// set to nil.
@@ -142,8 +145,8 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
 	}
 
-	if s.Synced != nil {
-		s.Synced <- diff.Repos()
+	if s.SubsetSynced != nil {
+		s.SubsetSynced <- diff.Repos()
 	}
 
 	return diff, nil
