@@ -42,7 +42,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             this.props.authenticatedUser && (
-                <Form onSubmit={this.onSubmit} className="saved-search-modal-form">
+                <Form onSubmit={this.onSubmit} className="saved-search-modal-form e2e-saved-search-modal">
                     <h3>Save search query to: </h3>
                     <div className="form-group">
                         <select
@@ -77,7 +77,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                     <button
                         type="submit"
                         disabled={this.state.saveLocation === UserOrOrg.Org && !this.state.organization}
-                        className="btn btn-primary saved-search-modal-form__button"
+                        className="btn btn-primary saved-search-modal-form__button e2e-saved-search-modal-save-button"
                     >
                         Save query
                     </button>

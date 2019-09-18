@@ -53,11 +53,11 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
     public render(): JSX.Element | null {
         return (
-            <div className="saved-search-list-page__row list-group-item">
+            <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
                     <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query)}>
-                        <div>{this.props.savedSearch.description}</div>
+                        <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
                     </Link>
                 </div>
                 <div>
@@ -134,7 +134,10 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                         <div>Manage notifications and alerts for specific search queries</div>
                     </div>
                     <div>
-                        <Link to={`${this.props.match.path}/add`} className="btn btn-primary">
+                        <Link
+                            to={`${this.props.match.path}/add`}
+                            className="btn btn-primary e2e-add-saved-search-button"
+                        >
                             <PlusIcon className="icon-inline" /> Add saved search
                         </Link>
                     </div>
