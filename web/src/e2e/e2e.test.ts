@@ -279,13 +279,18 @@ describe('e2e test suite', () => {
                     },
                 }),
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
-            const blob: string = await (await driver.page.waitFor(() => {
-                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                return elem && elem.textContent
-            })).jsonValue()
+            await retry(async () => {
+                await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
+                const blob: string = await (await driver.page.waitFor(
+                    () => {
+                        const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                        return elem && elem.textContent
+                    },
+                    { timeout: 5000 } // Wait 5s for repos to be synced in the background
+                )).jsonValue()
 
-            expect(blob).toBe('README\n\nchange')
+                expect(blob).toBe('README\n\nchange')
+            })
         })
 
         const bbsURL = process.env.BITBUCKET_SERVER_URL
@@ -306,13 +311,20 @@ describe('e2e test suite', () => {
                     repositoryPathPattern: 'bbs/{projectKey}/{repositorySlug}',
                 }),
             })
-            await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
-            const blob: string = await (await driver.page.waitFor(() => {
-                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                return elem && elem.textContent
-            })).jsonValue()
 
-            expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
+            await retry(async () => {
+                await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
+
+                const blob: string = await (await driver.page.waitFor(
+                    () => {
+                        const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                        return elem && elem.textContent
+                    },
+                    { timeout: 5000 } // Wait 5s for repos to be synced in the background
+                )).jsonValue()
+
+                expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
+            })
         })
     })
 
