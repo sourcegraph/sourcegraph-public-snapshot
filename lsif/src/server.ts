@@ -13,10 +13,10 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
-    HTTP_QUERY_DURATION_HISTOGRAM,
-    HTTP_UPLOAD_DURATION_HISTOGRAM,
+    httpQueryDurationHistogram,
+    httpUploadDurationHistogram,
     resultChunkCacheCapacityGauge,
-    QUEUE_SIZE_GAUGE,
+    queueSizeGauge,
 } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { Database } from './database.js'
@@ -129,7 +129,7 @@ async function setupQueue(): Promise<Queue> {
     const emitQueueSizeMetric = (): void => {
         (queue as any)
             .queued('lsif', 0, -1)
-            .then(jobs => QUEUE_SIZE_GAUGE.set(jobs.length))
+            .then(jobs => queueSizeGauge.set(jobs.length))
             .catch(e => logger.error('failed to get queued jobs', { error: e && e.message }))
     }
 
@@ -323,12 +323,12 @@ function metricsMiddleware(req: express.Request, res: express.Response, next: ex
     let histogram: promClient.Histogram | undefined
     switch (req.path) {
         case '/upload':
-            histogram = HTTP_UPLOAD_DURATION_HISTOGRAM
+            histogram = httpUploadDurationHistogram
             break
 
         case '/exists':
         case '/request':
-            histogram = HTTP_QUERY_DURATION_HISTOGRAM
+            histogram = httpQueryDurationHistogram
     }
 
     if (histogram !== undefined) {

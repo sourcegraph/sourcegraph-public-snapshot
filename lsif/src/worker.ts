@@ -5,7 +5,7 @@ import express from 'express'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache } from './cache'
-import { connectionCacheCapacityGauge, JOB_DURATION_HISTOGRAM, JOB_EVENTS_COUNTER } from './metrics'
+import { connectionCacheCapacityGauge, jobDurationHistogram, jobEventsCounter } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { initLogger, logger } from './logger'
@@ -154,12 +154,12 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
 
     worker.on('job', (_: string, job: Job<any> & { class: string }) => {
         logger.debug('worker accepted job', { job })
-        end = JOB_DURATION_HISTOGRAM.labels(job.class).startTimer()
+        end = jobDurationHistogram.labels(job.class).startTimer()
     })
 
     worker.on('success', (_: string, job: Job<any> & { class: string }, result: any) => {
         logger.debug('worker completed job', { job, result })
-        JOB_EVENTS_COUNTER.labels(job.class, 'success').inc()
+        jobEventsCounter.labels(job.class, 'success').inc()
         if (end) {
             end()
         }
@@ -167,7 +167,7 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
 
     worker.on('failure', (_: string, job: Job<any> & { class: string }, failure: any) => {
         logger.debug('worker failed job', { job, failure })
-        JOB_EVENTS_COUNTER.labels(job.class, 'failure').inc()
+        jobEventsCounter.labels(job.class, 'failure').inc()
         if (end) {
             end()
         }
