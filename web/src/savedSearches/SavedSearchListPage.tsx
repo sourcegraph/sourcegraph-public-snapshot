@@ -62,7 +62,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                 </div>
                 <div>
                     <Link
-                        className="btn btn-secondary btn-sm e2e-edit-external-service-button"
+                        className="btn btn-secondary btn-sm e2e-edit-saved-search-button"
                         to={`${this.props.match.path}/${this.props.savedSearch.id}`}
                         data-tooltip="Saved search settings"
                     >
@@ -70,7 +70,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     </Link>{' '}
                     <button
                         type="button"
-                        className="btn btn-sm btn-danger e2e-delete-external-service-button"
+                        className="btn btn-sm btn-danger e2e-delete-saved-search-button"
                         onClick={this.onDelete}
                         disabled={this.state.isDeleting}
                         data-tooltip="Delete saved search"

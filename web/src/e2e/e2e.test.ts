@@ -1164,12 +1164,24 @@ describe('e2e test suite', () => {
             expect(nodes).toEqual(1)
 
             expect(
-                await driver.page.evaluate(() =>
-                    document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent!.trim()
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
                 )
             ).toEqual('test query')
         })
-        test('Save search from search results page', async () => {
+        test('Delete saved search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-delete-saved-search-button', { visible: true })
+            await driver.page.on('dialog', async dialog => {
+                await dialog.accept()
+            })
+            await driver.page.click('.e2e-delete-saved-search-button')
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
+            )
+            expect(nodes).toEqual(0)
+        })
+        test('Save search from saved searches page', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
             await driver.page.waitForSelector('.e2e-add-saved-search-button', { visible: true })
             await driver.page.click('.e2e-add-saved-search-button')
@@ -1190,17 +1202,33 @@ describe('e2e test suite', () => {
             const nodes = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
             )
-            expect(nodes).toEqual(2)
+            expect(nodes).toEqual(1)
 
-            const searchTitles = await driver.page.evaluate(() =>
-                Array.from(document.querySelectorAll('.e2e-saved-search-list-page-row-title')).map(
-                    t => t.textContent! || ''
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
                 )
-            )
+            ).toEqual('test query 2')
+        })
+        test('Edit saved search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-edit-saved-search-button', { visible: true })
+            await driver.page.click('.e2e-edit-saved-search-button')
 
-            const expectedTitles = ['test', 'test 2']
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-description')
+            await driver.page.keyboard.type(' edited')
 
-            expect(searchTitles).toEqual(expectedTitles)
+            await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-submit-button')
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-saved-search-list-page-row-title')
+
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
+                )
+            ).toEqual('test query 2 edited')
         })
     })
 })
