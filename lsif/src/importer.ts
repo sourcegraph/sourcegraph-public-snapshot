@@ -1,4 +1,3 @@
-import winston from 'winston'
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { createConnection } from './connection'
@@ -7,6 +6,7 @@ import { DefaultMap } from './default-map'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
+import { Logger } from 'winston'
 import { MonikerKind, RangeId } from 'lsif-protocol'
 import { Package, SymbolReferences } from './xrepo'
 import { processLsifInput } from './input'
@@ -63,7 +63,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 export async function convertLsif(
     input: Readable,
     database: string,
-    logger: winston.Logger
+    logger: Logger
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createConnection(database, [
         DefinitionModel,
@@ -90,12 +90,12 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param logger The logger tagged with the request's repo and commit.s
+ * @param logger The logger tagged with the request's repo and commit.
  */
 export async function importLsif(
     entityManager: EntityManager,
     input: Readable,
-    logger: winston.Logger
+    logger: Logger
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const correlator = new Correlator()
 

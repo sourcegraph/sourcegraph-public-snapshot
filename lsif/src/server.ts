@@ -13,11 +13,12 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { Database } from './database.js'
-import { initLogger, logger } from './logger'
+import { createLogger } from './logger'
 import { Job, Queue, Scheduler } from 'node-resque'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
+import { Logger } from 'winston'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.
@@ -65,11 +66,10 @@ const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
+ *
+ * @param logger The application logger instance.
  */
-async function main(): Promise<void> {
-    // Initialize logger
-    initLogger('lsif-server')
-
+async function main(logger: Logger): Promise<void> {
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
     documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
@@ -81,18 +81,18 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create queue to publish jobs for worker
-    const queue = await setupQueue()
+    const queue = await setupQueue(logger)
 
     const app = express()
-    app.use(loggingMiddleware)
+    app.use(loggingMiddleware(logger))
     app.use(promBundle({}))
 
     // Register endpoints
     addMetaEndpoints(app)
-    addLsifEndpoints(app, queue)
+    addLsifEndpoints(app, queue, logger)
 
     // Error handler must be registered last
-    app.use(errorHandler)
+    app.use(errorHandler(logger))
 
     app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
 }
@@ -103,8 +103,10 @@ async function main(): Promise<void> {
  * always be up with a responsive system. The schedulers will do their own
  * master election via a redis key and will check for dead workers attached
  * to the queue.
+ *
+ * @param logger The server's logger instance.
  */
-async function setupQueue(): Promise<Queue> {
+async function setupQueue(logger: Logger): Promise<Queue> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -152,8 +154,9 @@ function addMetaEndpoints(app: express.Application): void {
  *
  * @param app The express app.
  * @param queue The queue containing LSIF jobs.
+ * @param logger The server's logger instance.
  */
-function addLsifEndpoints(app: express.Application, queue: Queue): void {
+function addLsifEndpoints(app: express.Application, queue: Queue, logger: Logger): void {
     // Create cross-repo database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
@@ -273,45 +276,56 @@ type HrTime = [number, number]
  * Middleware function used to log requests and the corresponding
  * response status code and wall time taken to process the request
  * (to the point where headers are emitted).
+ *
+ * @param logger The server's logger instance.
  */
-function loggingMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    const start = process.hrtime()
-    let end: HrTime | undefined
+function loggingMiddleware(
+    logger: Logger
+): (req: express.Request, res: express.Response, next: express.NextFunction) => void {
+    return (req: express.Request, res: express.Response, next: express.NextFunction): void => {
+        const start = process.hrtime()
+        let end: HrTime | undefined
 
-    onHeaders(res, () => {
-        end = process.hrtime()
-    })
-
-    onFinished(res, () => {
-        const responseTime = end ? `${((end[0] - start[0]) * 1e3 + (end[1] - start[1]) * 1e-6).toFixed(3)}ms` : ''
-
-        logger.debug('request', {
-            method: req.method,
-            path: req.path,
-            statusCode: res.statusCode,
-            responseTime,
+        onHeaders(res, () => {
+            end = process.hrtime()
         })
-    })
 
-    next()
+        onFinished(res, () => {
+            const responseTime = end ? `${((end[0] - start[0]) * 1e3 + (end[1] - start[1]) * 1e-6).toFixed(3)}ms` : ''
+
+            logger.debug('request', {
+                method: req.method,
+                path: req.path,
+                statusCode: res.statusCode,
+                responseTime,
+            })
+        })
+
+        next()
+    }
 }
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
+ *
+ * @param logger The server's logger instance.
  */
-function errorHandler(e: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
-    if (res.headersSent) {
-        res.status(e.status).send({ message: e.message })
-        return next(e)
-    }
+function errorHandler(
+    logger: Logger
+): (e: any, req: express.Request, res: express.Response, next: express.NextFunction) => void {
+    return (e: any, req: express.Request, res: express.Response, next: express.NextFunction): void => {
+        if (res.headersSent) {
+            return next(e)
+        }
 
-    if (e && e.status) {
-        res.status(e.status).send({ message: e.message })
-        return
-    }
+        if (e && e.status) {
+            res.status(e.status).send({ message: e.message })
+            return
+        }
 
-    logger.error('uncaught exception', { error: e && e.message })
-    res.status(500).send({ message: 'Unknown error' })
+        logger.error('uncaught exception', { error: e && e.message })
+        res.status(500).send({ message: 'Unknown error' })
+    }
 }
 
 /**
@@ -345,4 +359,8 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(e => logger.error('failed to start process', { error: e && e.message }))
+// Initialize logger
+const appLogger = createLogger('lsif-server')
+
+// Run app!
+main(appLogger).catch(e => appLogger.error('failed to start process', { error: e && e.message }))

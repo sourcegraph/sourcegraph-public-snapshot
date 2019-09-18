@@ -1,6 +1,6 @@
-import winston from 'winston'
-import { TransformableInfo } from 'logform'
+import { createLogger as _createLogger, Logger, transports } from 'winston'
 import { MESSAGE } from 'triple-beam'
+import { TransformableInfo } from 'logform'
 
 /**
  * The maximum level log message to output.
@@ -122,28 +122,15 @@ function shouldSerialize(value: any): boolean {
 }
 
 /**
- * Wrap the formatter function in a class acceptable to Winston.
- */
-class Formatter {
-    public transform = LOG_FORMAT === 'condensed' ? condensedFormat : logfmtFormat
-}
-
-/**
- * An importable logger. This must be initialized via `initLogger` at
- * application startup.
- */
-export let logger!: winston.Logger
-
-/**
  * Create an importable logger that matches the output of the Sourcegraph
  * frontend. These processes run directly next to it, and it shouldn't be
  * obvious that it's not using the same underlying logging infrastructure.
  */
-export function initLogger(service: string): void {
-    logger = winston.createLogger({
+export function createLogger(service: string): Logger {
+    return _createLogger({
         level: LOG_LEVEL,
-        format: new Formatter(),
+        format: { transform: LOG_FORMAT === 'condensed' ? condensedFormat : logfmtFormat },
         defaultMeta: { service },
-        transports: [new winston.transports.Console({})],
+        transports: [new transports.Console({})],
     })
 }

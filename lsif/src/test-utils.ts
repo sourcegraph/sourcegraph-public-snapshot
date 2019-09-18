@@ -1,10 +1,10 @@
-import winston from 'winston'
+import { Logger, transports, createLogger } from 'winston'
 import { lsp } from 'lsif-protocol'
 
-export function createSilentLogger(): winston.Logger {
-    const transport = new winston.transports.Console({})
+export function createSilentLogger(): Logger {
+    const transport = new transports.Console({})
     transport.silent = true
-    return winston.createLogger({ level: 'debug', transports: [transport] })
+    return createLogger({ level: 'debug', transports: [transport] })
 }
 
 export function createLocation(

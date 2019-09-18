@@ -8,9 +8,10 @@ import { ConnectionCache } from './cache'
 import { connectionCacheCapacityGauge } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
-import { JobsHash, Worker, Job } from 'node-resque'
+import { createLogger } from './logger'
+import { Job, JobsHash, Worker } from 'node-resque'
+import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
-import { initLogger, logger } from './logger'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -43,11 +44,10 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
+ *
+ * @param logger The application logger instance.
  */
-async function main(): Promise<void> {
-    // Initialize logger
-    initLogger('lsif-workers')
-
+async function main(logger: Logger): Promise<void> {
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
 
@@ -62,14 +62,14 @@ async function main(): Promise<void> {
     const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
 
     const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
+        convert: createConvertJob(xrepoDatabase, logger),
     }
 
     // Start metrics server
-    startMetricsServer()
+    startMetricsServer(logger)
 
     // Create worker and start processing jobs
-    await startWorker(jobFunctions)
+    await startWorker(logger, jobFunctions)
 }
 
 /**
@@ -78,9 +78,11 @@ async function main(): Promise<void> {
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
+ * @param logger The worker's logger instance.
  */
 function createConvertJob(
-    xrepoDatabase: XrepoDatabase
+    xrepoDatabase: XrepoDatabase,
+    logger: Logger
 ): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
         const jobLogger = logger.child({ jobId: uuid.v4(), repository, commit })
@@ -119,9 +121,13 @@ function createConvertJob(
 /**
  * Connect to redis and begin processing work with the given hash of job functions.
  *
+ * @param logger The worker's logger instance.
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
-async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+async function startWorker(
+    logger: Logger,
+    jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }
+): Promise<void> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -164,8 +170,10 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
 
 /**
  * Create an express server that only has /healthz and /metric endpoints.
+ *
+ * @param logger The worker's logger instance.
  */
-function startMetricsServer(): void {
+function startMetricsServer(logger: Logger): void {
     const app = express()
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
@@ -173,4 +181,8 @@ function startMetricsServer(): void {
     app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
 }
 
-main().catch(e => logger.error('failed to start process', { error: e && e.message }))
+// Initialize logger
+const appLogger = createLogger('lsif-workers')
+
+// Launch!
+main(appLogger).catch(e => appLogger.error('failed to start process', { error: e && e.message }))
