@@ -16,10 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -47,14 +45,10 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func NewSchema(db *sql.DB) (*graphql.Schema, error) {
+func NewSchema(db *sql.DB, a8n A8NResolver) (*graphql.Schema, error) {
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{
-			A8NStore: a8n.NewStoreWithClock(db, func() time.Time {
-				return time.Now().UTC().Truncate(time.Microsecond)
-			}),
-		},
+		&schemaResolver{A8NResolver: a8n},
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -82,13 +76,13 @@ func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaign() (*campaignResolver, bool) {
-	n, ok := r.Node.(*campaignResolver)
+func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
+	n, ok := r.Node.(CampaignResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToChangeset() (*changesetResolver, bool) {
-	n, ok := r.Node.(*changesetResolver)
+func (r *NodeResolver) ToChangeset() (ChangesetResolver, bool) {
+	n, ok := r.Node.(ChangesetResolver)
 	return n, ok
 }
 
@@ -173,8 +167,7 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
 type schemaResolver struct {
-	A8NStore    *a8n.Store
-	HTTPFactory *httpcli.Factory
+	A8NResolver
 }
 
 // DEPRECATED
@@ -183,21 +176,27 @@ func (r *schemaResolver) Root() *schemaResolver {
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
-	n, err := NodeByID(ctx, r.A8NStore, args.ID)
+	n, err := NodeByID(ctx, r.A8NResolver, args.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &NodeResolver{n}, nil
 }
 
-func NodeByID(ctx context.Context, s *a8n.Store, id graphql.ID) (Node, error) {
+func NodeByID(ctx context.Context, a8n A8NResolver, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
 	case "Campaign":
-		return campaignByID(ctx, s, id)
+		if a8n == nil {
+			return nil, errors.New("only available in enterprise")
+		}
+		return a8n.CampaignByID(ctx, id)
 	case "Changeset":
-		return changesetByID(ctx, s, id)
+		if a8n == nil {
+			return nil, errors.New("only available in enterprise")
+		}
+		return a8n.ChangesetByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

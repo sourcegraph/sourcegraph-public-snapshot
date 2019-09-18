@@ -1,4 +1,4 @@
-package graphqlbackend
+package a8n
 
 import (
 	"context"
@@ -20,7 +20,6 @@ import (
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -49,8 +48,8 @@ func TestCampaigns(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	sr := schemaResolver{
-		A8NStore:    a8n.NewStoreWithClock(dbconn.Global, clock),
+	sr := Resolver{
+		store:       NewStoreWithClock(dbconn.Global, clock),
 		HTTPFactory: cf,
 	}
 
