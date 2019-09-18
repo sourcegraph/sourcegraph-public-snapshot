@@ -274,7 +274,7 @@ function addLsifEndpoints(app: express.Application, queue: Queue): void {
                 // Enqueue convert job
                 logger.info('enqueueing conversion job', { repository, commit })
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
-                res.json(null)
+                res.status(204).send()
             }
         )
     )
