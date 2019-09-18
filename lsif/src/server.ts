@@ -15,6 +15,7 @@ import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } fro
 import { Database } from './database.js'
 import { initLogger, logger } from './logger'
 import { Job, Queue, Scheduler } from 'node-resque'
+import { RealQueue, rewriteJobMeta, WorkerMeta } from './queue'
 import { validateLsifInput } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
@@ -89,6 +90,7 @@ async function main(): Promise<void> {
 
     // Register endpoints
     addMetaEndpoints(app)
+    addQueueEndpoints(app, queue)
     addLsifEndpoints(app, queue)
 
     // Error handler must be registered last
@@ -104,7 +106,7 @@ async function main(): Promise<void> {
  * master election via a redis key and will check for dead workers attached
  * to the queue.
  */
-async function setupQueue(): Promise<Queue> {
+async function setupQueue(): Promise<RealQueue> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -114,7 +116,7 @@ async function setupQueue(): Promise<Queue> {
     }
 
     // Create queue and log the interesting events
-    const queue = new Queue({ connection: connectionOptions })
+    const queue = new Queue({ connection: connectionOptions }) as RealQueue
     queue.on('error', e => logger.error('queue error', { error: e && e.message }))
     await queue.connect()
     exitHook(() => queue.end())
@@ -145,6 +147,66 @@ function addMetaEndpoints(app: express.Application): void {
     app.get('/healthz', (req: express.Request, res: express.Response): void => {
         res.send('ok')
     })
+}
+
+/**
+ * Add endpoints to the HTTP API to view/control the worker queue.
+ *
+ * @param app The express app.
+ * @param queue The queue containing LSIF jobs.
+ */
+function addQueueEndpoints(app: express.Application, queue: RealQueue): void {
+    app.get(
+        '/queued',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const queuedJobs = await queue.queued('lsif', 0, -1)
+
+                res.send(
+                    queuedJobs.map(job => ({
+                        ...rewriteJobMeta(job),
+                    }))
+                )
+            }
+        )
+    )
+
+    app.get(
+        '/failed',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const failedJobs = await queue.failed(0, -1)
+                failedJobs.sort((a, b) => a.failed_at.localeCompare(b.failed_at))
+
+                res.send(
+                    failedJobs.map(job => ({
+                        error: job.error,
+                        failed_at: new Date(job.failed_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
+            }
+        )
+    )
+
+    app.get(
+        '/active',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const workerMeta = Array.from(Object.values(await queue.allWorkingOn())).filter(
+                    (x): x is WorkerMeta => x !== 'started'
+                )
+                workerMeta.sort((a, b) => a.run_at.localeCompare(b.run_at))
+
+                res.send(
+                    workerMeta.map(job => ({
+                        started_at: new Date(job.run_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
+            }
+        )
+    )
 }
 
 /**
