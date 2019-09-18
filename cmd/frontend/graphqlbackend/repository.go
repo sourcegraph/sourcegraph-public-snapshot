@@ -51,6 +51,8 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, er
 	return &RepositoryResolver{repo: repo}, nil
 }
 
+var RepositoryByIDInt32 = repositoryByIDInt32
+
 func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
 	repo, err := db.Repos.Get(ctx, repoID)
 	if err != nil {

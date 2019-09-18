@@ -1,4 +1,4 @@
-package a8n
+package resolvers
 
 import (
 	"context"
@@ -16,17 +16,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
 type Resolver struct {
-	store       *Store
+	store       *a8n.Store
 	HTTPFactory *httpcli.Factory
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, s *Store, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
+func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
 	// 🚨 SECURITY: Only site admins may access changesets for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -37,15 +38,15 @@ func (r *Resolver) ChangesetByID(ctx context.Context, s *Store, id graphql.ID) (
 		return nil, err
 	}
 
-	changeset, err := s.GetChangeset(ctx, GetChangesetOpts{ID: changesetID})
+	changeset, err := r.store.GetChangeset(ctx, a8n.GetChangesetOpts{ID: changesetID})
 	if err != nil {
 		return nil, err
 	}
 
-	return &changesetResolver{store: s, Changeset: changeset}, nil
+	return &changesetResolver{store: r.store, Changeset: changeset}, nil
 }
 
-func (r *Resolver) CampaignByID(ctx context.Context, s *Store, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
+func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignResolver, error) {
 	// 🚨 SECURITY: Only site admins may access campaigns for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -56,15 +57,15 @@ func (r *Resolver) CampaignByID(ctx context.Context, s *Store, id graphql.ID) (g
 		return nil, err
 	}
 
-	campaign, err := s.GetCampaign(ctx, GetCampaignOpts{ID: campaignID})
+	campaign, err := r.store.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
 	if err != nil {
 		return nil, err
 	}
 
-	return &campaignResolver{store: s, Campaign: campaign}, nil
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbackend.AddChangesetsToCampaignArgs) (_ *campaignResolver, err error) {
+func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbackend.AddChangesetsToCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
 	// 🚨 SECURITY: Only site admins may modify changesets and campaigns for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -96,12 +97,12 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 
 	defer tx.Done(&err)
 
-	campaign, err := tx.GetCampaign(ctx, GetCampaignOpts{ID: campaignID})
+	campaign, err := tx.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
 	if err != nil {
 		return nil, err
 	}
 
-	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetIDs})
+	changesets, _, err := tx.ListChangesets(ctx, a8n.ListChangesetsOpts{IDs: changesetIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +128,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (*campaignResolver, error) {
+func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
@@ -138,21 +139,21 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
-	campaign := &Campaign{
+	campaign := &a8n.Campaign{
 		Name:        args.Input.Name,
 		Description: args.Input.Description,
 		AuthorID:    user.ID,
 	}
 
-	node, err := NodeByID(ctx, r.store, args.Input.Namespace)
+	node, err := graphqlbackend.NodeByID(ctx, r, args.Input.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	switch ns := node.(type) {
-	case *UserResolver:
+	case *graphqlbackend.UserResolver:
 		campaign.NamespaceUserID = ns.DatabaseID()
-	case *OrgResolver:
+	case *graphqlbackend.OrgResolver:
 		campaign.NamespaceOrgID = ns.OrgID()
 	default:
 		return nil, errors.Errorf("Invalid namespace of type %T", ns)
@@ -165,7 +166,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (*campaignsConnectionResolver, error) {
+func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -173,29 +174,29 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionAr
 
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: ListCampaignsOpts{
+		opts: a8n.ListCampaignsOpts{
 			Limit: int(args.GetFirst()),
 		},
 	}, nil
 }
 
 type campaignsConnectionResolver struct {
-	store *Store
-	opts  ListCampaignsOpts
+	store *a8n.Store
+	opts  a8n.ListCampaignsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
-	campaigns []*Campaign
+	campaigns []*a8n.Campaign
 	next      int64
 	err       error
 }
 
-func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]*campaignResolver, error) {
+func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CampaignResolver, error) {
 	campaigns, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*campaignResolver, 0, len(campaigns))
+	resolvers := make([]graphqlbackend.CampaignResolver, 0, len(campaigns))
 	for _, c := range campaigns {
 		resolvers = append(resolvers, &campaignResolver{store: r.store, Campaign: c})
 	}
@@ -203,7 +204,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]*campaignRes
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := CountCampaignsOpts{ChangesetID: r.opts.ChangesetID}
+	opts := a8n.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
@@ -216,7 +217,7 @@ func (r *campaignsConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*Campaign, int64, error) {
+func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campaign, int64, error) {
 	r.once.Do(func() {
 		r.campaigns, r.next, r.err = r.store.ListCampaigns(ctx, r.opts)
 	})
@@ -224,8 +225,8 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*Campaign,
 }
 
 type campaignResolver struct {
-	store *Store
-	*Campaign
+	store *a8n.Store
+	*a8n.Campaign
 }
 
 const campaignIDKind = "Campaign"
@@ -251,8 +252,8 @@ func (r *campaignResolver) Description() string {
 	return r.Campaign.Description
 }
 
-func (r *campaignResolver) Author(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.AuthorID)
+func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.AuthorID)
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
@@ -264,30 +265,30 @@ func (r *campaignResolver) URL(ctx context.Context) (string, error) {
 	return path.Join(ns.URL(), "campaigns", string(r.ID())), nil
 }
 
-func (r *campaignResolver) Namespace(ctx context.Context) (n namespaceResolver, err error) {
+func (r *campaignResolver) Namespace(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
 	if r.NamespaceUserID != 0 {
-		n.Namespace, err = UserByIDInt32(ctx, r.NamespaceUserID)
+		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.NamespaceUserID)
 	} else {
-		n.Namespace, err = OrgByIDInt32(ctx, r.NamespaceOrgID)
+		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.NamespaceOrgID)
 	}
 
 	return n, err
 }
 
-func (r *campaignResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.Campaign.CreatedAt}
+func (r *campaignResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}
 }
 
-func (r *campaignResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.Campaign.UpdatedAt}
+func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.Campaign.UpdatedAt}
 }
 
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	graphqlutil.ConnectionArgs
-}) *changesetsConnectionResolver {
+}) graphqlbackend.ChangesetsConnectionResolver {
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: ListChangesetsOpts{
+		opts: a8n.ListChangesetsOpts{
 			CampaignID: r.Campaign.ID,
 			Limit:      int(args.ConnectionArgs.GetFirst()),
 		},
@@ -299,7 +300,7 @@ type createChangesetInput struct {
 	ExternalID string
 }
 
-func (r *Resolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) (_ []*changesetResolver, err error) {
+func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ChangesetResolver, err error) {
 	// 🚨 SECURITY: Only site admins may create changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -307,7 +308,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *CreateChangesetsA
 
 	var repoIDs []uint32
 	repoSet := map[uint32]*repos.Repo{}
-	cs := make([]*Changeset, 0, len(args.Input))
+	cs := make([]*a8n.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
 		repoID, err := unmarshalRepositoryID(c.Repository)
@@ -321,7 +322,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *CreateChangesetsA
 			repoIDs = append(repoIDs, id)
 		}
 
-		cs = append(cs, &Changeset{
+		cs = append(cs, &a8n.Changeset{
 			RepoID:     int32(id),
 			ExternalID: c.ExternalID,
 		})
@@ -420,7 +421,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *CreateChangesetsA
 		return nil, err
 	}
 
-	csr := make([]*changesetResolver, len(cs))
+	csr := make([]graphqlbackend.ChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{
 			store:     r.store,
@@ -432,7 +433,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *CreateChangesetsA
 	return csr, nil
 }
 
-func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (*changesetsConnectionResolver, error) {
+func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -440,29 +441,29 @@ func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionA
 
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: ListChangesetsOpts{
+		opts: a8n.ListChangesetsOpts{
 			Limit: int(args.GetFirst()),
 		},
 	}, nil
 }
 
 type changesetsConnectionResolver struct {
-	store *Store
-	opts  ListChangesetsOpts
+	store *a8n.Store
+	opts  a8n.ListChangesetsOpts
 
 	// cache results because they are used by multiple fields
 	once       sync.Once
-	changesets []*Changeset
+	changesets []*a8n.Changeset
 	next       int64
 	err        error
 }
 
-func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]*changesetResolver, error) {
+func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetResolver, error) {
 	changesets, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*changesetResolver, 0, len(changesets))
+	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesets))
 	for _, c := range changesets {
 		resolvers = append(resolvers, &changesetResolver{store: r.store, Changeset: c})
 	}
@@ -470,7 +471,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]*changesetR
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := CountChangesetsOpts{CampaignID: r.opts.CampaignID}
+	opts := a8n.CountChangesetsOpts{CampaignID: r.opts.CampaignID}
 	count, err := r.store.CountChangesets(ctx, opts)
 	return int32(count), err
 }
@@ -483,7 +484,7 @@ func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*Changeset, int64, error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, int64, error) {
 	r.once.Do(func() {
 		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)
 	})
@@ -491,8 +492,8 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*Changese
 }
 
 type changesetResolver struct {
-	store *Store
-	*Changeset
+	store *a8n.Store
+	*a8n.Changeset
 	repo *repos.Repo
 }
 
@@ -511,43 +512,41 @@ func (r *changesetResolver) ID() graphql.ID {
 	return marshalChangesetID(r.Changeset.ID)
 }
 
-func (r *changesetResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	if r.repo != nil {
-		return &RepositoryResolver{
-			repo: &types.Repo{
-				ID:           api.RepoID(r.repo.ID),
-				ExternalRepo: r.repo.ExternalRepo,
-				Name:         api.RepoName(r.repo.Name),
-				RepoFields: &types.RepoFields{
-					URI:         r.repo.URI,
-					Description: r.repo.Description,
-					Language:    r.repo.Language,
-					Fork:        r.repo.Fork,
-				},
+		return graphqlbackend.NewRepositoryResolver(&types.Repo{
+			ID:           api.RepoID(r.repo.ID),
+			ExternalRepo: r.repo.ExternalRepo,
+			Name:         api.RepoName(r.repo.Name),
+			RepoFields: &types.RepoFields{
+				URI:         r.repo.URI,
+				Description: r.repo.Description,
+				Language:    r.repo.Language,
+				Fork:        r.repo.Fork,
 			},
-		}, nil
+		}), nil
 	}
-	return repositoryByIDInt32(ctx, api.RepoID(r.Changeset.RepoID))
+	return graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.Changeset.RepoID))
 }
 
-func (r *changesetResolver) Campaigns(ctx context.Context, args struct {
+func (r *changesetResolver) Campaigns(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) *campaignsConnectionResolver {
+}) (graphqlbackend.CampaignsConnectionResolver, error) {
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: ListCampaignsOpts{
+		opts: a8n.ListCampaignsOpts{
 			ChangesetID: r.Changeset.ID,
 			Limit:       int(args.ConnectionArgs.GetFirst()),
 		},
-	}
+	}, nil
 }
 
-func (r *changesetResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.Changeset.CreatedAt}
+func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.Changeset.CreatedAt}
 }
 
-func (r *changesetResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.Changeset.UpdatedAt}
+func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
 }
 
 func (r *changesetResolver) Title() (string, error) {
@@ -559,9 +558,8 @@ func (r *changesetResolver) Body() (string, error) {
 }
 
 func (r *changesetResolver) State() (string, error) {
-	// TODO(mrnugget): Let's see if we can use a type instead of string,
-	// without circular reference between a8n/graphqlbackend
-	return string(r.Changeset.State())
+	s, err := r.Changeset.State()
+	return string(s), err
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
@@ -575,5 +573,12 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 func (r *changesetResolver) ReviewState() (string, error) {
 	// TODO(mrnugget): Let's see if we can use a type instead of string,
 	// without circular reference between a8n/graphqlbackend
-	return string(r.Changeset.ReviewState())
+	s, err := r.Changeset.ReviewState()
+	return string(s), err
+}
+
+func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
+func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+	err = relay.UnmarshalSpec(id, &repo)
+	return
 }

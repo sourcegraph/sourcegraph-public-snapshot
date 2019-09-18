@@ -45,7 +45,7 @@ type CampaignResolver interface {
 	Description() string
 	Author(ctx context.Context) (*UserResolver, error)
 	URL(ctx context.Context) (string, error)
-	Namespace(ctx context.Context) (n namespaceResolver, err error)
+	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Changesets(ctx context.Context, args struct{ graphqlutil.ConnectionArgs }) ChangesetsConnectionResolver
