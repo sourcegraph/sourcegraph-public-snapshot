@@ -31,6 +31,24 @@ func TestParseShortLog(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "commonly malformed (email address as name)",
+			input: `  1125	jane@sourcegraph.com <jane@sourcegraph.com>
+   390	Bot Of Doom <bot@doombot.com>
+`,
+			want: []*PersonCount{
+				{
+					Name:  "jane@sourcegraph.com",
+					Email: "jane@sourcegraph.com",
+					Count: 1125,
+				},
+				{
+					Name:  "Bot Of Doom",
+					Email: "bot@doombot.com",
+					Count: 390,
+				},
+			},
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

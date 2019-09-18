@@ -31,7 +31,6 @@ type Server struct {
 		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
 	}
 	Scheduler interface {
-		UpdateQueueLen() int
 		UpdateOnce(id uint32, name api.RepoName, url string)
 		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
 	}

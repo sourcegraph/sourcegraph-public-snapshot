@@ -681,13 +681,16 @@ func TestServer_StatusMessages(t *testing.T) {
 			}
 
 			clock := repos.NewFakeClock(time.Now(), 0)
-			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+			syncer := &repos.Syncer{
+				Store: store,
+				Now:   clock.Now,
+			}
 
 			if tc.sourcerErr != nil || tc.listRepoErr != nil {
 				store.ListReposError = tc.listRepoErr
 				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 				// Run Sync so that possibly `LastSyncErrors` is set
-				syncer = repos.NewSyncer(store, sourcer, nil, clock.Now)
+				syncer.Sourcer = sourcer
 				_, _ = syncer.Sync(ctx)
 			}
 
@@ -984,7 +987,10 @@ func TestRepoLookup(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+			syncer := &repos.Syncer{
+				Store: store,
+				Now:   clock.Now,
+			}
 			s := &Server{Syncer: syncer, Store: store}
 			if tc.githubDotComSource != nil {
 				s.GithubDotComSource = tc.githubDotComSource
@@ -1034,13 +1040,6 @@ func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner stri
 
 type fakeScheduler struct {
 	queue repos.Repos
-}
-
-func (s *fakeScheduler) UpdateQueueLen() int {
-	if s.queue != nil {
-		return s.queue.Len()
-	}
-	return 0
 }
 
 func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}

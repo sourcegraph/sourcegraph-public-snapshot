@@ -73,8 +73,5 @@ func init() {
 }
 
 func isPhabricatorAsset(path string) bool {
-	if strings.Contains(path, "phabricator.bundle.js") {
-		return true
-	}
-	return false
+	return strings.Contains(path, "phabricator.bundle.js")
 }

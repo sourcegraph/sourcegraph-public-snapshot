@@ -88,7 +88,7 @@ func (r *discussionCommentResolver) HTML(ctx context.Context, args *struct{ Opti
 	if err != nil {
 		return "", err
 	}
-	return markdown.Render(contents, nil), nil
+	return markdown.Render(contents), nil
 }
 
 func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, error) {

@@ -62,7 +62,7 @@ func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, saf
 		if lookupByExternalErr == nil {
 			return uid, false, true, "", nil
 		}
-		if lookupByExternalErr != nil && !errcode.IsNotFound(lookupByExternalErr) {
+		if !errcode.IsNotFound(lookupByExternalErr) {
 			return 0, false, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", lookupByExternalErr
 		}
 
