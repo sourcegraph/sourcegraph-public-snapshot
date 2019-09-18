@@ -23,28 +23,40 @@ const NO_COLOR = !!process.env.NO_COLOR
  * NO_COLOR is not enabled.
  */
 const colors: { [k: string]: (text: string) => string } = {
-  error: NO_COLOR ? text => text : text => `\x1b[31m${text}\x1b[0m`,
-  warn: NO_COLOR ? text => text : text => `\x1b[33m${text}\x1b[0m`,
-  info: NO_COLOR ? text => text : text => `\x1b[36m${text}\x1b[0m`,
-  debug: NO_COLOR ? text => text : text => `\x1b[2m${text}\x1b[0m`,
+    error: NO_COLOR ? text => text : text => `\x1b[31m${text}\x1b[0m`,
+    warn: NO_COLOR ? text => text : text => `\x1b[33m${text}\x1b[0m`,
+    info: NO_COLOR ? text => text : text => `\x1b[36m${text}\x1b[0m`,
+    debug: NO_COLOR ? text => text : text => `\x1b[2m${text}\x1b[0m`,
 }
+
+/**
+ * Pair of regular expressions and their substitute when quoting a
+ * logged string value.
+ */
+const replacerPairs: [RegExp, string][] = [
+    [new RegExp('\\\\', 'g'), '\\\\'],
+    [new RegExp('\n', 'g'), '\\n'],
+    [new RegExp('\r', 'g'), '\\r'],
+    [new RegExp('\t', 'g'), '\\t'],
+    [new RegExp('"', 'g'), '\\"'],
+]
 
 /**
  * Format a Winston log message as a 'condensed' format. This is meant to
  * closely match the condensed output used in the Go codebase.
  */
 function condensedFormat(info: TransformableInfo, opts?: any): TransformableInfo {
-  const pairs = []
-  for (const [key, value] of Object.entries(info)) {
-    if (key !== 'level' && key !== 'message') {
-      pairs.push([key, value])
+    const pairs = []
+    for (const [key, value] of Object.entries(info)) {
+        if (key !== 'level' && key !== 'message') {
+            pairs.push([key, value])
+        }
     }
-  }
 
-  pairs.sort((a, b) => a[0].localeCompare(b[0]))
-  const level = colors[info.level](info.level.toUpperCase())
-  info[MESSAGE] = `${level} ${info.message}, ${pairs.map(([k, v]) => `${k}: ${v}`).join(', ')}`
-  return info
+    pairs.sort((a, b) => a[0].localeCompare(b[0]))
+    const level = colors[info.level](info.level.toUpperCase())
+    info[MESSAGE] = `${level} ${info.message}, ${pairs.map(([k, v]) => `${k}: ${quote(v)}`).join(', ')}`
+    return info
 }
 
 /**
@@ -53,46 +65,68 @@ function condensedFormat(info: TransformableInfo, opts?: any): TransformableInfo
  * may be some minor differences in stringifying values (float/nil conversions).
  */
 function logfmtFormat(info: TransformableInfo, opts?: any): TransformableInfo {
-  const pairs = []
-  pairs.push(['t', info.timestamp ? info.timestamp : new Date().toISOString()])
-  pairs.push(['lvl', info.level])
-  pairs.push(['msg', info.message])
+    const pairs = []
+    pairs.push(['t', info.timestamp ? info.timestamp : new Date().toISOString()])
+    pairs.push(['lvl', info.level])
+    pairs.push(['msg', info.message])
 
-  const additionalPairs = []
-  for (const [key, value] of Object.entries(info)) {
-    if (key !== 'timestamp' && key !== 'level' && key !== 'message') {
-      additionalPairs.push([key, value])
+    const additionalPairs = []
+    for (const [key, value] of Object.entries(info)) {
+        if (key !== 'timestamp' && key !== 'level' && key !== 'message') {
+            additionalPairs.push([key, value])
+        }
     }
-  }
 
-  additionalPairs.sort((a, b) => a[0].localeCompare(b[0]))
-  pairs.push(...additionalPairs)
+    additionalPairs.sort((a, b) => a[0].localeCompare(b[0]))
+    pairs.push(...additionalPairs)
 
-  const quote = (value: any): string => {
-    let strValue = `${value}`
+    info[MESSAGE] = pairs.map(([k, v]) => `${k}=${quote(v)}`).join(' ')
+    return info
+}
 
-    strValue = strValue.replace(/\\/g, '\\\\')
-    strValue = strValue.replace(/\n/g, '\\n')
-    strValue = strValue.replace(/\r/g, '\\r')
-    strValue = strValue.replace(/\t/g, '\\t')
-    strValue = strValue.replace(/"/g, '\\"')
+/**
+ * Quote a value to log.
+ *
+ * @param value An arbitrary value.
+ */
+function quote(value: any): string {
+    // Stringify or jsonify, depending on type
+    let strValue = shouldSerialize(value) ? JSON.stringify(value, undefined, 0) : `${value}`
 
+    // Re-escape common escaped characters
+    for (const [pattern, substitute] of replacerPairs) {
+        strValue = strValue.replace(pattern, substitute)
+    }
+
+    // Quote the value if it contains logfmt-specific characters
     return [' ', '=', '"'].some(c => strValue.includes(c)) ? `"${strValue}"` : strValue
-  }
+}
 
-  info[MESSAGE] = pairs
-    .map(([k, v]) => [k, quote(v)])
-    .map(([k, v]) => `${k}=${v}`)
-    .join(' ')
+/**
+ * Determines if JSON.stringify needs to be called on a value for logging.
+ *
+ * @param value An arbitrary value.
+ */
+function shouldSerialize(value: any): boolean {
+    if (value === undefined || value === null) {
+        return false
+    }
 
-  return info
+    switch (typeof value) {
+        case 'boolean':
+        case 'number':
+        case 'string':
+            return false
+        default:
+            return true
+    }
 }
 
 /**
  * Wrap the formatter function in a class acceptable to Winston.
  */
 class Formatter {
-  public transform = LOG_FORMAT === 'condensed' ? condensedFormat : logfmtFormat
+    public transform = LOG_FORMAT === 'condensed' ? condensedFormat : logfmtFormat
 }
 
 /**
@@ -107,10 +141,10 @@ export let logger!: winston.Logger
  * obvious that it's not using the same underlying logging infrastructure.
  */
 export function initLogger(service: string): void {
-  logger = winston.createLogger({
-    level: LOG_LEVEL,
-    format: new Formatter(),
-    defaultMeta: { service },
-    transports: [new winston.transports.Console({})],
-  })
+    logger = winston.createLogger({
+        level: LOG_LEVEL,
+        format: new Formatter(),
+        defaultMeta: { service },
+        transports: [new winston.transports.Console({})],
+    })
 }
