@@ -1,6 +1,7 @@
-import { createLogger as _createLogger, Logger, transports } from 'winston'
-import { MESSAGE } from 'triple-beam'
-import { TransformableInfo } from 'logform'
+import chalk from 'chalk';
+import { createLogger as _createLogger, Logger, transports } from 'winston';
+import { MESSAGE } from 'triple-beam';
+import { TransformableInfo } from 'logform';
 
 /**
  * The maximum level log message to output.
@@ -13,19 +14,14 @@ const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
 const LOG_FORMAT = process.env.LOG_FORMAT
 
 /**
- * Whether or not to disable colorization in the condensed formatter.
- */
-const NO_COLOR = !!process.env.NO_COLOR
-
-/**
  * A map of log levels to colors. Used in the condensed formatter when
- * NO_COLOR is not enabled.
+ * the environment variable FORCE_COLOR is not 0.
  */
 const colors: { [k: string]: (text: string) => string } = {
-    error: NO_COLOR ? text => text : text => `\x1b[31m${text}\x1b[0m`,
-    warn: NO_COLOR ? text => text : text => `\x1b[33m${text}\x1b[0m`,
-    info: NO_COLOR ? text => text : text => `\x1b[36m${text}\x1b[0m`,
-    debug: NO_COLOR ? text => text : text => `\x1b[2m${text}\x1b[0m`,
+    error: chalk.red,
+    warn: chalk.yellow,
+    info: chalk.cyan,
+    debug: chalk.dim,
 }
 
 /**
