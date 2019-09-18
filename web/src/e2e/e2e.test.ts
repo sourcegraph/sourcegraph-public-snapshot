@@ -1172,7 +1172,7 @@ describe('e2e test suite', () => {
         test('Delete saved search', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
             await driver.page.waitForSelector('.e2e-delete-saved-search-button', { visible: true })
-            await driver.page.on('dialog', async dialog => {
+            driver.page.on('dialog', async dialog => {
                 await dialog.accept()
             })
             await driver.page.click('.e2e-delete-saved-search-button')
