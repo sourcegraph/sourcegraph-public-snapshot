@@ -9,7 +9,7 @@ import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
  *
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  *
- * This function will be deprecated.
+ * @deprecated This function will be deprecated along with this code path.
  */
 export const logUserEvent = (
     event: GQL.UserEvent,
@@ -49,13 +49,11 @@ export const logUserEvent = (
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  */
 export const logEvent = (
-    event: string,
-    uid: string,
-    url: string,
+    event: { name: string; userCookieID: string; url: string },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (url === DEFAULT_SOURCEGRAPH_URL) {
+    if (event.url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
 
@@ -67,7 +65,12 @@ export const logEvent = (
                 }
             }
         `,
-        variables: { event, userCookieID: uid, url, source: GQL.EventSource.CODEHOSTINTEGRATION },
+        variables: {
+            event,
+            userCookieID: event.userCookieID,
+            url: event.url,
+            source: GQL.EventSource.CODEHOSTINTEGRATION,
+        },
         mightContainPrivateInfo: false,
     }).subscribe({
         error: error => {
