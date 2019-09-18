@@ -129,6 +129,7 @@ func main() {
 		Store:        store,
 		Sourcer:      src,
 		Synced:       synced,
+		SubsetSynced: make(chan repos.Repos),
 		Logger:       log15.Root(),
 		Now:          clock,
 	}
@@ -140,12 +141,26 @@ func main() {
 
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
 
-	// Start new repo syncer updates scheduler relay thread.
 	go func() {
-		for rs := range synced {
-			if !envvar.SourcegraphDotComMode() {
+		for {
+			var (
+				rs    repos.Repos
+				isAll bool
+			)
+			select {
+			case rs = <-synced:
+				isAll = true
+			case rs = <-syncer.SubsetSynced:
+				isAll = false
+			}
+
+			if envvar.SourcegraphDotComMode() {
+				continue
+			}
+
+			if isAll {
 				if !conf.Get().DisableAutoGitUpdates {
-					scheduler.Update(rs...)
+					scheduler.Set(rs...)
 				}
 
 				go func() {
@@ -153,6 +168,10 @@ func main() {
 						log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
 					}
 				}()
+			} else {
+				if !conf.Get().DisableAutoGitUpdates {
+					scheduler.Update(rs...)
+				}
 			}
 		}
 	}()
