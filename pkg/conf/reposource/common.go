@@ -77,3 +77,9 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	hostsMatch := parsedBaseURL != nil && hostname(parsedBaseURL) == hostname(parsedCloneURL)
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
 }
+
+// RegexpReplacement is a pair of compiled regex pattern and its replacement.
+type RegexpReplacement struct {
+	Regexp      *regexp.Regexp
+	Replacement string
+}

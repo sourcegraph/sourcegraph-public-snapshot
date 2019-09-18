@@ -3,7 +3,6 @@ package repos
 import (
 	"crypto/x509"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -82,10 +81,4 @@ func setUserinfoBestEffort(rawurl, username, password string) string {
 	}
 
 	return u.String()
-}
-
-// regexpReplacement is a pair of compiled regex pattern and its replacement.
-type regexpReplacement struct {
-	regexp      *regexp.Regexp
-	replacement string
 }

@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -27,7 +25,7 @@ type GitLabSource struct {
 	config             *schema.GitLabConnection
 	exclude            map[string]bool
 	baseURL            *url.URL // URL with path /api/v4 (no trailing slash)
-	regexpReplacements []*regexpReplacement
+	RegexpReplacements []*reposource.RegexpReplacement
 	client             *gitlab.Client
 }
 
@@ -76,17 +74,10 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		}
 	}
 
-	// Validate user-defined regexes.
-	rps := make([]*regexpReplacement, len(c.ReplaceAllInRepositoryName))
-	for i, rr := range c.ReplaceAllInRepositoryName {
-		r, err := regexp.Compile(rr.Regex)
-		if err != nil {
-			return nil, fmt.Errorf("compile regex %q: %v", rr.Regex, err)
-		}
-		rps[i] = &regexpReplacement{
-			regexp:      r,
-			replacement: rr.Replacement,
-		}
+	// Validate and cache user-defined regexes.
+	rps, err := reposource.CompileGitLabRegexReplacements(c.ReplaceAllInRepositoryName)
+	if err != nil {
+		return nil, err
 	}
 
 	return &GitLabSource{
@@ -94,7 +85,7 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		config:             c,
 		exclude:            exclude,
 		baseURL:            baseURL,
-		regexpReplacements: rps,
+		RegexpReplacements: rps,
 		client:             gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
 	}, nil
 }
@@ -113,19 +104,17 @@ func (s GitLabSource) ExternalServices() ExternalServices {
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 	urn := s.svc.URN()
 	return &Repo{
-		Name: string(s.replaceAllInRepoName(
-			reposource.GitLabRepoName(
-				s.config.RepositoryPathPattern,
-				s.baseURL.Hostname(),
-				proj.PathWithNamespace,
-			),
+		Name: string(reposource.GitLabRepoName(
+			s.config.RepositoryPathPattern,
+			s.baseURL.Hostname(),
+			proj.PathWithNamespace,
+			s.RegexpReplacements,
 		)),
-		URI: string(s.replaceAllInRepoName(
-			reposource.GitLabRepoName(
-				"",
-				s.baseURL.Hostname(),
-				proj.PathWithNamespace,
-			),
+		URI: string(reposource.GitLabRepoName(
+			"",
+			s.baseURL.Hostname(),
+			proj.PathWithNamespace,
+			s.RegexpReplacements,
 		)),
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,
@@ -140,16 +129,6 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 		},
 		Metadata: proj,
 	}
-}
-
-// replaceAllInRepoName uses regexp defined to find and replace all matches with their replacements
-// in given repository name.
-func (s GitLabSource) replaceAllInRepoName(name api.RepoName) api.RepoName {
-	str := string(name)
-	for _, rp := range s.regexpReplacements {
-		str = rp.regexp.ReplaceAllString(str, rp.replacement)
-	}
-	return api.RepoName(str)
 }
 
 // authenticatedRemoteURL returns the GitLab projects's Git remote URL with the configured GitLab personal access
