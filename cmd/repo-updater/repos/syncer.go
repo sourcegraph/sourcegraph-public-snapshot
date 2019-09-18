@@ -19,24 +19,30 @@ import (
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
+	Store   Store
+	Sourcer Sourcer
+
 	// FailFullSync prevents Sync from running. This should only be true for
 	// Sourcegraph.com
 	FailFullSync bool
 
+	// Synced if non-nil is sent Repos synced by Sync.
+	Synced chan Repos
+
 	// SubsetSynced if non-nil is sent Repos synced by SubsetSync.
 	SubsetSynced chan Repos
+
+	// Logger if non-nil is logged to.
+	Logger log15.Logger
+
+	// Now is time.Now. Can be set by tests to get deterministic output.
+	Now func() time.Time
 
 	// lastSyncErr contains the last error returned by the Sourcer in each
 	// Sync. It's reset with each Sync and if the sync produced no error, it's
 	// set to nil.
 	lastSyncErr   error
 	lastSyncErrMu sync.Mutex
-
-	Store   Store
-	Sourcer Sourcer
-	Synced  chan Repos
-	Logger  log15.Logger
-	Now     func() time.Time
 
 	syncSignal signal
 }
