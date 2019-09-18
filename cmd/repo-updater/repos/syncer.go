@@ -31,7 +31,7 @@ type Syncer struct {
 
 	Store   Store
 	Sourcer Sourcer
-	Diffs   chan Diff
+	Synced  chan Repos
 	Now     func() time.Time
 
 	syncSignal signal
@@ -96,8 +96,8 @@ func (s *Syncer) Sync(ctx context.Context) (diff Diff, err error) {
 		return Diff{}, errors.Wrap(err, "syncer.sync.store.upsert-repos")
 	}
 
-	if s.Diffs != nil {
-		s.Diffs <- diff
+	if s.Synced != nil {
+		s.Synced <- diff.Repos()
 	}
 
 	return diff, nil
@@ -141,8 +141,8 @@ func (s *Syncer) SyncSubset(ctx context.Context, sourcedSubset ...*Repo) (diff D
 		return Diff{}, errors.Wrap(err, "syncer.syncsubset.store.upsert-repos")
 	}
 
-	if s.Diffs != nil {
-		s.Diffs <- diff
+	if s.Synced != nil {
+		s.Synced <- diff.Repos()
 	}
 
 	return diff, nil
