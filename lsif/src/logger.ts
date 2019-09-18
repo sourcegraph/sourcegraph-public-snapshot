@@ -33,11 +33,11 @@ const colors: { [k: string]: (text: string) => string } = {
  * logged string value.
  */
 const replacerPairs: [RegExp, string][] = [
-    [new RegExp('\\\\', 'g'), '\\\\'],
-    [new RegExp('\\n', 'g'), '\\n'],
-    [new RegExp('\\r', 'g'), '\\r'],
-    [new RegExp('\\t', 'g'), '\\t'],
-    [new RegExp('"', 'g'), '\\"'],
+    [/\\/g, '\\\\'],
+    [/\n/g, '\\n'],
+    [/\r/g, '\\r'],
+    [/\t/g, '\\t'],
+    [/"/g, '\\"'],
 ]
 
 /**
