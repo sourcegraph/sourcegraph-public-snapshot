@@ -164,8 +164,10 @@ async function setupQueue(): Promise<Queue> {
  * @param app The express app.
  */
 function addMetaEndpoints(app: express.Application): void {
-    app.get('/healthz', (req: express.Request, res: express.Response): void => {
-        res.send('ok')
+    app.get('/healthz', (_, res) => res.send('ok'))
+    app.get('/metrics', (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end(promClient.register.metrics())
     })
 }
 
