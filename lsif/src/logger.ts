@@ -6,12 +6,12 @@ import { inspect } from 'util'
 /**
  * The maximum level log message to output.
  */
-const LOG_LEVEL = 'debug' || process.env.LOG_LEVEL || 'info'
+const LOG_LEVEL = process.env.LOG_LEVEL || 'info'
 
 /**
  * A log format flag. Can be 'condensed' or 'logfmt'. Default is 'logfmt'.
  */
-const LOG_FORMAT = 'condensed' || process.env.LOG_FORMAT
+const LOG_FORMAT = process.env.LOG_FORMAT
 
 /**
  * Create an importable logger that matches the output of the Sourcegraph
