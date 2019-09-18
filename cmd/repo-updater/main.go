@@ -126,60 +126,27 @@ func main() {
 		server.GithubDotComSource = src
 	}
 
-	synced := make(chan repos.Repos)
+	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
+
 	syncer := &repos.Syncer{
-		FailFullSync:     envvar.SourcegraphDotComMode(),
 		Store:            store,
 		Sourcer:          src,
 		DisableStreaming: !streamingSyncer,
-		Synced:           synced,
-		SubsetSynced:     make(chan repos.Repos),
 		Logger:           log15.Root(),
 		Now:              clock,
+	}
+	if envvar.SourcegraphDotComMode() {
+		syncer.FailFullSync = true
+	} else {
+		syncer.Synced = make(chan repos.Repos)
+		syncer.SubsetSynced = make(chan repos.Repos)
+		go watchSyncer(ctx, syncer, scheduler, gps)
 	}
 	server.Syncer = syncer
 
 	if !envvar.SourcegraphDotComMode() {
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
 	}
-
-	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
-
-	go func() {
-		for {
-			var (
-				rs    repos.Repos
-				isAll bool
-			)
-			select {
-			case rs = <-synced:
-				isAll = true
-			case rs = <-syncer.SubsetSynced:
-				isAll = false
-			}
-
-			if envvar.SourcegraphDotComMode() {
-				continue
-			}
-
-			if isAll {
-				if !conf.Get().DisableAutoGitUpdates {
-					scheduler.Set(rs...)
-				}
-
-				go func() {
-					if err := gps.Sync(ctx, rs); err != nil {
-						log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
-					}
-				}()
-			} else {
-				if !conf.Get().DisableAutoGitUpdates {
-					scheduler.Update(rs...)
-				}
-			}
-		}
-	}()
-	log15.Debug("started new repo syncer updates scheduler relay thread")
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -217,6 +184,35 @@ func main() {
 	})
 
 	select {}
+}
+
+type scheduler interface {
+	Set(...*repos.Repo)
+	Update(...*repos.Repo)
+}
+
+func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
+	log15.Debug("started new repo syncer updates scheduler relay thread")
+
+	for {
+		select {
+		case rs := <-syncer.Synced:
+			if !conf.Get().DisableAutoGitUpdates {
+				sched.Set(rs...)
+			}
+
+			go func() {
+				if err := gps.Sync(ctx, rs); err != nil {
+					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+				}
+			}()
+
+		case rs := <-syncer.SubsetSynced:
+			if !conf.Get().DisableAutoGitUpdates {
+				sched.Update(rs...)
+			}
+		}
+	}
 }
 
 func makeGitHubDotComSrc(ctx context.Context, store repos.Store, cf *httpcli.Factory) (*repos.GithubSource, error) {
