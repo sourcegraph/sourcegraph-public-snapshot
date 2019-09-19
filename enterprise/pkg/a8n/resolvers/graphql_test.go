@@ -59,7 +59,7 @@ func TestCampaigns(t *testing.T) {
 		httpFactory: cf,
 	}
 
-	s, err := graphqlbackend.NewSchema(dbconn.Global, sr)
+	s, err := graphqlbackend.NewSchema(sr)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strconv"
 	"time"
@@ -45,7 +44,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func NewSchema(db *sql.DB, a8n A8NResolver) (*graphql.Schema, error) {
+func NewSchema(a8n A8NResolver) (*graphql.Schema, error) {
 	return graphql.ParseSchema(
 		Schema,
 		&schemaResolver{a8nResolver: a8n},

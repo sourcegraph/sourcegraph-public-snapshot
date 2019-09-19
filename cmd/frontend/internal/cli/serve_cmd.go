@@ -174,7 +174,7 @@ func Main() error {
 	if graphqlbackend.NewA8NResolver != nil {
 		a8n = graphqlbackend.NewA8NResolver(dbconn.Global)
 	}
-	schema, err := graphqlbackend.NewSchema(dbconn.Global, a8n)
+	schema, err := graphqlbackend.NewSchema(a8n)
 	if err != nil {
 		return err
 	}
