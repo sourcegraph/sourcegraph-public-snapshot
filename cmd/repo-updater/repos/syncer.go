@@ -85,13 +85,18 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 		return errors.New("Syncer is not enabled")
 	}
 
-	streamingInsert, err := s.streamingInsert(ctx)
-	if err != nil {
-		return errors.Wrap(err, "syncer.sync.streaming")
+	var streamingInserter func(*Repo)
+	if s.DisableStreaming {
+		streamingInserter = func(*Repo) {} //noop
+	} else {
+		streamingInserter, err = s.makeNewRepoInserter(ctx)
+		if err != nil {
+			return errors.Wrap(err, "syncer.sync.streaming")
+		}
 	}
 
 	var sourced Repos
-	if sourced, err = s.sourced(ctx, streamingInsert); err != nil {
+	if sourced, err = s.sourced(ctx, streamingInserter); err != nil {
 		return errors.Wrap(err, "syncer.sync.sourced")
 	}
 
@@ -355,12 +360,7 @@ func (s *Syncer) sourced(ctx context.Context, observe ...func(*Repo)) ([]*Repo, 
 	return listAll(ctx, srcs, observe...)
 }
 
-func (s *Syncer) streamingInsert(ctx context.Context) (func(*Repo), error) {
-	if s.DisableStreaming {
-		// Return noop
-		return func(*Repo) {}, nil
-	}
-
+func (s *Syncer) makeNewRepoInserter(ctx context.Context) (func(*Repo), error) {
 	// syncSubset requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
