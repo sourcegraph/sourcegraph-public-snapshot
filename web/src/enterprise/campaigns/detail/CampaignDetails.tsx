@@ -104,7 +104,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({ campaignID }) 
             <ChangesetList changesets={campaign.changesets.nodes} />
             <p className="mt-2">
                 Use the <Link to="/api/console">GraphQL API</Link> to add changesets to this campaign (
-                <code>createChangeset</code> and <code>addChangesetToCampaign</code>)
+                <code>createChangesets</code> and <code>addChangesetsToCampaign</code>)
             </p>
         </>
     )
