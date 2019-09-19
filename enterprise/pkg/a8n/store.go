@@ -767,7 +767,7 @@ func lockQuery(id string) *sqlf.Query {
 }
 
 const lockQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.lock
+-- source: enterprise/pkg/a8n/store.go:Lock
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
