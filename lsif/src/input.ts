@@ -5,16 +5,15 @@ import { ValidateFunction } from 'ajv'
 import { readline } from 'mz'
 
 /**
- * Pipes the input data into the output stream. All content of the input
- * stream will be written to the output stream if there are no validation
- * errors. The input is assumed to be gzipped. If the validator is
- * undefined, no validation will occur.
+ * Reads the input and writes it to the output stream unchanged. The input
+ * is expected to be a gzipped sequence of JSON lines. If a validation function
+ * is supplied, it will be called with the parsed JSON element of each line.
  *
  * @param input The input stream.
  * @param output The output stream.
  * @param validator The JSON schema validation function to apply.
  */
-export async function validateLsifInput(
+export function validateLsifInput(
     input: Readable,
     output: Writable,
     validator: ValidateFunction | undefined
@@ -29,47 +28,58 @@ export async function validateLsifInput(
         })
     }
 
-    const gzipWriter = zlib.createGzip()
-    const promise = new Promise((resolve, reject) => {
-        gzipWriter
+    return new Promise((resolve, reject) => {
+        const gunzippedReader = input.pipe(zlib.createGunzip()).on('error', reject)
+
+        const gzipWriter = zlib
+            .createGzip()
             .pipe(output)
             .on('error', reject)
             .on('finish', resolve)
-    })
 
-    let line = 0
-    for await (const data of readline.createInterface({ input: input.pipe(zlib.createGunzip()) })) {
-        line++
-
-        try {
-            if (!validator(JSON.parse(data)) && validator.errors) {
+        processElements(readline.createInterface({ input: gunzippedReader }), (element, data) => {
+            if (!validator(element) && validator.errors) {
                 throw new Error(validator.errors.map(e => e.message).join(', '))
             }
 
             gzipWriter.write(data)
-        } catch (e) {
-            throw new Error(`Failed to validate line #${line} (${data}): ${e && e.message}`)
-        }
-    }
-
-    await promise
+            gzipWriter.write('\n')
+        }).then(() => gzipWriter.end(), reject)
+    })
 }
 
 /**
- * Apply a function to each element of the input stream.
+ * Read the input and call a function on the parsed JSON element on each line.
+ * The input is expected to be a gzipped sequence of JSON lines.
  *
  * @param input The gzipped input stream.
  * @param process The function to apply to element of the input stream.
  */
-export async function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
+export function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const gunzippedReader = input.pipe(zlib.createGunzip()).on('error', reject)
+        processElements(readline.createInterface({ input: gunzippedReader }), process).then(resolve, reject)
+    })
+}
+
+/**
+ * Invoke a callback with the parsed JSON element from each line of the input.
+ *
+ * @param lines An async iterator of JSOn lines.
+ * @param process The function to invoke on each parsed JSON element.
+ */
+async function processElements(
+    lines: AsyncIterable<string>,
+    process: (element: Vertex | Edge, data: string) => void
+): Promise<void> {
     let line = 0
-    for await (const data of readline.createInterface({ input: input.pipe(zlib.createGunzip()) })) {
+    for await (const data of lines) {
         line++
 
         try {
-            process(JSON.parse(data))
+            process(JSON.parse(data), data)
         } catch (e) {
-            throw new Error(`Failed to process line #${line} (${data}): ${e && e.message}`)
+            throw new Error(`Failed to validate line #${line} (${data}): ${e && e.message}`)
         }
     }
 }
