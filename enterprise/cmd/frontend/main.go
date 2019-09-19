@@ -26,6 +26,7 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/resolvers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -34,6 +35,7 @@ import (
 func main() {
 	initLicensing()
 	initAuthz()
+	initResolvers()
 
 	hooks.AfterDBInit = func() {
 		dsn := conf.Get().ServiceConnections.PostgresDSN
@@ -169,6 +171,10 @@ func initAuthz() {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func initResolvers() {
+	graphqlbackend.NewA8NResolver = resolvers.NewResolver
 }
 
 type usersStore struct{}

@@ -18,13 +18,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
 type Resolver struct {
 	store       *a8n.Store
-	HTTPFactory *httpcli.Factory
+	httpFactory *httpcli.Factory
+}
+
+// NewResolver returns a new Resolver whose store uses the given db
+func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
+	return &Resolver{store: a8n.NewStore(dbconn.Global)}
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
@@ -389,7 +395,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	batches := make(map[int64]*batch, len(es))
 	for _, e := range es {
-		src, err := repos.NewSource(e, r.HTTPFactory)
+		src, err := repos.NewSource(e, r.httpFactory)
 		if err != nil {
 			return nil, err
 		}

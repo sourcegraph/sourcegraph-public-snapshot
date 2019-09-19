@@ -2,12 +2,16 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 )
+
+// NewA8NResolver will be set by enterprise
+var NewA8NResolver func(db *sql.DB) A8NResolver
 
 type AddChangesetsToCampaignArgs struct {
 	Campaign   graphql.ID

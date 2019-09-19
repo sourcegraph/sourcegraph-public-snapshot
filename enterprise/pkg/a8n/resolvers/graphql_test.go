@@ -52,7 +52,7 @@ func TestCampaigns(t *testing.T) {
 
 	sr := &Resolver{
 		store:       a8n.NewStoreWithClock(dbconn.Global, clock),
-		HTTPFactory: cf,
+		httpFactory: cf,
 	}
 
 	s, err := graphqlbackend.NewSchema(dbconn.Global, sr)
