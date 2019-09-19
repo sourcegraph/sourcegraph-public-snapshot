@@ -1038,6 +1038,21 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind: "GITLAB",
+			desc: "invalid properties in regex and replacement array",
+			config: `
+			{
+				"replaceAllInRepositoryName": [
+					{
+						"regex": "[",
+						"replacement": ""
+					}
+				]
+			}
+			`,
+			assert: includes(`replaceAllInRepositoryName.0.regex: Does not match format 'regex'`),
+		},
+		{
+			kind: "GITLAB",
 			desc: "valid regex and replacement array",
 			config: `
 			{

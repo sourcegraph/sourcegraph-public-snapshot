@@ -221,6 +221,7 @@ const GitLabSchemaJSON = `{
       "properties": {
         "regex": {
           "type": "string",
+          "format": "regex",
           "description": "The regex to match for the occurrences of its replacement."
         },
         "replacement": {
