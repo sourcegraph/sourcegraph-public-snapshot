@@ -125,10 +125,6 @@ export function logUserEvent(event: GQL.UserEvent): void {
  * Not used at all for public/sourcegraph.com usage.
  */
 export function logEvent(event: string): void {
-    if (window.context && window.context.sourcegraphDotComMode) {
-        return
-    }
-
     mutateGraphQL(
         gql`
             mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {

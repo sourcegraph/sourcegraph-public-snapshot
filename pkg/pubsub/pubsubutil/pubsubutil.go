@@ -14,9 +14,6 @@ import (
 // PubSubProjectID is used to create a new pubsub client.
 var PubSubProjectID = env.Get("PUBSUB_PROJECT_ID", "", "Pub/sub project ID is the id of the pubsub project.")
 
-// PubSubTopicID is the topic ID of the topic that forwards messages from publishers to subscribers.
-var PubSubTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub topic ID is the pub/sub topic id where messages are published.")
-
 var client *pubsub.Client
 
 // Enabled returns true if pubsub has been configured to run.
