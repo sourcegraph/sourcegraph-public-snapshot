@@ -20,5 +20,10 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
         exact: true,
         render: () => <Redirect to="/subscriptions/new" />,
     },
+    {
+        path: '/campaigns',
+        render: lazyComponent(() => import('./campaigns/global/GlobalCampaignsArea'), 'GlobalCampaignsArea'),
+        condition: props => props.showCampaigns,
+    },
     ...routes,
 ]

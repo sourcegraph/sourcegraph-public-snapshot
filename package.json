@@ -75,6 +75,7 @@
     "@storybook/components": "^5.1.3",
     "@storybook/react": "^5.1.3",
     "@storybook/theming": "^5.1.3",
+    "@testing-library/react-hooks": "^2.0.1",
     "@types/babel__core": "7.1.2",
     "@types/chai": "4.2.0",
     "@types/chai-as-promised": "7.1.2",
