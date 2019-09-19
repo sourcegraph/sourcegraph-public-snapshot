@@ -1,4 +1,4 @@
-# LSP and language servers
+# Language servers
 
 > Language servers are not recommended. We recommend using [LSIF](./lsif.md) to get precise code intelligence.
 

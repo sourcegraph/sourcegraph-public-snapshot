@@ -12,7 +12,7 @@ Code intelligence works out of the box with all of the most popular [programming
 There are two ways to get more precise code intelligence:
 
 - **Recommended**: [upload LSIF code intelligence data](./lsif.md)
-- Not recommended: [deploy a language server](./lsif.md)
+- Not recommended: [deploy a language server](./language_servers.md)
 
 Code intelligence is provided by [Sourcegraph extensions](../../extensions/index.md).
 
