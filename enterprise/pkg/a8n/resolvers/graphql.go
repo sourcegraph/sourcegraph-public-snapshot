@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -25,13 +25,13 @@ import (
 
 // Resolver is the GraphQL resolver of all things A8N.
 type Resolver struct {
-	store       *a8n.Store
+	store       *ee.Store
 	httpFactory *httpcli.Factory
 }
 
 // NewResolver returns a new Resolver whose store uses the given db
 func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
-	return &Resolver{store: ea8n.NewStore(dbconn.Global)}
+	return &Resolver{store: ee.NewStore(dbconn.Global)}
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
@@ -45,7 +45,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	changeset, err := r.store.GetChangeset(ctx, a8n.GetChangesetOpts{ID: changesetID})
+	changeset, err := r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID})
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
+	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
 	if err != nil {
 		return nil, err
 	}
@@ -104,12 +104,12 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 
 	defer tx.Done(&err)
 
-	campaign, err := tx.GetCampaign(ctx, a8n.GetCampaignOpts{ID: campaignID})
+	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
 	if err != nil {
 		return nil, err
 	}
 
-	changesets, _, err := tx.ListChangesets(ctx, a8n.ListChangesetsOpts{IDs: changesetIDs})
+	changesets, _, err := tx.ListChangesets(ctx, ee.ListChangesetsOpts{IDs: changesetIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -181,15 +181,15 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionAr
 
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: a8n.ListCampaignsOpts{
+		opts: ee.ListCampaignsOpts{
 			Limit: int(args.GetFirst()),
 		},
 	}, nil
 }
 
 type campaignsConnectionResolver struct {
-	store *a8n.Store
-	opts  a8n.ListCampaignsOpts
+	store *ee.Store
+	opts  ee.ListCampaignsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
@@ -211,7 +211,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := a8n.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID}
+	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
@@ -232,7 +232,7 @@ func (r *campaignsConnectionResolver) compute(ctx context.Context) ([]*a8n.Campa
 }
 
 type campaignResolver struct {
-	store *a8n.Store
+	store *ee.Store
 	*a8n.Campaign
 }
 
@@ -295,7 +295,7 @@ func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 }) graphqlbackend.ChangesetsConnectionResolver {
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: a8n.ListChangesetsOpts{
+		opts: ee.ListChangesetsOpts{
 			CampaignID: r.Campaign.ID,
 			Limit:      int(args.ConnectionArgs.GetFirst()),
 		},
@@ -448,15 +448,15 @@ func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionA
 
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: a8n.ListChangesetsOpts{
+		opts: ee.ListChangesetsOpts{
 			Limit: int(args.GetFirst()),
 		},
 	}, nil
 }
 
 type changesetsConnectionResolver struct {
-	store *a8n.Store
-	opts  a8n.ListChangesetsOpts
+	store *ee.Store
+	opts  ee.ListChangesetsOpts
 
 	// cache results because they are used by multiple fields
 	once       sync.Once
@@ -478,7 +478,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := a8n.CountChangesetsOpts{CampaignID: r.opts.CampaignID}
+	opts := ee.CountChangesetsOpts{CampaignID: r.opts.CampaignID}
 	count, err := r.store.CountChangesets(ctx, opts)
 	return int32(count), err
 }
@@ -499,7 +499,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Chan
 }
 
 type changesetResolver struct {
-	store *a8n.Store
+	store *ee.Store
 	*a8n.Changeset
 	repo *repos.Repo
 }
@@ -541,7 +541,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *struct {
 }) (graphqlbackend.CampaignsConnectionResolver, error) {
 	return &campaignsConnectionResolver{
 		store: r.store,
-		opts: a8n.ListCampaignsOpts{
+		opts: ee.ListCampaignsOpts{
 			ChangesetID: r.Changeset.ID,
 			Limit:       int(args.ConnectionArgs.GetFirst()),
 		},
