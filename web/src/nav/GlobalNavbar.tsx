@@ -30,6 +30,7 @@ interface Props
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     isSourcegraphDotCom: boolean
+    showCampaigns: boolean
 
     /**
      * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search

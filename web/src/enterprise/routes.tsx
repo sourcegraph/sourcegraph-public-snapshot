@@ -23,6 +23,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
     {
         path: '/campaigns',
         render: lazyComponent(() => import('./campaigns/global/GlobalCampaignsArea'), 'GlobalCampaignsArea'),
+        condition: props => props.showCampaigns,
     },
     ...routes,
 ]

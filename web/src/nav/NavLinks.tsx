@@ -35,6 +35,7 @@ interface Props
     history: H.History
     authenticatedUser: GQL.IUser | null
     showDotComMarketing: boolean
+    showCampaigns: boolean
     isSourcegraphDotCom: boolean
 }
 
@@ -62,8 +63,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
-                    // TODO: only show these on enterprise
+                {this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
                     </li>

@@ -52,6 +52,7 @@ window.addEventListener('DOMContentLoaded', () => {
             repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
             routes={enterpriseRoutes}
             keyboardShortcuts={KEYBOARD_SHORTCUTS}
+            showCampaigns={true}
         />,
         document.querySelector('#root')
     )
