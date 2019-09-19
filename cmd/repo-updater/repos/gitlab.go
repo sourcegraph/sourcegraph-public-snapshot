@@ -187,9 +187,11 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 	go func() {
 		defer wg.Done()
 		defer close(projch)
-		for _, p := range s.config.Projects {
+		// Admins normally add to end of lists, so end of list most likely has
+		// new repos => stream them first.
+		for i := len(s.config.Projects) - 1; i >= 0; i-- {
 			select {
-			case projch <- p:
+			case projch <- s.config.Projects[i]:
 			case <-ctx.Done():
 				return
 			}
