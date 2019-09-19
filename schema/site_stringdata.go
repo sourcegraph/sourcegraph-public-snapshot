@@ -65,6 +65,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
+        },
+        "automation": {
+          "description": "Enables the experimental code automation features.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       },
       "group": "Experimental",

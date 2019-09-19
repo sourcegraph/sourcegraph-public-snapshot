@@ -318,3 +318,11 @@ func EventLoggingEnabled() bool {
 	}
 	return val == "enabled"
 }
+
+func ExperimentalFeatures() schema.ExperimentalFeatures {
+	val := Get().ExperimentalFeatures
+	if val == nil {
+		return schema.ExperimentalFeatures{}
+	}
+	return *val
+}
