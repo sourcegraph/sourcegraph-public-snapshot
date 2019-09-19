@@ -141,12 +141,9 @@ func main() {
 		syncer.Synced = make(chan repos.Repos)
 		syncer.SubsetSynced = make(chan repos.Repos)
 		go watchSyncer(ctx, syncer, scheduler, gps)
-	}
-	server.Syncer = syncer
-
-	if !envvar.SourcegraphDotComMode() {
 		go func() { log.Fatal(syncer.Run(ctx, repos.GetUpdateInterval())) }()
 	}
+	server.Syncer = syncer
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
