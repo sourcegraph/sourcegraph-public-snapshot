@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignListItem } from './CampaignListItem'
+import { Link } from '../../../../../shared/src/components/Link'
 
 interface Props {
     campaigns?: GQL.ICampaignConnection
@@ -27,9 +28,9 @@ export const CampaignList: React.FunctionComponent<Props> = ({ campaigns, ...pro
                 ) : (
                     <div className="p-2 text-muted text-center">
                         <p>There are no campaigns yet.</p>
-                        <button type="button" className="btn btn-primary mt-2">
+                        <Link to="/campaigns/new" className="btn btn-primary mt-2">
                             Create a campaign
-                        </button>
+                        </Link>
                     </div>
                 )}
             </>
