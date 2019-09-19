@@ -22,17 +22,24 @@ type ChangesetSyncer struct {
 // Run runs the Sync at the specified interval.
 func (s *ChangesetSyncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
-		log15.Warn("ChangesetSyncer running the sync")
-		if err := s.Sync(ctx); err != nil {
-			log15.Error("ChangesetSyncer", "error", err)
-		}
+		time.Sleep(interval)
 
-		select {
-		case <-time.After(interval):
-		}
+		s.syncAllChangesets(ctx)
 	}
 
 	return ctx.Err()
+}
+
+func (s *ChangesetSyncer) syncAllChangesets(ctx context.Context) {
+	cs, err := s.listAllChangesets(ctx)
+	if err != nil {
+		log15.Error("ChangesetSyncer.listAllChangesets", "error", err)
+		return
+	}
+
+	if err := s.Sync(ctx, cs...); err != nil {
+		log15.Error("ChangesetSyncer", "error", err)
+	}
 }
 
 // Sync refreshes the metadata of the specified changesets and updates them
