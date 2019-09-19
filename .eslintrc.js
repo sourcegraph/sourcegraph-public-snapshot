@@ -33,7 +33,7 @@ const config = {
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
-    'no-restricted-imports': ['error', { paths: ['highlight.js', 'marked'] }],
+    'no-restricted-imports': ['error', { paths: ['highlight.js', 'marked', 'rxjs/ajax'] }],
     'react/forbid-elements': [
       'error',
       {

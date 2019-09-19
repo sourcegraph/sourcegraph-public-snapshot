@@ -70,12 +70,7 @@ export function createPlatformContext(
                     request,
                     variables,
                     baseUrl: window.SOURCEGRAPH_URL,
-                    headers: {},
-                    requestOptions: {
-                        crossDomain: true,
-                        withCredentials: true,
-                        async: true,
-                    },
+                    credentials: 'include',
                 })
             })
         )
