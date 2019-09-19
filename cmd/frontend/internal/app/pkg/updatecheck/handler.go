@@ -21,7 +21,7 @@ import (
 )
 
 // PubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
-var PubSubPingsTopicID = env.Get("PUBSUB_PINGS_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
+var PubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
