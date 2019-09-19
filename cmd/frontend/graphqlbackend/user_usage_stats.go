@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -95,8 +94,8 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		if args.Argument != nil {
 			argument = *args.Argument
 		}
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(bigQueryEvent{
+		var event []byte
+		event, err := json.Marshal(bigQueryEvent{
 			EventName:       args.Event,
 			UserID:          int(actor.UID),
 			AnonymousUserID: args.UserCookieID,
@@ -105,10 +104,11 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 			Argument:        argument,
 			Timestamp:       time.Now().UTC().Format(time.RFC3339),
 			Version:         version.Version(),
-		}); err != nil {
+		})
+		if err != nil {
 			return nil, err
 		}
-		return nil, pubsubutil.Publish(pubSubDotComEventsTopicID, buf.String())
+		return nil, pubsubutil.Publish(pubSubDotComEventsTopicID, string(event))
 	}
 
 	return nil, usagestats.LogEvent(
