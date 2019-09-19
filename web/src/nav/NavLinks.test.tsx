@@ -62,9 +62,7 @@ describe('NavLinks', () => {
         settingsCascade: SETTINGS_CASCADE,
         history,
         isSourcegraphDotCom: false,
-        experimentalFeatures: {
-            automation: 'enabled' as const,
-        },
+        showCampaigns: true,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed

@@ -42,6 +42,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
 Array [
   "Search /search",
   "WebActionsNavItems",
+  "CampaignsNavItem",
   "Extensions /extensions",
   "Sign in /sign-in",
   "About https://about.sourcegraph.com",
@@ -53,6 +54,7 @@ Array [
 exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
 Array [
   "WebActionsNavItems",
+  "CampaignsNavItem",
   "Extensions /extensions",
   "Sign in /sign-in",
   "About https://about.sourcegraph.com",
