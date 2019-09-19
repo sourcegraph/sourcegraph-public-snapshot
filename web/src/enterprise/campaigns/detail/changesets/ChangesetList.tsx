@@ -33,15 +33,12 @@ export const ChangesetList: React.FunctionComponent<Props> = ({ changesets }) =>
                     </div>
                     <div className="flex-fill overflow-hidden m-1">
                         <h4 className="m-0">
-                            <Link
-                                to={changeset.repository.url}
-                                className="text-muted"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
+                            <Link to={changeset.repository.url} className="text-muted">
                                 {changeset.repository.name}
                             </Link>{' '}
-                            <Link to={changeset.externalURL.url}>{changeset.title}</Link>
+                            <Link to={changeset.externalURL.url} target="_blank" rel="noopener noreferrer">
+                                {changeset.title}
+                            </Link>
                         </h4>
                         <div className="text-truncate w-100">{changeset.body}</div>
                     </div>
