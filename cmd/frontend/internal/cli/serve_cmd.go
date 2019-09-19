@@ -168,7 +168,13 @@ func Main() error {
 	if dbconn.Global == nil {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
-	schema, err := graphqlbackend.NewSchema(dbconn.Global)
+
+	// graphqlbackend.A8NResolver is set by enterprise frontend
+	var a8n graphqlbackend.A8NResolver
+	if graphqlbackend.NewA8NResolver != nil {
+		a8n = graphqlbackend.NewA8NResolver(dbconn.Global)
+	}
+	schema, err := graphqlbackend.NewSchema(a8n)
 	if err != nil {
 		return err
 	}
