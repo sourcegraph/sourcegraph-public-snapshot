@@ -48,11 +48,9 @@ Sourcegraph has the following dependencies:
 - [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 
-You have two options for installing these dependencies.
+The following are two recommended options for installing these dependencies:
 
-### Option A: Homebrew setup for macOS
-
-This is a streamlined setup for Mac machines.
+### macOS
 
 1.  Install [Homebrew](https://brew.sh).
 2.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
@@ -66,7 +64,7 @@ This is a streamlined setup for Mac machines.
 3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, and SQLite tools with the following command:
 
     ```
-    brew install go node redis postgresql git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go node yarn redis postgresql git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
@@ -88,57 +86,61 @@ This is a streamlined setup for Mac machines.
 
 6.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
-### Option B: Linux / Manual Install
+### Ubuntu
 
-For Linux users or if you don't want to use Homebrew on macOS, install the dependencies listed above using your preferred method.
 
-#### NodeJS on Ubuntu
+1. Add package repositories:
 
-Ubuntu installs a fairly old NodeJS by default. To get a more recent version:
+    ```
+    # Go
+    sudo add-apt-repository ppa:longsleep/golang-backports
 
-```
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
+    # Docker
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 
-As of this writing, `setup_8.x` also works, but you may want to prefer the newer
-one.
+    # Yarn
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 
-#### Redis on Linux
+    # Node.js
+    curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+    ```
 
-You can follow these [instructions to install Redis
-natively](http://redis.io/topics/quickstart). If you have Docker installed and
-are running Linux, however, the easiest way to get Redis up and running is
-probably:
+2. Update repositories:
 
-```
-dockerd # if docker isn't already running
-docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
-```
+    ```
+    sudo apt-get update
+    ```
 
-_`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data._
+3. Install dependencies:
 
-You need to have the redis image running when you run the Sourcegraph
-`dev/launch.sh` script. If you do not have docker access without root, run these
-commands under `sudo`.
+    ```
+    sudo apt install -y git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io nodejs yarn
+    ```
 
-#### SQLite tools
+4. Configure startup services
 
-On Ubuntu, you can get the required tools by running:
+    ```
+    sudo systemctl enable postgresql
+    sudo systemctl enable redis-server.service
+    ```
 
-```
-apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools
-```
+5. `[optional]` You can also run Redis using Docker
 
-## Step 3: Install Yarn
+    In this case you should not enable the `redis-server.service` from the previous step.
 
-Run the following command to install Yarn, a package manager for Node.js.
+    ```
+    dockerd # if docker isn't already running
+    docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
 
-```
-npm install -g yarn
-```
+    # $REDIS_DATA_DIR should be an absolute path to a folder where you intend to store Redis data
+    ```
 
-## Step 4: Initialize your database
+    You need to have Redis running when you start the dev server later on. If you have issues running Docker, try [adding your user to the docker group](https://stackoverflow.com/a/48957722), and/or [updating the socket file persimissions](https://stackoverflow.com/a/51362528), or try running these commands under `sudo`.
+
+
+## Step 3: Initialize your database
 
 You need a fresh Postgres database, and a database user that has full ownership
 of that database.
@@ -197,7 +199,7 @@ page](postgresql.md).
 
 Migrations are applied automatically.
 
-## Step 5: Start Docker
+## Step 4: Start Docker
 
 Start the Docker binary. You have two options:
 
