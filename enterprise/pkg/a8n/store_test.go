@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
@@ -34,11 +35,11 @@ func TestStore(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Campaigns", func(t *testing.T) {
-		campaigns := make([]*Campaign, 0, 3)
+		campaigns := make([]*a8n.Campaign, 0, 3)
 
 		t.Run("Create", func(t *testing.T) {
 			for i := 0; i < cap(campaigns); i++ {
-				c := &Campaign{
+				c := &a8n.Campaign{
 					Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
 					Description:  "All the Javascripts are belong to us",
 					AuthorID:     23,
@@ -261,11 +262,11 @@ func TestStore(t *testing.T) {
 			UpdatedAt:    now,
 		}
 
-		changesets := make([]*Changeset, 0, 3)
+		changesets := make([]*a8n.Changeset, 0, 3)
 
 		t.Run("Create", func(t *testing.T) {
 			for i := 0; i < cap(changesets); i++ {
-				th := &Changeset{
+				th := &a8n.Changeset{
 					RepoID:              42,
 					CreatedAt:           now,
 					UpdatedAt:           now,
@@ -418,8 +419,8 @@ func TestStore(t *testing.T) {
 		})
 
 		t.Run("Update", func(t *testing.T) {
-			want := make([]*Changeset, 0, len(changesets))
-			have := make([]*Changeset, 0, len(changesets))
+			want := make([]*a8n.Changeset, 0, len(changesets))
+			have := make([]*a8n.Changeset, 0, len(changesets))
 
 			now = now.Add(time.Second)
 			for _, c := range changesets {

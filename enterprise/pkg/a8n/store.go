@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
@@ -79,7 +80,7 @@ func (s *Store) Done(errs ...*error) {
 func (s *Store) DB() dbutil.DB { return s.db }
 
 // CreateChangesets creates the given Changesets.
-func (s *Store) CreateChangesets(ctx context.Context, cs ...*Changeset) error {
+func (s *Store) CreateChangesets(ctx context.Context, cs ...*a8n.Changeset) error {
 	q, err := s.createChangesetsQuery(cs)
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ changed AS (
 )
 ` + batchChangesetsQuerySuffix
 
-func (s *Store) createChangesetsQuery(cs []*Changeset) (*sqlf.Query, error) {
+func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) {
 	now := s.now()
 	for _, c := range cs {
 		if c.CreatedAt.IsZero() {
@@ -151,7 +152,7 @@ func (s *Store) createChangesetsQuery(cs []*Changeset) (*sqlf.Query, error) {
 	return batchChangesetsQuery(createChangesetsQueryFmtstr, cs)
 }
 
-func batchChangesetsQuery(fmtstr string, cs []*Changeset) (*sqlf.Query, error) {
+func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, error) {
 	type record struct {
 		ID                  int64           `json:"id"`
 		RepoID              int32           `json:"repo_id"`
@@ -240,14 +241,13 @@ type GetChangesetOpts struct {
 var ErrNoResults = errors.New("no results")
 
 // GetChangeset gets a changeset matching the given options.
-func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*Changeset, error) {
+func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*a8n.Changeset, error) {
 	q := getChangesetQuery(&opts)
 
-	var c Changeset
+	var c a8n.Changeset
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanChangeset(&c, sc)
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -297,12 +297,12 @@ type ListChangesetsOpts struct {
 }
 
 // ListChangesets lists Changesets with the given filters.
-func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs []*Changeset, next int64, err error) {
+func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs []*a8n.Changeset, next int64, err error) {
 	q := listChangesetsQuery(&opts)
 
-	cs = make([]*Changeset, 0, opts.Limit)
+	cs = make([]*a8n.Changeset, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c Changeset
+		var c a8n.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -370,7 +370,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 }
 
 // UpdateChangesets updates the given Changesets.
-func (s *Store) UpdateChangesets(ctx context.Context, cs ...*Changeset) error {
+func (s *Store) UpdateChangesets(ctx context.Context, cs ...*a8n.Changeset) error {
 	q, err := s.updateChangesetsQuery(cs)
 	if err != nil {
 		return err
@@ -418,7 +418,7 @@ AND batch.external_id = changed.external_id
 ORDER BY batch.ordinality
 `
 
-func (s *Store) updateChangesetsQuery(cs []*Changeset) (*sqlf.Query, error) {
+func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) {
 	now := s.now()
 	for _, c := range cs {
 		c.UpdatedAt = now
@@ -427,7 +427,7 @@ func (s *Store) updateChangesetsQuery(cs []*Changeset) (*sqlf.Query, error) {
 }
 
 // CreateCampaign creates the given Campaign.
-func (s *Store) CreateCampaign(ctx context.Context, c *Campaign) error {
+func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	q, err := s.createCampaignQuery(c)
 	if err != nil {
 		return err
@@ -464,7 +464,7 @@ RETURNING
 	changeset_ids
 `
 
-func (s *Store) createCampaignQuery(c *Campaign) (*sqlf.Query, error) {
+func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
 	if err != nil {
 		return nil, err
@@ -499,7 +499,7 @@ func nullInt32Column(n int32) *int32 {
 }
 
 // UpdateCampaign updates the given Campaign.
-func (s *Store) UpdateCampaign(ctx context.Context, c *Campaign) error {
+func (s *Store) UpdateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	q, err := s.updateCampaignQuery(c)
 	if err != nil {
 		return err
@@ -536,7 +536,7 @@ RETURNING
 	changeset_ids
 `
 
-func (s *Store) updateCampaignQuery(c *Campaign) (*sqlf.Query, error) {
+func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 	changesetIDs, err := jsonSetColumn(c.ChangesetIDs)
 	if err != nil {
 		return nil, err
@@ -598,14 +598,13 @@ type GetCampaignOpts struct {
 }
 
 // GetCampaign gets a campaign matching the given options.
-func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*Campaign, error) {
+func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*a8n.Campaign, error) {
 	q := getCampaignQuery(&opts)
 
-	var c Campaign
+	var c a8n.Campaign
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanCampaign(&c, sc)
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -655,13 +654,12 @@ type ListCampaignsOpts struct {
 }
 
 // ListCampaigns lists Campaigns with the given filters.
-func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*Campaign, next int64, err error) {
+func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs []*a8n.Campaign, next int64, err error) {
 	q := listCampaignsQuery(&opts)
 
-	cs = make([]*Campaign, 0, opts.Limit)
+	cs = make([]*a8n.Campaign, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-
-		var c Campaign
+		var c a8n.Campaign
 		if err = scanCampaign(&c, sc); err != nil {
 			return 0, 0, err
 		}
@@ -760,7 +758,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanChangeset(t *Changeset, s scanner) error {
+func scanChangeset(t *a8n.Changeset, s scanner) error {
 	var metadata json.RawMessage
 
 	err := s.Scan(
@@ -773,7 +771,6 @@ func scanChangeset(t *Changeset, s scanner) error {
 		&t.ExternalID,
 		&t.ExternalServiceType,
 	)
-
 	if err != nil {
 		return err
 	}
@@ -792,7 +789,7 @@ func scanChangeset(t *Changeset, s scanner) error {
 	return nil
 }
 
-func scanCampaign(c *Campaign, s scanner) error {
+func scanCampaign(c *a8n.Campaign, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
