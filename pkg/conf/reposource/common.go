@@ -78,8 +78,19 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
 }
 
-// RegexpReplacement is a pair of compiled regex pattern and its replacement.
-type RegexpReplacement struct {
-	Regexp      *regexp.Regexp
-	Replacement string
+// regexpReplacement is a pair of compiled regex pattern and its replacement.
+type regexpReplacement struct {
+	regexp      *regexp.Regexp
+	replacement string
+}
+
+// RegexpReplacements is a list of regex-replacement pairs.
+type RegexpReplacements []*regexpReplacement
+
+// Replace iterates over the regex-replacement pairs and replaces any matches found.
+func (rps RegexpReplacements) Replace(s string) string {
+	for _, rp := range rps {
+		s = rp.regexp.ReplaceAllString(s, rp.replacement)
+	}
+	return s
 }

@@ -1,10 +1,10 @@
 package reposource
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -34,7 +34,7 @@ func (c GitLab) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err 
 	return GitLabRepoName(c.RepositoryPathPattern, baseURL.Hostname(), pathWithNamespace, rps), nil
 }
 
-func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string, rps []*RegexpReplacement) api.RepoName {
+func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string, rps RegexpReplacements) api.RepoName {
 	if repositoryPathPattern == "" {
 		repositoryPathPattern = "{host}/{pathWithNamespace}"
 	}
@@ -44,25 +44,21 @@ func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string, rps [
 		"{pathWithNamespace}", pathWithNamespace,
 	).Replace(repositoryPathPattern)
 
-	for _, rp := range rps {
-		name = rp.Regexp.ReplaceAllString(name, rp.Replacement)
-	}
-
-	return api.RepoName(name)
+	return api.RepoName(rps.Replace(name))
 }
 
-// CompileGitLabRegexReplacements compiles a list of GitLabRegexReplacement into common RegexpReplacement,
+// CompileGitLabRegexReplacements compiles a list of GitLabRegexReplacement into common regexpReplacement,
 // it halts and returns when any regex compile error occurred.
-func CompileGitLabRegexReplacements(repls []*schema.GitLabRegexReplacement) ([]*RegexpReplacement, error) {
-	rps := make([]*RegexpReplacement, len(repls))
+func CompileGitLabRegexReplacements(repls []*schema.GitLabRegexReplacement) (RegexpReplacements, error) {
+	rps := make([]*regexpReplacement, len(repls))
 	for i, rr := range repls {
 		r, err := regexp.Compile(rr.Regex)
 		if err != nil {
-			return nil, fmt.Errorf("compile %q: %v", rr.Regex, err)
+			return nil, errors.Errorf("regexp.Compile %q: %v", rr.Regex, err)
 		}
-		rps[i] = &RegexpReplacement{
-			Regexp:      r,
-			Replacement: rr.Replacement,
+		rps[i] = &regexpReplacement{
+			regexp:      r,
+			replacement: rr.Replacement,
 		}
 	}
 	return rps, nil

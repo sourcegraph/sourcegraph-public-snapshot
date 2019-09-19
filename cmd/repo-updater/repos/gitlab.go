@@ -25,7 +25,7 @@ type GitLabSource struct {
 	config             *schema.GitLabConnection
 	exclude            map[string]bool
 	baseURL            *url.URL // URL with path /api/v4 (no trailing slash)
-	RegexpReplacements []*reposource.RegexpReplacement
+	regexpReplacements reposource.RegexpReplacements
 	client             *gitlab.Client
 }
 
@@ -85,7 +85,7 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		config:             c,
 		exclude:            exclude,
 		baseURL:            baseURL,
-		RegexpReplacements: rps,
+		regexpReplacements: rps,
 		client:             gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
 	}, nil
 }
@@ -108,13 +108,13 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 			s.config.RepositoryPathPattern,
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
-			s.RegexpReplacements,
+			s.regexpReplacements,
 		)),
 		URI: string(reposource.GitLabRepoName(
 			"",
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
-			s.RegexpReplacements,
+			s.regexpReplacements,
 		)),
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,

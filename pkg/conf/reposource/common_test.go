@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -150,6 +151,34 @@ func TestParseCloneURL(t *testing.T) {
 			got, _ := json.MarshalIndent(out, "", "  ")
 			exp, _ := json.MarshalIndent(test.output, "", "  ")
 			t.Errorf("for input %s, expected %s, but got %s", test.input, string(exp), string(got))
+		}
+	}
+}
+
+func TestRegexpReplacements(t *testing.T) {
+	rps := []*regexpReplacement{
+		{
+			regexp:      regexp.MustCompile("\\.d/"),
+			replacement: "/",
+		},
+		{
+			regexp:      regexp.MustCompile("-git$"),
+			replacement: "",
+		},
+	}
+
+	tests := []struct {
+		input  string
+		output string
+	}{
+		{"path/to.d/repo-git", "path/to/repo"},
+		{"path/to.d/repo-git.git", "path/to/repo-git.git"},
+		{"path/to.de/repo-git.git", "path/to.de/repo-git.git"},
+	}
+	for _, test := range tests {
+		got := RegexpReplacements(rps).Replace(test.input)
+		if test.output != got {
+			t.Errorf("for input %s, expected %s, but got %s", test.input, test.output, got)
 		}
 	}
 }
