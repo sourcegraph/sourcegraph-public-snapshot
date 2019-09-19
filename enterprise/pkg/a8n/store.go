@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
@@ -714,6 +715,61 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		opts.Limit,
 	)
 }
+
+var errLockNotAvailable = errors.New("lock not available")
+
+// Lock uses Postgres advisory locks to acquire an exclusive lock.
+// Concurrent processes that call this method while a lock is
+// already held by another process will have errLockNotAvailable returned.
+func (s *Store) Lock(ctx context.Context, id string) (err error) {
+	if _, ok := s.db.(*sql.Tx); !ok {
+		return errors.Errorf("store.lock must be called inside a transaction")
+	}
+
+	q := lockQuery(id)
+
+	var rows *sql.Rows
+	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+
+	if !rows.Next() {
+		return rows.Err()
+	}
+
+	locked := false
+	if err = rows.Scan(&locked); err != nil {
+		return err
+	}
+
+	if err = rows.Close(); err != nil {
+		return err
+	}
+
+	if !locked {
+		return errLockNotAvailable
+	}
+
+	return nil
+}
+
+var lockNamespace = int32(fnv1.HashString32("a8n"))
+
+func lockQuery(id string) *sqlf.Query {
+	// Postgres advisory lock ids are a global namespace within one database.
+	lockID := int32(fnv1.HashString32(id))
+	return sqlf.Sprintf(
+		lockQueryFmtStr,
+		lockNamespace,
+		lockID,
+	)
+}
+
+const lockQueryFmtStr = `
+-- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.lock
+SELECT pg_try_advisory_xact_lock(%s, %s)
+`
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	_, _, err := s.query(ctx, q, sc)
