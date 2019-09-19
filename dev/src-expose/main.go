@@ -5,6 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/peterbourgon/ff/ffcli"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 func main() {
@@ -26,13 +28,41 @@ func main() {
 	}
 
 	var (
-		globalFlags       = flag.NewFlagSet("src-expose", flag.ExitOnError)
-		globalSnapshotDir = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
+		globalFlags          = flag.NewFlagSet("src-expose", flag.ExitOnError)
+		globalSnapshotDir    = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
+		globalSnapshotConfig = globalFlags.String("snapshot-config", "", "If set will be used instead of command line arguments to specify snapshot configuration.")
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
 		serveN     = serveFlags.Int("n", 1, "number of instances of each repo to make")
 		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	)
+
+	parseSnapshotter := func(args []string) (*Snapshotter, error) {
+		var s Snapshotter
+		if *globalSnapshotConfig != "" {
+			if len(args) != 0 {
+				return nil, errors.New("does not take arguments if -snapshot-config is specified")
+			}
+			b, err := ioutil.ReadFile(*globalSnapshotConfig)
+			if err != nil {
+				return nil, errors.Wrapf(err, "could read configuration at %s", *globalSnapshotConfig)
+			}
+			if err := yaml.Unmarshal(b, &s); err != nil {
+				return nil, errors.Wrapf(err, "could not parse configuration at %s", *globalSnapshotConfig)
+			}
+		} else {
+			if len(args) == 0 {
+				return nil, errors.New("requires atleast 1 argument")
+			}
+			for _, dir := range args {
+				s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
+			}
+		}
+		if s.Destination == "" {
+			s.Destination = *globalSnapshotDir
+		}
+		return &s, nil
+	}
 
 	serve := &ffcli.Command{
 		Name:      "serve",
@@ -68,14 +98,9 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 		Usage:     "src-expose [flags] snapshot [flags] <src1> [<src2> ...]",
 		ShortHelp: "Create a git snapshot of directories",
 		Exec: func(args []string) error {
-			if len(args) == 0 {
-				return errors.New("requires atleast 1 argument")
-			}
-			s := Snapshotter{
-				Destination: *globalSnapshotDir,
-			}
-			for _, dir := range args {
-				s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
+			s, err := parseSnapshotter(args)
+			if err != nil {
+				return err
 			}
 			return s.Run()
 		},
@@ -87,15 +112,22 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 		ShortHelp:   "Periodically create snapshots of directories src1, src2, ... and serve them.",
 		Subcommands: []*ffcli.Command{serve, snapshot},
 		Exec: func(args []string) error {
-			if len(args) < 2 {
+			var err error
+			var s *Snapshotter
+			if len(args) == 0 {
+				s, err = parseSnapshotter(args)
+				if err != nil {
+					return err
+				}
+			} else if len(args) < 2 {
 				return errors.New("requires atleast 2 argument")
-			}
-			s := Snapshotter{
-				Destination: *globalSnapshotDir,
-				PreCommand:  args[0],
-			}
-			for _, dir := range args[1:] {
-				s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
+			} else {
+				preCommand := args[0]
+				s, err = parseSnapshotter(args[1:])
+				if err != nil {
+					return err
+				}
+				s.PreCommand = preCommand
 			}
 
 			fmt.Printf(`Periodically snapshotting directories as git repositories to %s.
