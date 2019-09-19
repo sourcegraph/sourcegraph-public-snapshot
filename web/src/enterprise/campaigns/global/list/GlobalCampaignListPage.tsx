@@ -15,11 +15,13 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => {
         <>
             <h1>Campaigns</h1>
             <p>Track large-scale code changes</p>
-            <div className="text-right mb-1">
-                <Link to="/campaigns/new" className="btn btn-primary">
-                    <AddIcon className="icon-inline" /> New Campaign
-                </Link>
-            </div>
+            {campaigns && campaigns.nodes.length > 0 && (
+                <div className="text-right mb-1">
+                    <Link to="/campaigns/new" className="btn btn-primary">
+                        <AddIcon className="icon-inline" /> New Campaign
+                    </Link>
+                </div>
+            )}
             <CampaignList {...props} campaigns={campaigns} />
         </>
     )
