@@ -1162,6 +1162,15 @@ describe('e2e test suite', () => {
             for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
                 await driver.page.waitForSelector(`.e2e-search-result-tab-${searchType}`)
                 await driver.page.click(`.e2e-search-result-tab-${searchType}`)
+                await driver.page.waitForFunction(
+                    (searchType: string) => {
+                        const el: HTMLElement | null = document.querySelector(`.e2e-search-result-tab-${searchType}`)
+                        return el && el.className.includes('e2e-search-result-tab--active')
+                    },
+                    {},
+                    searchType
+                )
+
                 await driver.assertWindowLocation(`/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}`)
             }
         })
