@@ -3,6 +3,7 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../backend/graphql'
 import { useObservable } from '../../../util/useObservable'
+import { useMemo } from 'react'
 
 /**
  * A React hook that observes campaigns queried from the GraphQL API.
@@ -11,24 +12,27 @@ import { useObservable } from '../../../util/useObservable'
  */
 export const useCampaigns = (): undefined | GQL.ICampaignConnection =>
     useObservable(
-        queryGraphQL(gql`
-            query Campaigns {
-                campaigns {
-                    nodes {
-                        id
-                        namespace {
-                            namespaceName
+        useMemo(
+            () =>
+                queryGraphQL(gql`
+                    query Campaigns {
+                        campaigns {
+                            nodes {
+                                id
+                                namespace {
+                                    namespaceName
+                                }
+                                name
+                                description
+                                url
+                            }
+                            totalCount
                         }
-                        name
-                        description
-                        url
                     }
-                    totalCount
-                }
-            }
-        `).pipe(
-            map(dataOrThrowErrors),
-            map(data => data.campaigns)
-        ),
-        []
+                `).pipe(
+                    map(dataOrThrowErrors),
+                    map(data => data.campaigns)
+                ),
+            []
+        )
     )

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { Redirect } from 'react-router'
 import { map, catchError, concatMap, tap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
@@ -35,24 +35,29 @@ interface Props {}
  * Shows a form to create a new campaign.
  */
 export const NewCampaignPage: React.FunctionComponent<Props> = () => {
-    const namespaces = useObservable(queryNamespaces(), [])
+    const namespaces = useObservable(useMemo(queryNamespaces, []))
 
     const [namespace, setNamespace] = useState<GQL.ID>()
     const [name, setName] = useState<string>()
     const [description, setDescription] = useState<string>()
 
-    const getNamespace = (): GQL.ID | undefined => namespace || (namespaces && namespaces[0].id)
+    const getNamespace = useCallback((): GQL.ID | undefined => namespace || (namespaces && namespaces[0].id), [
+        namespace,
+        namespaces,
+    ])
 
     const [onSubmit, createdCampaign] = useEventObservable(
-        (submits: Observable<React.FormEvent<HTMLFormElement>>) =>
-            submits.pipe(
-                tap(event => event.preventDefault()),
-                map(() => ({ name: name!, description: description!, namespace: getNamespace()! })),
-                concatMap(input =>
-                    concat(['saving' as const], createCampaign(input).pipe(catchError(err => [asError(err)])))
-                )
-            ),
-        [description, name, getNamespace()]
+        useCallback(
+            (submits: Observable<React.FormEvent<HTMLFormElement>>) =>
+                submits.pipe(
+                    tap(event => event.preventDefault()),
+                    map(() => ({ name: name!, description: description!, namespace: getNamespace()! })),
+                    concatMap(input =>
+                        concat(['saving' as const], createCampaign(input).pipe(catchError(err => [asError(err)])))
+                    )
+                ),
+            [name, description, getNamespace]
+        )
     )
 
     return (

@@ -6,13 +6,14 @@ import { useObservable, useEventObservable } from './useObservable'
 import { Observable, Subscriber } from 'rxjs'
 import * as sinon from 'sinon'
 import { map } from 'rxjs/operators'
+import { useMemo, useCallback } from 'react'
 
 describe('useObservable()', () => {
     it('should return the latest value of the given Observable', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.next(1)
         })
-        const { result } = renderHook(() => useObservable(new Observable<number>(subscribe), []))
+        const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
         expect(result.current).toBe(1)
         sinon.assert.calledOnce(subscribe)
         const [subscriber] = subscribe.args[0]
@@ -25,7 +26,7 @@ describe('useObservable()', () => {
 
     it('should return undefined if the Observable did not emit anything yet', () => {
         const subscribe = sinon.spy((_subscriber: Subscriber<number>) => {})
-        const { result } = renderHook(() => useObservable(new Observable<number>(subscribe), []))
+        const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
         expect(result.current).toBe(undefined)
         sinon.assert.calledOnce(subscribe)
         const [subscriber] = subscribe.args[0]
@@ -41,18 +42,20 @@ describe('useObservable()', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.error(err)
         })
-        const { result } = renderHook(() => useObservable(new Observable<number>(subscribe), []))
+        const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
         expect(result.error).toBe(err)
         sinon.assert.calledOnce(subscribe)
     })
 
-    it('should subscribe if component rerenders and dependencies changed', () => {
+    it('should subscribe if component rerenders and observable changed', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.next(1)
             return sinon.spy(() => {})
         })
         let dep = 'dep'
-        const { result, rerender } = renderHook(() => useObservable(new Observable<number>(subscribe), [dep]))
+        const { result, rerender } = renderHook(() =>
+            useObservable(useMemo(() => new Observable<number>(subscribe), [dep]))
+        )
         expect(result.current).toBe(1)
         sinon.assert.calledOnce(subscribe)
         dep = 'changed'
@@ -63,13 +66,14 @@ describe('useObservable()', () => {
         sinon.assert.calledOnce(unsubscribe)
     })
 
-    it('should not subscribe if component rerenders and dependencies did not change', () => {
+    it('should not subscribe if component rerenders and observable did not change', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.next(1)
             return sinon.spy(() => {})
         })
-        const dep = 'dep'
-        const { result, rerender } = renderHook(() => useObservable(new Observable<number>(subscribe), [dep]))
+        const { result, rerender } = renderHook(() =>
+            useObservable(useMemo(() => new Observable<number>(subscribe), []))
+        )
         expect(result.current).toBe(1)
         sinon.assert.calledOnce(subscribe)
         rerender()
@@ -84,7 +88,9 @@ describe('useObservable()', () => {
             subscriber.next(1)
             return sinon.spy(() => {})
         })
-        const { result, unmount } = renderHook(() => useObservable(new Observable<number>(subscribe), []))
+        const { result, unmount } = renderHook(() =>
+            useObservable(useMemo(() => new Observable<number>(subscribe), []))
+        )
         expect(result.current).toBe(1)
         sinon.assert.calledOnce(subscribe)
         unmount()
@@ -98,7 +104,7 @@ describe('useEventObservable()', () => {
     it('should emit on the transform function whenever an event was triggered', () => {
         const spy = sinon.spy((n: number) => n + 10)
         const { result } = renderHook(() =>
-            useEventObservable((events: Observable<number>) => events.pipe(map(spy)), [])
+            useEventObservable(useCallback((events: Observable<number>) => events.pipe(map(spy)), []))
         )
         let [onEvent, value] = result.current
         act(() => {
