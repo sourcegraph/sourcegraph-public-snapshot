@@ -3,8 +3,10 @@ package repos
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -27,6 +29,10 @@ func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, er
 	var c schema.OtherExternalServiceConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
+	}
+
+	if cf == nil {
+		cf = NewHTTPClientFactory()
 	}
 
 	cli, err := cf.Doer()
@@ -148,12 +154,22 @@ func (s OtherSource) srcexpose(ctx context.Context) ([]*Repo, error) {
 		return nil, err
 	}
 
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response from src-expose")
+	}
+
 	var data struct {
 		Items []*Repo
 	}
-	err = json.NewDecoder(resp.Body).Decode(&data)
+	err = json.Unmarshal(b, &data)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode response from src-expose")
+		return nil, errors.Wrapf(err, "failed to decode response from src-expose: %s", string(b))
+	}
+
+	clonePrefix := s.conn.Url
+	if !strings.HasSuffix(clonePrefix, "/") {
+		clonePrefix = clonePrefix + "/"
 	}
 
 	urn := s.svc.URN()
@@ -174,7 +190,7 @@ func (s OtherSource) srcexpose(ctx context.Context) ([]*Repo, error) {
 			urn: {
 				ID: urn,
 				// TODO we should allow this to be set
-				CloneURL: s.conn.Url + r.URI + "/.git",
+				CloneURL: clonePrefix + strings.TrimPrefix(r.URI, "/") + "/.git",
 			},
 		}
 
