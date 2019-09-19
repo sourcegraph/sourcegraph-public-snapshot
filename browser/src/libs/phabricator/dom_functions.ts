@@ -56,7 +56,8 @@ const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, p
     let codeElement: HTMLElement | null = lineNumberCell
     while (
         codeElement &&
-        // On unified diffs, some <th> or <t.n> elements can have an empty text content,
+        // On unified diffs, some <th> or td.n elements can have an empty text content or no data-n attribute
+        // (for added lines that did not exist in the base, for instance),
         // in which case isLineNumberCell returns false.
         (codeElement.tagName !== 'TD' ||
             codeElement.classList.contains('n') ||
