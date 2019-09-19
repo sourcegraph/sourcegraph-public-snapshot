@@ -119,7 +119,7 @@ func NewSiteProblems(messages ...string) Problems {
 func (ps Problems) Messages() []string {
 	msgs := make([]string, len(ps))
 	for i := range ps {
-		msgs[i] = ps[i].description
+		msgs[i] = ps[i].String()
 	}
 	return msgs
 }

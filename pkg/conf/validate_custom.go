@@ -65,24 +65,24 @@ func validateCustom(cfg Unified) (problems Problems) {
 func TestValidator(t interface {
 	Errorf(format string, args ...interface{})
 	Helper()
-}, c Unified, f func(Unified) []string, wantProblems []string) {
+}, c Unified, f Validator, wantProblems Problems) {
 	t.Helper()
 	problems := f(c)
-	wantSet := make(map[string]struct{}, len(wantProblems))
+	wantSet := make(map[string]problemKind, len(wantProblems))
 	for _, p := range wantProblems {
-		wantSet[p] = struct{}{}
+		wantSet[p.String()] = p.kind
 	}
 	for _, p := range problems {
 		var found bool
-		for ps := range wantSet {
-			if strings.Contains(p, ps) {
+		for ps, k := range wantSet {
+			if strings.Contains(p.String(), ps) && p.kind == k {
 				delete(wantSet, ps)
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Errorf("got unexpected error %q", p)
+			t.Errorf("got unexpected error %q with kind %q", p, p.kind)
 		}
 	}
 	if len(wantSet) > 0 {

@@ -65,7 +65,7 @@ func TestValidateCustom(t *testing.T) {
 				return
 			}
 			for _, p := range problems {
-				if strings.Contains(p, test.wantProblem) {
+				if strings.Contains(p.String(), test.wantProblem) {
 					return
 				}
 			}
