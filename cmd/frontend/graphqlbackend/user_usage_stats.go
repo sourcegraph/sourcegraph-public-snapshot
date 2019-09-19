@@ -17,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
-// PubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
-var PubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
+// pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
+var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
@@ -108,7 +108,7 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		}); err != nil {
 			return nil, err
 		}
-		return nil, pubsubutil.Publish(PubSubDotComEventsTopicID, buf.String())
+		return nil, pubsubutil.Publish(pubSubDotComEventsTopicID, buf.String())
 	}
 
 	return nil, usagestats.LogEvent(

@@ -20,8 +20,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// PubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
-var PubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
+// pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
+var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
@@ -214,7 +214,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	eventlogger.LogEvent(0, "", "ServerUpdateCheck", json.RawMessage(message))
 
 	if pubsubutil.Enabled() {
-		err := pubsubutil.Publish(PubSubPingsTopicID, message)
+		err := pubsubutil.Publish(pubSubPingsTopicID, message)
 		if err != nil {
 			log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
 		}
