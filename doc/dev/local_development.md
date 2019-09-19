@@ -1,6 +1,6 @@
 # Getting started with developing Sourcegraph
 
-Have a look around, our code is at https://sourcegraph.com/github.com/sourcegraph/sourcegraph.
+Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph).
 
 ## Outline
 
@@ -38,7 +38,7 @@ Sourcegraph has the following dependencies:
 - [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 
-The following are two recommended options for installing these dependencies:
+The following are two recommendations for installing these dependencies:
 
 ### macOS
 
