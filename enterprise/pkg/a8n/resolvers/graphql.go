@@ -368,58 +368,12 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	// We do this outside of a transaction.
 
 	store = repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-	es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
-	if err != nil {
-		return nil, err
+	syncer := ee.ChangesetSyncer{
+		ReposStore:  store,
+		Store:       r.store,
+		HTTPFactory: r.httpFactory,
 	}
-
-	byRepo := make(map[uint32]int64, len(rs))
-	for _, r := range rs {
-		eids := r.ExternalServiceIDs()
-		for _, id := range eids {
-			if _, ok := byRepo[r.ID]; !ok {
-				byRepo[r.ID] = id
-				break
-			}
-		}
-	}
-
-	type batch struct {
-		repos.ChangesetSource
-		Changesets []*repos.Changeset
-	}
-
-	batches := make(map[int64]*batch, len(es))
-	for _, e := range es {
-		src, err := repos.NewSource(e, r.httpFactory)
-		if err != nil {
-			return nil, err
-		}
-
-		css, ok := src.(repos.ChangesetSource)
-		if !ok {
-			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
-		}
-
-		batches[e.ID] = &batch{ChangesetSource: css}
-	}
-
-	for _, c := range cs {
-		repoID := uint32(c.RepoID)
-		b := batches[byRepo[repoID]]
-		b.Changesets = append(b.Changesets, &repos.Changeset{
-			Changeset: c,
-			Repo:      repoSet[repoID],
-		})
-	}
-
-	for _, b := range batches {
-		if err = b.LoadChangesets(ctx, b.Changesets...); err != nil {
-			return nil, err
-		}
-	}
-
-	if err = r.store.UpdateChangesets(ctx, cs...); err != nil {
+	if err = syncer.Sync(ctx, cs...); err != nil {
 		return nil, err
 	}
 
