@@ -222,7 +222,10 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	go func() {
 		defer wg.Done()
 
-		for _, name := range s.config.Repos {
+		// Admins normally add to end of lists, so end of list most likely has
+		// new repos => stream them first.
+		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			name := s.config.Repos[i]
 			ps := strings.SplitN(name, "/", 2)
 			if len(ps) != 2 {
 				ch <- batch{err: errors.Errorf("bitbucketserver.repos: name=%q", name)}
