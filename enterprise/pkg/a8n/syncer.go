@@ -2,6 +2,7 @@ package a8n
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -16,6 +17,22 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
+}
+
+// Run runs the Sync at the specified interval.
+func (s *ChangesetSyncer) Run(ctx context.Context, interval time.Duration) error {
+	for ctx.Err() == nil {
+		log15.Warn("ChangesetSyncer running the sync")
+		if err := s.Sync(ctx); err != nil {
+			log15.Error("ChangesetSyncer", "error", err)
+		}
+
+		select {
+		case <-time.After(interval):
+		}
+	}
+
+	return ctx.Err()
 }
 
 // Sync refreshes the metadata of the specified changesets and updates them

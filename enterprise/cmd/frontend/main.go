@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,14 +21,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/resolvers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -54,6 +58,14 @@ func main() {
 			}
 		}()
 		go licensing.StartMaxUserCount(&usersStore{})
+
+		syncer := &a8n.ChangesetSyncer{
+			Store:       a8n.NewStore(dbconn.Global),
+			ReposStore:  repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
+			HTTPFactory: repos.NewHTTPClientFactory(),
+		}
+
+		go syncer.Run(ctx, 2*time.Minute)
 	}
 
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
