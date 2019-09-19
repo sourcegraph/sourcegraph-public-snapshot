@@ -1013,6 +1013,52 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
+			kind:   "GITLAB",
+			desc:   "empty regex and replacement array",
+			config: `{"replaceAllInRepositoryName": []}`,
+			assert: includes(`replaceAllInRepositoryName: Array must have at least 1 items`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "missing properties in regex and replacement array",
+			config: `
+			{
+				"replaceAllInRepositoryName": [
+					{
+						"re": "regex",
+						"repl": "replacement"
+					}
+				]
+			}
+			`,
+			assert: includes(
+				`replaceAllInRepositoryName.0: regex is required`,
+				`replaceAllInRepositoryName.0: replacement is required`,
+			),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid regex and replacement array",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"token": "super-secret-token",
+				"projectQuery": ["none"],
+				"replaceAllInRepositoryName": [
+					{
+						"regex": "\\.d/",
+						"replacement": "/"
+					},
+					{
+						"regex": "-git$",
+						"replacement": ""
+					}
+				]
+			}
+			`,
+			assert: equals("<nil>"),
+		},
+		{
 			kind:   "PHABRICATOR",
 			desc:   "without repos nor token",
 			config: `{}`,
