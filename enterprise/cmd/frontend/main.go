@@ -65,7 +65,11 @@ func main() {
 			HTTPFactory: repos.NewHTTPClientFactory(),
 		}
 
-		go syncer.Run(ctx)
+		go func() {
+			if err := syncer.Run(ctx); err != nil {
+				log15.Error("ChangesetSyncer.Run", "err", err)
+			}
+		}()
 	}
 
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
