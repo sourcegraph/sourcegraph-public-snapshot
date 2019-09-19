@@ -54,6 +54,8 @@ describe('useObservable()', () => {
         })
         let dep = 'dep'
         const { result, rerender } = renderHook(() =>
+            // Intentional extra dependency
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             useObservable(useMemo(() => new Observable<number>(subscribe), [dep]))
         )
         expect(result.current).toBe(1)
