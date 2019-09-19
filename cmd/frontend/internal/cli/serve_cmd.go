@@ -168,7 +168,7 @@ func Main() error {
 	if dbconn.Global == nil {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
-	schema, err := graphqlbackend.NewSchema(dbconn.Global)
+	schema, err := graphqlbackend.NewSchema(dbconn.Global, nil)
 	if err != nil {
 		return err
 	}
