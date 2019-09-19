@@ -1,6 +1,17 @@
 import { createDriverForTest, Driver } from '../../../../shared/src/e2e/driver'
+import { saveScreenshotsUponFailuresAndClosePage } from '../../../../shared/src/e2e/screenshotReporter'
+import * as path from 'path'
 
-export function regressionTestInit(): void {
+/**
+ * Sets default timeout and error handlers for regression tests. Includes:
+ * - Default Jest test timeout
+ * - Top-level rejection handlers
+ * - Screenshot on failure
+ *
+ * This should be called in the top-level `beforeAll` function of each regression test suite,
+ * after the driver is initailized.
+ */
+export function setTestDefaults(driver: Driver): void {
     // 10s test timeout. This must be greater than the Puppeteer navigation timeout (set to 5s
     // below) in order to get the stack trace to point to the Puppeteer command that failed instead
     // of a cryptic Jest test timeout location.
@@ -13,6 +24,13 @@ export function regressionTestInit(): void {
     process.on('rejectionHandled', error => {
         console.error('Caught rejectionHandled:', error)
     })
+
+    // Take a screenshot when a test fails.
+    saveScreenshotsUponFailuresAndClosePage(
+        path.resolve(__dirname, '..', '..', '..'),
+        path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
+        () => driver.page
+    )
 }
 
 /**
