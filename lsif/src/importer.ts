@@ -6,9 +6,8 @@ import { DefaultMap } from './default-map'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
-import { MonikerKind, RangeId } from 'lsif-protocol'
+import { MonikerKind, RangeId, Vertex, Edge } from 'lsif-protocol'
 import { Package, SymbolReferences } from './xrepo'
-import { processLsifInput } from './input'
 import { Readable } from 'stream'
 import { TableInserter } from './inserter'
 import {
@@ -30,6 +29,7 @@ import {
     PackageInformationId,
     HoverResultId,
 } from './models.database'
+import { splitLines, parseJsonLines } from './input'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -93,7 +93,9 @@ export async function importLsif(
     input: Readable
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const correlator = new Correlator()
-    await processLsifInput(input, element => correlator.insert(element))
+    for await (const element of parseJsonLines(splitLines(input)) as AsyncIterable<Vertex | Edge>) {
+        correlator.insert(element)
+    }
 
     if (correlator.lsifVersion === undefined) {
         throw new Error('No metadata defined.')
