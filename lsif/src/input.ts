@@ -1,9 +1,8 @@
 import * as definitionsSchema from './lsif.schema.json'
 import * as zlib from 'mz/zlib'
-import Ajv from 'ajv'
+import Ajv, { ValidateFunction } from 'ajv'
 import { Edge, Vertex } from 'lsif-protocol'
 import { Readable, Writable } from 'stream'
-import { ValidateFunction } from 'ajv'
 
 /**
  * A JSON schema validation function that accepts an LSIF vertex or edge.
@@ -21,7 +20,7 @@ export const elementValidator = new Ajv().addSchema({ $id: 'defs.json', ...defin
  * @param output The output stream.
  * @param validator The JSON schema validation function to apply.
  */
-export async function validateLsifInput(
+export function validateLsifInput(
     input: Readable,
     output: Writable,
     validator: ValidateFunction | undefined
@@ -68,6 +67,7 @@ export async function validateLsifInput(
  */
 export async function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
     for await (const _ of processElements(splitLines(input.pipe(zlib.createGunzip())), process)) {
+        // no-op body, just consusme the iterable
     }
 }
 
@@ -83,7 +83,7 @@ export async function* splitLines(input: AsyncIterable<string>): AsyncIterable<s
         buffer += data.toString()
 
         do {
-            let index = buffer.indexOf('\n')
+            const index = buffer.indexOf('\n')
             if (index < 0) {
                 break
             }

@@ -1,7 +1,5 @@
-import * as definitionsSchema from './lsif.schema.json'
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import Ajv, { ValidateFunction } from 'ajv'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'

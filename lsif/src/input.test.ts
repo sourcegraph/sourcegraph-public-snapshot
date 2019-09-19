@@ -17,7 +17,7 @@ describe('validateLsifInput', () => {
         expect((await zlib.gunzip(await written)).toString().trim()).toEqual(lines.join('\n'))
     })
 
-    it('should fail without gzip', () => {
+    it('should fail without gzip', async () => {
         const lines = [
             '{"id": 1, "type": "vertex", "label": "document", "languageId": "typescript", "uri": "foo.ts"}',
             '{"id": 2, "type": "vertex", "label": "document", "languageId": "typescript", "uri": "bar.ts"}',
@@ -27,10 +27,10 @@ describe('validateLsifInput', () => {
         const input = createReadable(lines.join('\n'))
         const { output } = createWritable()
         const promise = validateLsifInput(input, output, elementValidator)
-        expect(promise).rejects.toThrowError(new Error('incorrect header check'))
+        await expect(promise).rejects.toThrowError(new Error('incorrect header check'))
     })
 
-    it('should wrap errors', () => {
+    it('should wrap errors', async () => {
         const lines = [
             '{"id": 1, "type": "vertex", "label": "document", "languageId": "typescript", "uri": "foo.ts"}',
             '{"id": 2, "type": "vertex", "label": "document"}',
@@ -40,7 +40,7 @@ describe('validateLsifInput', () => {
         const input = createReadable(lines.join('\n'))
         const { output } = createWritable()
         const promise = validateLsifInput(input.pipe(zlib.createGzip()), output, elementValidator)
-        expect(promise).rejects.toThrowError(
+        await expect(promise).rejects.toThrowError(
             new Error(
                 'Failed to process line #2 ({"id": 2, "type": "vertex", "label": "document"}): should have required property \'data\''
             )
@@ -73,7 +73,7 @@ describe('processLsifInput', () => {
         expect(elements[3].label).toEqual(EdgeLabels.moniker)
     })
 
-    it('should fail without gzip', () => {
+    it('should fail without gzip', async () => {
         const lines = [
             '{"type": "vertex", "label": "project"}',
             '{"type": "vertex", "label": "document"}',
@@ -83,7 +83,7 @@ describe('processLsifInput', () => {
 
         const input = createReadable(lines.join('\n'))
         const promise = processLsifInput(input, () => {})
-        expect(promise).rejects.toThrowError(new Error('incorrect header check'))
+        await expect(promise).rejects.toThrowError(new Error('incorrect header check'))
     })
 
     it('should wrap errors', async () => {
@@ -101,7 +101,7 @@ describe('processLsifInput', () => {
             }
         })
 
-        expect(promise).rejects.toThrowError(
+        await expect(promise).rejects.toThrowError(
             new Error('Failed to process line #3 ({"type": "edge", "label": "item"}): foo')
         )
     })
@@ -130,12 +130,12 @@ describe('processElements', () => {
         ]
 
         const elements: (Vertex | Edge)[] = []
-        const generator = processElements(generate(lines), element => {
-            elements.push(element)
-        })
+        await consume(
+            processElements(generate(lines), element => {
+                elements.push(element)
+            })
+        )
 
-        for await (const _ of generator) {
-        }
         expect(elements).toHaveLength(4)
         expect(elements[0].type).toEqual(ElementTypes.vertex)
         expect(elements[0].label).toEqual(VertexLabels.project)
@@ -177,12 +177,7 @@ describe('processElements', () => {
             }
         })
 
-        const consume = async () => {
-            for await (const _ of generator) {
-            }
-        }
-
-        expect(consume()).rejects.toThrowError(
+        await expect(consume(generator)).rejects.toThrowError(
             new Error('Failed to process line #3 ({"type": "edge", "label": "item"}): foo')
         )
     })
@@ -195,14 +190,7 @@ describe('processElements', () => {
             '{"type": "edge" "label": "moniker"}',
         ]
 
-        const generator = processElements(generate(input), element => {})
-
-        const consume = async () => {
-            for await (const _ of generator) {
-            }
-        }
-
-        expect(consume()).rejects.toThrowError(
+        await expect(consume(processElements(generate(input), () => {}))).rejects.toThrowError(
             new Error(
                 'Failed to process line #4 ({"type": "edge" "label": "moniker"}): Unexpected string in JSON at position 16'
             )
@@ -214,6 +202,9 @@ describe('processElements', () => {
 // Helpers
 
 async function* generate<T>(values: T[]): AsyncIterable<T> {
+    // Make it actually async
+    await Promise.resolve()
+
     for (const value of values) {
         yield value
     }
@@ -240,4 +231,10 @@ function createWritable(): { output: Writable; written: Promise<Buffer> } {
     })
 
     return { output, written }
+}
+
+async function consume<T>(iterable: AsyncIterable<T>): Promise<void> {
+    for await (const _ of iterable) {
+        // no-op body, just consume iterable
+    }
 }
