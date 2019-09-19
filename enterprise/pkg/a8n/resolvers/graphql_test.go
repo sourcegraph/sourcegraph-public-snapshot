@@ -32,6 +32,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "a8nresolversdb"
+}
+
 var update = flag.Bool("update", false, "update testdata")
 
 func TestCampaigns(t *testing.T) {
