@@ -2,6 +2,22 @@
 
 Have a look around, our code is at https://sourcegraph.com/github.com/sourcegraph/sourcegraph.
 
+## Outline
+
+- [Environment](#environment)
+- [Step 1: Install dependencies](#step-1-install-dependencies)
+- [Step 2: Initialize your database](#step-2-initialize-your-database)
+- [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
+- [Step 4: Get the code](#step-4-get-the-code)
+- [Step 5: Start the Server](#step-5-start-the-server)
+- [Troubleshooting](#troubleshooting)
+- [How to Run Tests](#how-to-run-tests)
+- [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
+- [How to debug live code](#how-to-debug-live-code)
+- [Code style guide](#code-style-guide)
+- [Windows support](#windows-support)
+- [Other nice things](#other-nice-things)
+
 ## Environment
 
 Sourcegraph server is a collection of smaller binaries. The development server, [dev/launch.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/launch.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/launch.sh`.
