@@ -65,7 +65,7 @@ func main() {
 			HTTPFactory: repos.NewHTTPClientFactory(),
 		}
 
-		go syncer.Run(ctx, 2*time.Minute)
+		go syncer.Run(ctx)
 	}
 
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))

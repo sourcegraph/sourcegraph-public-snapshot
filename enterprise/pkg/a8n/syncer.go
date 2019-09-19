@@ -2,6 +2,7 @@ package a8n
 
 import (
 	"context"
+	"math/rand"
 	"time"
 
 	"github.com/pkg/errors"
@@ -20,9 +21,10 @@ type ChangesetSyncer struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *ChangesetSyncer) Run(ctx context.Context, interval time.Duration) error {
+func (s *ChangesetSyncer) Run(ctx context.Context) error {
 	for ctx.Err() == nil {
-		time.Sleep(interval)
+		seconds := 30 + rand.Intn(90)
+		time.Sleep(time.Duration(seconds) * time.Second)
 
 		s.syncAllChangesets(ctx)
 	}
