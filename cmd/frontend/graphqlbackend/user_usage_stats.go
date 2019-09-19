@@ -94,7 +94,6 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		if args.Argument != nil {
 			argument = *args.Argument
 		}
-		var event []byte
 		event, err := json.Marshal(bigQueryEvent{
 			EventName:       args.Event,
 			UserID:          int(actor.UID),
