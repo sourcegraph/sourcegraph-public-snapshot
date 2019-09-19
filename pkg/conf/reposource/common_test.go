@@ -155,8 +155,8 @@ func TestParseCloneURL(t *testing.T) {
 	}
 }
 
-func TestRegexpReplacements(t *testing.T) {
-	rps := []*regexpReplacement{
+func TestNameTransformations(t *testing.T) {
+	rps := []*nameTransformation{
 		{
 			regexp:      regexp.MustCompile(`\.d/`),
 			replacement: "/",
@@ -176,7 +176,7 @@ func TestRegexpReplacements(t *testing.T) {
 		{"path/to.de/repo-git.git", "path/to.de/repo-git.git"},
 	}
 	for _, test := range tests {
-		got := RegexpReplacements(rps).Replace(test.input)
+		got := NameTransformations(rps).Transform(test.input)
 		if test.output != got {
 			t.Errorf("for input %s, expected %s, but got %s", test.input, test.output, got)
 		}

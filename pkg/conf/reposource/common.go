@@ -78,19 +78,22 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
 }
 
-// regexpReplacement is a pair of compiled regex pattern and its replacement.
-type regexpReplacement struct {
-	regexp      *regexp.Regexp
+// nameTransformation describes the rule to transform a repository name.
+type nameTransformation struct {
+	regexp      *regexp.Regexp // Not nil indicates a regex replacement transformation.
 	replacement string
 }
 
-// RegexpReplacements is a list of regex-replacement pairs.
-type RegexpReplacements []*regexpReplacement
+// NameTransformations is a list of transformation rules.
+type NameTransformations []*nameTransformation
 
-// Replace iterates over the regex-replacement pairs and replaces any matches found.
-func (rps RegexpReplacements) Replace(s string) string {
-	for _, rp := range rps {
-		s = rp.regexp.ReplaceAllString(s, rp.replacement)
+// Transform iterates over the regex-replacement pairs and replaces any matches found.
+func (nts NameTransformations) Transform(s string) string {
+	for _, nt := range nts {
+		switch {
+		case nt.regexp != nil:
+			s = nt.regexp.ReplaceAllString(s, nt.replacement)
+		}
 	}
 	return s
 }

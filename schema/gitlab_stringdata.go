@@ -109,12 +109,12 @@ const GitLabSchemaJSON = `{
       "type": "string",
       "default": "{host}/{pathWithNamespace}"
     },
-    "replaceAllInRepositoryName": {
-      "description": "An array of regexes to replace all occurrences in the repository name. The replacement happens after \"repositoryPathPattern\" is processed.",
+    "nameTransformations": {
+      "description": "An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after \"repositoryPathPattern\" is processed.",
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/definitions/RegexReplacement"
+        "$ref": "#/definitions/NameTransformation"
       },
       "examples": [
         [
@@ -213,11 +213,11 @@ const GitLabSchemaJSON = `{
         }
       }
     },
-    "RegexReplacement": {
-      "title": "GitLabRegexReplacement",
+    "NameTransformation": {
+      "title": "GitLabNameTransformation",
       "type": "object",
       "additionalProperties": false,
-      "required": ["regex", "replacement"],
+      "anyOf": [{ "required": ["regex", "replacement"] }],
       "properties": {
         "regex": {
           "type": "string",

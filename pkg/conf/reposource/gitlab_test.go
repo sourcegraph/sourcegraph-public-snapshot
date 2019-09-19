@@ -13,7 +13,7 @@ func TestGitLab_cloneURLToRepoName(t *testing.T) {
 	}{{
 		conn: schema.GitLabConnection{
 			Url: "https://gitlab.com",
-			ReplaceAllInRepositoryName: []*schema.GitLabRegexReplacement{
+			NameTransformations: []*schema.GitLabNameTransformation{
 				{
 					Regex:       "\\.d/",
 					Replacement: "/",

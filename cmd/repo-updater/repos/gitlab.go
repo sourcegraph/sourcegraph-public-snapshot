@@ -21,12 +21,12 @@ import (
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc                *ExternalService
-	config             *schema.GitLabConnection
-	exclude            map[string]bool
-	baseURL            *url.URL // URL with path /api/v4 (no trailing slash)
-	regexpReplacements reposource.RegexpReplacements
-	client             *gitlab.Client
+	svc                 *ExternalService
+	config              *schema.GitLabConnection
+	exclude             map[string]bool
+	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
+	nameTransformations reposource.NameTransformations
+	client              *gitlab.Client
 }
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
@@ -74,19 +74,19 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		}
 	}
 
-	// Validate and cache user-defined regexes.
-	rps, err := reposource.CompileGitLabRegexReplacements(c.ReplaceAllInRepositoryName)
+	// Validate and cache user-defined name transformations.
+	nts, err := reposource.CompileGitLabNameTransformations(c.NameTransformations)
 	if err != nil {
 		return nil, err
 	}
 
 	return &GitLabSource{
-		svc:                svc,
-		config:             c,
-		exclude:            exclude,
-		baseURL:            baseURL,
-		regexpReplacements: rps,
-		client:             gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
+		svc:                 svc,
+		config:              c,
+		exclude:             exclude,
+		baseURL:             baseURL,
+		nameTransformations: nts,
+		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
 	}, nil
 }
 
@@ -108,13 +108,13 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 			s.config.RepositoryPathPattern,
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
-			s.regexpReplacements,
+			s.nameTransformations,
 		)),
 		URI: string(reposource.GitLabRepoName(
 			"",
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
-			s.regexpReplacements,
+			s.nameTransformations,
 		)),
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,

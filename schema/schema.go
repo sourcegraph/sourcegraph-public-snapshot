@@ -301,25 +301,25 @@ type GitLabAuthorization struct {
 
 // GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
 type GitLabConnection struct {
-	Authorization               *GitLabAuthorization      `json:"authorization,omitempty"`
-	Certificate                 string                    `json:"certificate,omitempty"`
-	Exclude                     []*ExcludedGitLabProject  `json:"exclude,omitempty"`
-	GitURLType                  string                    `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool                      `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string                  `json:"projectQuery"`
-	Projects                    []*GitLabProject          `json:"projects,omitempty"`
-	ReplaceAllInRepositoryName  []*GitLabRegexReplacement `json:"replaceAllInRepositoryName,omitempty"`
-	RepositoryPathPattern       string                    `json:"repositoryPathPattern,omitempty"`
-	Token                       string                    `json:"token"`
-	Url                         string                    `json:"url"`
+	Authorization               *GitLabAuthorization        `json:"authorization,omitempty"`
+	Certificate                 string                      `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedGitLabProject    `json:"exclude,omitempty"`
+	GitURLType                  string                      `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                        `json:"initialRepositoryEnablement,omitempty"`
+	NameTransformations         []*GitLabNameTransformation `json:"nameTransformations,omitempty"`
+	ProjectQuery                []string                    `json:"projectQuery"`
+	Projects                    []*GitLabProject            `json:"projects,omitempty"`
+	RepositoryPathPattern       string                      `json:"repositoryPathPattern,omitempty"`
+	Token                       string                      `json:"token"`
+	Url                         string                      `json:"url"`
+}
+type GitLabNameTransformation struct {
+	Regex       string `json:"regex,omitempty"`
+	Replacement string `json:"replacement,omitempty"`
 }
 type GitLabProject struct {
 	Id   int    `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
-}
-type GitLabRegexReplacement struct {
-	Regex       string `json:"regex"`
-	Replacement string `json:"replacement"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.

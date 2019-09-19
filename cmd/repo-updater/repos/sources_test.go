@@ -637,7 +637,7 @@ func TestSources_ListRepos(t *testing.T) {
 						{Name: "sg-test.d/repo-git"},
 						{Name: "sg-test.d/repo-gitrepo"},
 					},
-					ReplaceAllInRepositoryName: []*schema.GitLabRegexReplacement{
+					NameTransformations: []*schema.GitLabNameTransformation{
 						{
 							Regex:       "\\.d/",
 							Replacement: "/",
@@ -652,7 +652,7 @@ func TestSources_ListRepos(t *testing.T) {
 		}
 
 		testCases = append(testCases, testCase{
-			name: "replaceAllInRepositoryName updates the repo name",
+			name: "nameTransformations updates the repo name",
 			svcs: svcs,
 			assert: func(s *ExternalService) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
