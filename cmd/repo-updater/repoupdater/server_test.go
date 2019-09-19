@@ -655,7 +655,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						SyncError: &protocol.SyncError{
-							Message: "syncer.sync.store.list-repos: could not connect to database",
+							Message: "syncer.sync.streaming: syncer.storedExternalIDs: could not connect to database",
 						},
 					},
 				},
@@ -691,7 +691,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 				// Run Sync so that possibly `LastSyncErrors` is set
 				syncer.Sourcer = sourcer
-				_, _ = syncer.Sync(ctx)
+				_ = syncer.Sync(ctx)
 			}
 
 			s := &Server{

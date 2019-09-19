@@ -9,6 +9,7 @@ const config = {
   testEnvironment: __dirname + '/shared/dev/jest-environment.js',
 
   collectCoverage: !!process.env.CI,
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
   coverageDirectory: '<rootDir>/coverage',
   coveragePathIgnorePatterns: [/\.test\.tsx?$/.source],
   roots: ['<rootDir>/src'],

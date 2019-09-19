@@ -254,6 +254,19 @@ func (s *updateScheduler) Update(rs ...*Repo) {
 	schedKnownRepos.Set(float64(known))
 }
 
+// Set updates the schedule with the given repos. However, rs is assumed to be
+// the known universe of repositories, rather than a subset.
+func (s *updateScheduler) Set(rs ...*Repo) {
+	s.Update(rs...)
+	known := 0
+	for _, r := range rs {
+		if !r.IsDeleted() {
+			known++
+		}
+	}
+	schedKnownRepos.Set(float64(known))
+}
+
 func (s *updateScheduler) upsert(r *Repo) {
 	repo := configuredRepo2FromRepo(r)
 
