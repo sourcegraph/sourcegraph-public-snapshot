@@ -17,6 +17,13 @@ export interface LayoutRouteProps {
     render: (props: LayoutRouteComponentProps) => React.ReactNode
 
     /**
+     * A condition function that needs to return true if the route should be rendered
+     *
+     * @default () => true
+     */
+    condition?: (props: LayoutRouteComponentProps) => boolean
+
+    /**
      * Whether or not to force the width of the page to be narrow.
      */
     forceNarrowWidth?: boolean

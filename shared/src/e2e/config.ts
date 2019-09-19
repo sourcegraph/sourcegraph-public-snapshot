@@ -7,13 +7,13 @@ import { pick } from 'lodash'
  */
 export interface Config {
     sudoToken: string
-    username: string
+    sudoUsername: string
     gitHubToken: string
     sourcegraphBaseUrl: string
 }
 
 export interface ConfigField {
-    envVar?: string
+    envVar: string
     description?: string
     defaultValue?: string
 }
@@ -21,16 +21,22 @@ export interface ConfigField {
 const configFields: { [K in keyof Config]: ConfigField } = {
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
+        description:
+            'An access token with "site-admin:sudo" permissions. This will be used to impersonate users in requests.',
     },
-    username: {
-        envVar: 'SOURCEGRAPH_USERNAME',
+    sudoUsername: {
+        envVar: 'SOURCEGRAPH_SUDO_USER',
+        description: 'The site-admin-level username that will be impersonated with the sudo access token.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
+        description: 'A GitHub token that will be used to authenticate a GitHub external service.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
         defaultValue: 'http://localhost:3080',
+        description:
+            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
     },
 }
 
@@ -62,25 +68,22 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
             if (!field) {
                 return ''
             }
-            const info = []
-            if (field.envVar) {
-                info.push(`environment variable: ${field.envVar}`)
+            const info = [field.envVar]
+            if (field.defaultValue) {
+                info.push(`default value: ${field.defaultValue}`)
             }
             if (field.description) {
                 info.push(`description: ${field.description}`)
             }
-            if (field.defaultValue) {
-                info.push(`default value: ${field.defaultValue}`)
-            }
-            return `(${info.join(', ')})`
+            return `${info.join(', ')}`
         }
-        // const fieldInfo = k => `- ${k}`
-        throw new Error(`FAIL: Required config was not provided. The following keys were missing:
+        throw new Error(`FAIL: Required config was not provided. These environment variables were missing:
 
-${missingKeys.map(k => `- ${k} ${fieldInfo(k)}`).join('\n')}
+${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
 
-Please set the appropriate environment variables or add these entries to the config file
-specified by the environment variable CONFIG_FILE`)
+The recommended way to set them is to install direnv (https://direnv.net) and
+create a .envrc file at the root of this repository.
+`)
     }
 
     return pick(config, required)

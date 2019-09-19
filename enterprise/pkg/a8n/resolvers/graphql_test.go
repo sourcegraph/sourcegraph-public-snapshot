@@ -1,4 +1,4 @@
-package graphqlbackend
+package resolvers
 
 import (
 	"context"
@@ -19,8 +19,9 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
@@ -30,6 +31,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func init() {
+	dbtesting.DBNameSuffix = "a8nresolversdb"
+}
 
 var update = flag.Bool("update", false, "update testdata")
 
@@ -49,12 +54,12 @@ func TestCampaigns(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	sr := schemaResolver{
-		A8NStore:    a8n.NewStoreWithClock(dbconn.Global, clock),
-		HTTPFactory: cf,
+	sr := &Resolver{
+		store:       a8n.NewStoreWithClock(dbconn.Global, clock),
+		httpFactory: cf,
 	}
 
-	s, err := graphql.ParseSchema(Schema, &sr)
+	s, err := graphqlbackend.NewSchema(sr)
 	if err != nil {
 		t.Fatal(err)
 	}

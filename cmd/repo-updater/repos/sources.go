@@ -198,7 +198,7 @@ func group(srcs []Source) map[string]Sources {
 
 // listAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *Repo and a single error
-func listAll(ctx context.Context, src Source) ([]*Repo, error) {
+func listAll(ctx context.Context, src Source, observe ...func(*Repo)) ([]*Repo, error) {
 	results := make(chan SourceResult)
 
 	go func() {
@@ -217,6 +217,9 @@ func listAll(ctx context.Context, src Source) ([]*Repo, error) {
 				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue
+		}
+		for _, o := range observe {
+			o(res.Repo)
 		}
 		repos = append(repos, res.Repo)
 	}

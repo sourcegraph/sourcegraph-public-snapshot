@@ -42,7 +42,7 @@ func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return markdown.Render(content, nil), nil
+	return markdown.Render(content), nil
 }
 
 type markdownOptions struct {
@@ -53,7 +53,7 @@ func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
 }) string {
-	return markdown.Render(args.Markdown, nil)
+	return markdown.Render(args.Markdown)
 }
 
 func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {

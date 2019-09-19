@@ -31,7 +31,6 @@ type Server struct {
 		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
 	}
 	Scheduler interface {
-		UpdateQueueLen() int
 		UpdateOnce(id uint32, name api.RepoName, url string)
 		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
 	}
@@ -416,7 +415,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 
-		_, err = s.Syncer.SyncSubset(ctx, repo)
+		err = s.Syncer.SyncSubset(ctx, repo)
 		if err != nil {
 			return nil, err
 		}

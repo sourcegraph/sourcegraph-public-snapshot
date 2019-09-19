@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig } from '../../../shared/src/e2e/config'
+import { getConfig, Config } from '../../../shared/src/e2e/config'
 import { regressionTestInit, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
@@ -84,7 +84,9 @@ const testRepoSlugs = [
     'facebook/react',
 ]
 
-// Reads the number of results from the text at the top of the results page
+/**
+ * Reads the number of results from the text at the top of the results page
+ */
 function getNumResults() {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const matches = document.querySelector('body')!.textContent!.match(/([0-9]+)\+?\sresults?/)
@@ -119,11 +121,10 @@ function hasNoResultsOrError(): boolean {
 }
 
 describe('Search regression test suite', () => {
-    regressionTestInit()
-    const config = getConfig(['sudoToken', 'username', 'gitHubToken', 'sourcegraphBaseUrl'])
+    let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl'>
     let driver: Driver
     let gqlClient: GraphQLClient
-
+    regressionTestInit()
     // Take a screenshot when a test fails.
     saveScreenshotsUponFailuresAndClosePage(
         path.resolve(__dirname, '..', '..', '..'),
@@ -131,17 +132,17 @@ describe('Search regression test suite', () => {
         () => driver.page
     )
 
-    if (new URL(window.location.href).origin !== new URL(config.sourcegraphBaseUrl).origin) {
-        throw new Error(
-            `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${config.sourcegraphBaseUrl}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
-        )
-    }
-
     describe('Search over a dozen repositories', () => {
         beforeAll(
             async () => {
-                driver = await createAndInitializeDriver()
-                gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.username)
+                config = getConfig(['sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl'])
+                if (new URL(window.location.href).origin !== new URL(config.sourcegraphBaseUrl).origin) {
+                    throw new Error(
+                        `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${config.sourcegraphBaseUrl}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
+                    )
+                }
+                driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
+                gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.sudoUsername)
                 await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
@@ -160,7 +161,12 @@ describe('Search regression test suite', () => {
         )
 
         // Close browser.
-        afterAll(() => driver && driver.close())
+        afterAll(async () => {
+            if (driver) {
+                await driver.close()
+            }
+            console.log('You can limit the test run to specific tests by running `yarn run test-regression -t $QUERY`.')
+        })
 
         test('Global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')

@@ -78,6 +78,8 @@ type JSContext struct {
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	Branding *schema.Branding `json:"branding"`
+
+	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -172,6 +174,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AuthProviders: authProviders,
 
 		Branding: conf.Branding(),
+
+		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}
 }
 
