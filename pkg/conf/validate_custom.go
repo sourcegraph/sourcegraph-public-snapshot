@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
-type Validator func(Unified) (problems []string)
+type Validator func(Unified) Problems
 
 // ContributeValidator adds the site configuration validator function to the validation process. It
 // is called to validate site configuration. Any strings it returns are shown as validation
@@ -20,7 +20,7 @@ func ContributeValidator(f Validator) {
 
 var contributedValidators []Validator
 
-func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems []string, err error) {
+func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems Problems, err error) {
 	var cfg Unified
 	if err := json.Unmarshal([]byte(normalizedInput.Critical), &cfg.Critical); err != nil {
 		return nil, err
@@ -33,9 +33,9 @@ func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems []string,
 
 // validateCustom validates the site config using custom validation steps that are not
 // able to be expressed in the JSON Schema.
-func validateCustom(cfg Unified) (problems []string) {
-	invalid := func(msg string) {
-		problems = append(problems, msg)
+func validateCustom(cfg Unified) (problems Problems) {
+	invalid := func(p *Problem) {
+		problems = append(problems, p)
 	}
 
 	// Auth provider config validation is contributed by the
@@ -46,10 +46,10 @@ func validateCustom(cfg Unified) (problems []string) {
 		hasSMTP := cfg.EmailSmtp != nil
 		hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
 		if hasSMTP && cfg.EmailAddress == "" {
-			invalid(`should set email.address because email.smtp is set`)
+			invalid(NewCriticalProblem(`should set email.address because email.smtp is set`))
 		}
 		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
-			invalid(`must set email.smtp username and password for email.smtp authentication`)
+			invalid(NewCriticalProblem(`must set email.smtp username and password for email.smtp authentication`))
 		}
 	}
 

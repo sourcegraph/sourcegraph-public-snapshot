@@ -12,9 +12,9 @@ import (
 const PkgName = "gitlaboauth"
 
 func init() {
-	conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
-		_, problems = parseConfig(&cfg)
-		return problems
+	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
+		_, messages := parseConfig(&cfg)
+		return conf.NewCriticalProblems(messages...)
 	})
 	go func() {
 		conf.Watch(func() {
@@ -32,7 +32,7 @@ func init() {
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, problems []string) {
+func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, messages []string) {
 	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
 	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Gitlab == nil {
@@ -40,22 +40,22 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.
 		}
 
 		if cfg.Critical.ExternalURL == "" {
-			problems = append(problems, "`externalURL` was empty and it is needed to determine the OAuth callback URL.")
+			messages = append(messages, "`externalURL` was empty and it is needed to determine the OAuth callback URL.")
 			continue
 		}
 		externalURL, err := url.Parse(cfg.Critical.ExternalURL)
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
+			messages = append(messages, fmt.Sprintf("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
 			continue
 		}
 		callbackURL := *externalURL
 		callbackURL.Path = "/.auth/gitlab/callback"
 
-		provider, providerProblems := parseProvider(callbackURL.String(), pr.Gitlab, pr)
-		problems = append(problems, providerProblems...)
+		provider, providerMessages := parseProvider(callbackURL.String(), pr.Gitlab, pr)
+		messages = append(messages, providerMessages...)
 		if provider != nil {
 			ps[*pr.Gitlab] = provider
 		}
 	}
-	return ps, problems
+	return ps, messages
 }

@@ -22,14 +22,14 @@ func init() {
 				providers.Update(pkgName, newProvidersList)
 			}
 		})
-		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
-			_, problems = parseConfig(&cfg)
-			return problems
+		conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
+			_, messages := parseConfig(&cfg)
+			return conf.NewCriticalProblems(messages...)
 		})
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.Provider, problems []string) {
+func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.Provider, messages []string) {
 	ps = make(map[schema.GitHubAuthProvider]providers.Provider)
 	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Github == nil {
@@ -37,12 +37,12 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.
 		}
 
 		provider, providerProblems := parseProvider(pr.Github, pr)
-		problems = append(problems, providerProblems...)
+		messages = append(messages, providerProblems...)
 		if provider != nil {
 			ps[*pr.Github] = provider
 		}
 	}
-	return ps, problems
+	return ps, messages
 }
 
 func getStateConfig() gologin.CookieConfig {
