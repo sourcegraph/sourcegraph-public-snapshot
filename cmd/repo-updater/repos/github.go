@@ -318,7 +318,10 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string, results ch
 		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
 	}
 
-	for _, nameWithOwner := range repos {
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for i := len(repos) - 1; i >= 0; i-- {
+		nameWithOwner := repos[i]
 		if err := ctx.Err(); err != nil {
 			results <- &githubResult{err: err}
 			return
@@ -506,12 +509,14 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, re
 func (s *GithubSource) listAllRepositories(ctx context.Context, results chan *githubResult) {
 	s.listRepos(ctx, s.config.Repos, results)
 
-	for _, query := range s.config.RepositoryQuery {
-		s.listRepositoryQuery(ctx, query, results)
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for i := len(s.config.RepositoryQuery) - 1; i >= 0; i-- {
+		s.listRepositoryQuery(ctx, s.config.RepositoryQuery[i], results)
 	}
 
-	for _, org := range s.config.Orgs {
-		s.listOrg(ctx, org, results)
+	for i := len(s.config.Orgs) - 1; i >= 0; i-- {
+		s.listOrg(ctx, s.config.Orgs[i], results)
 	}
 }
 
@@ -534,15 +539,16 @@ func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) 
 func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, results chan *githubResult) error {
 	const batchSize = 30
 
-	for i := 0; i < len(s.config.Repos); i += batchSize {
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for end := len(s.config.Repos); end > 0; end -= batchSize {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 
-		start := i
-		end := i + batchSize
-		if end > len(s.config.Repos) {
-			end = len(s.config.Repos)
+		start := end - batchSize
+		if start < 0 {
+			start = 0
 		}
 		batch := s.config.Repos[start:end]
 
