@@ -48,6 +48,7 @@ execWatchman() {
   "expression": ["anyof",
     ["suffix", "go"],
     ["dirname", "cmd/symbols"],
+    ["dirname", "schema"],
     ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
   ],
   "fields": ["name"]
