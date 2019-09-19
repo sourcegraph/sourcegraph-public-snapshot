@@ -1,8 +1,8 @@
 import * as zlib from 'mz/zlib'
 import { Edge, Vertex } from 'lsif-protocol'
-import { LineStream } from 'byline'
-import { Readable, Transform, Writable } from 'stream'
+import { Readable, Writable } from 'stream'
 import { ValidateFunction } from 'ajv'
+import { readline } from 'mz'
 
 /**
  * Pipes the input data into the output stream. All content of the input
@@ -14,13 +14,13 @@ import { ValidateFunction } from 'ajv'
  * @param output The output stream.
  * @param validator The JSON schema validation function to apply.
  */
-export function validateLsifInput(
+export async function validateLsifInput(
     input: Readable,
     output: Writable,
     validator: ValidateFunction | undefined
 ): Promise<void> {
     if (!validator) {
-        // If we're not validating, just pipe input to the temp file
+        // Not validating, pipe input to temp file
         return new Promise((resolve, reject) => {
             input
                 .pipe(output)
@@ -29,88 +29,47 @@ export function validateLsifInput(
         })
     }
 
-    let line = 0
-    const transform = new Transform({
-        objectMode: true,
-        transform: (data: Buffer, _: string, cb: (error: Error | null, data?: string) => void): void => {
-            line++
-            if (data.length === 0) {
-                return cb(null, '\n')
-            }
-
-            try {
-                if (!validator(JSON.parse(data.toString())) && validator.errors) {
-                    throw new Error(validator.errors.map(e => e.message).join(', '))
-                }
-            } catch (e) {
-                return cb(new Error(`Failed to validate line #${line} (${data}): ${e && e.message}`))
-            }
-
-            return cb(null, `${data}\n`)
-        },
-    })
-
-    return new Promise((resolve, reject) => {
-        const lineStream = new LineStream({
-            keepEmptyLines: true,
-        })
-
-        input
-            .pipe(zlib.createGunzip())
-            .on('error', reject)
-            .pipe(lineStream)
-
-        lineStream
-            .pipe(transform)
-            .on('error', reject)
-            .pipe(zlib.createGzip())
-            .on('error', reject)
+    const gzipWriter = zlib.createGzip()
+    const promise = new Promise((resolve, reject) => {
+        gzipWriter
             .pipe(output)
             .on('error', reject)
             .on('finish', resolve)
     })
+
+    let line = 0
+    for await (const data of readline.createInterface({ input: input.pipe(zlib.createGunzip()) })) {
+        line++
+
+        try {
+            if (!validator(JSON.parse(data)) && validator.errors) {
+                throw new Error(validator.errors.map(e => e.message).join(', '))
+            }
+
+            gzipWriter.write(data)
+        } catch (e) {
+            throw new Error(`Failed to validate line #${line} (${data}): ${e && e.message}`)
+        }
+    }
+
+    await promise
 }
 
 /**
- * Apply a function to each element of the input stream. The input is
- * assumed to be gzipped.
+ * Apply a function to each element of the input stream.
  *
- * @param input The input stream.
+ * @param input The gzipped input stream.
  * @param process The function to apply to element of the input stream.
  */
-export function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
+export async function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
     let line = 0
-    const output = new Writable({
-        objectMode: true,
-        write: (data: Buffer, _: string, cb: (error?: Error | null) => void): void => {
-            line++
-            if (data.length === 0) {
-                return cb()
-            }
+    for await (const data of readline.createInterface({ input: input.pipe(zlib.createGunzip()) })) {
+        line++
 
-            try {
-                process(JSON.parse(data.toString()))
-            } catch (e) {
-                return cb(new Error(`Failed to process line #${line} (${data}): ${e && e.message} `))
-            }
-
-            return cb()
-        },
-    })
-
-    return new Promise((resolve, reject) => {
-        const lineStream = new LineStream({
-            keepEmptyLines: true,
-        })
-
-        input
-            .pipe(zlib.createGunzip())
-            .on('error', reject)
-            .pipe(lineStream)
-
-        lineStream
-            .pipe(output)
-            .on('error', reject)
-            .on('finish', resolve)
-    })
+        try {
+            process(JSON.parse(data))
+        } catch (e) {
+            throw new Error(`Failed to process line #${line} (${data}): ${e && e.message}`)
+        }
+    }
 }

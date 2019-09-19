@@ -375,13 +375,6 @@
     "@types/connect" "*"
     "@types/node" "*"
 
-"@types/byline@^4.2.31":
-  version "4.2.31"
-  resolved "https://registry.npmjs.org/@types/byline/-/byline-4.2.31.tgz#0e61fcb9c03e047d21c4496554c7116297ab60cd"
-  integrity sha1-DmH8ucA+BH0hxEllVMcRYperYM0=
-  dependencies:
-    "@types/node" "*"
-
 "@types/connect@*":
   version "3.4.32"
   resolved "https://registry.npmjs.org/@types/connect/-/connect-3.4.32.tgz#aa0e9616b9435ccad02bc52b5b454ffc2c70ba28"
@@ -950,11 +943,6 @@ builtin-modules@^1.1.1:
   version "1.1.1"
   resolved "https://registry.npmjs.org/builtin-modules/-/builtin-modules-1.1.1.tgz#270f076c5a72c02f5b65a47df94c5fe3a278892f"
   integrity sha1-Jw8HbFpywC9bZaR9+Uxf46J4iS8=
-
-byline@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.npmjs.org/byline/-/byline-5.0.0.tgz#741c5216468eadc457b03410118ad77de8c1ddb1"
-  integrity sha1-dBxSFkaOrcRXsDQQEYrXfejB3bE=
 
 bytes@3.1.0:
   version "3.1.0"
