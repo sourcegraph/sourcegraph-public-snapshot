@@ -55,12 +55,12 @@ func snapshot(logger *log.Logger, src, dst string) error {
 		// we can't just git add, since if we are tracking files that are part
 		// of .gitignore they will continue to be tracked. So we empty the
 		// index.
-		[]string{"git", "rm", "-r", "-q", "--cached", "--ignore-unmatch", "."},
+		{"git", "rm", "-r", "-q", "--cached", "--ignore-unmatch", "."},
 
 		// git add -A makes the index reflect the work tree
-		[]string{"git", "add", "-A"},
+		{"git", "add", "-A"},
 
-		[]string{"git", "commit", "-m", "Sync at " + time.Now().Format("Mon Jan _2 15:04:05 2006")},
+		{"git", "commit", "-m", "Sync at " + time.Now().Format("Mon Jan _2 15:04:05 2006")},
 	}
 	for _, a := range args {
 		cmd := exec.Command(a[0], a[1:]...)
