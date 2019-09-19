@@ -1,11 +1,19 @@
+import * as definitionsSchema from './lsif.schema.json'
 import * as zlib from 'mz/zlib'
+import Ajv from 'ajv'
 import { Edge, Vertex } from 'lsif-protocol'
 import { Readable, Writable } from 'stream'
 import { ValidateFunction } from 'ajv'
-import { readline } from 'mz'
 
 /**
- * Reads the input and writes it to the output stream unchanged. The input
+ * A JSON schema validation function that accepts an LSIF vertex or edge.
+ */
+export const elementValidator = new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
+    oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }],
+})
+
+/**
+ * Reads the input stream and writes it to the output stream unchanged. The input
  * is expected to be a gzipped sequence of JSON lines. If a validation function
  * is supplied, it will be called with the parsed JSON element of each line.
  *
@@ -13,7 +21,7 @@ import { readline } from 'mz'
  * @param output The output stream.
  * @param validator The JSON schema validation function to apply.
  */
-export function validateLsifInput(
+export async function validateLsifInput(
     input: Readable,
     output: Writable,
     validator: ValidateFunction | undefined
@@ -28,58 +36,92 @@ export function validateLsifInput(
         })
     }
 
+    const lines = processElements(splitLines(input.pipe(zlib.createGunzip())), element => {
+        if (!validator(element) && validator.errors) {
+            // TODO - schema messages are not good due to oneOf
+            // only take the first error for now to give the user
+            // something to work with.
+            throw new Error(validator.errors[0].message)
+        }
+    })
+
+    const writer = async (output: Writable): Promise<void> => {
+        for await (const data of lines) {
+            output.write(data)
+            output.write('\n')
+        }
+    }
+
     return new Promise((resolve, reject) => {
-        const gunzippedReader = input.pipe(zlib.createGunzip()).on('error', reject)
-
-        const gzipWriter = zlib
-            .createGzip()
-            .pipe(output)
-            .on('error', reject)
-            .on('finish', resolve)
-
-        processElements(readline.createInterface({ input: gunzippedReader }), (element, data) => {
-            if (!validator(element) && validator.errors) {
-                throw new Error(validator.errors.map(e => e.message).join(', '))
-            }
-
-            gzipWriter.write(data)
-            gzipWriter.write('\n')
-        }).then(() => gzipWriter.end(), reject)
+        const compress = zlib.createGzip().on('finish', resolve)
+        compress.pipe(output).on('error', reject)
+        writer(compress).then(() => compress.end(), reject)
     })
 }
 
 /**
- * Read the input and call a function on the parsed JSON element on each line.
- * The input is expected to be a gzipped sequence of JSON lines.
+ * Read the input stream and call a function on the parsed JSON element on each
+ * line. The input is expected to be a gzipped sequence of JSON lines.
  *
  * @param input The gzipped input stream.
  * @param process The function to apply to element of the input stream.
  */
-export function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const gunzippedReader = input.pipe(zlib.createGunzip()).on('error', reject)
-        processElements(readline.createInterface({ input: gunzippedReader }), process).then(resolve, reject)
-    })
+export async function processLsifInput(input: Readable, process: (element: Vertex | Edge) => void): Promise<void> {
+    for await (const _ of processElements(splitLines(input.pipe(zlib.createGunzip())), process)) {
+    }
 }
 
 /**
- * Invoke a callback with the parsed JSON element from each line of the input.
+ * Transform an async iterable into an async iterable of lines. Each value
+ * is stripped of its trailing newline. Lines may be empty.
  *
- * @param lines An async iterator of JSOn lines.
- * @param process The function to invoke on each parsed JSON element.
+ * @param input The input buffer.
  */
-async function processElements(
+export async function* splitLines(input: AsyncIterable<string>): AsyncIterable<string> {
+    let buffer = ''
+    for await (const data of input) {
+        buffer += data.toString()
+
+        do {
+            let index = buffer.indexOf('\n')
+            if (index < 0) {
+                break
+            }
+
+            yield buffer.substring(0, index)
+            buffer = buffer.substring(index + 1)
+        } while (true)
+    }
+
+    yield buffer
+}
+
+/**
+ * Invoke a process function for each parsed JSON element in the input iterable.
+ * Wraps errors thrown by the process function with the line data and index
+ * context. Does not invoke the process function for empty lines. Returns a copy
+ * of the input iterable.
+ *
+ * @param lines An iterable of JSON lines.
+ * @param process The function to invoke for each element.
+ */
+export async function* processElements(
     lines: AsyncIterable<string>,
-    process: (element: Vertex | Edge, data: string) => void
-): Promise<void> {
+    process: (element: Vertex | Edge) => void
+): AsyncIterable<string> {
     let line = 0
     for await (const data of lines) {
         line++
 
+        if (data === '') {
+            continue
+        }
+
         try {
-            process(JSON.parse(data), data)
+            process(JSON.parse(data))
+            yield data
         } catch (e) {
-            throw new Error(`Failed to validate line #${line} (${data}): ${e && e.message}`)
+            throw new Error(`Failed to process line #${line} (${data}): ${e && e.message}`)
         }
     }
 }

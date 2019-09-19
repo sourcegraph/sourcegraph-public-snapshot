@@ -12,7 +12,7 @@ import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCa
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
 import { Database } from './database.js'
 import { Queue, Scheduler } from 'node-resque'
-import { validateLsifInput } from './input'
+import { validateLsifInput, elementValidator } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
 
@@ -114,9 +114,6 @@ async function main(): Promise<void> {
     // Create queue to publish jobs for worker
     const queue = await setupQueue()
 
-    // Compile the JSON schema used for validation
-    const validator = createInputValidator()
-
     const app = express()
     app.use(errorHandler)
     app.get('/healthz', (_, res) => res.send('ok'))
@@ -134,7 +131,7 @@ async function main(): Promise<void> {
                 const output = fs.createWriteStream(filename)
 
                 try {
-                    await validateLsifInput(req, output, DISABLE_VALIDATION ? undefined : validator)
+                    await validateLsifInput(req, output, DISABLE_VALIDATION ? undefined : elementValidator)
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }
@@ -225,17 +222,6 @@ async function setupQueue(): Promise<Queue> {
     await scheduler.start()
 
     return queue
-}
-
-/**
- * Create a json schema validation function that can validate each line of an
- * LSIF dump input.
- */
-function createInputValidator(): ValidateFunction {
-    // Compile schema with defs as a reference
-    return new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
-        oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }],
-    })
 }
 
 /**
