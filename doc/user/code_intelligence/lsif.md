@@ -1,10 +1,16 @@
 # LSIF
 
-LSIF is a file format for precomputed code intelligence data. It's fast and precise, but needs to be periodically generated and uploaded to your Sourcegraph instance.
+[LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) is a file format for precomputed code intelligence data. It provides fast and precise code intelligence, but needs to be periodically generated and uploaded to your Sourcegraph instance. LSIF is opt-in: repositories for which you have not uploaded LSIF data will continue to use the out-of-the-box code intelligence.
 
 > LSIF is supported in Sourcegraph 3.8 and up.
 
-## Language support
+> For users who have a language server deployed, LSIF will take priority over the language server when LSIF data exists for a repository.
+
+## LSIF indexers
+
+An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
+
+Several languages are currently supported:
 
 - [TypeScript](https://github.com/Microsoft/lsif-node/tree/master/tsc)
 - [Go](https://github.com/sourcegraph/lsif-go)
@@ -13,17 +19,13 @@ LSIF is a file format for precomputed code intelligence data. It's fast and prec
 
 ## Setting up LSIF code intelligence
 
-TODO overview of how indexers work (the general pipeline of generating + moniker generation)
-
 Install the LSIF indexer for your language (e.g. Go):
 
 ```
 $ go get github.com/sourcegraph/lsif-go/cmd/lsif-go
 ```
 
-Generate `data.lsif` in your project root:
-
-TODO what's required in the CI environment
+Generate `data.lsif` in your project root (most LSIF indexers require a proper build environment: dependencies have been fetched, environment variables are set, etc.):
 
 ```
 some-project-dir$ lsif-go --noContents --out=data.lsif
@@ -59,16 +61,10 @@ When uploading:
 
 ## Stale code intelligence
 
-LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded. You can fix this by setting up a periodic job that generates and uploads LSIF for the tip of your default branch (e.g. master) daily. Improvements to this are slated for Sourcegraph 3.9.
-
-TODO mention how basic code intel falls back
-
-TODO recommend against mixing LSIF and LSP
+LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded. You can mitigate this by setting up a periodic job that generates and uploads LSIF for the tip of your default branch (e.g. master) daily. Improvements to this are planned for Sourcegraph 3.9.
 
 ## More about LSIF
 
 To learn more, check out our lightning talk about LSIF from GopherCon 2019 or the [introductory blog post](https://about.sourcegraph.com/blog/code-intelligence-with-lsif):
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/fMIRKRj_A88" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
-TODO comparison with LSP
