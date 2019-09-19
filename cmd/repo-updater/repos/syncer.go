@@ -30,7 +30,7 @@ type Syncer struct {
 	// Sourcegraph.com
 	FailFullSync bool
 
-	// Synced if non-nil is sent Repos synced by Sync.
+	// Synced is sent Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Repos
 
 	// SubsetSynced if non-nil is sent Repos synced by SubsetSync.
