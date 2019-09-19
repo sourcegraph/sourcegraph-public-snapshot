@@ -29,6 +29,7 @@ func main() {
 
 	var (
 		globalFlags          = flag.NewFlagSet("src-expose", flag.ExitOnError)
+		globalVerbose        = globalFlags.Bool("verbose", false, "")
 		globalSnapshotDir    = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
 		globalSnapshotConfig = globalFlags.String("snapshot-config", "", "If set will be used instead of command line arguments to specify snapshot configuration.")
 
@@ -111,6 +112,7 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 		Usage:       "src-expose [flags] <precommand> <src1> [<src2> ...]",
 		ShortHelp:   "Periodically create snapshots of directories src1, src2, ... and serve them.",
 		Subcommands: []*ffcli.Command{serve, snapshot},
+		FlagSet:     globalFlags,
 		Exec: func(args []string) error {
 			var err error
 			var s *Snapshotter
@@ -128,6 +130,12 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 					return err
 				}
 				s.PreCommand = preCommand
+			}
+
+			if *globalVerbose {
+				b, _ := yaml.Marshal(s)
+				_, _ = os.Stdout.Write(b)
+				fmt.Println()
 			}
 
 			fmt.Printf(`Periodically snapshotting directories as git repositories to %s.
