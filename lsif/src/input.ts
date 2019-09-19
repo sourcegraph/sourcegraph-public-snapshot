@@ -44,19 +44,11 @@ export function validateLsifInput(
         }
     })
 
-    const writer = async (output: Writable): Promise<void> => {
-        for await (const data of lines) {
-            output.write(data)
-            output.write('\n')
-        }
-    }
-
     return new Promise((resolve, reject) => {
-        const compress = zlib.createGzip().on('finish', resolve)
-        compress.pipe(output).on('error', reject)
-        writer(compress).then(() => compress.end(), reject)
+        Readable.from(addNewlines(lines)).on('error', reject).pipe(zlib.createGzip()).on('error', reject).pipe(output).on('error', reject).on('finish', resolve)
     })
 }
+
 
 /**
  * Read the input stream and call a function on the parsed JSON element on each
@@ -94,6 +86,18 @@ export async function* splitLines(input: AsyncIterable<string>): AsyncIterable<s
     }
 
     yield buffer
+}
+
+/**
+ * Add newlines back into the output from `splitLines`.
+ *
+ * @param lines An iterable of lines.
+ */
+async function* addNewlines(lines: AsyncIterable<string>): AsyncIterable<string> {
+    for await (const line of lines) {
+        yield line
+        yield '\n'
+    }
 }
 
 /**
