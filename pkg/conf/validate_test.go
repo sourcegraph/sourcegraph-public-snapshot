@@ -73,3 +73,45 @@ func TestValidateCustom(t *testing.T) {
 		})
 	}
 }
+
+func TestProblems(t *testing.T) {
+	criticalProblems := NewCriticalProblems(
+		"criticalProblem1",
+		"criticalProblem2",
+		"criticalProblem3",
+	)
+	siteProblems := NewSiteProblems(
+		"siteProblem1",
+		"siteProblem2",
+		"siteProblem3",
+	)
+
+	var problems Problems
+	problems = append(problems, criticalProblems...)
+	problems = append(problems, siteProblems...)
+
+	{
+		messages := append(criticalProblems.Messages(), siteProblems.Messages()...)
+		want := strings.Join(messages, "\n")
+		got := strings.Join(problems.Messages(), "\n")
+		if want != got {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+
+	{
+		want := strings.Join(criticalProblems.Messages(), "\n")
+		got := strings.Join(problems.Critical().Messages(), "\n")
+		if want != got {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+
+	{
+		want := strings.Join(siteProblems.Messages(), "\n")
+		got := strings.Join(problems.Site().Messages(), "\n")
+		if want != got {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+}
