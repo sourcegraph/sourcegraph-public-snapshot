@@ -59,6 +59,8 @@ When uploading:
 - `COMMIT` must be the full 40 character hash
 - Set http or https to whichever you use when visiting your Sourcegraph instance in your browser
 
+When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to out-of-the-box code intelligence.
+
 ## Stale code intelligence
 
 LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded. You can mitigate this by setting up a periodic job that generates and uploads LSIF for the tip of your default branch (e.g. master) daily. Improvements to this are planned for Sourcegraph 3.9.
