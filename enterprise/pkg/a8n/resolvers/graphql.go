@@ -302,11 +302,6 @@ func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	}
 }
 
-type createChangesetInput struct {
-	Repository graphql.ID
-	ExternalID string
-}
-
 func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ChangesetResolver, err error) {
 	// 🚨 SECURITY: Only site admins may create changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
