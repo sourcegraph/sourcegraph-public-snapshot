@@ -188,12 +188,12 @@ func NodeByID(ctx context.Context, a8n A8NResolver, id graphql.ID) (Node, error)
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		if a8n == nil {
-			return nil, errors.New("only available in enterprise")
+			return nil, onlyInEnterprise
 		}
 		return a8n.CampaignByID(ctx, id)
 	case "Changeset":
 		if a8n == nil {
-			return nil, errors.New("only available in enterprise")
+			return nil, onlyInEnterprise
 		}
 		return a8n.ChangesetByID(ctx, id)
 	case "DiscussionComment":
