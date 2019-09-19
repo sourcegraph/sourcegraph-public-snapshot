@@ -45,10 +45,15 @@ export function validateLsifInput(
     })
 
     return new Promise((resolve, reject) => {
-        Readable.from(addNewlines(lines)).on('error', reject).pipe(zlib.createGzip()).on('error', reject).pipe(output).on('error', reject).on('finish', resolve)
+        Readable.from(addNewlines(lines))
+            .on('error', reject)
+            .pipe(zlib.createGzip())
+            .on('error', reject)
+            .pipe(output)
+            .on('error', reject)
+            .on('finish', resolve)
     })
 }
-
 
 /**
  * Read the input stream and call a function on the parsed JSON element on each
