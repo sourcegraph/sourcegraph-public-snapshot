@@ -40,8 +40,8 @@ func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, er
 // ListRepos returns all Other repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	if s.conn.ExperimentalFakehub {
-		repos, err := s.fakehub(ctx)
+	if s.conn.ExperimentalSrcExpose {
+		repos, err := s.srcexpose(ctx)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 		}
@@ -137,7 +137,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 	}, nil
 }
 
-func (s OtherSource) fakehub(ctx context.Context) ([]*Repo, error) {
+func (s OtherSource) srcexpose(ctx context.Context) ([]*Repo, error) {
 	req, err := http.NewRequest("GET", s.conn.Url+"/v1/list-repos", nil)
 	if err != nil {
 		return nil, err
@@ -153,17 +153,17 @@ func (s OtherSource) fakehub(ctx context.Context) ([]*Repo, error) {
 	}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode response from fakehub")
+		return nil, errors.Wrap(err, "failed to decode response from src-expose")
 	}
 
 	urn := s.svc.URN()
 	for _, r := range data.Items {
 		// The only required field is URI
 		if r.URI == "" {
-			return nil, errors.Errorf("repo without URI returned from fakehub: %+v", r)
+			return nil, errors.Errorf("repo without URI returned from src-expose: %+v", r)
 		}
 
-		// Fields that fakehub isn't allowed to control
+		// Fields that src-expose isn't allowed to control
 		r.Enabled = true
 		r.ExternalRepo = api.ExternalRepoSpec{
 			ID:          r.URI,

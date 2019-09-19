@@ -1,5 +1,3 @@
-// Command fakehub serves git repositories within some directory over HTTP,
-// along with a pastable config for easier manual testing of sourcegraph.
 package main
 
 import (
@@ -18,11 +16,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_fakehub(t *testing.T) {
+func TestServe(t *testing.T) {
 	logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
 	t.Run("empty case", func(t *testing.T) {
 		// Start server.
-		d, err := ioutil.TempDir("", "fakehub_test")
+		d, err := ioutil.TempDir("", "src-expose_test")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -30,7 +28,7 @@ func Test_fakehub(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		s, err := fakehub(logger, 1, ln, d)
+		s, err := serve(logger, 1, ln, d)
 		if err != nil {
 			t.Fatal(err)
 		}

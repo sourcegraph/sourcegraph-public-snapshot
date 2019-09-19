@@ -40,8 +40,8 @@ const OtherExternalServiceSchemaJSON = `{
       "default": "{base}/{repo}",
       "examples": ["pretty-host-name/{repo}"]
     },
-    "experimental.fakehub": {
-      "description": "EXPERIMENTAL: If true, the base url is used as a fakehub API endpoint. repositoryPathPattern and repos is ignored. This will be lifted to its own service type.",
+    "experimental.srcExpose": {
+      "description": "EXPERIMENTAL: If true, the base url is used as a src-expose API endpoint. repositoryPathPattern and repos is ignored. This will be lifted to its own service type.",
       "type": "boolean",
       "default": false
     }

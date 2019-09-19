@@ -1,4 +1,4 @@
-// Command fakehub serves git repositories within some directory over HTTP,
+// Command "src-expose" serves git repositories within some directory over HTTP,
 // along with a pastable config for easier manual testing of sourcegraph.
 package main
 
@@ -26,7 +26,7 @@ func main() {
 	}
 
 	var (
-		globalFlags       = flag.NewFlagSet("fakehub", flag.ExitOnError)
+		globalFlags       = flag.NewFlagSet("src-expose", flag.ExitOnError)
 		globalSnapshotDir = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
@@ -36,15 +36,15 @@ func main() {
 
 	serve := &ffcli.Command{
 		Name:      "serve",
-		Usage:     "fakehub [flags] serve [flags] [path/to/dir/containing/git/dirs]",
+		Usage:     "src-expose [flags] serve [flags] [path/to/dir/containing/git/dirs]",
 		ShortHelp: "Serve git repos for Sourcegraph to list and clone.",
-		LongHelp: `fakehub will serve any number (controlled with -n) of copies of the repo over
+		LongHelp: `src-expose will serve any number (controlled with -n) of copies of the repo over
 HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
 be used as test data for sourcegraph. The easiest way to get them into
 sourcegraph is to visit the URL printed out on startup and paste the contents
 into the text box for adding single repos in sourcegraph Site Admin.
 
-fakehub will default to serving ~/.sourcegraph/snapshots`,
+src-expose will default to serving ~/.sourcegraph/snapshots`,
 		FlagSet: serveFlags,
 		Exec: func(args []string) error {
 			var repoDir string
@@ -65,7 +65,7 @@ fakehub will default to serving ~/.sourcegraph/snapshots`,
 
 	snapshot := &ffcli.Command{
 		Name:      "snapshot",
-		Usage:     "fakehub [flags] snapshot [flags] <src1> [<src2> ...]",
+		Usage:     "src-expose [flags] snapshot [flags] <src1> [<src2> ...]",
 		ShortHelp: "Create a git snapshot of directories",
 		Exec: func(args []string) error {
 			if len(args) == 0 {
@@ -82,8 +82,8 @@ fakehub will default to serving ~/.sourcegraph/snapshots`,
 	}
 
 	root := &ffcli.Command{
-		Name:        "fakehub",
-		Usage:       "fakehub [flags] <precommand> <src1> [<src2> ...]",
+		Name:        "src-expose",
+		Usage:       "src-expose [flags] <precommand> <src1> [<src2> ...]",
 		ShortHelp:   "Periodically create snapshots of directories src1, src2, ... and serve them.",
 		Subcommands: []*ffcli.Command{serve, snapshot},
 		Exec: func(args []string) error {
@@ -106,7 +106,7 @@ Paste the following configuration as an Other External Service in Sourcegraph:
   {
     "url": "http://%s",
     "repos": ["hack-ignore-me"],
-    "experimental.fakehub": true
+    "experimental.src-expose": true
   }
 
 `, *globalSnapshotDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr)

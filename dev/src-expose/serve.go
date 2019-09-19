@@ -23,7 +23,7 @@ func serveRepos(n int, addr string, repoDir string) error {
 		return errors.Wrap(err, "listen")
 	}
 	logger.Printf("listening on http://%s", ln.Addr())
-	s, err := fakehub(logger, n, ln, repoDir)
+	s, err := serve(logger, n, ln, repoDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
 	}
@@ -34,7 +34,7 @@ func serveRepos(n int, addr string, repoDir string) error {
 	return nil
 }
 
-func fakehub(logger *log.Logger, n int, ln net.Listener, reposRoot string) (*http.Server, error) {
+func serve(logger *log.Logger, n int, ln net.Listener, reposRoot string) (*http.Server, error) {
 	configureRepos(logger, reposRoot)
 
 	// Start the HTTP server.
