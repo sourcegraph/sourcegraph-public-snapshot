@@ -11,7 +11,7 @@ import (
 )
 
 func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
-	return settingsSubjectByID(ctx, r.A8NResolver, args.ID)
+	return settingsSubjectByID(ctx, r.a8nResolver, args.ID)
 }
 
 var errUnknownSettingsSubject = errors.New("unknown settings subject")

@@ -48,7 +48,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 func NewSchema(db *sql.DB, a8n A8NResolver) (*graphql.Schema, error) {
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{A8NResolver: a8n},
+		&schemaResolver{a8nResolver: a8n},
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -167,7 +167,7 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
 type schemaResolver struct {
-	A8NResolver
+	a8nResolver A8NResolver
 }
 
 // DEPRECATED
@@ -176,7 +176,7 @@ func (r *schemaResolver) Root() *schemaResolver {
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
-	n, err := NodeByID(ctx, r.A8NResolver, args.ID)
+	n, err := NodeByID(ctx, r.a8nResolver, args.ID)
 	if err != nil {
 		return nil, err
 	}

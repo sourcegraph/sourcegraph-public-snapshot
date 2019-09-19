@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -42,6 +43,43 @@ type A8NResolver interface {
 	Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error)
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ChangesetResolver, error)
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ChangesetsConnectionResolver, error)
+}
+
+var onlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
+
+func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.AddChangesetsToCampaign(ctx, args)
+}
+
+func (r *schemaResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.CreateCampaign(ctx, args)
+}
+
+func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.Campaigns(ctx, args)
+}
+
+func (r *schemaResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ChangesetResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.CreateChangesets(ctx, args)
+}
+
+func (r *schemaResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ChangesetsConnectionResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.Changesets(ctx, args)
 }
 
 type CampaignResolver interface {
