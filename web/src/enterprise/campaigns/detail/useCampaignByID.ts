@@ -43,6 +43,7 @@ export const useCampaignByID = (campaign: GQL.ID): undefined | GQL.ICampaign | n
                                             reviewState
                                             repository {
                                                 name
+                                                url
                                             }
                                             externalURL {
                                                 url
