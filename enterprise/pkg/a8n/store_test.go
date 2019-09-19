@@ -147,6 +147,24 @@ func TestStore(t *testing.T) {
 					}
 				}
 			}
+
+			{
+				var cursor int64
+				for i := 1; i <= len(campaigns); i++ {
+					opts := ListCampaignsOpts{Cursor: cursor, Limit: 1}
+					have, next, err := s.ListCampaigns(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := campaigns[i-1 : i]
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+					cursor = next
+				}
+			}
 		})
 
 		t.Run("Update", func(t *testing.T) {
@@ -387,6 +405,24 @@ func TestStore(t *testing.T) {
 				want := changesets
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatal(diff)
+				}
+			}
+
+			{
+				var cursor int64
+				for i := 1; i <= len(changesets); i++ {
+					opts := ListChangesetsOpts{Cursor: cursor, Limit: 1}
+					have, next, err := s.ListChangesets(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := changesets[i-1 : i]
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+					cursor = next
 				}
 			}
 		})
