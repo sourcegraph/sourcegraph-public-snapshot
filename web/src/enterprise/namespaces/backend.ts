@@ -9,25 +9,28 @@ export const queryNamespaces = (): Observable<Namespace[]> =>
         gql`
             query ViewerNamespaces {
                 # TODO expose combined namespaces field
-                users {
-                    nodes {
-                        __typename
-                        id
-                        namespaceName
-                        url
-                    }
-                }
-                organizations {
-                    nodes {
-                        __typename
-                        id
-                        namespaceName
-                        url
+                currentUser {
+                    __typename
+                    id
+                    namespaceName
+                    url
+                    organizations {
+                        nodes {
+                            __typename
+                            id
+                            namespaceName
+                            url
+                        }
                     }
                 }
             }
         `
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => [...data.users.nodes, ...data.organizations.nodes])
+        map(data => {
+            if (!data.currentUser) {
+                return []
+            }
+            return [data.currentUser, ...data.currentUser.organizations.nodes]
+        })
     )

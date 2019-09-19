@@ -63,7 +63,7 @@ export const NewCampaignPage: React.FunctionComponent<Props> = () => {
     return (
         <>
             {createdCampaign && createdCampaign !== 'saving' && !(createdCampaign instanceof Error) && (
-                <Redirect to={createdCampaign.url} />
+                <Redirect to={`/campaigns/${createdCampaign.id}`} />
             )}
             <PageTitle title="New campaign" />
             <h2 className="border-bottom pb-2">
