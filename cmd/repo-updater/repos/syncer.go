@@ -362,7 +362,7 @@ func (s *Syncer) streamingInsert(ctx context.Context) (func(*Repo), error) {
 	}
 
 	// syncSubset requires querying the store for related repositories, and
-	// will do nothing if there are any related repositories. Most
+	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
 	// ask the store for all repositories and only do syncsubset if it might
 	// be an insert.
