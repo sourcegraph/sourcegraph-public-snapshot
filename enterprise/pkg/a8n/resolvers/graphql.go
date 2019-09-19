@@ -557,9 +557,8 @@ func (r *changesetResolver) Body() (string, error) {
 	return r.Changeset.Body()
 }
 
-func (r *changesetResolver) State() (string, error) {
-	s, err := r.Changeset.State()
-	return string(s), err
+func (r *changesetResolver) State() (a8n.ChangesetState, error) {
+	return r.Changeset.State()
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
@@ -570,11 +569,8 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState() (string, error) {
-	// TODO(mrnugget): Let's see if we can use a type instead of string,
-	// without circular reference between a8n/graphqlbackend
-	s, err := r.Changeset.ReviewState()
-	return string(s), err
+func (r *changesetResolver) ReviewState() (a8n.ChangesetReviewState, error) {
+	return r.Changeset.ReviewState()
 }
 
 func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }

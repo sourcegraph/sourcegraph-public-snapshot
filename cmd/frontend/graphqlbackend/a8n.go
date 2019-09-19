@@ -6,6 +6,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 )
 
 type AddChangesetsToCampaignArgs struct {
@@ -69,9 +70,9 @@ type ChangesetResolver interface {
 	UpdatedAt() DateTime
 	Title() (string, error)
 	Body() (string, error)
-	State() (string, error)
+	State() (a8n.ChangesetState, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState() (string, error)
+	ReviewState() (a8n.ChangesetReviewState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
 }
