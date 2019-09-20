@@ -259,6 +259,6 @@ README.md @sqs
 # These can also be configured by package through Renovate config (see renovate.json)
 **/package.json @sourcegraph/web
 **/yarn.lock @sourcegraph/web
-/go.sum
-/go.mod
+/go.sum @sourcegraph/core-services
+/go.mod @sourcegraph/core-services
 /CHANGELOG.md
