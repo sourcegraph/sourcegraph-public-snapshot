@@ -1,21 +1,8 @@
 import * as definitionsSchema from './lsif.schema.json'
+import * as zlib from 'mz/zlib'
 import Ajv from 'ajv'
 import { Edge, Vertex } from 'lsif-protocol'
-import { createGunzip } from 'zlib'
 import { Readable } from 'stream'
-
-/**
- * Take a Node Readable Stream of gzipped newline-delimited JSON and yields the parsed lines.
- *
- * @param input A readable stream (HTTP request, fs read stream, etc)
- */
-export async function* readGzippedJsonNd(input: Readable): AsyncIterable<any> {
-    const ungzipped = input.pipe(createGunzip())
-    const lines = splitLines(ungzipped)
-    for await (const element of parseJsonLines(lines)) {
-        yield element
-    }
-}
 
 /**
  * A JSON schema validation function that accepts an LSIF vertex or edge.
@@ -25,9 +12,20 @@ const lsifElementValidator = new Ajv().addSchema({ $id: 'defs.json', ...definiti
 })
 
 /**
+ * Yield parsed LSIF elements from a stream containing the content of a gzipped LSIF dump.
+ *
+ * @param input A stream of gzipped JSON lines.
+ */
+export async function* readGzippedJsonElements(input: Readable): AsyncIterable<any> {
+    for await (const element of parseJsonLines(splitLines(input.pipe(zlib.createGunzip())))) {
+        yield element
+    }
+}
+
+/**
  * Reads the input stream of parsed LSIF lines and validates it using JSON schema.
- * If it is not valid, an error is thrown.
- * Yields the validated items.
+ * If it is not a valid vertex or edge, an error is thrown with the line index and
+ * content as context. Yields the validated items.
  *
  * @param parsedLines The parsed JSON lines.
  */
@@ -35,6 +33,7 @@ export async function* validateLsifElements(parsedLines: AsyncIterable<unknown>)
     let index = 0
     for await (const element of parsedLines) {
         index++
+
         if (!lsifElementValidator(element) && lsifElementValidator.errors) {
             // TODO - schema messages are not good due to oneOf
             // only take the first error for now to give the user
@@ -48,6 +47,7 @@ export async function* validateLsifElements(parsedLines: AsyncIterable<unknown>)
                 { element, index }
             )
         }
+
         yield element as Vertex | Edge
     }
 }
@@ -78,17 +78,20 @@ export async function* splitLines(input: AsyncIterable<string | Buffer>): AsyncI
 }
 
 /**
- * JSON stringifies the given stream of values, with trailing new lines.
+ * JSON stringifies an iterable of objects and yields them with trailing newlines.
+ *
+ * @param elements The iterable of objects to stringify.
  */
-export async function* stringifyJsonLines(parsedLines: AsyncIterable<unknown>): AsyncIterable<string> {
-    for await (const line of parsedLines) {
-        yield JSON.stringify(line) + '\n'
+export async function* stringifyJsonLines(elements: AsyncIterable<unknown>): AsyncIterable<string> {
+    for await (const element of elements) {
+        yield JSON.stringify(element) + '\n'
     }
 }
 
 /**
  * Parses a stream of uncompressed JSON strings and yields each parsed line.
- * Ignores empty lines.
+ * Ignores empty lines. Throws an exception with line index and content when
+ * a non-empty line is not valid JSON.
  *
  * @param lines An iterable of JSON lines.
  */

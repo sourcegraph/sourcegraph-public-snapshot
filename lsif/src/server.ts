@@ -1,5 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
+import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
@@ -9,15 +10,15 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
 import { Database } from './database.js'
-import { Queue, Scheduler } from 'node-resque'
-import { validateLsifElements, stringifyJsonLines, readGzippedJsonNd } from './input'
-import { wrap } from 'async-middleware'
-import { XrepoDatabase } from './xrepo.js'
-import { createGzip } from 'zlib'
+import { Edge, Vertex } from 'lsif-protocol'
+import { identity } from 'lodash'
 import { pipeline as _pipeline, Readable } from 'stream'
 import { promisify } from 'util'
-import { identity } from 'lodash'
-import { Vertex, Edge } from 'lsif-protocol'
+import { Queue, Scheduler } from 'node-resque'
+import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
+import { wrap } from 'async-middleware'
+import { XrepoDatabase } from './xrepo.js'
+
 const pipeline = promisify(_pipeline)
 
 /**
@@ -68,6 +69,7 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * Whether or not to disable input validation. Validation is enabled by default.
  */
 const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
+
 const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex | Edge> = DISABLE_VALIDATION
     ? identity
     : validateLsifElements
@@ -135,13 +137,13 @@ async function main(): Promise<void> {
                 checkCommit(commit)
 
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+                const output = fs.createWriteStream(filename)
 
                 try {
-                    const parsedLines = readGzippedJsonNd(req)
-                    // TODO filter out unknown properties with ajv
-                    const lsifElements = validateIfEnabled(parsedLines)
+                    const elements = readGzippedJsonElements(req)
+                    const lsifElements = validateIfEnabled(elements)
                     const stringifiedLines = stringifyJsonLines(lsifElements)
-                    await pipeline(Readable.from(stringifiedLines), createGzip(), fs.createWriteStream(filename))
+                    await pipeline(Readable.from(stringifiedLines), zlib.createGzip(), output)
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }

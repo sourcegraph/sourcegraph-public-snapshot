@@ -3,11 +3,12 @@ import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { createConnection } from './connection'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './metrics'
 import { DefaultMap } from './default-map'
+import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
-import { MonikerKind, RangeId, Vertex, Edge } from 'lsif-protocol'
 import { Package, SymbolReferences } from './xrepo'
+import { readGzippedJsonElements } from './input'
 import { Readable } from 'stream'
 import { TableInserter } from './inserter'
 import {
@@ -29,7 +30,6 @@ import {
     PackageInformationId,
     HoverResultId,
 } from './models.database'
-import { splitLines, parseJsonLines } from './input'
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -93,7 +93,7 @@ export async function importLsif(
     input: Readable
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const correlator = new Correlator()
-    for await (const element of parseJsonLines(splitLines(input)) as AsyncIterable<Vertex | Edge>) {
+    for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
         correlator.insert(element)
     }
 

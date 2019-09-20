@@ -1,9 +1,40 @@
 import * as zlib from 'mz/zlib'
 import { Edge, Vertex } from 'lsif-protocol'
-import { splitLines, readGzippedJsonNd, parseJsonLines, validateLsifElements } from './input'
+import { parseJsonLines, readGzippedJsonElements, splitLines, validateLsifElements } from './input'
 import { Readable } from 'stream'
 
-describe('validateLsifElements()', () => {
+describe('readGzippedJsonElements', () => {
+    it('should decode gzip', async () => {
+        const lines = [
+            { type: 'vertex', label: 'project' },
+            { type: 'vertex', label: 'document' },
+            { type: 'edge', label: 'item' },
+            { type: 'edge', label: 'moniker' },
+        ]
+
+        const elements: (Vertex | Edge)[] = []
+        const input = Readable.from(lines.map(l => JSON.stringify(l)).join('\n'))
+        for await (const element of readGzippedJsonElements(input.pipe(zlib.createGzip()))) {
+            elements.push(element)
+        }
+
+        expect(elements).toEqual(lines)
+    })
+
+    it('should fail without gzip', async () => {
+        const lines = [
+            '{"type": "vertex", "label": "project"}',
+            '{"type": "vertex", "label": "document"}',
+            '{"type": "edge", "label": "item"}',
+            '{"type": "edge", "label": "moniker"}',
+        ]
+
+        const input = Readable.from(lines.join('\n'))
+        await expect(consume(readGzippedJsonElements(input))).rejects.toThrowError(new Error('incorrect header check'))
+    })
+})
+
+describe('validateLsifElements', () => {
     it('should reject invalid LSIF', async () => {
         const lines = [
             { id: 1, type: 'vertex', label: 'whatisthis', languageId: 'typescript', uri: 'foo.ts' },
@@ -21,38 +52,7 @@ describe('validateLsifElements()', () => {
     })
 })
 
-describe('readGzippedJsonNd()', () => {
-    it('should decode gzip', async () => {
-        const lines = [
-            { type: 'vertex', label: 'project' },
-            { type: 'vertex', label: 'document' },
-            { type: 'edge', label: 'item' },
-            { type: 'edge', label: 'moniker' },
-        ]
-
-        const elements: (Vertex | Edge)[] = []
-        const input = Readable.from(lines.map(l => JSON.stringify(l)).join('\n'))
-        for await (const element of readGzippedJsonNd(input.pipe(zlib.createGzip()))) {
-            elements.push(element)
-        }
-
-        expect(elements).toEqual(lines)
-    })
-
-    it('should fail without gzip', async () => {
-        const lines = [
-            '{"type": "vertex", "label": "project"}',
-            '{"type": "vertex", "label": "document"}',
-            '{"type": "edge", "label": "item"}',
-            '{"type": "edge", "label": "moniker"}',
-        ]
-
-        const input = Readable.from(lines.join('\n'))
-        await expect(consume(readGzippedJsonNd(input))).rejects.toThrowError(new Error('incorrect header check'))
-    })
-})
-
-describe('splitLines()', () => {
+describe('splitLines', () => {
     it('should split input by newline', async () => {
         const chunks = ['foo\n', 'bar', '\nbaz\n\nbonk\nqu', 'ux']
 
@@ -65,7 +65,7 @@ describe('splitLines()', () => {
     })
 })
 
-describe('parseJsonLines()', () => {
+describe('parseJsonLines', () => {
     it('should parse JSON', async () => {
         const lines = [
             { type: 'vertex', label: 'project' },
