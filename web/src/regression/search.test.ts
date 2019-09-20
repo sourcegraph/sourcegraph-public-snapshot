@@ -9,6 +9,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureExternalService, waitForRepos } from './util/api'
 import { ensureLoggedInOrCreateUser } from './util/helpers'
+import { buildSearchURLQuery } from '../../../shared/src/util/url'
 
 const testRepoSlugs = [
     'auth0/go-jwt-middleware',
@@ -306,6 +307,34 @@ describe('Search regression test suite', () => {
         test('Global symbol search ("type:symbol ^newroute count:100") with a few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 2)
+        })
+        test('Indexed multiline search, many results', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this'
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Non-indexed multiline search, many results', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this index:no'
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
+        })
+        test('Indexed multiline search, 0 results', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\('
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
+        test('Non-indexed multiline search, 0 results', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no'
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
     })
 })
