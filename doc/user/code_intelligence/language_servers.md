@@ -9,7 +9,7 @@ Language servers provide more precise code intelligence than the out-of-the-box 
 - [Python](https://sourcegraph.com/extensions/sourcegraph/python)
 - More can be found in the [extension registry](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22)
 
-Language servers that run securely in your self-hosted Sourcegraph instance. The extensions (and associated language servers) perform advanced, scalable code analysis and are derived from our popular open-source language servers in use by hundreds of thousands of developers in editors and on Sourcegraph.com.
+Language servers run securely in your self-hosted Sourcegraph instance. The extensions (and associated language servers) perform advanced, scalable code analysis and are derived from our popular open-source language servers in use by hundreds of thousands of developers in editors and on Sourcegraph.com.
 
 ## Language server deployment
 
