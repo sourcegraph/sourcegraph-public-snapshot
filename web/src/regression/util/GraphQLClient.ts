@@ -15,11 +15,6 @@ export class GraphQLClient {
         sudoToken: string
         username: string
     }): GraphQLClient {
-        if (new URL(window.location.href).origin !== new URL(baseURL).origin) {
-            throw new Error(
-                `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${baseURL}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
-            )
-        }
         return new GraphQLClient(baseURL, sudoToken, username)
     }
 
