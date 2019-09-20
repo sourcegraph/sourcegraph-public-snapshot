@@ -74,7 +74,7 @@ export class EventLogger implements TelemetryService {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
-        logEvent(event, anonUserId, sourcegraphURL, this.requestGraphQL)
+        logEvent({ name: event, userCookieID: anonUserId, url: sourcegraphURL }, this.requestGraphQL)
     }
 
     /**

@@ -152,18 +152,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		AuthorID:    user.ID,
 	}
 
-	node, err := graphqlbackend.NodeByID(ctx, r, args.Input.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	switch ns := node.(type) {
-	case *graphqlbackend.UserResolver:
-		campaign.NamespaceUserID = ns.DatabaseID()
-	case *graphqlbackend.OrgResolver:
-		campaign.NamespaceOrgID = ns.OrgID()
+	switch relay.UnmarshalKind(args.Input.Namespace) {
+	case "User":
+		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
+	case "Org":
+		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceOrgID)
 	default:
-		return nil, errors.Errorf("Invalid namespace of type %T", ns)
+		return nil, errors.Errorf("Invalid namespace %q", args.Input.Namespace)
 	}
 
 	if err := r.store.CreateCampaign(ctx, campaign); err != nil {

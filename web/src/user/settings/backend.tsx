@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../backend/graphql'
@@ -91,7 +91,7 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  *
  * Not used at all for public/sourcegraph.com usage.
  *
- * This function will be deprecated.
+ * @deprecated Use logEvent
  */
 export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context && window.context.sourcegraphDotComMode) {
@@ -139,13 +139,6 @@ export function logEvent(event: string): void {
         `,
         { event, userCookieID: eventLogger.getAnonUserID(), url: window.location.href, source: GQL.EventSource.WEB }
     )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data || (errors && errors.length > 0)) {
-                    throw createAggregateError(errors)
-                }
-                return
-            })
-        )
+        .pipe(map(dataOrThrowErrors))
         .subscribe()
 }

@@ -9,7 +9,7 @@ import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
  *
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  *
- * This function will be deprecated.
+ * @deprecated Use logEvent
  */
 export const logUserEvent = (
     event: GQL.UserEvent,
@@ -49,25 +49,26 @@ export const logUserEvent = (
  * This is never sent to Sourcegraph.com (i.e., when using the integration with open source code).
  */
 export const logEvent = (
-    event: string,
-    uid: string,
-    url: string,
+    event: { name: string; userCookieID: string; url: string },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (url === DEFAULT_SOURCEGRAPH_URL) {
+    if (event.url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
 
     requestGraphQL<GQL.IMutation>({
         request: gql`
-            mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
-                logEvent(event: $event, userCookieID: $userCookieID, url: $url, source: $source) {
+            mutation logEvent($name: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
+                logEvent(event: $name, userCookieID: $userCookieID, url: $url, source: $source) {
                     alwaysNil
                 }
             }
         `,
-        variables: { event, userCookieID: uid, url, source: GQL.EventSource.CODEHOSTINTEGRATION },
+        variables: {
+            ...event,
+            source: GQL.EventSource.CODEHOSTINTEGRATION,
+        },
         mightContainPrivateInfo: false,
     }).subscribe({
         error: error => {
