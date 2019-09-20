@@ -256,10 +256,9 @@ README.md @sqs
 /pkg/hubspot/ @dadlerj
 /pkg/highlight/ @slimsag
 
-# Don't set any reviewers for these,
-# configure by package through Renovate config (see renovate.json)
-**/package.json
-**/yarn.lock
+# These can also be configured by package through Renovate config (see renovate.json)
+**/package.json @sourcegraph/web
+**/yarn.lock @sourcegraph/web
 /go.sum
 /go.mod
 /CHANGELOG.md
