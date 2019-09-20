@@ -43,21 +43,17 @@ Upload `data.lsif` to your Sourcegraph instance:
 some-project-dir$ env \
   SRC_ENDPOINT=https://sourcegraph.example.com \
   REPOSITORY=github.com/<user>/<reponame> \
-  COMMIT=<40 char hash> \
+  COMMIT=$(git rev-parse HEAD | tr -d "\n") \
   bash upload.sh data.lsif
 ```
 
-If the upload is accepted, the response will be `null`.
-
-Now, when you visit a file in that repository on your Sourcegraph instance, the code intelligence should be more precise than it was out-of-the-box.
-
-## Troubleshooting
-
-When uploading:
-
+- `SRC_ENDPOINT` is the URL to your Sourcegraph instance
 - `REPOSITORY` must match the name of the repository on your Sourcegraph instance
 - `COMMIT` must be the full 40 character hash
-- Set http or https to whichever you use when visiting your Sourcegraph instance in your browser
+
+If the upload is accepted, the response will be `null`. If an error occurred, you'll see it in the response.
+
+After uploading LSIF files, your Sourcegraph instance will use these files to power code intelligence so that when you visit a file in that repository on your Sourcegraph instance, the code intelligence should be more precise than it was out-of-the-box.
 
 When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to out-of-the-box code intelligence.
 
