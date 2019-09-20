@@ -85,9 +85,9 @@ type nameTransformation struct {
 }
 
 // NameTransformations is a list of transformation rules.
-type NameTransformations []*nameTransformation
+type NameTransformations []nameTransformation
 
-// Transform iterates over the regex-replacement pairs and replaces any matches found.
+// Transform iterates and performs the list of transformations.
 func (nts NameTransformations) Transform(s string) string {
 	for _, nt := range nts {
 		switch {

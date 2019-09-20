@@ -156,7 +156,7 @@ func TestParseCloneURL(t *testing.T) {
 }
 
 func TestNameTransformations(t *testing.T) {
-	rps := []*nameTransformation{
+	rps := []nameTransformation{
 		{
 			regexp:      regexp.MustCompile(`\.d/`),
 			replacement: "/",
