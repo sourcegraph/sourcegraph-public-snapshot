@@ -1,8 +1,8 @@
 import * as definitionsSchema from './lsif.schema.json'
-import * as zlib from 'mz/zlib'
 import Ajv from 'ajv'
 import { Edge, Vertex } from 'lsif-protocol'
 import { Readable } from 'stream'
+import { createGunzip } from 'zlib'
 
 /**
  * A JSON schema validation function that accepts an LSIF vertex or edge.
@@ -12,12 +12,12 @@ const lsifElementValidator = new Ajv().addSchema({ $id: 'defs.json', ...definiti
 })
 
 /**
- * Yield parsed LSIF elements from a stream containing the content of a gzipped LSIF dump.
+ * Yield parsed JSON elements from a stream containing the gzipped JSON lines.
  *
  * @param input A stream of gzipped JSON lines.
  */
 export async function* readGzippedJsonElements(input: Readable): AsyncIterable<unknown> {
-    for await (const element of parseJsonLines(splitLines(input.pipe(zlib.createGunzip())))) {
+    for await (const element of parseJsonLines(splitLines(input.pipe(createGunzip())))) {
         yield element
     }
 }

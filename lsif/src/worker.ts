@@ -84,33 +84,33 @@ async function main(): Promise<void> {
  *
  * @param xrepoDatabase The cross-repo database.
  */
-function createConvertJob(
-    xrepoDatabase: XrepoDatabase
-): (repository: string, commit: string, filename: string) => Promise<void> {
-    return async (repository, commit, filename) => {
-        console.log(`Converting ${repository}@${commit}`)
+const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
+    repository: string,
+    commit: string,
+    filename: string
+): Promise<void> => {
+    console.log(`Converting ${repository}@${commit}`)
 
-        const input = fs.createReadStream(filename)
-        const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
+    const input = fs.createReadStream(filename)
+    const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
 
-        try {
-            // Create database in a temp path
-            const { packages, references } = await convertLsif(input, tempFile)
+    try {
+        // Create database in a temp path
+        const { packages, references } = await convertLsif(input, tempFile)
 
-            // Move the temp file where it can be found by the server
-            await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
+        // Move the temp file where it can be found by the server
+        await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
 
-            // Add the new database to the xrepo db
-            await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
-        } catch (e) {
-            // Don't leave busted artifacts
-            await fs.unlink(tempFile)
-            throw e
-        }
-
-        // Remove input
-        await fs.unlink(filename)
+        // Add the new database to the xrepo db
+        await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+    } catch (e) {
+        // Don't leave busted artifacts
+        await fs.unlink(tempFile)
+        throw e
     }
+
+    // Remove input
+    await fs.unlink(filename)
 }
 
 /**

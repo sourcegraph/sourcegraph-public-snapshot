@@ -1,6 +1,5 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as zlib from 'mz/zlib'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
@@ -18,6 +17,7 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
+import { createGzip } from 'mz/zlib'
 
 const pipeline = promisify(_pipeline)
 
@@ -143,7 +143,7 @@ async function main(): Promise<void> {
                     const elements = readGzippedJsonElements(req)
                     const lsifElements = validateIfEnabled(elements)
                     const stringifiedLines = stringifyJsonLines(lsifElements)
-                    await pipeline(Readable.from(stringifiedLines), zlib.createGzip(), output)
+                    await pipeline(Readable.from(stringifiedLines), createGzip(), output)
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }
