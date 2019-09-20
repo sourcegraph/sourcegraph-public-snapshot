@@ -19,7 +19,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Developing the GraphQL API](graphql_api.md)
 - [Using PostgreSQL](postgresql.md)
 - [Testing](testing.md)
-- [Code style guide](code_style_guide.md)
+- [Go style guide](go_style_guide.md)
 - [Code reviews](code_reviews.md)
 - [Telemetry](telemetry.md)
 - [Phabricator/Gitolite documentation](phabricator_gitolite.md)
