@@ -4,9 +4,9 @@ const path = require('path')
 
 /** @type {jest.InitialOptions} */
 const config = {
-  // uses latest jsdom and exposes jsdom as a global,
-  // for example to change the URL in window.location
-  testEnvironment: __dirname + '/shared/dev/jest-environment.js',
+  // // uses latest jsdom and exposes jsdom as a global,
+  // // for example to change the URL in window.location
+  // testEnvironment: __dirname + '/shared/dev/jest-environment.js',
 
   collectCoverage: !!process.env.CI,
   collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],

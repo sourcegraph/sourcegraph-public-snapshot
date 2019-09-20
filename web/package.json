@@ -31,5 +31,11 @@
   ],
   "jest": {
     "testURL": "http://localhost:3080"
+  },
+  "dependencies": {
+    "@types/node-fetch": "^2.5.1",
+    "es6-promise": "^4.2.8",
+    "isomorphic-fetch": "^2.2.1",
+    "node-fetch": "^2.6.0"
   }
 }

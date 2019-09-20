@@ -1,6 +1,11 @@
 import { GraphQLResult, requestGraphQL } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Observable } from 'rxjs'
+import * as es6promise from 'es6-promise'
+es6promise.polyfill()
+import 'isomorphic-fetch'
+
+console.log('#### fetch', fetch)
 
 /**
  * A GraphQL client to be used from regression test scripts.
@@ -15,11 +20,11 @@ export class GraphQLClient {
         sudoToken: string
         username: string
     }): GraphQLClient {
-        if (new URL(window.location.href).origin !== new URL(baseURL).origin) {
-            throw new Error(
-                `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${baseURL}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
-            )
-        }
+        // if (new URL(window.location.href).origin !== new URL(baseURL).origin) {
+        //     throw new Error(
+        //         `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${baseURL}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
+        //     )
+        // }
         return new GraphQLClient(baseURL, sudoToken, username)
     }
 
