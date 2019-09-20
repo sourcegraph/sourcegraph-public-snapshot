@@ -1,12 +1,13 @@
+import { ajax } from 'rxjs/ajax'
 import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
-import { checkOk } from '../../../shared/src/backend/fetch'
 
 export async function createBlobURLForBundle(bundleURL: string): Promise<string> {
-    const response = await fetch(bundleURL, {
+    const req = await ajax({
+        url: bundleURL,
         // Include credentials when fetching extensions from the private registry
-        credentials: new URL(bundleURL).origin !== DEFAULT_SOURCEGRAPH_URL ? 'include' : 'omit',
-    })
-    checkOk(response)
-    const blob = await response.blob()
-    return window.URL.createObjectURL(blob)
+        withCredentials: new URL(bundleURL).origin !== DEFAULT_SOURCEGRAPH_URL,
+        crossDomain: true,
+        responseType: 'blob',
+    }).toPromise()
+    return window.URL.createObjectURL(req.response)
 }

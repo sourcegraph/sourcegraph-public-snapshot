@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
+import { ajax } from 'rxjs/ajax'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
@@ -14,8 +15,6 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { isDefined } from '../../../util/types'
 import { SettingsService } from './settings'
 import { ModelService } from './modelService'
-import { fromFetch } from 'rxjs/fetch'
-import { checkOk } from '../../../backend/fetch'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -26,11 +25,14 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
 }
 
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
-    fromFetch(`${baseUrl}/package.json`).pipe(
-        map(checkOk),
-        switchMap(response => response.json()),
+    ajax({
+        url: `${baseUrl}/package.json`,
+        responseType: 'json',
+        crossDomain: true,
+        async: true,
+    }).pipe(
         map(
-            (response): ConfiguredExtension => ({
+            ({ response }): ConfiguredExtension => ({
                 id: response.name,
                 manifest: {
                     url: `${baseUrl}/${response.main.replace('dist/', '')}`,

@@ -8,11 +8,10 @@ import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../shared/repo/backend'
 import { normalizeRepoName } from './util'
-import { fromFetch } from 'rxjs/fetch'
+import { ajax } from 'rxjs/ajax'
 import { EREPONOTFOUND } from '../../../../shared/src/backend/errors'
 import { RepoSpec, FileSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
-import { checkOk } from '../../../../shared/src/backend/fetch'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -128,17 +127,16 @@ export function queryConduitHelper<T>(endpoint: string, params: {}): Observable<
     for (const [key, value] of Object.entries(params)) {
         form.set(`params[${key}]`, JSON.stringify(value))
     }
-    return fromFetch(window.location.origin + endpoint, {
+    return ajax({
+        url: window.location.origin + endpoint,
         method: 'POST',
         body: form,
-        credentials: 'include',
+        withCredentials: true,
         headers: {
             Accept: 'application/json',
         },
     }).pipe(
-        map(checkOk),
-        switchMap(response => response.json()),
-        map((response: ConduitResponse<T>) => {
+        map(({ response }: { response: ConduitResponse<T> }) => {
             if (response.error_code !== null) {
                 throw new Error(`error ${response.error_code}: ${response.error_info}`)
             }

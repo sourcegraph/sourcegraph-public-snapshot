@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { ajax, AjaxRequest, AjaxResponse } from 'rxjs/ajax'
+import { catchError, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { createAggregateError } from '../util/errors'
-import { checkOk } from '../backend/fetch'
+import { createAggregateError, normalizeAjaxError } from '../util/errors'
 import * as GQL from './schema'
-import { fromFetch } from 'rxjs/fetch'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -51,26 +50,34 @@ export const createInvalidGraphQLMutationResponseError = (queryName: string): Gr
         queryName,
     })
 
-export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'body'> {
+export interface GraphQLRequestOptions {
+    headers: AjaxRequest['headers']
+    requestOptions?: Partial<Omit<AjaxRequest, 'url' | 'method' | 'headers' | 'body'>>
     baseUrl?: string
 }
 
 export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     request,
     variables = {},
+    headers,
+    requestOptions = {},
     baseUrl = '',
-    ...options
 }: GraphQLRequestOptions & {
     request: string
     variables?: {}
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    return fromFetch(`${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`, {
-        ...options,
+    return ajax({
         method: 'POST',
+        url: `${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+        headers,
         body: JSON.stringify({ query: request, variables }),
+        ...requestOptions,
     }).pipe(
-        map(checkOk),
-        switchMap(response => response.json())
+        catchError<AjaxResponse, never>(err => {
+            normalizeAjaxError(err)
+            throw err
+        }),
+        map(({ response }) => response)
     )
 }

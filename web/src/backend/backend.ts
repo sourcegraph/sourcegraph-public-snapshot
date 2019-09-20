@@ -1,11 +1,17 @@
+import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
-import { fromFetch } from 'rxjs/fetch'
-import { checkOk } from '../../../shared/src/backend/fetch'
+import { catchError, map } from 'rxjs/operators'
+import { normalizeAjaxError } from '../../../shared/src/util/errors'
 
 export function backendRequest<T>(url: string): Observable<T> {
-    return fromFetch(url, { headers: window.context.xhrHeaders }).pipe(
-        map(checkOk),
-        switchMap(response => response.json())
+    return ajax({
+        url,
+        headers: window.context.xhrHeaders,
+    }).pipe(
+        catchError<AjaxResponse, never>(err => {
+            normalizeAjaxError(err)
+            throw err
+        }),
+        map<AjaxResponse, T>(({ response }) => response)
     )
 }
