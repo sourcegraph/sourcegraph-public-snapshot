@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/url"
 	"reflect"
-	"regexp"
 	"testing"
 )
 
@@ -156,15 +155,24 @@ func TestParseCloneURL(t *testing.T) {
 }
 
 func TestNameTransformations(t *testing.T) {
-	rps := []NameTransformation{
+	opts := []NameTransformationOptions{
 		{
-			regexp:      regexp.MustCompile(`\.d/`),
-			replacement: "/",
+			Regex:       `\.d/`,
+			Replacement: "/",
 		},
 		{
-			regexp:      regexp.MustCompile("-git$"),
-			replacement: "",
+			Regex:       "-git$",
+			Replacement: "",
 		},
+	}
+
+	nts := make([]NameTransformation, len(opts))
+	for i, opt := range opts {
+		nt, err := NewNameTransformation(opt)
+		if err != nil {
+			t.Fatalf("NewNameTransformation: %v", err)
+		}
+		nts[i] = nt
 	}
 
 	tests := []struct {
@@ -176,7 +184,7 @@ func TestNameTransformations(t *testing.T) {
 		{"path/to.de/repo-git.git", "path/to.de/repo-git.git"},
 	}
 	for _, test := range tests {
-		got := NameTransformations(rps).Transform(test.input)
+		got := NameTransformations(nts).Transform(test.input)
 		if test.output != got {
 			t.Errorf("for input %s, expected %s, but got %s", test.input, test.output, got)
 		}

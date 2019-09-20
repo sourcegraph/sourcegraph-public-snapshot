@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -78,9 +79,17 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
 }
 
+type NameTransformationKind string
+
+const (
+	NameTransformationRegex NameTransformationKind = "regex"
+)
+
 // NameTransformation describes the rule to transform a repository name.
 type NameTransformation struct {
-	// Not nil indicates a regex replacement transformation.
+	kind NameTransformationKind
+
+	// Fields for regex replacement transformation.
 	regexp      *regexp.Regexp
 	replacement string
 
@@ -88,11 +97,41 @@ type NameTransformation struct {
 	// to help better organize the structure and more clear to the future contributors.
 }
 
+type NameTransformationOptions struct {
+	// Options for regex replacement transformation.
+	Regex       string
+	Replacement string
+}
+
+func NewNameTransformation(opts NameTransformationOptions) (NameTransformation, error) {
+	switch {
+	case opts.Regex != "":
+		r, err := regexp.Compile(opts.Regex)
+		if err != nil {
+			return NameTransformation{}, errors.Errorf("regexp.Compile %q: %v", opts.Regex, err)
+		}
+		return NameTransformation{
+			kind:        NameTransformationRegex,
+			regexp:      r,
+			replacement: opts.Replacement,
+		}, nil
+
+	default:
+		return NameTransformation{}, errors.Errorf("unrecognized transformation: %v", opts)
+	}
+}
+
+func (nt NameTransformation) Kind() NameTransformationKind {
+	return nt.kind
+}
+
 // Transform performs the transformation to given string.
 func (nt NameTransformation) Transform(s string) string {
-	switch {
-	case nt.regexp != nil:
-		s = nt.regexp.ReplaceAllString(s, nt.replacement)
+	switch nt.kind {
+	case NameTransformationRegex:
+		if nt.regexp != nil {
+			s = nt.regexp.ReplaceAllString(s, nt.replacement)
+		}
 	}
 	return s
 }

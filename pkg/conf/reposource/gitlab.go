@@ -1,10 +1,8 @@
 package reposource
 
 import (
-	"regexp"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -52,20 +50,14 @@ func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string, nts N
 func CompileGitLabNameTransformations(ts []*schema.GitLabNameTransformation) (NameTransformations, error) {
 	nts := make([]NameTransformation, len(ts))
 	for i, t := range ts {
-		switch {
-		case t.Regex != "":
-			r, err := regexp.Compile(t.Regex)
-			if err != nil {
-				return nil, errors.Errorf("regexp.Compile %q: %v", t.Regex, err)
-			}
-			nts[i] = NameTransformation{
-				regexp:      r,
-				replacement: t.Replacement,
-			}
-
-		default:
-			return nil, errors.Errorf("unrecognized transformation: %v", t)
+		nt, err := NewNameTransformation(NameTransformationOptions{
+			Regex:       t.Regex,
+			Replacement: t.Replacement,
+		})
+		if err != nil {
+			return nil, err
 		}
+		nts[i] = nt
 	}
 	return nts, nil
 }
