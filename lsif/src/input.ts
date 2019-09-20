@@ -16,7 +16,7 @@ const lsifElementValidator = new Ajv().addSchema({ $id: 'defs.json', ...definiti
  *
  * @param input A stream of gzipped JSON lines.
  */
-export async function* readGzippedJsonElements(input: Readable): AsyncIterable<any> {
+export async function* readGzippedJsonElements(input: Readable): AsyncIterable<unknown> {
     for await (const element of parseJsonLines(splitLines(input.pipe(zlib.createGunzip())))) {
         yield element
     }
