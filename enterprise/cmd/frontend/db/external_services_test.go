@@ -765,12 +765,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
-			desc:   "invalid empty exclude",
-			config: `{"exclude": []}`,
-			assert: includes(`exclude: Array must have at least 1 items`),
-		},
-		{
-			kind:   "GITLAB",
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
@@ -1013,14 +1007,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 		{
-			kind:   "GITLAB",
-			desc:   "empty regex and replacement array",
-			config: `{"nameTransformations": []}`,
-			assert: includes(`nameTransformations: Array must have at least 1 items`),
-		},
-		{
 			kind: "GITLAB",
-			desc: "missing properties in regex and replacement array",
+			desc: "missing properties in name transformations",
 			config: `
 			{
 				"nameTransformations": [
@@ -1038,7 +1026,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind: "GITLAB",
-			desc: "invalid properties in regex and replacement array",
+			desc: "invalid properties in name transformations",
 			config: `
 			{
 				"nameTransformations": [
@@ -1053,7 +1041,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind: "GITLAB",
-			desc: "valid regex and replacement array",
+			desc: "valid name transformations",
 			config: `
 			{
 				"url": "https://gitlab.foo.bar",

@@ -70,7 +70,6 @@ const GitLabSchemaJSON = `{
     "exclude": {
       "description": "A list of projects to never mirror from this GitLab instance. Takes precedence over \"projects\" and \"projectQuery\" configuration. Supports excluding by name ({\"name\": \"group/name\"}) or by ID ({\"id\": 42}).",
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
         "title": "ExcludedGitLabProject",
@@ -112,7 +111,6 @@ const GitLabSchemaJSON = `{
     "nameTransformations": {
       "description": "An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after \"repositoryPathPattern\" is processed.",
       "type": "array",
-      "minItems": 1,
       "items": {
         "$ref": "#/definitions/NameTransformation"
       },
