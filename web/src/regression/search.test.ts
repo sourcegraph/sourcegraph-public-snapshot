@@ -1,8 +1,6 @@
-import * as path from 'path'
-import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig, Config } from '../../../shared/src/e2e/config'
-import { regressionTestInit, createAndInitializeDriver } from './util/init'
+import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureExternalService, waitForRepos } from './util/api'
@@ -124,25 +122,18 @@ describe('Search regression test suite', () => {
     let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl'>
     let driver: Driver
     let gqlClient: GraphQLClient
-    regressionTestInit()
-    // Take a screenshot when a test fails.
-    saveScreenshotsUponFailuresAndClosePage(
-        path.resolve(__dirname, '..', '..', '..'),
-        path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
-        () => driver.page
-    )
 
     describe('Search over a dozen repositories', () => {
         beforeAll(
             async () => {
                 config = getConfig(['sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl'])
-                if (new URL(window.location.href).origin !== new URL(config.sourcegraphBaseUrl).origin) {
-                    throw new Error(
-                        `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${config.sourcegraphBaseUrl}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
-                    )
-                }
                 driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
-                gqlClient = new GraphQLClient(config.sourcegraphBaseUrl, config.sudoToken, config.sudoUsername)
+                gqlClient = GraphQLClient.newForPuppeteerTest({
+                    baseURL: config.sourcegraphBaseUrl,
+                    sudoToken: config.sudoToken,
+                    username: config.sudoUsername,
+                })
+                setTestDefaults(driver)
                 await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,

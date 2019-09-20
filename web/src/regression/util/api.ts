@@ -154,11 +154,30 @@ export async function getUser(gqlClient: GraphQLClient, username: string): Promi
     return user
 }
 
-export async function deleteUser(gqlClient: GraphQLClient, username: string): Promise<void> {
-    const user = await getUser(gqlClient, username)
-    if (!user) {
-        throw new Error(`Fetched user ${username} was null`)
+export async function deleteUser(
+    gqlClient: GraphQLClient,
+    username: string,
+    mustAlreadyExist: boolean = true
+): Promise<void> {
+    let user: GQL.IUser | null
+    try {
+        user = await getUser(gqlClient, username)
+    } catch (err) {
+        if (mustAlreadyExist) {
+            throw err
+        } else {
+            return
+        }
     }
+
+    if (!user) {
+        if (mustAlreadyExist) {
+            throw new Error(`Fetched user ${username} was null`)
+        } else {
+            return
+        }
+    }
+
     await gqlClient
         .mutateGraphQL(
             gql`

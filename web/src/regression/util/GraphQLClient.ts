@@ -6,7 +6,24 @@ import { Observable } from 'rxjs'
  * A GraphQL client to be used from regression test scripts.
  */
 export class GraphQLClient {
-    constructor(public baseURL: string, public sudoToken: string, public username: string) {}
+    public static newForPuppeteerTest({
+        baseURL,
+        sudoToken,
+        username,
+    }: {
+        baseURL: string
+        sudoToken: string
+        username: string
+    }): GraphQLClient {
+        if (new URL(window.location.href).origin !== new URL(baseURL).origin) {
+            throw new Error(
+                `JSDOM URL "${window.location.href}" did not match Sourcegraph base URL "${baseURL}". Tests will fail with a same-origin violation. Try setting the environment variable SOURCEGRAPH_BASE_URL.`
+            )
+        }
+        return new GraphQLClient(baseURL, sudoToken, username)
+    }
+
+    private constructor(public baseURL: string, public sudoToken: string, public username: string) {}
 
     /**
      * mimics the `mutateGraphQL` function used by the Sourcegraph backend, but substitutes
