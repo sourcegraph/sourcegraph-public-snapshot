@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig, Config } from '../../../shared/src/e2e/config'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
