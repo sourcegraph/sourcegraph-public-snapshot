@@ -78,22 +78,32 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
 }
 
-// nameTransformation describes the rule to transform a repository name.
-type nameTransformation struct {
-	regexp      *regexp.Regexp // Not nil indicates a regex replacement transformation.
+// NameTransformation describes the rule to transform a repository name.
+type NameTransformation struct {
+	// Not nil indicates a regex replacement transformation.
+	regexp      *regexp.Regexp
 	replacement string
+
+	// Note: Please add a blank line between each set of fields for a transformation rule
+	// to help better organize the structure and more clear to the future contributors.
+}
+
+// Transform performs the transformation to given string.
+func (nt NameTransformation) Transform(s string) string {
+	switch {
+	case nt.regexp != nil:
+		s = nt.regexp.ReplaceAllString(s, nt.replacement)
+	}
+	return s
 }
 
 // NameTransformations is a list of transformation rules.
-type NameTransformations []nameTransformation
+type NameTransformations []NameTransformation
 
 // Transform iterates and performs the list of transformations.
 func (nts NameTransformations) Transform(s string) string {
 	for _, nt := range nts {
-		switch {
-		case nt.regexp != nil:
-			s = nt.regexp.ReplaceAllString(s, nt.replacement)
-		}
+		s = nt.Transform(s)
 	}
 	return s
 }

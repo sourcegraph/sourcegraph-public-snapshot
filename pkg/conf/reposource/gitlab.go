@@ -47,10 +47,10 @@ func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string, nts N
 	return api.RepoName(nts.Transform(name))
 }
 
-// CompileGitLabNameTransformations compiles a list of GitLabNameTransformation into common nameTransformation,
+// CompileGitLabNameTransformations compiles a list of GitLabNameTransformation into common NameTransformation,
 // it halts and returns when any compile error occurred.
 func CompileGitLabNameTransformations(ts []*schema.GitLabNameTransformation) (NameTransformations, error) {
-	nts := make([]nameTransformation, len(ts))
+	nts := make([]NameTransformation, len(ts))
 	for i, t := range ts {
 		switch {
 		case t.Regex != "":
@@ -58,7 +58,7 @@ func CompileGitLabNameTransformations(ts []*schema.GitLabNameTransformation) (Na
 			if err != nil {
 				return nil, errors.Errorf("regexp.Compile %q: %v", t.Regex, err)
 			}
-			nts[i] = nameTransformation{
+			nts[i] = NameTransformation{
 				regexp:      r,
 				replacement: t.Replacement,
 			}
