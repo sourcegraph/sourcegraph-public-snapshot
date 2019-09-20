@@ -125,6 +125,7 @@ async function main(): Promise<void> {
 
     const app = express()
     app.use(errorHandler)
+    app.get('/ping', (_, res) => res.send('ok'))
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
