@@ -11,7 +11,7 @@ import (
 )
 
 func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
-	n, err := NodeByID(ctx, r.a8nResolver, args.ID)
+	n, err := r.nodeByID(ctx, args.ID)
 	if err != nil {
 		return nil, err
 	}
