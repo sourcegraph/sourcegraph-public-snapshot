@@ -59,17 +59,17 @@ Rejected alternatives:
 Effective RFCs contain the following information:
   - Title that includes the RFC number.
     - The title is inlined in the Google Doc so that it is more visible and will not disappear if exported to a different format.
-  - Metadata about the state of the RFC.
+  - Metadata about the state of the RFC. Including but not limited to:
     - Editor: The person responsible for iterating on the content of the RFC.
       - Generally this is the author of the Google Doc but it is possible for ownership to be transferred.
-    - Status: A description of the state of the RFC. Illustrative examples:
+    - Status: A description of the current state or outcome of the RFC. Illustrative examples:
       - "Still drafting this. I expect to share this with the web team September 6."
       - "Collecting feedback. I will update the RFC on September 8 based on the feedback collected.
       - "Updating RFC based on collected feedback. I expect to reshare the updated doc September 9.
-  - The outcome of the RFC
-    - "We aren't going to pursue this RFC for the following reasons…"
-    - "The web team is going to implement this RFC in 3.8."
-    - "This RFC has been implemented." 
+      - "We aren't going to pursue this RFC for the following reasons..."
+      - "The web team is going to implement this RFC in 3.8."
+      - "This RFC has been implemented." 
+    - (optional) Links to any GitHub issues that capture work being done to implement this RFC.
   - Background/Situation: A sufficient, but minimal, amount of context necessary to frame the rest of the RFC. The content should be indisputable facts, not opinions or arguments. The facts should support the chosen definition of the problem and the constraints in the next section.
   - Problem/Goals/Complication/Constraints: A description of the problem that this RFC is trying to address, the constraints that this RFC trying to satisfy, and why this problem is worth solving now.
   - Proposed solution/implementation: A description of HOW to solve the problem.
