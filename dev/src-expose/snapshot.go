@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func snapshot(logger *log.Logger, src, dst string) error {
@@ -169,6 +171,13 @@ type Snapshotter struct {
 
 	// Snapshots is a list of Snapshosts to take.
 	Snapshots []Snapshot
+
+	// DirMode defines what behaviour to use if Dir is missing.
+	//
+	//  - fail (default)
+	//  - ignore
+	//  - remove_dest
+	DirMode string
 }
 
 func (o *Snapshotter) SetDefaults() error {
@@ -186,6 +195,10 @@ func (o *Snapshotter) SetDefaults() error {
 			return err
 		}
 		o.Destination = filepath.Join(h, ".sourcegraph", "snapshots")
+	}
+
+	if o.DirMode == "" {
+		o.DirMode = "fail"
 	}
 
 	for i, s := range o.Snapshots {
@@ -239,6 +252,22 @@ func (o *Snapshotter) Run() error {
 			cmd.Dir = s.Dir
 			if _, err := run(logger, filepath.Base(s.Dir), cmd); err != nil {
 				return err
+			}
+		}
+
+		if _, err := os.Stat(s.Dir); err != nil {
+			switch o.DirMode {
+			case "fail":
+				return errors.Wrapf(err, "snapshot source dir missing: %v", s.Dir)
+			case "ignore":
+				logger.Printf("dir %s missing, ignoring", s.Dir)
+				continue
+			case "remove_dest":
+				logger.Printf("dir %s missing, removing %s", s.Dir, s.Destination)
+				if err := os.RemoveAll(s.Destination); err != nil {
+					return errors.Wrapf(err, "failed to remove snapshot destination %s", s.Destination)
+				}
+
 			}
 		}
 
