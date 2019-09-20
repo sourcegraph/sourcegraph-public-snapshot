@@ -1,4 +1,4 @@
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
+FROM alpine:3.10@sha256:72c42ed48c3a2db31b7dafe17d275b634664a708d901ec9fd57b1529280f01fb AS ctags
 
 # hadolint ignore=DL3003,DL3018,DL4006
 RUN apk --no-cache add --virtual build-deps curl jansson-dev \
@@ -15,8 +15,8 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
     rm -rf /tmp/ctags-$CTAGS_VERSION && \
     apk --no-cache --purge del build-deps
 
-# TODO: Make this image use our sourcegraph/alpine:3.9 base image.
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
+# TODO: Make this image use our sourcegraph/alpine:3.9 base image (3.10?).
+FROM alpine:3.10@sha256:72c42ed48c3a2db31b7dafe17d275b634664a708d901ec9fd57b1529280f01fb
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
