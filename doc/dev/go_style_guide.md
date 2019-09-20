@@ -1,4 +1,4 @@
-# Code style guide
+# Go style guide
 
 This file documents the style used in Sourcegraph's code. For non-code text, see the overall [style guide](style_guide.md).
 
