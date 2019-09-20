@@ -1,6 +1,6 @@
 # Language servers
 
-> Language servers are not recommended. We recommend using [LSIF](./lsif.md) to get precise code intelligence.
+> Language servers are not recommended because they are complex to configure, require separate deployment, and are slow to initialize. Instead, we recommend using [LSIF](./lsif.md) to get precise code intelligence.
 
 Language servers provide more precise code intelligence than the out-of-the-box experience. There are language servers for the following languages:
 
