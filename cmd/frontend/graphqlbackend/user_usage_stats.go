@@ -83,7 +83,7 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Source       string
 	Argument     *string
 }) (*EmptyResponse, error) {
-	if !conf.EventLoggingEnabled() {
+	if !conf.EventLoggingEnabled() || pubSubDotComEventsTopicID == "" {
 		return nil, nil
 	}
 	actor := actor.FromContext(ctx)
