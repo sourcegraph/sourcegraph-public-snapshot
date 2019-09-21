@@ -1,5 +1,4 @@
 import * as zlib from 'mz/zlib'
-import { Edge, Vertex } from 'lsif-protocol'
 import { parseJsonLines, readGzippedJsonElements, splitLines, validateLsifElements } from './input'
 import { Readable } from 'stream'
 
@@ -12,7 +11,7 @@ describe('readGzippedJsonElements', () => {
             { type: 'edge', label: 'moniker' },
         ]
 
-        const elements: (Vertex | Edge)[] = []
+        const elements: unknown[] = []
         const input = Readable.from(lines.map(l => JSON.stringify(l)).join('\n'))
         for await (const element of readGzippedJsonElements(input.pipe(zlib.createGzip()))) {
             elements.push(element)
