@@ -1,5 +1,4 @@
 import uuid from 'uuid'
-import * as GQL from '../../../shared/src/graphql/schema'
 import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
