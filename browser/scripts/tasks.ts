@@ -82,8 +82,8 @@ const BROWSER_BUNDLE_ZIPS = {
 }
 
 const BROWSER_BLACKLIST = {
-    chrome: ['applications'],
-    firefox: ['key'],
+    chrome: ['applications'] as const,
+    firefox: ['key'] as const,
 }
 
 function writeSchema(env: BuildEnv, browser: Browser, writeDir: string): void {
@@ -104,7 +104,7 @@ function writeManifest(env: BuildEnv, browser: Browser, writeDir: string): void 
     }
 
     if (browser === 'firefox') {
-        manifest.permissions.push('<all_urls>')
+        manifest.permissions!.push('<all_urls>')
         delete manifest.storage
     }
 
