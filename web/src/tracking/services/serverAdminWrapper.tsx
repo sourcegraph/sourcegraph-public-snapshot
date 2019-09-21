@@ -5,7 +5,6 @@ import { logUserEvent, logEvent } from '../../user/settings/backend'
 class ServerAdminWrapper {
     /**
      * isAuthenicated is a flag that indicates if a user is signed in.
-     * We only log certain events (pageviews) if the user is not authenticated.
      */
     private isAuthenicated = false
 
@@ -19,8 +18,10 @@ class ServerAdminWrapper {
         }
     }
 
-    public trackPageView(eventAction: string): void {
-        logUserEvent(GQL.UserEvent.PAGEVIEW)
+    public trackPageView(eventAction: string, logAsActiveUser: boolean = true): void {
+        if (logAsActiveUser) {
+            logUserEvent(GQL.UserEvent.PAGEVIEW)
+        }
         if (this.isAuthenicated) {
             if (eventAction === 'ViewRepository' || eventAction === 'ViewBlob' || eventAction === 'ViewTree') {
                 logUserEvent(GQL.UserEvent.STAGECODE)
