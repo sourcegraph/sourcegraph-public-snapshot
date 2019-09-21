@@ -46,38 +46,6 @@ const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
- * Runs the worker which accepts LSIF conversion jobs from node-resque.
- */
-async function main(): Promise<void> {
-    // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
-
-    // Ensure storage roots exist
-    await ensureDirectory(STORAGE_ROOT)
-    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
-    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
-
-    // Create backend
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
-    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
-
-    const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
-    }
-
-    // Start metrics server
-    startMetricsServer()
-
-    // Create worker and start processing jobs
-    await startWorker(jobFunctions)
-
-    if (LOG_READY) {
-        console.log('Listening for uploads')
-    }
-}
-
-/**
  * Create a job that takes a repository, commit, and filename containing the gzipped
  * input of an LSIF dump and converts it to a SQLite database. This will also populate
  * the cross-repo database for this dump.
@@ -111,6 +79,38 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
 
     // Remove input
     await fs.unlink(filename)
+}
+
+/**
+ * Runs the worker which accepts LSIF conversion jobs from node-resque.
+ */
+async function main(): Promise<void> {
+    // Update cache capacities on startup
+    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
+
+    // Ensure storage roots exist
+    await ensureDirectory(STORAGE_ROOT)
+    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
+    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
+
+    // Create backend
+    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
+    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
+    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
+
+    const jobFunctions = {
+        convert: createConvertJob(xrepoDatabase),
+    }
+
+    // Start metrics server
+    startMetricsServer()
+
+    // Create worker and start processing jobs
+    await startWorker(jobFunctions)
+
+    if (LOG_READY) {
+        console.log('Listening for uploads')
+    }
 }
 
 /**
