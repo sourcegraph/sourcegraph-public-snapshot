@@ -13,11 +13,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"github.com/sourcegraph/sourcegraph/pkg/pubsub/pubsubutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
+var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
@@ -210,7 +214,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	eventlogger.LogEvent(0, "", "ServerUpdateCheck", json.RawMessage(message))
 
 	if pubsubutil.Enabled() {
-		err := pubsubutil.Publish(pubsubutil.PubSubTopicID, message)
+		err := pubsubutil.Publish(pubSubPingsTopicID, message)
 		if err != nil {
 			log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
 		}
