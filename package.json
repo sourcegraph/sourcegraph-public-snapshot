@@ -65,7 +65,7 @@
     "@sourcegraph/tsconfig": "^4.0.0",
     "@sourcegraph/tslint-config": "^14.0.2",
     "@storybook/addon-actions": "^5.1.3",
-    "@storybook/addon-console": "^1.1.0",
+    "@storybook/addon-console": "^1.2.1",
     "@storybook/addon-info": "^5.1.3",
     "@storybook/addon-knobs": "^5.1.3",
     "@storybook/addon-links": "^5.1.3",

@@ -1688,10 +1688,10 @@
     react-inspector "^3.0.2"
     uuid "^3.3.2"
 
-"@storybook/addon-console@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@storybook/addon-console/-/addon-console-1.1.0.tgz#ef063fa122a7aa03ac54067a1d6a72d717b41c73"
-  integrity sha512-G36/KB0uN5OB30W/QQU/NIbQ2EA4ZjJGORvYNx83bojRN2cKF0NFae5hEwlAAhKZK31qe3g3bsymWvc7+WBCpA==
+"@storybook/addon-console@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.npmjs.org/@storybook/addon-console/-/addon-console-1.2.1.tgz#f338401661b4636118b13839848061e996d4e104"
+  integrity sha512-2iDbDTipWonvRpIqLLntfhCGvawFFvoG1xyErpyL7K/HRdQ1zzIvR1Qm83S7TK8Vg+RzZWm4wcDbxx7WOsFCNg==
   dependencies:
     global "^4.3.2"
 
