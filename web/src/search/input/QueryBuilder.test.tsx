@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cleanup, fireEvent, getBySelectText, getByTestId, queryByTestId, render, wait } from 'react-testing-library'
+import { cleanup, fireEvent, getByDisplayValue, getByTestId, queryByTestId, render, wait } from '@testing-library/react'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
 
@@ -84,7 +84,7 @@ describe('QueryBuilder', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
 
-        const typeField = getBySelectText(container, 'Code (default)')
+        const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
@@ -101,7 +101,7 @@ describe('QueryBuilder', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
 
-        const typeField = getBySelectText(container, 'Code (default)')
+        const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'commit' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
@@ -118,7 +118,7 @@ describe('QueryBuilder', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
 
-        const typeField = getBySelectText(container, 'Code (default)')
+        const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
@@ -132,7 +132,7 @@ describe('QueryBuilder', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
 
-        const typeField = getBySelectText(container, 'Code (default)')
+        const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-after'))
@@ -147,7 +147,7 @@ describe('QueryBuilder', () => {
         const onChange = sinon.spy()
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
 
-        const typeField = getBySelectText(container, 'Code (default)')
+        const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-before'))
@@ -158,18 +158,18 @@ describe('QueryBuilder', () => {
         expect(onChange.calledWith('type:diff before:"1 year ago"')).toBe(true)
     })
 
-    it('fires the onFieldsQueryChange prop handler with the "message:" filter when updating the "Message" field', async () => {
-        const onChange = sinon.spy()
+    it.only('fires the onFieldsQueryChange prop handler with the "message:" filter when updating the "Message" field', async () => {
+        const onChange = sinon.spy((query: string) => {})
         const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
 
-        const typeField = getBySelectText(container, 'Code (default)')
+        const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-message'))
         const messageField = container.querySelector('#query-builder-message')!
         fireEvent.change(messageField, { target: { value: 'fix issue' } })
 
-        expect(onChange.calledTwice).toBe(true)
+        sinon.assert.calledTwice(onChange)
         expect(onChange.calledWith('type:diff message:"fix issue"')).toBe(true)
     })
 })
