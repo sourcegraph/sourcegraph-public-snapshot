@@ -1,7 +1,7 @@
 import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { cleanup, fireEvent, render } from 'react-testing-library'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import sinon from 'sinon'
 
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
