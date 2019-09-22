@@ -174,8 +174,7 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...props} />
             </BrowserRouter>
         )
-        expect(getByTestId(container, 'result-container')).toBeTruthy()
-        expect(getAllByTestId(container, 'result-container').length).toBe(3)
+        expect(getAllByTestId(container, 'result-container')).toHaveLength(3)
     })
 
     it('displays "Show More" when the limit is hit', () => {
