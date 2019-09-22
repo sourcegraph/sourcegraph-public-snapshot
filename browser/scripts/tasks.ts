@@ -99,7 +99,7 @@ function writeManifest(env: BuildEnv, browser: Browser, writeDir: string): void 
     }
 
     if (EXTENSION_PERMISSIONS_ALL_URLS) {
-        manifest.permissions.push('<all_urls>')
+        manifest.permissions!.push('<all_urls>')
         signale.info('Adding <all_urls> to permissions because of env var setting')
     }
 
