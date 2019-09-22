@@ -6,74 +6,60 @@ import { QueryBuilder } from './QueryBuilder'
 describe('QueryBuilder', () => {
     afterAll(cleanup)
 
-    it('fires the onFieldsQueryChange prop handler with the `repo:` filter when updating the "Repository" field', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-        // Only the first test needs to click the toggle, since after this,
-        // the toggle state is stored in localStorage and the query builder open by default.
+    let onChange: sinon.SinonSpy<[string], void>
+    let container: HTMLElement
+    beforeEach(() => {
+        localStorage.clear()
+        onChange = sinon.spy((query: string) => {})
+        ;({ container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />))
+
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
+    })
 
+    it('fires the onFieldsQueryChange prop handler with the `repo:` filter when updating the "Repository" field', () => {
         const repoField = container.querySelector('#query-builder-repo')!
         fireEvent.change(repoField, { target: { value: 'sourcegraph/sourcegraph' } })
-        expect(onChange.calledOnce).toBe(true)
-        expect(onChange.calledWith('repo:sourcegraph/sourcegraph')).toBe(true)
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, 'repo:sourcegraph/sourcegraph')
     })
 
     it('fires the onFieldsQueryChange prop handler with the `file:` filter when updating the "File" field', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const fileField = container.querySelector('#query-builder-file')!
         fireEvent.change(fileField, { target: { value: 'web' } })
-        expect(onChange.calledOnce).toBe(true)
-        expect(onChange.calledWith('file:web')).toBe(true)
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, 'file:web')
     })
 
     it('fires the onFieldsQueryChange prop handler with the `case:` filter when updating the "Case" field', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const caseField = container.querySelector('#query-builder-case')!
         fireEvent.change(caseField, { target: { value: 'yes' } })
-        expect(onChange.calledOnce).toBe(true)
-        expect(onChange.calledWith('case:yes')).toBe(true)
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, 'case:yes')
     })
 
     it('fires the onFieldsQueryChange prop handler with the patterns left untransformed when updating the "Patterns" field', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const patternsField = container.querySelector('#query-builder-patterns')!
         fireEvent.change(patternsField, { target: { value: '(open|close) file' } })
-        expect(onChange.calledOnce).toBe(true)
-        expect(onChange.calledWith('(open|close) file')).toBe(true)
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, '(open|close) file')
     })
 
     it('field fires the onFieldsQueryChange prop handler with a multi-word term wrapped in double quotes when updating the "Exact match"', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const exactMatchField = container.querySelector('#query-builder-exactMatch')!
         fireEvent.change(exactMatchField, { target: { value: 'foo bar baz' } })
-        expect(onChange.calledOnce).toBe(true)
-        expect(onChange.calledWith('"foo bar baz"')).toBe(true)
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, '"foo bar baz"')
     })
 
     it('field fires the onFieldsQueryChange prop handler with a single-word term wrapped in double quotes when updating the "Exact match"', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const exactMatchField = container.querySelector('#query-builder-exactMatch')!
         fireEvent.change(exactMatchField, { target: { value: 'open(' } })
-        expect(onChange.calledOnce).toBe(true)
-        expect(onChange.calledWith('"open("')).toBe(true)
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, '"open("')
     })
 
     it('checks that the "Author", "Before", "After", and "Message" fields do not exist if the search type is set to code search', () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         expect(queryByTestId(container, 'test-author')).toBeNull()
         expect(queryByTestId(container, 'test-after')).toBeNull()
         expect(queryByTestId(container, 'test-before')).toBeNull()
@@ -81,9 +67,6 @@ describe('QueryBuilder', () => {
     })
 
     it('checks that the "Author", "Before", "After", and "Message" fields exist if the search type is set to diff search', async () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -98,9 +81,6 @@ describe('QueryBuilder', () => {
     })
 
     it('checks that the "Author", "Before", and "After" fields exist if type is commit', async () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'commit' } })
 
@@ -115,23 +95,17 @@ describe('QueryBuilder', () => {
     })
 
     it('fires the onFieldsQueryChange prop handler with the "author:" filter when updating the "Author" field', async () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
         await wait(() => queryByTestId(container, 'test-author'))
         const authorField = container.querySelector('#query-builder-author')!
         fireEvent.change(authorField, { target: { value: 'alice' } })
-        expect(onChange.calledTwice).toBe(true)
-        expect(onChange.calledWith('type:diff author:alice')).toBe(true)
+        sinon.assert.calledTwice(onChange)
+        sinon.assert.calledWith(onChange, 'type:diff author:alice')
     })
 
     it('fires the onFieldsQueryChange prop handler with the "after:" filter when updating the "After" field ', async () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -139,14 +113,11 @@ describe('QueryBuilder', () => {
         const afterField = container.querySelector('#query-builder-after')!
         fireEvent.change(afterField, { target: { value: '1 year ago' } })
 
-        expect(onChange.calledTwice).toBe(true)
-        expect(onChange.calledWith('type:diff after:"1 year ago"')).toBe(true)
+        sinon.assert.calledTwice(onChange)
+        sinon.assert.calledWith(onChange, 'type:diff after:"1 year ago"')
     })
 
     it('fires the onFieldsQueryChange prop handler with the "before:" filter when updating the "Before" field', async () => {
-        const onChange = sinon.spy()
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -154,14 +125,11 @@ describe('QueryBuilder', () => {
         const beforeField = container.querySelector('#query-builder-before')!
         fireEvent.change(beforeField, { target: { value: '1 year ago' } })
 
-        expect(onChange.calledTwice).toBe(true)
-        expect(onChange.calledWith('type:diff before:"1 year ago"')).toBe(true)
+        sinon.assert.calledTwice(onChange)
+        sinon.assert.calledWith(onChange, 'type:diff before:"1 year ago"')
     })
 
-    it.only('fires the onFieldsQueryChange prop handler with the "message:" filter when updating the "Message" field', async () => {
-        const onChange = sinon.spy((query: string) => {})
-        const { container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />)
-
+    it('fires the onFieldsQueryChange prop handler with the "message:" filter when updating the "Message" field', async () => {
         const typeField = getByDisplayValue(container, 'Code (default)')
         fireEvent.change(typeField, { target: { value: 'diff' } })
 
@@ -170,6 +138,6 @@ describe('QueryBuilder', () => {
         fireEvent.change(messageField, { target: { value: 'fix issue' } })
 
         sinon.assert.calledTwice(onChange)
-        expect(onChange.calledWith('type:diff message:"fix issue"')).toBe(true)
+        sinon.assert.calledWith(onChange, 'type:diff message:"fix issue"')
     })
 })

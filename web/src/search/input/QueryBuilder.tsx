@@ -70,30 +70,36 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
     private onInputChange = (key: keyof QueryBuilderState['fields']) => (
         event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
-        event.persist()
-        this.setState(({ fields }) => {
-            const newFields = { ...fields, [key]: event.target.value }
+        const { value } = event.target
+        this.setState(
+            ({ fields }) => {
+                const newFields = { ...fields, [key]: value }
 
-            const fieldsQueryParts: string[] = []
-            for (const [inputField, inputValue] of Object.entries(newFields)) {
-                if (inputValue !== '') {
-                    if (inputField === 'patterns') {
-                        // Patterns should be added to the query as-is.
-                        fieldsQueryParts.push(inputValue)
-                    } else if (inputField === 'exactMatch') {
-                        // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                        fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
-                    } else if (inputField === 'type' && inputValue === 'code') {
-                        // code searches don't need to be specified.
-                        continue
-                    } else {
-                        fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                const fieldsQueryParts: string[] = []
+                for (const [inputField, inputValue] of Object.entries(newFields)) {
+                    if (inputValue !== '') {
+                        if (inputField === 'patterns') {
+                            // Patterns should be added to the query as-is.
+                            fieldsQueryParts.push(inputValue)
+                        } else if (inputField === 'exactMatch') {
+                            // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
+                            fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
+                        } else if (inputField === 'type' && inputValue === 'code') {
+                            // code searches don't need to be specified.
+                            continue
+                        } else {
+                            fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                        }
                     }
                 }
-            }
+                const builderQuery = fieldsQueryParts.join(' ')
 
-            return { fields: newFields, builderQuery: fieldsQueryParts.join(' ') }
-        })
+                return { fields: newFields, builderQuery }
+            },
+            () => {
+                this.props.onFieldsQueryChange(this.state.builderQuery)
+            }
+        )
     }
 
     private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -121,12 +127,6 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         message: this.onInputChange('message'),
         count: this.onInputChange('count'),
         timeout: this.onInputChange('timeout'),
-    }
-
-    public componentDidUpdate(prevProps: Props, prevState: QueryBuilderState): void {
-        if (prevState.builderQuery !== this.state.builderQuery) {
-            this.props.onFieldsQueryChange(this.state.builderQuery)
-        }
     }
 
     public render(): JSX.Element | null {
