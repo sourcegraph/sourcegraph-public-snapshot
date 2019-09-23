@@ -1,8 +1,9 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
-import { sourcegraphBaseUrl, createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
+import { getConfig } from '../../../shared/src/e2e/config'
 
 const GHE_BASE_URL = process.env.GHE_BASE_URL || 'https://ghe.sgdev.org'
 const GHE_USERNAME = process.env.GHE_USERNAME
@@ -26,6 +27,8 @@ const REPO_PREFIX = new URL(GHE_BASE_URL).hostname
 // location.
 jest.setTimeout(1000 * 60 * 1000)
 
+const { sourcegraphBaseUrl } = getConfig(['sourcegraphBaseUrl'])
+
 /**
  * Logs into GitHub Enterprise enterprise.
  */
@@ -43,7 +46,7 @@ async function gheLogin({ page }: Driver): Promise<void> {
  *
  */
 async function init(driver: Driver): Promise<void> {
-    await driver.ensureLoggedIn()
+    await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     await gheLogin(driver)
     await driver.setExtensionSourcegraphUrl()
     await driver.ensureHasExternalService({
@@ -69,7 +72,7 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
 
     beforeAll(async () => {
         try {
-            driver = await createDriverForTest({ loadExtension: true })
+            driver = await createDriverForTest({ loadExtension: true, sourcegraphBaseUrl })
             await init(driver)
         } catch (err) {
             console.error(err)
