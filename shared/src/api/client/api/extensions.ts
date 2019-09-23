@@ -27,7 +27,7 @@ export class ClientExtensions {
             this.subscriptions.add(
                 extensionRegistry.activeExtensions.subscribe(extensions => {
                     const activeExtensions = extensions.map(activeExtension => activeExtension.id)
-                    telemetryService.log('ActiveExtensions', { activeExtensions })
+                    telemetryService.log('activeExtensions', { activeExtensions })
                 })
             )
         }
