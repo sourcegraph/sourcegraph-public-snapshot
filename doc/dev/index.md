@@ -38,6 +38,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Open product, open company, open source](open_source_open_company.md)
 - [Roadmap](roadmap/index.md)
 - [Product planning](product/index.md)
+- [RFCs](rfcs/index.md)
 - [Issue triage](issues.md)
 - [Release process and schedule](releases.md)
 - [Retrospectives](retrospectives/index.md)
