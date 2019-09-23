@@ -1,4 +1,4 @@
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
+FROM alpine:3.10@sha256:72c42ed48c3a2db31b7dafe17d275b634664a708d901ec9fd57b1529280f01fb AS ctags
 
 # hadolint ignore=DL3003,DL3018,DL4006
 RUN apk --no-cache add --virtual build-deps curl jansson-dev \
@@ -15,8 +15,8 @@ RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctag
     rm -rf /tmp/ctags-$CTAGS_VERSION && \
     apk --no-cache --purge del build-deps
 
-# TODO: Make this image use our sourcegraph/alpine:3.9 base image.
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
+# TODO: Make this image use our sourcegraph/alpine:3.9 base image (3.10?).
+FROM alpine:3.10@sha256:72c42ed48c3a2db31b7dafe17d275b634664a708d901ec9fd57b1529280f01fb
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -42,9 +42,9 @@ RUN apk update && apk add --no-cache \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
-    'bash=4.4.19-r1' 'postgresql-contrib=11.5-r0' 'postgresql=11.5-r0' \
+    'bash=5.0.0-r0' 'postgresql-contrib=11.5-r1' 'postgresql=11.5-r1' \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
-    mailcap nginx openssh-client pcre su-exec tini nodejs-current=11.3.0-r0
+    mailcap nginx openssh-client pcre su-exec tini nodejs-current=12.4.0-r0
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)

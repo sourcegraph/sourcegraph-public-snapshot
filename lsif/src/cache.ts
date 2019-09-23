@@ -1,6 +1,8 @@
 import promClient from 'prom-client'
 import Yallist from 'yallist'
-import { Connection, createConnection, EntityManager } from 'typeorm'
+import { Connection, EntityManager } from 'typeorm'
+import { createConnection } from './connection'
+import { DocumentData, ResultChunkData } from './models.database'
 import {
     connectionCacheEventsCounter,
     connectionCacheSizeGauge,
@@ -9,7 +11,6 @@ import {
     resultChunkCacheEventsCounter,
     resultChunkCacheSizeGauge,
 } from './metrics'
-import { DocumentData, ResultChunkData } from './models.database'
 
 /**
  * A wrapper around a cache value promise.
@@ -339,18 +340,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[],
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        const factory = (): Promise<Connection> =>
-            createConnection({
-                database,
-                entities,
-                type: 'sqlite',
-                name: database,
-                synchronize: true,
-                logging: ['error', 'warn'],
-                maxQueryExecutionTime: 1000,
-            })
-
-        return this.withValue(database, factory, callback)
+        return this.withValue(database, () => createConnection(database, entities), callback)
     }
 
     /**
@@ -360,23 +350,15 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * @param database The database filename.
      * @param entities The set of expected entities present in this schema.
      * @param callback The function invoke with a SQLite transaction connection.
-     * @param pragmaHook The function called with connection before the transaction begins.
      */
     public withTransactionalEntityManager<T>(
         database: string,
         // Decorators are not possible type check
         // eslint-disable-next-line @typescript-eslint/ban-types
         entities: Function[],
-        callback: (entityManager: EntityManager) => Promise<T>,
-        pragmaHook?: (connection: Connection) => Promise<void>
+        callback: (entityManager: EntityManager) => Promise<T>
     ): Promise<T> {
-        return this.withConnection(database, entities, async connection => {
-            if (pragmaHook) {
-                await pragmaHook(connection)
-            }
-
-            return await connection.transaction(callback)
-        })
+        return this.withConnection(database, entities, connection => connection.transaction(callback))
     }
 }
 

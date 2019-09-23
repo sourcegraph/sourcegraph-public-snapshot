@@ -147,6 +147,7 @@ func Main() {
 		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`lsif-server: node /lsif/out/server.js`,
+		`lsif-worker: node /lsif/out/worker.js`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,

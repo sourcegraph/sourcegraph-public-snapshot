@@ -1,30 +1,48 @@
 import * as fs from 'mz/fs'
-import * as zlib from 'mz/zlib'
+import * as path from 'path'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createBackend } from './backend'
+import { convertLsif } from './importer'
 import { createCommit, createLocation, getTestData } from './test-utils'
+import { createDatabaseFilename } from './util'
+import { Database } from './database'
+import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {
     let storageRoot!: string
+    const repository = 'test'
+    const commit = createCommit('test')
+
     const connectionCache = new ConnectionCache(10)
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const input = (await getTestData('typescript/linked-reference-results/data/data.lsif.gz')).pipe(
-            zlib.createGunzip()
-        )
-        await backend.insertDump(input, 'data', createCommit('data'))
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
+
+        const input = await getTestData('typescript/linked-reference-results/data/data.lsif.gz')
+        const database = createDatabaseFilename(storageRoot, repository, commit)
+        const { packages, references } = await convertLsif(input, database)
+        await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
     })
 
     afterAll(async () => await rmfr(storageRoot))
 
+    const loadDatabase = (repository: string, commit: string): Database =>
+        new Database(
+            storageRoot,
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
+            connectionCache,
+            documentCache,
+            resultChunkCache,
+            repository,
+            commit,
+            createDatabaseFilename(storageRoot, repository, commit)
+        )
+
     it('should find all refs of `foo`', async () => {
-        const backend = await createBackend(storageRoot, connectionCache, documentCache, resultChunkCache)
-        const db = await backend.createDatabase('data', createCommit('data'))
+        const db = loadDatabase(repository, commit)
 
         const positions = [
             { line: 1, character: 5 },
