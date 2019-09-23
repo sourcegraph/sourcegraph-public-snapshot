@@ -55,7 +55,7 @@ interface SourcegraphContext
     sourcegraphDotComMode: boolean
 
     /**
-     * siteID is the identifier of the Sourcegraph site. It is also the Telligent app ID.
+     * siteID is the identifier of the Sourcegraph site.
      */
     siteID: string
 
