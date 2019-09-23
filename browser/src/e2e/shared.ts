@@ -9,6 +9,7 @@ export function testSingleFilePage({
     sourcegraphBaseUrl,
     repoName,
     lineSelector,
+    goToDefinitionURL,
 }: {
     /** Called to get the driver */
     getDriver: () => Driver
@@ -24,6 +25,8 @@ export function testSingleFilePage({
 
     /** The CSS selector for a line in the code view */
     lineSelector: string
+    /** The expected URL for the "Go to Definition" button */
+    goToDefinitionURL?: string
 }): void {
     it('adds "View on Sourcegraph" buttons to files', async () => {
         await getDriver().page.goto(url)
@@ -59,7 +62,8 @@ export function testSingleFilePage({
             getDriver().page.click('.e2e-tooltip-go-to-definition'),
         ])
         expect(await getDriver().page.evaluate(() => location.href)).toBe(
-            `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
+            goToDefinitionURL ||
+                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
         )
     })
 }
