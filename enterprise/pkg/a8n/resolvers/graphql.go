@@ -206,6 +206,32 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
+func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	err = tx.DeleteCampaign(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
