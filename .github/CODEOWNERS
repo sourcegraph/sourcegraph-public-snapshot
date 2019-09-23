@@ -260,7 +260,7 @@ README.md @sqs
 **/package.json @sourcegraph/web
 **/yarn.lock @sourcegraph/web
 
-# Overwrite ownership for LSIF packaging
+# Code intel team owns LSIF server
 /lsif/package.json @sourcegraph/code-intel
 /lsif/yarn.lock @sourcegraph/code-intel
 
