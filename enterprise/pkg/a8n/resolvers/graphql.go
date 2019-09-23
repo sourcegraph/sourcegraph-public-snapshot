@@ -217,14 +217,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	tx, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer tx.Done(&err)
-
-	err = tx.DeleteCampaign(ctx, campaignID)
+	err = r.store.DeleteCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, err
 	}
