@@ -178,7 +178,7 @@
     "puppeteer": "1.19.0",
     "puppeteer-firefox": "^0.5.0",
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
-    "react-hot-loader": "^4.12.10",
+    "react-hot-loader": "^4.12.14",
     "react-test-renderer": "^16.9.0",
     "sass-loader": "^8.0.0",
     "shelljs": "^0.8.3",
