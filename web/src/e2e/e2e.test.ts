@@ -134,7 +134,6 @@ describe('e2e test suite', () => {
         })
 
         test('Check access tokens work (create, use and delete)', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/tokens/new')
             await driver.page.waitForSelector('.e2e-create-access-token-description')
 
             const name = 'E2E Test ' + new Date().toISOString() + ' ' + random(1, 1e7)
