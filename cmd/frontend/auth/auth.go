@@ -63,9 +63,9 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 //
 // - If there is exactly one `@` in the username, any portion since the `@` character is removed
 // - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
-// - Any leading or trailing `-` characters are dropped
 // - Usernames with consecutive `-` or `.` characters are not allowed
 // - Usernames that start or end with `.` are not allowed
+// - Usernames that start with `-` are not allowed
 //
 // Usernames that could not be converted return an error.
 func NormalizeUsername(name string) (string, error) {
@@ -75,7 +75,6 @@ func NormalizeUsername(name string) (string, error) {
 	}
 
 	name = disallowedCharacter.ReplaceAllString(name, "-")
-	name = strings.Trim(name, "-")
 	if disallowedSymbols.MatchString(name) {
 		return "", fmt.Errorf("username %q could not be normalized to acceptable format", origName)
 	}
@@ -88,6 +87,6 @@ func NormalizeUsername(name string) (string, error) {
 }
 
 var (
-	disallowedSymbols   = regexp.MustCompile(`(^[\-\.])|([\-\.]$)|([\-\.]{2,})`)
+	disallowedSymbols   = regexp.MustCompile(`(^[\-\.])|(\.$)|([\-\.]{2,})`)
 	disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-\.]`)
 )
