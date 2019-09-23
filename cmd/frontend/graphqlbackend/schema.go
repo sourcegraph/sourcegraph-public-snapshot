@@ -33,6 +33,8 @@ type Mutation {
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
+    # Updates a campaign.
+    updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -372,6 +374,18 @@ input CreateCampaignInput {
 
     # The description of the campaign as Markdown.
     description: String!
+}
+
+# Input arguments for updating a campaign.
+input UpdateCampaignInput {
+    # The ID of the campaign to update.
+    id: ID!
+
+    # The updated name of the campaign (if non-null).
+    name: String
+
+    # The updated description of the campaign as Markdown (if non-null).
+    description: String
 }
 
 # A collection of threads.
