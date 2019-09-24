@@ -37,16 +37,12 @@ describe('search/helpers', () => {
             expect(getSearchTypeFromQuery('type:diff repo:^github.com/sourcegraph/sourcegraph test')).toEqual('diff')
         })
 
-        test('returns symbol when multiple search types, including symbol, are specified', () => {
-            // Edge case. If there are multiple type filters and `type:symbol` is one of them, symbol results always get returned.
-            expect(
-                getSearchTypeFromQuery('type:diff type:symbol repo:^github.com/sourcegraph/sourcegraph test')
-            ).toEqual('symbol')
-        })
-
         test('returns the first search type specified when multiple search types, not including symbol, are specified', () => {
             expect(
                 getSearchTypeFromQuery('type:diff type:commit repo:^github.com/sourcegraph/sourcegraph test')
+            ).toEqual('diff')
+            expect(
+                getSearchTypeFromQuery('type:diff type:symbol repo:^github.com/sourcegraph/sourcegraph test')
             ).toEqual('diff')
         })
     })

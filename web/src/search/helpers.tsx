@@ -81,15 +81,6 @@ export function getSearchTypeFromQuery(query: string): SearchType {
     const matches = query.match(getTypeName)
 
     if (matches && matches.groups && matches.groups.type) {
-        // In an edge case where multiple `type:` filters are used, if
-        // `type:symbol` is included, symbol results be returned, regardless of order,
-        // so we must check for `type:symbol`. For other types,
-        // the first `type` filter appearing in the query is applied.
-        const symbolTypeRegex = /\btype:symbol\b/
-        const symbolMatches = query.match(symbolTypeRegex)
-        if (symbolMatches) {
-            return 'symbol'
-        }
         return matches.groups.type as SearchType
     }
 
