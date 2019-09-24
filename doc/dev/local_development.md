@@ -14,7 +14,6 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 - [How to Run Tests](#how-to-run-tests)
 - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
 - [How to debug live code](#how-to-debug-live-code)
-- [Code style guide](#code-style-guide)
 - [Windows support](#windows-support)
 - [Other nice things](#other-nice-things)
 
