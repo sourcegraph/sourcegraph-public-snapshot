@@ -35,6 +35,10 @@ type UpdateCampaignArgs struct {
 	}
 }
 
+type DeleteCampaignArgs struct {
+	Campaign graphql.ID
+}
+
 type CreateChangesetsArgs struct {
 	Input []struct {
 		Repository graphql.ID
@@ -47,6 +51,7 @@ type A8NResolver interface {
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
 	Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error)
+	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
@@ -76,6 +81,13 @@ func (r *schemaResolver) UpdateCampaign(ctx context.Context, args *UpdateCampaig
 		return nil, onlyInEnterprise
 	}
 	return r.a8nResolver.UpdateCampaign(ctx, args)
+}
+
+func (r *schemaResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.DeleteCampaign(ctx, args)
 }
 
 func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {

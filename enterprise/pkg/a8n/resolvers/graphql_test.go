@@ -455,6 +455,29 @@ func TestCampaigns(t *testing.T) {
 			t.Errorf("wrong campaign added to changeset. want=%v, have=%v", campaigns.Admin.ID, have)
 		}
 	}
+
+	deleteInput := map[string]interface{}{"id": campaigns.Admin.ID}
+	mustExec(ctx, t, s, deleteInput, &struct{}{}, `
+		mutation($id: ID!){
+			deleteCampaign(campaign: $id) { alwaysNil }
+		}
+	`)
+
+	var campaignsAfterDelete struct {
+		Campaigns struct {
+			TotalCount int
+		}
+	}
+
+	mustExec(ctx, t, s, nil, &campaignsAfterDelete, `
+		query { campaigns { totalCount } }
+	`)
+
+	haveCount := campaignsAfterDelete.Campaigns.TotalCount
+	wantCount := listed.All.TotalCount - 1
+	if haveCount != wantCount {
+		t.Errorf("wrong campaigns totalcount after delete. want=%d, have=%d", wantCount, haveCount)
+	}
 }
 
 func mustExec(

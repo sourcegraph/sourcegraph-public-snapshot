@@ -37,6 +37,8 @@ type Mutation {
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
+    # Deletes a campaign.
+    deleteCampaign(campaign: ID!): EmptyResponse
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
