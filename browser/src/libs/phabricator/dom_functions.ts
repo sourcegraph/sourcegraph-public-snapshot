@@ -79,15 +79,20 @@ export const diffDomFunctions: DOMFunctions = {
         }
 
         const td = target.closest('td')
-        if (
-            td &&
-            (td.classList.contains('show-more') ||
-                td.classList.contains('show-context') ||
-                !getLineNumberCellFromCodeElement(td))
-        ) {
+        if (!td) {
             return null
         }
-
+        if (td.classList.contains('show-more') || td.classList.contains('show-context')) {
+            // This element represents a collapsed part of the diff, it's not a code element.
+            return null
+        }
+        try {
+            getLineNumberCellFromCodeElement(td)
+        } catch (err) {
+            // The element has no associated line number cell: this can be the case when hovering
+            // 'empty' lines in the base part of a split diff that has added lines.
+            return null
+        }
         return td
     },
     getCodeElementFromLineNumber: getDiffCodeElementFromLineNumber,
