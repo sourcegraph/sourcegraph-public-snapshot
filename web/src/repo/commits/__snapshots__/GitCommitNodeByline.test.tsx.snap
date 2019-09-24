@@ -10,7 +10,9 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
@@ -34,7 +36,9 @@ exports[`GitCommitNodeByline author 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
@@ -60,19 +64,23 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
    
   <img
     className="user-avatar icon-inline mr-1"
-    data-tooltip="Bob Yang (committer)"
+    data-tooltip="bYang (Bob Yang) (committer)"
     src="http://example.com/bob.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
   authored
    and
    
-  <strong>
-    Bob Yang
+  <strong
+    data-tooltip="bob@example.com"
+  >
+    bYang (Bob Yang)
   </strong>
    
   committed 
@@ -97,19 +105,23 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
    
   <img
     className="user-avatar icon-inline mr-1"
-    data-tooltip="Bob Yang (committer)"
+    data-tooltip="bYang (Bob Yang) (committer)"
     src="http://example.com/bob.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
   authored
    and
    
-  <strong>
-    Bob Yang
+  <strong
+    data-tooltip="bob@example.com"
+  >
+    bYang (Bob Yang)
   </strong>
    
   committed 
@@ -132,7 +144,9 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
@@ -156,7 +170,9 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
