@@ -12,20 +12,7 @@ GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 IMAGE=sourcegraph/grafana:10.0.0
 CONTAINER=grafana
 
-CID_FILE="${GRAFANA_DISK}/grafana.cid"
-
 mkdir -p ${GRAFANA_DISK}/logs
-rm -f ${CID_FILE}
-
-function finish {
-  if test -f ${CID_FILE}; then
-      echo 'trapped CTRL-C: stopping docker grafana container'
-      docker stop $(cat ${CID_FILE})
-      rm -f  ${CID_FILE}
-  fi
-  docker rm -f $CONTAINER
-}
-trap finish EXIT
 
 CONFIG_SUB_DIR="all"
 
@@ -34,7 +21,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 fi
 
 docker inspect $CONTAINER > /dev/null 2>&1 && docker rm -f $CONTAINER
-docker run --rm  --cidfile ${CID_FILE} \
+docker run --rm \
     --name=grafana \
     --cpus=1 \
     --memory=1g \
