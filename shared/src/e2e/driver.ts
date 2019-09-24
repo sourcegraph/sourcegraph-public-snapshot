@@ -58,6 +58,7 @@ export class Driver {
         })
         const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
+            await this.page.waitForSelector('.e2e-signup-form')
             if (email) {
                 await this.page.type('input[name=email]', email)
             }
@@ -66,6 +67,7 @@ export class Driver {
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 5000 })
         } else if (url.pathname === '/sign-in') {
+            await this.page.waitForSelector('.e2e-signin-form')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
