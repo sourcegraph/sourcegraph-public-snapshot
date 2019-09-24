@@ -168,6 +168,44 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
+func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	if args.Input.Name != nil {
+		campaign.Name = *args.Input.Name
+	}
+
+	if args.Input.Description != nil {
+		campaign.Description = *args.Input.Description
+	}
+
+	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+}
+
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {

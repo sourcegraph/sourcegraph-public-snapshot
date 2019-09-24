@@ -27,6 +27,14 @@ type CreateCampaignArgs struct {
 	}
 }
 
+type UpdateCampaignArgs struct {
+	Input struct {
+		ID          graphql.ID
+		Name        *string
+		Description *string
+	}
+}
+
 type CreateChangesetsArgs struct {
 	Input []struct {
 		Repository graphql.ID
@@ -35,14 +43,16 @@ type CreateChangesetsArgs struct {
 }
 
 type A8NResolver interface {
+	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
+	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
+	Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error)
+
+	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
+	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ChangesetsConnectionResolver, error)
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
-	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
-	Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error)
-	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ChangesetResolver, error)
-	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ChangesetsConnectionResolver, error)
 }
 
 var onlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
@@ -59,6 +69,13 @@ func (r *schemaResolver) CreateCampaign(ctx context.Context, args *CreateCampaig
 		return nil, onlyInEnterprise
 	}
 	return r.a8nResolver.CreateCampaign(ctx, args)
+}
+
+func (r *schemaResolver) UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.UpdateCampaign(ctx, args)
 }
 
 func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {
