@@ -11,7 +11,12 @@ import (
 )
 
 func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
-	return settingsSubjectByID(ctx, r.a8nResolver, args.ID)
+	n, err := r.nodeByID(ctx, args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return settingsSubjectForNode(ctx, n)
 }
 
 var errUnknownSettingsSubject = errors.New("unknown settings subject")
@@ -24,15 +29,10 @@ type settingsSubject struct {
 	user            *UserResolver
 }
 
-// settingsSubjectByID fetches the settings subject with the given ID. If the ID refers to a node
-// that is not a valid settings subject, an error is returned.
-func settingsSubjectByID(ctx context.Context, a8n A8NResolver, id graphql.ID) (*settingsSubject, error) {
-	resolver, err := NodeByID(ctx, a8n, id)
-	if err != nil {
-		return nil, err
-	}
-
-	switch s := resolver.(type) {
+// settingsSubjectForNode fetches the settings subject for the given Node. If
+// the node is not a valid settings subject, an error is returned.
+func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, error) {
+	switch s := n.(type) {
 	case *siteResolver:
 		return &settingsSubject{site: s}, nil
 

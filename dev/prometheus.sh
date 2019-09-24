@@ -9,7 +9,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
 
-IMAGE=sourcegraph/prometheus:v2.12.0
+IMAGE=sourcegraph/prometheus:10.0.0
 CONTAINER=prometheus
 
 CID_FILE="${PROMETHEUS_DISK}/prometheus.cid"

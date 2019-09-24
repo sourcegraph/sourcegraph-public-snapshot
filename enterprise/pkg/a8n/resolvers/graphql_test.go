@@ -231,6 +231,40 @@ func TestCampaigns(t *testing.T) {
 		}),
 	}
 
+	campaigns.Admin.Name = "Updated Admin Campaign Name"
+	campaigns.Admin.Description = "Updated Admin Campaign Description"
+	updateInput := map[string]interface{}{
+		"input": map[string]interface{}{
+			"id":          campaigns.Admin.ID,
+			"name":        campaigns.Admin.Name,
+			"description": campaigns.Admin.Description,
+		},
+	}
+	var updated struct {
+		UpdateCampaign Campaign
+	}
+
+	mustExec(ctx, t, s, updateInput, &updated, `
+		fragment u on User { id, databaseID, siteAdmin }
+		fragment o on Org  { id, name }
+		fragment c on Campaign {
+			id, name, description, createdAt, updatedAt
+			author    { ...u }
+			namespace {
+				... on User { ...u }
+				... on Org  { ...o }
+			}
+		}
+		mutation($input: UpdateCampaignInput!){
+			updateCampaign(input: $input) { ...c }
+		}
+	`)
+
+	haveUpdated, wantUpdated := updated.UpdateCampaign, campaigns.Admin
+	if !reflect.DeepEqual(haveUpdated, wantUpdated) {
+		t.Errorf("wrong campaign updated. diff=%s", cmp.Diff(haveUpdated, wantUpdated))
+	}
+
 	err = store.UpsertExternalServices(ctx, externalService)
 	if err != nil {
 		t.Fatal(t)
@@ -420,6 +454,29 @@ func TestCampaigns(t *testing.T) {
 		if !have[campaigns.Admin.ID] || len(have) != 1 {
 			t.Errorf("wrong campaign added to changeset. want=%v, have=%v", campaigns.Admin.ID, have)
 		}
+	}
+
+	deleteInput := map[string]interface{}{"id": campaigns.Admin.ID}
+	mustExec(ctx, t, s, deleteInput, &struct{}{}, `
+		mutation($id: ID!){
+			deleteCampaign(campaign: $id) { alwaysNil }
+		}
+	`)
+
+	var campaignsAfterDelete struct {
+		Campaigns struct {
+			TotalCount int
+		}
+	}
+
+	mustExec(ctx, t, s, nil, &campaignsAfterDelete, `
+		query { campaigns { totalCount } }
+	`)
+
+	haveCount := campaignsAfterDelete.Campaigns.TotalCount
+	wantCount := listed.All.TotalCount - 1
+	if haveCount != wantCount {
+		t.Errorf("wrong campaigns totalcount after delete. want=%d, have=%d", wantCount, haveCount)
 	}
 }
 

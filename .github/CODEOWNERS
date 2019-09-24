@@ -104,12 +104,12 @@ tslint.config.js @felixfbecker
 /enterprise/cmd/frontend/internal/registry @sqs @beyang
 
 # Frontend
-/shared @sourcegraph/code-nav
-/web @felixfbecker @lguychard
-/ui @felixfbecker @lguychard
-/enterprise/ui @felixfbecker @lguychard
+/shared @sourcegraph/web
+/web @sourcegraph/web
+/ui @sourcegraph/web
+/enterprise/ui @sourcegraph/web
 /cmd/frontend/internal/app/jscontext @slimsag
-/packages/@sourcegraph @sourcegraph/code-nav
+/packages/@sourcegraph @sourcegraph/web
 /web/src/site-admin/externalServices.tsx @beyang
 /shared/src/components/activation/ @beyang
 
@@ -159,9 +159,9 @@ tslint.config.js @felixfbecker
 /enterprise/cmd/frontend/internal/authz/*github* @beyang
 /enterprise/cmd/frontend/internal/authz/*gitlab* @beyang
 
-# Code nav
-/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
-/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-nav
+# Symbols
+/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
+/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
 
 # Search and code mod
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
@@ -208,11 +208,11 @@ README.md @sqs
 /web/src/enterprise/dotcom/welcome/ @sqs
 
 # Browser extensions
-/browser/ @felixfbecker @lguychard
+/browser/ @sourcegraph/web
 
 # Extension API
-/packages/sourcegraph-extension-api/ @sourcegraph/code-nav
-/packages/@sourcegraph/extension-api-types @sourcegraph/code-nav
+/packages/sourcegraph-extension-api/ @sourcegraph/web
+/packages/@sourcegraph/extension-api-types @sourcegraph/web
 /cmd/frontend/registry @felixfbecker
 
 # Backend shared packages
@@ -236,11 +236,11 @@ README.md @sqs
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
-/lsif/ @chrismwendt @efritz @sourcegraph/code-nav
+/lsif/ @sourcegraph/code-intel
 
 # Development
-/dev/fakehub @ijt
-/dev/repogen @ijt
+/dev/fakehub @sourcegraph/core-services
+/dev/repogen @sourcegraph/core-services
 /.vscode @felixfbecker
 /.graphqlconfig @felixfbecker
 
@@ -256,10 +256,9 @@ README.md @sqs
 /pkg/hubspot/ @dadlerj
 /pkg/highlight/ @slimsag
 
-# Don't set any reviewers for these,
-# configure by package through Renovate config (see renovate.json)
-**/package.json
-**/yarn.lock
-/go.sum
-/go.mod
+# These can also be configured by package through Renovate config (see renovate.json)
+**/package.json @sourcegraph/web
+**/yarn.lock @sourcegraph/web
+/go.sum @sourcegraph/core-services
+/go.mod @sourcegraph/core-services
 /CHANGELOG.md

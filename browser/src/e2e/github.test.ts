@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import getFreePort from 'get-port'
 import { startCase } from 'lodash'
 import { appendFile, exists, mkdir, readFile } from 'mz/fs'

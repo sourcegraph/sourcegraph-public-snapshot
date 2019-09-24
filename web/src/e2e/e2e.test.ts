@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
@@ -1158,7 +1162,7 @@ describe('e2e test suite', () => {
             expect(label).toEqual('Code')
         })
 
-        test('Clicking search results tabs updates query and URL', async () => {
+        test.skip('Clicking search results tabs updates query and URL', async () => {
             for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
                 await driver.page.waitForSelector(`.e2e-search-result-tab-${searchType}`)
                 await driver.page.click(`.e2e-search-result-tab-${searchType}`)

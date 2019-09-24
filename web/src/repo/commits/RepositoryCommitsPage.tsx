@@ -50,6 +50,9 @@ export const gitCommitFragment = gql`
             name
             email
             displayName
+            user {
+                username
+            }
         }
         date
     }

@@ -152,18 +152,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		AuthorID:    user.ID,
 	}
 
-	node, err := graphqlbackend.NodeByID(ctx, r, args.Input.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	switch ns := node.(type) {
-	case *graphqlbackend.UserResolver:
-		campaign.NamespaceUserID = ns.DatabaseID()
-	case *graphqlbackend.OrgResolver:
-		campaign.NamespaceOrgID = ns.OrgID()
+	switch relay.UnmarshalKind(args.Input.Namespace) {
+	case "User":
+		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
+	case "Org":
+		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceOrgID)
 	default:
-		return nil, errors.Errorf("Invalid namespace of type %T", ns)
+		return nil, errors.Errorf("Invalid namespace %q", args.Input.Namespace)
 	}
 
 	if err := r.store.CreateCampaign(ctx, campaign); err != nil {
@@ -171,6 +166,63 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+}
+
+func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Input.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	if args.Input.Name != nil {
+		campaign.Name = *args.Input.Name
+	}
+
+	if args.Input.Description != nil {
+		campaign.Description = *args.Input.Description
+	}
+
+	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+}
+
+func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.store.DeleteCampaign(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {

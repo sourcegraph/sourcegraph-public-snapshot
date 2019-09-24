@@ -1,5 +1,7 @@
-import { Id } from 'lsif-protocol'
+import * as fs from 'mz/fs'
+import * as path from 'path'
 import { DefinitionReferenceResultId } from './models.database'
+import { Id } from 'lsif-protocol'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -96,6 +98,44 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
 
     // Hash value may be negative - must unset sign bit before modulus
     return Math.abs(hash) % maxIndex
+}
+
+/**
+ * Construct the path of the SQLite database file for the given repository and commit.
+ *
+ * @param storageRoot The path where SQLite databases are stored.
+ * @param repository The repository name.
+ * @param commit The repository commit.
+ */
+export function createDatabaseFilename(storageRoot: string, repository: string, commit: string): string {
+    // return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+    return path.join(storageRoot, `${encodeURIComponent(repository)}.lsif.db`)
+}
+
+/**
+ * Ensure the directory exists.
+ *
+ * @param path The directory path.
+ */
+export async function ensureDirectory(path: string): Promise<void> {
+    try {
+        await fs.mkdir(path)
+    } catch (e) {
+        if (!hasErrorCode(e, 'EEXIST')) {
+            throw e
+        }
+    }
+}
+
+/**
+ * Log an error value to standard error and exit the process after a short
+ * timeout to allow outstanding logs to flush.
+ *
+ * @param e The error value.
+ */
+export function logErrorAndExit(e: any): void {
+    console.error(e)
+    setTimeout(() => process.exit(1), 100)
 }
 
 /**

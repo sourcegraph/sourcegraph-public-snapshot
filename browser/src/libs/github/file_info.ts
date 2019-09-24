@@ -35,16 +35,17 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
         const { revAndFilePath, rawRepoName } = parsedURL
 
         const filePath = getFilePath()
-        if (!revAndFilePath.endsWith(filePath)) {
+        const filePathWithLeadingSlash = filePath.startsWith('/') ? filePath : `/${filePath}`
+        if (!revAndFilePath.endsWith(filePathWithLeadingSlash)) {
             throw new Error(
-                `The file path ${filePath} should always be a suffix of revAndFilePath ${revAndFilePath}, but isn't in this case.`
+                `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revAndFilePath}, but isn't in this case.`
             )
         }
         return of({
             rawRepoName,
             filePath,
             commitID: getCommitIDFromPermalink(),
-            rev: revAndFilePath.slice(0, -filePath.length),
+            rev: revAndFilePath.slice(0, -filePathWithLeadingSlash.length),
         })
     } catch (error) {
         return throwError(error)

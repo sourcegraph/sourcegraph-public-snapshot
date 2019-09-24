@@ -1,7 +1,7 @@
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from 'react-testing-library'
+import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from '@testing-library/react'
 import { noop } from 'rxjs'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'

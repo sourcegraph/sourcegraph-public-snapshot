@@ -52,7 +52,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
 
     public render(): JSX.Element | null {
         return (
-            <Form className="signin-signup-form signup-form" onSubmit={this.handleSubmit}>
+            <Form className="signin-signup-form signup-form e2e-signup-form" onSubmit={this.handleSubmit}>
                 {this.state.error && (
                     <div className="alert alert-danger my-2">Error: {upperFirst(this.state.error.message)}</div>
                 )}

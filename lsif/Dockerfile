@@ -19,9 +19,10 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache tini nodejs-current=12.4.0-r0
+RUN apk add --no-cache tini supervisor=3.3.5-r0 nodejs-current=12.4.0-r0
 
 COPY --from=builder /lsif /lsif
+COPY supervisord.conf /etc/supervisord.conf
 
-EXPOSE 3186
-ENTRYPOINT ["/sbin/tini", "--", "node", "/lsif/out/server.js"]
+EXPOSE 3186 3187
+CMD ["/sbin/tini", "--", "/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

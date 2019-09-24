@@ -557,6 +557,22 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 	), nil
 }
 
+// DeleteCampaign deletes the Campaign with the given ID.
+func (s *Store) DeleteCampaign(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(deleteCampaignQueryFmtstr, id)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteCampaignQueryFmtstr = `
+-- source: pkg/a8n/store.go:DeleteCampaign
+DELETE FROM campaigns WHERE id = %s
+`
+
 // CountCampaignsOpts captures the query options needed for
 // counting campaigns.
 type CountCampaignsOpts struct {

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -10,7 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/pubsub/pubsubutil"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
+
+// pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
+var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
@@ -76,11 +83,33 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Source       string
 	Argument     *string
 }) (*EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() || !conf.EventLoggingEnabled() {
+	if !conf.EventLoggingEnabled() || pubSubDotComEventsTopicID == "" {
 		return nil, nil
 	}
-
 	actor := actor.FromContext(ctx)
+
+	// On Sourcegraph.com, log events to BigQuery instead of the internal Postgres table.
+	if envvar.SourcegraphDotComMode() {
+		var argument string
+		if args.Argument != nil {
+			argument = *args.Argument
+		}
+		event, err := json.Marshal(bigQueryEvent{
+			EventName:       args.Event,
+			UserID:          int(actor.UID),
+			AnonymousUserID: args.UserCookieID,
+			URL:             args.URL,
+			Source:          args.Source,
+			Argument:        argument,
+			Timestamp:       time.Now().UTC().Format(time.RFC3339),
+			Version:         version.Version(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, pubsubutil.Publish(pubSubDotComEventsTopicID, string(event))
+	}
+
 	return nil, usagestats.LogEvent(
 		ctx,
 		args.Event,
@@ -90,4 +119,15 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		args.Source,
 		args.Argument,
 	)
+}
+
+type bigQueryEvent struct {
+	EventName       string `json:"name"`
+	AnonymousUserID string `json:"anonymous_user_id"`
+	UserID          int    `json:"user_id"`
+	URL             string `json:"url"`
+	Source          string `json:"source"`
+	Argument        string `json:"argument,omitempty"`
+	Timestamp       string `json:"timestamp"`
+	Version         string `json:"version"`
 }
