@@ -50,7 +50,7 @@ var (
 			FieldFork:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
-			FieldType:      {Literal: types.StringType, Quoted: types.StringType, Singular: false},
+			FieldType:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldRepoHasFile:        regexpNegatableFieldType,
 			FieldRepoHasCommitAfter: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
