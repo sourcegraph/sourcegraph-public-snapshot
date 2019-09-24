@@ -203,8 +203,8 @@ Dockerfile @sourcegraph/distribution
 # Documentation and homepage
 README.md @sqs
 /doc/ @sqs @ryan-blunden
+/doc/dev/ @nicksnyder
 /doc/dev/product/ @christinaforney
-/doc/dev/teams.md @beyang @nicksnyder
 /web/src/enterprise/dotcom/welcome/ @sqs
 
 # Browser extensions
