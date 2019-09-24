@@ -22,7 +22,7 @@ const formatPersonNames = ({ user, displayName }: Signature['person']): string =
 /**
  * Formats person names with {@link formatPersonNames}, and shows tooltip with user email.
  */
-const PersonNames: React.FC<{ person: Signature['person'] }> = ({ person }) => (
+const PersonNames: React.FunctionComponent<{ person: Signature['person'] }> = ({ person }) => (
     <strong data-tooltip={person.email}>{formatPersonNames(person)}</strong>
 )
 
