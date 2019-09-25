@@ -62,21 +62,58 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
     ).toPromise()
 }
 
-export async function ensureExternalService(
+export async function ensureNoExternalServices(
     gqlClient: GraphQLClient,
     options: {
         kind: GQL.ExternalServiceKind
         uniqueDisplayName: string
-        config: Record<string, any>
+        deleteIfExist?: boolean
     }
 ): Promise<void> {
-    const externalServices = await gqlClient
+    const externalServices = await getExternalServices(gqlClient, options)
+    if (externalServices.length === 0) {
+        return
+    }
+    if (!options.deleteIfExist) {
+        throw new Error('external services already exist, not deleting')
+    }
+
+    for (const externalService of externalServices) {
+        await gqlClient
+            .mutateGraphQL(
+                gql`
+                    mutation DeleteExternalService($externalService: ID!) {
+                        deleteExternalService(externalService: $externalService) {
+                            alwaysNil
+                        }
+                    }
+                `,
+                { externalService: externalService.id }
+            )
+            .toPromise()
+    }
+}
+
+export function getExternalServices(
+    gqlClient: GraphQLClient,
+    options: {
+        kind?: GQL.ExternalServiceKind
+        uniqueDisplayName?: string
+    } = {}
+): Promise<GQL.IExternalService[]> {
+    return gqlClient
         .queryGraphQL(
             gql`
                 query ExternalServices($first: Int) {
                     externalServices(first: $first) {
                         nodes {
+                            id
+                            kind
                             displayName
+                            config
+                            createdAt
+                            updatedAt
+                            warning
                         }
                     }
                 }
@@ -85,10 +122,27 @@ export async function ensureExternalService(
         )
         .pipe(
             map(dataOrThrowErrors),
-            map(({ externalServices }) => externalServices)
+            map(({ externalServices }) =>
+                externalServices.nodes.filter(
+                    ({ displayName, kind }) =>
+                        (options.uniqueDisplayName === undefined || options.uniqueDisplayName === displayName) &&
+                        (options.kind === undefined || options.kind === kind)
+                )
+            )
         )
         .toPromise()
-    if (externalServices.nodes.some(({ displayName }) => displayName === options.uniqueDisplayName)) {
+}
+
+export async function ensureExternalService(
+    gqlClient: GraphQLClient,
+    options: {
+        kind: GQL.ExternalServiceKind
+        uniqueDisplayName: string
+        config: Record<string, any>
+    }
+): Promise<void> {
+    const externalServices = await getExternalServices(gqlClient, options)
+    if (externalServices.length > 0) {
         return
     }
 
@@ -188,6 +242,21 @@ export async function deleteUser(
                 }
             `,
             { hard: false, user: user.id }
+        )
+        .toPromise()
+}
+
+export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID, siteAdmin: boolean): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
+                    setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { userID, siteAdmin }
         )
         .toPromise()
 }
