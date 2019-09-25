@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Allow single trailing hyphen in username
+
 ### Fixed
 
 ### Removed
