@@ -85,7 +85,7 @@ The precise format is not as important as the content itself. Ultimately RFCs ar
 
 [We value openness](https://docs.sourcegraph.com/dev/open_source_open_company). Transparency helps us communicate with and gather feedback from our customers, and it holds everyone accountable to a higher quality bar.
 
-The default sharing state of documents in our [Google Drive's RFCs](https://drive.google.com/drive/folders/1bip_pMeWePyNNdCEETRzoyMdLtntcNKR) folder will allow everyone to publically read/comment, and all Sourcegraph teammates to edit.
+The default sharing state of documents in our [Google Drive's RFCs](https://drive.google.com/drive/folders/1bip_pMeWePyNNdCEETRzoyMdLtntcNKR) folder will allow everyone to publicly read/comment, and all Sourcegraph teammates to edit.
 
 ![Google link sharing settings](link-sharing.png)
 
