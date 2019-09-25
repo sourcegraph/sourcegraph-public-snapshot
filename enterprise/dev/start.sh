@@ -25,6 +25,6 @@ export SITE_CONFIG_ALLOW_EDITS=true
 export EXTSVC_CONFIG_ALLOW_EDITS=true
 
 export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/pkg"
-export ENTERPRISE_COMMANDS="frontend management-console"
+export ENTERPRISE_COMMANDS="frontend management-console repo-updater"
 export ENTERPRISE=1
 ../dev/launch.sh

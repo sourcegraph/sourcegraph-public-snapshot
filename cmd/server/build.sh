@@ -18,7 +18,7 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console}
+additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
@@ -34,7 +34,6 @@ for pkg in $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
     github.com/sourcegraph/sourcegraph/cmd/replacer \
-    github.com/sourcegraph/sourcegraph/cmd/repo-updater \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
     github.com/google/zoekt/cmd/zoekt-archive-index \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
