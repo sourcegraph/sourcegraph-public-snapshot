@@ -256,18 +256,12 @@ dev/migrate.sh drop
 dev/migrate.sh up
 ```
 
-If you still receive errors while migrating, try recreating the sourcegraph database (this will delete your db data)
+If you receive errors while migrating, try dropping the database
 
 ```bash
-# For Linux users, first access the postgres user shell
-sudo su - postgres
+dev/drop-entire-local-database.sh
+dev/migrate.sh up
 ```
-```bash
-dropdb sourcegraph
-createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-```
-
-Then try running the migrations with `dev/migrate.sh up`
 
 #### Internal Server Error
 
