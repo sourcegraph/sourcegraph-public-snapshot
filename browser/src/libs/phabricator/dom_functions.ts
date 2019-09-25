@@ -20,7 +20,7 @@ const getLineNumber = (lineNumberCell: HTMLElement): number =>
  * Supports both `<th>` line number cells, where the line number is the `textContent` (old Phabricator versions)
  * and `<td>` line number cells with a `data-n` attribtue (recent Phabricator versions).
  */
-const getLineNumberCellFromCodeElement = (codeElement: HTMLElement): HTMLElement => {
+const getLineNumberCellFromCodeElement = (codeElement: HTMLElement): HTMLElement | null => {
     let elem: HTMLElement | null = codeElement
     while (elem) {
         if (isLineNumberCell(elem)) {
@@ -28,7 +28,7 @@ const getLineNumberCellFromCodeElement = (codeElement: HTMLElement): HTMLElement
         }
         elem = elem.previousElementSibling as HTMLElement | null
     }
-    throw new Error('could not find line number element from code element')
+    return null
 }
 
 const getDiffLineNumberElementFromLineNumber = (
@@ -79,21 +79,27 @@ export const diffDomFunctions: DOMFunctions = {
         }
 
         const td = target.closest('td')
-        if (
-            td &&
-            (td.classList.contains('show-more') ||
-                td.classList.contains('show-context') ||
-                !getLineNumberCellFromCodeElement(td))
-        ) {
+        if (!td) {
             return null
         }
-
+        if (td.classList.contains('show-more') || td.classList.contains('show-context')) {
+            // This element represents a collapsed part of the diff, it's not a code element.
+            return null
+        }
+        if (!getLineNumberCellFromCodeElement(td)) {
+            // The element has no associated line number cell: this can be the case when hovering
+            // 'empty' lines in the base part of a split diff that has added lines.
+            return null
+        }
         return td
     },
     getCodeElementFromLineNumber: getDiffCodeElementFromLineNumber,
     getLineElementFromLineNumber: getDiffCodeElementFromLineNumber,
     getLineNumberFromCodeElement: codeElement => {
         const lineNumberCell = getLineNumberCellFromCodeElement(codeElement)
+        if (!lineNumberCell) {
+            throw new Error('Could not find line number cell from code element')
+        }
         return getLineNumber(lineNumberCell)
     },
     getDiffCodePart: codeElement => {
@@ -106,6 +112,9 @@ export const diffDomFunctions: DOMFunctions = {
         }
 
         const lineNumberCell = getLineNumberCellFromCodeElement(codeElement)
+        if (!lineNumberCell) {
+            throw new Error('Could not find line number cell from code element')
+        }
 
         // In unified diffs, both <th>'s have a class telling us which side of the diff the line belongs to.
         if (lineNumberCell.classList.contains('left')) {
