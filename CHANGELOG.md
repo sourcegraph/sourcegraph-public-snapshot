@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
+
 ### Changed
 
 ### Fixed

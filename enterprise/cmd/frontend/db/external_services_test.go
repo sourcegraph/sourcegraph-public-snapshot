@@ -765,12 +765,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
-			desc:   "invalid empty exclude",
-			config: `{"exclude": []}`,
-			assert: includes(`exclude: Array must have at least 1 items`),
-		},
-		{
-			kind:   "GITLAB",
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
@@ -1008,6 +1002,61 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 						"type": "username",
 					}
 				}
+			}
+			`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind: "GITLAB",
+			desc: "missing properties in name transformations",
+			config: `
+			{
+				"nameTransformations": [
+					{
+						"re": "regex",
+						"repl": "replacement"
+					}
+				]
+			}
+			`,
+			assert: includes(
+				`nameTransformations.0: regex is required`,
+				`nameTransformations.0: replacement is required`,
+			),
+		},
+		{
+			kind: "GITLAB",
+			desc: "invalid properties in name transformations",
+			config: `
+			{
+				"nameTransformations": [
+					{
+						"regex": "[",
+						"replacement": ""
+					}
+				]
+			}
+			`,
+			assert: includes(`nameTransformations.0.regex: Does not match format 'regex'`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid name transformations",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"token": "super-secret-token",
+				"projectQuery": ["none"],
+				"nameTransformations": [
+					{
+						"regex": "\\.d/",
+						"replacement": "/"
+					},
+					{
+						"regex": "-git$",
+						"replacement": ""
+					}
+				]
 			}
 			`,
 			assert: equals("<nil>"),
