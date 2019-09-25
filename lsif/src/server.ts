@@ -18,6 +18,9 @@ import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } fro
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
 import { createGzip } from 'mz/zlib'
+import { createPostgresConnection } from './connection'
+import { ReferenceModel } from './models.database'
+import { PackageModel } from './models.xrepo'
 
 const pipeline = promisify(_pipeline)
 
@@ -25,6 +28,11 @@ const pipeline = promisify(_pipeline)
  * Which port to run the LSIF server on. Defaults to 3186.
  */
 const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
+
+/**
+ * The database uri for the cross-repository database in postgres.
+ */
+const POSTGRES_URI = process.env.POSTGRES_URI || 'postgres:5432'
 
 /**
  * The host and port running the redis instance containing work queues.
@@ -88,12 +96,14 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
-    // Create cross-repo database
+    // Prepare caches
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
-    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
-    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
+
+    // Create cross-repo database
+    const connection = await createPostgresConnection('xrepo', POSTGRES_URI, [PackageModel, ReferenceModel])
+    const xrepoDatabase = new XrepoDatabase(connection)
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
         const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
