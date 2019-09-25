@@ -10,6 +10,7 @@ export interface NamespaceAreaContext extends ExtensionsControllerProps, ThemePr
     namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
 
     authenticatedUser: GQL.IUser | null
+    patternType: GQL.SearchPatternType
 }
 
 export interface NamespaceAreaRoute extends RouteDescriptor<NamespaceAreaContext> {}

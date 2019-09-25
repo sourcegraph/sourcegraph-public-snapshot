@@ -15,6 +15,7 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
+
 interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
@@ -37,6 +38,8 @@ interface Props
      * homepage.
      */
     lowProfile: boolean
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 interface State {

@@ -23,6 +23,7 @@ func TestSearch(t *testing.T) {
 	tcs := []struct {
 		name                         string
 		searchQuery                  string
+		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 		repoRevsMock                 func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error)
 		externalServicesListMock     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
@@ -48,6 +49,7 @@ func TestSearch(t *testing.T) {
 				Results:     nil,
 				ResultCount: 0,
 			},
+			searchVersion: "V1",
 		},
 		{
 			name:        "empty query against empty repo gets no results",
@@ -70,13 +72,14 @@ func TestSearch(t *testing.T) {
 				Results:     nil,
 				ResultCount: 0,
 			},
+			searchVersion: "V1",
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
-			vars := map[string]interface{}{"query": tc.searchQuery}
+			vars := map[string]interface{}{"query": tc.searchQuery, "version": tc.searchVersion}
 			db.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
@@ -187,11 +190,11 @@ var testSearchGQLQuery = `
 			}
 		}
 
-		query ($query: String!) {
+		query ($query: String!, $version: SearchVersion!, $patternType: SearchPatternType) {
 			site {
 				buildVersion
 			}
-			search(query: $query) {
+			search(query: $query, version: $version, patternType: $patternType) {
 				results {
 					results{
 						__typename

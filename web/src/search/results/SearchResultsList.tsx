@@ -61,6 +61,9 @@ export interface SearchResultsListProps
     didSave: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 interface State {
@@ -409,7 +412,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                     className="btn btn-secondary btn-sm"
                                                                     to={
                                                                         '/search?' +
-                                                                        buildSearchURLQuery(proposedQuery.query)
+                                                                        buildSearchURLQuery(
+                                                                            proposedQuery.query,
+                                                                            this.props.patternType
+                                                                        )
                                                                     }
                                                                 >
                                                                     {proposedQuery.query || proposedQuery.description}

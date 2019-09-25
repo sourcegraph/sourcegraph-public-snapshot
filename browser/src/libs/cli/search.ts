@@ -3,6 +3,7 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { createSuggestionFetcher } from '../../shared/backend/search'
 import { observeSourcegraphURL } from '../../shared/util/context'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 const isURL = /^https?:\/\//
 
@@ -50,7 +51,10 @@ export class SearchCommand {
         const props = {
             url: isURL.test(query)
                 ? query
-                : `${sourcegraphURL}/search?${buildSearchURLQuery(query)}&utm_source=omnibox`,
+                : `${sourcegraphURL}/search?${buildSearchURLQuery(
+                      query,
+                      SearchPatternType.literal
+                  )}&utm_source=omnibox`,
         }
 
         switch (disposition) {

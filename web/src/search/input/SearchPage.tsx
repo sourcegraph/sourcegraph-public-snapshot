@@ -23,6 +23,8 @@ interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, 
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 interface State {
@@ -79,6 +81,8 @@ export class SearchPage extends React.Component<Props, State> {
                             onChange={this.onUserQueryChange}
                             autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
+                            patternType={this.props.patternType}
+                            togglePatternType={this.props.togglePatternType}
                         />
                         <SearchButton />
                     </div>
@@ -92,6 +96,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                    patternType={this.props.patternType}
                                 />
                             </div>
                             <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
@@ -115,6 +120,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                    patternType={this.props.patternType}
                                 />
                             </div>
                         </>
@@ -136,7 +142,7 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, query, 'home', this.props.activation)
+        submitSearch(this.props.history, query, 'home', this.props.patternType, this.props.activation)
     }
 
     private getPageTitle(): string | undefined {

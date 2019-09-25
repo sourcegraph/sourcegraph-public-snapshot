@@ -138,6 +138,8 @@ interface Props
     rev: string
     location: H.Location
     history: H.History
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 interface State {
@@ -371,6 +373,7 @@ export class TreePage extends React.PureComponent<Props, State> {
             this.props.history,
             this.getQueryPrefix() + this.state.query,
             this.props.filePath ? 'tree' : 'repo',
+            this.props.patternType,
             this.props.activation
         )
     }

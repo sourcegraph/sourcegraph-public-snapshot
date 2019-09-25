@@ -29,6 +29,7 @@ interface Props
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
     authenticatedUser: GQL.IUser | null
+    patternType: GQL.SearchPatternType
 }
 
 /**

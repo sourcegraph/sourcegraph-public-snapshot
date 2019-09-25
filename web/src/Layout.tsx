@@ -88,9 +88,13 @@ export interface LayoutProps
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: string,
+        version: string,
+        patternType: GQL.SearchPatternType,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
-
+    // The pattern type determined by the UI toggle, or the defaultPatternType in settings.
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
 

@@ -85,6 +85,7 @@ interface UserAreaProps
      * parameter.
      */
     authenticatedUser: GQL.IUser | null
+    patternType: GQL.SearchPatternType
 }
 
 interface UserAreaState {
@@ -125,6 +126,7 @@ export interface UserAreaRouteContext
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+    patternType: GQL.SearchPatternType
 }
 
 /**

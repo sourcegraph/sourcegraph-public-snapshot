@@ -13,10 +13,12 @@ export function submitSearch(
     history: H.History,
     query: string,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
+    patternType: GQL.SearchPatternType,
     activation?: ActivationProps['activation']
 ): void {
     // Go to search results page
-    const path = '/search?' + buildSearchURLQuery(query)
+    console.log('@@@pattern type', patternType)
+    const path = '/search?' + buildSearchURLQuery(query, patternType)
     eventLogger.log('SearchSubmitted', {
         code_search: {
             pattern: query,

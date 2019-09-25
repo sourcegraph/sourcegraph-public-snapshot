@@ -49,6 +49,8 @@ export interface RepoRevContainerContext
 
     /** The URL route match for {@link RepoRevContainer}. */
     routePrefix: string
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 /** A sub-route of {@link RepoRevContainer}. */
@@ -77,6 +79,8 @@ interface RepoRevContainerProps
 
     /** Called when the resolvedRevOrError state in this component's parent should be updated. */
     onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 interface RepoRevContainerState {}
@@ -213,6 +217,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             routePrefix: this.props.routePrefix,
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
+            patternType: this.props.patternType,
+            togglePatternType: this.props.togglePatternType,
         }
 
         return (

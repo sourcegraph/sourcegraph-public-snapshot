@@ -22,6 +22,7 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps, Th
 
     location: H.Location
     history: H.History
+    patternType: GQL.SearchPatternType
 }
 
 /** A section shown in the explore area. */
@@ -54,6 +55,7 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
             isLightTheme: this.props.isLightTheme,
             location: this.props.location,
             history: this.props.history,
+            patternType: this.props.patternType,
         }
 
         return (

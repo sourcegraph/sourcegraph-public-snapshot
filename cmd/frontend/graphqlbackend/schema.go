@@ -998,6 +998,11 @@ type Query {
     clientConfiguration: ClientConfigurationDetails!
     # Runs a search.
     search(
+        # The version of the search syntax being used.
+        version: SearchVersion = V1
+        # PatternType controls the search pattern type, if and only if it is not specified in the query string using
+        # the patternType: field.
+        patternType: SearchPatternType
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
@@ -1028,6 +1033,20 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+}
+
+# The version of the search syntax.
+enum SearchVersion {
+    # Search syntax that defaults to regexp search.
+    V1
+    # Search syntax that defaults to literal search.
+    V2
+}
+
+# The search pattern type.
+enum SearchPatternType {
+    literal
+    regexp
 }
 
 # A query and an associated number of times it occurred.

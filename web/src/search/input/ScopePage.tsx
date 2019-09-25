@@ -35,6 +35,8 @@ const ScopeNotFound: React.FunctionComponent = () => (
 
 interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCascadeProps {
     authenticatedUser: GQL.IUser | null
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 interface State {
@@ -157,6 +159,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 <span className="scope-page__input-scope-text">{this.state.value}</span>
                             </div>
                             <QueryInput
+                                {...this.props}
                                 value={this.state.query}
                                 onChange={this.onQueryChange}
                                 prependQueryForSuggestions={this.state.value}
@@ -228,7 +231,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, `${this.state.value} ${this.state.query}`, 'home')
+        submitSearch(this.props.history, `${this.state.value} ${this.state.query}`, 'home', this.props.patternType)
     }
 
     private onShowMore = (event: React.MouseEvent<HTMLButtonElement>): void => {

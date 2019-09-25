@@ -19,6 +19,8 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+import RegexpToggle from './RegexpToggle'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -57,6 +59,8 @@ interface Props {
      * At most one query input per page should have this behavior.
      */
     hasGlobalQueryBehavior?: boolean
+    togglePatternType: (patternType: SearchPatternType) => void
+    patternType: SearchPatternType
 }
 
 interface State {
@@ -291,6 +295,7 @@ export class QueryInput extends React.Component<Props, State> {
                         })}
                     </ul>
                 )}
+                <RegexpToggle {...this.props} navbarSearchQuery={this.props.value} />
             </div>
         )
     }

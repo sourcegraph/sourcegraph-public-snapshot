@@ -16,6 +16,7 @@ import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 interface NodeProps extends RouteComponentProps {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
+    patternType: GQL.SearchPatternType
 }
 
 interface NodeState {
@@ -56,7 +57,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
             <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query)}>
+                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType)}>
                         <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
                     </Link>
                 </div>
@@ -95,7 +96,9 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps {
+    patternType: GQL.SearchPatternType
+}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()

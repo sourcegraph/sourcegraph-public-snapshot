@@ -34,6 +34,8 @@ const genericSearchResultInterfaceFields = gql`
 
 export function search(
     query: string,
+    version: string,
+    patternType: GQL.SearchPatternType,
     { extensionsController }: ExtensionsControllerProps<'services'>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
@@ -48,8 +50,8 @@ export function search(
                 : ''
             return queryGraphQL(
                 gql`
-                    query Search($query: String!) {
-                        search(query: $query) {
+                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
+                        search(query: $query, version: $version, patternType: $patternType) {
                             results {
                                 __typename
                                 limitHit
@@ -122,7 +124,7 @@ export function search(
                         }
                     }
                 `,
-                { query }
+                { query, version, patternType }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {

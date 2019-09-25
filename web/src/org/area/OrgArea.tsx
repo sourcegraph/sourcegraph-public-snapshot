@@ -78,6 +78,7 @@ interface Props
      * The currently authenticated user.
      */
     authenticatedUser: GQL.IUser | null
+    patternType: GQL.SearchPatternType
 }
 
 interface State {
@@ -104,6 +105,7 @@ export interface OrgAreaPageProps
 
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
+    patternType: GQL.SearchPatternType
 }
 
 /**
@@ -172,6 +174,7 @@ export class OrgArea extends React.Component<Props> {
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
+            patternType: this.props.patternType,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

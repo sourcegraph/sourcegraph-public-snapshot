@@ -29,6 +29,7 @@ interface QuerySpec {
 interface RepositoryContributorNodeProps extends QuerySpec {
     node: GQL.IRepositoryContributor
     repoName: string
+    patternType: GQL.SearchPatternType
 }
 
 const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
@@ -37,6 +38,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     revisionRange,
     after,
     path,
+    patternType,
 }) => {
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
 
@@ -73,7 +75,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className="repository-contributor-node__count">
                     <Link
-                        to={`/search?${buildSearchURLQuery(query)}`}
+                        to={`/search?${buildSearchURLQuery(query, patternType)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange &&
@@ -154,11 +156,13 @@ const queryRepositoryContributors = memoizeObservable(
     args => `${args.repo}:${args.first}:${args.revisionRange}:${args.after}:${args.path}`
 )
 
-interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
+    patternType: GQL.SearchPatternType
+}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType'>
 > {}
 
 interface State extends QuerySpec {}
@@ -348,6 +352,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         revisionRange,
                         after,
                         path,
+                        patternType: this.props.patternType,
                     }}
                     defaultFirst={20}
                     hideSearch={true}

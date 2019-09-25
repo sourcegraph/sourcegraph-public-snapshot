@@ -27,8 +27,12 @@ import (
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	getResults := func(t *testing.T, query string) []string {
-		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
+	getResults := func(t *testing.T, query, version string) []string {
+		r, err := (&schemaResolver{}).Search(&struct {
+			Version     string
+			PatternType *string
+			Query       string
+		}{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -51,8 +55,8 @@ func TestSearchResults(t *testing.T) {
 		}
 		return resultDescriptions
 	}
-	testCallResults := func(t *testing.T, query string, want []string) {
-		results := getResults(t, query)
+	testCallResults := func(t *testing.T, query, version string, want []string) {
+		results := getResults(t, query, version)
 		if !reflect.DeepEqual(results, want) {
 			t.Errorf("got %v, want %v", results, want)
 		}
@@ -83,7 +87,7 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
-		testCallResults(t, `repo:r repo:p`, []string{"repo:repo"})
+		testCallResults(t, `repo:r repo:p`, "V1", []string{"repo:repo"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}
@@ -145,7 +149,7 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
-		testCallResults(t, `foo\d "bar*"`, []string{"dir/file:123"})
+		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}

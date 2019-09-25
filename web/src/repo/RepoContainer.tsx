@@ -47,6 +47,8 @@ export interface RepoContainerContext
 
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -68,6 +70,8 @@ interface RepoContainerProps
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     authenticatedUser: GQL.IUser | null
+    patternType: GQL.SearchPatternType
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {
@@ -237,6 +241,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             ...this.state.repoHeaderContributionsLifecycleProps,
             onDidUpdateExternalLinks: this.onDidUpdateExternalLinks,
             onDidUpdateRepository: this.onDidUpdateRepository,
+            patternType: this.props.patternType,
+            togglePatternType: this.props.togglePatternType,
         }
 
         return (
