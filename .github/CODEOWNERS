@@ -259,6 +259,11 @@ README.md @sqs
 # These can also be configured by package through Renovate config (see renovate.json)
 **/package.json @sourcegraph/web
 **/yarn.lock @sourcegraph/web
+
+# Code intel team owns LSIF server
+/lsif/package.json @sourcegraph/code-intel
+/lsif/yarn.lock @sourcegraph/code-intel
+
 /go.sum @sourcegraph/core-services
 /go.mod @sourcegraph/core-services
 /CHANGELOG.md
