@@ -311,7 +311,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 			name VARCHAR(256) NOT NULL,
 			namelowercase VARCHAR(256) NOT NULL,
 			path VARCHAR(4096) NOT NULL,
-			pathlowercase VARCHAR(256) NOT NULL,
+			pathlowercase VARCHAR(4096) NOT NULL,
 			line INT NOT NULL,
 			kind VARCHAR(255) NOT NULL,
 			language VARCHAR(255) NOT NULL,
