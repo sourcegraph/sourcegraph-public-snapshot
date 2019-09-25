@@ -52,7 +52,6 @@ if [ $? -ne 0 ]; then
     echo "^^^ +++"
     echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
     docker inspect "$CONTAINER"
-    docker logs --timestamps "$CONTAINER"
     exit 1
 fi
 set -e
