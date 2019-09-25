@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -76,4 +77,72 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	}
 	hostsMatch := parsedBaseURL != nil && hostname(parsedBaseURL) == hostname(parsedCloneURL)
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
+}
+
+type NameTransformationKind string
+
+const (
+	NameTransformationRegex NameTransformationKind = "regex"
+)
+
+// NameTransformation describes the rule to transform a repository name.
+type NameTransformation struct {
+	kind NameTransformationKind
+
+	// Fields for regex replacement transformation.
+	regexp      *regexp.Regexp
+	replacement string
+
+	// Note: Please add a blank line between each set of fields for a transformation rule
+	// to help better organize the structure and more clear to the future contributors.
+}
+
+type NameTransformationOptions struct {
+	// Options for regex replacement transformation.
+	Regex       string
+	Replacement string
+}
+
+func NewNameTransformation(opts NameTransformationOptions) (NameTransformation, error) {
+	switch {
+	case opts.Regex != "":
+		r, err := regexp.Compile(opts.Regex)
+		if err != nil {
+			return NameTransformation{}, errors.Errorf("regexp.Compile %q: %v", opts.Regex, err)
+		}
+		return NameTransformation{
+			kind:        NameTransformationRegex,
+			regexp:      r,
+			replacement: opts.Replacement,
+		}, nil
+
+	default:
+		return NameTransformation{}, errors.Errorf("unrecognized transformation: %v", opts)
+	}
+}
+
+func (nt NameTransformation) Kind() NameTransformationKind {
+	return nt.kind
+}
+
+// Transform performs the transformation to given string.
+func (nt NameTransformation) Transform(s string) string {
+	switch nt.kind {
+	case NameTransformationRegex:
+		if nt.regexp != nil {
+			s = nt.regexp.ReplaceAllString(s, nt.replacement)
+		}
+	}
+	return s
+}
+
+// NameTransformations is a list of transformation rules.
+type NameTransformations []NameTransformation
+
+// Transform iterates and performs the list of transformations.
+func (nts NameTransformations) Transform(s string) string {
+	for _, nt := range nts {
+		s = nt.Transform(s)
+	}
+	return s
 }
