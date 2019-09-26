@@ -41,28 +41,22 @@ const parseBool = (s: string): boolean => {
     throw new Error(`could not parse string ${JSON.stringify(s)} to boolean`)
 }
 
-const parseString = (s: string): string => s
-
 const configFields: ConfigFields = {
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
-        parser: parseString,
         description:
             'An access token with "site-admin:sudo" permissions. This will be used to impersonate users in requests.',
     },
     sudoUsername: {
         envVar: 'SOURCEGRAPH_SUDO_USER',
-        parser: parseString,
         description: 'The site-admin-level username that will be impersonated with the sudo access token.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
-        parser: parseString,
         description: 'A GitHub token that will be used to authenticate a GitHub external service.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
-        parser: parseString,
         defaultValue: 'http://localhost:3080',
         description:
             'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
@@ -75,7 +69,6 @@ const configFields: ConfigFields = {
     },
     testUserPassword: {
         envVar: 'TEST_USER_PASSWORD',
-        parser: parseString,
         description:
             'The password to use for any test users that are created. This password should be secure and unguessable when running against production Sourcegraph instances.',
     },
