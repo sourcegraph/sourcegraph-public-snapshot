@@ -164,11 +164,7 @@ If the changes are intended, click **Approve** 👍
 
 Once you approve all of the changes, the Percy check will turn green ✅
 
-### Adding a new visual snapshot 
-
-
-
-
+### Adding a new visual snapshot test
 
 Open `web/src/e2e/index.e2e.test.tsx` and add a new e2e test:
 
