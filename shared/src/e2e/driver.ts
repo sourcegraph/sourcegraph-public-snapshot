@@ -431,7 +431,7 @@ export class Driver {
                 return handles
             }
         }
-        throw new Error(`cannot click on non-existent element with text ${JSON.stringify(text)} and tag ${tag}`)
+        throw new Error(`Could not find element with text ${JSON.stringify(text)}${tag ? ' and tag ' + tag : ''}`)
     }
 
     /**
