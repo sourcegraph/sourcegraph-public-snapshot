@@ -247,6 +247,8 @@
 // 1528395591_create_events_logging_table.up.sql (1.192kB)
 // 1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql (317B)
 // 1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql (1.543kB)
+// 1528395593_allows_trailing_hyphen_in_usernames.down.sql (387B)
+// 1528395593_allows_trailing_hyphen_in_usernames.up.sql (391B)
 
 package migrations
 
@@ -5255,6 +5257,46 @@ func _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql() (*asse
 	return a, nil
 }
 
+var __1528395593_allows_trailing_hyphen_in_usernamesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x4b\xc4\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x80\x95\x3a\xba\xb8\x10\x54\x09\x56\x08\x02\xce\x1e\xae\xce\xde\x0a\x1a\x20\x79\x85\x3a\x05\xf5\xb8\xe8\x44\xdd\x2a\x47\xdd\x28\x03\x5d\xcb\x58\x0d\x7b\x2b\x24\x5e\x4d\xb4\xae\x5e\xac\x86\xbd\x2d\x92\x90\xa6\xa6\x96\x8a\xba\x26\x9a\x8b\x4b\x8b\x53\x8b\xb0\x3b\x19\x2c\x13\x0f\x22\x89\x72\x37\x6e\xe5\xe8\x8e\x87\xa9\x21\xdf\x03\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x9a\xeb\x60\x34\x83\x01\x00\x00")
+
+func _1528395593_allows_trailing_hyphen_in_usernamesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395593_allows_trailing_hyphen_in_usernamesDownSql,
+		"1528395593_allows_trailing_hyphen_in_usernames.down.sql",
+	)
+}
+
+func _1528395593_allows_trailing_hyphen_in_usernamesDownSql() (*asset, error) {
+	bytes, err := _1528395593_allows_trailing_hyphen_in_usernamesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395593_allows_trailing_hyphen_in_usernames.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf5, 0xa5, 0x61, 0x68, 0xa9, 0xea, 0x3e, 0xbb, 0xfb, 0x73, 0xf5, 0x62, 0xa6, 0x7f, 0x18, 0x14, 0xd9, 0xb5, 0x2b, 0x1c, 0x44, 0x71, 0x60, 0x7b, 0x8, 0x28, 0x4e, 0x18, 0x57, 0x11, 0xd0, 0x95}}
+	return a, nil
+}
+
+var __1528395593_allows_trailing_hyphen_in_usernamesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x4b\xc4\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x80\x95\x3a\xba\xb8\x10\x54\x09\x56\x08\x02\xce\x1e\xae\xce\xde\x0a\x1a\x20\x79\x85\x3a\x05\xf5\xb8\xe8\x44\xdd\x2a\x47\xdd\x28\x03\x5d\xcb\x58\x0d\x7b\x2b\x24\x5e\x4d\xb4\xae\x5e\xac\x86\xbd\x2d\x92\x90\xa6\xa6\x96\xae\xbd\x8a\xba\x26\x9a\x9b\x4b\x8b\x53\x8b\xb0\x3b\x1a\x2c\x13\x0f\x22\x89\x72\x39\x6e\xe5\xe8\xce\x87\xa9\xa1\xc4\x0b\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\xda\x1f\x5e\x10\x87\x01\x00\x00")
+
+func _1528395593_allows_trailing_hyphen_in_usernamesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395593_allows_trailing_hyphen_in_usernamesUpSql,
+		"1528395593_allows_trailing_hyphen_in_usernames.up.sql",
+	)
+}
+
+func _1528395593_allows_trailing_hyphen_in_usernamesUpSql() (*asset, error) {
+	bytes, err := _1528395593_allows_trailing_hyphen_in_usernamesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395593_allows_trailing_hyphen_in_usernames.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3c, 0x75, 0xa7, 0x14, 0x38, 0x70, 0x58, 0x44, 0xed, 0xd1, 0x60, 0x9f, 0x62, 0x28, 0x3c, 0xa2, 0x7, 0x8c, 0xbd, 0x90, 0x6, 0xbe, 0xa, 0x9f, 0xc8, 0x88, 0xa4, 0xb0, 0x60, 0x70, 0x6b, 0x91}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5839,6 +5881,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql,
 
 	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql,
+
+	"1528395593_allows_trailing_hyphen_in_usernames.down.sql": _1528395593_allows_trailing_hyphen_in_usernamesDownSql,
+
+	"1528395593_allows_trailing_hyphen_in_usernames.up.sql": _1528395593_allows_trailing_hyphen_in_usernamesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -6129,6 +6175,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395591_create_events_logging_table.up.sql":                         {_1528395591_create_events_logging_tableUpSql, map[string]*bintree{}},
 	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql": {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql, map[string]*bintree{}},
 	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql":   {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql, map[string]*bintree{}},
+	"1528395593_allows_trailing_hyphen_in_usernames.down.sql":               {_1528395593_allows_trailing_hyphen_in_usernamesDownSql, map[string]*bintree{}},
+	"1528395593_allows_trailing_hyphen_in_usernames.up.sql":                 {_1528395593_allows_trailing_hyphen_in_usernamesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

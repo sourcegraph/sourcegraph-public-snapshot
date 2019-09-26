@@ -109,8 +109,8 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                             aria-describedby="new-org-page__form-name-help"
                         />
                         <small id="new-org-page__form-name-help" className="form-text text-muted">
-                            An organization name consists of letters, numbers, hyphens (-) and may not begin or end with
-                            a hyphen
+                            An organization name consists of letters, numbers, hyphens (-), dots (.) and may not begin
+                            or end with a dot, nor begin with a hyphen.
                         </small>
                     </div>
 
