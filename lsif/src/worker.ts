@@ -5,11 +5,13 @@ import express from 'express'
 import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { convertLsif } from './importer'
-import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
+import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { createLogger } from './logger'
 import { createPostgresConnection } from './connection'
-import { JobsHash, Worker } from 'node-resque'
-import { XrepoDatabase } from './xrepo'
 import { GITSERVER_URLS, updateCommits } from './commits'
+import { JobsHash, Worker } from 'node-resque'
+import { Logger } from 'winston'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -29,11 +31,6 @@ const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187)
 const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_ENDPOINT || 'redis-store:6379'
 
 /**
- * Whether or not to log a message when the HTTP server is ready and listening.
- */
-const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
-
-/**
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
@@ -44,43 +41,55 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
+ * @param logger The worker's logger instance.
  */
-const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
-    repository: string,
-    commit: string,
-    filename: string
-): Promise<void> => {
-    console.log(`Converting ${repository}@${commit}`)
+function createConvertJob(
+    xrepoDatabase: XrepoDatabase,
+    logger: Logger
+): (repository: string, commit: string, filename: string) => Promise<void> {
+    return async (repository, commit, filename) => {
+        const jobLogger = logger.child({ jobId: uuid.v4(), repository, commit })
+        const jobTimer = jobLogger.startTimer()
+        jobLogger.info('converting LSIF data')
 
-    const input = fs.createReadStream(filename)
-    const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
+        const input = fs.createReadStream(filename)
+        const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
 
-    try {
-        // Create database in a temp path
-        const { packages, references } = await convertLsif(input, tempFile)
+        try {
+            // Create database in a temp path
+            const { packages, references } = await convertLsif(input, tempFile, jobLogger)
 
-        // Move the temp file where it can be found by the server
-        await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
+            // Move the temp file where it can be found by the server
+            await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
 
-        // Add the new database to the xrepo db
-        await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
-    } catch (e) {
-        // Don't leave busted artifacts
-        await fs.unlink(tempFile)
-        throw e
+            // Add the new database to the xrepo db
+            const xrepoTimer = jobLogger.startTimer()
+            jobLogger.debug('populating cross-repo database')
+            await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+            xrepoTimer.done({ message: 'populated cross-repo database', level: 'debug' })
+        } catch (e) {
+            jobLogger.error('failed to convert LSIF data', { error: e })
+            // Don't leave busted artifacts
+            await fs.unlink(tempFile)
+            throw e
+        }
+
+        // Update commit parentage information for this commit
+        await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, jobLogger)
+
+        jobTimer.done({ message: 'converted LSIF data', level: 'info' })
+
+        // Remove input
+        await fs.unlink(filename)
     }
-
-    // Update commit parentage information for this commit
-    await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit)
-
-    // Remove input
-    await fs.unlink(filename)
 }
 
 /**
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
+ *
+ * @param logger The application logger instance.
  */
-async function main(): Promise<void> {
+async function main(logger: Logger): Promise<void> {
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
@@ -90,27 +99,25 @@ async function main(): Promise<void> {
     const connection = await createPostgresConnection()
     const xrepoDatabase = new XrepoDatabase(connection)
 
-    const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
-    }
-
     // Start metrics server
-    startMetricsServer()
+    startMetricsServer(logger)
 
     // Create worker and start processing jobs
-    await startWorker(jobFunctions)
-
-    if (LOG_READY) {
-        console.log('Listening for uploads')
-    }
+    await startWorker(logger, {
+        convert: createConvertJob(xrepoDatabase, logger),
+    })
 }
 
 /**
  * Connect to redis and begin processing work with the given hash of job functions.
  *
+ * @param logger The worker's logger instance.
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
-async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }): Promise<void> {
+async function startWorker(
+    logger: Logger,
+    jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }
+): Promise<void> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
     const connectionOptions = {
@@ -124,8 +131,20 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
         jobs[key] = { perform: jobFunctions[key] }
     }
 
+    // Create worker and log the interesting events
     const worker = new Worker({ connection: connectionOptions, queues: ['lsif'] }, jobs)
-    worker.on('error', logErrorAndExit)
+    worker.on('start', () => logger.debug('worker started'))
+    worker.on('end', () => logger.debug('worker ended'))
+    worker.on('poll', () => logger.debug('worker polling queue'))
+    worker.on('ping', () => logger.debug('worker pinging queue'))
+    worker.on('job', (_, job) => logger.debug('worker accepted job', { job }))
+    worker.on('success', (_, job, result) => logger.debug('worker completed job', { job, result }))
+    worker.on('failure', (_, job, failure) => logger.debug('worker failed job', { job, failure }))
+    worker.on('cleaning_worker', (worker, pid) =>
+        logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
+    )
+    worker.on('error', error => logger.error('worker error', { error }))
+
     await worker.connect()
     exitHook(() => worker.end())
     await worker.start()
@@ -133,17 +152,23 @@ async function startWorker(jobFunctions: { [name: string]: (...args: any[]) => P
 
 /**
  * Create an express server that only has /healthz and /metric endpoints.
+ *
+ * @param logger The worker's logger instance.
  */
-function startMetricsServer(): void {
+function startMetricsServer(logger: Logger): void {
     const app = express()
     app.get('/healthz', (_, res) => res.send('ok'))
     app.use(promBundle({}))
 
-    app.listen(WORKER_METRICS_PORT, () => {
-        if (LOG_READY) {
-            console.log(`Listening for HTTP requests on port ${WORKER_METRICS_PORT}`)
-        }
-    })
+    app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
 }
 
-main().catch(logErrorAndExit)
+// Initialize logger
+const appLogger = createLogger('lsif-worker')
+
+// Launch!
+main(appLogger).catch(error => {
+    appLogger.error('failed to start process', { error })
+    appLogger.on('finish', () => process.exit(1))
+    appLogger.end()
+})

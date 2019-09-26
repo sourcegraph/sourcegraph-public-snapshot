@@ -7,19 +7,22 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
-import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
-import { createGzip } from 'mz/zlib'
+import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
+import { createGzip } from 'zlib'
+import { createLogger } from './logger'
 import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
+import { GITSERVER_URLS, updateCommits } from './commits'
 import { identity } from 'lodash'
+import { logger as loggingMiddleware } from 'express-winston'
+import { Logger } from 'winston'
 import { pipeline as _pipeline, Readable } from 'stream'
 import { promisify } from 'util'
 import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
-import { updateCommits, GITSERVER_URLS } from './commits'
 
 const pipeline = promisify(_pipeline)
 
@@ -58,11 +61,6 @@ const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 102
 const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
- * Whether or not to log a message when the HTTP server is ready and listening.
- */
-const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
-
-/**
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
@@ -72,14 +70,43 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  */
 const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
 
+/**
+ * The JSON schema validation function to use. If validation is disabled, then
+ * this method has no observable behavior.
+ */
 const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex | Edge> = DISABLE_VALIDATION
     ? identity
     : validateLsifElements
 
 /**
- * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
+ * Middleware function used to convert uncaught exceptions into 500 responses.
+ *
+ * @param logger The server's logger instance.
  */
-async function main(): Promise<void> {
+const errorHandler = (
+    logger: Logger
+): ((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => void) => (
+    error: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+): void => {
+    if (!error || !error.status) {
+        // Only log errors that don't have a status attached
+        logger.error('uncaught exception', { error })
+    }
+
+    if (!res.headersSent) {
+        res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+    }
+}
+
+/**
+ * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
+ *
+ * @param logger The application logger instance.
+ */
+async function main(logger: Logger): Promise<void> {
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
     documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
@@ -91,9 +118,91 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create queue to publish jobs for worker
-    const queue = await setupQueue()
+    const queue = await setupQueue(logger)
 
-    // Prepare caches
+    const app = express()
+    app.use(
+        loggingMiddleware({
+            winstonInstance: logger,
+            level: 'debug',
+            ignoredRoutes: ['/ping', '/healthz', '/metrics'],
+            requestWhitelist: ['method', 'url', 'query'],
+            msg: 'request',
+        })
+    )
+    app.use(promBundle({}))
+
+    // Register endpoints
+    app.use(metaEndpoints())
+    app.use(await lsifEndpoints(queue, logger))
+
+    // Error handler must be registered last
+    app.use(errorHandler(logger))
+
+    app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
+}
+
+/**
+ * Connect and start an active connection to the worker queue. We also run a
+ * node-resque scheduler on each server instance, as these are guaranteed to
+ * always be up with a responsive system. The schedulers will do their own
+ * master election via a redis key and will check for dead workers attached
+ * to the queue.
+ *
+ * @param logger The server's logger instance.
+ */
+async function setupQueue(logger: Logger): Promise<Queue> {
+    const [host, port] = REDIS_ENDPOINT.split(':', 2)
+
+    const connectionOptions = {
+        host,
+        port: parseInt(port, 10),
+        namespace: 'lsif',
+    }
+
+    // Create queue and log the interesting events
+    const queue = new Queue({ connection: connectionOptions })
+    queue.on('error', error => logger.error('queue error', { error }))
+    await queue.connect()
+    exitHook(() => queue.end())
+
+    // Create scheduler log the interesting events
+    const scheduler = new Scheduler({ connection: connectionOptions })
+    scheduler.on('start', () => logger.debug('scheduler started'))
+    scheduler.on('end', () => logger.debug('scheduler ended'))
+    scheduler.on('poll', () => logger.debug('scheduler checking for stuck workers'))
+    scheduler.on('master', () => logger.debug('scheduler became master'))
+    scheduler.on('cleanStuckWorker', worker => logger.debug('scheduler cleaning stuck worker', { worker }))
+    scheduler.on('transferredJob', (_, job) => logger.debug('scheduler transferring job', { job }))
+    scheduler.on('error', error => logger.error('scheduler error', { error }))
+
+    await scheduler.connect()
+    exitHook(() => scheduler.end())
+    await scheduler.start()
+
+    return queue
+}
+
+/**
+ * Create a router containing health endpoint.
+ */
+function metaEndpoints(): express.Router {
+    const router = express.Router()
+    router.get('/ping', (_, res) => res.send('ok'))
+    router.get('/healthz', (_, res) => res.send('ok'))
+    return router
+}
+
+/**
+ * Create a router containing the LSIF upload and query endpoints.
+ *
+ * @param queue The queue containing LSIF jobs.
+ * @param logger The server's logger instance.
+ */
+async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Router> {
+    const router = express.Router()
+
+    // Create cross-repo database
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
@@ -143,13 +252,15 @@ async function main(): Promise<void> {
             return database
         }
 
+        // TODO - log here as well
+
         // If we don't know about this commit, request updated commit data
         // from the gitserver. This will pull back ancestors for this commit
         // up to a certain (configurable) depth and insert them into the
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (!(await xrepoDatabase.isCommitTracked(repository, commit))) {
-            await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit)
+            await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, logger)
         }
 
         // Determine the closest commit that we actually have LSIF data for
@@ -162,13 +273,7 @@ async function main(): Promise<void> {
         return tryLoadDatabase(repository, commitWithData)
     }
 
-    const app = express()
-    app.use(errorHandler)
-    app.get('/ping', (_, res) => res.send('ok'))
-    app.get('/healthz', (_, res) => res.send('ok'))
-    app.use(promBundle({}))
-
-    app.post(
+    router.post(
         '/upload',
         wrap(
             async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
@@ -188,13 +293,15 @@ async function main(): Promise<void> {
                     throw Object.assign(e, { status: 422 })
                 }
 
+                // Enqueue convert job
+                logger.info('enqueueing convert job', { repository, commit })
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
             }
         )
     )
 
-    app.post(
+    router.post(
         '/exists',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
@@ -215,7 +322,7 @@ async function main(): Promise<void> {
         )
     )
 
-    app.post(
+    router.post(
         '/request',
         bodyParser.json({ limit: '1mb' }),
         wrap(
@@ -239,54 +346,7 @@ async function main(): Promise<void> {
         )
     )
 
-    app.listen(HTTP_PORT, () => {
-        if (LOG_READY) {
-            console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
-        }
-    })
-}
-
-/**
- * Connect and start an active connection to the worker queue. We also run a
- * node-resque scheduler on each server instance, as these are guaranteed to
- * always be up with a responsive system. The schedulers will do their own
- * master election via a redis key and will check for dead workers attached
- * to the queue.
- */
-async function setupQueue(): Promise<Queue> {
-    const [host, port] = REDIS_ENDPOINT.split(':', 2)
-
-    const connectionOptions = {
-        host,
-        port: parseInt(port, 10),
-        namespace: 'lsif',
-    }
-
-    const queue = new Queue({ connection: connectionOptions })
-    queue.on('error', logErrorAndExit)
-    await queue.connect()
-    exitHook(() => queue.end())
-
-    const scheduler = new Scheduler({ connection: connectionOptions })
-    scheduler.on('error', logErrorAndExit)
-    await scheduler.connect()
-    exitHook(() => scheduler.end())
-    await scheduler.start()
-
-    return queue
-}
-
-/**
- * Middleware function used to convert uncaught exceptions into 500 responses.
- */
-function errorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction): void {
-    if (err && err.status) {
-        res.status(err.status).send({ message: err.message })
-        return
-    }
-
-    console.error(err)
-    res.status(500).send({ message: 'Unknown error' })
+    return router
 }
 
 /**
@@ -320,4 +380,12 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
     }
 }
 
-main().catch(logErrorAndExit)
+// Initialize logger
+const appLogger = createLogger('lsif-server')
+
+// Run app!
+main(appLogger).catch(error => {
+    appLogger.error('failed to start process', { error })
+    appLogger.on('finish', () => process.exit(1))
+    appLogger.end()
+})

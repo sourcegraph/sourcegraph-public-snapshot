@@ -7,9 +7,10 @@ import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
+import { Logger } from 'winston'
 import { Package, SymbolReferences } from './xrepo'
-import { readGzippedJsonElements } from './input'
 import { Readable } from 'stream'
+import { readGzippedJsonElements } from './input'
 import { TableInserter } from './inserter'
 import {
     DefinitionModel,
@@ -66,10 +67,12 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  *
  * @param input The input stream containing JSON-encoded LSIF data.
  * @param database The filepath of the database to populate.
+ * @param logger The logger tagged with the request's repo and commit.
  */
 export async function convertLsif(
     input: Readable,
-    database: string
+    database: string,
+    logger: Logger
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, entities)
 
@@ -77,7 +80,7 @@ export async function convertLsif(
         await connection.query('PRAGMA synchronous = OFF')
         await connection.query('PRAGMA journal_mode = OFF')
 
-        return await connection.transaction(entityManager => importLsif(entityManager, input))
+        return await connection.transaction(entityManager => importLsif(entityManager, input, logger))
     } finally {
         await connection.close()
     }
@@ -90,15 +93,27 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
+ * @param logger The logger tagged with the request's repo and commit.
  */
 export async function importLsif(
     entityManager: EntityManager,
-    input: Readable
+    input: Readable,
+    logger: Logger
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    // Correlate input data into in-memory maps
+    const correlationTimer = logger.startTimer()
     const correlator = new Correlator()
+    logger.debug('correlating LSIF data')
     for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
         correlator.insert(element)
     }
+
+    correlationTimer.done({
+        message: 'correlated LSIF data',
+        level: 'debug',
+        vertices: correlator.numVertices,
+        edges: correlator.numEdges,
+    })
 
     if (correlator.lsifVersion === undefined) {
         throw new Error('No metadata defined.')
@@ -108,7 +123,10 @@ export async function importLsif(
     // reference result for each set so that we can remap all identifiers to the
     // chosen one.
 
+    const canonicalizeReferenceResultsTimer = logger.startTimer()
+    logger.debug('canonicalizing reference results')
     const canonicalReferenceResultIds = canonicalizeReferenceResults(correlator)
+    canonicalizeReferenceResultsTimer.done({ message: 'canonicalized reference results', level: 'debug' })
 
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
@@ -120,11 +138,16 @@ export async function importLsif(
     await metaInserter.flush()
 
     // Insert documents
+    const populateDocumentsTimer = logger.startTimer()
+    logger.debug('populating documents')
     const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize, inserterMetrics)
     await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
     await documentInserter.flush()
+    populateDocumentsTimer.done({ message: 'populated documents', level: 'debug' })
 
     // Insert result chunks
+    const populateResultChunkTimer = logger.startTimer()
+    logger.debug('populating result chunks')
     const resultChunkInserter = new TableInserter(
         entityManager,
         ResultChunkModel,
@@ -133,8 +156,11 @@ export async function importLsif(
     )
     await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
     await resultChunkInserter.flush()
+    populateResultChunkTimer.done({ message: 'populated result chunks', level: 'debug' })
 
     // Insert definitions and references
+    const populateDefinitionAndReferencesTimer = logger.startTimer()
+    logger.debug('populating definitions and references')
     const definitionInserter = new TableInserter(
         entityManager,
         DefinitionModel,
@@ -150,6 +176,7 @@ export async function importLsif(
     await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
     await definitionInserter.flush()
     await referenceInserter.flush()
+    populateDefinitionAndReferencesTimer.done({ message: 'populated definitions and references', level: 'debug' })
 
     // Return data to populate cross-repo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }

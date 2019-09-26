@@ -1,6 +1,7 @@
-import got from 'got'
-import { XrepoDatabase } from './xrepo'
 import * as crypto from 'crypto'
+import got from 'got'
+import { Logger } from 'winston'
+import { XrepoDatabase } from './xrepo'
 
 /**
  * The URLs of the gitservers to query for branch and commit data.
@@ -23,19 +24,30 @@ const MAX_COMMITS_PER_UPDATE = 5000
  * @param xrepoDatabase The cross-repo database.
  * @param repository The repository name.
  * @param commit The commit from which the gitserver queries should start.
+ * @param logger The logger instance.
  */
 export async function updateCommits(
     gitserverUrls: string[],
     xrepoDatabase: XrepoDatabase,
     repository: string,
-    commit: string
+    commit: string,
+    logger: Logger
 ): Promise<void> {
     if (await xrepoDatabase.isCommitTracked(repository, commit)) {
         return
     }
 
     const gitserverUrl = addrFor(gitserverUrls, repository)
-    await xrepoDatabase.updateCommits(repository, await getCommitsNear(gitserverUrl, repository, commit))
+
+    const queryCommitsTimer = logger.startTimer()
+    logger.debug('querying commits', { gitserverUrl })
+    const commits = await getCommitsNear(gitserverUrl, repository, commit)
+    queryCommitsTimer.done({ message: 'retrieved commits', level: 'debug' })
+
+    const updateCommitsTimer = logger.startTimer()
+    logger.debug('updating commits')
+    await xrepoDatabase.updateCommits(repository, commits)
+    updateCommitsTimer.done({ message: 'updated commits', level: 'debug' })
 }
 
 /**

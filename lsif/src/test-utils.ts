@@ -2,6 +2,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as uuid from 'uuid'
 import { Connection } from 'typeorm'
+import { createLogger, Logger, transports } from 'winston'
 import { createSqliteConnection } from './connection'
 import { lsp } from 'lsif-protocol'
 import { Readable } from 'stream'
@@ -14,6 +15,15 @@ import { Readable } from 'stream'
  */
 export async function getTestData(filename: string): Promise<Readable> {
     return fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
+}
+
+/**
+ * Create a logger that emits no data to stdout/stderr.
+ */
+export function createSilentLogger(): Logger {
+    const transport = new transports.Console({})
+    transport.silent = true
+    return createLogger({ level: 'debug', transports: [transport] })
 }
 
 /**

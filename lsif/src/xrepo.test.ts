@@ -1,8 +1,8 @@
 import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
-import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
-import { getCleanSqliteDatabase } from './test-utils'
 import { entities } from './models.xrepo'
+import { getCleanSqliteDatabase } from './test-utils'
+import { MAX_TRAVERSAL_LIMIT, XrepoDatabase } from './xrepo'
 
 describe('XrepopDatabase', () => {
     let storageRoot!: string
