@@ -6,142 +6,87 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient } from './util/GraphQLClient'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
-import { Config, getConfig } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/e2e/config'
 import { ensureLoggedInOrCreateUser } from './util/helpers'
-import { ensureExternalService, waitForRepos } from './util/api'
-import { BoundingBox } from 'puppeteer'
+import {
+    ensureExternalService,
+    waitForRepos,
+    setUserSiteAdmin,
+    getUser,
+    deleteUser,
+    ensureNoExternalServices,
+    getExternalServices,
+} from './util/api'
 import { Key } from 'ts-key-enum'
+import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 
-const testRepoSlugs = ['auth0/go-jwt-middleware', 'kyoshidajp/ghkw', 'PalmStoneGames/kube-cert-manager']
-
-interface ExpectedScreenshot {
-    screenshotFile: string
-    description: string
-}
+const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
 
 /**
- * Utility class to verify screenshots match a particular description
+ * Gets the activation status for the current user from the GUI. There's no easy way to fetch this
+ * from the API, so we use a coarse method for extracting it from the GUI.
  */
-class ScreenshotVerifier {
-    public screenshots: ExpectedScreenshot[]
-    constructor(public driver: Driver) {
-        this.screenshots = []
-    }
-
-    public async verifyScreenshot({
-        filename,
-        description,
-        clip,
-    }: {
-        /**
-         * The filename to which to save the screenshot. It should be a decsriptive name that captures both
-         * what should be happening in the screenshot and the context around what's happening. E.g.,
-         * "progress-bar-after-initial-search-is-half-green.png"
-         */
-        filename: string
-
-        /**
-         * A short description of what should happen in the screenshot.
-         */
-        description: string
-        clip?: BoundingBox
-    }) {
-        await this.driver.page.screenshot({
-            path: filename,
-            clip,
-        })
-        this.screenshots.push({ screenshotFile: filename, description })
-    }
-
-    public async verifySelector(
-        filename: string,
-        description: string,
-        selector: string,
-        waitForSelectorToBeVisibleTimeout: number = 0
-    ) {
-        if (waitForSelectorToBeVisibleTimeout > 0) {
-            await this.driver.page.waitForFunction(
-                selector => {
-                    const element = document.querySelector(selector)
-                    if (!element) {
-                        return false
-                    }
-                    const { width, height } = element.getBoundingClientRect()
-                    return width > 0 && height > 0
-                },
-                { timeout: waitForSelectorToBeVisibleTimeout },
-                selector
-            )
+async function getActivationStatus(driver: Driver): Promise<{ complete: number; total: number }> {
+    await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+    await driver.page.waitForSelector(activationNavBarSelector)
+    await driver.page.click(activationNavBarSelector)
+    await new Promise(resolve => setTimeout(resolve, 2000)) // TODO: replace/delete
+    return driver.page.evaluate(() => {
+        const dropdownMenu = document.querySelector('.activation-dropdown')
+        if (!dropdownMenu) {
+            throw new Error('No activation status dropdown menu')
         }
-
-        const clip: BoundingBox | undefined = await this.driver.page.evaluate(selector => {
-            const element = document.querySelector(selector)
-            if (!element) {
-                throw new Error(`element with selector ${JSON.stringify(selector)} not found`)
-            }
-            const { left, top, width, height } = element.getBoundingClientRect()
-            return { x: left, y: top, width, height }
-        }, selector)
-        await this.verifyScreenshot({
-            filename,
-            description,
-            clip,
-        })
-    }
-
-    /**
-     * Returns instructions to manually verify each screenshot stored in the to-verify list.
-     */
-    public verificationInstructions(): string {
-        return `
-        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        @@@@ Manual verification steps required!!! @@@@
-        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-        Please verify the following screenshots match the corresponding descriptions:
-
-        ${this.screenshots.map(s => `${s.screenshotFile}:\t${JSON.stringify(s.description)}`).join('\n        ')}
-
-        `
-        // TODO
-    }
+        const lineItems = Array.from(dropdownMenu.querySelectorAll('.activation-dropdown-item'))
+        const complete = lineItems.flatMap(el => Array.from(el.querySelectorAll('.mdi-icon.text-success'))).length
+        const incomplete = lineItems.flatMap(el => Array.from(el.querySelectorAll('.mdi-icon.text-muted'))).length
+        return {
+            complete,
+            total: complete + incomplete,
+        }
+    })
 }
 
 describe('Onboarding', () => {
-    let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl'>
+    const config = getConfig([
+        'sudoToken',
+        'sudoUsername',
+        'gitHubToken',
+        'sourcegraphBaseUrl',
+        'includeAdminOnboarding',
+    ])
+    const testExternalServiceConfig = {
+        kind: GQL.ExternalServiceKind.GITHUB,
+        uniqueDisplayName: 'GitHub (search-regression-test)',
+        config: {
+            url: 'https://github.com',
+            token: config.gitHubToken,
+            repos: ['auth0/go-jwt-middleware', 'kyoshidajp/ghkw', 'PalmStoneGames/kube-cert-manager'],
+            repositoryQuery: ['none'],
+        },
+    }
     let driver: Driver
     let gqlClient: GraphQLClient
     let screenshots: ScreenshotVerifier
+    const testUsername = 'test-onboarding-regression-test-user'
 
     beforeAll(
         async () => {
-            config = getConfig(['sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl'])
             driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
+            setTestDefaults(driver)
             gqlClient = GraphQLClient.newForPuppeteerTest({
                 baseURL: config.sourcegraphBaseUrl,
                 sudoToken: config.sudoToken,
                 username: config.sudoUsername,
             })
             screenshots = new ScreenshotVerifier(driver)
-            setTestDefaults(driver)
             await ensureLoggedInOrCreateUser({
                 driver,
                 gqlClient,
-                username: 'test-onboarding-regression-test-user',
+                username: testUsername,
                 password: 'test',
                 deleteIfExists: true,
             })
-            await ensureExternalService(gqlClient, {
-                kind: GQL.ExternalServiceKind.GITHUB,
-                uniqueDisplayName: 'GitHub (search-regression-test)',
-                config: {
-                    url: 'https://github.com',
-                    token: config.gitHubToken,
-                    repos: testRepoSlugs,
-                    repositoryQuery: ['none'],
-                },
-            })
-            await waitForRepos(gqlClient, ['github.com/' + testRepoSlugs[testRepoSlugs.length - 1]])
         },
         20 * 1000 // wait 20s for cloning
     )
@@ -150,12 +95,79 @@ describe('Onboarding', () => {
         if (driver) {
             await driver.close()
         }
-        console.log(screenshots.verificationInstructions())
+        await deleteUser(gqlClient, testUsername, false)
+        if (screenshots.screenshots.length > 0) {
+            console.log(screenshots.verificationInstructions())
+        }
     })
+
+    /**
+     * Only run site-admin onboarding test if the appropriate environment variable is set.
+     * This test assumes an instance of Sourcegraph that does not yet have external services.
+     */
+    const testAdminOnboarding = config.includeAdminOnboarding ? test : test.skip
+    testAdminOnboarding(
+        'Site-admin onboarding',
+        async () => {
+            await ensureNoExternalServices(gqlClient, {
+                ...testExternalServiceConfig,
+                deleteIfExist: true,
+            })
+            if ((await getExternalServices(gqlClient)).length > 0) {
+                throw new Error(
+                    'other external services exist and this test should be run on an instance with no user-created external services'
+                )
+            }
+
+            const testUser = await getUser(gqlClient, 'test-onboarding-regression-test-user')
+            if (!testUser) {
+                throw new Error(`Could not obtain userID of user ${testUsername}`)
+            }
+            await setUserSiteAdmin(gqlClient, testUser.id, true)
+
+            const activationStatus = await getActivationStatus(driver)
+            if (activationStatus.total !== 4) {
+                throw new Error(`Expected 4 onboarding steps for site admins, but only found ${activationStatus.total}`)
+            }
+
+            // Verify add-external-service onboarding step
+            await driver.page.waitForSelector(activationNavBarSelector)
+            // Check that onboarding status menu contains menu item and it goes where it should
+            await retry(async () => {
+                // for some reason, first click doesn't work here
+                await driver.page.click(activationNavBarSelector)
+                await driver.page.click(activationNavBarSelector)
+                await driver.clickElementWithText('Connect your code host')
+            })
+            await driver.waitUntilURL(driver.sourcegraphBaseUrl + '/site-admin/external-services')
+            // Verify confetti plays
+            await driver.ensureHasExternalService({
+                kind: testExternalServiceConfig.kind,
+                displayName: testExternalServiceConfig.uniqueDisplayName,
+                config: JSON.stringify(testExternalServiceConfig.config),
+            })
+            await new Promise(resolve => setTimeout(resolve, 500)) // wait for confetti to play a bit
+            await screenshots.verifyScreenshot({
+                filename: 'confetti-appears-after-adding-first-external-service.png',
+                description: 'confetti coming out of "Setup" navbar item',
+            })
+        },
+        30 * 1000
+    )
 
     test(
         'Non-admin user onboarding',
         async () => {
+            await ensureExternalService(gqlClient, testExternalServiceConfig)
+            const repoSlugs = testExternalServiceConfig.config.repos
+            await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]])
+
+            const testUser = await getUser(gqlClient, testUsername)
+            if (!testUser) {
+                throw new Error(`Could not obtain userID of user ${testUsername}`)
+            }
+            await setUserSiteAdmin(gqlClient, testUser.id, false)
+
             const statusBarSelector = '.activation-dropdown-button__progress-bar-container'
 
             // Initial status indicator
@@ -173,7 +185,7 @@ describe('Onboarding', () => {
             await new Promise(resolve => setTimeout(resolve, 500)) // allow some time for confetti to play
             await screenshots.verifyScreenshot({
                 filename: 'confetti-appears-after-first-search.png',
-                description: 'confetti',
+                description: 'confetti coming out of "Setup" navbar item',
             })
             await screenshots.verifySelector(
                 'progress-bar-after-initial-search-is-half-green.png',
@@ -183,23 +195,24 @@ describe('Onboarding', () => {
 
             // Do a find references
             await driver.page.goto(
-                config.sourcegraphBaseUrl +
-                    '/ghe.sgdev.org/sourcegraph/gorillalabs-sparkling/-/blob/src/java/sparkling/function/FlatMapFunction.java#L10:12&tab=references'
+                config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go'
             )
-            const defTokenXPath = '//*[contains(@class, "blob-page__blob")]//span[./text()="FlatMapFunction"]'
+            // await driver.page.mouse.move(100, 100)
+            const defTokenXPath =
+                '//*[contains(@class, "blob-page__blob")]//span[starts-with(text(), "TokenExtractor")]'
             await driver.page.waitForXPath(defTokenXPath)
             const elems = await driver.page.$x(defTokenXPath)
-            await elems[0].click()
+            await Promise.all(elems.map(e => e.click()))
             await Promise.all(elems.map(elem => elem.dispose()))
             const findRefsSelector = '.e2e-tooltip-find-references'
             await driver.page.waitForSelector(findRefsSelector)
             await driver.page.click(findRefsSelector)
             await driver.page.waitForSelector('.e2e-search-result')
-            await new Promise(resolve => setTimeout(resolve, 500)) // allow some time for confetti to play
 
+            await new Promise(resolve => setTimeout(resolve, 500)) // allow some time for confetti to play
             await screenshots.verifyScreenshot({
                 filename: 'confetti-appears-after-find-refs.png',
-                description: 'confetti',
+                description: 'confetti coming out of "Setup" navbar item',
             })
             await screenshots.verifySelector(
                 'progress-bar-after-search-and-fnd-refs-is-full-green.png',
