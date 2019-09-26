@@ -34,7 +34,7 @@ export function createSqliteConnection(
 /**
  * Create a Postgres connection. This creates a typorm connection
  * pool with the name `xrepo`. The connection configuration is
- * constructed by `createPostgresConnectionOptions.
+ * constructed by `createPostgresConnectionOptions`.
  */
 export function createPostgresConnection(): Promise<Connection> {
     return _createConnection({
