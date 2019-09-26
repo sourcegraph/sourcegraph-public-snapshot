@@ -407,7 +407,7 @@ export class Driver {
             /**
              * Filter candidate elements to those with the specified tag name
              */
-            tagName?: string
+            tagName?: keyof HTMLElementTagNameMap
 
             /**
              * Log the XPath quer(y|ies) used to find the element.
