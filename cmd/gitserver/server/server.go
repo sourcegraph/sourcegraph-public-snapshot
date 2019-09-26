@@ -403,7 +403,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
-		_, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
+		_, err := s.cloneRepo(ctx, req.Repo, req.URL, &cloneOptions{Block: true})
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
