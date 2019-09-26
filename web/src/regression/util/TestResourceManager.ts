@@ -15,12 +15,13 @@ export class TestResourceManager {
     public async create(resource: Resource): Promise<void> {
         await resource.create()
         this.resources.push(resource)
-        console.log(`TEST RESOURCE CREATED: ${resource.type} ${JSON.stringify(resource.name)}`)
+        console.log(`Test resource created: ${resource.type} ${JSON.stringify(resource.name)}`)
     }
 
     public async destroyAll(): Promise<void> {
         for (const resource of this.resources) {
             await resource.destroy()
+            console.log(`Test resource destroyed: ${resource.type} ${JSON.stringify(resource.name)}`)
         }
     }
 }

@@ -1,6 +1,7 @@
 import { createDriverForTest, Driver } from '../../../../shared/src/e2e/driver'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../../shared/src/e2e/screenshotReporter'
 import * as path from 'path'
+import { getConfig } from '../../../../shared/src/e2e/config'
 
 /**
  * Sets default timeout and error handlers for regression tests. Includes:
@@ -39,7 +40,8 @@ export function setTestDefaults(driver: Driver): void {
  * of an error pointing to the timed-out Puppeteer command.
  */
 export async function createAndInitializeDriver(sourcegraphBaseUrl: string): Promise<Driver> {
-    const driver = await createDriverForTest({ sourcegraphBaseUrl })
+    const { logBrowserConsole, slowMo, headless } = getConfig('logBrowserConsole', 'slowMo', 'headless')
+    const driver = await createDriverForTest({ sourcegraphBaseUrl, logBrowserConsole, slowMo, headless })
     driver.page.setDefaultNavigationTimeout(5 * 1000) // 5s navigation timeout
     return driver
 }

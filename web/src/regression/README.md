@@ -47,6 +47,9 @@ Tips:
 - The regression tests are run using [Jest](https://jestjs.io). Jest runs all tests even if an error
   occurs in initialization, so when an error occurs, you often have to scroll up--the first error is
   often the real one.
+- When debugging test failures, you can insert the line `await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000))` to pause execution. You can also refer to the [Puppeteer
+  debugging docs](https://github.com/GoogleChrome/puppeteer#debugging-tips)
+- The `SLOWMO` and `HEADLESS` environment variables will slow down Puppeteer execution and run in headless mode, respectively.
 
 ## Adding a test
 

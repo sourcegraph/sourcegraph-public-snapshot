@@ -2,7 +2,7 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { PageEventObj, Page, Serializable } from 'puppeteer'
+import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
@@ -464,14 +464,18 @@ function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Nod
     )
 }
 
-interface DriverOptions {
+interface DriverOptions extends LaunchOptions {
     /** If true, load the Sourcegraph browser extension. */
     loadExtension?: boolean
 
     sourcegraphBaseUrl: string
+
+    /** If true, print browser console messages to stdout. */
+    logBrowserConsole?: boolean
 }
 
-export async function createDriverForTest({ loadExtension, sourcegraphBaseUrl }: DriverOptions): Promise<Driver> {
+export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole } = options
     const args = ['--window-size=1280,1024']
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
@@ -484,24 +488,22 @@ export async function createDriverForTest({ loadExtension, sourcegraphBaseUrl }:
     }
 
     const browser = await puppeteer.launch({
+        ...options,
         args,
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
-        // Uncomment for debugging
-        // slowMo: 10,
     })
     const page = await browser.newPage()
-    page.on('console', message => {
-        if (message.text().includes('Download the React DevTools')) {
-            return
-        }
-        if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
-            return
-        }
-        console.log(
-            'Browser console message:',
-            util.inspect(message, { colors: true, depth: 2, breakLength: Infinity })
-        )
-    })
+    if (logBrowserConsole) {
+        page.on('console', message => {
+            if (message.text().includes('Download the React DevTools')) {
+                return
+            }
+            if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
+                return
+            }
+            console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
+        })
+    }
     return new Driver(browser, page, sourcegraphBaseUrl)
 }

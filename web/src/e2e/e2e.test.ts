@@ -67,7 +67,7 @@ describe('e2e test suite', () => {
             MockDate.reset()
 
             // Start browser.
-            driver = await createDriverForTest({ sourcegraphBaseUrl })
+            driver = await createDriverForTest({ sourcegraphBaseUrl, logBrowserConsole: true })
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2

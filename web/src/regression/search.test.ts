@@ -183,7 +183,6 @@ describe('Search regression test suite', () => {
             if (driver) {
                 await driver.close()
             }
-            console.log('You can limit the test run to specific tests by running `yarn run test-regression -t $QUERY`.')
         })
 
         test('Global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {

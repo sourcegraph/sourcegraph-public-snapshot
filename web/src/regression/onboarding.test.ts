@@ -20,6 +20,7 @@ import {
 import { Key } from 'ts-key-enum'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
+import { TestResourceManager } from './util/TestResourceManager'
 
 const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
 
@@ -70,6 +71,7 @@ describe('Onboarding', () => {
     let gqlClient: GraphQLClient
     let screenshots: ScreenshotVerifier
     const testUsername = 'test-onboarding-regression-test-user'
+    const resourceManager = new TestResourceManager()
 
     beforeAll(
         async () => {
@@ -81,11 +83,18 @@ describe('Onboarding', () => {
                 username: config.sudoUsername,
             })
             screenshots = new ScreenshotVerifier(driver)
-            await ensureLoggedInOrCreateTestUser({
-                driver,
-                gqlClient,
-                username: testUsername,
-                deleteIfExists: true,
+
+            await resourceManager.create({
+                type: 'User',
+                name: testUsername,
+                create: () =>
+                    ensureLoggedInOrCreateTestUser({
+                        driver,
+                        gqlClient,
+                        username: testUsername,
+                        deleteIfExists: true,
+                    }),
+                destroy: () => deleteUser(gqlClient, testUsername, false),
             })
         },
         20 * 1000 // wait 20s for cloning
@@ -93,7 +102,7 @@ describe('Onboarding', () => {
 
     afterAll(async () => {
         if (!config.noCleanup) {
-            await deleteUser(gqlClient, testUsername, false)
+            await resourceManager.destroyAll()
         }
         if (driver) {
             await driver.close()

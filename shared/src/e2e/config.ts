@@ -12,6 +12,9 @@ export interface Config {
     includeAdminOnboarding: boolean
     testUserPassword: string
     noCleanup: boolean
+    logBrowserConsole: boolean
+    slowMo: number
+    headless: boolean
 }
 
 interface Field<T = string> {
@@ -81,6 +84,24 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description:
             'If true, regression tests will not clean up users, external services, or other resources they create. This can reduce the running time of tests (especially on subsequent runs), but should not be used when running against production instances.',
+    },
+    logBrowserConsole: {
+        envVar: 'LOG_BROWSER_CONSOLE',
+        parser: parseBool,
+        description: 'If true, log browser console to stdout',
+        defaultValue: false,
+    },
+    slowMo: {
+        envVar: 'SLOWMO',
+        parser: parseInt,
+        description: 'Slow down puppeteer by the specified number of milliseconds',
+        defaultValue: 0,
+    },
+    headless: {
+        envVar: 'HEADLESS',
+        parser: parseBool,
+        description: 'Run Puppeteer in headless mode',
+        defaultValue: false,
     },
 }
 
