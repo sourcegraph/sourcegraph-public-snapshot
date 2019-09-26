@@ -7,7 +7,6 @@ import uuid from 'uuid'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
 import { createPostgresConnection } from './connection'
-import { entities } from './models.xrepo'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
 
@@ -15,11 +14,6 @@ import { XrepoDatabase } from './xrepo'
  * Which port to run the worker metrics server on. Defaults to 3187.
  */
 const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187)
-
-/**
- * The database uri for the cross-repository database in postgres.
- */
-const POSTGRES_URI = process.env.POSTGRES_URI || 'postgres:5432'
 
 /**
  * The host and port running the redis instance containing work queues.
@@ -89,7 +83,7 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection('xrepo', POSTGRES_URI, entities)
+    const connection = await createPostgresConnection()
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {

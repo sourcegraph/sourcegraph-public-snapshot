@@ -12,7 +12,6 @@ import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
-import { entities } from './models.xrepo'
 import { identity } from 'lodash'
 import { pipeline as _pipeline, Readable } from 'stream'
 import { promisify } from 'util'
@@ -27,11 +26,6 @@ const pipeline = promisify(_pipeline)
  * Which port to run the LSIF server on. Defaults to 3186.
  */
 const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
-
-/**
- * The database uri for the cross-repository database in postgres.
- */
-const POSTGRES_URI = process.env.POSTGRES_URI || 'postgres:5432'
 
 /**
  * The host and port running the redis instance containing work queues.
@@ -101,7 +95,7 @@ async function main(): Promise<void> {
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection('xrepo', POSTGRES_URI, entities)
+    const connection = await createPostgresConnection()
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
