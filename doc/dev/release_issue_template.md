@@ -19,16 +19,17 @@ Run a find replace on:
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
 - [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release (send calendar invites to team@sourcegraph.com).
+- [ ] Create a new test grid for MAJOR.MINOR by cloning the previous [release testing grid on Monday.com](https://sourcegraph-team.monday.com) and renaming it to "MAJOR.MINOR Release test grid".
+    - [ ] Reset all tested cells to "To test", unless the "Automated" column is marked as "Done". See [this article for how to update multiple values in Monday.com](https://support.monday.com/hc/en-us/articles/115005335049-Batch-Actions-Edit-multiple-items-in-one-click).
+    - [ ] Assign rows in the release testing grid to engineers from the team that owns the row.
 - [ ] Create reminders for yourself to preform the remaining sections in this checklist at appropriate times.
 
 ## 5 working days before release (YYYY-MM-DD)
 
 - [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
 - [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
-- [ ] Create a new test grid for MAJOR.MINOR by cloning the previous [release testing grid on Monday.com](https://sourcegraph-team.monday.com) and renaming it to "MAJOR.MINOR Release test grid".
-    - [ ] Reset all tested cells to "To test", unless the "Automated" column is marked as "Done". See [this article for how to update multiple values in Monday.com](https://support.monday.com/hc/en-us/articles/115005335049-Batch-Actions-Edit-multiple-items-in-one-click).
-    - [ ] Ping each team, and ask them to identify which of the optional rows that they own should be tested this iteration.
-    - [ ] Ping the @distribution team to determine which environments each row should be tested in.
+- [ ] Ping each team, and ask them to identify which of the optional rows that they own on the release testing grid should be tested this iteration.
+- [ ] Ping the @distribution team to determine which environments each row on the release testing grid should be tested in.
 
 ## 4 working days before release (YYYY-MM-DD)
 
@@ -77,7 +78,7 @@ Run a find replace on:
     ```
     IMAGE=sourcegraph/server:MAJOR.MINOR.0-rc.1 ./dev/run-server-image.sh
     ```
-  - [ ] Mention that testing is the top priority, it is expected to take the whole day, and that known or suspected regressions should be tagged as release blockers.
+  - [ ] Mention that testing is the top priority, it is expected to take the whole day, and that known or suspected regressions should be tagged as release blockers. Mention that, for other issues found, high-level details like customer impact should be added to help Product determine whether it's a release blocker.
 
 
 
@@ -90,6 +91,7 @@ Run a find replace on:
 ## As necessary
 
 - `git cherry-pick` bugfix (not feature!) commits from `master` into the release branch.
+- Aggressively revert features that may cause delays.
 - Re-test any flows that might have been impacted by commits that have been cherry picked into the release branch.
 - Tag additional release candidates.
 
