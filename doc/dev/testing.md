@@ -50,7 +50,7 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 
 ### Running locally
 
-To run all e2e tests locally against your dev server, **create a user `test` with password `test`**, then run:
+To run all e2e tests locally against your dev server, **create a user `test` with password `test`, promote as site admin**, then run:
 
 ```
 env GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
@@ -164,7 +164,11 @@ If the changes are intended, click **Approve** 👍
 
 Once you approve all of the changes, the Percy check will turn green ✅
 
-### Adding a new visual snapshot test
+### Adding a new visual snapshot 
+
+
+
+
 
 Open `web/src/e2e/index.e2e.test.tsx` and add a new e2e test:
 
