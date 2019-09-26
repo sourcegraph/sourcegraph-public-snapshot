@@ -106,10 +106,10 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
         }
         throw new Error(`FAIL: Required config was not provided. These environment variables were missing:
 
-            ${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
+${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
 
-            The recommended way to set them is to install direnv (https://direnv.net) and
-            create a .envrc file at the root of this repository.
+The recommended way to set them is to install direnv (https://direnv.net) and
+create a .envrc file at the root of this repository.
         `)
     }
 

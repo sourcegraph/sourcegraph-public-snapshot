@@ -7,7 +7,7 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient } from './util/GraphQLClient'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { ensureLoggedInOrCreateUser } from './util/helpers'
+import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
     ensureExternalService,
     waitForRepos,
@@ -80,7 +80,7 @@ describe('Onboarding', () => {
                 username: config.sudoUsername,
             })
             screenshots = new ScreenshotVerifier(driver)
-            await ensureLoggedInOrCreateUser({
+            await ensureLoggedInOrCreateTestUser({
                 driver,
                 gqlClient,
                 username: testUsername,

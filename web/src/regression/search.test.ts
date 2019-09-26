@@ -8,7 +8,7 @@ import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureExternalService, waitForRepos } from './util/api'
-import { ensureLoggedInOrCreateUser } from './util/helpers'
+import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 
 const testRepoSlugs = [
@@ -139,7 +139,7 @@ describe('Search regression test suite', () => {
                     username: config.sudoUsername,
                 })
                 setTestDefaults(driver)
-                await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
+                await ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: 'test', password: 'test' })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
                     uniqueDisplayName: 'GitHub (search-regression-test)',

@@ -9,7 +9,7 @@ import { deleteUser } from './api'
 /**
  * Create the user with the specified password
  */
-export async function ensureLoggedInOrCreateUser({
+export async function ensureLoggedInOrCreateTestUser({
     driver,
     gqlClient,
     username,
@@ -22,6 +22,10 @@ export async function ensureLoggedInOrCreateUser({
     password: string
     deleteIfExists?: boolean
 }): Promise<void> {
+    if (!username.startsWith('test-')) {
+        throw new Error(`Test username must start with "test-" (was ${JSON.stringify(username)})`)
+    }
+
     if (deleteIfExists) {
         await deleteUser(gqlClient, username, false)
     } else {
