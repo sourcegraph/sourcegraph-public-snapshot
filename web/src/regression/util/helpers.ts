@@ -59,13 +59,7 @@ export async function createTestUser(driver: Driver, gqlClient: GraphQLClient, u
         .pipe(
             map(dataOrThrowErrors),
             catchError(err =>
-                throwError(
-                    new Error(
-                        `User likely alredy exists, but with a different password. Please delete user ${JSON.stringify(
-                            username
-                        )} and retry. (Underlying error: ${err.message})`
-                    )
-                )
+                throwError(new Error(`Could not create user ${JSON.stringify(username)}: ${err.message})`))
             ),
             map(({ createUser }) => createUser.resetPasswordURL)
         )
