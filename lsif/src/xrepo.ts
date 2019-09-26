@@ -59,11 +59,11 @@ export interface SymbolReferences {
  */
 export class XrepoDatabase {
     /**
-     * Create a new `XrepoDatabase` backed by the given database conection.
+     * Create a new `XrepoDatabase` backed by the given database connection.
      *
      * @param connection The Postgres connection.
      */
-    constructor(private connection: Connection) {}
+    constructor(private connection: Connection) { }
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
