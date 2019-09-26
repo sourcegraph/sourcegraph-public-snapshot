@@ -131,7 +131,7 @@ describe('Search regression test suite', () => {
     describe('Search over a dozen repositories', () => {
         beforeAll(
             async () => {
-                config = getConfig(['sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl'])
+                config = getConfig('sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl')
                 driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
                 gqlClient = GraphQLClient.newForPuppeteerTest({
                     baseURL: config.sourcegraphBaseUrl,
@@ -139,7 +139,7 @@ describe('Search regression test suite', () => {
                     username: config.sudoUsername,
                 })
                 setTestDefaults(driver)
-                await ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: 'test', password: 'test' })
+                await ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: 'test' })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
                     uniqueDisplayName: 'GitHub (search-regression-test)',

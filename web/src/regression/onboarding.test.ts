@@ -48,13 +48,7 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
 }
 
 describe('Onboarding', () => {
-    const config = getConfig([
-        'sudoToken',
-        'sudoUsername',
-        'gitHubToken',
-        'sourcegraphBaseUrl',
-        'includeAdminOnboarding',
-    ])
+    const config = getConfig('sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl', 'includeAdminOnboarding')
     const testExternalServiceConfig = {
         kind: GQL.ExternalServiceKind.GITHUB,
         uniqueDisplayName: 'GitHub (search-regression-test)',
@@ -84,7 +78,6 @@ describe('Onboarding', () => {
                 driver,
                 gqlClient,
                 username: testUsername,
-                password: 'test',
                 deleteIfExists: true,
             })
         },
