@@ -29,6 +29,7 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
+    entities,
 } from './models.database'
 
 /**
@@ -62,13 +63,7 @@ export async function convertLsif(
     input: Readable,
     database: string
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const connection = await createSqliteConnection(database, [
-        DefinitionModel,
-        DocumentModel,
-        MetaModel,
-        ReferenceModel,
-        ResultChunkModel,
-    ])
+    const connection = await createSqliteConnection(database, entities)
 
     try {
         await connection.query('PRAGMA synchronous = OFF')

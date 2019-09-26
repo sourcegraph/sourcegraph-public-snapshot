@@ -6,11 +6,10 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
+import { createPostgresConnection } from './connection'
+import { entities } from './models.xrepo'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
-import { PackageModel } from './models.xrepo'
-import { ReferenceModel } from './models.database'
-import { createPostgresConnection } from './connection'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -90,7 +89,7 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection('xrepo', POSTGRES_URI, [PackageModel, ReferenceModel])
+    const connection = await createPostgresConnection('xrepo', POSTGRES_URI, entities)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {

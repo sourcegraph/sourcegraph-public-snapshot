@@ -79,3 +79,8 @@ export class ReferenceModel extends Package {
     @Column('blob')
     public filter!: EncodedBloomFilter
 }
+
+/**
+ * The entities composing the cross-repository database models.
+ */
+export const entities = [PackageModel, ReferenceModel]

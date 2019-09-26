@@ -8,8 +8,11 @@ import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { createGzip } from 'mz/zlib'
+import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
+import { entities } from './models.xrepo'
 import { identity } from 'lodash'
 import { pipeline as _pipeline, Readable } from 'stream'
 import { promisify } from 'util'
@@ -17,10 +20,6 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
-import { createGzip } from 'mz/zlib'
-import { createPostgresConnection } from './connection'
-import { ReferenceModel } from './models.database'
-import { PackageModel } from './models.xrepo'
 
 const pipeline = promisify(_pipeline)
 
@@ -102,7 +101,7 @@ async function main(): Promise<void> {
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection('xrepo', POSTGRES_URI, [PackageModel, ReferenceModel])
+    const connection = await createPostgresConnection('xrepo', POSTGRES_URI, entities)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
