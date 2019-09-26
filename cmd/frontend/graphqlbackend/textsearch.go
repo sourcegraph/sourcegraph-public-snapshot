@@ -534,10 +534,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		query := args.Pattern
-		k := zoektResultCountFactor(len(zoektRepos), query)
-		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, args.Zoekt.Client, opts, false, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args, zoektRepos, false, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
