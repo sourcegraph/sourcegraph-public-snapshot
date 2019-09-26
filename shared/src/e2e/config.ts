@@ -24,7 +24,7 @@ type ConfigFields = {
 }
 
 const parseBool = (s: string): boolean => {
-    if (['1', 't', 'T', 'TRUE', 'true', 'True'].some(v => v === s)) {
+    if (['1', 't', 'true'].some(v => v.toLowerCase() === s)) {
         return true
     }
     if (['0', 'f', 'F', 'FALSE', 'false', 'False'].some(v => v === s)) {
