@@ -440,7 +440,7 @@ export class Driver {
      */
     public async clickElementWithText(
         text: string,
-        { tagName, log }: { tagName?: string; log?: boolean } = {}
+        { tagName, log }: { tagName?: keyof HTMLElementTagNameMap; log?: boolean } = {}
     ): Promise<void> {
         const handles = await this.findElementWithText(text, { tagName, log })
         await handles[0].click()
