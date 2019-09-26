@@ -285,9 +285,13 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 // listOrg handles the `org` config option.
 // It returns all the repositories belonging to the given organization
 // by hitting the /orgs/:org/repos endpoint.
-func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
+func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) (fail error) {
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
+			if err != nil && page == 1 {
+				fail, err = err, nil
+			}
+
 			remaining, reset, retry, _ := s.client.RateLimit.Get()
 			log15.Debug(
 				"github sync: ListOrgRepositories",
@@ -300,6 +304,29 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 		}()
 		return s.client.ListOrgRepositories(ctx, org, page)
 	})
+	return
+}
+
+func (s *GithubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		defer func() {
+			if err != nil && page == 1 {
+				fail, err = err, nil
+			}
+
+			remaining, reset, retry, _ := s.client.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListUserRepositories",
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
+			)
+		}()
+		return s.client.ListUserRepositories(ctx, user, page)
+	})
+	return
 }
 
 // listRepos returns the valid repositories from the given list of repository names.
@@ -404,7 +431,7 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListUserRepositories(ctx, page)
+		return s.client.ListAffiliatedRepositories(ctx, page)
 	})
 }
 
@@ -495,7 +522,15 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, re
 	// list API instead of the limited
 	// search API.
 	if org := matchOrg(query); org != "" {
-		s.listOrg(ctx, org, results)
+		if err := s.listOrg(ctx, org, results); err == nil {
+			return
+		} else if uerr := s.listUser(ctx, org, results); uerr == nil {
+			return
+		} else {
+			results <- &githubResult{
+				err: err,
+			}
+		}
 		return
 	}
 
