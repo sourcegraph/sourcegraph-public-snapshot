@@ -59,7 +59,7 @@ describe('Onboarding', () => {
     )
     const testExternalServiceConfig = {
         kind: GQL.ExternalServiceKind.GITHUB,
-        uniqueDisplayName: 'GitHub (search-regression-test)',
+        uniqueDisplayName: 'GitHub (onboarding-regression-test)',
         config: {
             url: 'https://github.com',
             token: config.gitHubToken,
