@@ -16,6 +16,10 @@ WORKDIR /dashboards
 
 RUN ./build.sh
 
+# TODO(uwedeportivo): remove once eric's PR lands
+# temporary fix for status_code <-> code label discrepancy in metrics (lsif code base uses status_code, rest uses code)
+RUN sed -i -e 's/{code=~/{status_code=~/g' lsif.json
+
 FROM grafana/grafana:6.3.3@sha256:926446fd803964b7aa57684a4a3a42c76eac8ecaf7ed8b80bad9013706496d88 as production
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
