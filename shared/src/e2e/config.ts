@@ -27,7 +27,7 @@ const parseBool = (s: string): boolean => {
     if (['1', 't', 'true'].some(v => v.toLowerCase() === s)) {
         return true
     }
-    if (['0', 'f', 'F', 'FALSE', 'false', 'False'].some(v => v === s)) {
+    if (['0', 'f', 'false'].some(v => v.toLowerCase() === s)) {
         return false
     }
     throw new Error(`could not parse string ${JSON.stringify(s)} to boolean`)
