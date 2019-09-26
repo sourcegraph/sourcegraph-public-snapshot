@@ -12,15 +12,18 @@ export interface Config {
     includeAdminOnboarding: boolean
 }
 
-interface Field<T> {
+interface Field<T = string> {
     envVar: string
     description?: string
     defaultValue?: T
+}
+
+interface FieldParser<T = string> {
     parser: (rawValue: string) => T
 }
 
 type ConfigFields = {
-    [K in keyof Config]: Field<Config[K]>
+    [K in keyof Config]: Field<Config[K]> & (Config[K] extends string ? Partial<FieldParser> : FieldParser<Config[K]>)
 }
 
 const parseBool = (s: string): boolean => {
@@ -80,7 +83,7 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
         }
         const envValue = process.env[field.envVar]
         if (envValue) {
-            config[fieldName] = field.parser(envValue)
+            config[fieldName] = field.parser ? field.parser(envValue) : envValue
         }
     }
 
