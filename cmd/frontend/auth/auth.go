@@ -68,6 +68,8 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 // - Usernames that start with `-` are not allowed
 //
 // Usernames that could not be converted return an error.
+//
+// Note: Do not forget to change database constraints on "users" and "orgs" tables.
 func NormalizeUsername(name string) (string, error) {
 	origName := name
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
