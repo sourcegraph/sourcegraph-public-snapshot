@@ -127,6 +127,7 @@ describe('Search regression test suite', () => {
     let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl'>
     let driver: Driver
     let gqlClient: GraphQLClient
+    const testUsername = 'test-search'
 
     describe('Search over a dozen repositories', () => {
         beforeAll(
@@ -139,7 +140,7 @@ describe('Search regression test suite', () => {
                     username: config.sudoUsername,
                 })
                 setTestDefaults(driver)
-                await ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: 'test' })
+                await ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: testUsername })
                 await ensureExternalService(gqlClient, {
                     kind: GQL.ExternalServiceKind.GITHUB,
                     uniqueDisplayName: 'GitHub (search-regression-test)',
@@ -150,7 +151,7 @@ describe('Search regression test suite', () => {
                         repositoryQuery: ['none'],
                     },
                 })
-                await waitForRepos(gqlClient, ['github.com/' + testRepoSlugs[testRepoSlugs.length - 1]])
+                await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
             2 * 60 * 1000

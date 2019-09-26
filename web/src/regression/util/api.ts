@@ -46,13 +46,13 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                             errors.pipe(
                                 delayWhen(error => {
                                     if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
-                                        // Delay retry by 1s.
-                                        return timer(1000)
+                                        // Delay retry by 2s.
+                                        return timer(2 * 1000)
                                     }
                                     // Throw all errors other than ECLONEINPROGRESS
                                     throw error
                                 }),
-                                take(10)
+                                take(60) // Up to 60 retries (an effective timeout of 2 minutes)
                             ),
                             defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
                         )
