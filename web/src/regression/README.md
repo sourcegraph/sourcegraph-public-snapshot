@@ -29,9 +29,16 @@ Run the tests:
 
 1. From the repository root directory, `cd` into the `web/` directory.
 1. Run `yarn run test-regression`. This will fail with an error indicating environment variables
-   that need to be set. Set these according to their descriptions and re-run the command. You should
-   see a Chrome window pop up and the tests will play in that window. The initial run may take
-   awhile, because test repositories need to be cloned.
+   that need to be set. Set these according to their descriptions and re-run the command. You may be
+   prompted with additional environment variables to set. Continue setting environment variables
+   until you no longer see environment variable errors. (You can also get a full list of environment
+   variables at `shared/src/e2e/config.ts`.) You should see a Chrome window pop up and the tests
+   will play in that window. The initial run may take awhile, because test repositories need to be
+   cloned.
+
+Note: some tests require additional manual verification of screenshots after the test completes.
+Screenshots files are deposited in the current directory and are named descriptively for what should
+be checked.
 
 Tips:
 
