@@ -73,10 +73,14 @@ export class ReferenceModel extends Package {
 
     /**
      * A serialized bloom filter that encodes the set of symbols that this repository
-     * and commit imports from the given package. Testing this filter will prevent the
-     * backend from opening databases that will yield no results for a particular symbol.
+     * and commit imports from the given package. Testing this filter will prevent
+     * the backend from opening databases that will yield no results for a particular
+     * symbol.
+     *
+     * The type of the column is determined by the database backend: we use Postgres
+     * with type `bytea` in production, but use SQLite in unit tests with type `blob`.
      */
-    @Column('blob')
+    @Column(process.env.JEST_WORKER_ID !== undefined ? 'blob' : 'bytea')
     public filter!: EncodedBloomFilter
 }
 
