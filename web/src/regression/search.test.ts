@@ -10,6 +10,7 @@ import { GraphQLClient } from './util/GraphQLClient'
 import { ensureExternalService, waitForRepos, deleteUser, ensureNoExternalServices } from './util/api'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
+import { TestResourceManager } from './util/TestResourceManager'
 
 const testRepoSlugs = [
     'auth0/go-jwt-middleware',
@@ -134,6 +135,7 @@ describe('Search regression test suite', () => {
     }
 
     describe('Search over a dozen repositories', () => {
+        const resourceManager = new TestResourceManager()
         beforeAll(
             async () => {
                 config = getConfig('sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl', 'noCleanup')
@@ -144,17 +146,31 @@ describe('Search regression test suite', () => {
                     username: config.sudoUsername,
                 })
                 setTestDefaults(driver)
-                await ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: testUsername })
-                await ensureExternalService(gqlClient, {
-                    ...testExternalServiceInfo,
-                    config: {
-                        url: 'https://github.com',
-                        token: config.gitHubToken,
-                        repos: testRepoSlugs,
-                        repositoryQuery: ['none'],
-                    },
+
+                await resourceManager.create({
+                    type: 'User',
+                    name: testUsername,
+                    create: () => ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: testUsername }),
+                    destroy: () => deleteUser(gqlClient, testUsername, false),
                 })
-                await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
+                await resourceManager.create({
+                    type: 'External service',
+                    name: testExternalServiceInfo.uniqueDisplayName,
+                    create: async () => {
+                        await ensureExternalService(gqlClient, {
+                            ...testExternalServiceInfo,
+                            config: {
+                                url: 'https://github.com',
+                                token: config.gitHubToken,
+                                repos: testRepoSlugs,
+                                repositoryQuery: ['none'],
+                            },
+                        })
+                        await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
+                    },
+                    destroy: () =>
+                        ensureNoExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true }),
+                })
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
             2 * 60 * 1000
@@ -162,8 +178,7 @@ describe('Search regression test suite', () => {
 
         afterAll(async () => {
             if (!config.noCleanup) {
-                await deleteUser(gqlClient, testUsername, false)
-                await ensureNoExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true })
+                await resourceManager.destroyAll()
             }
             if (driver) {
                 await driver.close()
