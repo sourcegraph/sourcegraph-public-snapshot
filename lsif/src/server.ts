@@ -18,7 +18,8 @@ import { promisify } from 'util'
 import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
-import { XrepoDatabase } from './xrepo.js'
+import { XrepoDatabase } from './xrepo'
+import { updateCommits, GITSERVER_URLS } from './commits'
 
 const pipeline = promisify(_pipeline)
 
@@ -89,6 +90,9 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
+    // Create queue to publish jobs for worker
+    const queue = await setupQueue()
+
     // Prepare caches
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
@@ -98,7 +102,7 @@ async function main(): Promise<void> {
     const connection = await createPostgresConnection()
     const xrepoDatabase = new XrepoDatabase(connection)
 
-    const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+    const createDatabaseFilenameStat = async (repository: string, commit: string): Promise<string | undefined> => {
         const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
 
         try {
@@ -109,6 +113,15 @@ async function main(): Promise<void> {
             }
 
             throw e
+        }
+
+        return file
+    }
+
+    const tryLoadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+        const file = await createDatabaseFilenameStat(repository, commit)
+        if (!file) {
+            return undefined
         }
 
         return new Database(
@@ -123,8 +136,31 @@ async function main(): Promise<void> {
         )
     }
 
-    // Create queue to publish jobs for worker
-    const queue = await setupQueue()
+    const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+        // Try to construct database for the exact commit
+        const database = await tryLoadDatabase(repository, commit)
+        if (database) {
+            return database
+        }
+
+        // If we don't know about this commit, request updated commit data
+        // from the gitserver. This will pull back ancestors for this commit
+        // up to a certain (configurable) depth and insert them into the
+        // cross-repository database. This populates the necessary data for
+        // the following query.
+        if (!(await xrepoDatabase.isCommitTracked(repository, commit))) {
+            await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit)
+        }
+
+        // Determine the closest commit that we actually have LSIF data for
+        const commitWithData = await xrepoDatabase.findClosestCommitWithData(repository, commit)
+        if (!commitWithData) {
+            return undefined
+        }
+
+        // Try to construct a database for the approximate commit
+        return tryLoadDatabase(repository, commitWithData)
+    }
 
     const app = express()
     app.use(errorHandler)

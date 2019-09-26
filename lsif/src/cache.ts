@@ -330,7 +330,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * be disposed by cache eviction while the callback is active.
      *
      * @param database The database filename.
-     * @param entities The set of expected entities present in this schema.
+     * @param entities The set of entities to create on a new connection.
      * @param callback The function invoke with the SQLite connection.
      */
     public withConnection<T>(
@@ -348,7 +348,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * before invoking the callback.
      *
      * @param database The database filename.
-     * @param entities The set of expected entities present in this schema.
+     * @param entities The set of entities to create on a new connection.
      * @param callback The function invoke with a SQLite transaction connection.
      */
     public withTransactionalEntityManager<T>(

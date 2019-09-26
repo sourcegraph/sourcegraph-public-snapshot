@@ -1,7 +1,7 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
-import { userInfo } from 'os'
 import { entities } from './models.xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
+import { userInfo } from 'os'
 
 /**
  * The common options used for typeorm connections.

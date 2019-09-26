@@ -6,7 +6,7 @@ import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } fro
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
-import { PackageModel, ReferenceModel } from './models.xrepo'
+import { entities } from './models.xrepo'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -20,7 +20,7 @@ describe('Database', () => {
 
     beforeAll(async () => {
         storageRoot = await fs.promises.mkdtemp('typescript-')
-        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, [PackageModel, ReferenceModel]))
+        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, entities))
 
         const input = await getTestData('typescript/linked-reference-results/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)

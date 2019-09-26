@@ -9,6 +9,7 @@ import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } 
 import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
+import { GITSERVER_URLS, updateCommits } from './commits'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -68,6 +69,9 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
         await fs.unlink(tempFile)
         throw e
     }
+
+    // Update commit parentage information for this commit
+    await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit)
 
     // Remove input
     await fs.unlink(filename)

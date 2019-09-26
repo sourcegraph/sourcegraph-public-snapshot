@@ -7,9 +7,17 @@ import {
 } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel } from './models.xrepo'
+import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
 import { TableInserter } from './inserter'
 
+/**
+ * The maximum traversal distance when finding the closest commit.
+ */
+export const MAX_TRAVERSAL_LIMIT = 100
+
+/**
+ * The insertion metrics for the cross-repo database.
+ */
 const insertionMetrics = {
     durationHistogram: xrepoInsertionDurationHistogram,
     errorsCounter: xrepoQueryErrorsCounter,
@@ -66,21 +74,103 @@ export class XrepoDatabase {
     constructor(private connection: Connection) {}
 
     /**
+     * Determine if we have commit parent data for this commit.
+     *
+     * @param repository The name of the repository.
+     * @param commit The target commit.
+     */
+    public isCommitTracked(repository: string, commit: string): Promise<boolean> {
+        return this.withConnection(
+            async connection =>
+                (await connection.getRepository(Commit).findOne({ where: { repository, commit } })) !== undefined
+        )
+    }
+
+    /**
+     * Return the commit that has LSIF data 'closest' to the given target commit (a direct descendant
+     * or ancestor of the target commit). If no closest commit can be determined, this method returns
+     * undefined.
+     *
+     * @param repository The name of the repository.
+     * @param commit The target commit.
+     */
+    public findClosestCommitWithData(repository: string, commit: string): Promise<string | undefined> {
+        return this.withConnection(async connection => {
+            const query = `
+                with recursive lineage(repository, "commit", parentCommit, hasLsifData, distance, direction) as (
+                    -- seed result set with the target repository and commit marked
+                    -- with both ancestor and descendant directions
+                    select l.* from (
+                        select c.*, 0, 'A' from commitWithLsifMarkers c union
+                        select c.*, 0, 'D' from commitWithLsifMarkers c
+                    ) l
+                    where l.repository = ? and l."commit" = ?
+
+                    union
+
+                    -- get the next commit in the ancestor or descendant direction
+                    select c.*, l.distance + 1, l.direction from lineage l
+                    join commitWithLsifMarkers c on (
+                        (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parentCommit) or
+                        (l.direction = 'D' and c.repository = l.repository and c.parentCommit = l."commit")
+                    )
+                    -- limit traversal distance
+                    where l.distance < ?
+                )
+
+                -- lineage is ordered by distance to the target commit by
+                -- construction; get the nearest commit that has LSIF data
+                select l."commit" from lineage l where l.hasLsifData limit 1
+            `
+
+            const results = (await connection.query(query, [repository, commit, MAX_TRAVERSAL_LIMIT])) as {
+                commit: string
+            }[]
+
+            if (results.length === 0) {
+                return undefined
+            }
+
+            return results[0].commit
+        })
+    }
+
+    /**
+     * Update the known commits for a repository. The given commits are pairs of revhashes, where
+     * [`a`, `b`] indicates that one parent of `b` is `a`. If a commit has no parents, then there
+     * should be a pair of the form [`a`, ``] (where the parent is an empty string).
+     *
+     * @param repository The name of the repository.
+     * @param commits The commit parentage data.
+     */
+    public async updateCommits(repository: string, commits: [string, string][]): Promise<void> {
+        return await this.withTransactionalEntityManager(async entityManager => {
+            const commitInserter = new TableInserter(
+                entityManager,
+                Commit,
+                Commit.BatchSize,
+                insertionMetrics,
+                true // Do nothing on conflict
+            )
+
+            for (const [commit, parentCommit] of commits) {
+                await commitInserter.insert({ repository, commit, parentCommit })
+            }
+
+            await commitInserter.flush()
+        })
+    }
+
+    /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
      *
      * @param scheme The package manager scheme (e.g. npm, pip).
      * @param name The package name.
      * @param version The package version.
      */
-    public getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
-        return this.withConnection(connection =>
-            connection.getRepository(PackageModel).findOne({
-                where: {
-                    scheme,
-                    name,
-                    version,
-                },
-            })
+    public async getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
+        return await this.withConnection(connection =>
+            connection.getRepository(PackageModel).findOne({ where: { scheme, name, version } })
         )
     }
 
@@ -115,6 +205,14 @@ export class XrepoDatabase {
                 insertionMetrics
             )
 
+            const lsifDataMarkerInserter = new TableInserter(
+                entityManager,
+                LsifDataMarker,
+                LsifDataMarker.BatchSize,
+                insertionMetrics,
+                true // Do nothing on conflict
+            )
+
             // Remove all previous package data for this repo/commit
             await entityManager
                 .createQueryBuilder()
@@ -144,8 +242,12 @@ export class XrepoDatabase {
                 })
             }
 
+            // Mark that we have data available for this commit
+            await lsifDataMarkerInserter.insert({ repository, commit })
+
             await packageInserter.flush()
             await referenceInserter.flush()
+            await lsifDataMarkerInserter.flush()
         })
     }
 
@@ -173,13 +275,7 @@ export class XrepoDatabase {
         value: string
     }): Promise<ReferenceModel[]> {
         const results = await this.withConnection(connection =>
-            connection.getRepository(ReferenceModel).find({
-                where: {
-                    scheme,
-                    name,
-                    version,
-                },
-            })
+            connection.getRepository(ReferenceModel).find({ where: { scheme, name, version } })
         )
 
         // Test the bloom filter of each reference model concurrently
