@@ -260,3 +260,22 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
         )
         .toPromise()
 }
+
+export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
+    return gqlClient
+        .queryGraphQL(
+            gql`
+                query SiteFlags {
+                    site {
+                        productVersion
+                    }
+                }
+            `,
+            {}
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ site }) => site.productVersion)
+        )
+        .toPromise()
+}

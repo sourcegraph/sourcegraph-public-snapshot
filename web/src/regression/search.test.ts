@@ -145,7 +145,7 @@ describe('Search regression test suite', () => {
                     sudoToken: config.sudoToken,
                     username: config.sudoUsername,
                 })
-                setTestDefaults(driver)
+                await setTestDefaults(driver, gqlClient)
 
                 await resourceManager.create({
                     type: 'User',
@@ -185,8 +185,8 @@ describe('Search regression test suite', () => {
             }
         })
 
-        test('Global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
+        test('Global text search (asdfalksdjflaksjdflkasjdf) with 0 results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=asdfalksdjflaksjdflkasjdf')
             await driver.page.waitForFunction(hasNoResultsOrError)
         })
         test('Global text search with double-quoted string constant ("error type:") with a few results.', async () => {

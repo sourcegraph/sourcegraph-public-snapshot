@@ -76,12 +76,12 @@ describe('Onboarding', () => {
     beforeAll(
         async () => {
             driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
-            setTestDefaults(driver)
             gqlClient = GraphQLClient.newForPuppeteerTest({
                 baseURL: config.sourcegraphBaseUrl,
                 sudoToken: config.sudoToken,
                 username: config.sudoUsername,
             })
+            await setTestDefaults(driver, gqlClient)
             screenshots = new ScreenshotVerifier(driver)
 
             await resourceManager.create({
