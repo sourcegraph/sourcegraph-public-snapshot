@@ -247,16 +247,19 @@ While developing Sourcegraph, you may run into:
 
 `frontend | failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:Dirty database version 1514702776. Fix and force version.`
 
-You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, and run something like:
-
-Then try:
-
-`dev/migrate.sh up`
+You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, then run `dev/migrate.sh up`
 
 If you get something like `error: Dirty database version 1514702776. Fix and force version.`, you need to roll things back and start from scratch.
 
 ```bash
 dev/migrate.sh drop
+dev/migrate.sh up
+```
+
+If you receive errors while migrating, try dropping the database
+
+```bash
+dev/drop-entire-local-database.sh
 dev/migrate.sh up
 ```
 
