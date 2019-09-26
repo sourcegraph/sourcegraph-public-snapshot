@@ -63,7 +63,7 @@ export class XrepoDatabase {
      *
      * @param connection The Postgres connection.
      */
-    constructor(private connection: Connection) { }
+    constructor(private connection: Connection) {}
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
