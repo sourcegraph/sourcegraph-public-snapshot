@@ -7,7 +7,7 @@ import { getConfig, Config } from '../../../shared/src/e2e/config'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
-import { ensureExternalService, waitForRepos } from './util/api'
+import { ensureExternalService, waitForRepos, deleteUser, ensureNoExternalServices } from './util/api'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 
@@ -124,15 +124,19 @@ function hasNoResultsOrError(): boolean {
 }
 
 describe('Search regression test suite', () => {
-    let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl'>
+    let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl' | 'noCleanup'>
     let driver: Driver
     let gqlClient: GraphQLClient
     const testUsername = 'test-search'
+    const testExternalServiceInfo = {
+        kind: GQL.ExternalServiceKind.GITHUB,
+        uniqueDisplayName: 'GitHub (search-regression-test)',
+    }
 
     describe('Search over a dozen repositories', () => {
         beforeAll(
             async () => {
-                config = getConfig('sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl')
+                config = getConfig('sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl', 'noCleanup')
                 driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
                 gqlClient = GraphQLClient.newForPuppeteerTest({
                     baseURL: config.sourcegraphBaseUrl,
@@ -142,8 +146,7 @@ describe('Search regression test suite', () => {
                 setTestDefaults(driver)
                 await ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: testUsername })
                 await ensureExternalService(gqlClient, {
-                    kind: GQL.ExternalServiceKind.GITHUB,
-                    uniqueDisplayName: 'GitHub (search-regression-test)',
+                    ...testExternalServiceInfo,
                     config: {
                         url: 'https://github.com',
                         token: config.gitHubToken,
@@ -157,8 +160,11 @@ describe('Search regression test suite', () => {
             2 * 60 * 1000
         )
 
-        // Close browser.
         afterAll(async () => {
+            if (!config.noCleanup) {
+                await deleteUser(gqlClient, testUsername, false)
+                await ensureNoExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true })
+            }
             if (driver) {
                 await driver.close()
             }

@@ -11,6 +11,7 @@ export interface Config {
     sourcegraphBaseUrl: string
     includeAdminOnboarding: boolean
     testUserPassword: string
+    noCleanup: boolean
 }
 
 interface Field<T = string> {
@@ -74,6 +75,12 @@ const configFields: ConfigFields = {
         parser: parseString,
         description:
             'The password to use for any test users that are created. This password should be secure and unguessable when running against production Sourcegraph instances.',
+    },
+    noCleanup: {
+        envVar: 'NO_CLEANUP',
+        parser: parseBool,
+        description:
+            'If true, regression tests will not clean up users, external services, or other resources they create. This can reduce the running time of tests (especially on subsequent runs), but should not be used when running against production instances.',
     },
 }
 

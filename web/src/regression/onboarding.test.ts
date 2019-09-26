@@ -48,7 +48,14 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
 }
 
 describe('Onboarding', () => {
-    const config = getConfig('sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl', 'includeAdminOnboarding')
+    const config = getConfig(
+        'sudoToken',
+        'sudoUsername',
+        'gitHubToken',
+        'sourcegraphBaseUrl',
+        'includeAdminOnboarding',
+        'noCleanup'
+    )
     const testExternalServiceConfig = {
         kind: GQL.ExternalServiceKind.GITHUB,
         uniqueDisplayName: 'GitHub (search-regression-test)',
@@ -85,10 +92,12 @@ describe('Onboarding', () => {
     )
 
     afterAll(async () => {
+        if (!config.noCleanup) {
+            await deleteUser(gqlClient, testUsername, false)
+        }
         if (driver) {
             await driver.close()
         }
-        await deleteUser(gqlClient, testUsername, false)
         if (screenshots.screenshots.length > 0) {
             console.log(screenshots.verificationInstructions())
         }
