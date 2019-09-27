@@ -50,7 +50,7 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 
 ### Running locally
 
-To run all e2e tests locally against your dev server, **create a user `test` with password `test`**, then run:
+To run all e2e tests locally against your dev server, **create a user `test` with password `test`, promote as site admin**, then run:
 
 ```
 env GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
@@ -60,7 +60,16 @@ env GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
 
 This will open Chromium, create an external service, clone repositories, and execute the e2e tests.
 
-You can single-out one test with `test.only`. Alternatively, you can use `-t` to filter tests: `env ... test-e2e -t "some test name"`.
+You can single-out one test with `test.only`:
+
+
+```TypeScript
+        test.only('widgetizes quuxinators', async () => {
+            // ...
+        })
+```
+
+Alternatively, you can use `-t` to filter tests: `env ... test-e2e -t "some test name"`.
 
 ### Viewing e2e tests live in CI
 
@@ -81,10 +90,10 @@ Open VNC Viewer and type in `localhost:5900`. Hit <kbd>Enter</kbd> and accept th
 
 ### Adding a new e2e test
 
-Open `web/src/e2e/index.e2e.test.tsx` and add a new `test`:
+Open `web/src/e2e/e2e.test.ts` and add a new `test`:
 
 ```TypeScript
-        test.only('widgetizes quuxinators', async () => {
+        test('widgetizes quuxinators', async () => {
             await page.goto(baseURL + '/quuxinator/widgetize')
             await page.waitForSelector('.widgetize', { visible: true })
             // ...

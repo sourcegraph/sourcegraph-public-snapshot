@@ -105,3 +105,4 @@ Add links to completed retrospective docs here. These are publicly visible, so m
 - [3.5](3_5.md)
 - [3.6](3_6.md)
 - [3.7](3_7.md)
+- [3.8](3_8.md)

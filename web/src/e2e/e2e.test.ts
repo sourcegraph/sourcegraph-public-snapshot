@@ -353,24 +353,24 @@ describe('e2e test suite', () => {
     describe('Theme switcher', () => {
         test('changes the theme', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
-            await driver.page.waitForSelector('.theme', { visible: true })
-            const currentThemes = await driver.page.evaluate(() =>
-                Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-            )
-            expect(currentThemes).toHaveLength(1)
+            await driver.page.waitForSelector('.theme.theme-dark, .theme.theme-light', { visible: true })
+
+            const getActiveThemeClasses = (): Promise<string[]> =>
+                driver.page.evaluate(() =>
+                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
+                )
+
+            expect(await getActiveThemeClasses()).toHaveLength(1)
+            await driver.page.waitForSelector('.e2e-user-nav-item-toggle')
             await driver.page.click('.e2e-user-nav-item-toggle')
+
+            // Switch to dark
             await driver.page.select('.e2e-theme-toggle', 'dark')
-            expect(
-                await driver.page.evaluate(() =>
-                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-                )
-            ).toEqual(['theme-dark'])
+            expect(await getActiveThemeClasses()).toEqual(['theme-dark'])
+
+            // Switch to light
             await driver.page.select('.e2e-theme-toggle', 'light')
-            expect(
-                await driver.page.evaluate(() =>
-                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-                )
-            ).toEqual(['theme-light'])
+            expect(await getActiveThemeClasses()).toEqual(['theme-light'])
         })
     })
 

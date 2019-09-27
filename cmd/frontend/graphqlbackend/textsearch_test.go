@@ -404,7 +404,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
 		searcher        zoekt.Searcher
-		opts            zoekt.SearchOptions
 		since           func(time.Time) time.Duration
 	}
 
@@ -428,7 +427,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
 				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
 			},
 			wantFm:            nil,
@@ -444,8 +442,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:            zoekt.SearchOptions{MaxWallTime: time.Second},
-				since:           func(time.Time) time.Duration { return time.Second },
+				since:           func(time.Time) time.Duration { return 2 * time.Second },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
@@ -460,7 +457,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: true,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				opts:            zoekt.SearchOptions{},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
 			wantFm:            nil,
@@ -476,7 +472,6 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: true,
 				searcher:        &errorSearcher{err: errors.New("womp womp")},
-				opts:            zoekt.SearchOptions{},
 				since:           func(time.Time) time.Duration { return 0 },
 			},
 			wantFm:            nil,
@@ -487,7 +482,12 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, tt.args.query, tt.args.repos, tt.args.useFullDeadline, tt.args.searcher, tt.args.opts, false, tt.args.since)
+			args := &search.Args{
+				Pattern:         tt.args.query,
+				UseFullDeadline: tt.args.useFullDeadline,
+				Zoekt:           &searchbackend.Zoekt{Client: tt.args.searcher},
+			}
+			gotFm, gotLimitHit, gotReposLimitHit, err := zoektSearchHEAD(tt.args.ctx, args, tt.args.repos, false, tt.args.since)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return

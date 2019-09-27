@@ -387,6 +387,69 @@ export class Driver {
             }
         }
     }
+
+    /**
+     * Finds the "best" element containing the text, where "best" is roughly defined as "what the
+     * user would click on if you told them to click on the text".
+     *
+     * Returns a list of elements when it is unsure how to pick among candidates. It generally tries
+     * to prefer elements that more tightly wrap the text. Throws an error when no elements could be
+     * found.
+     *
+     * The caller should call `dispose` on the returned JSHandles when done.
+     */
+    public async findElementWithText(
+        text: string,
+        {
+            tagName: selector,
+            log,
+        }: {
+            /**
+             * Filter candidate elements to those with the specified tag name
+             */
+            tagName?: keyof HTMLElementTagNameMap
+
+            /**
+             * Log the XPath quer(y|ies) used to find the element.
+             */
+            log?: boolean
+        } = {}
+    ): Promise<puppeteer.ElementHandle<Element>[]> {
+        const tag = selector || '*'
+        const queries = [
+            `//${tag}[text() = ${JSON.stringify(text)}]`,
+            `//${tag}[starts-with(text(), ${JSON.stringify(text)})]`,
+            `//${tag}[contains(text(), ${JSON.stringify(text)})]`,
+        ]
+
+        for (const query of queries) {
+            if (log) {
+                console.log(`locating xpath ${query}`)
+            }
+            const handles = await this.page.$x(query)
+            if (handles.length > 0) {
+                return handles
+            }
+        }
+        throw new Error(`Could not find element with text ${JSON.stringify(text)}${tag ? ' and tag ' + tag : ''}`)
+    }
+
+    /**
+     * Click the element containing the text. The element is discovered using the
+     * `findElementWithText` method.
+     */
+    public async clickElementWithText(
+        text: string,
+        { tagName, log }: { tagName?: keyof HTMLElementTagNameMap; log?: boolean } = {}
+    ): Promise<void> {
+        const handles = await this.findElementWithText(text, { tagName, log })
+        await handles[0].click()
+        await Promise.all(handles.map(handle => handle.dispose()))
+    }
+
+    public async waitUntilURL(url: string): Promise<void> {
+        await this.page.waitForFunction(url => document.location.href === url, {}, url)
+    }
 }
 
 function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
