@@ -228,6 +228,14 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
+// listRepositories is a generic method that unmarshals the given
+// JSON HTTP endpoint into a []restRepository. It will return an
+// error if it fails.
+//
+// This is used to extract repositories from the GitHub API endpoints:
+// - /users/:user/repos
+// - /orgs/:org/repos
+// - /user/repos
 func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
 	if err := c.requestGet(ctx, "", requestURI, &restRepos); err != nil {

@@ -285,6 +285,8 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 // listOrg handles the `org` config option.
 // It returns all the repositories belonging to the given organization
 // by hitting the /orgs/:org/repos endpoint.
+//
+// It returns an error if the request fails on the first page.
 func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) (fail error) {
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
@@ -307,6 +309,10 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 	return
 }
 
+// listUser returns all the repositories belonging to the given user
+// by hitting the /users/:user/repos endpoint.
+//
+// It returns an error if the request fails on the first page.
 func (s *GithubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
@@ -521,14 +527,15 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, re
 	// to directly use GitHub's org repo
 	// list API instead of the limited
 	// search API.
+	//
+	// If the org repo list API fails, we
+	// try the user repo list API.
 	if org := matchOrg(query); org != "" {
-		if err := s.listOrg(ctx, org, results); err == nil {
-			return
-		} else if uerr := s.listUser(ctx, org, results); uerr == nil {
-			return
-		} else {
-			results <- &githubResult{
-				err: err,
+		if err := s.listOrg(ctx, org, results); err != nil {
+			if uerr := s.listUser(ctx, org, results); uerr != nil {
+				results <- &githubResult{
+					err: err,
+				}
 			}
 		}
 		return

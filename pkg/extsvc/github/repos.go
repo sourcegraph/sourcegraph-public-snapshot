@@ -476,6 +476,8 @@ func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) 
 	return repos, len(repos) > 0, 1, err
 }
 
+// ListUserRepositories lists GitHub repositories from the specified user.
+// Pages are 1-indexed (so the first call should be for page 1)
 func (c *Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("users/%s/repos?sort=pushed&type=owner&page=%d&per_page=100", user, page)
 	repos, err = c.listRepositories(ctx, path)
