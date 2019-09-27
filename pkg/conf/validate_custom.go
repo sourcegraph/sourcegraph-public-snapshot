@@ -7,18 +7,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
 )
 
+type Validator func(Unified) Problems
+
 // ContributeValidator adds the site configuration validator function to the validation process. It
 // is called to validate site configuration. Any strings it returns are shown as validation
 // problems.
 //
 // It may only be called at init time.
-func ContributeValidator(f func(Unified) (problems []string)) {
+func ContributeValidator(f Validator) {
 	contributedValidators = append(contributedValidators, f)
 }
 
-var contributedValidators []func(Unified) []string
+var contributedValidators []Validator
 
-func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems []string, err error) {
+func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems Problems, err error) {
 	var cfg Unified
 	if err := json.Unmarshal([]byte(normalizedInput.Critical), &cfg.Critical); err != nil {
 		return nil, err
@@ -31,9 +33,9 @@ func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems []string,
 
 // validateCustom validates the site config using custom validation steps that are not
 // able to be expressed in the JSON Schema.
-func validateCustom(cfg Unified) (problems []string) {
-	invalid := func(msg string) {
-		problems = append(problems, msg)
+func validateCustom(cfg Unified) (problems Problems) {
+	invalid := func(p *Problem) {
+		problems = append(problems, p)
 	}
 
 	// Auth provider config validation is contributed by the
@@ -44,10 +46,10 @@ func validateCustom(cfg Unified) (problems []string) {
 		hasSMTP := cfg.EmailSmtp != nil
 		hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
 		if hasSMTP && cfg.EmailAddress == "" {
-			invalid(`should set email.address because email.smtp is set`)
+			invalid(NewCriticalProblem(`should set email.address because email.smtp is set`))
 		}
 		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
-			invalid(`must set email.smtp username and password for email.smtp authentication`)
+			invalid(NewCriticalProblem(`must set email.smtp username and password for email.smtp authentication`))
 		}
 	}
 
@@ -63,24 +65,24 @@ func validateCustom(cfg Unified) (problems []string) {
 func TestValidator(t interface {
 	Errorf(format string, args ...interface{})
 	Helper()
-}, c Unified, f func(Unified) []string, wantProblems []string) {
+}, c Unified, f Validator, wantProblems Problems) {
 	t.Helper()
 	problems := f(c)
-	wantSet := make(map[string]struct{}, len(wantProblems))
+	wantSet := make(map[string]problemKind, len(wantProblems))
 	for _, p := range wantProblems {
-		wantSet[p] = struct{}{}
+		wantSet[p.String()] = p.kind
 	}
 	for _, p := range problems {
 		var found bool
-		for ps := range wantSet {
-			if strings.Contains(p, ps) {
+		for ps, k := range wantSet {
+			if strings.Contains(p.String(), ps) && p.kind == k {
 				delete(wantSet, ps)
 				found = true
 				break
 			}
 		}
 		if !found {
-			t.Errorf("got unexpected error %q", p)
+			t.Errorf("got unexpected error %q with kind %q", p, p.kind)
 		}
 	}
 	if len(wantSet) > 0 {

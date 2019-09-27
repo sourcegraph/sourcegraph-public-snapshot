@@ -66,11 +66,11 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var loggedNeedsExternalURL bool
 	for _, p := range c.Critical.AuthProviders {
 		if p.Saml != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, `saml auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+			problems = append(problems, conf.NewCriticalProblem("saml auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
 		}
 	}
@@ -79,7 +79,7 @@ func validateConfig(c conf.Unified) (problems []string) {
 	for i, p := range c.Critical.AuthProviders {
 		if p.Saml != nil {
 			if j, ok := seen[*p.Saml]; ok {
-				problems = append(problems, fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j))
+				problems = append(problems, conf.NewCriticalProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
 			} else {
 				seen[*p.Saml] = i
 			}

@@ -35,6 +35,10 @@ var DevAndTesting = conftypes.RawUnified{
 // single-container instances of Sourcegraph.
 var DockerContainer = conftypes.RawUnified{
 	Critical: `{
+	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
+	// This is required to be configured for Sourcegraph to work correctly.
+	"externalURL": "https://sourcegraph.example.com",
+
 	"auth.providers": [
 		{
 			"type": "builtin",
@@ -52,8 +56,9 @@ var DockerContainer = conftypes.RawUnified{
 // Sourcegraph.
 var Cluster = conftypes.RawUnified{
 	Critical: `{
-	// Publicly accessible URL to web app (e.g., what you type into your browser).
-	"externalURL": "http://localhost:3080",
+	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
+	// This is required to be configured for Sourcegraph to work correctly.
+	"externalURL": "https://sourcegraph.example.com",
 
 	// The authentication provider to use for identifying and signing in users.
 	// Only one entry is supported.

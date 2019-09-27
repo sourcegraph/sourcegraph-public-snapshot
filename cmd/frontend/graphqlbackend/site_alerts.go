@@ -2,12 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -50,7 +50,7 @@ type AlertFuncArgs struct {
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	args := AlertFuncArgs{
 		IsAuthenticated: actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:     (backend.CheckCurrentUserIsSiteAdmin(ctx) == nil),
+		IsSiteAdmin:     backend.CheckCurrentUserIsSiteAdmin(ctx) == nil,
 	}
 
 	var alerts []*Alert
@@ -70,15 +70,38 @@ func init() {
 			return nil
 		}
 
-		messages, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
-		if len(messages) > 0 || err != nil {
+		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+		if err != nil {
 			return []*Alert{
 				{
-					TypeValue:    AlertTypeWarning,
-					MessageValue: "[**Update site configuration**](/site-admin/configuration) to resolve problems.",
+					TypeValue:    AlertTypeError,
+					MessageValue: `Update [**site configuration**](/site-admin/configuration) or [**critical configuration**](/help/admin/management_console) to resolve problems: ` + err.Error(),
 				},
 			}
 		}
-		return nil
+		if len(problems) == 0 {
+			return nil
+		}
+
+		alerts := make([]*Alert, 0, 2)
+
+		criticalProblems := problems.Critical()
+		if len(criticalProblems) > 0 {
+			alerts = append(alerts, &Alert{
+				TypeValue: AlertTypeWarning,
+				MessageValue: `[**Update critical configuration**](/help/admin/management_console) to resolve problems.` +
+					"\n* " + strings.Join(criticalProblems.Messages(), "\n* "),
+			})
+		}
+
+		siteProblems := problems.Site()
+		if len(siteProblems) > 0 {
+			alerts = append(alerts, &Alert{
+				TypeValue: AlertTypeWarning,
+				MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems.` +
+					"\n* " + strings.Join(siteProblems.Messages(), "\n* "),
+			})
+		}
+		return alerts
 	})
 }
