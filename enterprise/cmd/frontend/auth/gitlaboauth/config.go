@@ -1,7 +1,6 @@
 package gitlaboauth
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -13,8 +12,8 @@ const PkgName = "gitlaboauth"
 
 func init() {
 	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
-		_, messages := parseConfig(&cfg)
-		return conf.NewCriticalProblems(messages...)
+		_, problems := parseConfig(&cfg)
+		return problems
 	})
 	go func() {
 		conf.Watch(func() {
@@ -32,7 +31,7 @@ func init() {
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, messages []string) {
+func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
 	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
 	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Gitlab == nil {
@@ -40,22 +39,22 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.
 		}
 
 		if cfg.Critical.ExternalURL == "" {
-			messages = append(messages, "`externalURL` was empty and it is needed to determine the OAuth callback URL.")
+			problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is needed to determine the OAuth callback URL."))
 			continue
 		}
 		externalURL, err := url.Parse(cfg.Critical.ExternalURL)
 		if err != nil {
-			messages = append(messages, fmt.Sprintf("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
+			problems = append(problems, conf.NewCriticalProblem("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
 			continue
 		}
 		callbackURL := *externalURL
 		callbackURL.Path = "/.auth/gitlab/callback"
 
 		provider, providerMessages := parseProvider(callbackURL.String(), pr.Gitlab, pr)
-		messages = append(messages, providerMessages...)
+		problems = append(problems, conf.NewCriticalProblems(providerMessages...)...)
 		if provider != nil {
 			ps[*pr.Gitlab] = provider
 		}
 	}
-	return ps, messages
+	return ps, problems
 }

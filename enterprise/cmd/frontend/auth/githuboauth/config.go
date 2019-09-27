@@ -23,13 +23,13 @@ func init() {
 			}
 		})
 		conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
-			_, messages := parseConfig(&cfg)
-			return conf.NewCriticalProblems(messages...)
+			_, problems := parseConfig(&cfg)
+			return problems
 		})
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.Provider, messages []string) {
+func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.Provider, problems conf.Problems) {
 	ps = make(map[schema.GitHubAuthProvider]providers.Provider)
 	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Github == nil {
@@ -37,12 +37,12 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.
 		}
 
 		provider, providerProblems := parseProvider(pr.Github, pr)
-		messages = append(messages, providerProblems...)
+		problems = append(problems, conf.NewCriticalProblems(providerProblems...)...)
 		if provider != nil {
 			ps[*pr.Github] = provider
 		}
 	}
-	return ps, messages
+	return ps, problems
 }
 
 func getStateConfig() gologin.CookieConfig {

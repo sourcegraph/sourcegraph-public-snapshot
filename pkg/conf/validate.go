@@ -117,6 +117,10 @@ func NewSiteProblems(messages ...string) Problems {
 
 // Messages returns the list of problems in strings.
 func (ps Problems) Messages() []string {
+	if len(ps) == 0 {
+		return nil
+	}
+
 	msgs := make([]string, len(ps))
 	for i := range ps {
 		msgs[i] = ps[i].String()
