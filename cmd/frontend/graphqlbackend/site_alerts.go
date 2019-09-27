@@ -75,7 +75,7 @@ func init() {
 			return []*Alert{
 				{
 					TypeValue:    AlertTypeError,
-					MessageValue: `There is a serious problem either in the [**site configuration**](/site-admin/configuration) or [**critical configuration**](/help/admin/management_console): ` + err.Error(),
+					MessageValue: `Update [**site configuration**](/site-admin/configuration) or [**critical configuration**](/help/admin/management_console) to resolve problems: ` + err.Error(),
 				},
 			}
 		}
