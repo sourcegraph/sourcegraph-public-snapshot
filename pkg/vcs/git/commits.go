@@ -134,7 +134,7 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 	//  - CommitCount handles the case of opt.Range == "" by treating it as "HEAD"
 	//  - We are OK with not handling these bad repositories that contain HEAD branches.
 	//
-	commitid, err := ResolveRevision(ctx, repo, nil, revspec, nil)
+	commitid, err := ResolveRevision(ctx, repo, nil, revspec, &ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
