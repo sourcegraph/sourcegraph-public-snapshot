@@ -4,10 +4,14 @@ We value writing down plans so that we can asynchronously communicate to and sol
 
 This document describes how we operationalize written planning through our RFC process. This process is designed to be lightweight so that it can be used for many purposes (e.g. product specs, policy decisions, technical discussion), and it is optimized for facilitating collaboration and feedback. In contrast, GitHub issues are best for tracking concrete bug reports or work that has already been scoped and planned (i.e. there isn't much remaining to discuss).
 
+_All RFCs are in a [public Google Drive folder](https://drive.google.com/drive/folders/1bip_pMeWePyNNdCEETRzoyMdLtntcNKR)._
+
+## Lifecycle
+
 The general lifecycle of an RFC is:
 
    1. Write a draft.
-   2. Collect feedback.
+   2. Solicit feedback from relevant teammates.
    3. Update draft and go to step 2.
    4. Make a decision.
    5. If appropriate, file tracking issues on GitHub and add them to appropriate milestones.
