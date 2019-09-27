@@ -5,6 +5,11 @@ interface Resource {
     destroy: () => Promise<void>
 }
 
+/**
+ * Tracks resources created by tests. Lets the resource creation and removal logic be stored in one
+ * place and for easy resource cleanup at the end of tests. Also prints which resources are created
+ * and destroyed in case tests are aborted midway through and manual cleanup is required.
+ */
 export class TestResourceManager {
     private resources: Resource[]
 
