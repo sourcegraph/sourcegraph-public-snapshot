@@ -453,7 +453,7 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
-// ListAffiliatedepositories lists GitHub repositories affiliated with the client
+// ListAffiliatedRepositories lists GitHub repositories affiliated with the client
 // token. page is the page of results to return. Pages are 1-indexed (so the
 // first call should be for page 1).
 func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
