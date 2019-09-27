@@ -62,7 +62,7 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
     ).toPromise()
 }
 
-export async function ensureNoExternalServices(
+export async function ensureNoTestExternalServices(
     gqlClient: GraphQLClient,
     options: {
         kind: GQL.ExternalServiceKind
@@ -70,6 +70,12 @@ export async function ensureNoExternalServices(
         deleteIfExist?: boolean
     }
 ): Promise<void> {
+    if (!options.uniqueDisplayName.startsWith('[TEST]')) {
+        throw new Error(
+            `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
+        )
+    }
+
     const externalServices = await getExternalServices(gqlClient, options)
     if (externalServices.length === 0) {
         return
@@ -133,7 +139,7 @@ export function getExternalServices(
         .toPromise()
 }
 
-export async function ensureExternalService(
+export async function ensureTestExternalService(
     gqlClient: GraphQLClient,
     options: {
         kind: GQL.ExternalServiceKind
@@ -141,6 +147,12 @@ export async function ensureExternalService(
         config: Record<string, any>
     }
 ): Promise<void> {
+    if (!options.uniqueDisplayName.startsWith('[TEST]')) {
+        throw new Error(
+            `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
+        )
+    }
+
     const externalServices = await getExternalServices(gqlClient, options)
     if (externalServices.length > 0) {
         return

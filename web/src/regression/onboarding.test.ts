@@ -9,12 +9,12 @@ import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
-    ensureExternalService,
+    ensureTestExternalService,
     waitForRepos,
     setUserSiteAdmin,
     getUser,
     deleteUser,
-    ensureNoExternalServices,
+    ensureNoTestExternalServices,
     getExternalServices,
 } from './util/api'
 import { Key } from 'ts-key-enum'
@@ -59,7 +59,7 @@ describe('Onboarding', () => {
     )
     const testExternalServiceConfig = {
         kind: GQL.ExternalServiceKind.GITHUB,
-        uniqueDisplayName: 'GitHub (onboarding-regression-test)',
+        uniqueDisplayName: '[TEST] GitHub (onboarding.test.ts)',
         config: {
             url: 'https://github.com',
             token: config.gitHubToken,
@@ -120,7 +120,7 @@ describe('Onboarding', () => {
     testAdminOnboarding(
         'Site-admin onboarding',
         async () => {
-            await ensureNoExternalServices(gqlClient, {
+            await ensureNoTestExternalServices(gqlClient, {
                 ...testExternalServiceConfig,
                 deleteIfExist: true,
             })
@@ -169,7 +169,7 @@ describe('Onboarding', () => {
     test(
         'Non-admin user onboarding',
         async () => {
-            await ensureExternalService(gqlClient, testExternalServiceConfig)
+            await ensureTestExternalService(gqlClient, testExternalServiceConfig)
             const repoSlugs = testExternalServiceConfig.config.repos
             await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]])
 

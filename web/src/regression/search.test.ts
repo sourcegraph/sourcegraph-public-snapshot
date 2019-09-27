@@ -7,7 +7,7 @@ import { getConfig, Config } from '../../../shared/src/e2e/config'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
-import { ensureExternalService, waitForRepos, deleteUser, ensureNoExternalServices } from './util/api'
+import { ensureTestExternalService, waitForRepos, deleteUser, ensureNoTestExternalServices } from './util/api'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
@@ -131,7 +131,7 @@ describe('Search regression test suite', () => {
     const testUsername = 'test-search'
     const testExternalServiceInfo = {
         kind: GQL.ExternalServiceKind.GITHUB,
-        uniqueDisplayName: 'GitHub (search-regression-test)',
+        uniqueDisplayName: '[TEST] GitHub (search.test.ts)',
     }
 
     describe('Search over a dozen repositories', () => {
@@ -157,7 +157,7 @@ describe('Search regression test suite', () => {
                     type: 'External service',
                     name: testExternalServiceInfo.uniqueDisplayName,
                     create: async () => {
-                        await ensureExternalService(gqlClient, {
+                        await ensureTestExternalService(gqlClient, {
                             ...testExternalServiceInfo,
                             config: {
                                 url: 'https://github.com',
@@ -169,7 +169,7 @@ describe('Search regression test suite', () => {
                         await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
                     },
                     destroy: () =>
-                        ensureNoExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true }),
+                        ensureNoTestExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true }),
                 })
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
