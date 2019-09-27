@@ -9,7 +9,7 @@ This page demonstrates a few example GraphQL queries for the [Sourcegraph GraphQ
 		<th>Example use case</th>
 	</tr>
 	<tr>
-  	<td>
+  	<td style="width:33%">
   		<a href="https://sourcegraph.com/api/console#%7B%22query%22%3A%22query%20%7B%5Cn%20%20repository(name%3A%20%5C%22github.com%2Fuber%2Freact-map-gl%5C%22)%20%7B%5Cn%20%20%20%20defaultBranch%20%7B%5Cn%20%20%20%20%20%20target%20%7B%5Cn%20%20%20%20%20%20%20%20commit%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20blob(path%3A%20%5C%22README.md%5C%22)%20%7B%5Cn%20%20%20%20%20%20%20%20%20%20%20%20content%5Cn%20%20%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%20%20%7D%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%5Cn%22%7D">Get the contents of a file on the default branch</a>
   	</td>
   	<td>Returns the file contents.</td>
