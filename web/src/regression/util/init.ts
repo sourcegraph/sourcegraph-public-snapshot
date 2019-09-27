@@ -8,7 +8,9 @@ import * as semver from 'semver'
 
 /**
  * Semver constraint on the Sourcegraph product version. Uses the syntax specified in
- * https://www.npmjs.com/package/semver.
+ * https://www.npmjs.com/package/semver. This should be updated when a change is made that breaks
+ * compatibility between the regression tests and the Sourcegraph GUI. For example, when a new CSS
+ * class is added that the regression tests rely on to identify a particular component.
  */
 const supportedSourcegraphVersionConstraint = '>=3.8'
 
