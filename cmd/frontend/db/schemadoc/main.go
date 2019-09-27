@@ -59,19 +59,39 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		log.Fatal("rows.Err", err)
 	}
 
+	tmpfile, err := ioutil.TempFile("", "psql*.env")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	env := []string{"PGHOST=host.docker.internal"}
+	for _, e := range os.Environ() {
+		if strings.HasPrefix(e, "PG") && !strings.HasPrefix(e, "PGHOST=") {
+			env = append(env, e)
+		}
+	}
+	if _, err := tmpfile.Write([]byte(strings.Join(env, "\n"))); err != nil {
+		log.Fatal(err)
+	}
+	tmpfile.Close()
+
 	docs := []string{}
 	for _, table := range tables {
 		// Get postgres "describe table" output.
-		cmd := exec.Command("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+		//cmd := exec.Command("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+		cmd := exec.Command("docker", "run", "--rm", "--env-file", tmpfile.Name(), "postgres:9.6", "psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
+		fmt.Println(cmd.Args)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Fatal("cmd.CombinedOutput", out, err)
+			log.Fatal("cmd.CombinedOutput", string(out), err)
 		}
 
 		lines := strings.Split(string(out), "\n")
 		doc := "# " + strings.TrimSpace(lines[0]) + "\n"
 		doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
 		docs = append(docs, doc)
+		fmt.Println(doc)
 	}
 	sort.Strings(docs)
 
