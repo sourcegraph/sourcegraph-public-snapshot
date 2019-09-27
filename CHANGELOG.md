@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed an issue that rendered the search filter `repohascommitafter` unusable in the presence of an empty repository.
+
 ### Removed
 
 ## 3.8.0
