@@ -52,7 +52,6 @@
 /pkg/gosrc @beyang
 /pkg/txemail @slimsag
 /gulpfile.ts @beyang
-/client @sqs
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
@@ -101,12 +100,12 @@ tslint.config.js @felixfbecker
 /jest.config.js @felixfbecker
 /cmd @beyang @slimsag
 /pkg @beyang @slimsag
-/enterprise/cmd/frontend/internal/registry @sqs @beyang
 
 # Frontend
 /shared @sourcegraph/web
 /web @sourcegraph/web
 /ui @sourcegraph/web
+/client @sourcegraph/web
 /enterprise/ui @sourcegraph/web
 /cmd/frontend/internal/app/jscontext @slimsag
 /packages/@sourcegraph @sourcegraph/web
@@ -195,6 +194,7 @@ Dockerfile @sourcegraph/distribution
 /pkg/conf @slimsag
 /pkg/db/confdb @slimsag
 /pkg/db/globalstatedb @slimsag
+/enterprise/docs @sourcegraph/distribution
 
 # Licensing and billing
 /enterprise/cmd/frontend/internal/dotcom @sourcegraph/distribution
@@ -202,10 +202,9 @@ Dockerfile @sourcegraph/distribution
 
 # Documentation and homepage
 README.md @sqs
-/doc/ @sqs @ryan-blunden
+/doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
 /doc/dev/product/ @christinaforney
-/web/src/enterprise/dotcom/welcome/ @sqs
 
 # Browser extensions
 /browser/ @sourcegraph/web
@@ -213,7 +212,8 @@ README.md @sqs
 # Extension API
 /packages/sourcegraph-extension-api/ @sourcegraph/web
 /packages/@sourcegraph/extension-api-types @sourcegraph/web
-/cmd/frontend/registry @felixfbecker
+/cmd/frontend/registry @sourcegraph/web
+/enterprise/cmd/frontend/internal/registry @sourcegraph/web
 
 # Backend shared packages
 /pkg/endpoint/ @keegancsmith @slimsag
@@ -246,11 +246,10 @@ README.md @sqs
 
 # Misc and special overrides
 /LICENSE* @sqs @beyang @slimsag
-/enterprise/pkg/license @sqs @beyang
+/enterprise/pkg/license @beyang
 /cmd/frontend/external/session @beyang
 /cmd/frontend/external @beyang
-/babel.config.js @sqs @felixfbecker
-/enterprise/docs @sqs
+/babel.config.js @felixfbecker
 /cmd/loadtest @beyang
 /pkg/legacyconf/ @slimsag
 /pkg/hubspot/ @dadlerj
