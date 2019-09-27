@@ -9,6 +9,7 @@ import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { createLogger } from './logger'
 import { createPostgresConnection } from './connection'
 import { GITSERVER_URLS, updateCommits } from './commits'
+import { JobClass } from './queue'
 import { JobsHash, Worker } from 'node-resque'
 import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
@@ -116,7 +117,7 @@ async function main(logger: Logger): Promise<void> {
  */
 async function startWorker(
     logger: Logger,
-    jobFunctions: { [name: string]: (...args: any[]) => Promise<any> }
+    jobFunctions: { [K in JobClass]: (...args: any[]) => Promise<any> }
 ): Promise<void> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
 
@@ -127,8 +128,8 @@ async function startWorker(
     }
 
     const jobs: JobsHash = {}
-    for (const key of Object.keys(jobFunctions)) {
-        jobs[key] = { perform: jobFunctions[key] }
+    for (const [key, fn] of Object.entries(jobFunctions)) {
+        jobs[key] = { perform: fn }
     }
 
     // Create worker and log the interesting events

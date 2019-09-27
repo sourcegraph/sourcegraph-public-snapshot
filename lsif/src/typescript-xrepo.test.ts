@@ -2,6 +2,11 @@ import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
+import { createDatabaseFilename } from './util'
+import { Database } from './database'
+import { entities } from './models.xrepo'
+import { Readable } from 'stream'
+import { XrepoDatabase } from './xrepo'
 import {
     createCommit,
     createLocation,
@@ -10,11 +15,6 @@ import {
     getCleanSqliteDatabase,
     getTestData,
 } from './test-utils'
-import { createDatabaseFilename } from './util'
-import { Database } from './database'
-import { entities } from './models.xrepo'
-import { Readable } from 'stream'
-import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {
     let storageRoot!: string

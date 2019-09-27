@@ -1,7 +1,7 @@
 import { createLogger as _createLogger, Logger, transports } from 'winston'
-import { MESSAGE } from 'triple-beam'
-import { TransformableInfo, format } from 'logform'
+import { format, TransformableInfo } from 'logform'
 import { inspect } from 'util'
+import { MESSAGE } from 'triple-beam'
 
 /**
  * The maximum level log message to output.

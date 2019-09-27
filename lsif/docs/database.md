@@ -1,4 +1,4 @@
-# LSIF data model
+# LSIF database data model
 
 This document outlines the data model for a single LSIF dump. The definition of the database tables and the entities encoded within it can be found in `models.database.ts`.
 

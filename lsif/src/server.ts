@@ -11,15 +11,16 @@ import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } fro
 import { createGzip } from 'zlib'
 import { createLogger } from './logger'
 import { createPostgresConnection } from './connection'
-import { Database } from './database.js'
+import { Database } from './database'
 import { Edge, Vertex } from 'lsif-protocol'
 import { GITSERVER_URLS, updateCommits } from './commits'
 import { identity } from 'lodash'
+import { JobMeta, Queue, WorkerMeta } from './queue'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { pipeline as _pipeline, Readable } from 'stream'
 import { promisify } from 'util'
-import { Queue, Scheduler } from 'node-resque'
+import { Queue as ResqueQueue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
@@ -135,6 +136,7 @@ async function main(logger: Logger): Promise<void> {
     // Register endpoints
     app.use(metaEndpoints())
     app.use(await lsifEndpoints(queue, logger))
+    app.use(queueEndpoints(queue, logger))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -161,7 +163,7 @@ async function setupQueue(logger: Logger): Promise<Queue> {
     }
 
     // Create queue and log the interesting events
-    const queue = new Queue({ connection: connectionOptions })
+    const queue = new ResqueQueue({ connection: connectionOptions }) as Queue
     queue.on('error', error => logger.error('queue error', { error }))
     await queue.connect()
     exitHook(() => queue.end())
@@ -342,6 +344,75 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
                 }
 
                 res.json(await db[cleanMethod](path, position))
+            }
+        )
+    )
+
+    return router
+}
+
+/**
+ * Add endpoints to the HTTP API to view/control the worker queue.
+ *
+ * @param queue The queue containing LSIF jobs.
+ * @param logger The server's logger instance.
+ */
+function queueEndpoints(queue: Queue, logger: Logger): express.Router {
+    const router = express.Router()
+
+    const rewriteJobMeta = (job: JobMeta): { class: string; args: { [K: string]: any } } => ({
+        class: job.class,
+        args: job.args,
+    })
+
+    router.get(
+        '/queued',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const queuedJobs = await queue.queued('lsif', 0, -1)
+
+                res.send(
+                    queuedJobs.map(job => ({
+                        ...rewriteJobMeta(job),
+                    }))
+                )
+            }
+        )
+    )
+
+    router.get(
+        '/failed',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const failedJobs = await queue.failed(0, -1)
+                failedJobs.sort((a, b) => a.failed_at.localeCompare(b.failed_at))
+
+                res.send(
+                    failedJobs.map(job => ({
+                        error: job.error,
+                        failed_at: new Date(job.failed_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
+            }
+        )
+    )
+
+    router.get(
+        '/active',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const workerMeta = Array.from(Object.values(await queue.allWorkingOn())).filter(
+                    (x): x is WorkerMeta => x !== 'started'
+                )
+                workerMeta.sort((a, b) => a.run_at.localeCompare(b.run_at))
+
+                res.send(
+                    workerMeta.map(job => ({
+                        started_at: new Date(job.run_at).toISOString(),
+                        ...rewriteJobMeta(job.payload),
+                    }))
+                )
             }
         )
     )
