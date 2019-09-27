@@ -34,7 +34,7 @@ func printConfigValidation() {
 		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		log15.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
 		for _, verr := range messages {
-			log15.Warn(verr)
+			log15.Warn(verr.String())
 		}
 		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}
