@@ -1,25 +1,19 @@
 package shared
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // validateConfig returns the first error reported from the list of validators.
 func validateConfig(contents string, validators ...func(schema.CriticalConfiguration) error) error {
-	p, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	if len(errs) > 0 {
-		return fmt.Errorf("invalid JSON: %v", errs)
-	}
-
 	c := schema.CriticalConfiguration{}
-	if err := json.Unmarshal(p, &c); err != nil {
+	if err := jsonc.Unmarshal(contents, &c); err != nil {
 		return fmt.Errorf("unmarshal JSON: %v", err)
 	}
 

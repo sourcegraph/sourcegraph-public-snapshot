@@ -13,7 +13,7 @@ func TestValidateConfig(t *testing.T) {
 	}{
 		{
 			contents: `{`,
-			err:      "invalid JSON",
+			err:      "unmarshal JSON: failed to parse JSON: [CloseBraceExpected]",
 		},
 
 		{
