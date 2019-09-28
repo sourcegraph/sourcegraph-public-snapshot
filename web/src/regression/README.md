@@ -27,16 +27,18 @@ Prerequisites:
 - Sourcegraph builtin authentication must be enabled and Sourcegraph must be directly accessible
   from the host that runs the test script (e.g., additional auth proxies will break the tests). This
   requirement may be removed at a later date.
+- Install [`direnv`](https://direnv.net) and create a `.envrc` file at the root of this repository.
 
 Run the tests:
 
 1. From the repository root directory, `cd` into the `web/` directory.
 1. Run `yarn run test-regression`. This will fail with an error indicating environment variables
-   need to be set. Set these according to their descriptions and re-run the command. You may be
-   prompted to set additional environment variables. Continue setting these until you no longer see
-   environment variable errors. (You can view a full list of environment variables in
-   `shared/src/e2e/config.ts`.) You should see a Chrome window pop up and the tests will play in
-   that window. The initial run may take awhile, because test repositories need to be cloned.
+   need to be set. The required set of env vars varies with each test suite, so you can set the
+   union of all the env vars or just the ones for the test cases you wish to run. Set these in your
+   `.envrc` file and run `direnv allow`. (There are also optional environment variables. You can
+   view a full list in `shared/src/e2e/config.ts`.)
+1. You should see a Chrome window pop up and the tests will play in that window. The initial run may
+   take awhile, because test repositories need to be cloned.
 1. some tests require additional manual verification of screenshots after the test completes.
    Screenshots files are deposited in the current directory and are named descriptively for what
    should be checked.
@@ -49,8 +51,8 @@ Tips:
   have to scroll up--the first error is often the real one.
 - When debugging test failures, you can insert the line `await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000))` to pause execution. Also read the [Puppeteer debugging
   docs](https://github.com/GoogleChrome/puppeteer#debugging-tips)
-- The `SLOWMO` and `HEADLESS` environment variables will slow down Puppeteer execution and run in
-  headless mode, respectively.
+- The `SLOWMO` environment variable will slow down Puppeteer execution by the specified number of
+  milliseconds. `HEADLESS` will cause Puppeteer to run in headless mode (no visible browser window).
 
 ## Adding a test
 
