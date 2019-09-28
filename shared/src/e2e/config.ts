@@ -53,7 +53,8 @@ const configFields: ConfigFields = {
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
-        description: 'A GitHub token that will be used to authenticate a GitHub external service.',
+        description:
+            'A GitHub personal access token that will be used to authenticate a GitHub external service. It does not need to have any scopes.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
@@ -76,7 +77,7 @@ const configFields: ConfigFields = {
         envVar: 'NO_CLEANUP',
         parser: parseBool,
         description:
-            'If true, regression tests will not clean up users, external services, or other resources they create. This can reduce the running time of tests (especially on subsequent runs), but should not be used when running against production instances.',
+            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll mamke test runs faster). Set to false if running against production",
     },
     logBrowserConsole: {
         envVar: 'LOG_BROWSER_CONSOLE',
@@ -100,7 +101,9 @@ const configFields: ConfigFields = {
 
 /**
  * Reads e2e config from environment variables. The caller should specify the config fields that it
- * depends on.
+ * depends on. This should NOT be called from helper packages. Instead, call it near the start of
+ * "test main" function (i.e., Jest `test` blocks). Doing this ensures that all the necessary
+ * environment variables necessary for a test are presented to the user in one go.
  */
 export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config, T> {
     // Read config

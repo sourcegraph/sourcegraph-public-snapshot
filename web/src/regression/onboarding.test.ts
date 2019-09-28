@@ -55,7 +55,11 @@ describe('Onboarding', () => {
         'gitHubToken',
         'sourcegraphBaseUrl',
         'includeAdminOnboarding',
-        'noCleanup'
+        'noCleanup',
+        'testUserPassword',
+        'headless',
+        'slowMo',
+        'logBrowserConsole'
     )
     const testExternalServiceConfig = {
         kind: GQL.ExternalServiceKind.GITHUB,
@@ -75,7 +79,7 @@ describe('Onboarding', () => {
 
     beforeAll(
         async () => {
-            driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
+            driver = await createAndInitializeDriver(config)
             gqlClient = GraphQLClient.newForPuppeteerTest({
                 baseURL: config.sourcegraphBaseUrl,
                 sudoToken: config.sudoToken,
@@ -88,9 +92,8 @@ describe('Onboarding', () => {
                 type: 'User',
                 name: testUsername,
                 create: () =>
-                    ensureLoggedInOrCreateTestUser({
-                        driver,
-                        gqlClient,
+                    ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                        ...config,
                         username: testUsername,
                         deleteIfExists: true,
                     }),

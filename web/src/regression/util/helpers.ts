@@ -5,24 +5,23 @@ import { catchError, map } from 'rxjs/operators'
 import { throwError } from 'rxjs'
 import { Key } from 'ts-key-enum'
 import { deleteUser } from './api'
-import { getConfig } from '../../../../shared/src/e2e/config'
-
-const { testUserPassword } = getConfig('testUserPassword')
+import { Config } from '../../../../shared/src/e2e/config'
 
 /**
  * Create the user with the specified password
  */
-export async function ensureLoggedInOrCreateTestUser({
-    driver,
-    gqlClient,
-    username,
-    deleteIfExists,
-}: {
-    driver: Driver
-    gqlClient: GraphQLClient
-    username: string
-    deleteIfExists?: boolean
-}): Promise<void> {
+export async function ensureLoggedInOrCreateTestUser(
+    driver: Driver,
+    gqlClient: GraphQLClient,
+    {
+        username,
+        deleteIfExists,
+        testUserPassword,
+    }: {
+        username: string
+        deleteIfExists?: boolean
+    } & Pick<Config, 'testUserPassword'>
+): Promise<void> {
     if (!username.startsWith('test-')) {
         throw new Error(`Test username must start with "test-" (was ${JSON.stringify(username)})`)
     }
@@ -39,11 +38,15 @@ export async function ensureLoggedInOrCreateTestUser({
         }
     }
 
-    await createTestUser(driver, gqlClient, username)
+    await createTestUser(driver, gqlClient, { username, testUserPassword })
     await driver.ensureLoggedIn({ username, password: testUserPassword })
 }
 
-export async function createTestUser(driver: Driver, gqlClient: GraphQLClient, username: string): Promise<void> {
+async function createTestUser(
+    driver: Driver,
+    gqlClient: GraphQLClient,
+    { username, testUserPassword }: { username: string } & Pick<Config, 'testUserPassword'>
+): Promise<void> {
     // If there's an error, try to create the user
     const passwordResetURL = await gqlClient
         .mutateGraphQL(

@@ -3,7 +3,7 @@
  */
 
 import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig, Config } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/e2e/config'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
@@ -125,7 +125,6 @@ function hasNoResultsOrError(): boolean {
 }
 
 describe('Search regression test suite', () => {
-    let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl' | 'noCleanup'>
     let driver: Driver
     let gqlClient: GraphQLClient
     const testUsername = 'test-search'
@@ -136,10 +135,20 @@ describe('Search regression test suite', () => {
 
     describe('Search over a dozen repositories', () => {
         const resourceManager = new TestResourceManager()
+        const config = getConfig(
+            'sudoToken',
+            'sudoUsername',
+            'gitHubToken',
+            'sourcegraphBaseUrl',
+            'noCleanup',
+            'testUserPassword',
+            'logBrowserConsole',
+            'slowMo',
+            'headless'
+        )
         beforeAll(
             async () => {
-                config = getConfig('sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl', 'noCleanup')
-                driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
+                driver = await createAndInitializeDriver(config)
                 gqlClient = GraphQLClient.newForPuppeteerTest({
                     baseURL: config.sourcegraphBaseUrl,
                     sudoToken: config.sudoToken,
@@ -150,7 +159,8 @@ describe('Search regression test suite', () => {
                 await resourceManager.create({
                     type: 'User',
                     name: testUsername,
-                    create: () => ensureLoggedInOrCreateTestUser({ driver, gqlClient, username: testUsername }),
+                    create: () =>
+                        ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config }),
                     destroy: () => deleteUser(gqlClient, testUsername, false),
                 })
                 await resourceManager.create({

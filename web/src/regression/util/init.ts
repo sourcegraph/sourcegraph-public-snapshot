@@ -1,7 +1,7 @@
 import { createDriverForTest, Driver } from '../../../../shared/src/e2e/driver'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../../shared/src/e2e/screenshotReporter'
 import * as path from 'path'
-import { getConfig } from '../../../../shared/src/e2e/config'
+import { Config } from '../../../../shared/src/e2e/config'
 import { currentProductVersion } from './api'
 import { GraphQLClient } from './GraphQLClient'
 import * as semver from 'semver'
@@ -61,9 +61,10 @@ export async function setTestDefaults(driver: Driver, gqlClient: GraphQLClient):
  * timeouts is under 5s. Otherwise, the timeout error will be a cryptic Jest timeout error, instead
  * of an error pointing to the timed-out Puppeteer command.
  */
-export async function createAndInitializeDriver(sourcegraphBaseUrl: string): Promise<Driver> {
-    const { logBrowserConsole, slowMo, headless } = getConfig('logBrowserConsole', 'slowMo', 'headless')
-    const driver = await createDriverForTest({ sourcegraphBaseUrl, logBrowserConsole, slowMo, headless })
+export async function createAndInitializeDriver(
+    config: Pick<Config, 'sourcegraphBaseUrl' | 'logBrowserConsole' | 'slowMo' | 'headless'>
+): Promise<Driver> {
+    const driver = await createDriverForTest(config)
     driver.page.setDefaultNavigationTimeout(5 * 1000) // 5s navigation timeout
     return driver
 }
