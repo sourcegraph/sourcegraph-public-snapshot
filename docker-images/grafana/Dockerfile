@@ -5,7 +5,6 @@ RUN apk update && apk upgrade && \
 
 WORKDIR /opt
 RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git
-RUN git clone https://github.com/grafana/grafonnet-lib.git && cd grafonnet-lib && git checkout 69bc267211790a1c3f4ea6e6211f3e8ffe22f987
 
 RUN cd jsonnet && \
     make
