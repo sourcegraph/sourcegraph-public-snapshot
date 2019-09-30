@@ -62,8 +62,8 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 // https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap/#username-considerations-with-ldap):
 //
 // - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
-// - Usernames with exactly one `@` character, any portion since the `@` character is removed
-// - Usernames with two or more `@` characters, they are treated as non-standard characters and both are replaced with `-`
+// - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
+// - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
 // - Usernames with consecutive `-` or `.` characters are not allowed
 // - Usernames that start or end with `.` are not allowed
 // - Usernames that start with `-` are not allowed
