@@ -221,7 +221,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 
 	result, err := s.repoLookup(r.Context(), args)
 	if err != nil {
-		if err == context.Canceled {
+		if r.Context().Err() != nil {
 			http.Error(w, "request canceled", http.StatusGatewayTimeout)
 			return
 		}

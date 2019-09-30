@@ -1,13 +1,10 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { GitCommitNodeByline } from './GitCommitNodeByline'
+import { GitCommitNodeByline, Signature } from './GitCommitNodeByline'
 
-const FIXTURE_SIGNATURE_1: GQL.ISignature = {
-    __typename: 'Signature',
+const FIXTURE_SIGNATURE_1: Signature = {
     date: '1990-01-01',
     person: {
-        __typename: 'Person',
         name: 'Alice Zhao',
         displayName: 'Alice Zhao',
         email: 'alice@example.com',
@@ -16,16 +13,16 @@ const FIXTURE_SIGNATURE_1: GQL.ISignature = {
     },
 }
 
-const FIXTURE_SIGNATURE_2: GQL.ISignature = {
-    __typename: 'Signature',
+const FIXTURE_SIGNATURE_2: Signature = {
     date: '1991-01-01',
     person: {
-        __typename: 'Person',
         name: 'Bob Yang',
         displayName: 'Bob Yang',
         email: 'bob@example.com',
         avatarURL: 'http://example.com/bob.png',
-        user: null,
+        user: {
+            username: 'bYang',
+        },
     },
 }
 
@@ -68,14 +65,15 @@ describe('GitCommitNodeByline', () => {
                     <GitCommitNodeByline
                         author={FIXTURE_SIGNATURE_1}
                         committer={{
-                            __typename: 'Signature',
                             date: '1992-01-01',
                             person: {
-                                __typename: 'Person',
                                 name: 'GitHub',
                                 email: 'noreply@github.com',
                                 displayName: 'GitHub',
                                 avatarURL: 'http://example.com/github.png',
+                                user: {
+                                    username: 'gitUserName',
+                                },
                             },
                         }}
                     />

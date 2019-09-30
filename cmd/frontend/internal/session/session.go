@@ -34,17 +34,17 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 const cookieName = "sgs"
 
 func init() {
-	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
+	conf.ContributeValidator(func(c conf.Unified) (problems conf.Problems) {
 		if c.Critical.AuthSessionExpiry == "" {
 			return nil
 		}
 
 		d, err := time.ParseDuration(c.Critical.AuthSessionExpiry)
 		if err != nil {
-			return []string{"auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used."}
+			return conf.NewCriticalProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
 		}
 		if d == 0 {
-			return []string{"auth.sessionExpiry should be greater than zero. The default of 90 days will be used."}
+			return conf.NewCriticalProblems("auth.sessionExpiry should be greater than zero. The default of 90 days will be used.")
 		}
 		return nil
 	})

@@ -5,9 +5,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 

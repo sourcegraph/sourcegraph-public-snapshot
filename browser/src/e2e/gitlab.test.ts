@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'

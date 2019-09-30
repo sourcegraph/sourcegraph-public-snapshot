@@ -43,22 +43,3 @@ export const createAggregateError = (errors: ErrorLike[] = []): AggregateError =
         name: 'AggregateError' as const,
         errors: errors.map(asError),
     })
-
-/**
- * Improves error messages in case of ajax errors
- */
-export const normalizeAjaxError = (err: any): void => {
-    if (!err) {
-        return
-    }
-    if (typeof err.status === 'number') {
-        if (err.status === 0) {
-            err.message = 'Unable to reach server. Check your network connection and try again in a moment.'
-        } else {
-            err.message = `Unexpected HTTP error: ${err.status}`
-            if (err.xhr && err.xhr.statusText) {
-                err.message += ` ${err.xhr.statusText}`
-            }
-        }
-    }
-}

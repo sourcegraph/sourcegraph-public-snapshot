@@ -7,9 +7,24 @@ import { UserAvatar } from '../../user/UserAvatar'
  * The subset of {@link GQL.ISignature} information needed by {@link GitCommitNodeByline}. Using the
  * minimal subset makes testing easier.
  */
-interface Signature extends Pick<GQL.ISignature, 'date'> {
-    person: Pick<GQL.IPerson, 'email' | 'name' | 'displayName' | 'avatarURL'>
+export interface Signature extends Pick<GQL.ISignature, 'date'> {
+    person: {
+        user: Pick<GQL.IUser, 'username'> | null
+    } & Pick<GQL.IPerson, 'email' | 'name' | 'displayName' | 'avatarURL'>
 }
+
+/**
+ * Formats person names to: "username (Display Name)" or "Display Name"
+ */
+const formatPersonNames = ({ user, displayName }: Signature['person']): string =>
+    user ? `${user.username} (${displayName})` : displayName
+
+/**
+ * Formats person names with {@link formatPersonNames}, and shows tooltip with user email.
+ */
+const PersonNames: React.FunctionComponent<{ person: Signature['person'] }> = ({ person }) => (
+    <strong data-tooltip={person.email}>{formatPersonNames(person)}</strong>
+)
 
 /**
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
@@ -37,15 +52,15 @@ export const GitCommitNodeByline: React.FunctionComponent<{
                 <UserAvatar
                     className="icon-inline"
                     user={author.person}
-                    data-tooltip={`${author.person.displayName} (author)`}
+                    data-tooltip={`${formatPersonNames(author.person)} (author)`}
                 />{' '}
                 <UserAvatar
                     className="icon-inline mr-1"
                     user={committer.person}
-                    data-tooltip={`${committer.person.displayName} (committer)`}
+                    data-tooltip={`${formatPersonNames(committer.person)} (committer)`}
                 />{' '}
-                <strong>{author.person.displayName}</strong> {!compact && 'authored'} and{' '}
-                <strong>{committer.person.displayName}</strong>{' '}
+                <PersonNames person={author.person} /> {!compact && 'authored'} and{' '}
+                <PersonNames person={committer.person} />{' '}
                 {!compact && (
                     <>
                         committed <Timestamp date={committer.date} />
@@ -57,8 +72,12 @@ export const GitCommitNodeByline: React.FunctionComponent<{
 
     return (
         <small className={`git-commit-node-byline git-commit-node-byline--no-committer ${className}`}>
-            <UserAvatar className="icon-inline mr-1" user={author.person} data-tooltip={author.person.displayName} />{' '}
-            <strong>{author.person.displayName}</strong>{' '}
+            <UserAvatar
+                className="icon-inline mr-1"
+                user={author.person}
+                data-tooltip={formatPersonNames(author.person)}
+            />{' '}
+            <PersonNames person={author.person} />{' '}
             {!compact && (
                 <>
                     committed <Timestamp date={author.date} />

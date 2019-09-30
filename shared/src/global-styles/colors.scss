@@ -85,6 +85,11 @@ $warning: $yellow;
 $danger: $red;
 $secondary-light: darken($gray-01, 5%);
 
+// Added to bg- and text- utilities because it is commonly needed in our app.
+$theme-colors: (
+    'merged': $purple,
+);
+
 $theme-colors-light: (
     'secondary': $secondary-light,
 );

@@ -1,5 +1,6 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
+import { createConnection } from './connection'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './metrics'
 import { DefaultMap } from './default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
@@ -7,9 +8,13 @@ import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from './xrepo'
+import { readGzippedJsonElements } from './input'
+import { Readable } from 'stream'
 import { TableInserter } from './inserter'
 import {
     DefinitionModel,
+    DocumentData,
+    DocumentModel,
     MetaModel,
     MonikerData,
     PackageInformationData,
@@ -24,8 +29,6 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
-    DocumentData,
-    DocumentModel,
 } from './models.database'
 
 /**
@@ -49,31 +52,49 @@ const RESULTS_PER_RESULT_CHUNK = readEnvInt('RESULTS_PER_RESULT_CHUNK', 500)
 const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 
 /**
+ * Populate a SQLite database with the given input stream. Returns the
+ * data required to populate the cross-repo database.
+ *
+ * @param input The input stream containing JSON-encoded LSIF data.
+ * @param database The filepath of the database to populate.
+ */
+export async function convertLsif(
+    input: Readable,
+    database: string
+): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    const connection = await createConnection(database, [
+        DefinitionModel,
+        DocumentModel,
+        MetaModel,
+        ReferenceModel,
+        ResultChunkModel,
+    ])
+
+    try {
+        await connection.query('PRAGMA synchronous = OFF')
+        await connection.query('PRAGMA journal_mode = OFF')
+
+        return await connection.transaction(entityManager => importLsif(entityManager, input))
+    } finally {
+        await connection.close()
+    }
+}
+
+/**
  * Correlate each vertex and edge together, then populate the provided entity manager
  * with the document, definition, and reference information. Returns the package and
- * external reference data needed to populate the xrepo database.
+ * external reference data needed to populate the cross-repo database.
  *
  * @param entityManager A transactional SQLite entity manager.
- * @param elements The stream of vertex and edge objects composing the LSIF dump.
+ * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
  */
 export async function importLsif(
     entityManager: EntityManager,
-    elements: AsyncIterable<Vertex | Edge>
+    input: Readable
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const correlator = new Correlator()
-
-    let line = 0
-    for await (const element of elements) {
-        try {
-            correlator.insert(element)
-        } catch (e) {
-            throw Object.assign(
-                new Error(`Failed to process line #${line + 1} (${JSON.stringify(element)}): ${e && e.message}`),
-                { status: 422 }
-            )
-        }
-
-        line++
+    for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
+        correlator.insert(element)
     }
 
     if (correlator.lsifVersion === undefined) {
@@ -132,7 +153,7 @@ export async function importLsif(
     await definitionInserter.flush()
     await referenceInserter.flush()
 
-    // Return data to populate xrepo database
+    // Return data to populate cross-repo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }
 }
 
@@ -183,7 +204,7 @@ async function populateDocumentsTable(
  * Correlate and insert all result chunk entries for this dump.
  *
  * @param correlator The correlator with all vertices and edges inserted.
- * @param documentInserter The inserter for the result chunks table.
+ * @param resultChunkInserter The inserter for the result chunks table.
  * @param numResultChunks The number of result chunks used to hash compute the result identifier hash.
  */
 async function populateResultChunksTable(

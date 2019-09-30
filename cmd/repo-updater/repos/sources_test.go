@@ -627,6 +627,61 @@ func TestSources_ListRepos(t *testing.T) {
 	{
 		svcs := ExternalServices{
 			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "sg-test.d/repo-git"},
+						{Name: "sg-test.d/repo-gitrepo"},
+					},
+					NameTransformations: []*schema.GitLabNameTransformation{
+						{
+							Regex:       "\\.d/",
+							Replacement: "/",
+						},
+						{
+							Regex:       "-git$",
+							Replacement: "",
+						},
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "nameTransformations updates the repo name",
+			svcs: svcs,
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					have := rs.Names()
+					sort.Strings(have)
+
+					var want []string
+					switch s.Kind {
+					case "GITLAB":
+						want = []string{
+							"gitlab.com/sg-test/repo",
+							"gitlab.com/sg-test/repo-gitrepo",
+						}
+					}
+
+					if !reflect.DeepEqual(have, want) {
+						t.Error(cmp.Diff(have, want))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),

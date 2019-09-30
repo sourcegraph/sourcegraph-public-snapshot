@@ -1,12 +1,11 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
+import { createDatabaseFilename, hashKey, mustGet } from './util'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter, instrument } from './metrics'
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
-import { hashKey, mustGet } from './util'
 import { isEqual, uniqWith } from 'lodash'
-import { makeFilename } from './backend'
 import { PackageModel } from './models.xrepo'
 import { XrepoDatabase } from './xrepo'
 import {
@@ -305,9 +304,9 @@ export class Database {
 
     /**
      * Find the definition of the target moniker outside of the current database. If the
-     * moniker has attached package information, then the xrepo database is queried for
-     * the target package. That database is opened, and its def table is queried for the
-     * target moniker.
+     * moniker has attached package information, then the cross-repo database is queried
+     * for the target package. That database is opened, and its definitions table is queried
+     * for the target moniker.
      *
      * @param document The document containing the reference.
      * @param moniker The target moniker.
@@ -335,7 +334,7 @@ export class Database {
         const db = this.createNewDatabase(
             packageEntity.repository,
             packageEntity.commit,
-            makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
+            createDatabaseFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
         const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
@@ -371,7 +370,7 @@ export class Database {
         const db = this.createNewDatabase(
             packageEntity.repository,
             packageEntity.commit,
-            makeFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
+            createDatabaseFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
         )
 
         const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
@@ -380,9 +379,9 @@ export class Database {
 
     /**
      * Find the references of the target moniker outside of the current database. If the moniker
-     * has attached package information, then the xrepo database is queried for the packages that
-     * require this particular moniker identifier. These databases are opened, and their ref tables
-     * are queried for the target moniker.
+     * has attached package information, then the cross-repo database is queried for the packages
+     * that require this particular moniker identifier. These databases are opened, and their
+     * references tables are queried for the target moniker.
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
@@ -415,7 +414,7 @@ export class Database {
             const db = this.createNewDatabase(
                 reference.repository,
                 reference.commit,
-                makeFilename(this.storageRoot, reference.repository, reference.commit)
+                createDatabaseFilename(this.storageRoot, reference.repository, reference.commit)
             )
 
             const pathTransformer = (path: string): string => createRemoteUri(reference, path)

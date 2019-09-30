@@ -2,9 +2,9 @@
 
 [LSIF](https://code.visualstudio.com/blogs/2019/02/19/lsif) is a file format that stores code intelligence information such as hover docstrings, definitions, and references.
 
-Sourcegraph receives and stores LSIF files uploaded using [upload-lsif.sh](upload-lsif.sh) (usually used in CI, similar to [Codecov's Bash Uploader](https://docs.codecov.io/docs/about-the-codecov-bash-uploader)), then uses that information to provide fast and precise code intelligence when viewing files.
+Sourcegraph receives and stores LSIF files uploaded using [upload.sh](upload.sh) (usually used in CI, similar to [Codecov's Bash Uploader](https://docs.codecov.io/docs/about-the-codecov-bash-uploader)), then uses that information to provide fast and precise code intelligence when viewing files.
 
-The HTTP [server](src) runs behind Sourcegraph (for auth) and receives and stores LSIF dump uploads and services requests for relevant LSP queries.
+The HTTP [server](src/server.ts) runs behind Sourcegraph (for auth) and services requests for relevant LSP queries. LSIF dump uploads received by the server are stored in a temporary file to be asynchronously processed by the [worker](src/worker.ts). The server and worker communicate via [node-resque](https://github.com/taskrabbit/node-resque), a work broker powered by Redis.
 
 ## API
 

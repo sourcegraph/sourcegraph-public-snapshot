@@ -71,7 +71,9 @@ const config: webpack.Configuration = {
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: [path.resolve(__dirname, '../../../node_modules')],
+                            sassOptions: {
+                                includePaths: [path.resolve(__dirname, '../../../node_modules')],
+                            },
                         },
                     },
                 ],

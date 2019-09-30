@@ -165,7 +165,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     </>
                                 ) : (
                                     <>
-                                        <DownloadIcon className="icon-inline" /> Save this search query
+                                        <DownloadIcon className="icon-inline e2e-save-search-link" /> Save this search
+                                        query
                                     </>
                                 )}
                             </button>

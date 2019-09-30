@@ -260,6 +260,24 @@ func TestStore(t *testing.T) {
 				}
 			})
 		})
+
+		t.Run("Delete", func(t *testing.T) {
+			for i := range campaigns {
+				err := s.DeleteCampaign(ctx, campaigns[i].ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				count, err := s.CountCampaigns(ctx, CountCampaignsOpts{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(len(campaigns)-(i+1)); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
 	})
 
 	t.Run("Changesets", func(t *testing.T) {

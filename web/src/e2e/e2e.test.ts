@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
@@ -182,6 +186,32 @@ describe('e2e test suite', () => {
                 name
             )
         })
+
+        test('Check allowed usernames', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-username')
+
+            const name = 'alice.bob-chris-'
+
+            await driver.replaceText({
+                selector: '.e2e-user-settings-profile-page-username',
+                newText: name,
+                selectMethod: 'selectall',
+            })
+
+            await driver.page.click('.e2e-user-settings-profile-page-update-profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-alert-success', { visible: true })
+
+            await driver.page.goto(sourcegraphBaseUrl + `/users/${name}/settings/profile`)
+            await driver.replaceText({
+                selector: '.e2e-user-settings-profile-page-username',
+                newText: 'test',
+                selectMethod: 'selectall',
+            })
+
+            await driver.page.click('.e2e-user-settings-profile-page-update-profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-alert-success', { visible: true })
+        })
     })
 
     describe('External services', () => {
@@ -349,24 +379,24 @@ describe('e2e test suite', () => {
     describe('Theme switcher', () => {
         test('changes the theme', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
-            await driver.page.waitForSelector('.theme', { visible: true })
-            const currentThemes = await driver.page.evaluate(() =>
-                Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-            )
-            expect(currentThemes).toHaveLength(1)
+            await driver.page.waitForSelector('.theme.theme-dark, .theme.theme-light', { visible: true })
+
+            const getActiveThemeClasses = (): Promise<string[]> =>
+                driver.page.evaluate(() =>
+                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
+                )
+
+            expect(await getActiveThemeClasses()).toHaveLength(1)
+            await driver.page.waitForSelector('.e2e-user-nav-item-toggle')
             await driver.page.click('.e2e-user-nav-item-toggle')
+
+            // Switch to dark
             await driver.page.select('.e2e-theme-toggle', 'dark')
-            expect(
-                await driver.page.evaluate(() =>
-                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-                )
-            ).toEqual(['theme-dark'])
+            expect(await getActiveThemeClasses()).toEqual(['theme-dark'])
+
+            // Switch to light
             await driver.page.select('.e2e-theme-toggle', 'light')
-            expect(
-                await driver.page.evaluate(() =>
-                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-                )
-            ).toEqual(['theme-light'])
+            expect(await getActiveThemeClasses()).toEqual(['theme-light'])
         })
     })
 
@@ -1158,12 +1188,104 @@ describe('e2e test suite', () => {
             expect(label).toEqual('Code')
         })
 
-        test('Clicking search results tabs updates query and URL', async () => {
+        test.skip('Clicking search results tabs updates query and URL', async () => {
             for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
                 await driver.page.waitForSelector(`.e2e-search-result-tab-${searchType}`)
                 await driver.page.click(`.e2e-search-result-tab-${searchType}`)
                 await driver.assertWindowLocation(`/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}`)
             }
+        })
+    })
+
+    describe('Saved searches', () => {
+        test('Save search from search results page', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
+            await driver.page.waitForSelector('.e2e-save-search-link', { visible: true })
+            await driver.page.click('.e2e-save-search-link')
+            await driver.page.waitForSelector('.e2e-saved-search-modal')
+            await driver.page.waitForSelector('.e2e-saved-search-modal-save-button')
+            await driver.page.click('.e2e-saved-search-modal-save-button')
+            await driver.assertWindowLocation('/users/test/searches/add?query=test')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-description')
+            await driver.page.keyboard.type('test query')
+            await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-submit-button')
+            await driver.assertWindowLocation('/users/test/searches')
+
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
+            )
+            expect(nodes).toEqual(1)
+
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
+                )
+            ).toEqual('test query')
+        })
+        test('Delete saved search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-delete-saved-search-button', { visible: true })
+            driver.page.on('dialog', async dialog => {
+                await dialog.accept()
+            })
+            await driver.page.click('.e2e-delete-saved-search-button')
+            await driver.page.waitFor(() => !document.querySelector('.e2e-saved-search-list-page-row'))
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
+            )
+            expect(nodes).toEqual(0)
+        })
+        test('Save search from saved searches page', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-add-saved-search-button', { visible: true })
+            await driver.page.click('.e2e-add-saved-search-button')
+            await driver.assertWindowLocation('/users/test/searches/add')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-description')
+            await driver.page.keyboard.type('test query 2')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-query', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-query')
+            await driver.page.keyboard.type('test')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-submit-button')
+            await driver.assertWindowLocation('/users/test/searches')
+
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
+            )
+            expect(nodes).toEqual(1)
+
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
+                )
+            ).toEqual('test query 2')
+        })
+        test('Edit saved search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-edit-saved-search-button', { visible: true })
+            await driver.page.click('.e2e-edit-saved-search-button')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-description')
+            await driver.page.keyboard.type(' edited')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-submit-button')
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-saved-search-list-page-row-title')
+
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
+                )
+            ).toEqual('test query 2 edited')
         })
     })
 })

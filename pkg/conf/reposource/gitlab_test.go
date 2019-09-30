@@ -13,10 +13,21 @@ func TestGitLab_cloneURLToRepoName(t *testing.T) {
 	}{{
 		conn: schema.GitLabConnection{
 			Url: "https://gitlab.com",
+			NameTransformations: []*schema.GitLabNameTransformation{
+				{
+					Regex:       "\\.d/",
+					Replacement: "/",
+				},
+				{
+					Regex:       "-git$",
+					Replacement: "",
+				},
+			},
 		},
 		urls: []urlToRepoName{
 			{"git@gitlab.com:beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 			{"git@gitlab.com:/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
+			{"git@gitlab.com:/beyang.d/public-repo-git.git", "gitlab.com/beyang/public-repo"},
 			{"https://gitlab.com/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 			{"https://oauth2:ACCESS_TOKEN@gitlab.com/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 

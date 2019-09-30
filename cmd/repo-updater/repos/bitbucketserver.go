@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
@@ -223,14 +222,13 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	go func() {
 		defer wg.Done()
 
-		repos := make([]*bitbucketserver.Repo, 0, len(s.config.Repos))
-		errs := new(multierror.Error)
-
-		for _, name := range s.config.Repos {
+		// Admins normally add to end of lists, so end of list most likely has
+		// new repos => stream them first.
+		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			name := s.config.Repos[i]
 			ps := strings.SplitN(name, "/", 2)
 			if len(ps) != 2 {
-				errs = multierror.Append(errs,
-					errors.Errorf("bitbucketserver.repos: name=%q", name))
+				ch <- batch{err: errors.Errorf("bitbucketserver.repos: name=%q", name)}
 				continue
 			}
 
@@ -243,14 +241,11 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
 					continue
 				}
-				errs = multierror.Append(errs,
-					errors.Wrapf(err, "bitbucketserver.repos: name: %q", name))
+				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repos: name: %q", name)}
 			} else {
-				repos = append(repos, repo)
+				ch <- batch{repos: []*bitbucketserver.Repo{repo}}
 			}
 		}
-
-		ch <- batch{repos: repos, err: errs.ErrorOrNil()}
 	}()
 
 	for _, q := range s.config.RepositoryQuery {

@@ -15,9 +15,20 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Allow single trailing hyphen in usernames and org names [#5680](https://github.com/sourcegraph/sourcegraph/pull/5680)
+
 ### Fixed
 
+- Fixed an issue that rendered the search filter `repohascommitafter` unusable in the presence of an empty repository. [#5149](https://github.com/sourcegraph/sourcegraph/issues/5149)
+- An issue where `externalURL` not being configured in the management console could go unnoticed. [#3899](https://github.com/sourcegraph/sourcegraph/issues/3899)
+
 ### Removed
+
+## 3.8.1
+
+### Added
+
+- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
 
 ## 3.8.0
 

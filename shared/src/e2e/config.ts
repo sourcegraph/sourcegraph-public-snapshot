@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import { pick } from 'lodash'
 
 /**
@@ -10,58 +9,86 @@ export interface Config {
     sudoUsername: string
     gitHubToken: string
     sourcegraphBaseUrl: string
+    includeAdminOnboarding: boolean
 }
 
-export interface ConfigField {
+interface Field<T = string> {
     envVar: string
     description?: string
-    defaultValue?: string
+    defaultValue?: T
 }
 
-const configFields: { [K in keyof Config]: ConfigField } = {
+interface FieldParser<T = string> {
+    parser: (rawValue: string) => T
+}
+
+type ConfigFields = {
+    [K in keyof Config]: Field<Config[K]> & (Config[K] extends string ? Partial<FieldParser> : FieldParser<Config[K]>)
+}
+
+const parseBool = (s: string): boolean => {
+    if (['1', 't', 'true'].some(v => v.toLowerCase() === s)) {
+        return true
+    }
+    if (['0', 'f', 'false'].some(v => v.toLowerCase() === s)) {
+        return false
+    }
+    throw new Error(`could not parse string ${JSON.stringify(s)} to boolean`)
+}
+
+const configFields: ConfigFields = {
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
+        parser: s => s,
         description:
             'An access token with "site-admin:sudo" permissions. This will be used to impersonate users in requests.',
     },
     sudoUsername: {
         envVar: 'SOURCEGRAPH_SUDO_USER',
+        parser: s => s,
         description: 'The site-admin-level username that will be impersonated with the sudo access token.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
+        parser: s => s,
         description: 'A GitHub token that will be used to authenticate a GitHub external service.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
+        parser: s => s,
         defaultValue: 'http://localhost:3080',
         description:
             'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
     },
+    includeAdminOnboarding: {
+        envVar: 'INCLUDE_ADMIN_ONBOARDING',
+        parser: parseBool,
+        description:
+            'If true, include admin onboarding tests, which assume none of the admin onboarding steps have yet completed on the instance. If those steps have already been completed, this test will fail.',
+    },
 }
 
 /**
- * Reads e2e config from appropriate inputs: the config file defined by $CONFIG_FILE
- * and environment variables. The caller should specify the config fields that it
- * depends on. This method reads the config synchronously from disk.
+ * Reads e2e config from environment variables. The caller should specify the config fields that it
+ * depends on.
  */
 export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
-    const configFile = process.env.CONFIG_FILE
-    // eslint-disable-next-line no-sync
-    const config = configFile ? JSON.parse(fs.readFileSync(configFile, 'utf-8')) : {}
-
-    // Set defaults and read env vars
-    for (const [fieldName, field] of Object.entries(configFields)) {
-        if (field.defaultValue && config[fieldName] === undefined) {
+    // Read config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: { [key: string]: any } = {}
+    for (const fieldName of required) {
+        const field = configFields[fieldName]
+        if (field.defaultValue !== undefined) {
             config[fieldName] = field.defaultValue
         }
-        if (field.envVar && process.env[field.envVar]) {
-            config[fieldName] = process.env[field.envVar]
+        const envValue = process.env[field.envVar]
+        if (envValue) {
+            config[fieldName] = field.parser ? field.parser(envValue) : envValue
         }
     }
 
     // Check required fields for type safety
-    const missingKeys = required.filter(key => !config[key])
+    const missingKeys = required.filter(key => config[key] === undefined)
     if (missingKeys.length > 0) {
         const fieldInfo = (k: T): string => {
             const field = configFields[k]
@@ -79,11 +106,11 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
         }
         throw new Error(`FAIL: Required config was not provided. These environment variables were missing:
 
-${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
+            ${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
 
-The recommended way to set them is to install direnv (https://direnv.net) and
-create a .envrc file at the root of this repository.
-`)
+            The recommended way to set them is to install direnv (https://direnv.net) and
+            create a .envrc file at the root of this repository.
+        `)
     }
 
     return pick(config, required)

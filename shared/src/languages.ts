@@ -97,6 +97,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'c':
         case 'cc':
         case 'cpp':
+        case 'cxx':
         case 'c++':
         case 'h++':
         case 'hh':

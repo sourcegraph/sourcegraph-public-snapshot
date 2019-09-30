@@ -326,6 +326,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				"github.com/gorilla/muxy",
 				"github.com/gorilla/i18n",
 				"github.com/gorilla/template",
+				"github.com/gorilla/.github",
 			}),
 			conf: &schema.GitHubConnection{
 				Url:   "https://github.com",
@@ -357,7 +358,14 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				"github.com/gorilla/muxy",
 				"github.com/gorilla/i18n",
 				"github.com/gorilla/template",
+				"github.com/gorilla/.github",
 				"github.com/golang-migrate/migrate",
+				"github.com/torvalds/linux",
+				"github.com/torvalds/uemacs",
+				"github.com/torvalds/subsurface-for-dirk",
+				"github.com/torvalds/libdc-for-dirk",
+				"github.com/torvalds/test-tlb",
+				"github.com/torvalds/pesconvert",
 			}),
 			conf: &schema.GitHubConnection{
 				Url:   "https://github.com",
@@ -365,6 +373,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				RepositoryQuery: []string{
 					"org:gorilla",
 					"org:golang-migrate",
+					"org:torvalds",
 				},
 			},
 			err: "<nil>",

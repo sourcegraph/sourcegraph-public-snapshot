@@ -5,20 +5,24 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
+    "ajv": "^6.10.2",
+    "async-exit-hook": "^2.0.1",
     "async-middleware": "^1.2.1",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
-    "express-prom-bundle": "^5.1.5",
     "express": "^4.17.1",
+    "express-prom-bundle": "^5.1.5",
+    "ioredis": "^4.14.0",
     "lodash": "^4.17.15",
     "lsif-protocol": "0.4.3",
-    "morgan": "^1.9.1",
     "mz": "^2.7.0",
+    "node-resque": "^5.5.7",
     "prom-client": "^11.5.3",
     "relateurl": "^0.2.7",
     "rmfr": "^2.0.0",
     "sqlite3": "^4.1.0",
     "typeorm": "^0.2.18",
+    "uuid": "^3.3.3",
     "vscode-languageserver": "^5.2.1",
     "yallist": "^3.0.3"
   },
@@ -27,13 +31,15 @@
     "@types/bloomfilter": "^0.0.0",
     "@types/body-parser": "1.17.0",
     "@types/express": "4.17.0",
+    "@types/ioredis": "^4.0.17",
     "@types/jest": "24.0.17",
     "@types/lodash": "^4.14.138",
-    "@types/morgan": "^1.7.37",
     "@types/mz": "0.0.32",
+    "@types/node-resque": "^5.4.1",
     "@types/relateurl": "^0.2.28",
     "@types/rmfr": "^2.0.0",
     "@types/sinon": "^7.0.13",
+    "@types/uuid": "^3.4.5",
     "@types/yallist": "^3.0.1",
     "babel-jest": "^24.8.0",
     "jest": "^24.8.0",
@@ -41,7 +47,8 @@
     "source-map-support": "^0.5.13",
     "tsc-watch": "^2.2.1",
     "tslint": "^5.18.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.5.3",
+    "typescript-json-schema": "^0.40.0"
   },
   "scripts": {
     "build": "tsc",
@@ -49,6 +56,8 @@
     "typecheck": "tsc --noEmit",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
-    "serve": "tsc-watch --onSuccess \"node --inspect -r source-map-support/register out/server.js\" --noClear"
+    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server.js\" --noClear",
+    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear",
+    "schema": "typescript-json-schema ./node_modules/lsif-protocol/lib/protocol.d.ts '*' -o src/lsif.schema.json --titles --ignoreErrors --noExtraProps --required --strictNullChecks"
   }
 }

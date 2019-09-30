@@ -23,11 +23,6 @@
 	{{if not .WebpackDevServer}}<link rel="stylesheet" href="{{.AssetURL}}/styles/app.bundle.css?{{version "styles/app.bundle.css"}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
-	{{if .InjectSourcegraphTracker}}
-	<script ignore-csp>
-		; (function (t, r, a, c, k, e, d) { if (!t[k]) { t.GlobalTelligentNamespace = t.GlobalTelligentNamespace || []; t.GlobalTelligentNamespace.push(k); t[k] = function () { (t[k].q = t[k].q || []).push(arguments) }; t[k].q = t[k].q || []; e = r.createElement(a); d = r.getElementsByTagName(a)[0]; e.async = 1; e.src = c; d.parentNode.insertBefore(e, d) } }(window, document, "script", "https://storage.googleapis.com/telligent-artifacts/tracker/tel.js", "telligent"));
-	</script>
-    {{end}}
 	<script ignore-csp>
 		window.context = {{.Context }}
 		window.pageError = {{.Error }}

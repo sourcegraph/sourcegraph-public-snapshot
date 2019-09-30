@@ -6,7 +6,19 @@ import { Observable } from 'rxjs'
  * A GraphQL client to be used from regression test scripts.
  */
 export class GraphQLClient {
-    constructor(public baseURL: string, public sudoToken: string, public username: string) {}
+    public static newForPuppeteerTest({
+        baseURL,
+        sudoToken,
+        username,
+    }: {
+        baseURL: string
+        sudoToken: string
+        username: string
+    }): GraphQLClient {
+        return new GraphQLClient(baseURL, sudoToken, username)
+    }
+
+    private constructor(public baseURL: string, public sudoToken: string, public username: string) {}
 
     /**
      * mimics the `mutateGraphQL` function used by the Sourcegraph backend, but substitutes

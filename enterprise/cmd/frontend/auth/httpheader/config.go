@@ -24,7 +24,7 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var httpHeaderAuthProviders int
 	for _, p := range c.Critical.AuthProviders {
 		if p.HttpHeader != nil {
@@ -32,7 +32,7 @@ func validateConfig(c conf.Unified) (problems []string) {
 		}
 	}
 	if httpHeaderAuthProviders >= 2 {
-		problems = append(problems, `at most 1 http-header auth provider may be used`)
+		problems = append(problems, conf.NewCriticalProblem(`at most 1 http-header auth provider may be used`))
 	}
 	return problems
 }

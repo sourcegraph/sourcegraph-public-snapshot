@@ -7,17 +7,16 @@ import (
 	"sync"
 	"sync/atomic"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func init() {
-	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
+	conf.ContributeValidator(func(c conf.Unified) (problems conf.Problems) {
 		for _, c := range c.GitCloneURLToRepositoryName {
 			if _, err := regexp.Compile(c.From); err != nil {
-				problems = append(problems, fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From))
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From)))
 			}
 		}
 		return

@@ -15,13 +15,6 @@ import (
 type PathMatcher interface {
 	MatchPath(path string) bool
 
-	// Copy returns a copied version of this PathMatcher that is safe to use
-	// from another goroutine. (For example, if this PathMatcher is backed
-	// by a regexp, this Copy method should lead to the regexp's Copy method
-	// being called, to avoid lock contention if multiple goroutines are
-	// using the regexp.)
-	Copy() PathMatcher
-
 	// String returns the source text used to compile the PatchMatcher.
 	String() string
 }
@@ -33,12 +26,6 @@ type pathMatcherFunc struct {
 
 func (f *pathMatcherFunc) MatchPath(path string) bool { return f.matcher(path) }
 
-func (f *pathMatcherFunc) Copy() PathMatcher {
-	// Noop; use regexpMatcher or another type that implements Copy if
-	// the underlying pattern can be copied.
-	return f
-}
-
 func (f *pathMatcherFunc) String() string {
 	return f.pattern
 }
@@ -48,10 +35,6 @@ type regexpMatcher regexp.Regexp
 
 func (m *regexpMatcher) MatchPath(path string) bool {
 	return (*regexp.Regexp)(m).MatchString(path)
-}
-
-func (m *regexpMatcher) Copy() PathMatcher {
-	return (*regexpMatcher)((*regexp.Regexp)(m).Copy())
 }
 
 func (m *regexpMatcher) String() string {
@@ -116,14 +99,6 @@ func (pm pathMatcherAnd) MatchPath(path string) bool {
 	return true
 }
 
-func (pm pathMatcherAnd) Copy() PathMatcher {
-	pm2 := make([]PathMatcher, len(pm))
-	for i, m := range pm {
-		pm2[i] = m.Copy()
-	}
-	return pathMatcherAnd(pm2)
-}
-
 func (pm pathMatcherAnd) String() string {
 	var b bytes.Buffer
 	b.WriteString("li:")
@@ -170,17 +145,6 @@ func (pm pathMatcherIncludeExclude) MatchPath(path string) bool {
 
 	exclude := pm.exclude != nil && pm.exclude.MatchPath(path)
 	return !exclude
-}
-
-func (pm pathMatcherIncludeExclude) Copy() PathMatcher {
-	var pm2 pathMatcherIncludeExclude
-	if pm.include != nil {
-		pm2.include = pm.include.Copy()
-	}
-	if pm.exclude != nil {
-		pm2.exclude = pm.exclude.Copy()
-	}
-	return pm2
 }
 
 func (pm pathMatcherIncludeExclude) String() string {

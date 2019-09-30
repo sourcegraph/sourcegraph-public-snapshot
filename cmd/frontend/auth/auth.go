@@ -61,12 +61,15 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 // username formatting rules (based on, but not identical to
 // https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap/#username-considerations-with-ldap):
 //
-// - Any portion of the username after a '@' character is removed
+// - If there is exactly one `@` in the username, any portion since the `@` character is removed
 // - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
-// - Usernames with consecutive '-' or '.' characters are not allowed
-// - Usernames that start or end with '-' or '.' are not allowed
+// - Usernames with consecutive `-` or `.` characters are not allowed
+// - Usernames that start or end with `.` are not allowed
+// - Usernames that start with `-` are not allowed
 //
 // Usernames that could not be converted return an error.
+//
+// Note: Do not forget to change database constraints on "users" and "orgs" tables.
 func NormalizeUsername(name string) (string, error) {
 	origName := name
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
@@ -86,6 +89,6 @@ func NormalizeUsername(name string) (string, error) {
 }
 
 var (
-	disallowedSymbols   = regexp.MustCompile(`(^[\-\.])|([\-\.]$)|([\-\.]{2,})`)
+	disallowedSymbols   = regexp.MustCompile(`(^[\-\.])|(\.$)|([\-\.]{2,})`)
 	disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-\.]`)
 )

@@ -9,30 +9,29 @@ describe('GitHub DOM functions', () => {
     describe('diffDomFunctions', () => {
         type GitHubDiffPage = 'pull-request' | 'pull-request-discussion' | 'commit'
 
-        interface GitHubCodeViewFixture
-            extends Omit<DOMFunctionsTest, 'htmlFixturePath' | 'firstCharacterIsDiffIndicator'> {}
+        interface GitHubCodeViewFixture extends Omit<DOMFunctionsTest, 'htmlFixturePath'> {}
 
         const diffFixtures: Record<GitHubVersion, Record<GitHubDiffPage, GitHubCodeViewFixture>> = {
             'ghe-2.14.11': {
                 commit: {
                     url: 'https://ghe.sgdev.org/beyang/mux/commit/1fddf523893b7475951631ed0f7e09edd9ce50d0',
                     lineCases: [
-                        { diffPart: 'head', lineNumber: 80 }, // not changed
-                        { diffPart: 'head', lineNumber: 82 }, // added
-                        { diffPart: 'base', lineNumber: 82 }, // removed
+                        { diffPart: 'head', lineNumber: 80, firstCharacterIsDiffIndicator: true }, // not changed
+                        { diffPart: 'head', lineNumber: 82, firstCharacterIsDiffIndicator: true }, // added
+                        { diffPart: 'base', lineNumber: 82, firstCharacterIsDiffIndicator: true }, // removed
                     ],
                 },
                 'pull-request': {
                     url: 'http://ghe.sgdev.org/beyang/mux/pull/1',
                     lineCases: [
-                        { diffPart: 'head', lineNumber: 63 }, // not changed
-                        { diffPart: 'head', lineNumber: 64 }, // added
+                        { diffPart: 'head', lineNumber: 63, firstCharacterIsDiffIndicator: true }, // not changed
+                        { diffPart: 'head', lineNumber: 64, firstCharacterIsDiffIndicator: true }, // added
                     ],
                 },
                 'pull-request-discussion': {
                     url: 'http://ghe.sgdev.org/beyang/mux/pull/1',
                     lineCases: [
-                        { diffPart: 'head', lineNumber: 64 }, // added
+                        { diffPart: 'head', lineNumber: 64, firstCharacterIsDiffIndicator: true }, // added
                     ],
                 },
             },
@@ -67,14 +66,12 @@ describe('GitHub DOM functions', () => {
                     describe(`${startCase(page)} page`, () => {
                         for (const extension of ['vanilla', 'refined-github']) {
                             describe(startCase(extension), () => {
-                                const firstCharacterIsDiffIndicator = version !== 'github.com'
                                 if (page === 'pull-request-discussion') {
                                     const htmlFixturePath = `${__dirname}/__fixtures__/${version}/${page}/${extension}/code-view.html`
                                     testDOMFunctions(diffDomFunctions, {
                                         url,
                                         htmlFixturePath,
                                         lineCases,
-                                        firstCharacterIsDiffIndicator,
                                     })
                                 } else {
                                     for (const view of ['split', 'unified']) {
@@ -84,7 +81,6 @@ describe('GitHub DOM functions', () => {
                                                 url,
                                                 htmlFixturePath,
                                                 lineCases,
-                                                firstCharacterIsDiffIndicator,
                                             })
                                         })
                                     }
@@ -106,7 +102,6 @@ describe('GitHub DOM functions', () => {
                         testDOMFunctions(singleFileDOMFunctions, {
                             htmlFixturePath,
                             lineCases: [{ lineNumber: 1 }, { lineNumber: 2 }],
-                            firstCharacterIsDiffIndicator: false,
                         })
                     })
                 }

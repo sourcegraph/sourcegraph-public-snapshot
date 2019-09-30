@@ -19,7 +19,7 @@ func (r *schemaResolver) SetTag(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	node, err := NodeByID(ctx, r.a8nResolver, args.Node)
+	node, err := r.nodeByID(ctx, args.Node)
 	if err != nil {
 		return nil, err
 	}

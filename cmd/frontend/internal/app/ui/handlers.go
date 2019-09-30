@@ -60,8 +60,6 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	InjectSourcegraphTracker bool
-
 	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
 
 	// The fields below have zero values when not on a repo page.
@@ -114,8 +112,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
 
-		InjectSourcegraphTracker: envvar.SourcegraphDotComMode(),
-		WebpackDevServer:         webpackDevServer,
+		WebpackDevServer: webpackDevServer,
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {

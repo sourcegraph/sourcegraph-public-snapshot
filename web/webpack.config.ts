@@ -153,7 +153,9 @@ const config: webpack.Configuration = {
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: [nodeModulesPath],
+                            sassOptions: {
+                                includePaths: [nodeModulesPath],
+                            },
                         },
                     },
                 ],

@@ -145,14 +145,10 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 // Copy returns a copied version of rg that is safe to use from another
 // goroutine.
 func (rg *readerGrep) Copy() *readerGrep {
-	var reCopy *regexp.Regexp
-	if rg.re != nil {
-		reCopy = rg.re.Copy()
-	}
 	return &readerGrep{
-		re:               reCopy,
+		re:               rg.re,
 		ignoreCase:       rg.ignoreCase,
-		matchPath:        rg.matchPath.Copy(),
+		matchPath:        rg.matchPath,
 		literalSubstring: rg.literalSubstring,
 	}
 }
@@ -173,10 +169,6 @@ func (rg *readerGrep) matchString(s string) bool {
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
 func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
-	if rg.ignoreCase && rg.transformBuf == nil {
-		rg.transformBuf = make([]byte, zf.MaxLen)
-	}
-
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
 	fileBuf := zf.DataFor(f)
@@ -188,6 +180,9 @@ func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []proto
 	// trade some correctness for perf by using a non-utf8 aware
 	// lowercase function.
 	if rg.ignoreCase {
+		if rg.transformBuf == nil {
+			rg.transformBuf = make([]byte, zf.MaxLen)
+		}
 		fileMatchBuf = rg.transformBuf[:len(fileBuf)]
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 	}

@@ -26,7 +26,7 @@
                             </button>
                         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.6.2"}} {{$previousReleaseVersion := "3.6"}} {{$currentReleaseRevspec := "v3.7.2"}} {{$currentReleaseVersion := "3.7"}} {{$nextReleaseVersion := "master"}}
+                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.7.2"}} {{$previousReleaseVersion := "3.7"}} {{$currentReleaseRevspec := "v3.8.1"}} {{$currentReleaseVersion := "3.8"}} {{$nextReleaseVersion := "master"}}
                             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -91,6 +91,12 @@
                         <a class="content-nav-section-header" href="/user">User documentation</a>
                         <ul class="content-nav-section-group">
                             <li><a href="/user/code_intelligence">Code intelligence overview</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/user/code_intelligence/lsif">LSIF</a></li>
+                                    <li><a href="/user/code_intelligence/language_servers">Language servers</a></li>
+                                </ul>
+                            </li>
                             <li><a href="/user/search">Code search overview</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
@@ -221,7 +227,6 @@
                                 <li><a href="/integration/browser_extension">Browser extension</a></li>
                                 <li><a href="/integration/browser_search_engine">Browser search engine shortcuts</a></li>
                                 <li><a href="/integration/editor">Editor integrations</a></li>
-                                <li><a href="/integration/google_gsuite">G Suite and Chrome Enterprise integration</a></li>
                                 <li><a href="/integration/lightstep">LightStep</a></li>
                         </ul>
                     </li>
@@ -320,6 +325,7 @@
                             <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
                             <li><a href="/dev/phabricator_gitolite">Print info from Gitolite</a></li>
                             <li><a href="/dev/product">Product</a></li>
+                            <li><a href="/dev/rfcs">RFCs</a></li>
                             <li><a href="/dev/releases">Releases</a></li>
                             <li><a href="/dev/retrospectives">Retrospectives</a></li>
                             <li class="content-nav-no-hover">
@@ -330,6 +336,11 @@
                                     <li><a href="/dev/retrospectives/3_3">3.3 retrospective</a></li>
                                     <li><a href="/dev/retrospectives/customer_license_expiration">Customer license expiration P0 retrospective</a></li>
                                     <li><a href="/dev/retrospectives/postgresql_upgrade">Tomás’ notes on the PostgreSQL upgrade</a></li>
+                                    <li><a href="/dev/retrospectives/3_4">3.4 retrospective</a></li>
+                                    <li><a href="/dev/retrospectives/3_5">3.5 retrospective</a></li>
+                                    <li><a href="/dev/retrospectives/3_6">3.6 retrospective</a></li>
+                                    <li><a href="/dev/retrospectives/3_7">3.7 retrospective</a></li>
+                                    <li><a href="/dev/retrospectives/3_8">3.8 retrospective</a></li>
                                 </ul>
                             </li>
                             <li><a href="/dev/architecture">Sourcegraph Architecture Overview</a></li>

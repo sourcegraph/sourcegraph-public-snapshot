@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { render, RenderResult } from 'react-testing-library'
+import { render, RenderResult } from '@testing-library/react'
 import { noop, Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
