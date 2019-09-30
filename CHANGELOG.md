@@ -13,8 +13,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
-
 ### Changed
 
 ### Fixed
@@ -23,6 +21,12 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue where `externalURL` not being configured in the management console could go unnoticed. [#3899](https://github.com/sourcegraph/sourcegraph/issues/3899)
 
 ### Removed
+
+## 3.8.1
+
+### Added
+
+- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
 
 ## 3.8.0
 
