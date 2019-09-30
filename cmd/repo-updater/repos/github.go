@@ -287,11 +287,15 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 // by hitting the /orgs/:org/repos endpoint.
 //
 // It returns an error if the request fails on the first page.
-func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) (fail error) {
+func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
+	var oerr error
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
-			if err != nil && page == 1 {
-				fail, err = err, nil
+			// Catch 404 to handle
+			if page == 1 {
+				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
+					oerr, err = err, nil
+				}
 			}
 
 			remaining, reset, retry, _ := s.client.RateLimit.Get()
@@ -306,7 +310,13 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 		}()
 		return s.client.ListOrgRepositories(ctx, org, page)
 	})
-	return
+
+	// Handle 404 from org repos endpoint by trying user repos endpoint
+	if oerr != nil && s.listUser(ctx, org, results) != nil {
+		results <- &githubResult{
+			err: oerr,
+		}
+	}
 }
 
 // listUser returns all the repositories belonging to the given user
@@ -531,13 +541,7 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, re
 	// If the org repo list API fails, we
 	// try the user repo list API.
 	if org := matchOrg(query); org != "" {
-		if err := s.listOrg(ctx, org, results); err != nil {
-			if uerr := s.listUser(ctx, org, results); uerr != nil {
-				results <- &githubResult{
-					err: err,
-				}
-			}
-		}
+		s.listOrg(ctx, org, results)
 		return
 	}
 
