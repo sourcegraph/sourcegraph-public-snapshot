@@ -314,8 +314,10 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
 
 Usernames on Sourcegraph are normalized according to the following rules.
 
-- If there is exactly one `@` in the username, any portion since the `@` character is removed
+
 - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
+- Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
+- Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
 - Usernames with consecutive `-` or `.` characters are not allowed
 - Usernames that start or end with `.` are not allowed
 - Usernames that start with `-` are not allowed
