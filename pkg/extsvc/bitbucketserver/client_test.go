@@ -2,14 +2,18 @@ package bitbucketserver
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -288,6 +292,90 @@ func TestClient_Users(t *testing.T) {
 
 			if have, want := users, tc.users; !reflect.DeepEqual(have, want) {
 				t.Error(cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestClient_LoadPullRequest(t *testing.T) {
+	cli, save := NewTestClient(t, "PullRequests", *update)
+	defer save()
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	pr := &PullRequest{
+		ID: 2,
+		ToRef: struct {
+			ID         string `json:"id"`
+			Repository *Repo  `json:"repository"`
+		}{
+			Repository: &Repo{
+				Slug: "vegeta",
+				Project: &Project{
+					Key: "SOUR",
+				},
+			},
+		},
+	}
+
+	for i, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   *PullRequest
+		err  string
+	}{
+		{
+			name: "timeout",
+			pr:   pr,
+			ctx:  timeout,
+			err:  "context deadline exceeded",
+		},
+		{
+			name: "success",
+			pr:   pr,
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err := cli.LoadPullRequest(tc.ctx, tc.pr)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			data, err := json.MarshalIndent(tc.pr, " ", " ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			path := "testdata/golden/LoadPullRequest-" + strconv.Itoa(i)
+			if *update {
+				if err = ioutil.WriteFile(path, data, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(data), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
 			}
 		})
 	}
