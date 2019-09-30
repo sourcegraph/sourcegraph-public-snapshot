@@ -14,6 +14,8 @@ RUN mkdir /dashboards
 ADD jsonnet /dashboards
 WORKDIR /dashboards
 
+ENV PATH="/opt/jsonnet:${PATH}"
+
 RUN ./build.sh
 
 # TODO(uwedeportivo): remove once eric's PR lands
