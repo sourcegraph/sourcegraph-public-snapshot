@@ -1,3 +1,4 @@
+import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable, Subject } from 'rxjs'
 import { map, mergeMap, startWith, tap } from 'rxjs/operators'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
@@ -301,6 +302,118 @@ export function fetchSite(): Observable<GQL.ISite> {
     `).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
+    )
+}
+
+type SettingsConfig = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> & {
+    contents: any
+}
+
+/**
+ * All configuration and settings in one place. Excludes critical site config for now, because this
+ * must be fetched from management console
+ */
+export interface AllConfig {
+    site: any
+    externalServices: Partial<
+        {
+            [k in GQL.ExternalServiceKind]: any
+        }
+    >
+    settings: {
+        subjects: SettingsConfig[]
+        final: any | null
+    }
+}
+
+/**
+ * Fetches all the configuration and settings (requires site admin privileges).
+ */
+export function fetchAllConfigAndSettings(): Observable<AllConfig> {
+    return queryGraphQL(
+        gql`
+            query AllConfig($first: Int) {
+                site {
+                    id
+                    configuration {
+                        id
+                        effectiveContents
+                    }
+                    latestSettings {
+                        contents
+                    }
+                    settingsCascade {
+                        final
+                    }
+                }
+
+                externalServices(first: $first) {
+                    nodes {
+                        id
+                        kind
+                        displayName
+                        config
+                        createdAt
+                        updatedAt
+                        warning
+                    }
+                }
+
+                viewerSettings {
+                    ...SettingsCascadeFields
+                }
+            }
+
+            fragment SettingsCascadeFields on SettingsCascade {
+                subjects {
+                    __typename
+                    latestSettings {
+                        id
+                        contents
+                    }
+                    settingsURL
+                }
+                final
+            }
+        `,
+        { first: 100 } // assume no more than 100 external services added
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            const externalServices: Partial<{ [k in GQL.ExternalServiceKind]: any[] }> = data.externalServices.nodes
+                .filter(svc => svc.config)
+                .map((svc): [GQL.ExternalServiceKind, any] => [svc.kind, parseJSONC(svc.config)])
+                .reduce<Partial<{ [k in GQL.ExternalServiceKind]: any[] }>>(
+                    (externalServicesByKind, [kind, config]) => {
+                        let services = externalServicesByKind[kind]
+                        if (!services) {
+                            services = []
+                            externalServicesByKind[kind] = services
+                        }
+                        services.push(config)
+                        return externalServicesByKind
+                    },
+                    {}
+                )
+            const settingsSubjects = data.viewerSettings.subjects.map(settings => ({
+                __typename: settings.__typename,
+                settingsURL: settings.settingsURL,
+                contents: settings.latestSettings ? parseJSONC(settings.latestSettings.contents) : null,
+            }))
+            const finalSettings = parseJSONC(data.viewerSettings.final)
+            return {
+                site:
+                    data.site &&
+                    data.site.configuration &&
+                    data.site.configuration.effectiveContents &&
+                    parseJSONC(data.site.configuration.effectiveContents),
+                externalServices,
+                settings: {
+                    subjects: settingsSubjects,
+                    final: finalSettings,
+                },
+            }
+        })
     )
 }
 

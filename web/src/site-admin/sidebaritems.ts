@@ -76,6 +76,10 @@ export const otherGroup: SiteAdminSideBarGroup = {
             label: 'Pings',
             to: '/site-admin/pings',
         },
+        {
+            label: 'Export config',
+            to: '/site-admin/export-config',
+        },
     ],
 }
 
