@@ -134,7 +134,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                             />
                             <small className="form-text text-muted">
                                 A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
-                                with a hyphen nor a dot.
+                                with a dot, nor begin with a hyphen.
                             </small>
                         </div>
                         <div className="form-group site-admin-create-user-page__form-group">

@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -12,15 +13,26 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
+
+type NewSubSyncer func(*sql.DB, Store, *httpcli.Factory) SubSyncer
+
+type SubSyncer interface {
+	Sync(context.Context) error
+}
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
+
+	// SubSyncer is run alongside this Syncer. The subSyncer's Sync method is
+	// called before this Syncer's Sync method.
+	SubSyncer SubSyncer
 
 	// DisableStreaming if true will prevent the syncer from streaming in new
 	// sourced repositories into the store.
@@ -54,6 +66,12 @@ type Syncer struct {
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
+		if s.SubSyncer != nil {
+			if err := s.SubSyncer.Sync(ctx); err != nil && s.Logger != nil {
+				s.Logger.Error("SubSyncer", "error", err)
+			}
+		}
+
 		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}

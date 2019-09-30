@@ -186,6 +186,32 @@ describe('e2e test suite', () => {
                 name
             )
         })
+
+        test('Check allowed usernames', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-username')
+
+            const name = 'alice.bob-chris-'
+
+            await driver.replaceText({
+                selector: '.e2e-user-settings-profile-page-username',
+                newText: name,
+                selectMethod: 'selectall',
+            })
+
+            await driver.page.click('.e2e-user-settings-profile-page-update-profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-alert-success', { visible: true })
+
+            await driver.page.goto(sourcegraphBaseUrl + `/users/${name}/settings/profile`)
+            await driver.replaceText({
+                selector: '.e2e-user-settings-profile-page-username',
+                newText: 'test',
+                selectMethod: 'selectall',
+            })
+
+            await driver.page.click('.e2e-user-settings-profile-page-update-profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-alert-success', { visible: true })
+        })
     })
 
     describe('External services', () => {

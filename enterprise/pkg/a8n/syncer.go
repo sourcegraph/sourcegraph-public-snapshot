@@ -2,8 +2,7 @@ package a8n
 
 import (
 	"context"
-	"math/rand"
-	"time"
+	"database/sql"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -20,33 +19,33 @@ type ChangesetSyncer struct {
 	HTTPFactory *httpcli.Factory
 }
 
-// Run runs the Sync at the specified interval.
-func (s *ChangesetSyncer) Run(ctx context.Context) error {
-	for ctx.Err() == nil {
-		seconds := 30 + rand.Intn(90)
-		time.Sleep(time.Duration(seconds) * time.Second)
-
-		s.syncAllChangesets(ctx)
+func NewSubSyncer(db *sql.DB, store repos.Store, cf *httpcli.Factory) repos.SubSyncer {
+	return &ChangesetSyncer{
+		Store:       NewStore(db),
+		ReposStore:  store,
+		HTTPFactory: cf,
 	}
-
-	return ctx.Err()
 }
 
-func (s *ChangesetSyncer) syncAllChangesets(ctx context.Context) {
+// Sync refreshes the metadata of all changesets and updates them in the
+// database
+func (s *ChangesetSyncer) Sync(ctx context.Context) error {
 	cs, err := s.listAllChangesets(ctx)
 	if err != nil {
 		log15.Error("ChangesetSyncer.listAllChangesets", "error", err)
-		return
+		return err
 	}
 
-	if err := s.Sync(ctx, cs...); err != nil {
+	if err := s.SyncChangesets(ctx, cs...); err != nil {
 		log15.Error("ChangesetSyncer", "error", err)
+		return err
 	}
+	return nil
 }
 
-// Sync refreshes the metadata of the specified changesets and updates them
-// in the database
-func (s *ChangesetSyncer) Sync(ctx context.Context, cs ...*a8n.Changeset) (err error) {
+// SyncChangesets refreshes the metadata of the given changesets and
+// updates them in the database
+func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}

@@ -425,7 +425,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		Store:       r.store,
 		HTTPFactory: r.httpFactory,
 	}
-	if err = syncer.Sync(ctx, cs...); err != nil {
+	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
 		return nil, err
 	}
 
