@@ -77,7 +77,7 @@ const configFields: ConfigFields = {
         envVar: 'NO_CLEANUP',
         parser: parseBool,
         description:
-            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll mamke test runs faster). Set to false if running against production",
+            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production",
     },
     logBrowserConsole: {
         envVar: 'LOG_BROWSER_CONSOLE',
