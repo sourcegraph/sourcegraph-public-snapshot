@@ -54,8 +54,8 @@ func TestSrcExpose(t *testing.T) {
 				ID:          "foo",
 			},
 			Sources: map[string]*SourceInfo{
-				"extsvc::1": {
-					ID:       "extsvc::1",
+				"extsvc:other:1": {
+					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/foo/.git",
 				},
 			},
@@ -69,8 +69,8 @@ func TestSrcExpose(t *testing.T) {
 				ID:          "bar/baz",
 			},
 			Sources: map[string]*SourceInfo{
-				"extsvc::1": {
-					ID:       "extsvc::1",
+				"extsvc:other:1": {
+					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/bar/baz/.git",
 				},
 			},
@@ -89,8 +89,8 @@ func TestSrcExpose(t *testing.T) {
 				ID:          "/repos/foo",
 			},
 			Sources: map[string]*SourceInfo{
-				"extsvc::1": {
-					ID:       "extsvc::1",
+				"extsvc:other:1": {
+					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
@@ -108,8 +108,8 @@ func TestSrcExpose(t *testing.T) {
 				ID:          "foo",
 			},
 			Sources: map[string]*SourceInfo{
-				"extsvc::1": {
-					ID:       "extsvc::1",
+				"extsvc:other:1": {
+					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/foo/.git",
 				},
 			},
@@ -118,6 +118,7 @@ func TestSrcExpose(t *testing.T) {
 
 	source, err := NewOtherSource(&ExternalService{
 		ID:     1,
+		Kind:   "OTHER",
 		Config: fmt.Sprintf(`{"url": %q}`, s.URL),
 	}, nil)
 	if err != nil {
