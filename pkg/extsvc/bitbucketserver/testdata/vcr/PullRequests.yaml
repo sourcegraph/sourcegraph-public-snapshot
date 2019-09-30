@@ -7,6 +7,86 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999
+    method: GET
+  response:
+    body: '{"errors":[{"context":null,"message":"Pull request 9999 does not exist
+      in SOUR/vegeta.","exceptionName":"com.atlassian.bitbucket.pull.NoSuchPullRequestException"}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Mon, 30 Sep 2019 14:40:54 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1IK17DGx880x1192695x0'
+      X-Asen:
+      - SEN-L13789548
+      X-Asessionid:
+      - 1nx89la
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 404 Not Found
+    code: 404
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/invalidslug/pull-requests/9999
+    method: GET
+  response:
+    body: '{"errors":[{"context":null,"message":"Repository SOUR/invalidslug does
+      not exist.","exceptionName":"com.atlassian.bitbucket.repository.NoSuchRepositoryException"}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Mon, 30 Sep 2019 14:40:54 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1IK17DGx880x1192696x0'
+      X-Asen:
+      - SEN-L13789548
+      X-Asessionid:
+      - 1bq78r9
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 404 Not Found
+    code: 404
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
     url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2
     method: GET
   response:
@@ -20,7 +100,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 30 Sep 2019 14:08:37 GMT
+      - Mon, 30 Sep 2019 14:40:54 GMT
       Pragma:
       - no-cache
       Server:
@@ -28,11 +108,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx848x1192627x0'
+      - '@1IK17DGx880x1192697x0'
       X-Asen:
       - SEN-L13789548
       X-Asessionid:
-      - 1s3in3c
+      - 1klbzx8
       X-Auserid:
       - "1"
       X-Ausername:

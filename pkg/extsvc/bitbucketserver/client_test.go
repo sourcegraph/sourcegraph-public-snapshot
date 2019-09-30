@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"reflect"
-	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -306,20 +306,12 @@ func TestClient_LoadPullRequest(t *testing.T) {
 
 	pr := &PullRequest{
 		ID: 2,
-		ToRef: struct {
-			ID         string `json:"id"`
-			Repository *Repo  `json:"repository"`
-		}{
-			Repository: &Repo{
-				Slug: "vegeta",
-				Project: &Project{
-					Key: "SOUR",
-				},
-			},
+		ToRef: Ref{
+			Repository: &Repo{Slug: "vegeta", Project: &Project{Key: "SOUR"}},
 		},
 	}
 
-	for i, tc := range []struct {
+	for _, tc := range []struct {
 		name string
 		ctx  context.Context
 		pr   *PullRequest
@@ -330,6 +322,39 @@ func TestClient_LoadPullRequest(t *testing.T) {
 			pr:   pr,
 			ctx:  timeout,
 			err:  "context deadline exceeded",
+		},
+		{
+			name: "repo not set",
+			pr:   &PullRequest{ID: 2},
+			err:  "ToRef repository not set",
+		},
+		{
+			name: "project not set",
+			pr: &PullRequest{
+				ID:    2,
+				ToRef: Ref{Repository: &Repo{Slug: "vegeta"}},
+			},
+			err: "repository project not set",
+		},
+		{
+			name: "non existing pr",
+			pr: &PullRequest{
+				ID: 9999,
+				ToRef: Ref{
+					Repository: &Repo{Slug: "vegeta", Project: &Project{Key: "SOUR"}},
+				},
+			},
+			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 9999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
+		},
+		{
+			name: "non existing repo",
+			pr: &PullRequest{
+				ID: 9999,
+				ToRef: Ref{
+					Repository: &Repo{Slug: "invalidslug", Project: &Project{Key: "SOUR"}},
+				},
+			},
+			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/invalidslug/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Repository SOUR/invalidslug does not exist.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.repository.NoSuchRepositoryException\\\"}]}\"",
 		},
 		{
 			name: "success",
@@ -348,10 +373,10 @@ func TestClient_LoadPullRequest(t *testing.T) {
 
 			err := cli.LoadPullRequest(tc.ctx, tc.pr)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
-			if err != nil {
+			if err != nil || tc.err != "<nil>" {
 				return
 			}
 
@@ -360,7 +385,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			path := "testdata/golden/LoadPullRequest-" + strconv.Itoa(i)
+			path := "testdata/golden/LoadPullRequest-" + strings.Replace(tc.name, " ", "-", -1)
 			if *update {
 				if err = ioutil.WriteFile(path, data, 0640); err != nil {
 					t.Fatalf("failed to update golden file %q: %s", path, err)
