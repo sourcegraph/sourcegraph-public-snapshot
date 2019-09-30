@@ -31,7 +31,7 @@ import (
 
 const port = "3182"
 
-func Main(newSubSyncer repos.NewSubSyncer) {
+func Main(newPreSync repos.NewPreSync) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
 
 	ctx := context.Background()
@@ -126,18 +126,16 @@ func Main(newSubSyncer repos.NewSubSyncer) {
 
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
 
-	var subSyncer repos.SubSyncer
-	if newSubSyncer != nil {
-		subSyncer = newSubSyncer(db, store, cf)
-	}
-
 	syncer := &repos.Syncer{
 		Store:            store,
 		Sourcer:          src,
-		SubSyncer:        subSyncer,
 		DisableStreaming: !streamingSyncer,
 		Logger:           log15.Root(),
 		Now:              clock,
+	}
+
+	if newPreSync != nil {
+		syncer.PreSync = newPreSync(db, store, cf)
 	}
 
 	if envvar.SourcegraphDotComMode() {
