@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 )
 
 func main() {
@@ -13,5 +14,5 @@ func main() {
 	if debug {
 		log.Println("enterprise edition")
 	}
-	shared.Main()
+	shared.Main(a8n.NewSubSyncer)
 }
