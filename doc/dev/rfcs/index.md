@@ -1,17 +1,17 @@
 # RFCs
 
-<div class="alert alert-success">
-  See <a href="https://drive.google.com/drive/folders/1bip_pMeWePyNNdCEETRzoyMdLtntcNKR">Sourcegraph RFCs in Google Drive</a>.
-</div>
-
 We value writing down plans so that we can asynchronously communicate to and solicit feedback from our remote-first team. A good plan communicates what problem is being solved, why that problem is being prioritized now, and what the plan is to solve the identified problem.
 
 This document describes how we operationalize written planning through our RFC process. This process is designed to be lightweight so that it can be used for many purposes (e.g. product specs, policy decisions, technical discussion), and it is optimized for facilitating collaboration and feedback. In contrast, GitHub issues are best for tracking concrete bug reports or work that has already been scoped and planned (i.e. there isn't much remaining to discuss).
 
+_All RFCs are in a [public Google Drive folder](https://drive.google.com/drive/folders/1bip_pMeWePyNNdCEETRzoyMdLtntcNKR)._
+
+## Lifecycle
+
 The general lifecycle of an RFC is:
 
    1. Write a draft.
-   2. Collect feedback.
+   2. Solicit feedback from relevant teammates.
    3. Update draft and go to step 2.
    4. Make a decision.
    5. If appropriate, file tracking issues on GitHub and add them to appropriate milestones.
@@ -73,7 +73,8 @@ Effective RFCs contain the following information:
     - "Updating RFC based on collected feedback. I expect to reshare the updated doc September 9.
     - "We aren't going to pursue this RFC for the following reasons..."
     - "The web team is going to implement this RFC in 3.8."
-    - "This RFC has been implemented." 
+    - "This RFC has been implemented."
+  - LGTM: RFC readers add their name to this list if they understand what the RFC is proposing and agree with the proposal. "Looks Good To Me".
   - (optional) Links to any GitHub issues that capture work being done to implement this RFC.
 - Background/Situation: A sufficient, but minimal, amount of context necessary to frame the rest of the RFC. The content should be indisputable facts, not opinions or arguments. The facts should support the chosen definition of the problem and the constraints in the next section.
 - Problem/Goals/Complication/Constraints: A description of the problem that this RFC is trying to address, the constraints that this RFC trying to satisfy, and why this problem is worth solving now.
@@ -91,7 +92,7 @@ The default sharing state of documents in our [Google Drive's RFCs](https://driv
 
 Sometimes there is information relevant to an RFC, but that information can't be made public.
 
-- RFCs should never reference customer names directly, even if they are listed on our homepage. Instead, you can use a Hubspot link  or an arbitrary code name (e.g. "ACME", "Customer X") for each customer that you need to reference in the document. Code names do not need to be consistent across documents. The first usage of each code name should be linked to the actual company's profile in Hubspot.
+- RFCs should never reference customer names directly, even if they are listed on our homepage. Instead, you can use a Hubspot link or an arbitrary code name (e.g. "ACME", "Customer X") for each customer that you need to reference in the document. Code names do not need to be consistent across documents. The first usage of each code name should be linked to the actual company's profile in Hubspot.
   - To make this easy, add a search engine to your browser so that you can quickly type `h ACME` or `h sourcegraph` to find the company in Hubspot.
     - Use this URL https://app.hubspot.com/contacts/2762526/companies/list/view/all/?query=%s
     ![Hubspot search](hubspot-search.png)
