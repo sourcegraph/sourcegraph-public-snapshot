@@ -10,6 +10,11 @@ export interface Config {
     gitHubToken: string
     sourcegraphBaseUrl: string
     includeAdminOnboarding: boolean
+    testUserPassword: string
+    noCleanup: boolean
+    logBrowserConsole: boolean
+    slowMo: number
+    headless: boolean
 }
 
 interface Field<T = string> {
@@ -39,23 +44,20 @@ const parseBool = (s: string): boolean => {
 const configFields: ConfigFields = {
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
-        parser: s => s,
         description:
             'An access token with "site-admin:sudo" permissions. This will be used to impersonate users in requests.',
     },
     sudoUsername: {
         envVar: 'SOURCEGRAPH_SUDO_USER',
-        parser: s => s,
         description: 'The site-admin-level username that will be impersonated with the sudo access token.',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
-        parser: s => s,
-        description: 'A GitHub token that will be used to authenticate a GitHub external service.',
+        description:
+            'A GitHub personal access token that will be used to authenticate a GitHub external service. It does not need to have any scopes.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
-        parser: s => s,
         defaultValue: 'http://localhost:3080',
         description:
             'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
@@ -66,13 +68,44 @@ const configFields: ConfigFields = {
         description:
             'If true, include admin onboarding tests, which assume none of the admin onboarding steps have yet completed on the instance. If those steps have already been completed, this test will fail.',
     },
+    testUserPassword: {
+        envVar: 'TEST_USER_PASSWORD',
+        description:
+            'The password to use for any test users that are created. This password should be secure and unguessable when running against production Sourcegraph instances.',
+    },
+    noCleanup: {
+        envVar: 'NO_CLEANUP',
+        parser: parseBool,
+        description:
+            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production",
+    },
+    logBrowserConsole: {
+        envVar: 'LOG_BROWSER_CONSOLE',
+        parser: parseBool,
+        description: 'If true, log browser console to stdout',
+        defaultValue: false,
+    },
+    slowMo: {
+        envVar: 'SLOWMO',
+        parser: parseInt,
+        description: 'Slow down puppeteer by the specified number of milliseconds',
+        defaultValue: 0,
+    },
+    headless: {
+        envVar: 'HEADLESS',
+        parser: parseBool,
+        description: 'Run Puppeteer in headless mode',
+        defaultValue: false,
+    },
 }
 
 /**
  * Reads e2e config from environment variables. The caller should specify the config fields that it
- * depends on.
+ * depends on. This should NOT be called from helper packages. Instead, call it near the start of
+ * "test main" function (i.e., Jest `test` blocks). Doing this ensures that all the necessary
+ * environment variables necessary for a test are presented to the user in one go.
  */
-export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
+export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config, T> {
     // Read config
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const config: { [key: string]: any } = {}
@@ -106,10 +139,10 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
         }
         throw new Error(`FAIL: Required config was not provided. These environment variables were missing:
 
-            ${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
+${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
 
-            The recommended way to set them is to install direnv (https://direnv.net) and
-            create a .envrc file at the root of this repository.
+The recommended way to set them is to install direnv (https://direnv.net) and
+create a .envrc file at the root of this repository.
         `)
     }
 

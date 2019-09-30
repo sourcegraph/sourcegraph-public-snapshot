@@ -7,19 +7,20 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient } from './util/GraphQLClient'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { ensureLoggedInOrCreateUser } from './util/helpers'
+import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
-    ensureExternalService,
+    ensureTestExternalService,
     waitForRepos,
     setUserSiteAdmin,
     getUser,
     deleteUser,
-    ensureNoExternalServices,
+    ensureNoTestExternalServices,
     getExternalServices,
 } from './util/api'
 import { Key } from 'ts-key-enum'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
+import { TestResourceManager } from './util/TestResourceManager'
 
 const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
 
@@ -48,16 +49,21 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
 }
 
 describe('Onboarding', () => {
-    const config = getConfig([
+    const config = getConfig(
         'sudoToken',
         'sudoUsername',
         'gitHubToken',
         'sourcegraphBaseUrl',
         'includeAdminOnboarding',
-    ])
+        'noCleanup',
+        'testUserPassword',
+        'headless',
+        'slowMo',
+        'logBrowserConsole'
+    )
     const testExternalServiceConfig = {
         kind: GQL.ExternalServiceKind.GITHUB,
-        uniqueDisplayName: 'GitHub (search-regression-test)',
+        uniqueDisplayName: '[TEST] GitHub (onboarding.test.ts)',
         config: {
             url: 'https://github.com',
             token: config.gitHubToken,
@@ -69,33 +75,41 @@ describe('Onboarding', () => {
     let gqlClient: GraphQLClient
     let screenshots: ScreenshotVerifier
     const testUsername = 'test-onboarding-regression-test-user'
+    const resourceManager = new TestResourceManager()
 
     beforeAll(
         async () => {
-            driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
-            setTestDefaults(driver)
+            driver = await createAndInitializeDriver(config)
             gqlClient = GraphQLClient.newForPuppeteerTest({
                 baseURL: config.sourcegraphBaseUrl,
                 sudoToken: config.sudoToken,
                 username: config.sudoUsername,
             })
+            await setTestDefaults(driver, gqlClient)
             screenshots = new ScreenshotVerifier(driver)
-            await ensureLoggedInOrCreateUser({
-                driver,
-                gqlClient,
-                username: testUsername,
-                password: 'test',
-                deleteIfExists: true,
+
+            await resourceManager.create({
+                type: 'User',
+                name: testUsername,
+                create: () =>
+                    ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                        ...config,
+                        username: testUsername,
+                        deleteIfExists: true,
+                    }),
+                destroy: () => deleteUser(gqlClient, testUsername, false),
             })
         },
         20 * 1000 // wait 20s for cloning
     )
 
     afterAll(async () => {
+        if (!config.noCleanup) {
+            await resourceManager.destroyAll()
+        }
         if (driver) {
             await driver.close()
         }
-        await deleteUser(gqlClient, testUsername, false)
         if (screenshots.screenshots.length > 0) {
             console.log(screenshots.verificationInstructions())
         }
@@ -109,7 +123,7 @@ describe('Onboarding', () => {
     testAdminOnboarding(
         'Site-admin onboarding',
         async () => {
-            await ensureNoExternalServices(gqlClient, {
+            await ensureNoTestExternalServices(gqlClient, {
                 ...testExternalServiceConfig,
                 deleteIfExist: true,
             })
@@ -158,7 +172,7 @@ describe('Onboarding', () => {
     test(
         'Non-admin user onboarding',
         async () => {
-            await ensureExternalService(gqlClient, testExternalServiceConfig)
+            await ensureTestExternalService(gqlClient, testExternalServiceConfig)
             const repoSlugs = testExternalServiceConfig.config.repos
             await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]])
 

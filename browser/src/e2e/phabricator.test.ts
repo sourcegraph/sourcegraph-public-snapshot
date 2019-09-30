@@ -19,7 +19,7 @@ const PHABRICATOR_PASSWORD = process.env.PHABRICATOR_PASSWORD || 'sourcegraph'
 const TEST_NATIVE_INTEGRATION = Boolean(
     process.env.TEST_NATIVE_INTEGRATION && JSON.parse(process.env.TEST_NATIVE_INTEGRATION)
 )
-const { gitHubToken, sourcegraphBaseUrl } = getConfig(['gitHubToken', 'sourcegraphBaseUrl'])
+const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the

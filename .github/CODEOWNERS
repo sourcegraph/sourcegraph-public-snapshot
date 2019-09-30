@@ -101,6 +101,9 @@ tslint.config.js @felixfbecker
 /cmd @beyang @slimsag
 /pkg @beyang @slimsag
 
+# Regression testing
+/web/src/regression @beyang
+
 # Frontend
 /shared @sourcegraph/web
 /web @sourcegraph/web

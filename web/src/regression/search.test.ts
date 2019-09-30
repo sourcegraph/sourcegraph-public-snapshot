@@ -3,13 +3,14 @@
  */
 
 import { Driver } from '../../../shared/src/e2e/driver'
-import { getConfig, Config } from '../../../shared/src/e2e/config'
+import { getConfig } from '../../../shared/src/e2e/config'
 import { setTestDefaults, createAndInitializeDriver } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
-import { ensureExternalService, waitForRepos } from './util/api'
-import { ensureLoggedInOrCreateUser } from './util/helpers'
+import { ensureTestExternalService, waitForRepos, deleteUser, ensureNoTestExternalServices } from './util/api'
+import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
+import { TestResourceManager } from './util/TestResourceManager'
 
 const testRepoSlugs = [
     'auth0/go-jwt-middleware',
@@ -124,48 +125,78 @@ function hasNoResultsOrError(): boolean {
 }
 
 describe('Search regression test suite', () => {
-    let config: Pick<Config, 'sudoToken' | 'sudoUsername' | 'gitHubToken' | 'sourcegraphBaseUrl'>
     let driver: Driver
     let gqlClient: GraphQLClient
+    const testUsername = 'test-search'
+    const testExternalServiceInfo = {
+        kind: GQL.ExternalServiceKind.GITHUB,
+        uniqueDisplayName: '[TEST] GitHub (search.test.ts)',
+    }
 
     describe('Search over a dozen repositories', () => {
+        const resourceManager = new TestResourceManager()
+        const config = getConfig(
+            'sudoToken',
+            'sudoUsername',
+            'gitHubToken',
+            'sourcegraphBaseUrl',
+            'noCleanup',
+            'testUserPassword',
+            'logBrowserConsole',
+            'slowMo',
+            'headless'
+        )
         beforeAll(
             async () => {
-                config = getConfig(['sudoToken', 'sudoUsername', 'gitHubToken', 'sourcegraphBaseUrl'])
-                driver = await createAndInitializeDriver(config.sourcegraphBaseUrl)
+                driver = await createAndInitializeDriver(config)
                 gqlClient = GraphQLClient.newForPuppeteerTest({
                     baseURL: config.sourcegraphBaseUrl,
                     sudoToken: config.sudoToken,
                     username: config.sudoUsername,
                 })
-                setTestDefaults(driver)
-                await ensureLoggedInOrCreateUser({ driver, gqlClient, username: 'test', password: 'test' })
-                await ensureExternalService(gqlClient, {
-                    kind: GQL.ExternalServiceKind.GITHUB,
-                    uniqueDisplayName: 'GitHub (search-regression-test)',
-                    config: {
-                        url: 'https://github.com',
-                        token: config.gitHubToken,
-                        repos: testRepoSlugs,
-                        repositoryQuery: ['none'],
-                    },
+                await setTestDefaults(driver, gqlClient)
+
+                await resourceManager.create({
+                    type: 'User',
+                    name: testUsername,
+                    create: () =>
+                        ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config }),
+                    destroy: () => deleteUser(gqlClient, testUsername, false),
                 })
-                await waitForRepos(gqlClient, ['github.com/' + testRepoSlugs[testRepoSlugs.length - 1]])
+                await resourceManager.create({
+                    type: 'External service',
+                    name: testExternalServiceInfo.uniqueDisplayName,
+                    create: async () => {
+                        await ensureTestExternalService(gqlClient, {
+                            ...testExternalServiceInfo,
+                            config: {
+                                url: 'https://github.com',
+                                token: config.gitHubToken,
+                                repos: testRepoSlugs,
+                                repositoryQuery: ['none'],
+                            },
+                        })
+                        await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
+                    },
+                    destroy: () =>
+                        ensureNoTestExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true }),
+                })
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
             2 * 60 * 1000
         )
 
-        // Close browser.
         afterAll(async () => {
+            if (!config.noCleanup) {
+                await resourceManager.destroyAll()
+            }
             if (driver) {
                 await driver.close()
             }
-            console.log('You can limit the test run to specific tests by running `yarn run test-regression -t $QUERY`.')
         })
 
-        test('Global text search (alksdjflaksjdflkasjdf) with 0 results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=alksdjflaksjdflkasjdf')
+        test('Global text search (asdfalksdjflaksjdflkasjdf) with 0 results.', async () => {
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=asdfalksdjflaksjdflkasjdf')
             await driver.page.waitForFunction(hasNoResultsOrError)
         })
         test('Global text search with double-quoted string constant ("error type:") with a few results.', async () => {

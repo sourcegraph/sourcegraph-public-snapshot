@@ -16,7 +16,7 @@ const GITLAB_BASE_URL = process.env.GITLAB_BASE_URL || 'https://gitlab.com'
 const GITLAB_TOKEN = process.env.GITLAB_TOKEN
 const REPO_PATH_PREFIX = new URL(GITLAB_BASE_URL).hostname
 
-const { sourcegraphBaseUrl } = getConfig(['sourcegraphBaseUrl'])
+const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
