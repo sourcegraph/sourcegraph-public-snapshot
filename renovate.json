@@ -2,7 +2,6 @@
   "$schema": "http://json.schemastore.org/renovate",
   "extends": ["github>sourcegraph/renovate-config"],
   "semanticCommits": false,
-  "labels": ["bot"],
   "packageRules": [
     {
       "paths": ["lsif/"],

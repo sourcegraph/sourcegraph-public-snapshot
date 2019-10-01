@@ -258,13 +258,11 @@ README.md @sqs
 /pkg/hubspot/ @dadlerj
 /pkg/highlight/ @slimsag
 
-# These can also be configured by package through Renovate config (see renovate.json)
-**/package.json @sourcegraph/web
-**/yarn.lock @sourcegraph/web
-
-# Code intel team owns LSIF server
-/lsif/package.json @sourcegraph/code-intel
-/lsif/yarn.lock @sourcegraph/code-intel
+# These are configured through Renovate config.
+# See ../renovate.json and https://github.com/sourcegraph/renovate-config/blob/master/renovate.json
+# This is so that automerged PRs do not trigger email notification spam.
+**/package.json
+**/yarn.lock
 
 /go.sum @sourcegraph/core-services
 /go.mod @sourcegraph/core-services
