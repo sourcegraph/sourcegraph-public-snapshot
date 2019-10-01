@@ -155,7 +155,7 @@ type Snapshot struct {
 	Destination string `yaml:",omitempty"`
 }
 
-// Snapshotter runs several
+// Snapshotter manages the running over several Snapshots.
 type Snapshotter struct {
 	// Dir is the directory PreCommand is run from. If a Snapshot's Dir is
 	// relative, it will be resolved relative to this directory. Defaults to
