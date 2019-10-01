@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Allow single trailing hyphen in usernames and org names [#5680](https://github.com/sourcegraph/sourcegraph/pull/5680)
+- Indexed search won't spam the logs on startup if the frontend API is not yet available. [zoekt#30](https://github.com/sourcegraph/zoekt/pull/30)
 
 ### Fixed
 
