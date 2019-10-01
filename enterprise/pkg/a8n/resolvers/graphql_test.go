@@ -222,17 +222,6 @@ func TestCampaigns(t *testing.T) {
 		t.Errorf("wrong page info: %+v", listed.All.PageInfo.HasNextPage)
 	}
 
-	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	externalService := &repos.ExternalService{
-		Kind:        "GITHUB",
-		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-			Repos: []string{"sourcegraph/sourcegraph"},
-		}),
-	}
-
 	campaigns.Admin.Name = "Updated Admin Campaign Name"
 	campaigns.Admin.Description = "Updated Admin Campaign Description"
 	updateInput := map[string]interface{}{
@@ -267,27 +256,38 @@ func TestCampaigns(t *testing.T) {
 		t.Errorf("wrong campaign updated. diff=%s", cmp.Diff(haveUpdated, wantUpdated))
 	}
 
-	err = store.UpsertExternalServices(ctx, externalService)
+	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	githubExtSvc := &repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repos: []string{"sourcegraph/sourcegraph"},
+		}),
+	}
+
+	err = store.UpsertExternalServices(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
 
-	src, err := repos.NewGithubSource(externalService, cf)
+	src, err := repos.NewGithubSource(githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
 
-	repo, err := src.GetRepo(ctx, "sourcegraph/sourcegraph")
+	githubRepo, err := src.GetRepo(ctx, "sourcegraph/sourcegraph")
 	if err != nil {
 		t.Fatal(t)
 	}
 
-	err = store.UpsertRepos(ctx, repo)
+	err = store.UpsertRepos(ctx, githubRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	graphqlRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
+	graphqlGithubRepoID := string(marshalRepositoryID(api.RepoID(githubRepo.ID)))
 
 	type Changeset struct {
 		ID          string
@@ -309,7 +309,7 @@ func TestCampaigns(t *testing.T) {
 		Changesets []Changeset
 	}
 
-	in := fmt.Sprintf(`[{repository: %q, externalID: %q}]`, graphqlRepoID, "999")
+	in := fmt.Sprintf(`[{repository: %q, externalID: %q}]`, graphqlGithubRepoID, "999")
 	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment cs on Changeset {
 			id
@@ -335,7 +335,7 @@ func TestCampaigns(t *testing.T) {
 	{
 		want := []Changeset{
 			{
-				Repository: struct{ ID string }{ID: graphqlRepoID},
+				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "add extension filter to filter bar",
