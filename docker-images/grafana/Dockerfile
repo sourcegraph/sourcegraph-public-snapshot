@@ -6,8 +6,8 @@ RUN apk update && apk upgrade && \
 WORKDIR /opt
 RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git
 
-RUN cd jsonnet && \
-    make
+WORKDIR /opt/jsonnet
+RUN make
 
 RUN mkdir /dashboards
 COPY jsonnet /dashboards
