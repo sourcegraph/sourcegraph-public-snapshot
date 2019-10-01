@@ -1,5 +1,5 @@
 // Command "src-expose" serves git repositories within some directory over HTTP,
-// along with a pastable config for easier manual testing of sourcegraph.
+// along with a pastable config for easier manual testing of Sourcegraph.
 package main
 
 import (
@@ -71,9 +71,9 @@ func main() {
 		ShortHelp: "Serve git repos for Sourcegraph to list and clone.",
 		LongHelp: `src-expose will serve any number (controlled with -n) of copies of the repo over
 HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
-be used as test data for sourcegraph. The easiest way to get them into
-sourcegraph is to visit the URL printed out on startup and paste the contents
-into the text box for adding single repos in sourcegraph Site Admin.
+be used as test data for Sourcegraph. The easiest way to get them into
+Sourcegraph is to visit the URL printed out on startup and paste the contents
+into the text box for adding single repos in Sourcegraph Site Admin.
 
 src-expose will default to serving ~/.sourcegraph/snapshots`,
 		FlagSet: serveFlags,
@@ -97,7 +97,7 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 	snapshot := &ffcli.Command{
 		Name:      "snapshot",
 		Usage:     "src-expose [flags] snapshot [flags] <src1> [<src2> ...]",
-		ShortHelp: "Create a git snapshot of directories",
+		ShortHelp: "Create a Git snapshot of directories",
 		Exec: func(args []string) error {
 			s, err := parseSnapshotter(args)
 			if err != nil {
