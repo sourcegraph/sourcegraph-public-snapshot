@@ -245,9 +245,8 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					// The test fixtures and golden files were generated with
 					// this config pointed to bitbucket.sgdev.org
-					Url:             os.Getenv("BITBUCKET_SERVER_URL"),
-					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					RepositoryQuery: []string{"all"},
+					Url:   os.Getenv("BITBUCKET_SERVER_URL"),
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				}),
 			}
 
