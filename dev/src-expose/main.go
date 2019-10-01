@@ -156,11 +156,15 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 				}
 			}()
 
+			if err := s.SetDefaults(); err != nil {
+				return err
+			}
+
 			for {
 				if err := s.Run(); err != nil {
-					log.Fatalf("error: %v", err)
+					return err
 				}
-				time.Sleep(10 * time.Second)
+				time.Sleep(s.Duration)
 			}
 		},
 	}

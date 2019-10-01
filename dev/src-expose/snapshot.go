@@ -178,6 +178,9 @@ type Snapshotter struct {
 	//  - ignore
 	//  - remove_dest
 	DirMode string
+
+	// Duration defines how often snapshots should be taken.
+	Duration time.Duration
 }
 
 func (o *Snapshotter) SetDefaults() error {
@@ -199,6 +202,10 @@ func (o *Snapshotter) SetDefaults() error {
 
 	if o.DirMode == "" {
 		o.DirMode = "fail"
+	}
+
+	if o.Duration == 0 {
+		o.Duration = 10 * time.Second
 	}
 
 	for i, s := range o.Snapshots {
