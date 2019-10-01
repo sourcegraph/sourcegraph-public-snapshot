@@ -16,6 +16,19 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type usageError struct {
+	Message string
+	FlagSet *flag.FlagSet
+}
+
+func (e *usageError) Usage() {
+	e.FlagSet.Usage()
+}
+
+func (e *usageError) Error() string {
+	return e.Message
+}
+
 func main() {
 	log.SetPrefix("")
 
@@ -32,16 +45,21 @@ func main() {
 		globalSnapshotDir    = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
 		globalSnapshotConfig = globalFlags.String("snapshot-config", "", "If set will be used instead of command line arguments to specify snapshot configuration.")
 
+		snapshotFlags = flag.NewFlagSet("snapshot", flag.ExitOnError)
+
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
 		serveN     = serveFlags.Int("n", 1, "number of instances of each repo to make")
 		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	)
 
-	parseSnapshotter := func(args []string) (*Snapshotter, error) {
+	parseSnapshotter := func(flagSet *flag.FlagSet, args []string) (*Snapshotter, error) {
 		var s Snapshotter
 		if *globalSnapshotConfig != "" {
 			if len(args) != 0 {
-				return nil, errors.New("does not take arguments if -snapshot-config is specified")
+				return nil, &usageError{
+					Message: "does not take arguments if -snapshot-config is specified",
+					FlagSet: flagSet,
+				}
 			}
 			b, err := ioutil.ReadFile(*globalSnapshotConfig)
 			if err != nil {
@@ -52,7 +70,10 @@ func main() {
 			}
 		} else {
 			if len(args) == 0 {
-				return nil, errors.New("requires atleast 1 argument")
+				return nil, &usageError{
+					Message: "requires atleast 1 argument, or -snapshot-config to be specified.",
+					FlagSet: flagSet,
+				}
 			}
 			for _, dir := range args {
 				s.Snapshots = append(s.Snapshots, &Snapshot{Dir: dir})
@@ -86,7 +107,10 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 				repoDir = args[0]
 
 			default:
-				return errors.New("too many arguments")
+				return &usageError{
+					Message: "too many arguments",
+					FlagSet: serveFlags,
+				}
 			}
 
 			return serveRepos(*serveN, *serveAddr, repoDir)
@@ -97,8 +121,9 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 		Name:      "snapshot",
 		Usage:     "src-expose [flags] snapshot [flags] <src1> [<src2> ...]",
 		ShortHelp: "Create a Git snapshot of directories",
+		FlagSet:   snapshotFlags,
 		Exec: func(args []string) error {
-			s, err := parseSnapshotter(args)
+			s, err := parseSnapshotter(snapshotFlags, args)
 			if err != nil {
 				return err
 			}
@@ -116,15 +141,18 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 			var err error
 			var s *Snapshotter
 			if len(args) == 0 {
-				s, err = parseSnapshotter(args)
+				s, err = parseSnapshotter(globalFlags, args)
 				if err != nil {
 					return err
 				}
 			} else if len(args) < 2 {
-				return errors.New("requires atleast 2 argument")
+				return &usageError{
+					Message: "requires atleast 2 argument",
+					FlagSet: globalFlags,
+				}
 			} else {
 				preCommand := args[0]
-				s, err = parseSnapshotter(args[1:])
+				s, err = parseSnapshotter(globalFlags, args[1:])
 				if err != nil {
 					return err
 				}
@@ -170,6 +198,9 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 	}
 
 	if err := root.Run(os.Args[1:]); err != nil {
-		log.Fatalf("error: %v", err)
+		if u, ok := err.(interface{ Usage() }); ok {
+			u.Usage()
+		}
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 	}
 }
