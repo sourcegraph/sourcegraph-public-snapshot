@@ -129,7 +129,7 @@ func TestSrcExpose(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			body = tc.body
 
-			repos, err := source.srcexpose(context.Background())
+			repos, err := source.srcExpose(context.Background())
 			if got := fmt.Sprintf("%v", err); !strings.Contains(got, tc.err) {
 				t.Fatalf("got error %v, want %v", got, tc.err)
 			}

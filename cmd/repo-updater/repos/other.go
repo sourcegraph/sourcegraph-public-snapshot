@@ -47,7 +47,7 @@ func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, er
 // in Sourcegraph via the external services configuration.
 func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	if s.conn.ExperimentalSrcExpose {
-		repos, err := s.srcexpose(ctx)
+		repos, err := s.srcExpose(ctx)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 		}
@@ -143,7 +143,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 	}, nil
 }
 
-func (s OtherSource) srcexpose(ctx context.Context) ([]*Repo, error) {
+func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
 	req, err := http.NewRequest("GET", s.conn.Url+"/v1/list-repos", nil)
 	if err != nil {
 		return nil, err
