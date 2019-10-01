@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -10,12 +9,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/pkg/errors"
 )
 
-func serveRepos(n int, addr string, repoDir string) error {
+func serveRepos(addr string, repoDir string) error {
 	logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
 
 	ln, err := net.Listen("tcp", addr)
@@ -23,7 +21,7 @@ func serveRepos(n int, addr string, repoDir string) error {
 		return errors.Wrap(err, "listen")
 	}
 	logger.Printf("listening on http://%s", ln.Addr())
-	s, err := serve(logger, n, ln, repoDir)
+	s, err := serve(logger, ln, repoDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
 	}
@@ -34,16 +32,11 @@ func serveRepos(n int, addr string, repoDir string) error {
 	return nil
 }
 
-func serve(logger *log.Logger, n int, ln net.Listener, reposRoot string) (*http.Server, error) {
+func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server, error) {
 	configureRepos(logger, reposRoot)
 
 	// Start the HTTP server.
 	mux := &http.ServeMux{}
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tvars := &templateVars{n, configureRepos(logger, reposRoot), ln.Addr()}
-
-		handleConfig(tvars, w)
-	})
 
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
 		type Repo struct {
@@ -71,14 +64,7 @@ func serve(logger *log.Logger, n int, ln net.Listener, reposRoot string) (*http.
 		_ = enc.Encode(&resp)
 	})
 
-	if n == 1 {
-		mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(reposRoot)})))
-	} else {
-		for i := 1; i <= n; i++ {
-			pfx := fmt.Sprintf("/repos/%d/", i)
-			mux.Handle(pfx, http.StripPrefix(pfx, http.FileServer(httpDir{http.Dir(reposRoot)})))
-		}
-	}
+	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(reposRoot)})))
 
 	s := &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -171,53 +157,4 @@ func configureOneRepo(logger *log.Logger, gitDir string) error {
 		}
 	}
 	return nil
-}
-
-// handleConfig shows the config for pasting into sourcegraph.
-func handleConfig(tvars *templateVars, w http.ResponseWriter) {
-	t1 := `// Paste this into Site admin | External services | Add external service | Single Git repositories:
-{
-  "url": "http://{{.Addr}}",
-  "repos": [{{range .Repos}}
-      "{{.}}",{{end}}
-  ]
-}
-`
-	err := func() error {
-		t2, err := template.New("config").Parse(t1)
-		if err != nil {
-			return errors.Wrap(err, "parsing config template")
-		}
-		if err := t2.Execute(w, tvars); err != nil {
-			return errors.Wrap(err, "executing config template")
-		}
-		return nil
-	}()
-	if err != nil {
-		log.Println(err)
-		_, _ = w.Write([]byte(err.Error()))
-	}
-}
-
-type templateVars struct {
-	n       int
-	RelDirs []string
-	Addr    net.Addr
-}
-
-// Repos returns a slice of URL paths for all the repos, including any copies.
-func (tv *templateVars) Repos() []string {
-	var paths []string
-	if tv.n == 1 {
-		for _, rd := range tv.RelDirs {
-			paths = append(paths, "/repos/"+rd)
-		}
-	} else {
-		for i := 1; i <= tv.n; i++ {
-			for _, rd := range tv.RelDirs {
-				paths = append(paths, fmt.Sprint("/repos/", i, "/", rd))
-			}
-		}
-	}
-	return paths
 }

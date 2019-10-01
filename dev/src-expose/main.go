@@ -48,7 +48,6 @@ func main() {
 		snapshotFlags = flag.NewFlagSet("snapshot", flag.ExitOnError)
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
-		serveN     = serveFlags.Int("n", 1, "number of instances of each repo to make")
 		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	)
 
@@ -89,11 +88,8 @@ func main() {
 		Name:      "serve",
 		Usage:     "src-expose [flags] serve [flags] [path/to/dir/containing/git/dirs]",
 		ShortHelp: "Serve git repos for Sourcegraph to list and clone.",
-		LongHelp: `src-expose will serve any number (controlled with -n) of copies of the repo over
-HTTP at /repo/1/.git, /repo/2/.git etc. These can be git cloned, and they can
-be used as test data for Sourcegraph. The easiest way to get them into
-Sourcegraph is to visit the URL printed out on startup and paste the contents
-into the text box for adding single repos in Sourcegraph Site Admin.
+		LongHelp: `src-expose serve will serve the git repositories over HTTP. These can be git
+cloned, and they can be discovered by Sourcegraph.
 
 src-expose will default to serving ~/.sourcegraph/snapshots`,
 		FlagSet: serveFlags,
@@ -113,7 +109,7 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 				}
 			}
 
-			return serveRepos(*serveN, *serveAddr, repoDir)
+			return serveRepos(*serveAddr, repoDir)
 		},
 	}
 
@@ -179,7 +175,7 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 `, *globalSnapshotDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr)
 
 			go func() {
-				if err := serveRepos(*serveN, *serveAddr, *globalSnapshotDir); err != nil {
+				if err := serveRepos(*serveAddr, *globalSnapshotDir); err != nil {
 					log.Fatal(err)
 				}
 			}()
