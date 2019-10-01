@@ -10,7 +10,7 @@ RUN cd jsonnet && \
     make
 
 RUN mkdir /dashboards
-ADD jsonnet /dashboards
+COPY jsonnet /dashboards
 WORKDIR /dashboards
 
 ENV PATH="/opt/jsonnet:${PATH}"
