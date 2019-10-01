@@ -153,6 +153,13 @@ type Snapshot struct {
 
 	// Destination is the directory containing the bare git repo.
 	Destination string `yaml:",omitempty"`
+
+	// MinDuration defines the minimum wait between snapshots for Dir.
+	MinDuration time.Duration
+
+	// last stores the time of the last snapshot. Compared against MinDuration
+	// to determine if we should run.
+	last time.Time
 }
 
 // Snapshotter manages the running over several Snapshots.
@@ -170,7 +177,7 @@ type Snapshotter struct {
 	PreCommand string
 
 	// Snapshots is a list of Snapshosts to take.
-	Snapshots []Snapshot
+	Snapshots []*Snapshot
 
 	// DirMode defines what behaviour to use if Dir is missing.
 	//
@@ -254,6 +261,11 @@ func (o *Snapshotter) Run() error {
 	}
 
 	for _, s := range o.Snapshots {
+		if time.Since(s.last) < s.MinDuration {
+			continue
+		}
+		s.last = time.Now()
+
 		if s.PreCommand != "" {
 			cmd := exec.Command("sh", "-c", s.PreCommand)
 			cmd.Dir = s.Dir

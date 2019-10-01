@@ -55,7 +55,7 @@ func main() {
 				return nil, errors.New("requires atleast 1 argument")
 			}
 			for _, dir := range args {
-				s.Snapshots = append(s.Snapshots, Snapshot{Dir: dir})
+				s.Snapshots = append(s.Snapshots, &Snapshot{Dir: dir})
 			}
 		}
 		if s.Destination == "" {
