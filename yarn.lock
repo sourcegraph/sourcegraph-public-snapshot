@@ -2223,10 +2223,10 @@
   dependencies:
     "@types/chai" "*"
 
-"@types/chai@*", "@types/chai@4.2.0":
-  version "4.2.0"
-  resolved "https://registry.npmjs.org/@types/chai/-/chai-4.2.0.tgz#2478260021408dec32c123a7cad3414beb811a07"
-  integrity sha512-zw8UvoBEImn392tLjxoavuonblX/4Yb9ha4KBU10FirCfwgzhKO0dvyJSF9ByxV1xK1r2AgnAi/tvQaLgxQqxA==
+"@types/chai@*", "@types/chai@4.2.3":
+  version "4.2.3"
+  resolved "https://registry.npmjs.org/@types/chai/-/chai-4.2.3.tgz#419477a3d5202bad19e14c787940a61dc9ea6407"
+  integrity sha512-VRw2xEGbll3ZiTQ4J02/hUjNqZoue1bMhoo2dgM2LXjDdyaq4q80HgBDHwpI0/VKlo4Eg+BavyQMv/NYgTetzA==
 
 "@types/chalk@2.2.0":
   version "2.2.0"
