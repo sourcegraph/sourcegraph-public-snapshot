@@ -234,7 +234,7 @@
     "open-color": "^1.6.3",
     "pretty-bytes": "^5.3.0",
     "react": "^16.9.0",
-    "react-circular-progressbar": "^1.0.0",
+    "react-circular-progressbar": "^2.0.2",
     "react-dom": "npm:@hot-loader/react-dom@^16.9.0",
     "react-dom-confetti": "^0.1.1",
     "react-router": "^5.0.1",
