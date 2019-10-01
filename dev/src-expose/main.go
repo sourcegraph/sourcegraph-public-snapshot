@@ -81,6 +81,11 @@ func main() {
 		if s.Destination == "" {
 			s.Destination = *globalSnapshotDir
 		}
+
+		if err := s.SetDefaults(); err != nil {
+			return nil, err
+		}
+
 		return &s, nil
 	}
 
@@ -128,9 +133,15 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 	}
 
 	root := &ffcli.Command{
-		Name:        "src-expose",
-		Usage:       "src-expose [flags] <precommand> <src1> [<src2> ...]",
-		ShortHelp:   "Periodically create snapshots of directories src1, src2, ... and serve them.",
+		Name:  "src-expose",
+		Usage: "src-expose [flags] <precommand> <src1> [<src2> ...]",
+		LongHelp: `Periodically create snapshots of directories src1, src2, ... and serve them.
+
+For more advanced uses specify -snapshot-config pointing to a yaml file.
+
+EXAMPLE CONFIGURATION
+
+` + MustAssetString("example.yaml"),
 		Subcommands: []*ffcli.Command{serve, snapshot},
 		FlagSet:     globalFlags,
 		Exec: func(args []string) error {
@@ -179,10 +190,6 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 					log.Fatal(err)
 				}
 			}()
-
-			if err := s.SetDefaults(); err != nil {
-				return err
-			}
 
 			for {
 				if err := s.Run(); err != nil {

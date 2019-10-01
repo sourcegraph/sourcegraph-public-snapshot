@@ -155,7 +155,7 @@ type Snapshot struct {
 	Destination string `yaml:",omitempty"`
 
 	// MinDuration defines the minimum wait between snapshots for Dir.
-	MinDuration time.Duration
+	MinDuration time.Duration `yaml:",omitempty"`
 
 	// last stores the time of the last snapshot. Compared against MinDuration
 	// to determine if we should run.
@@ -170,7 +170,7 @@ type Snapshotter struct {
 	Dir string
 
 	// If a Snapshot's Destination is relative, it will be resolved relative
-	// to Destination.
+	// to Destination. Defaults to ~/.sourcegraph/snapshots
 	Destination string
 
 	// PreCommand before any snapshots are taken, PreCommand is run from Dir.
