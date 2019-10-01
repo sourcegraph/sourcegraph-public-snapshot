@@ -332,7 +332,6 @@ func TestCampaigns(t *testing.T) {
 
 	graphqlGithubRepoID := string(marshalRepositoryID(api.RepoID(githubRepo.ID)))
 	graphqlBBSRepoID := string(marshalRepositoryID(api.RepoID(bbsRepo.ID)))
-	fmt.Println(graphqlBBSRepoID)
 
 	in := fmt.Sprintf(
 		`[{repository: %q, externalID: %q}, {repository: %q, externalID: %q}]`,
