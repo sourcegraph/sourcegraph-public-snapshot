@@ -223,7 +223,23 @@
     "approved": false,
     "status": "UNAPPROVED"
    },
-   "reviewers": [],
+   "reviewers": [
+    {
+     "user": {
+      "name": "thorsten",
+      "emailAddress": "thorsten@sourcegraph.com",
+      "id": 104,
+      "displayName": "thorsten",
+      "active": true,
+      "slug": "thorsten",
+      "type": "NORMAL"
+     },
+     "lastReviewedCommit": "858c0c78b93c45fda144acf68f549734f8aeb6fe",
+     "role": "REVIEWER",
+     "approved": false,
+     "status": "NEEDS_WORK"
+    }
+   ],
    "participants": [],
    "links": {
     "self": [

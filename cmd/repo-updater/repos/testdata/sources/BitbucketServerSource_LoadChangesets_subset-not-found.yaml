@@ -20,7 +20,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 30 Sep 2019 15:04:56 GMT
+      - Tue, 01 Oct 2019 10:10:08 GMT
       Pragma:
       - no-cache
       Server:
@@ -28,11 +28,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx904x1193131x0'
+      - '@1IK17DGx610x1197189x0'
       X-Asen:
       - SEN-L13789548
       X-Asessionid:
-      - wvs3az
+      - bcgc58
       X-Auserid:
       - "1"
       X-Ausername:
@@ -60,7 +60,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 30 Sep 2019 15:04:56 GMT
+      - Tue, 01 Oct 2019 10:10:08 GMT
       Pragma:
       - no-cache
       Server:
@@ -68,11 +68,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx904x1193132x0'
+      - '@1IK17DGx610x1197190x0'
       X-Asen:
       - SEN-L13789548
       X-Asessionid:
-      - m8q892
+      - vw6pkq
       X-Auserid:
       - "1"
       X-Ausername:
