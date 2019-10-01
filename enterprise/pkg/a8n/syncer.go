@@ -2,7 +2,6 @@ package a8n
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -17,14 +16,6 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
-}
-
-func NewSubSyncer(db *sql.DB, store repos.Store, cf *httpcli.Factory) repos.SubSyncer {
-	return &ChangesetSyncer{
-		Store:       NewStore(db),
-		ReposStore:  store,
-		HTTPFactory: cf,
-	}
 }
 
 // Sync refreshes the metadata of all changesets and updates them in the
