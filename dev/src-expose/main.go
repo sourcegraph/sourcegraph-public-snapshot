@@ -1,5 +1,4 @@
-// Command "src-expose" serves git repositories within some directory over HTTP,
-// along with a pastable config for easier manual testing of Sourcegraph.
+// Command "src-expose" serves directories as git repositories over HTTP.
 package main
 
 import (
