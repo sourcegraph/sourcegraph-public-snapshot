@@ -53,7 +53,7 @@ func snapshot(logger *log.Logger, src, dst string) error {
 		return nil
 	}
 
-	args := [][]string{
+	cmds := [][]string{
 		// we can't just git add, since if we are tracking files that are part
 		// of .gitignore they will continue to be tracked. So we empty the
 		// index.
@@ -64,7 +64,7 @@ func snapshot(logger *log.Logger, src, dst string) error {
 
 		{"git", "commit", "-m", "Sync at " + time.Now().Format("Mon Jan _2 15:04:05 2006")},
 	}
-	for _, a := range args {
+	for _, a := range cmds {
 		cmd := exec.Command(a[0], a[1:]...)
 		cmd.Env = env
 		cmd.Dir = src
