@@ -9,7 +9,6 @@ This roadmap is an overview of what’s coming in the next 3-6 months. The proje
 
 We ship a release on the [20th day of each month](http://localhost:5080/dev/releases#releases-are-monthly).
 
-**Next release:** [Sourcegraph 3.9](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+milestone%3A3.9+label%3Aroadmap) (ships on October 20, 2019).
 
 Want to help us achieve these goals? [We're hiring!](https://github.com/sourcegraph/careers/blob/master/job-descriptions/software-engineer.md)
 
