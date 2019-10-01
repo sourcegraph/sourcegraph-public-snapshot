@@ -11555,10 +11555,10 @@ mdast-util-compact@^1.0.0:
   dependencies:
     unist-util-visit "^1.1.0"
 
-mdi-react@^5.5.0:
-  version "5.5.0"
-  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-5.5.0.tgz#710173f6ff5dd4b217a8d8874600d914dbcb054d"
-  integrity sha512-OTm2TnBRgvHaMfBJsEqxHdiLZ4SToDC/f9ewI3x8yg0g20Fk7vO3YbBdpBF5C046ls2Emv5yKshoxue6mYpP7A==
+mdi-react@^5.6.0:
+  version "5.6.0"
+  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-5.6.0.tgz#4e7c55db60ed01b71e681b0a784ab88f2fe0e44d"
+  integrity sha512-mes6iLVHCEs0gDg/WNiF/xBZ6ES6EQtd10Aoe186yKU/TeWiYDLgmKaybIyV2UPsplD0bfHpxyhS2B0W9c+pqg==
 
 mdn-browser-compat-data@0.0.72:
   version "0.0.72"
