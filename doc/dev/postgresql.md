@@ -56,6 +56,19 @@ export PGDATABASE=sourcegraph
 export PGSSLMODE=disable
 ```
 
+You can also use a tool like [`envdir`][s] or [a `.dotenv` file][dotenv] to
+source these env vars on demand when you start the server.
+
+[envdir]: https://cr.yp.to/daemontools/envdir.html
+[dotenv]: https://github.com/joho/godotenv
+
+<<<<<<< HEAD
+=======
+Note: Sourcegraph will create a secondary database in the same PostgreSQL
+instance called `sourcegraph_lsif`. It is assumed the PostgreSQL instance
+is dedicated to Sourcegraph solely.
+
+>>>>>>> 6b0ad9211b... Update postgresql.md
 To test the environment's credentials, run `psql` (the PostgreSQL CLI
 client) with the `PG*` environment variables set. If you see a
 database prompt, then the environment's credentials are valid.
@@ -66,6 +79,10 @@ Make sure you've set `PGHOST`. (Postgres can do peer authentication
 on local sockets, which provides reliable identification but must
 be specially configured to authenticate you as a user with a name
 different from your account name.)
+
+Note: Sourcegraph will create a secondary database in the same PostgreSQL
+instance called `sourcegraph_lsif`. It is assumed the PostgreSQL instance
+is dedicated to Sourcegraph solely.
 
 # Migrations
 

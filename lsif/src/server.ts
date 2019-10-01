@@ -8,6 +8,8 @@ import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { createGzip } from 'mz/zlib'
+import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
 import { identity } from 'lodash'
@@ -17,7 +19,6 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
-import { createGzip } from 'mz/zlib'
 
 const pipeline = promisify(_pipeline)
 
@@ -88,12 +89,14 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
-    // Create cross-repo database
+    // Prepare caches
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
-    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
-    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
+
+    // Create cross-repo database
+    const connection = await createPostgresConnection()
+    const xrepoDatabase = new XrepoDatabase(connection)
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
         const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
@@ -266,7 +269,7 @@ export function checkRepository(repository: any): void {
  */
 export function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
-        throw Object.assign(new Error('Must specify the commit as a 40 character hash ' + commit), { status: 400 })
+        throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
     }
 }
 
