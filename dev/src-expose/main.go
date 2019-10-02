@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +28,14 @@ func (e *usageError) Usage() {
 
 func (e *usageError) Error() string {
 	return e.Message
+}
+
+func dockerAddr(addr string) string {
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		port = "3434"
+	}
+	return "host.docker.internal:" + port
 }
 
 func main() {
@@ -178,12 +187,12 @@ Serving the repositories at http://%s.
 Paste the following configuration as an Other External Service in Sourcegraph:
 
   {
-    "url": "http://%s",
+    "url": "http://%s", // Use http://%s if Sourcegraph is running in Docker
     "repos": ["hack-ignore-me"],
-    "experimental.src-expose": true
+    "experimental.srcExpose": true
   }
 
-`, *globalSnapshotDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr)
+`, *globalSnapshotDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr, dockerAddr(*serveAddr))
 
 			go func() {
 				if err := serveRepos(*serveAddr, *globalSnapshotDir); err != nil {
