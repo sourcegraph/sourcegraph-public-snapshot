@@ -213,7 +213,8 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
             return { element: elem, ...singleFileCodeView }
         }
 
-        if (elem.closest('.discussion-item-body')) {
+        if (elem.closest('.discussion-item-body') || elem.classList.contains('js-comment-container')) {
+            // This code view is embedded on a PR conversation page.
             return { element: elem, ...diffConversationCodeView }
         }
 

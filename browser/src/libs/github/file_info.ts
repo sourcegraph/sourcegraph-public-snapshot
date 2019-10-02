@@ -1,11 +1,11 @@
 import { Observable, of, throwError } from 'rxjs'
 import { FileInfo } from '../code_intelligence'
 import { getCommitIDFromPermalink } from './scrape'
-import { getDeltaFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
+import { getDiffFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> => {
     const { rawRepoName } = parseURL()
-    const { headFilePath, baseFilePath } = getDeltaFileName(codeView)
+    const { headFilePath, baseFilePath } = getDiffFileName(codeView)
     if (!headFilePath) {
         throw new Error('cannot determine file path')
     }
