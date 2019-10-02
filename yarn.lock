@@ -2725,10 +2725,10 @@
   resolved "https://registry.npmjs.org/@types/simmerjs/-/simmerjs-0.5.0.tgz#8af013ff6aa071bb18328c6ce8861d7c51fca4b3"
   integrity sha512-2SbGw2eDt9eFGoj7KwuJbw2Kqccw6MXO8ViIBDPolV4naxsZtMCJg3E5cmj53uZj7tIwyyiQMfY2ty016Yc/wA==
 
-"@types/sinon@7.0.13":
-  version "7.0.13"
-  resolved "https://registry.npmjs.org/@types/sinon/-/sinon-7.0.13.tgz#ca039c23a9e27ebea53e0901ef928ea2a1a6d313"
-  integrity sha512-d7c/C/+H/knZ3L8/cxhicHUiTDxdgap0b/aNJfsmLwFu/iOP17mdgbQsbHA3SJmrzsjD0l3UEE5SN4xxuz5ung==
+"@types/sinon@7.5.0":
+  version "7.5.0"
+  resolved "https://registry.npmjs.org/@types/sinon/-/sinon-7.5.0.tgz#f5a10c27175465a0b001b68d8b9f761582967cc6"
+  integrity sha512-NyzhuSBy97B/zE58cDw4NyGvByQbAHNP9069KVSgnXt/sc0T6MFRh0InKAeBVHJWdSXG1S3+PxgVIgKo9mTHbw==
 
 "@types/socket.io-client@1.4.32":
   version "1.4.32"
@@ -15731,10 +15731,10 @@ simplebar@^4.0.0:
     resize-observer-polyfill "^1.5.1"
     scrollbarwidth "^0.1.3"
 
-sinon@^7.4.2:
-  version "7.4.2"
-  resolved "https://registry.npmjs.org/sinon/-/sinon-7.4.2.tgz#ecd54158fef2fcfbdb231a3fa55140e8cb02ad6c"
-  integrity sha512-pY5RY99DKelU3pjNxcWo6XqeB1S118GBcVIIdDi6V+h6hevn1izcg2xv1hTHW/sViRXU7sUOxt4wTUJ3gsW2CQ==
+sinon@^7.5.0:
+  version "7.5.0"
+  resolved "https://registry.npmjs.org/sinon/-/sinon-7.5.0.tgz#e9488ea466070ea908fd44a3d6478fd4923c67ec"
+  integrity sha512-AoD0oJWerp0/rY9czP/D6hDTTUYGpObhZjMpd7Cl/A6+j0xBE+ayL/ldfggkBXUs0IkvIiM1ljM8+WkOc5k78Q==
   dependencies:
     "@sinonjs/commons" "^1.4.0"
     "@sinonjs/formatio" "^3.2.1"
