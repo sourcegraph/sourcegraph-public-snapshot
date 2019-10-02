@@ -442,6 +442,14 @@ func TestCampaigns(t *testing.T) {
 			createdAt
 			updatedAt
 			campaigns { nodes { id } }
+			title
+			body
+			state
+			externalURL {
+				url
+				serviceType
+			}
+			reviewState
 		}
 
 		fragment c on Campaign {
