@@ -37,7 +37,7 @@ Admins understand the health of their instances and are alerted proactively if t
 
 ### Large-scale code change automation
 
-You can use Sourcegraph to [automate large-scale code changes](https://about.sourcegraph.com/product/automation) to remove legacy code, fix critical security issues, and pay down tech debt. Developers can collaborate on campaigns across thousands of repositories, and share, notify, and alert accordingly to get these changes pushed through.
+Use Sourcegraph to [automate large-scale code changes](https://about.sourcegraph.com/product/automation) to remove legacy code, fix critical security issues, and pay down tech debt. You can create campaigns across thousands of repositories and code owners. Sourcegraph automatically creates and updates all of the branches and pull requests, and you can track progress and activity in one place.
 
 <!--
 
