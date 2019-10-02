@@ -1,3 +1,4 @@
+import { startCase } from 'lodash'
 import { parseURL, getDiffFileName } from './util'
 import { getFixtureBody } from '../code_intelligence/code_intelligence_test_utils'
 
@@ -99,11 +100,11 @@ describe('getDiffFileName()', () => {
         })
     }
     for (const gitHubVersion of ['github.com', 'ghe-2.14.11'] as const) {
-        describe(`${gitHubVersion}`, () => {
+        describe(gitHubVersion, () => {
             for (const [gitHubDiffPage, expectedFilePath] of Object.entries(tests[gitHubVersion])) {
-                describe(`${gitHubDiffPage}`, () => {
+                describe(`${startCase(gitHubDiffPage)} page`, () => {
                     for (const gitHubFlavor of ['vanilla', 'refined-github']) {
-                        describe(`${gitHubFlavor}`, () => {
+                        describe(startCase(gitHubFlavor), () => {
                             if (gitHubDiffPage === 'pull-request-discussion') {
                                 testGetDeltaFilename({
                                     expectedFilePath,
