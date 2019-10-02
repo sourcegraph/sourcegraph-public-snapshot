@@ -127,8 +127,12 @@ export class SiteAdminExportConfigPage extends React.Component<Props, State> {
                 </div>
                 <p>
                     All configuration and settings, except critical site configuration (which must be accessed through
-                    the management console).
+                    the <a href="/help/admin/management_console ">management console</a>).
                 </p>
+                <div className="card-header alert alert-warning">
+                    Note: This editor is for export purposes only. You may edit the contents and use auto-complete, but
+                    changes will not be saved. Reloading the page will erase any of the changes you make in this editor.
+                </div>
                 <DynamicallyImportedMonacoSettingsEditor
                     value={this.state.allConfig ? JSON.stringify(this.state.allConfig, undefined, 2) : ''}
                     jsonSchema={allConfigSchema}
@@ -137,9 +141,6 @@ export class SiteAdminExportConfigPage extends React.Component<Props, State> {
                     isLightTheme={this.props.isLightTheme}
                     history={this.props.history}
                 />
-                <p className="form-text text-muted">
-                    <small>Note: Changes made in this editor will not be saved.</small>
-                </p>
             </div>
         )
     }
