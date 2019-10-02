@@ -71,9 +71,12 @@ The release captain should create a tracking issue using the [release issue temp
 | 3.9 | @tsenart| 2019-10-20 (Sunday) |
 | 3.10 | @beyang | 2019-11-20 (Wednesday) |
 | 3.11 | @chrismwendt | 2019-12-20 (Saturday) |
-| 3.12 | @vanesa | 2020-01-20 (Monday, MLK) |
+| 3.12 | @uwedeportivo | 2020-01-20 (Monday, MLK) |
 | 3.13 | @felixfbecker | 2020-02-20 (Thursday) |
-| 3.14 | @ijt | 2020-03-20 (Friday) |
+| 3.14 | @efritz | 2020-03-20 (Friday) |
+| 3.15 | @unknwon | 2020-04-20 (Monday) |
+| 3.16 | @rvantonder | 2020-05-20 (Wednesday) |
+| 3.16 | @hadrian-git | 2020-06-20 (Saturday) |
 
 Release captains may trade rotations with each other by updating this schedule.
 
