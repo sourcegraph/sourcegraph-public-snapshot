@@ -5,7 +5,7 @@ We want Sourcegraph to be:
 - **For developers:** the best way to answer questions and get unblocked while writing, reviewing, or reading code.
 - **For organizations** (engineering leaders and internal tools teams): the infrastructure for developer tools and data.
 
-This roadmap is an overview of what’s coming in the next 3-6 months. The project details for how we get there are in our [Project Roadmap Google Doc](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit?usp=sharing). Our high-level vision is outlined in the [Sourcegraph master plan](https://about.sourcegraph.com/plan).
+This roadmap is an overview of what’s coming in the next 3-6 months.  More details are in the [project roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit?usp=sharing). Our high-level vision is outlined in the [Sourcegraph master plan](https://about.sourcegraph.com/plan).
 
 We ship a release on the [20th day of each month](../releases.md#releases-are-monthly).
 
@@ -35,7 +35,7 @@ Sourcegraph performs at the scale of our largest customers under a wide variety 
 
 Admins understand the health of their instances and are alerted proactively if things fail. It is clear what repositories are configured, and what their syncing status is.
 
-### Large scale code automation
+### Large-scale code change automation
 
 You can use Sourcegraph to [automate large-scale code changes](https://about.sourcegraph.com/product/automation) to remove legacy code, fix critical security issues, and pay down tech debt. Developers can collaborate on campaigns across thousands of repositories, and share, notify, and alert accordingly to get these changes pushed through.
 
