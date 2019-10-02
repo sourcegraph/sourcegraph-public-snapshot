@@ -254,7 +254,6 @@ README.md @sqs
 /cmd/frontend/external @beyang
 /babel.config.js @felixfbecker
 /cmd/loadtest @beyang
-/pkg/legacyconf/ @slimsag
 /pkg/hubspot/ @dadlerj
 /pkg/highlight/ @slimsag
 
