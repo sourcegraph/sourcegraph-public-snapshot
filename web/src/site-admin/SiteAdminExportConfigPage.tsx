@@ -83,46 +83,19 @@ const allConfigSchema = {
 
 interface Props extends RouteComponentProps {
     isLightTheme: boolean
-    authenticatedUser: GQL.IUser
 }
 
-const AuthenticatedSiteAdminExportConfigPage: React.FunctionComponent<Props> = ({
-    isLightTheme,
-    history,
-    authenticatedUser,
-}) => {
+export const SiteAdminExportConfigPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div className="site-admin-export-config-page">
-            <PageTitle title="Export configuration - Admin" />
+            <PageTitle title="Debug info - Admin" />
             <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                <h2 className="mb-0">Export configuration and settings</h2>
+                <h2 className="mb-0">Debug information</h2>
             </div>
-            <p>
-                All configuration and settings, except critical site configuration (which must be accessed through the{' '}
-                <a href="/help/admin/management_console ">management console</a>).
-            </p>
+            <p>Debugging information that it is useful to share when reporting an issue.</p>
             <div className="card-header alert alert-warning">
-                <div>
-                    Note: This editor is read-only. To edit settings or configuration, visit the appropriate page:
-                </div>
-                <ul className="mb-0">
-                    <li>
-                        <Link to="/site-admin/configuration">Site configuration</Link>
-                    </li>
-                    <li>
-                        <Link to="/site-admin/external-services">External services</Link>
-                    </li>
-                    <li>
-                        <Link to="/site-admin/global-settings">Global settings</Link>
-                    </li>
-                    <li>
-                        <Link to="/site-admin/organizations">Organization settings</Link>
-                    </li>
-                    <li>
-                        <Link to={`/users/${authenticatedUser.username}/settings`}>User settings</Link>
-                    </li>
-                </ul>
+                <div>Please redact any secrets before sharing.</div>
             </div>
             <DynamicallyImportedMonacoSettingsEditor
                 value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}
@@ -136,5 +109,3 @@ const AuthenticatedSiteAdminExportConfigPage: React.FunctionComponent<Props> = (
         </div>
     )
 }
-
-export const SiteAdminExportConfigPage = withAuthenticatedUser(AuthenticatedSiteAdminExportConfigPage)
