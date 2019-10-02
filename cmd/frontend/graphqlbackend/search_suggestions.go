@@ -12,8 +12,10 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -101,6 +103,63 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		return nil, nil
 	}
 	suggesters = append(suggesters, showFileSuggestions)
+
+	showLangSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+		// The "repo:" field must be specified for showing language suggestions.
+		// For performance reason, only try to get languages of the first repository found
+		// within the scope of the "repo:" field value.
+		if len(r.query.Values(query.FieldRepo)) == 0 {
+			return nil, nil
+		}
+		effectiveRepoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
+
+		// Only care about the first valid value.
+		i := 0
+		for _, v := range effectiveRepoFieldValues {
+			if _, err := regexp.Compile(v); err == nil {
+				effectiveRepoFieldValues[i] = v
+				i++
+				break
+			}
+		}
+		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
+		if len(effectiveRepoFieldValues) == 0 {
+			return nil, nil
+		}
+
+		repoRevs, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+		if err != nil {
+			return nil, err
+		} else if len(repoRevs) == 0 {
+			return nil, nil
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+		defer cancel()
+
+		// Only care about the first found repository.
+		repo := &types.Repo{Name: repoRevs[0].Repo.Name}
+		commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+		if err != nil {
+			return nil, err
+		}
+
+		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID)
+		if err != nil {
+			return nil, err
+		}
+
+		resolvers := make([]*searchSuggestionResolver, 0, len(inventory.Languages))
+		for _, l := range inventory.Languages {
+			resolvers = append(resolvers, newSearchResultResolver(
+				&languageResolver{name: strings.ToLower(l.Name)},
+				math.MaxInt32,
+			))
+		}
+
+		return resolvers, err
+	}
+	suggesters = append(suggesters, showLangSuggestions)
 
 	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
 		repoRevs, _, _, err := r.resolveRepositories(ctx, nil)
@@ -240,6 +299,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		repoRev  string
 		file     string
 		symbol   string
+		lang     string
 	}
 	seen := make(map[key]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
@@ -263,6 +323,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		case *searchSymbolResult:
 			k.repoName = s.commit.repo.repo.Name
 			k.symbol = s.symbol.Name + s.symbol.Parent
+		case *languageResolver:
+			k.lang = s.name
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))
 		}
@@ -295,3 +357,9 @@ func allEmptyStrings(ss1, ss2 []string) bool {
 	}
 	return true
 }
+
+type languageResolver struct {
+	name string
+}
+
+func (r *languageResolver) Name() string { return r.name }

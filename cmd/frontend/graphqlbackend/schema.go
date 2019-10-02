@@ -1182,8 +1182,14 @@ type SearchFilter {
     kind: String!
 }
 
+# A programming language.
+type Language {
+    # Name of the programming language.
+    name: String!
+}
+
 # A search suggestion.
-union SearchSuggestion = Repository | File | Symbol
+union SearchSuggestion = Repository | File | Symbol | Language
 
 # A search-related alert message.
 type SearchAlert {
