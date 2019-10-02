@@ -12,40 +12,8 @@
    "id": "refs/heads/release-testing-pr",
    "repository": {
     "slug": "vegeta",
-    "id": 2,
-    "name": "vegeta",
-    "scmId": "git",
-    "state": "AVAILABLE",
-    "statusMessage": "Available",
-    "forkable": true,
-    "origin": null,
     "project": {
-     "key": "SOUR",
-     "id": 1,
-     "name": "sourcegraph",
-     "public": false,
-     "type": "NORMAL",
-     "links": {
-      "self": [
-       {
-        "href": "https://bitbucket.sgdev.org/projects/SOUR"
-       }
-      ]
-     }
-    },
-    "public": false,
-    "links": {
-     "clone": [
-      {
-       "href": "https://bitbucket.sgdev.org/scm/sour/vegeta.git",
-       "name": "http"
-      }
-     ],
-     "self": [
-      {
-       "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"
-      }
-     ]
+     "key": "SOUR"
     }
    }
   },
@@ -53,40 +21,8 @@
    "id": "refs/heads/master",
    "repository": {
     "slug": "vegeta",
-    "id": 2,
-    "name": "vegeta",
-    "scmId": "git",
-    "state": "AVAILABLE",
-    "statusMessage": "Available",
-    "forkable": true,
-    "origin": null,
     "project": {
-     "key": "SOUR",
-     "id": 1,
-     "name": "sourcegraph",
-     "public": false,
-     "type": "NORMAL",
-     "links": {
-      "self": [
-       {
-        "href": "https://bitbucket.sgdev.org/projects/SOUR"
-       }
-      ]
-     }
-    },
-    "public": false,
-    "links": {
-     "clone": [
-      {
-       "href": "https://bitbucket.sgdev.org/scm/sour/vegeta.git",
-       "name": "http"
-      }
-     ],
-     "self": [
-      {
-       "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"
-      }
-     ]
+     "key": "SOUR"
     }
    }
   },

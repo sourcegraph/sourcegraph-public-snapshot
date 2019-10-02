@@ -304,61 +304,59 @@ func TestClient_LoadPullRequest(t *testing.T) {
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
 	defer cancel()
 
-	pr := &PullRequest{
-		ID: 2,
-		ToRef: Ref{
-			Repository: &Repo{Slug: "vegeta", Project: &Project{Key: "SOUR"}},
-		},
-	}
+	pr := &PullRequest{ID: 2}
+	pr.ToRef.Repository.Slug = "vegeta"
+	pr.ToRef.Repository.Project.Key = "SOUR"
 
 	for _, tc := range []struct {
 		name string
 		ctx  context.Context
-		pr   *PullRequest
+		pr   func() *PullRequest
 		err  string
 	}{
 		{
 			name: "timeout",
-			pr:   pr,
+			pr:   func() *PullRequest { return pr },
 			ctx:  timeout,
 			err:  "context deadline exceeded",
 		},
 		{
 			name: "repo not set",
-			pr:   &PullRequest{ID: 2},
-			err:  "ToRef repository not set",
+			pr:   func() *PullRequest { return &PullRequest{ID: 2} },
+			err:  "repository slug empty",
 		},
 		{
 			name: "project not set",
-			pr: &PullRequest{
-				ID:    2,
-				ToRef: Ref{Repository: &Repo{Slug: "vegeta"}},
+			pr: func() *PullRequest {
+				pr := &PullRequest{ID: 2}
+				pr.ToRef.Repository.Slug = "vegeta"
+				return pr
 			},
-			err: "repository project not set",
+			err: "project key empty",
 		},
 		{
 			name: "non existing pr",
-			pr: &PullRequest{
-				ID: 9999,
-				ToRef: Ref{
-					Repository: &Repo{Slug: "vegeta", Project: &Project{Key: "SOUR"}},
-				},
+			pr: func() *PullRequest {
+				pr := &PullRequest{ID: 9999}
+				pr.ToRef.Repository.Slug = "vegeta"
+				pr.ToRef.Repository.Project.Key = "SOUR"
+				return pr
 			},
 			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 9999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
 		},
 		{
 			name: "non existing repo",
-			pr: &PullRequest{
-				ID: 9999,
-				ToRef: Ref{
-					Repository: &Repo{Slug: "invalidslug", Project: &Project{Key: "SOUR"}},
-				},
+			pr: func() *PullRequest {
+				pr := &PullRequest{ID: 9999}
+				pr.ToRef.Repository.Slug = "invalidslug"
+				pr.ToRef.Repository.Project.Key = "SOUR"
+				return pr
 			},
 			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/invalidslug/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Repository SOUR/invalidslug does not exist.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.repository.NoSuchRepositoryException\\\"}]}\"",
 		},
 		{
 			name: "success",
-			pr:   pr,
+			pr:   func() *PullRequest { return pr },
 		},
 	} {
 		tc := tc
@@ -371,7 +369,8 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err := cli.LoadPullRequest(tc.ctx, tc.pr)
+			pr := tc.pr()
+			err := cli.LoadPullRequest(tc.ctx, pr)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -380,7 +379,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				return
 			}
 
-			data, err := json.MarshalIndent(tc.pr, " ", " ")
+			data, err := json.MarshalIndent(pr, " ", " ")
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -368,16 +368,19 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) error {
 
 // LoadPullRequest loads the given PullRequest returning an error in case of failure.
 func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
-	repo := pr.ToRef.Repository
-	if repo == nil {
-		return errors.New("ToRef repository not set")
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
 	}
-	proj := repo.Project
-	if proj == nil {
-		return errors.New("repository project not set")
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", proj.Key, repo.Slug, pr.ID)
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
 	return c.send(ctx, "GET", path, nil, nil, pr)
 }
 
@@ -731,7 +734,12 @@ type Project struct {
 
 type Ref struct {
 	ID         string `json:"id"`
-	Repository *Repo  `json:"repository"`
+	Repository struct {
+		Slug    string `json:"slug"`
+		Project struct {
+			Key string `json:"key"`
+		} `json:"project"`
+	} `json:"repository"`
 }
 
 type PullRequest struct {

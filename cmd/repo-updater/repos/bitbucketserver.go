@@ -112,12 +112,9 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			return err
 		}
 
-		pr := &bitbucketserver.PullRequest{
-			ID: number,
-			ToRef: bitbucketserver.Ref{
-				Repository: repo,
-			},
-		}
+		pr := &bitbucketserver.PullRequest{ID: number}
+		pr.ToRef.Repository.Slug = repo.Slug
+		pr.ToRef.Repository.Project.Key = repo.Project.Key
 
 		err = s.client.LoadPullRequest(ctx, pr)
 		if err != nil {
