@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -63,44 +64,42 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 			branches = filtered
 		}
 
-		if args.Interactive && len(branches) > 1000 {
-			// Do not sort
-		} else if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
-			for _, branch := range branches {
-				branch.Commit, err = git.GetCommit(ctx, *cachedRepo, nil, branch.Head)
-				if err != nil {
-					return nil, err
-				}
+			ok, err := hydrateBranchCommits(ctx, *cachedRepo, args.Interactive, branches)
+			if err != nil {
+				return nil, err
 			}
 
-			date := func(c *git.Commit) time.Time {
-				if c.Committer == nil {
+			if ok {
+				date := func(c *git.Commit) time.Time {
+					if c.Committer == nil {
+						return c.Author.Date
+					}
+					if c.Committer.Date.After(c.Author.Date) {
+						return c.Committer.Date
+					}
 					return c.Author.Date
 				}
-				if c.Committer.Date.After(c.Author.Date) {
-					return c.Committer.Date
-				}
-				return c.Author.Date
-			}
-			sort.Slice(branches, func(i, j int) bool {
-				bi, bj := branches[i], branches[j]
-				if bi.Commit == nil {
+				sort.Slice(branches, func(i, j int) bool {
+					bi, bj := branches[i], branches[j]
+					if bi.Commit == nil {
+						return false
+					}
+					if bj.Commit == nil {
+						return true
+					}
+					di, dj := date(bi.Commit), date(bj.Commit)
+					if di.Equal(dj) {
+						return bi.Name < bj.Name
+					}
+					if di.After(dj) {
+						return true
+					}
 					return false
-				}
-				if bj.Commit == nil {
-					return true
-				}
-				di, dj := date(bi.Commit), date(bj.Commit)
-				if di.Equal(dj) {
-					return bi.Name < bj.Name
-				}
-				if di.After(dj) {
-					return true
-				}
-				return false
-			})
+				})
+			}
 		}
 	}
 
@@ -151,6 +150,31 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		refs:  refs,
 		repo:  r,
 	}, nil
+}
+
+func hydrateBranchCommits(ctx context.Context, repo gitserver.Repo, interactive bool, branches []*git.Branch) (ok bool, err error) {
+	parentCtx := ctx
+	if interactive {
+		if len(branches) > 1000 {
+			return false, nil
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+	}
+
+	for _, branch := range branches {
+		branch.Commit, err = git.GetCommit(ctx, repo, nil, branch.Head)
+		if err != nil {
+			if parentCtx.Err() == nil && ctx.Err() != nil {
+				// reached interactive timeout
+				return false, nil
+			}
+			return false, err
+		}
+	}
+
+	return true, nil
 }
 
 type gitRefConnectionResolver struct {
