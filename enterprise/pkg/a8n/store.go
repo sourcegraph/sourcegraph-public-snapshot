@@ -468,7 +468,7 @@ SELECT
   changed.source,
   changed.key,
   changed.created_at,
-  changed.metadata,
+  changed.metadata
 FROM changed
 LEFT JOIN batch ON batch.key = changed.key
 ORDER BY batch.ordinality
@@ -485,7 +485,6 @@ changed AS (
     created_at,
     metadata
   )
-  ON CONFLICT (key) DO NOTHING
   SELECT
     changeset_id,
     kind,
@@ -494,6 +493,7 @@ changed AS (
     created_at,
     metadata
   FROM batch
+  ON CONFLICT (key) DO NOTHING
   RETURNING changeset_events.*
 )
 ` + batchChangesetEventsQuerySuffix
