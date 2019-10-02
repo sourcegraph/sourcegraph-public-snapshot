@@ -222,17 +222,6 @@ func TestCampaigns(t *testing.T) {
 		t.Errorf("wrong page info: %+v", listed.All.PageInfo.HasNextPage)
 	}
 
-	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	externalService := &repos.ExternalService{
-		Kind:        "GITHUB",
-		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-			Repos: []string{"sourcegraph/sourcegraph"},
-		}),
-	}
-
 	campaigns.Admin.Name = "Updated Admin Campaign Name"
 	campaigns.Admin.Description = "Updated Admin Campaign Description"
 	updateInput := map[string]interface{}{
@@ -267,27 +256,59 @@ func TestCampaigns(t *testing.T) {
 		t.Errorf("wrong campaign updated. diff=%s", cmp.Diff(haveUpdated, wantUpdated))
 	}
 
-	err = store.UpsertExternalServices(ctx, externalService)
+	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	githubExtSvc := &repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repos: []string{"sourcegraph/sourcegraph"},
+		}),
+	}
+
+	bbsExtSvc := &repos.ExternalService{
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "Bitbucket Server",
+		Config: marshalJSON(t, &schema.BitbucketServerConnection{
+			// The test fixtures and golden files were generated with
+			// this config pointed to bitbucket.sgdev.org
+			Url:   os.Getenv("BITBUCKET_SERVER_URL"),
+			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+			Repos: []string{"SOUR/vegeta"},
+		}),
+	}
+
+	err = store.UpsertExternalServices(ctx, githubExtSvc, bbsExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
 
-	src, err := repos.NewGithubSource(externalService, cf)
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
 
-	repo, err := src.GetRepo(ctx, "sourcegraph/sourcegraph")
+	githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
 	if err != nil {
 		t.Fatal(t)
 	}
 
-	err = store.UpsertRepos(ctx, repo)
+	bbsSrc, err := repos.NewBitbucketServerSource(bbsExtSvc, cf)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	bbsRepos := getBitbucketServerRepos(t, ctx, bbsSrc)
+	if len(bbsRepos) != 1 {
+		t.Fatalf("wrong number of bitbucket server repos. got=%d", len(bbsRepos))
+	}
+	bbsRepo := bbsRepos[0]
+
+	err = store.UpsertRepos(ctx, githubRepo, bbsRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	graphqlRepoID := string(marshalRepositoryID(api.RepoID(repo.ID)))
 
 	type Changeset struct {
 		ID          string
@@ -309,7 +330,15 @@ func TestCampaigns(t *testing.T) {
 		Changesets []Changeset
 	}
 
-	in := fmt.Sprintf(`[{repository: %q, externalID: %q}]`, graphqlRepoID, "999")
+	graphqlGithubRepoID := string(marshalRepositoryID(api.RepoID(githubRepo.ID)))
+	graphqlBBSRepoID := string(marshalRepositoryID(api.RepoID(bbsRepo.ID)))
+
+	in := fmt.Sprintf(
+		`[{repository: %q, externalID: %q}, {repository: %q, externalID: %q}]`,
+		graphqlGithubRepoID, "999",
+		graphqlBBSRepoID, "3",
+	)
+
 	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment cs on Changeset {
 			id
@@ -335,7 +364,7 @@ func TestCampaigns(t *testing.T) {
 	{
 		want := []Changeset{
 			{
-				Repository: struct{ ID string }{ID: graphqlRepoID},
+				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
 				Title:      "add extension filter to filter bar",
@@ -346,6 +375,19 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "github",
 				},
 				ReviewState: "APPROVED",
+			},
+			{
+				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
+				CreatedAt:  now.Format(time.RFC3339),
+				UpdatedAt:  now.Format(time.RFC3339),
+				Title:      "attacker: Simplify timeout configuration",
+				Body:       "This commit simplifies the timeout configuration internally to make use\r\nof the `http.Client.Timeout` field which didn't exist when this code was\r\noriginally written.\r\n\r\nIt also fixes #396: a test flake of `TestTimeout`.",
+				State:      "OPEN",
+				ExternalURL: struct{ URL, ServiceType string }{
+					URL:         "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/3",
+					ServiceType: "bitbucketServer",
+				},
+				ReviewState: "CHANGES_REQUESTED",
 			},
 		}
 
@@ -580,4 +622,24 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
+}
+
+func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.BitbucketServerSource) []*repos.Repo {
+	results := make(chan repos.SourceResult)
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	var repos []*repos.Repo
+
+	for res := range results {
+		if res.Err != nil {
+			t.Fatal(res.Err)
+		}
+		repos = append(repos, res.Repo)
+	}
+
+	return repos
 }

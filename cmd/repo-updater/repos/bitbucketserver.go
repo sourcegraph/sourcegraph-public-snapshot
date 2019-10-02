@@ -103,6 +103,30 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 	s.listAllRepos(ctx, results)
 }
 
+// LoadChangesets loads the latest state of the given Changesets from the codehost.
+func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	for i := range cs {
+		repo := cs[i].Repo.Metadata.(*bitbucketserver.Repo)
+		number, err := strconv.Atoi(cs[i].ExternalID)
+		if err != nil {
+			return err
+		}
+
+		pr := &bitbucketserver.PullRequest{ID: number}
+		pr.ToRef.Repository.Slug = repo.Slug
+		pr.ToRef.Repository.Project.Key = repo.Project.Key
+
+		err = s.client.LoadPullRequest(ctx, pr)
+		if err != nil {
+			return err
+		}
+
+		cs[i].Changeset.Metadata = pr
+	}
+
+	return nil
+}
+
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
