@@ -976,6 +976,8 @@ type Query {
     viewerConfiguration: ConfigurationCascade! @deprecated(reason: "use viewerSettings instead")
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
+    # Fetch search filter suggestions for autocompletion.
+    searchFilterSuggestions: SearchFilterSuggestions
     # Runs a search.
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
@@ -1043,6 +1045,35 @@ type Search {
     # cached and thus quicker to query. Useful for e.g. querying sparkline
     # data.
     stats: SearchResultsStats!
+}
+
+# A value with its description.
+type DescriptiveValue {
+    value: String!
+    description: String!
+}
+
+# Discrete values with its default for a search filter.
+type SearchFilterDiscreteValues {
+    default: String!
+    values: [String!]!
+}
+
+# Predefined suggestions about search filters.
+type SearchFilterSuggestions {
+    filters: [DescriptiveValue!]!
+    type: SearchFilterDiscreteValues!
+    case: SearchFilterDiscreteValues!
+    fork: SearchFilterDiscreteValues!
+    archived: SearchFilterDiscreteValues!
+    file: [DescriptiveValue!]!
+    lang: [String!]!
+    repogroup: [String!]!
+    repo: [String!]!
+    repohasfile: [String!]!
+    repohascommitafter: [String!]!
+    count: [Int!]!
+    timeout: [String!]!
 }
 
 # A search result.
