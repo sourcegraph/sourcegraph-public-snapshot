@@ -478,18 +478,14 @@ Object {
 
 exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Refined Github line number 13 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
-  "content": "export
-                                class TestResourceManager
-                                {",
-  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition.annotated",
+  "content": "export class TestResourceManager {",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition",
 }
 `;
 
 exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Refined Github line number 13 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
-  "content": "export
-                                class TestResourceManager
-                                {",
+  "content": "export class TestResourceManager {",
   "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition",
 }
 `;
@@ -497,7 +493,7 @@ Object {
 exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Vanilla line number 13 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "export class TestResourceManager {",
-  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition.annotated",
 }
 `;
 
