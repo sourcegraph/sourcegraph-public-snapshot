@@ -5,9 +5,7 @@ import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } fro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
-import { SiteConfiguration } from '../schema/site.schema'
 import { Settings } from '../../../shared/src/settings/settings'
-import { CriticalConfiguration } from '../schema/critical.schema'
 
 /**
  * Fetches all users.
