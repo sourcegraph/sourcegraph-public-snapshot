@@ -5,6 +5,8 @@ import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } fro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { SiteConfiguration } from '../schema/site.schema'
+import { Settings } from '../../../shared/src/settings/settings'
 
 /**
  * Fetches all users.
@@ -305,8 +307,13 @@ export function fetchSite(): Observable<GQL.ISite> {
     )
 }
 
-type SettingsConfig = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> & {
-    contents: any
+/**
+ * Placeholder for the type of the external service config (to avoid explicit 'any' type)
+ */
+interface ExternalServiceConfig {}
+
+type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> & {
+    contents: Settings
 }
 
 /**
@@ -314,15 +321,11 @@ type SettingsConfig = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> & 
  * must be fetched from management console
  */
 export interface AllConfig {
-    site: any
-    externalServices: Partial<
-        {
-            [k in GQL.ExternalServiceKind]: any
-        }
-    >
+    site: SiteConfiguration
+    externalServices: Partial<Record<GQL.ExternalServiceKind, ExternalServiceConfig>>
     settings: {
-        subjects: SettingsConfig[]
-        final: any | null
+        subjects: SettingsSubject[]
+        final: Settings | null
     }
 }
 
@@ -380,10 +383,12 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const externalServices: Partial<{ [k in GQL.ExternalServiceKind]: any[] }> = data.externalServices.nodes
+            const externalServices: Partial<
+                Record<GQL.ExternalServiceKind, ExternalServiceConfig[]>
+            > = data.externalServices.nodes
                 .filter(svc => svc.config)
-                .map((svc): [GQL.ExternalServiceKind, any] => [svc.kind, parseJSONC(svc.config)])
-                .reduce<Partial<{ [k in GQL.ExternalServiceKind]: any[] }>>(
+                .map((svc): [GQL.ExternalServiceKind, ExternalServiceConfig] => [svc.kind, parseJSONC(svc.config)])
+                .reduce<Partial<{ [k in GQL.ExternalServiceKind]: ExternalServiceConfig[] }>>(
                     (externalServicesByKind, [kind, config]) => {
                         let services = externalServicesByKind[kind]
                         if (!services) {

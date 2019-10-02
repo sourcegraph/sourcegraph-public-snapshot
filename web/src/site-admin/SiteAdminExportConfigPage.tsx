@@ -1,7 +1,6 @@
 import { RouteComponentProps } from 'react-router'
-import { AllConfig, fetchAllConfigAndSettings } from './backend'
-import React from 'react'
-import { Subscription } from 'rxjs'
+import { fetchAllConfigAndSettings } from './backend'
+import React, { useMemo } from 'react'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import awsCodeCommitJSON from '../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../schema/bitbucket_cloud.schema.json'
@@ -15,6 +14,7 @@ import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { useObservable } from '../util/useObservable'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -94,54 +94,34 @@ const allConfigSchema = {
         ),
 }
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps {
     isLightTheme: boolean
 }
 
-interface State {
-    allConfig?: AllConfig
-}
-
-export class SiteAdminExportConfigPage extends React.Component<Props, State> {
-    public state: State = {}
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            fetchAllConfigAndSettings().subscribe(allConfig => {
-                this.setState({ allConfig })
-            })
-        )
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <div className="site-admin-export-config-page">
-                <PageTitle title="Export configuration - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Export configuration and settings</h2>
-                </div>
-                <p>
-                    All configuration and settings, except critical site configuration (which must be accessed through
-                    the <a href="/help/admin/management_console ">management console</a>).
-                </p>
-                <div className="card-header alert alert-warning">
-                    Note: This editor is for export purposes only. You may edit the contents and use auto-complete, but
-                    changes will not be saved. Reloading the page will erase any of the changes you make in this editor.
-                </div>
-                <DynamicallyImportedMonacoSettingsEditor
-                    value={this.state.allConfig ? JSON.stringify(this.state.allConfig, undefined, 2) : ''}
-                    jsonSchema={allConfigSchema}
-                    canEdit={false}
-                    height={800}
-                    isLightTheme={this.props.isLightTheme}
-                    history={this.props.history}
-                />
+export const SiteAdminExportCeonfigPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
+    const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
+    return (
+        <div className="site-admin-export-config-page">
+            <PageTitle title="Export configuration - Admin" />
+            <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                <h2 className="mb-0">Export configuration and settings</h2>
             </div>
-        )
-    }
+            <p>
+                All configuration and settings, except critical site configuration (which must be accessed through the{' '}
+                <a href="/help/admin/management_console ">management console</a>).
+            </p>
+            <div className="card-header alert alert-warning">
+                Note: This editor is for export purposes only. You may edit the contents and use auto-complete, but
+                changes will not be saved. Reloading the page will erase any of the changes you make in this editor.
+            </div>
+            <DynamicallyImportedMonacoSettingsEditor
+                value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}
+                jsonSchema={allConfigSchema}
+                canEdit={false}
+                height={800}
+                isLightTheme={isLightTheme}
+                history={history}
+            />
+        </div>
+    )
 }
