@@ -49,6 +49,20 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 			return nil, err
 		}
 
+		// Filter before calls to GetCommit. This hopefully reduces the
+		// working set enough that we can sort interactively.
+		if args.Query != nil {
+			query := strings.ToLower(*args.Query)
+
+			filtered := branches[:0]
+			for _, branch := range branches {
+				if strings.Contains(strings.ToLower(branch.Name), query) {
+					filtered = append(filtered, branch)
+				}
+			}
+			branches = filtered
+		}
+
 		if args.Interactive && len(branches) > 1000 {
 			// Do not sort
 		} else if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
