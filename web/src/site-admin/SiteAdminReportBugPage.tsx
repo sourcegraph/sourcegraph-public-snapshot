@@ -1,6 +1,5 @@
 import { RouteComponentProps } from 'react-router'
 import { fetchAllConfigAndSettings } from './backend'
-import * as GQL from '../../../shared/src/graphql/schema'
 import React, { useMemo } from 'react'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import awsCodeCommitJSON from '../../../schema/aws_codecommit.schema.json'
@@ -17,8 +16,6 @@ import { PageTitle } from '../components/PageTitle'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../util/useObservable'
 import { mapValues, values } from 'lodash'
-import { Link } from '../../../shared/src/components/Link'
-import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -85,17 +82,31 @@ interface Props extends RouteComponentProps {
     isLightTheme: boolean
 }
 
-export const SiteAdminExportConfigPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
+export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
-        <div className="site-admin-export-config-page">
-            <PageTitle title="Debug info - Admin" />
+        <div>
+            <PageTitle title="Report a bug - Admin" />
             <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                <h2 className="mb-0">Debug information</h2>
+                <h2 className="mb-0">Report a bug</h2>
             </div>
-            <p>Debugging information that it is useful to share when reporting an issue.</p>
+            <p>
+                Create an issue on the{' '}
+                <a target="_blank" rel="noopener noreferrer" href="https://github.com/sourcegraph/sourcegraph/issues">
+                    public issue tracker
+                </a>
+                , and include a description of the bug along with the info below (with secrets redacted). If the report
+                contains sensitive information that should not be public, email the report to{' '}
+                <a target="_blank" rel="noopener noreferrer" href="mailto:support@sourcegraph.com">
+                    support@sourcegraph.com
+                </a>
+                , instead.
+            </p>
             <div className="card-header alert alert-warning">
-                <div>Please redact any secrets before sharing.</div>
+                <div>
+                    Please redact any secrets before sharing, whether on the public issue tracker or with
+                    support@sourcegraph.com.
+                </div>
             </div>
             <DynamicallyImportedMonacoSettingsEditor
                 value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}

@@ -77,8 +77,8 @@ export const otherGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/pings',
         },
         {
-            label: 'Debug info',
-            to: '/site-admin/debug-info',
+            label: 'Report a bug',
+            to: '/site-admin/report-bug',
         },
     ],
 }

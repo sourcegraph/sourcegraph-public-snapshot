@@ -7,6 +7,7 @@ import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObser
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { SiteConfiguration } from '../schema/site.schema'
 import { Settings } from '../../../shared/src/settings/settings'
+import { CriticalConfiguration } from '../schema/critical.schema'
 
 /**
  * Fetches all users.
@@ -321,7 +322,8 @@ type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> &
  * must be fetched from management console
  */
 export interface AllConfig {
-    site: SiteConfiguration
+    site: GQL.ISiteConfiguration
+    critical: GQL.ICriticalConfiguration
     externalServices: Partial<Record<GQL.ExternalServiceKind, ExternalServiceConfig>>
     settings: {
         subjects: SettingsSubject[]
@@ -339,6 +341,10 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
                 site {
                     id
                     configuration {
+                        id
+                        effectiveContents
+                    }
+                    criticalConfiguration {
                         id
                         effectiveContents
                     }
@@ -412,6 +418,10 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
                     data.site.configuration &&
                     data.site.configuration.effectiveContents &&
                     parseJSONC(data.site.configuration.effectiveContents),
+                critical:
+                    data.site &&
+                    data.site.criticalConfiguration &&
+                    parseJSONC(data.site.criticalConfiguration.effectiveContents),
                 externalServices,
                 settings: {
                     subjects: settingsSubjects,
