@@ -1,4 +1,4 @@
-import { parseURL, getDeltaFileName } from './util'
+import { parseURL, getDiffFileName } from './util'
 import { getFixtureBody } from '../code_intelligence/code_intelligence_test_utils'
 
 describe('util', () => {
@@ -65,7 +65,7 @@ describe('util', () => {
 type GithubVersion = 'github.com' | 'ghe-2.14.11'
 type GithubDiffPage = 'commit' | 'pull-request' | 'pull-request-discussion'
 
-describe('getDeltaFileName()', () => {
+describe('getDiffFileName()', () => {
     const tests: Record<GithubVersion, Record<GithubDiffPage, string>> = {
         'github.com': {
             commit: 'doc/dev/incidents.md',
@@ -92,7 +92,7 @@ describe('getDeltaFileName()', () => {
             })
             // TODO add examples with renamed files and check that getDeltaFilename() doesn't return
             // identical headFilePath & baseFilePath
-            expect(getDeltaFileName(container)).toStrictEqual({
+            expect(getDiffFileName(container)).toStrictEqual({
                 baseFilePath: expectedFilePath,
                 headFilePath: expectedFilePath,
             })

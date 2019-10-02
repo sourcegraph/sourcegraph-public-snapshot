@@ -15,10 +15,10 @@ export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
 }
 
 /**
- * getDeltaFileName returns the path of the file container. It assumes
+ * Returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
-export function getDeltaFileName(container: HTMLElement): { headFilePath: string; baseFilePath?: string } {
+export function getDiffFileName(container: HTMLElement): { headFilePath: string; baseFilePath?: string } {
     const fileInfoElement = container.querySelector<HTMLElement>('.file-info')
     if (fileInfoElement) {
         if (fileInfoElement.tagName === 'A') {
@@ -39,7 +39,7 @@ export function getDeltaFileName(container: HTMLElement): { headFilePath: string
     if (fileHeaderLink) {
         return getPathNamesFromElement(fileHeaderLink)
     }
-    throw new Error('Could not determine delta file name')
+    throw new Error('Could not determine diff file name')
 }
 
 function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
