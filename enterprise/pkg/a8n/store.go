@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
@@ -794,8 +795,10 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 	switch t.ExternalServiceType {
 	case github.ServiceType:
 		t.Metadata = new(github.PullRequest)
+	case bitbucketserver.ServiceType:
+		t.Metadata = new(bitbucketserver.PullRequest)
 	default:
-		return nil
+		return errors.New("unknown external service type")
 	}
 
 	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
