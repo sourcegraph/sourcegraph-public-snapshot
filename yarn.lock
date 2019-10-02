@@ -1585,7 +1585,8 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -2660,13 +2661,6 @@
   version "16.9.0"
   resolved "https://registry.npmjs.org/@types/react-test-renderer/-/react-test-renderer-16.9.0.tgz#d60f530ecf4c906721511603cca711b4fa830d41"
   integrity sha512-bN5EyjtuTY35xX7N5j0KP1vg5MpUXHpFTX6tGsqkNOthjNvet4VQOYRxFh+NT5cDSJrATmAFK9NLeYZ4mp/o0Q==
-  dependencies:
-    "@types/react" "*"
-
-"@types/react-visibility-sensor@5.0.1":
-  version "5.0.1"
-  resolved "https://registry.npmjs.org/@types/react-visibility-sensor/-/react-visibility-sensor-5.0.1.tgz#614cf7c68a1e5a0ad8685d4ddcf47646e16a3cab"
-  integrity sha512-Pzyz6KtripJh2/fKyhOLFKni0+2RaI/4sFAyB+bURrpY8HLdHXRQo/V2BcMjt4u8gJYVTXIhBU5KhOXl5/70MA==
   dependencies:
     "@types/react" "*"
 
@@ -14441,12 +14435,12 @@ react-transition-group@^2.2.1, react-transition-group@^2.3.1:
     prop-types "^15.6.2"
     react-lifecycles-compat "^3.0.4"
 
-react-visibility-sensor@^5.0.2:
-  version "5.0.2"
-  resolved "https://registry.npmjs.org/react-visibility-sensor/-/react-visibility-sensor-5.0.2.tgz#e360fff81572cb3a2a9fd680484447a9da09a55d"
-  integrity sha512-7+1lr7oQOO2vKr5u/uxoDGFWAAy7lsDy2aJU3Zy1/OymI+TRqOBk8m2L8YE1B0UyfCDWxVAWO+aifVGqNOvqeQ==
+react-visibility-sensor@^5.1.1:
+  version "5.1.1"
+  resolved "https://registry.npmjs.org/react-visibility-sensor/-/react-visibility-sensor-5.1.1.tgz#5238380960d3a0b2be0b7faddff38541e337f5a9"
+  integrity sha512-cTUHqIK+zDYpeK19rzW6zF9YfT4486TIgizZW53wEZ+/GPBbK7cNS0EHyJVyHYacwFEvvHLEKfgJndbemWhB/w==
   dependencies:
-    prop-types "^15.6.2"
+    prop-types "^15.7.2"
 
 react@^0.14.0:
   version "0.14.9"
@@ -15973,7 +15967,8 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "23.0.1"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
