@@ -13,9 +13,10 @@ import (
 
 type refsArgs struct {
 	graphqlutil.ConnectionArgs
-	Query   *string
-	Type    *string
-	OrderBy *string
+	Query       *string
+	Type        *string
+	OrderBy     *string
+	Interactive bool
 }
 
 func (r *RepositoryResolver) Branches(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
@@ -37,13 +38,29 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		if err != nil {
 			return nil, err
 		}
-		branches, err = git.ListBranches(ctx, *cachedRepo, git.BranchesOptions{IncludeCommit: true})
+		branches, err = git.ListBranches(ctx, *cachedRepo, git.BranchesOptions{
+			// We intentionally do not ask for commits here since it requires
+			// a seperate git call per branch. We only need the git commits to
+			// sort by author/commit date and there are few enough branches to
+			// warrant doing it interactively.
+			IncludeCommit: false,
+		})
 		if err != nil {
 			return nil, err
 		}
 
-		// Sort branches by most recently committed.
-		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+		if args.Interactive && len(branches) > 1000 {
+			// Do not sort
+		} else if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+			// Sort branches by most recently committed.
+
+			for _, branch := range branches {
+				branch.Commit, err = git.GetCommit(ctx, *cachedRepo, nil, branch.Head)
+				if err != nil {
+					return nil, err
+				}
+			}
+
 			date := func(c *git.Commit) time.Time {
 				if c.Committer == nil {
 					return c.Author.Date
