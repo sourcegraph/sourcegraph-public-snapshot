@@ -11,39 +11,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func (r *RepositoryResolver) Branches(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-	Query   *string
-	OrderBy *string
-}) (*gitRefConnectionResolver, error) {
-	gitRefTypeBranch := gitRefTypeBranch
-	return r.GitRefs(ctx, &struct {
-		graphqlutil.ConnectionArgs
-		Query   *string
-		Type    *string
-		OrderBy *string
-	}{ConnectionArgs: args.ConnectionArgs, Query: args.Query, Type: &gitRefTypeBranch, OrderBy: args.OrderBy})
-}
-
-func (r *RepositoryResolver) Tags(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-	Query *string
-}) (*gitRefConnectionResolver, error) {
-	gitRefTypeTag := gitRefTypeTag
-	return r.GitRefs(ctx, &struct {
-		graphqlutil.ConnectionArgs
-		Query   *string
-		Type    *string
-		OrderBy *string
-	}{ConnectionArgs: args.ConnectionArgs, Query: args.Query, Type: &gitRefTypeTag})
-}
-
-func (r *RepositoryResolver) GitRefs(ctx context.Context, args *struct {
+type refsArgs struct {
 	graphqlutil.ConnectionArgs
 	Query   *string
 	Type    *string
 	OrderBy *string
-}) (*gitRefConnectionResolver, error) {
+}
+
+func (r *RepositoryResolver) Branches(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
+	t := gitRefTypeBranch
+	args.Type = &t
+	return r.GitRefs(ctx, args)
+}
+
+func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
+	t := gitRefTypeTag
+	args.Type = &t
+	return r.GitRefs(ctx, args)
+}
+
+func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
 	var branches []*git.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
