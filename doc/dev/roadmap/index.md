@@ -19,7 +19,11 @@ We're continually improving Sourcegraph's core features for developers:
 - Integration into code review
 - Automation of large-scale code changes
 
-The current product focus is on the usability, scalability, and automation features of the product. We strive to make Sourcegraph intuitive to use for anyone looking for answers about their code, and easy for admins to configure and maintain. We expect Sourcegraph to perform reliably at scale for our largest customers. We intend to create code change automation features that organically spread value throughout an organization.
+Our current product priorities are:
+
+- Usability: Sourcegraph is intuitive to use for anyone looking for answers about their code, and easy for admins to configure and maintain.
+- Scalability: Sourcegraph performs reliably at scale for our largest customers.
+- Automation: clean up tech debt and make other large-scale code changes across your entire code base.
 
 ## In 3-6 months, Sourcegraph will have
 
@@ -27,13 +31,11 @@ The current product focus is on the usability, scalability, and automation featu
 
 Sourcegraph is intuitive to use for a wide range of roles, from developers to PMs, engineering managers, data analysts, and more. It adds value to this wide range of roles by making more information about code available, such as language statistics and dependency graphs. [Search has an improved UI](https://docs.google.com/document/d/1Vo7HlwO_HgrK8O-VEIZ9wHuSyHdEA0zk9qucNCoF0jg/edit?usp=sharing) that makes it more accessible, easier to use, and faster to drill down on what you're looking for.
 
-Improving upon on our out-of-the-box code intelligence, Sourcegraph provides fast and precise code intelligence in the browser witha a quick and easy setup to your repository.
+Improving upon on our [basic code intelligence](../../user/code_intelligence) that works for every language, Sourcegraph provides precise code intelligence for a subset of common languages including Go, TypeScript, C/C++, Java, and C#.
 
 ### Enhanced scalablity, reliability, and security
 
-Sourcegraph performs at the scale of our largest customers under a wide variety of configurations and deployment infrastructure. [Code search is fast at large scale](https://docs.google.com/document/d/18w8T_KzYxQye8wg1g01QpMOX4_ERTtbOxMBRYaOEkmk/edit?usp=sharing) (~80k repositories), and the API can support enterprise level usage. Sourcegraph enforces repository permissions using ACLs from Bitbucket Server, GitHub, and GitLab.
-
-Admins understand the health of their instances and are alerted proactively if things fail. It is clear what repositories are configured, and what their syncing status is.
+Sourcegraph performs at the scale of our largest customers under a wide variety of configurations and deployment infrastructure. [Code search is fast at large scale](https://docs.google.com/document/d/18w8T_KzYxQye8wg1g01QpMOX4_ERTtbOxMBRYaOEkmk/edit?usp=sharing) (~80k repositories), and the API can support enterprise level usage. Sourcegraph enforces repository permissions using ACLs from Bitbucket Server, GitHub, and GitLab. Admins understand the health of their instances and are alerted proactively if things fail.
 
 ### Large-scale code change automation
 
