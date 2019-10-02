@@ -152,16 +152,16 @@ func (t *Changeset) URL() (s string, err error) {
 
 // ReviewState of a Changeset.
 func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
+	states := map[ChangesetReviewState]bool{}
+
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
-		states := map[ChangesetReviewState]bool{}
-		for _, r := range m.Reviews {
-			states[ChangesetReviewState(r.State)] = true
+		for _, ti := range m.TimelineItems {
+			if r, ok := ti.Item.(*github.PullRequestReview); ok {
+				states[ChangesetReviewState(r.State)] = true
+			}
 		}
-
-		return selectReviewState(states), nil
 	case *bitbucketserver.PullRequest:
-		states := map[ChangesetReviewState]bool{}
 		for _, r := range m.Reviewers {
 			switch r.Status {
 			case "UNAPPROVED":
@@ -172,11 +172,11 @@ func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 				states[ChangesetReviewStateApproved] = true
 			}
 		}
-
-		return selectReviewState(states), nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
+
+	return selectReviewState(states), nil
 }
 
 func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
