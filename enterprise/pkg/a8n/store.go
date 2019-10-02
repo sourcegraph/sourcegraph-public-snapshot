@@ -427,6 +427,125 @@ func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
 }
 
+// CreateChangesetEvents creates the given ChangesetEvents.
+func (s *Store) CreateChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) error {
+	q, err := s.createChangesetEventsQuery(cs)
+	if err != nil {
+		return err
+	}
+
+	i := -1
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		i++
+		err = scanChangesetEvent(cs[i], sc)
+		return int64(cs[i].ID), 1, err
+	})
+}
+
+const changesetEventsBatchQueryPrefix = `
+WITH batch AS (
+  SELECT * FROM ROWS FROM (
+  json_to_recordset(%s)
+  AS (
+      id           bigint,
+      changeset_id integer,
+      kind         text,
+      source       text,
+      key          text,
+      created_at   timestamptz,
+      metadata     jsonb
+    )
+  )
+  WITH ORDINALITY
+)
+`
+
+const batchChangesetEventsQuerySuffix = `
+SELECT
+  changed.id,
+  changed.changeset_id,
+  changed.kind,
+  changed.source,
+  changed.key,
+  changed.created_at,
+  changed.metadata,
+FROM changed
+LEFT JOIN batch ON batch.key = changed.key
+ORDER BY batch.ordinality
+`
+
+var createChangesetEventsQueryFmtstr = changesetEventsBatchQueryPrefix + `,
+-- source: pkg/a8n/store.go:CreateChangesetEvents
+changed AS (
+  INSERT INTO changeset_events (
+    changeset_id,
+    kind,
+    source,
+    key,
+    created_at,
+    metadata
+  )
+  ON CONFLICT (key) DO NOTHING
+  SELECT
+    changeset_id,
+    kind,
+    source,
+    key,
+    created_at,
+    metadata
+  FROM batch
+  RETURNING changeset_events.*
+)
+` + batchChangesetEventsQuerySuffix
+
+func (s *Store) createChangesetEventsQuery(es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
+	now := s.now()
+	for _, e := range es {
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = now
+		}
+	}
+	return batchChangesetEventsQuery(createChangesetEventsQueryFmtstr, es)
+}
+
+func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
+	type record struct {
+		ID          int64           `json:"id"`
+		ChangesetID int64           `json:"changeset_id"`
+		Kind        string          `json:"kind"`
+		Source      string          `json:"source"`
+		Key         string          `json:"key"`
+		CreatedAt   time.Time       `json:"created_at"`
+		Metadata    json.RawMessage `json:"metadata"`
+	}
+
+	records := make([]record, 0, len(es))
+
+	for _, e := range es {
+		metadata, err := metadataColumn(e.Metadata)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, record{
+			ID:          e.ID,
+			ChangesetID: e.ChangesetID,
+			Kind:        e.Kind,
+			Source:      string(e.Source),
+			Key:         e.Key,
+			CreatedAt:   e.CreatedAt,
+			Metadata:    metadata,
+		})
+	}
+
+	batch, err := json.MarshalIndent(records, "    ", "    ")
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(fmtstr, string(batch)), nil
+}
+
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	q, err := s.createCampaignQuery(c)
@@ -803,6 +922,34 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 
 	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
 		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.ExternalServiceType)
+	}
+
+	return nil
+}
+
+func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
+	var metadata json.RawMessage
+
+	err := s.Scan(
+		&e.ID,
+		&e.ChangesetID,
+		&e.Kind,
+		&e.Source,
+		&e.Key,
+		&e.CreatedAt,
+		&metadata,
+	)
+	if err != nil {
+		return err
+	}
+
+	switch e.Source {
+	default:
+		return nil
+	}
+
+	if err = json.Unmarshal(metadata, e.Metadata); err != nil {
+		return errors.Wrapf(err, "scanChangesetEvent: failed to unmarshal %q metadata", e.Source)
 	}
 
 	return nil

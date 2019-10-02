@@ -194,3 +194,34 @@ func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewStat
 
 	return ChangesetReviewStatePending
 }
+
+// A ChangesetEvent is an event that happened in the lifetime
+// and context of a Changeset.
+type ChangesetEvent struct {
+	ID          int64
+	ChangesetID int64
+	Kind        string
+	Source      changesetEventSource
+	Key         string // Deduplication key
+	CreatedAt   time.Time
+	Metadata    interface{}
+}
+
+// Clone returns a clone of a ChangesetEvent.
+func (e *ChangesetEvent) Clone() *ChangesetEvent {
+	ee := *e
+	return &ee
+}
+
+// changesetEventSource defines the source of a ChangesetEvent. This type is unexported
+// so that users of ChangesetEvent can't instantiate it with a Source being an arbitrary
+// string.
+type changesetEventSource string
+
+// Valid ChangesetEvent sources
+const (
+	ChangesetEventSourceGitHubAPI              changesetEventSource = "github:api"
+	ChangesetEventSourceGitHubWebhook          changesetEventSource = "github:webhook"
+	ChangesetEventSourceBitbucketServerAPI     changesetEventSource = "bitbucketserver:api"
+	ChangesetEventSourceBitbucketServerWebhook changesetEventSource = "bitbucketserver:webhook"
+)

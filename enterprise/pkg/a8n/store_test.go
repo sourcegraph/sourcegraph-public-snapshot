@@ -548,4 +548,46 @@ func TestStore(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("ChangesetEvents", func(t *testing.T) {
+		events := make([]*a8n.ChangesetEvent, 0, 3)
+
+		t.Run("Create", func(t *testing.T) {
+			for i := 0; i < cap(events); i++ {
+				e := &a8n.ChangesetEvent{
+					ChangesetID: 42,
+					Kind:        "CommentAdded",
+					Source:      a8n.ChangesetEventSourceGitHubAPI,
+					Key:         fmt.Sprintf("%d:deduplication:key:changeme", i),
+					CreatedAt:   now,
+					Metadata:    []byte("{}"),
+				}
+
+				events = append(events, e)
+			}
+
+			// Verify that no duplicates are introduced and no error is returned.
+			for i := 0; i < 2; i++ {
+				err := s.CreateChangesetEvents(ctx, events...)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			for _, have := range events {
+				if have.ID == 0 {
+					t.Fatal("id should not be zero")
+				}
+
+				want := have.Clone()
+
+				want.ID = have.ID
+				want.CreatedAt = now
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+	})
 }
