@@ -2,14 +2,18 @@ package bitbucketserver
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -288,6 +292,114 @@ func TestClient_Users(t *testing.T) {
 
 			if have, want := users, tc.users; !reflect.DeepEqual(have, want) {
 				t.Error(cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestClient_LoadPullRequest(t *testing.T) {
+	cli, save := NewTestClient(t, "PullRequests", *update)
+	defer save()
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	pr := &PullRequest{ID: 2}
+	pr.ToRef.Repository.Slug = "vegeta"
+	pr.ToRef.Repository.Project.Key = "SOUR"
+
+	for _, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   func() *PullRequest
+		err  string
+	}{
+		{
+			name: "timeout",
+			pr:   func() *PullRequest { return pr },
+			ctx:  timeout,
+			err:  "context deadline exceeded",
+		},
+		{
+			name: "repo not set",
+			pr:   func() *PullRequest { return &PullRequest{ID: 2} },
+			err:  "repository slug empty",
+		},
+		{
+			name: "project not set",
+			pr: func() *PullRequest {
+				pr := &PullRequest{ID: 2}
+				pr.ToRef.Repository.Slug = "vegeta"
+				return pr
+			},
+			err: "project key empty",
+		},
+		{
+			name: "non existing pr",
+			pr: func() *PullRequest {
+				pr := &PullRequest{ID: 9999}
+				pr.ToRef.Repository.Slug = "vegeta"
+				pr.ToRef.Repository.Project.Key = "SOUR"
+				return pr
+			},
+			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 9999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
+		},
+		{
+			name: "non existing repo",
+			pr: func() *PullRequest {
+				pr := &PullRequest{ID: 9999}
+				pr.ToRef.Repository.Slug = "invalidslug"
+				pr.ToRef.Repository.Project.Key = "SOUR"
+				return pr
+			},
+			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/invalidslug/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Repository SOUR/invalidslug does not exist.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.repository.NoSuchRepositoryException\\\"}]}\"",
+		},
+		{
+			name: "success",
+			pr:   func() *PullRequest { return pr },
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			pr := tc.pr()
+			err := cli.LoadPullRequest(tc.ctx, pr)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil || tc.err != "<nil>" {
+				return
+			}
+
+			data, err := json.MarshalIndent(pr, " ", " ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			path := "testdata/golden/LoadPullRequest-" + strings.Replace(tc.name, " ", "-", -1)
+			if *update {
+				if err = ioutil.WriteFile(path, data, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(data), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
 			}
 		})
 	}

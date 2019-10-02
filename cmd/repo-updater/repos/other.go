@@ -2,11 +2,16 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -14,22 +19,44 @@ import (
 // A OtherSource yields repositories from a single Other connection configured
 // in Sourcegraph via the external services configuration.
 type OtherSource struct {
-	svc  *ExternalService
-	conn *schema.OtherExternalServiceConnection
+	svc    *ExternalService
+	conn   *schema.OtherExternalServiceConnection
+	client httpcli.Doer
 }
 
 // NewOtherSource returns a new OtherSource from the given external service.
-func NewOtherSource(svc *ExternalService) (*OtherSource, error) {
+func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
 	var c schema.OtherExternalServiceConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
-	return &OtherSource{svc: svc, conn: &c}, nil
+
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	cli, err := cf.Doer()
+	if err != nil {
+		return nil, err
+	}
+
+	return &OtherSource{svc: svc, conn: &c, client: cli}, nil
 }
 
 // ListRepos returns all Other repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	if s.conn.ExperimentalSrcExpose {
+		repos, err := s.srcExpose(ctx)
+		if err != nil {
+			results <- SourceResult{Source: s, Err: err}
+		}
+		for _, r := range repos {
+			results <- SourceResult{Source: s, Repo: r}
+		}
+		return
+	}
+
 	urls, err := s.cloneURLs()
 	if err != nil {
 		results <- SourceResult{Source: s, Err: err}
@@ -114,4 +141,64 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*Repo, error
 			},
 		},
 	}, nil
+}
+
+func (s OtherSource) srcExpose(ctx context.Context) ([]*Repo, error) {
+	req, err := http.NewRequest("GET", s.conn.Url+"/v1/list-repos", nil)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response from src-expose")
+	}
+
+	var data struct {
+		Items []*Repo
+	}
+	err = json.Unmarshal(b, &data)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode response from src-expose: %s", string(b))
+	}
+
+	clonePrefix := s.conn.Url
+	if !strings.HasSuffix(clonePrefix, "/") {
+		clonePrefix = clonePrefix + "/"
+	}
+
+	urn := s.svc.URN()
+	for _, r := range data.Items {
+		// The only required field is URI
+		if r.URI == "" {
+			return nil, errors.Errorf("repo without URI returned from src-expose: %+v", r)
+		}
+
+		// Fields that src-expose isn't allowed to control
+		r.Enabled = true
+		r.ExternalRepo = api.ExternalRepoSpec{
+			ID:          r.URI,
+			ServiceType: "other",
+			ServiceID:   s.conn.Url,
+		}
+		r.Sources = map[string]*SourceInfo{
+			urn: {
+				ID: urn,
+				// TODO we should allow this to be set
+				CloneURL: clonePrefix + strings.TrimPrefix(r.URI, "/") + "/.git",
+			},
+		}
+
+		// The only required field left is Name
+		if r.Name == "" {
+			r.Name = r.URI
+		}
+	}
+
+	return data.Items, nil
 }

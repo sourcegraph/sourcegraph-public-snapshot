@@ -13,7 +13,7 @@ import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
 
-const { gitHubToken, sourcegraphBaseUrl } = getConfig(['gitHubToken', 'sourcegraphBaseUrl'])
+const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -67,7 +67,7 @@ describe('e2e test suite', () => {
             MockDate.reset()
 
             // Start browser.
-            driver = await createDriverForTest({ sourcegraphBaseUrl })
+            driver = await createDriverForTest({ sourcegraphBaseUrl, logBrowserConsole: true })
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2

@@ -46,13 +46,13 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                             errors.pipe(
                                 delayWhen(error => {
                                     if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
-                                        // Delay retry by 1s.
-                                        return timer(1000)
+                                        // Delay retry by 2s.
+                                        return timer(2 * 1000)
                                     }
                                     // Throw all errors other than ECLONEINPROGRESS
                                     throw error
                                 }),
-                                take(10)
+                                take(60) // Up to 60 retries (an effective timeout of 2 minutes)
                             ),
                             defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
                         )
@@ -62,7 +62,7 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
     ).toPromise()
 }
 
-export async function ensureNoExternalServices(
+export async function ensureNoTestExternalServices(
     gqlClient: GraphQLClient,
     options: {
         kind: GQL.ExternalServiceKind
@@ -70,6 +70,12 @@ export async function ensureNoExternalServices(
         deleteIfExist?: boolean
     }
 ): Promise<void> {
+    if (!options.uniqueDisplayName.startsWith('[TEST]')) {
+        throw new Error(
+            `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
+        )
+    }
+
     const externalServices = await getExternalServices(gqlClient, options)
     if (externalServices.length === 0) {
         return
@@ -133,7 +139,7 @@ export function getExternalServices(
         .toPromise()
 }
 
-export async function ensureExternalService(
+export async function ensureTestExternalService(
     gqlClient: GraphQLClient,
     options: {
         kind: GQL.ExternalServiceKind
@@ -141,6 +147,12 @@ export async function ensureExternalService(
         config: Record<string, any>
     }
 ): Promise<void> {
+    if (!options.uniqueDisplayName.startsWith('[TEST]')) {
+        throw new Error(
+            `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
+        )
+    }
+
     const externalServices = await getExternalServices(gqlClient, options)
     if (externalServices.length > 0) {
         return
@@ -257,6 +269,25 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
                 }
             `,
             { userID, siteAdmin }
+        )
+        .toPromise()
+}
+
+export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
+    return gqlClient
+        .queryGraphQL(
+            gql`
+                query SiteFlags {
+                    site {
+                        productVersion
+                    }
+                }
+            `,
+            {}
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ site }) => site.productVersion)
         )
         .toPromise()
 }

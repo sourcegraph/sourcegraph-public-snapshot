@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
@@ -478,8 +479,8 @@ func TestStore(t *testing.T) {
 
 			now = now.Add(time.Second)
 			for _, c := range changesets {
-				c.Metadata = []byte(`{"updated": true}`)
-				c.ExternalServiceType = "gitlab"
+				c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
+				c.ExternalServiceType = bitbucketserver.ServiceType
 
 				if c.RepoID != 0 {
 					c.RepoID++

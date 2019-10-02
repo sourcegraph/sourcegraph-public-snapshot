@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 )
 
@@ -96,6 +97,8 @@ func (t *Changeset) Title() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return m.Title, nil
+	case *bitbucketserver.PullRequest:
+		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -106,6 +109,8 @@ func (t *Changeset) Body() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return m.Body, nil
+	case *bitbucketserver.PullRequest:
+		return m.Description, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -115,6 +120,8 @@ func (t *Changeset) Body() (string, error) {
 func (t *Changeset) State() (s ChangesetState, err error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
+		s = ChangesetState(m.State)
+	case *bitbucketserver.PullRequest:
 		s = ChangesetState(m.State)
 	default:
 		return "", errors.New("unknown changeset type")
@@ -132,6 +139,12 @@ func (t *Changeset) URL() (s string, err error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return m.URL, nil
+	case *bitbucketserver.PullRequest:
+		if len(m.Links.Self) < 1 {
+			return "", errors.New("bitbucketserver pull request has no self links")
+		}
+		selfLink := m.Links.Self[0]
+		return selfLink.Href, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -146,20 +159,38 @@ func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 			states[ChangesetReviewState(r.State)] = true
 		}
 
-		// If any review requested changes, that state takes precedence over all
-		// other review states, followed by explicit approval. Everything else is
-		// considered pending.
-		for _, state := range [...]ChangesetReviewState{
-			ChangesetReviewStateChangesRequested,
-			ChangesetReviewStateApproved,
-		} {
-			if states[state] {
-				return state, nil
+		return selectReviewState(states), nil
+	case *bitbucketserver.PullRequest:
+		states := map[ChangesetReviewState]bool{}
+		for _, r := range m.Reviewers {
+			switch r.Status {
+			case "UNAPPROVED":
+				states[ChangesetReviewStatePending] = true
+			case "NEEDS_WORK":
+				states[ChangesetReviewStateChangesRequested] = true
+			case "APPROVED":
+				states[ChangesetReviewStateApproved] = true
 			}
 		}
 
-		return ChangesetReviewStatePending, nil
+		return selectReviewState(states), nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
+}
+
+func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
+	// If any review requested changes, that state takes precedence over all
+	// other review states, followed by explicit approval. Everything else is
+	// considered pending.
+	for _, state := range [...]ChangesetReviewState{
+		ChangesetReviewStateChangesRequested,
+		ChangesetReviewStateApproved,
+	} {
+		if states[state] {
+			return state
+		}
+	}
+
+	return ChangesetReviewStatePending
 }

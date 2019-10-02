@@ -5,44 +5,47 @@ import { catchError, map } from 'rxjs/operators'
 import { throwError } from 'rxjs'
 import { Key } from 'ts-key-enum'
 import { deleteUser } from './api'
+import { Config } from '../../../../shared/src/e2e/config'
 
 /**
  * Create the user with the specified password
  */
-export async function ensureLoggedInOrCreateUser({
-    driver,
-    gqlClient,
-    username,
-    password,
-    deleteIfExists,
-}: {
-    driver: Driver
-    gqlClient: GraphQLClient
-    username: string
-    password: string
-    deleteIfExists?: boolean
-}): Promise<void> {
+export async function ensureLoggedInOrCreateTestUser(
+    driver: Driver,
+    gqlClient: GraphQLClient,
+    {
+        username,
+        deleteIfExists,
+        testUserPassword,
+    }: {
+        username: string
+        deleteIfExists?: boolean
+    } & Pick<Config, 'testUserPassword'>
+): Promise<void> {
+    if (!username.startsWith('test-')) {
+        throw new Error(`Test username must start with "test-" (was ${JSON.stringify(username)})`)
+    }
+
     if (deleteIfExists) {
         await deleteUser(gqlClient, username, false)
     } else {
         // Attempt to log in first
         try {
-            await driver.ensureLoggedIn({ username, password })
+            await driver.ensureLoggedIn({ username, password: testUserPassword })
             return
         } catch (err) {
             console.log(`Login failed (error: ${err.message}), will attempt to create user ${JSON.stringify(username)}`)
         }
     }
 
-    await createUser(driver, gqlClient, username, password)
-    await driver.ensureLoggedIn({ username, password })
+    await createTestUser(driver, gqlClient, { username, testUserPassword })
+    await driver.ensureLoggedIn({ username, password: testUserPassword })
 }
 
-export async function createUser(
+async function createTestUser(
     driver: Driver,
     gqlClient: GraphQLClient,
-    username: string,
-    password: string
+    { username, testUserPassword }: { username: string } & Pick<Config, 'testUserPassword'>
 ): Promise<void> {
     // If there's an error, try to create the user
     const passwordResetURL = await gqlClient
@@ -59,13 +62,7 @@ export async function createUser(
         .pipe(
             map(dataOrThrowErrors),
             catchError(err =>
-                throwError(
-                    new Error(
-                        `User likely alredy exists, but with a different password. Please delete user ${JSON.stringify(
-                            username
-                        )} and retry. (Underlying error: ${err.message})`
-                    )
-                )
+                throwError(new Error(`Could not create user ${JSON.stringify(username)}: ${err.message})`))
             ),
             map(({ createUser }) => createUser.resetPasswordURL)
         )
@@ -75,7 +72,7 @@ export async function createUser(
     }
 
     await driver.page.goto(passwordResetURL)
-    await driver.page.keyboard.type(password)
+    await driver.page.keyboard.type(testUserPassword)
     await driver.page.keyboard.down(Key.Enter)
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
