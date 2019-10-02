@@ -1,5 +1,6 @@
 import { RouteComponentProps } from 'react-router'
 import { fetchAllConfigAndSettings } from './backend'
+import * as GQL from '../../../shared/src/graphql/schema'
 import React, { useMemo } from 'react'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import awsCodeCommitJSON from '../../../schema/aws_codecommit.schema.json'
@@ -15,6 +16,9 @@ import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../util/useObservable'
+import { mapValues, values } from 'lodash'
+import { Link } from '../../../shared/src/components/Link'
+import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -25,16 +29,16 @@ interface JSONSchema {
     definitions?: Record<string, { type: string }>
 }
 
-const externalServices: [ExternalServiceKind, JSONSchema][] = [
-    [ExternalServiceKind.AWSCODECOMMIT, awsCodeCommitJSON],
-    [ExternalServiceKind.BITBUCKETCLOUD, bitbucketCloudSchemaJSON],
-    [ExternalServiceKind.BITBUCKETSERVER, bitbucketServerSchemaJSON],
-    [ExternalServiceKind.GITHUB, githubSchemaJSON],
-    [ExternalServiceKind.GITLAB, gitlabSchemaJSON],
-    [ExternalServiceKind.GITOLITE, gitoliteSchemaJSON],
-    [ExternalServiceKind.OTHER, otherExternalServiceSchemaJSON],
-    [ExternalServiceKind.PHABRICATOR, phabricatorSchemaJSON],
-]
+const externalServices: Record<ExternalServiceKind, JSONSchema> = {
+    AWSCODECOMMIT: awsCodeCommitJSON,
+    BITBUCKETCLOUD: bitbucketCloudSchemaJSON,
+    BITBUCKETSERVER: bitbucketServerSchemaJSON,
+    GITHUB: githubSchemaJSON,
+    GITLAB: gitlabSchemaJSON,
+    GITOLITE: gitoliteSchemaJSON,
+    OTHER: otherExternalServiceSchemaJSON,
+    PHABRICATOR: phabricatorSchemaJSON,
+}
 
 const allConfigSchema = {
     $id: 'all.schema.json#',
@@ -44,15 +48,7 @@ const allConfigSchema = {
         site: siteSchemaJSON,
         externalServices: {
             type: 'object',
-            properties: externalServices.reduce<
-                Partial<{ [k in ExternalServiceKind]: { type: string; items: JSONSchema } }>
-            >((properties, [kind, schema]) => {
-                properties[kind] = {
-                    type: 'array',
-                    items: schema,
-                }
-                return properties
-            }, {}),
+            properties: mapValues(externalServices, schema => ({ type: 'array', items: schema })),
         },
         settings: {
             type: 'object',
@@ -79,26 +75,22 @@ const allConfigSchema = {
             },
         },
     },
-    definitions: externalServices
-        .map(([, schema]) => schema.definitions)
+    definitions: values(externalServices)
+        .map(schema => schema.definitions)
         .concat([siteSchemaJSON.definitions, settingsSchemaJSON.definitions])
-        .reduce(
-            (definitions, theseDefinitions) =>
-                theseDefinitions
-                    ? {
-                          ...definitions,
-                          ...theseDefinitions,
-                      }
-                    : definitions,
-            {}
-        ),
+        .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
 interface Props extends RouteComponentProps {
     isLightTheme: boolean
+    authenticatedUser: GQL.IUser
 }
 
-export const SiteAdminExportCeonfigPage: React.FunctionComponent<Props> = ({ isLightTheme, history }) => {
+const AuthenticatedSiteAdminExportConfigPage: React.FunctionComponent<Props> = ({
+    isLightTheme,
+    history,
+    authenticatedUser,
+}) => {
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div className="site-admin-export-config-page">
@@ -111,8 +103,26 @@ export const SiteAdminExportCeonfigPage: React.FunctionComponent<Props> = ({ isL
                 <a href="/help/admin/management_console ">management console</a>).
             </p>
             <div className="card-header alert alert-warning">
-                Note: This editor is for export purposes only. You may edit the contents and use auto-complete, but
-                changes will not be saved. Reloading the page will erase any of the changes you make in this editor.
+                <div>
+                    Note: This editor is read-only. To edit settings or configuration, visit the appropriate page:
+                </div>
+                <ul className="mb-0">
+                    <li>
+                        <Link to="/site-admin/configuration">Site configuration</Link>
+                    </li>
+                    <li>
+                        <Link to="/site-admin/external-services">External services</Link>
+                    </li>
+                    <li>
+                        <Link to="/site-admin/global-settings">Global settings</Link>
+                    </li>
+                    <li>
+                        <Link to="/site-admin/organizations">Organization settings</Link>
+                    </li>
+                    <li>
+                        <Link to={`/users/${authenticatedUser.username}/settings`}>User settings</Link>
+                    </li>
+                </ul>
             </div>
             <DynamicallyImportedMonacoSettingsEditor
                 value={allConfig ? JSON.stringify(allConfig, undefined, 2) : ''}
@@ -121,7 +131,10 @@ export const SiteAdminExportCeonfigPage: React.FunctionComponent<Props> = ({ isL
                 height={800}
                 isLightTheme={isLightTheme}
                 history={history}
+                readOnly={true}
             />
         </div>
     )
 }
+
+export const SiteAdminExportConfigPage = withAuthenticatedUser(AuthenticatedSiteAdminExportConfigPage)
