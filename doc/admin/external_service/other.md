@@ -56,6 +56,57 @@ Repositories must be listed individually:
   ]
 ```
 
+## Experimental: src-expose
+
+`src-expose` is a tool to periodically snapshot local directories and serve them as Git repositories over HTTP. This is a useful way to get code from other version control systems into Sourcegraph, or textual artifacts from non version controlled systems (eg configuration) into Sourcegraph.
+
+> `src-expose` is currently unreleased. It requires `insiders` builds of Sourcegraph. It will be available in Sourcegraph 3.9.
+
+### Quick start
+
+Start up sourcegraph insiders
+
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:insiders</code></pre>
+
+Pick a directory you want to export from, then run:
+
+``` shell
+wget https://storage.googleapis.com/sourcegraph-artifacts/src-expose/latest/darwin-amd64/src-expose
+# For linux comment the above and uncomment the below
+# wget https://storage.googleapis.com/sourcegraph-artifacts/src-expose/latest/linux-amd64/src-expose
+
+chmod +x src-expose
+./src-expose "echo sync command here" dir1 dir2 dir3
+```
+
+`src-expose` will output a configuration to use. It may scroll by quickly due to snapshot logging, so scroll up. However, this configuration should work:
+
+``` javascript
+{
+  "url": "http://host.docker.internal:3434",
+  "repos": [
+    "hack-ignore-me"
+  ],
+  "experimental.srcExpose": true
+}
+```
+
+Go to Admin > External services > Add external service > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
+
+### Advanced configuration
+
+The command line argument used by the quick start is for quickly validating the approach. However, you may have more complicated scenarious for snapshotting. In that case you can pass a YAML configuration file:
+
+``` shell
+src-expose -snapshot-config config.yaml
+```
+
+To see the configuration please consult `src-expose -help`. The [example.yaml](https://github.com/sourcegraph/sourcegraph/blob/master/dev/src-expose/example.yaml) also documents the possibilities.
+
+### Serving git repositories
+
+Alternatively you can serve git repositories. See `src-expose serve -help`.
+
 ## Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/other_external_service.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/other) to see rendered content.</div>
