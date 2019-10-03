@@ -23,9 +23,9 @@ SELECT remote_exec('_lsif', '
     );
 
     CREATE UNIQUE INDEX IF NOT EXISTS "packages_package_unique" ON "packages"("scheme", "name", "version");
-    CREATE INDEX IF NOT EXISTS"packages_repo_commit" ON "packages"("repository", "commit");
-    CREATE INDEX IF NOT EXISTS"references_package" ON "references"("scheme", "name", "version");
-    CREATE INDEX IF NOT EXISTS"references_repo_commit" ON "references"("repository", "commit");
+    CREATE INDEX IF NOT EXISTS "packages_repo_commit" ON "packages"("repository", "commit");
+    CREATE INDEX IF NOT EXISTS "references_package" ON "references"("scheme", "name", "version");
+    CREATE INDEX IF NOT EXISTS "references_repo_commit" ON "references"("repository", "commit");
 
     COMMIT;
 ');
