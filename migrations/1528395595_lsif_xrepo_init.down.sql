@@ -1,6 +1,6 @@
--- Performs migration in LSIF database
+-- Tear down inital LSIF database.
 
-SELECT dblink_exec('dbname=sourcegraph_lsif user=' || current_user, '
+SELECT remote_exec('_lsif', '
     BEGIN;
 
     DROP INDEX IF EXISTS "packages_package_unique";

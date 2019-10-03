@@ -1,15 +1,9 @@
--- Performs migration in LSIF database
+-- Set up initial LSIF database.
 
-SELECT dblink_exec('dbname=sourcegraph_lsif user=' || current_user, '
-    -- This gets weirdly meta. We need to enable the extension
-    -- on this side as well so the LSIF processes can query into
-    -- the sourcegraph db to check if migrations have been
-    -- applied on application startup.
-    CREATE EXTENSION IF NOT EXISTS dblink;
-
+SELECT remote_exec('_lsif', '
     BEGIN;
 
-    CREATE TABLE "packages" (
+    CREATE TABLE IF NOT EXISTS "packages" (
         "id" SERIAL PRIMARY KEY,
         "scheme" text NOT NULL,
         "name" text NOT NULL,
@@ -18,7 +12,7 @@ SELECT dblink_exec('dbname=sourcegraph_lsif user=' || current_user, '
         "commit" text NOT NULL
     );
 
-    CREATE TABLE "references" (
+    CREATE TABLE IF NOT EXISTS "references" (
         "id" SERIAL PRIMARY KEY,
         "scheme" text NOT NULL,
         "name" text NOT NULL,
@@ -28,10 +22,10 @@ SELECT dblink_exec('dbname=sourcegraph_lsif user=' || current_user, '
         "filter" bytea NOT NULL
     );
 
-    CREATE UNIQUE INDEX "packages_package_unique" ON "packages"("scheme", "name", "version");
-    CREATE INDEX "packages_repo_commit" ON "packages"("repository", "commit");
-    CREATE INDEX "references_package" ON "references"("scheme", "name", "version");
-    CREATE INDEX "references_repo_commit" ON "references"("repository", "commit");
+    CREATE UNIQUE INDEX IF NOT EXISTS "packages_package_unique" ON "packages"("scheme", "name", "version");
+    CREATE INDEX IF NOT EXISTS"packages_repo_commit" ON "packages"("repository", "commit");
+    CREATE INDEX IF NOT EXISTS"references_package" ON "references"("scheme", "name", "version");
+    CREATE INDEX IF NOT EXISTS"references_repo_commit" ON "references"("repository", "commit");
 
     COMMIT;
 ');

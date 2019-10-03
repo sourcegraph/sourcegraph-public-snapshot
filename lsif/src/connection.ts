@@ -63,7 +63,7 @@ export async function createPostgresConnection(): Promise<Connection> {
     // Get configuration for **frontend** database
     const connectionOptions = createPostgresConnectionOptions()
     // Override the database name we're connecting to
-    const connection = await connect({ ...connectionOptions, database: 'sourcegraph_lsif' })
+    const connection = await connect({ ...connectionOptions, database: connectionOptions.database + '_lsif' })
     // Poll the schema migrations table until we are up to date
     await waitForMigrations(connection, connectionOptions.database || '')
 
@@ -168,9 +168,9 @@ async function waitForMigrations(connection: Connection, database: string): Prom
  * error, if no migration version can be found, or if the current migration state
  * is dirty.
  *
- * This process was configured to point to the sourcegraph database, but we have
- * connected to the sourcegraph_lsif database. We ue dblink to issue a query in
- * the 'remote' database without creating a second connection.
+ * This process was configured to point to the primary Sourcegraph database, but we
+ * have connected to the LSIF-specific database. We ue dblink to issue a query in the
+ * 'remote' database without creating a second connection.
  *
  * @param connection The database connection.
  * @param database The target database in which to perform the query.
