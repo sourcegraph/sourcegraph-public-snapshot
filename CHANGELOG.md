@@ -21,6 +21,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.8.2
+
+### Fixed
+
+- Sourcegraph cluster deployments now run a more stable syntax highlighting server which can self-recover from rarer failure cases such as getting stuck at high CPU usage when highlighting some specific files. [#5406](https://github.com/sourcegraph/sourcegraph/issues/5406) This will be ported to single-container deployments [at a later date](https://github.com/sourcegraph/sourcegraph/issues/5841).
+
+## 3.8.1
+
+### Added
+
+- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
+
 ## 3.8.0
 
 ### Added

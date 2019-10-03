@@ -52,7 +52,7 @@ RUN apk update && apk add --no-cache \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:0.7.0 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:5e1efbb@sha256:6ec136246b302a6c8fc113f087a66d5f9a89a9f5b851e9abb917c8b5e1d8c4b1 /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:96e3f14@sha256:f2b5eb5ef162f349e98d2d772955724b8f2b0bf2925797a049d3752953474a88 /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/lsif-server:ci /lsif /lsif
@@ -64,9 +64,9 @@ COPY --from=sourcegraph/prometheus:v2.12.0 /usr/share/prometheus /usr/share/prom
 
 # hadolint ignore=DL3018
 RUN set -ex && \
- addgroup -S grafana && \
- adduser -S -G grafana grafana && \
- apk add --no-cache libc6-compat=1.1.23-r3 ca-certificates su-exec
+    addgroup -S grafana && \
+    adduser -S -G grafana grafana && \
+    apk add --no-cache libc6-compat=1.1.23-r3 ca-certificates su-exec
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:6.3.3-2 /usr/share/grafana /usr/share/grafana
