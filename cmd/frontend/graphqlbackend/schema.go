@@ -1725,8 +1725,8 @@ type RepositoryContributor {
 
 # A code symbol (e.g., a function, variable, type, class, etc.).
 #
-# It is derived from symbols as defined in the Language Server Protocol (see
-# https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+# It is derived from DocumentSymbol as defined in the Language Server Protocol (see
+# https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
 type Symbol {
     # The name of the symbol.
     name: String!
