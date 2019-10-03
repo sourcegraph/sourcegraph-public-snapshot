@@ -107,32 +107,32 @@ func (s *searchFilterSuggestions) Filters() []descriptiveValue {
 }
 
 // Type returns discrete and default values of search filter "type:".
-func (s *searchFilterSuggestions) Type() discreteValues {
-	return discreteValues{
+func (s *searchFilterSuggestions) Type() searchFilterDiscreteValues {
+	return searchFilterDiscreteValues{
 		def:    "code",
 		values: []string{"code", "diff", "commit", "symbol"},
 	}
 }
 
 // Case returns discrete and default values of search filter "case:".
-func (s *searchFilterSuggestions) Case() discreteValues {
-	return discreteValues{
+func (s *searchFilterSuggestions) Case() searchFilterDiscreteValues {
+	return searchFilterDiscreteValues{
 		def:    string(No),
 		values: []string{string(Yes), string(No)},
 	}
 }
 
 // Fork returns discrete and default values of search filter "fork:".
-func (s *searchFilterSuggestions) Fork() discreteValues {
-	return discreteValues{
+func (s *searchFilterSuggestions) Fork() searchFilterDiscreteValues {
+	return searchFilterDiscreteValues{
 		def:    string(Yes),
 		values: []string{string(No), string(Only), string(Yes)},
 	}
 }
 
 // Archived returns discrete and default values of search filter "archived:".
-func (s *searchFilterSuggestions) Archived() discreteValues {
-	return discreteValues{
+func (s *searchFilterSuggestions) Archived() searchFilterDiscreteValues {
+	return searchFilterDiscreteValues{
 		def:    string(Yes),
 		values: []string{string(No), string(Only), string(Yes)},
 	}
@@ -198,11 +198,11 @@ type descriptiveValue struct {
 func (v descriptiveValue) Value() string       { return v.value }
 func (v descriptiveValue) Description() string { return v.description }
 
-// discreteValues contains a list of discrete values and the default choice.
-type discreteValues struct {
+// searchFilterDiscreteValues contains a list of discrete values and the default choice.
+type searchFilterDiscreteValues struct {
 	def    string
 	values []string
 }
 
-func (v discreteValues) Default() string  { return v.def }
-func (v discreteValues) Values() []string { return v.values }
+func (v searchFilterDiscreteValues) Default() string  { return v.def }
+func (v searchFilterDiscreteValues) Values() []string { return v.values }

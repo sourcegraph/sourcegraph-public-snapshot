@@ -1042,30 +1042,47 @@ type Search {
 
 # A value with its description.
 type DescriptiveValue {
+    # The value itself.
     value: String!
+    # Description of the value.
     description: String!
 }
 
 # Discrete values with its default for a search filter.
 type SearchFilterDiscreteValues {
+    # The default choice among discrete values.
     default: String!
+    # The list of discrete values.
     values: [String!]!
 }
 
 # Predefined suggestions about search filters.
 type SearchFilterSuggestions {
+    # The suggestions for search filters.
     filters: [DescriptiveValue!]!
+    # The suggestions for search filter "type:".
     type: SearchFilterDiscreteValues!
+    # The suggestions for search filter "case:".
     case: SearchFilterDiscreteValues!
+    # The suggestions for search filter "fork:".
     fork: SearchFilterDiscreteValues!
+    # The suggestions for search filter "archived:".
     archived: SearchFilterDiscreteValues!
+    # The suggestions for search filter "file:".
     file: [DescriptiveValue!]!
+    # The suggestions for search filter "lang:".
     lang: [String!]!
+    # The suggestions for search filter "repogroup:".
     repogroup: [String!]!
+    # The suggestions for search filter "repo:".
     repo: [String!]!
+    # The suggestions for search filter "repohasfile:".
     repohasfile: [String!]!
+    # The suggestions for search filter "repohascommitafter:".
     repohascommitafter: [String!]!
+    # The suggestions for search filter "count:".
     count: [Int!]!
+    # The suggestions for search filter "timeout:".
     timeout: [String!]!
 }
 
