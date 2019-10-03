@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -222,12 +223,60 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
+		// Mock to bypass language suggestions.
+		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
+			return &inventory.Inventory{}, nil
+		}
+		defer func() { backend.Mocks.Repos.GetInventory = nil }()
+
 		testSuggestions(t, "repo:foo", []string{"repo:foo-repo", "file:dir/file"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}
 		if !calledSearchFilesInRepos {
 			t.Error("!calledSearchFilesInRepos")
+		}
+	})
+
+	t.Run("repo: field for language suggestions", func(t *testing.T) {
+		var mu sync.Mutex
+		calledReposList := false
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+			mu.Lock()
+			defer mu.Unlock()
+			calledReposList = true
+
+			want := db.ReposListOptions{
+				IncludePatterns: []string{"foo"},
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				LimitOffset:     limitOffset,
+			}
+			if !reflect.DeepEqual(op, want) {
+				t.Errorf("got %+v, want %+v", op, want)
+			}
+			return []*types.Repo{{Name: "foo-repo"}}, nil
+		}
+
+		calledReposGetInventory := false
+		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
+			calledReposGetInventory = true
+			return &inventory.Inventory{
+				Languages: []inventory.Lang{
+					{Name: "Go"},
+					{Name: "Typescript"},
+					{Name: "Java"},
+				},
+			}, nil
+		}
+		defer func() { backend.Mocks.Repos.GetInventory = nil }()
+
+		testSuggestions(t, "repo:foo", []string{"lang:go", "lang:java", "repo:foo-repo", "lang:typescript"})
+		if !calledReposList {
+			t.Error("!calledReposList")
+		}
+		if !calledReposGetInventory {
+			t.Error("!calledReposGetInventory")
 		}
 	})
 
@@ -266,6 +315,12 @@ func TestSearchSuggestions(t *testing.T) {
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
+
+		// Mock to bypass language suggestions.
+		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
+			return &inventory.Inventory{}, nil
+		}
+		defer func() { backend.Mocks.Repos.GetInventory = nil }()
 
 		testSuggestions(t, "repo:foo file:bar", []string{"file:dir/bar-file"})
 		if !calledReposList {
