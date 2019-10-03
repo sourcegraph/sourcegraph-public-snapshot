@@ -1,3 +1,5 @@
+-- Note: `commit` is a reserved word, so it's quoted.
+
 SELECT remote_exec('_lsif', '
     CREATE TABLE IF NOT EXISTS commits (
         id SERIAL PRIMARY KEY,
@@ -27,5 +29,5 @@ SELECT remote_exec('_lsif', '
                 WHERE m.repository = c.repository
                 AND m."commit" = c."commit"
             ) AS has_lsif_data
-        FROM "commits" c;
+        FROM commits c;
 ');
