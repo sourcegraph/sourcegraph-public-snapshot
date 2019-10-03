@@ -39,7 +39,11 @@ interface DirSuggestion extends BaseSuggestion {
     type: 'dir'
 }
 
-export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion
+interface LangSuggestion extends BaseSuggestion {
+    type: 'lang'
+}
+
+export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion | LangSuggestion
 
 export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
     switch (item.__typename) {
@@ -87,6 +91,14 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                 urlLabel: 'go to definition',
             }
         }
+        case 'Language': {
+            return {
+                type: 'lang',
+                title: item.name,
+                url: '', // TODO:
+                urlLabel: '', // TODO:
+            }
+        }
     }
 }
 
@@ -105,6 +117,8 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
             return <SymbolIcon kind={GQL.SymbolKind.FILE} {...passThru} />
         case 'symbol':
             return <SymbolIcon kind={suggestion.kind} {...passThru} />
+        case 'lang':
+            return <FolderIcon /> // TODO:
     }
 }
 
