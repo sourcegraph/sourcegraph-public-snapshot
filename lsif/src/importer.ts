@@ -8,8 +8,8 @@ import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from './xrepo'
-import { readGzippedJsonElements } from './input'
 import { Readable } from 'stream'
+import { readGzippedJsonElements } from './input'
 import { TableInserter } from './inserter'
 import {
     DefinitionModel,

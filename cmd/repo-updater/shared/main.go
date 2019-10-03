@@ -31,7 +31,7 @@ import (
 
 const port = "3182"
 
-func Main() {
+func Main(newPreSync repos.NewPreSync) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
 
 	ctx := context.Background()
@@ -133,6 +133,11 @@ func Main() {
 		Logger:           log15.Root(),
 		Now:              clock,
 	}
+
+	if newPreSync != nil {
+		syncer.PreSync = newPreSync(db, store, cf)
+	}
+
 	if envvar.SourcegraphDotComMode() {
 		syncer.FailFullSync = true
 	} else {

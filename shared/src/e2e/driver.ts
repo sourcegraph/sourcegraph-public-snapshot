@@ -2,7 +2,7 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { PageEventObj, Page, Serializable } from 'puppeteer'
+import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
@@ -65,13 +65,13 @@ export class Driver {
             await this.page.type('input[name=username]', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 5000 })
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.waitForSelector('.e2e-signin-form')
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 5000 })
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         }
     }
 
@@ -387,6 +387,69 @@ export class Driver {
             }
         }
     }
+
+    /**
+     * Finds the "best" element containing the text, where "best" is roughly defined as "what the
+     * user would click on if you told them to click on the text".
+     *
+     * Returns a list of elements when it is unsure how to pick among candidates. It generally tries
+     * to prefer elements that more tightly wrap the text. Throws an error when no elements could be
+     * found.
+     *
+     * The caller should call `dispose` on the returned JSHandles when done.
+     */
+    public async findElementWithText(
+        text: string,
+        {
+            tagName: selector,
+            log,
+        }: {
+            /**
+             * Filter candidate elements to those with the specified tag name
+             */
+            tagName?: keyof HTMLElementTagNameMap
+
+            /**
+             * Log the XPath quer(y|ies) used to find the element.
+             */
+            log?: boolean
+        } = {}
+    ): Promise<puppeteer.ElementHandle<Element>[]> {
+        const tag = selector || '*'
+        const queries = [
+            `//${tag}[text() = ${JSON.stringify(text)}]`,
+            `//${tag}[starts-with(text(), ${JSON.stringify(text)})]`,
+            `//${tag}[contains(text(), ${JSON.stringify(text)})]`,
+        ]
+
+        for (const query of queries) {
+            if (log) {
+                console.log(`locating xpath ${query}`)
+            }
+            const handles = await this.page.$x(query)
+            if (handles.length > 0) {
+                return handles
+            }
+        }
+        throw new Error(`Could not find element with text ${JSON.stringify(text)}${tag ? ' and tag ' + tag : ''}`)
+    }
+
+    /**
+     * Click the element containing the text. The element is discovered using the
+     * `findElementWithText` method.
+     */
+    public async clickElementWithText(
+        text: string,
+        { tagName, log }: { tagName?: keyof HTMLElementTagNameMap; log?: boolean } = {}
+    ): Promise<void> {
+        const handles = await this.findElementWithText(text, { tagName, log })
+        await handles[0].click()
+        await Promise.all(handles.map(handle => handle.dispose()))
+    }
+
+    public async waitUntilURL(url: string): Promise<void> {
+        await this.page.waitForFunction(url => document.location.href === url, {}, url)
+    }
 }
 
 function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
@@ -401,14 +464,18 @@ function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Nod
     )
 }
 
-interface DriverOptions {
+interface DriverOptions extends LaunchOptions {
     /** If true, load the Sourcegraph browser extension. */
     loadExtension?: boolean
 
     sourcegraphBaseUrl: string
+
+    /** If true, print browser console messages to stdout. */
+    logBrowserConsole?: boolean
 }
 
-export async function createDriverForTest({ loadExtension, sourcegraphBaseUrl }: DriverOptions): Promise<Driver> {
+export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole } = options
     const args = ['--window-size=1280,1024']
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
@@ -421,24 +488,22 @@ export async function createDriverForTest({ loadExtension, sourcegraphBaseUrl }:
     }
 
     const browser = await puppeteer.launch({
+        ...options,
         args,
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
-        // Uncomment for debugging
-        // slowMo: 10,
     })
     const page = await browser.newPage()
-    page.on('console', message => {
-        if (message.text().includes('Download the React DevTools')) {
-            return
-        }
-        if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
-            return
-        }
-        console.log(
-            'Browser console message:',
-            util.inspect(message, { colors: true, depth: 2, breakLength: Infinity })
-        )
-    })
+    if (logBrowserConsole) {
+        page.on('console', message => {
+            if (message.text().includes('Download the React DevTools')) {
+                return
+            }
+            if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
+                return
+            }
+            console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
+        })
+    }
     return new Driver(browser, page, sourcegraphBaseUrl)
 }

@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import { pick } from 'lodash'
 
 /**
@@ -10,15 +9,39 @@ export interface Config {
     sudoUsername: string
     gitHubToken: string
     sourcegraphBaseUrl: string
+    includeAdminOnboarding: boolean
+    testUserPassword: string
+    noCleanup: boolean
+    logBrowserConsole: boolean
+    slowMo: number
+    headless: boolean
 }
 
-export interface ConfigField {
+interface Field<T = string> {
     envVar: string
     description?: string
-    defaultValue?: string
+    defaultValue?: T
 }
 
-const configFields: { [K in keyof Config]: ConfigField } = {
+interface FieldParser<T = string> {
+    parser: (rawValue: string) => T
+}
+
+type ConfigFields = {
+    [K in keyof Config]: Field<Config[K]> & (Config[K] extends string ? Partial<FieldParser> : FieldParser<Config[K]>)
+}
+
+const parseBool = (s: string): boolean => {
+    if (['1', 't', 'true'].some(v => v.toLowerCase() === s)) {
+        return true
+    }
+    if (['0', 'f', 'false'].some(v => v.toLowerCase() === s)) {
+        return false
+    }
+    throw new Error(`could not parse string ${JSON.stringify(s)} to boolean`)
+}
+
+const configFields: ConfigFields = {
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
         description:
@@ -30,7 +53,8 @@ const configFields: { [K in keyof Config]: ConfigField } = {
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
-        description: 'A GitHub token that will be used to authenticate a GitHub external service.',
+        description:
+            'A GitHub personal access token that will be used to authenticate a GitHub external service. It does not need to have any scopes.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
@@ -38,30 +62,66 @@ const configFields: { [K in keyof Config]: ConfigField } = {
         description:
             'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
     },
+    includeAdminOnboarding: {
+        envVar: 'INCLUDE_ADMIN_ONBOARDING',
+        parser: parseBool,
+        description:
+            'If true, include admin onboarding tests, which assume none of the admin onboarding steps have yet completed on the instance. If those steps have already been completed, this test will fail.',
+    },
+    testUserPassword: {
+        envVar: 'TEST_USER_PASSWORD',
+        description:
+            'The password to use for any test users that are created. This password should be secure and unguessable when running against production Sourcegraph instances.',
+    },
+    noCleanup: {
+        envVar: 'NO_CLEANUP',
+        parser: parseBool,
+        description:
+            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production",
+    },
+    logBrowserConsole: {
+        envVar: 'LOG_BROWSER_CONSOLE',
+        parser: parseBool,
+        description: 'If true, log browser console to stdout',
+        defaultValue: false,
+    },
+    slowMo: {
+        envVar: 'SLOWMO',
+        parser: parseInt,
+        description: 'Slow down puppeteer by the specified number of milliseconds',
+        defaultValue: 0,
+    },
+    headless: {
+        envVar: 'HEADLESS',
+        parser: parseBool,
+        description: 'Run Puppeteer in headless mode',
+        defaultValue: false,
+    },
 }
 
 /**
- * Reads e2e config from appropriate inputs: the config file defined by $CONFIG_FILE
- * and environment variables. The caller should specify the config fields that it
- * depends on. This method reads the config synchronously from disk.
+ * Reads e2e config from environment variables. The caller should specify the config fields that it
+ * depends on. This should NOT be called from helper packages. Instead, call it near the start of
+ * "test main" function (i.e., Jest `test` blocks). Doing this ensures that all the necessary
+ * environment variables necessary for a test are presented to the user in one go.
  */
-export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
-    const configFile = process.env.CONFIG_FILE
-    // eslint-disable-next-line no-sync
-    const config = configFile ? JSON.parse(fs.readFileSync(configFile, 'utf-8')) : {}
-
-    // Set defaults and read env vars
-    for (const [fieldName, field] of Object.entries(configFields)) {
-        if (field.defaultValue && config[fieldName] === undefined) {
+export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config, T> {
+    // Read config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: { [key: string]: any } = {}
+    for (const fieldName of required) {
+        const field = configFields[fieldName]
+        if (field.defaultValue !== undefined) {
             config[fieldName] = field.defaultValue
         }
-        if (field.envVar && process.env[field.envVar]) {
-            config[fieldName] = process.env[field.envVar]
+        const envValue = process.env[field.envVar]
+        if (envValue) {
+            config[fieldName] = field.parser ? field.parser(envValue) : envValue
         }
     }
 
     // Check required fields for type safety
-    const missingKeys = required.filter(key => !config[key])
+    const missingKeys = required.filter(key => config[key] === undefined)
     if (missingKeys.length > 0) {
         const fieldInfo = (k: T): string => {
             const field = configFields[k]
@@ -83,7 +143,7 @@ ${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
 
 The recommended way to set them is to install direnv (https://direnv.net) and
 create a .envrc file at the root of this repository.
-`)
+        `)
     }
 
     return pick(config, required)

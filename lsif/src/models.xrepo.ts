@@ -114,8 +114,6 @@ class Package {
  * pair to the package that it provides to other projects.
  */
 @Entity({ name: 'packages' })
-@Index(['scheme', 'name', 'version'], { unique: true })
-@Index(['repository', 'commit'])
 export class PackageModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
@@ -128,8 +126,6 @@ export class PackageModel extends Package {
  * repository and commit pair to support find global reference operations.
  */
 @Entity({ name: 'references' })
-@Index(['scheme', 'name', 'version'])
-@Index(['repository', 'commit'])
 export class ReferenceModel extends Package {
     /**
      * The number of model instances that can be inserted at once.

@@ -53,6 +53,12 @@ some-project-dir$ env \
 
 If the upload is accepted, the response will be `null`. If an error occurred, you'll see it in the response.
 
+Go to your global settings at https://sourcegraph.example.com/site-admin/global-settings and enable LSIF:
+
+```json
+  "codeIntel.lsif": true
+```
+
 After uploading LSIF files, your Sourcegraph instance will use these files to power code intelligence so that when you visit a file in that repository on your Sourcegraph instance, the code intelligence should be more precise than it was out-of-the-box.
 
 When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to out-of-the-box code intelligence.

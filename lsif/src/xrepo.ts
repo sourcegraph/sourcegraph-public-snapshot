@@ -168,9 +168,15 @@ export class XrepoDatabase {
      * @param name The package name.
      * @param version The package version.
      */
-    public async getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
-        return await this.withConnection(connection =>
-            connection.getRepository(PackageModel).findOne({ where: { scheme, name, version } })
+    public getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
+        return this.withConnection(connection =>
+            connection.getRepository(PackageModel).findOne({
+                where: {
+                    scheme,
+                    name,
+                    version,
+                },
+            })
         )
     }
 

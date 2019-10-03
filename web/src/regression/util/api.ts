@@ -46,13 +46,13 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                             errors.pipe(
                                 delayWhen(error => {
                                     if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
-                                        // Delay retry by 1s.
-                                        return timer(1000)
+                                        // Delay retry by 2s.
+                                        return timer(2 * 1000)
                                     }
                                     // Throw all errors other than ECLONEINPROGRESS
                                     throw error
                                 }),
-                                take(10)
+                                take(60) // Up to 60 retries (an effective timeout of 2 minutes)
                             ),
                             defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
                         )
@@ -62,21 +62,64 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
     ).toPromise()
 }
 
-export async function ensureExternalService(
+export async function ensureNoTestExternalServices(
     gqlClient: GraphQLClient,
     options: {
         kind: GQL.ExternalServiceKind
         uniqueDisplayName: string
-        config: Record<string, any>
+        deleteIfExist?: boolean
     }
 ): Promise<void> {
-    const externalServices = await gqlClient
+    if (!options.uniqueDisplayName.startsWith('[TEST]')) {
+        throw new Error(
+            `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
+        )
+    }
+
+    const externalServices = await getExternalServices(gqlClient, options)
+    if (externalServices.length === 0) {
+        return
+    }
+    if (!options.deleteIfExist) {
+        throw new Error('external services already exist, not deleting')
+    }
+
+    for (const externalService of externalServices) {
+        await gqlClient
+            .mutateGraphQL(
+                gql`
+                    mutation DeleteExternalService($externalService: ID!) {
+                        deleteExternalService(externalService: $externalService) {
+                            alwaysNil
+                        }
+                    }
+                `,
+                { externalService: externalService.id }
+            )
+            .toPromise()
+    }
+}
+
+export function getExternalServices(
+    gqlClient: GraphQLClient,
+    options: {
+        kind?: GQL.ExternalServiceKind
+        uniqueDisplayName?: string
+    } = {}
+): Promise<GQL.IExternalService[]> {
+    return gqlClient
         .queryGraphQL(
             gql`
                 query ExternalServices($first: Int) {
                     externalServices(first: $first) {
                         nodes {
+                            id
+                            kind
                             displayName
+                            config
+                            createdAt
+                            updatedAt
+                            warning
                         }
                     }
                 }
@@ -85,10 +128,33 @@ export async function ensureExternalService(
         )
         .pipe(
             map(dataOrThrowErrors),
-            map(({ externalServices }) => externalServices)
+            map(({ externalServices }) =>
+                externalServices.nodes.filter(
+                    ({ displayName, kind }) =>
+                        (options.uniqueDisplayName === undefined || options.uniqueDisplayName === displayName) &&
+                        (options.kind === undefined || options.kind === kind)
+                )
+            )
         )
         .toPromise()
-    if (externalServices.nodes.some(({ displayName }) => displayName === options.uniqueDisplayName)) {
+}
+
+export async function ensureTestExternalService(
+    gqlClient: GraphQLClient,
+    options: {
+        kind: GQL.ExternalServiceKind
+        uniqueDisplayName: string
+        config: Record<string, any>
+    }
+): Promise<void> {
+    if (!options.uniqueDisplayName.startsWith('[TEST]')) {
+        throw new Error(
+            `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
+        )
+    }
+
+    const externalServices = await getExternalServices(gqlClient, options)
+    if (externalServices.length > 0) {
         return
     }
 
@@ -188,6 +254,40 @@ export async function deleteUser(
                 }
             `,
             { hard: false, user: user.id }
+        )
+        .toPromise()
+}
+
+export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID, siteAdmin: boolean): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetUserIsSiteAdmin($userID: ID!, $siteAdmin: Boolean!) {
+                    setUserIsSiteAdmin(userID: $userID, siteAdmin: $siteAdmin) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { userID, siteAdmin }
+        )
+        .toPromise()
+}
+
+export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
+    return gqlClient
+        .queryGraphQL(
+            gql`
+                query SiteFlags {
+                    site {
+                        productVersion
+                    }
+                }
+            `,
+            {}
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ site }) => site.productVersion)
         )
         .toPromise()
 }

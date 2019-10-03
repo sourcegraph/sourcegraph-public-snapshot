@@ -305,7 +305,7 @@ export function checkRepository(repository: any): void {
  */
 export function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
-        throw Object.assign(new Error('Must specify the commit as a 40 character hash ' + commit), { status: 400 })
+        throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
     }
 }
 

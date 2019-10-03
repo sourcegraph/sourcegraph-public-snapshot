@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
 	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -45,6 +46,7 @@ func TestCampaigns(t *testing.T) {
 
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
+	rcache.SetupForTest(t)
 
 	cf, save := newGithubClientFactory(t, "test-campaigns")
 	defer save()

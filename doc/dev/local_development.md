@@ -179,6 +179,10 @@ You need a fresh Postgres database and a database user that has full ownership o
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
 
+    Note: Sourcegraph will create a secondary database in the same PostgreSQL
+    instance with a name of the form `{PGDATABASE}_lsif`. It is assumed the
+    PostgreSQL instance is dedicated solely to Sourcegraph.
+
 ### More info
 
 For more information about data storage, [read our full PostgreSQL Guide
@@ -216,7 +220,7 @@ cd sourcegraph
 ./dev/launch.sh
 ```
 
-This will continuously compile your code and live reload your locally running instance of Sourcegraph. 
+This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
 Navigate your browser to http://localhost:3080 to see if everything worked.
 
@@ -247,16 +251,19 @@ While developing Sourcegraph, you may run into:
 
 `frontend | failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:Dirty database version 1514702776. Fix and force version.`
 
-You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, and run something like:
-
-Then try:
-
-`dev/migrate.sh up`
+You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, then run `dev/migrate.sh up`
 
 If you get something like `error: Dirty database version 1514702776. Fix and force version.`, you need to roll things back and start from scratch.
 
 ```bash
 dev/migrate.sh drop
+dev/migrate.sh up
+```
+
+If you receive errors while migrating, try dropping the database
+
+```bash
+dev/drop-entire-local-database.sh
 dev/migrate.sh up
 ```
 
