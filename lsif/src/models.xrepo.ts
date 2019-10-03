@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, Index, PrimaryColumn, ViewEntity, ViewColumn } from 'typeorm'
+import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, ViewEntity, ViewColumn } from 'typeorm'
 import { getBatchSize } from './util'
 import { EncodedBloomFilter } from './encoding'
 
@@ -7,9 +7,6 @@ import { EncodedBloomFilter } from './encoding'
  * heads for all known repositories.
  */
 @Entity({ name: 'commits' })
-@Index(['repository', 'commit', 'parentCommit'], { unique: true })
-@Index(['repository', 'commit'])
-@Index(['repository', 'parentCommit'])
 export class Commit {
     /**
      * The number of model instances that can be inserted at once.
@@ -146,7 +143,9 @@ export class ReferenceModel extends Package {
 }
 
 /**
- * A view that adds a `hasLsifData` column to the `commits` table.
+ * A view that adds a `hasLsifData` column to the `commits` table. We define the view
+ * in a migration as well as inline so that when we run unit tests (via a SQLite db)
+ * we will also have access to the view.
  */
 @ViewEntity({
     name: 'commitWithLsifMarkers',
@@ -156,7 +155,7 @@ export class ReferenceModel extends Package {
             c."commit",
             c.parentCommit,
             exists (
-                select *
+                select 1
                 from lsifDataMarkers m
                 where m.repository = c.repository and m."commit" = c."commit"
             ) as hasLsifData

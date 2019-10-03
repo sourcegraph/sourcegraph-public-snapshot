@@ -253,6 +253,8 @@
 // 1528395594_create_lsif_database.up.sql (1.697kB)
 // 1528395595_lsif_xrepo_init.down.sql (370B)
 // 1528395595_lsif_xrepo_init.up.sql (1kB)
+// 1528395596_lsif_commits.down.sql (333B)
+// 1528395596_lsif_commits.up.sql (1.109kB)
 
 package migrations
 
@@ -5381,6 +5383,46 @@ func _1528395595_lsif_xrepo_initUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395596_lsif_commitsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x0a\x76\xf5\x71\x75\x0e\x51\x28\x4a\xcd\xcd\x2f\x49\x8d\x4f\xad\x48\x4d\xd6\x50\x8f\xcf\x29\xce\x4c\x53\xd7\x51\x50\xe7\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x08\xf3\x74\x0d\x57\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x50\x4a\xce\xcf\xcd\xcd\x2c\x09\xcf\x2c\xc9\xf0\x29\xce\x4c\xf3\x4d\x2c\xca\x4e\x2d\x2a\x56\xb2\x46\x68\xf0\xf4\x73\x71\x8d\xc0\xd4\x51\x1c\x5f\x94\x5a\x90\x1f\x0f\xe1\xc4\x17\x24\x16\xa5\xe6\x95\x38\x43\x38\xa5\x79\x99\x85\xa5\xa9\xa4\x9a\x41\xbc\x7a\x64\xcb\x90\x75\x85\x38\x3a\xf9\xb8\x62\xd1\x85\x57\x0d\x28\x84\x5c\x12\x4b\x12\x11\x3e\x57\xd7\xb4\xe6\x02\x04\x00\x00\xff\xff\x8f\xab\xec\x0f\x4d\x01\x00\x00")
+
+func _1528395596_lsif_commitsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395596_lsif_commitsDownSql,
+		"1528395596_lsif_commits.down.sql",
+	)
+}
+
+func _1528395596_lsif_commitsDownSql() (*asset, error) {
+	bytes, err := _1528395596_lsif_commitsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395596_lsif_commits.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x42, 0xa2, 0x7, 0xc4, 0x72, 0x69, 0x82, 0x34, 0x1c, 0x34, 0x1f, 0x93, 0xe5, 0x29, 0xf0, 0x7c, 0xe5, 0xc4, 0xf5, 0x48, 0x43, 0xae, 0xc0, 0xee, 0xf9, 0x2e, 0x60, 0xff, 0xc7, 0x37, 0x7b, 0x57}}
+	return a, nil
+}
+
+var __1528395596_lsif_commitsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x54\x5d\x6f\x82\x30\x14\x7d\xe7\x57\xdc\xf0\x02\x24\x64\xc9\x9e\x89\x0f\x1d\x5e\xb3\x66\x15\x5c\xc1\xa9\x4f\x84\xb0\x1a\x9b\x0d\x71\x50\x13\xf7\xef\x17\xfc\xc0\x16\x35\x73\xc9\xfa\xd6\xde\x73\xef\x39\xe7\x1e\x25\x41\x86\x61\x0a\xb5\x28\x2b\x25\x32\xb1\x13\x85\xeb\x64\x9f\x8d\x5c\x3a\x3e\x38\x16\x00\x40\xc8\x91\xa4\x08\x29\x79\x62\x08\x74\x04\x51\x9c\x02\xce\x69\x92\x26\x60\x17\x55\x59\x4a\xd5\xd8\xe0\xee\xa1\xed\xb1\xe5\xbb\x0d\x09\x72\x4a\x18\x4c\x38\x1d\x13\xbe\x80\x17\x5c\xf8\x67\x40\x2d\x36\x55\x23\x55\x55\x7f\xdb\xa0\xc4\x4e\xed\x27\x46\x53\xc6\x34\xcc\x61\xf0\xed\xfa\x26\xaf\xc5\x5a\x85\xd7\x50\x7b\x90\x17\x58\xbf\x8a\x6f\x5d\x0e\x73\x95\x8f\xf3\xfa\x43\xd4\xa6\x89\x7f\xd0\xa8\x99\x07\x57\x1f\xe8\x77\xad\xde\x35\xad\xd3\x88\xbe\x4e\x11\x68\x34\xc4\xf9\x8d\x7d\x67\xed\xb4\xec\x70\xc9\xf4\x55\x64\xdb\xb5\xfc\xda\x0a\x1b\xe2\xe8\x1c\xce\x0d\x72\xbf\xb7\x45\x2f\xd0\x55\xdc\x4b\x7f\x17\xd5\x5f\x47\x9b\xe9\xde\x47\xa0\x33\xc4\x1c\x38\x4e\x18\x09\x11\xde\x28\xce\x4e\xb0\x99\x54\x2b\xd6\xc8\x65\x17\x38\x49\xba\xb4\x0e\xff\x83\xee\xda\x9e\xe2\xc1\x20\xeb\xd7\x4e\x6b\xec\xbf\x1b\xe2\xcd\xea\xd1\xac\x6b\x3c\x9e\xd9\xe1\xf1\xa2\x30\xe2\xf1\xf8\xca\x2f\xb5\xbc\x00\xce\x9e\x91\x23\x94\x86\x64\x18\xf4\x3c\x5c\x74\x91\x68\xd8\xf6\x9c\xa2\x1c\x68\xbe\x0c\xac\x07\x24\x81\x55\xde\xb0\xa3\x10\xcb\xd4\xd7\x7d\x06\x8a\xc0\x72\xbc\xc0\xfa\x09\x00\x00\xff\xff\x0d\xeb\x85\xc1\x55\x04\x00\x00")
+
+func _1528395596_lsif_commitsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395596_lsif_commitsUpSql,
+		"1528395596_lsif_commits.up.sql",
+	)
+}
+
+func _1528395596_lsif_commitsUpSql() (*asset, error) {
+	bytes, err := _1528395596_lsif_commitsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395596_lsif_commits.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xda, 0x4f, 0x76, 0xcd, 0x3, 0x4c, 0x5f, 0xea, 0xc0, 0x6f, 0x87, 0x15, 0x99, 0x7d, 0xed, 0x77, 0xb8, 0x7e, 0xef, 0xfb, 0x6a, 0xb0, 0xfb, 0x37, 0x79, 0x4, 0x3e, 0x7d, 0xfb, 0x53, 0x57, 0xf0}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5977,6 +6019,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395595_lsif_xrepo_init.down.sql": _1528395595_lsif_xrepo_initDownSql,
 
 	"1528395595_lsif_xrepo_init.up.sql": _1528395595_lsif_xrepo_initUpSql,
+
+	"1528395596_lsif_commits.down.sql": _1528395596_lsif_commitsDownSql,
+
+	"1528395596_lsif_commits.up.sql": _1528395596_lsif_commitsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -6273,6 +6319,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395594_create_lsif_database.up.sql":                                {_1528395594_create_lsif_databaseUpSql, map[string]*bintree{}},
 	"1528395595_lsif_xrepo_init.down.sql":                                   {_1528395595_lsif_xrepo_initDownSql, map[string]*bintree{}},
 	"1528395595_lsif_xrepo_init.up.sql":                                     {_1528395595_lsif_xrepo_initUpSql, map[string]*bintree{}},
+	"1528395596_lsif_commits.down.sql":                                      {_1528395596_lsif_commitsDownSql, map[string]*bintree{}},
+	"1528395596_lsif_commits.up.sql":                                        {_1528395596_lsif_commitsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
