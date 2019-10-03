@@ -166,7 +166,7 @@ func (s *searchFilterSuggestions) Repohasfile() []string {
 }
 
 func (s *searchFilterSuggestions) Repohascommitafter() []string {
-	return []string{"1 week ago", "1 month ago"}
+	return []string{`"1 week ago"`, `"last Thursday"`, `"June 25 2017"`}
 }
 
 func (s *searchFilterSuggestions) Count() []int32    { return []int32{100, 1000} }
