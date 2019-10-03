@@ -1425,6 +1425,10 @@ type Repository implements Node & GenericSearchResultInterface {
         type: GitRefType
         # Ordering for Git refs in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git branches.
     branches(
@@ -1434,6 +1438,10 @@ type Repository implements Node & GenericSearchResultInterface {
         query: String
         # Ordering for Git branches in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git tags.
     tags(
