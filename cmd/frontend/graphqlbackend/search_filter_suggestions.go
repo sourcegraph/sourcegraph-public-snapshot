@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// Search provides search results and suggestions.
+// SearchFilterSuggestions provides search filter and default value suggestions.
 func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFilterSuggestions, error) {
 	groupsByName, err := resolveRepoGroups(ctx)
 	if err != nil {
@@ -34,11 +34,13 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 	}, nil
 }
 
+// searchFilterSuggestions holds suggestions of search filters and their default values.
 type searchFilterSuggestions struct {
 	repogroup []string
 	repo      []string
 }
 
+// Filters returns a list of filters and their description.
 func (s *searchFilterSuggestions) Filters() []descriptiveValue {
 	return []descriptiveValue{
 		{
@@ -104,34 +106,39 @@ func (s *searchFilterSuggestions) Filters() []descriptiveValue {
 	}
 }
 
-func (s *searchFilterSuggestions) Type() searchFilterDiscreteValues {
-	return searchFilterDiscreteValues{
+// Type returns discrete and default values of search filter "type:".
+func (s *searchFilterSuggestions) Type() discreteValues {
+	return discreteValues{
 		def:    "code",
 		values: []string{"code", "diff", "commit", "symbol"},
 	}
 }
 
-func (s *searchFilterSuggestions) Case() searchFilterDiscreteValues {
-	return searchFilterDiscreteValues{
+// Case returns discrete and default values of search filter "case:".
+func (s *searchFilterSuggestions) Case() discreteValues {
+	return discreteValues{
 		def:    string(No),
 		values: []string{string(Yes), string(No)},
 	}
 }
 
-func (s *searchFilterSuggestions) Fork() searchFilterDiscreteValues {
-	return searchFilterDiscreteValues{
+// Fork returns discrete and default values of search filter "fork:".
+func (s *searchFilterSuggestions) Fork() discreteValues {
+	return discreteValues{
 		def:    string(Yes),
 		values: []string{string(No), string(Only), string(Yes)},
 	}
 }
 
-func (s *searchFilterSuggestions) Archived() searchFilterDiscreteValues {
-	return searchFilterDiscreteValues{
+// Archived returns discrete and default values of search filter "archived:".
+func (s *searchFilterSuggestions) Archived() discreteValues {
+	return discreteValues{
 		def:    string(Yes),
 		values: []string{string(No), string(Only), string(Yes)},
 	}
 }
 
+// File returns example values of search filter "file:".
 func (s *searchFilterSuggestions) File() []descriptiveValue {
 	return []descriptiveValue{
 		{
@@ -157,21 +164,32 @@ func (s *searchFilterSuggestions) File() []descriptiveValue {
 	}
 }
 
-func (s *searchFilterSuggestions) Lang() []string      { return []string{"javascript", "go", "markdown"} }
-func (s *searchFilterSuggestions) Repogroup() []string { return s.repogroup }
-func (s *searchFilterSuggestions) Repo() []string      { return s.repo }
+// Lang returns example values of search filter "lang:".
+func (s *searchFilterSuggestions) Lang() []string { return []string{"javascript", "go", "markdown"} }
 
+// Repogroup returns all repository groups defined in the settings.
+func (s *searchFilterSuggestions) Repogroup() []string { return s.repogroup }
+
+// Repo returns a list of repositories as the default value for suggestion.
+func (s *searchFilterSuggestions) Repo() []string { return s.repo }
+
+// Repohasfile returns example values of search filter "repohasfile:".
 func (s *searchFilterSuggestions) Repohasfile() []string {
 	return []string{"go.mod", "package.json", "Gemfile"}
 }
 
+// Repohascommitafter returns example values of search filter "repohascommitafter:".
 func (s *searchFilterSuggestions) Repohascommitafter() []string {
 	return []string{`"1 week ago"`, `"last Thursday"`, `"June 25 2017"`}
 }
 
-func (s *searchFilterSuggestions) Count() []int32    { return []int32{100, 1000} }
+// Repohascommitafter returns example values of search filter "repohascommitafter:".
+func (s *searchFilterSuggestions) Count() []int32 { return []int32{100, 1000} }
+
+// Timeout returns example values of search filter "timeout:".
 func (s *searchFilterSuggestions) Timeout() []string { return []string{"10s", "30s"} }
 
+// descriptiveValue contains a value with its description.
 type descriptiveValue struct {
 	value       string
 	description string
@@ -180,10 +198,11 @@ type descriptiveValue struct {
 func (v descriptiveValue) Value() string       { return v.value }
 func (v descriptiveValue) Description() string { return v.description }
 
-type searchFilterDiscreteValues struct {
+// discreteValues contains a list of discrete values and the default choice.
+type discreteValues struct {
 	def    string
 	values []string
 }
 
-func (v searchFilterDiscreteValues) Default() string  { return v.def }
-func (v searchFilterDiscreteValues) Values() []string { return v.values }
+func (v discreteValues) Default() string  { return v.def }
+func (v discreteValues) Values() []string { return v.values }
