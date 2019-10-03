@@ -6,6 +6,9 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 LABEL com.sourcegraph.prometheus.version=v2.12.0
 
 # TODO(uwe): remove "USER root" line once https://github.com/prometheus/prometheus/issues/3441 is resolved
+#
+# This is needed currently because the base image has us running as "nobody"
+# which cannot create the sourcegraph user below.
 USER root
 # Add the sourcegraph group, user, and create the home directory.
 #
