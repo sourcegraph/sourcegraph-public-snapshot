@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -200,6 +201,13 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 }
 
 func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		// The test fixtures and golden files were generated with
+		// this config pointed to bitbucket.sgdev.org
+		instanceURL = "https://bitbucket.sgdev.org"
+	}
+
 	repo := &Repo{
 		Metadata: &bitbucketserver.Repo{
 			Slug:    "vegeta",
@@ -225,7 +233,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
 				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "999"}},
 			},
-			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
+			err: "Bitbucket API HTTP error: code=404 url=\"${INSTANCEURL}/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
 		},
 	}
 
@@ -243,9 +251,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 			svc := &ExternalService{
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
-					// The test fixtures and golden files were generated with
-					// this config pointed to bitbucket.sgdev.org
-					Url:   os.Getenv("BITBUCKET_SERVER_URL"),
+					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				}),
 			}
@@ -259,6 +265,8 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
+
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
 			err = bbsSrc.LoadChangesets(ctx, tc.cs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
