@@ -421,7 +421,7 @@ type Campaign implements Node {
 
     # The changeset counts over time, in 1 day intervals.
     changesetCounts(
-        # Only include changeset counts up to this point in time (inclusive).
+        # Only include changeset counts from this point in time (inclusive).
         # Defaults to createdAt.
         from: DateTime
         # Only include changeset counts up to this point in time (inclusive).
