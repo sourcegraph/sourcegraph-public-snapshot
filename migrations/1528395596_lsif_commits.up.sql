@@ -1,31 +1,31 @@
 SELECT remote_exec('_lsif', '
-    CREATE TABLE IF NOT EXISTS "commits" (
-        "id" SERIAL PRIMARY KEY,
-        "repository" text NOT NULL,
+    CREATE TABLE IF NOT EXISTS commits (
+        id SERIAL PRIMARY KEY,
+        repository text NOT NULL,
         "commit" text NOT NULL,
-        "parentCommit" text NOT NULL
+        parent_commit text NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS "lsifDataMarkers" (
-        "repository" text NOT NULL,
+    CREATE TABLE IF NOT EXISTS lsif_data_markers (
+        repository text NOT NULL,
         "commit" text NOT NULL,
-        PRIMARY KEY ("repository", "commit")
+        PRIMARY KEY (repository, "commit")
     );
 
-    CREATE UNIQUE INDEX IF NOT EXISTS "commits_repo_commit_parentCommit_unique" ON "commits"("repository", "commit", "parentCommit");
-    CREATE INDEX IF NOT EXISTS "commits_repo_commit" ON "commits"("repository", "commit");
-    CREATE INDEX IF NOT EXISTS "commits_repo_parentCommit" ON "commits"("repository", "commit");
+    CREATE UNIQUE INDEX IF NOT EXISTS commits_repo_commit_parent_commit_unique ON commits(repository, "commit", parent_commit);
+    CREATE INDEX IF NOT EXISTS commits_repo_commit ON commits(repository, "commit");
+    CREATE INDEX IF NOT EXISTS commits_repo_parent_commit ON commits(repository, "commit");
 
-    CREATE OR REPLACE VIEW "commitWithLsifMarkers" AS
+    CREATE OR REPLACE VIEW commit_with_lsif_markers AS
         SELECT
-            c."repository",
+            c.repository,
             c."commit",
-            c."parentCommit",
+            c.parent_Commit,
             EXISTS (
                 SELECT 1
-                FROM "lsifDataMarkers" m
-                WHERE m."repository" = c."repository"
+                FROM lsif_data_markers m
+                WHERE m.repository = c.repository
                 AND m."commit" = c."commit"
-            ) AS hasLsifData
+            ) AS has_lsif_data
         FROM "commits" c;
 ');

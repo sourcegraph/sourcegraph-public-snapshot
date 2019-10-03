@@ -36,7 +36,7 @@ export class Commit {
      * with the same boolean fields. This value is an empty string for a
      * commit with no parent.
      */
-    @Column('text')
+    @Column('text', { name: 'parent_commit' })
     public parentCommit!: string
 }
 
@@ -44,7 +44,7 @@ export class Commit {
  * An entity within the cross-repo database. A row with a repository and commit
  * indicates that there exists LSIF data for that pair.
  */
-@Entity({ name: 'lsifDataMarkers' })
+@Entity({ name: 'lsif_data_markers' })
 export class LsifDataMarker {
     /**
      * The name of the source repository.
@@ -148,17 +148,17 @@ export class ReferenceModel extends Package {
  * we will also have access to the view.
  */
 @ViewEntity({
-    name: 'commitWithLsifMarkers',
+    name: 'commit_with_lsif_markers',
     expression: `
         select
             c.repository,
             c."commit",
-            c.parentCommit,
+            c.parent_commit,
             exists (
                 select 1
-                from lsifDataMarkers m
+                from lsif_data_markers m
                 where m.repository = c.repository and m."commit" = c."commit"
-            ) as hasLsifData
+            ) as has_lsif_data
         from commits c
     `,
 })
