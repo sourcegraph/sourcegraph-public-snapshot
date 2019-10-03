@@ -177,18 +177,23 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
 			"error", err,
 		)
-		if cause := errors.Cause(err); cause == gosyntect.ErrRequestTooLarge || cause == gosyntect.ErrPanic {
-			if cause == gosyntect.ErrPanic {
-				tr.LogFields(otlog.Bool("panic", true))
-				prometheusStatus = "panic"
-			}
-			if cause == gosyntect.ErrHSSWorkerTimeout {
-				tr.LogFields(otlog.Bool("hss_worker_timeout", true))
-				prometheusStatus = "worker_timeout"
-			}
-
-			// Failed to highlight code, e.g. for a text file. We still need to
-			// generate the table.
+		var problem string
+		switch errors.Cause(err) {
+		case gosyntect.ErrRequestTooLarge:
+			problem = "request_too_large"
+		case gosyntect.ErrPanic:
+			problem = "panic"
+		case gosyntect.ErrHSSWorkerTimeout:
+			problem = "hss_worker_timeout"
+		}
+		if problem != "" {
+			// A problem that can sometimes be expected has occurred. We will
+			// identify such problems through metrics/logs and resolve them on
+			// a case-by-case basis, but they are frequent enough that we want
+			// to fallback to plaintext rendering instead of just giving the
+			// user an error.
+			tr.LogFields(otlog.Bool(problem, true))
+			prometheusStatus = problem
 			table, err2 := generatePlainTable(code)
 			return table, false, err2
 		}
