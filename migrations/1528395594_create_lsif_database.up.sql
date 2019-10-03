@@ -23,10 +23,7 @@ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION create_lsif_db() RETURNS void AS $$
 BEGIN
-    -- Buildkite (in particular) will fail if we aren't able to run thiss migration
-    -- in an idempotent manner. We need to ensure that the database has not already
-    -- been created before issuing the create database command.
-
+    -- Ensure db doesn't already exist before trying to create it.
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_database WHERE datname = current_database() || '_lsif') THEN
         PERFORM remote_exec('', 'CREATE DATABASE "' || current_database() || '_lsif" OWNER DEFAULT TEMPLATE template0 ENCODING ''UTF8''');
     END IF;
