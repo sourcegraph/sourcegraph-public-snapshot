@@ -3,10 +3,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ExtensionHoverAlertType } from '../libs/code_intelligence/hover_alerts'
 import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
 
-interface RepoLocations {
-    [key: string]: string
-}
-
 export interface PhabricatorMapping {
     callsign: string
     path: string
@@ -45,8 +41,6 @@ export interface StorageItems {
     sourcegraphURL: string
 
     identity: string
-    enterpriseUrls: string[]
-    repoLocations: RepoLocations
     phabricatorMappings: PhabricatorMapping[]
     sourcegraphAnonymousUid: string
     /**
@@ -71,8 +65,6 @@ export const defaultStorageItems: StorageItems = {
     sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
 
     identity: '',
-    enterpriseUrls: [],
-    repoLocations: {},
     phabricatorMappings: [],
     sourcegraphAnonymousUid: '',
     disableExtension: false,

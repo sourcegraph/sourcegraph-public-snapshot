@@ -1,12 +1,6 @@
 {
   "type": "object",
   "properties": {
-    "enterpriseUrls": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
     "phabricatorMappings": {
       "type": "array",
       "id": "ListOfCallsignMappings",

@@ -16,7 +16,7 @@ import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
 import { getHeaders } from '../../shared/backend/headers'
 import { fromBrowserEvent } from '../../shared/util/browser'
-import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
@@ -78,24 +78,8 @@ async function main(): Promise<void> {
 
     configureOmnibox(sourcegraphURL)
 
-    // Sync managed enterprise URLs
-    // TODO why sync vs merging values?
-    // Managed storage is currently only supported for Google Chrome (GSuite Admin)
-    // We don't have a managed storage manifest for Firefox, so storage.managed.get() throws on Firefox.
-    if (getPlatformName() === 'chrome-extension') {
-        const items = await storage.managed.get()
-        if (items.enterpriseUrls && items.enterpriseUrls.length > 1) {
-            setDefaultBrowserAction()
-            const urls = items.enterpriseUrls.map(item => item.replace(/\/$/, ''))
-            await handleManagedPermissionRequest(urls)
-        }
-    }
-
     storage.onChanged.addListener(async (changes, areaName) => {
         if (areaName === 'managed') {
-            if (changes.enterpriseUrls && changes.enterpriseUrls.newValue) {
-                await handleManagedPermissionRequest(changes.enterpriseUrls.newValue)
-            }
             return
         }
 
@@ -114,36 +98,24 @@ async function main(): Promise<void> {
     // Not supported in Firefox
     // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
     if (browser.permissions.onAdded) {
-        browser.permissions.onAdded.addListener(async permissions => {
+        browser.permissions.onAdded.addListener(permissions => {
             if (!permissions.origins) {
                 return
             }
-            const items = await storage.sync.get()
-            const enterpriseUrls = items.enterpriseUrls || []
-            for (const url of permissions.origins) {
-                enterpriseUrls.push(url.replace('/*', ''))
-            }
-            await storage.sync.set({ enterpriseUrls })
-
             const origins = without(permissions.origins, ...jsContentScriptOrigins)
             customServerOrigins.push(...origins)
         })
     }
     if (browser.permissions.onRemoved) {
-        browser.permissions.onRemoved.addListener(async permissions => {
+        browser.permissions.onRemoved.addListener(permissions => {
             if (!permissions.origins) {
                 return
             }
             customServerOrigins = without(customServerOrigins, ...permissions.origins)
-            const items = await storage.sync.get()
-            const enterpriseUrls = items.enterpriseUrls || []
             const urlsToRemove: string[] = []
             for (const url of permissions.origins) {
                 urlsToRemove.push(url.replace('/*', ''))
             }
-            await storage.sync.set({
-                enterpriseUrls: without(enterpriseUrls, ...urlsToRemove),
-            })
         })
     }
 
@@ -200,28 +172,7 @@ async function main(): Promise<void> {
             ...items,
             ...managedItems,
         })
-        if (managedItems && managedItems.enterpriseUrls && managedItems.enterpriseUrls.length) {
-            await handleManagedPermissionRequest(managedItems.enterpriseUrls)
-        } else {
-            setDefaultBrowserAction()
-        }
     })
-
-    async function handleManagedPermissionRequest(managedUrls: string[]): Promise<void> {
-        setDefaultBrowserAction()
-        if (managedUrls.length === 0) {
-            return
-        }
-        const perms = await browser.permissions.getAll()
-        const origins = perms.origins || []
-        if (managedUrls.every(val => origins.includes(`${val}/*`))) {
-            setDefaultBrowserAction()
-            return
-        }
-        browser.browserAction.onClicked.addListener(async () => {
-            await browser.runtime.openOptionsPage()
-        })
-    }
 
     function setDefaultBrowserAction(): void {
         browser.browserAction.setBadgeText({ text: '' })
