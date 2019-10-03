@@ -18,6 +18,9 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
+# set default
+ENV PGDATABASE=sg PGHOST=pgsql PGPORT=5432 PGSSLMODE=disable PGUSER=sg
+
 # hadolint ignore=DL3018
 RUN apk add --no-cache tini supervisor=3.3.5-r0 nodejs-current=12.4.0-r0
 

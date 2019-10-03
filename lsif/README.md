@@ -6,6 +6,10 @@ Sourcegraph receives and stores LSIF files uploaded using [upload.sh](upload.sh)
 
 The HTTP [server](src/server.ts) runs behind Sourcegraph (for auth) and services requests for relevant LSP queries. LSIF dump uploads received by the server are stored in a temporary file to be asynchronously processed by the [worker](src/worker.ts). The server and worker communicate via [node-resque](https://github.com/taskrabbit/node-resque), a work broker powered by Redis.
 
+## Database Configuration
+
+The LSIF processes store most of its data in SQLite repositories on a shared disk that are written once by a worker on LSIF dump upload, and read many times by the APIs to answer LSIF/LSP queries. Cross-repository and cross-commit data is stored in Postgres, as this database requires many concurrent writer (which is an unsafe operation for SQLite in a networked application). The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html). These value should be configured to point to the same Postgres database as the rest of Sourcegraph. The LSIF processes will connect to the database named `sourcegraph_lsif`, regardless of configuration, but require access to the primary Sourcegraph database to check the status of migration on application startup. Although it currently resides on the same Postgres instance (pod, container, or physical machine depending on the deployment context), separation of this data allows the LSIF database to be easily moved to a completely separate Postgres instance if we find that LSIF access and write patterns put too much stress on a single node.
+
 ## API
 
 ### `/upload`

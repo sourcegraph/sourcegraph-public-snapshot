@@ -1,15 +1,16 @@
 import * as fs from 'mz/fs'
-import * as path from 'path'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
-import { createCommit, createLocation, getTestData } from './test-utils'
+import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
+import { PackageModel, ReferenceModel } from './models.xrepo'
 
 describe('Database', () => {
     let storageRoot!: string
+    let xrepoDatabase!: XrepoDatabase
     const repository = 'five'
     const commit = createCommit('five')
 
@@ -19,7 +20,7 @@ describe('Database', () => {
 
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
-        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
+        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, [PackageModel, ReferenceModel]))
 
         const input = await getTestData('cpp/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
@@ -32,7 +33,7 @@ describe('Database', () => {
     const loadDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
-            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
+            xrepoDatabase,
             connectionCache,
             documentCache,
             resultChunkCache,

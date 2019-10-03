@@ -4,10 +4,9 @@ import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
-import { ConnectionCache } from './cache'
-import { connectionCacheCapacityGauge } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
+import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
 
@@ -27,13 +26,6 @@ const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187)
  *  Additionally keep this logic in sync with pkg/redispool/redispool.go and cmd/server/redis.go
  */
 const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_ENDPOINT || 'redis-store:6379'
-
-/**
- * The number of SQLite connections that can be opened at once. This
- * value may be exceeded for a short period if many handles are held
- * at once.
- */
-const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
 
 /**
  * Whether or not to log a message when the HTTP server is ready and listening.
@@ -85,18 +77,14 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
-    // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
-
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
-    // Create backend
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
-    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
+    // Create cross-repo database
+    const connection = await createPostgresConnection()
+    const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {
         convert: createConvertJob(xrepoDatabase),
