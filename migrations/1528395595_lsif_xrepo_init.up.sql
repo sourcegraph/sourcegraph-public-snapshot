@@ -7,8 +7,8 @@ SELECT remote_exec('_lsif', '
         "id" SERIAL PRIMARY KEY,
         "scheme" text NOT NULL,
         "name" text NOT NULL,
-        "version" text NOT NULL,
-        "repository" text,
+        "version" text,
+        "repository" text NOT NULL,
         "commit" text NOT NULL
     );
 
@@ -16,8 +16,8 @@ SELECT remote_exec('_lsif', '
         "id" SERIAL PRIMARY KEY,
         "scheme" text NOT NULL,
         "name" text NOT NULL,
-        "version" text NOT NULL,
-        "repository" text,
+        "version" text,
+        "repository" text NOT NULL,
         "commit" text NOT NULL,
         "filter" bytea NOT NULL
     );
