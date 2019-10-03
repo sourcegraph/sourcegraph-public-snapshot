@@ -732,6 +732,8 @@ github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab h1:tXj2rcIvqVG
 github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab/go.mod h1:ZqB/uu1WtCDmlwK8c+TO8+QSfDkJsWx9LYjQBgGxxtk=
 github.com/sourcegraph/gosyntect v0.0.0-20190512033712-1205f5e776e1 h1:EWPtdGam5rnA29pHkF1fawhZHpRL8LE/XyUCgRDiwGU=
 github.com/sourcegraph/gosyntect v0.0.0-20190512033712-1205f5e776e1/go.mod h1:GJtLTMyfNp97Mi5/diAtNsgiYQBtLpUZmJenqheEUYU=
+github.com/sourcegraph/gosyntect v0.0.0-20191003053245-e91d603ba4eb h1:bbs7cDhEjewPB6aicTDJ15tseQAsl8bSGDVsnIuG0c0=
+github.com/sourcegraph/gosyntect v0.0.0-20191003053245-e91d603ba4eb/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
 github.com/sourcegraph/jsonschemadoc v0.0.0-20190214000648-1850b818f08c h1:MXlcJZ1VL5nNGkCj6ZTT71P4pImPkeG2lvzcJYzGvU4=
 github.com/sourcegraph/jsonschemadoc v0.0.0-20190214000648-1850b818f08c/go.mod h1:ovHiFoMDwf4nf7ynAc7lIhD4w0nc/6tO27DtVzqYrTQ=
 github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614 h1:MrlKMpoGse4bCneDoK/c+ZbPGqOP5Hme5ulatc8smbQ=
