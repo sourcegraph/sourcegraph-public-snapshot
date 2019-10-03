@@ -267,13 +267,18 @@ func TestCampaigns(t *testing.T) {
 		}),
 	}
 
+	bbsURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if bbsURL == "" {
+		// The test fixtures and golden files were generated with
+		// this config pointed to bitbucket.sgdev.org
+		bbsURL = "https://bitbucket.sgdev.org"
+	}
+
 	bbsExtSvc := &repos.ExternalService{
 		Kind:        "BITBUCKETSERVER",
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			// The test fixtures and golden files were generated with
-			// this config pointed to bitbucket.sgdev.org
-			Url:   os.Getenv("BITBUCKET_SERVER_URL"),
+			Url:   bbsURL,
 			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 			Repos: []string{"SOUR/vegeta"},
 		}),
