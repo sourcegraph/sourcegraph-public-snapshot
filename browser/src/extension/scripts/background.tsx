@@ -1,5 +1,5 @@
 // We want to polyfill first.
-import '../../config/polyfill'
+import '../polyfills'
 
 import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
