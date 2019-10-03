@@ -246,6 +246,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added support for GitHub organization webhooks to enable faster updates of metadata used by [Automation](https://about.sourcegraph.com/product/automation/), such as pull requests or issue comments. See the [GitHub webhook documentation](https://docs.sourcegraph.com/admin/external_service/github#webhooks) for instructions on how to enable webhooks.
 - Added burndown chart to visualize progress of campaigns.
 - Added ability to edit campaign titles and descriptions.
+- An experimental tool [src-expose](https://docs.sourcegraph.com/admin/external_service/other#experimental-src-expose) to import code from any code host.
 
 ### Changed
 
