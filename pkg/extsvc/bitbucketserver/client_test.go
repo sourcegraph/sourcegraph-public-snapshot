@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -298,6 +299,11 @@ func TestClient_Users(t *testing.T) {
 }
 
 func TestClient_LoadPullRequest(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "http://127.0.0.1:7990"
+	}
+
 	cli, save := NewTestClient(t, "PullRequests", *update)
 	defer save()
 
@@ -342,7 +348,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				pr.ToRef.Repository.Project.Key = "SOUR"
 				return pr
 			},
-			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 9999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
+			err: "Bitbucket API HTTP error: code=404 url=\"${INSTANCEURL}/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 9999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
 		},
 		{
 			name: "non existing repo",
@@ -352,7 +358,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 				pr.ToRef.Repository.Project.Key = "SOUR"
 				return pr
 			},
-			err: "Bitbucket API HTTP error: code=404 url=\"https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/invalidslug/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Repository SOUR/invalidslug does not exist.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.repository.NoSuchRepositoryException\\\"}]}\"",
+			err: "Bitbucket API HTTP error: code=404 url=\"${INSTANCEURL}/rest/api/1.0/projects/SOUR/repos/invalidslug/pull-requests/9999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Repository SOUR/invalidslug does not exist.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.repository.NoSuchRepositoryException\\\"}]}\"",
 		},
 		{
 			name: "success",
@@ -368,6 +374,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
 			pr := tc.pr()
 			err := cli.LoadPullRequest(tc.ctx, pr)
