@@ -169,15 +169,15 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
+		log15.Error(
+			"syntax highlighting failed (this is a bug, please report it)",
+			"filepath", p.Filepath,
+			"repo_name", p.Metadata.RepoName,
+			"revision", p.Metadata.Revision,
+			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+			"error", err,
+		)
 		if cause := errors.Cause(err); cause == gosyntect.ErrRequestTooLarge || cause == gosyntect.ErrPanic {
-			log15.Error(
-				"syntax highlighting failed (this is a bug, please report it)",
-				"filepath", p.Filepath,
-				"repo_name", p.Metadata.RepoName,
-				"revision", p.Metadata.Revision,
-				"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
-				"error", err,
-			)
 			if cause == gosyntect.ErrPanic {
 				tr.LogFields(otlog.Bool("panic", true))
 				prometheusStatus = "panic"
