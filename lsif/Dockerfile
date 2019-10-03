@@ -7,7 +7,7 @@ COPY . /lsif/
 RUN yarn --cwd /lsif
 RUN yarn --cwd /lsif run build
 
-FROM alpine:3.9@sha256:72c42ed48c3a2db31b7dafe17d275b634664a708d901ec9fd57b1529280f01fb
+FROM sourcegraph/alpine:3.9@sha256:e9264d4748e16de961a2b973cc12259dee1d33473633beccb1dfb8a0e62c6459
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -19,7 +19,7 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache tini supervisor=3.3.5-r0 nodejs-current=12.4.0-r0
+RUN apk add --no-cache supervisor=3.3.5-r0 nodejs-current=12.4.0-r0
 
 COPY --from=builder /lsif /lsif
 COPY supervisord.conf /etc/supervisord.conf
