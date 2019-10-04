@@ -122,10 +122,7 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		}
 	}
 
-	if err = s.Store.UpdateChangesets(ctx, cs...); err != nil {
-		return err
-	}
-	return nil
+	return s.Store.UpdateChangesets(ctx, cs...)
 }
 
 func (s *ChangesetSyncer) listAllChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {

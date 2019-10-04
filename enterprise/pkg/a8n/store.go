@@ -530,7 +530,7 @@ func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Q
 		records = append(records, record{
 			ID:          e.ID,
 			ChangesetID: e.ChangesetID,
-			Kind:        e.Kind,
+			Kind:        string(e.Kind),
 			Source:      string(e.Source),
 			Key:         e.Key,
 			CreatedAt:   e.CreatedAt,
