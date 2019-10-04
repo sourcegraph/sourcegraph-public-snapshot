@@ -83,6 +83,7 @@ type Changeset struct {
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
+	Events              []*ChangesetEvent
 }
 
 // Clone returns a clone of a Changeset.
@@ -200,7 +201,7 @@ func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewStat
 type ChangesetEvent struct {
 	ID          int64
 	ChangesetID int64
-	Kind        string
+	Kind        changesetEventKind
 	Source      changesetEventSource
 	Key         string // Deduplication key
 	CreatedAt   time.Time
@@ -224,4 +225,56 @@ const (
 	ChangesetEventSourceGitHubWebhook          changesetEventSource = "github:webhook"
 	ChangesetEventSourceBitbucketServerAPI     changesetEventSource = "bitbucketserver:api"
 	ChangesetEventSourceBitbucketServerWebhook changesetEventSource = "bitbucketserver:webhook"
+)
+
+// changesetEventKind defines the kind of a ChangesetEvent. This type is unexported
+// so that users of ChangesetEvent can't instantiate it with a Kind being an arbitrary
+// string.
+type changesetEventKind string
+
+// Valid ChangesetEvent kinds
+const (
+	// ChangesetEventKindAssigned is AssignedEvent on GitHub and doesnt exist on BBS
+	ChangesetEventKindAssigned changesetEventKind = "assigned"
+
+	// ChangesetEventKindClosed is ClosedEvent on GitHub and DECLINED on BBS
+	ChangesetEventKindClosed changesetEventKind = "closed"
+
+	// ChangesetEventKindCommented is IssueComment on GitHub and COMMENTED on BBS
+	ChangesetEventKindCommented changesetEventKind = "commented"
+
+	// ChangesetEventKindRenamedTitle is RenamedTitleEvent on GitHub and doesn't exist on BBS
+	ChangesetEventKindRenamedTitle changesetEventKind = "renamed"
+
+	// ChangesetEventKindMerged is MergedEvent on GitHub and MERGED on BBS
+	ChangesetEventKindMerged changesetEventKind = "merged"
+
+	// ChangesetEventKindApproved is PullRequestReviewEvent(APPROVED) on GitHub and APPROVED on BBS
+	ChangesetEventKindApproved changesetEventKind = "approved"
+
+	// ChangesetEventKindReopened is ReopenedEvent on GitHub and doesn't exist on BBS
+	ChangesetEventKindReopened changesetEventKind = "reopened"
+
+	// ChangesetEventKindReviewDismissed is ReviewDismissedEvent on GitHub and doesn't exist on BBS
+	ChangesetEventKindReviewDismissed changesetEventKind = "review_dismissed"
+
+	// ChangesetEventKindReviewRequestRemoved is ReviewRequestRemovedEvent on GitHub and doesn't exist on BBS
+	ChangesetEventKindReviewRequestRemoved changesetEventKind = "review_request_removed"
+
+	// ChangesetEventKindReviewRequested is ReviewRequestedEvent on GitHub and doesn't exist on BBS
+	ChangesetEventKindReviewRequested changesetEventKind = "review_requested"
+
+	// ChangesetEventKindUnassigned is UnassignedEvent on GitHub and doesnt exist on BBS
+	ChangesetEventKindUnassigned changesetEventKind = "unassigned"
+
+	// TODO: Full set of Bitbucket Server pull request actions:
+	//   - APPROVED
+	//   - COMMENTED
+	//   - DECLINED
+	//   - MERGED
+	//   - OPENED
+	//   - REOPENED
+	//   - RESCOPED
+	//   - UNAPPROVED
+	//   - UPDATED
 )

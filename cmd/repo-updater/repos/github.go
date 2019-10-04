@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
@@ -168,7 +169,73 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	for i := range cs {
+		events := make([]*a8n.ChangesetEvent, len(prs[i].TimelineItems))
+
+		for i, item := range prs[i].TimelineItems {
+			event := &a8n.ChangesetEvent{
+				Source:   a8n.ChangesetEventSourceGitHubAPI,
+				Metadata: item,
+			}
+
+			switch item.Type {
+			case "AssignedEvent":
+				event.Kind = a8n.ChangesetEventKindAssigned
+				ghEvent := item.Item.(*github.AssignedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "ClosedEvent":
+				event.Kind = a8n.ChangesetEventKindClosed
+				ghEvent := item.Item.(*github.ClosedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "IssueComment":
+				event.Kind = a8n.ChangesetEventKindCommented
+				ghEvent := item.Item.(*github.IssueComment)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "RenamedTitleEvent":
+				event.Kind = a8n.ChangesetEventKindRenamedTitle
+				ghEvent := item.Item.(*github.RenamedTitleEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "MergedEvent":
+				event.Kind = a8n.ChangesetEventKindMerged
+				ghEvent := item.Item.(*github.MergedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "PullRequestReview":
+				switch item.Item.(*github.PullRequestReview).State {
+				case "APPROVED":
+					event.Kind = a8n.ChangesetEventKindApproved
+				}
+				ghEvent := item.Item.(*github.PullRequestReview)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "ReopenedEvent":
+				event.Kind = a8n.ChangesetEventKindReopened
+				ghEvent := item.Item.(*github.ReopenedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "ReviewDismissedEvent":
+				event.Kind = a8n.ChangesetEventKindReviewDismissed
+				ghEvent := item.Item.(*github.ReviewDismissedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "ReviewRequestRemovedEvent":
+				event.Kind = a8n.ChangesetEventKindReviewRequestRemoved
+				ghEvent := item.Item.(*github.ReviewRequestRemovedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "ReviewRequestedEvent":
+				event.Kind = a8n.ChangesetEventKindReviewRequested
+				ghEvent := item.Item.(*github.ReviewRequestedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			case "UnassignedEvent":
+				event.Kind = a8n.ChangesetEventKindUnassigned
+				ghEvent := item.Item.(*github.UnassignedEvent)
+				event.Key = string(event.Kind) + ":" + ghEvent.CreatedAt.UTC().Format(time.RFC3339)
+			}
+
+			events[i] = event
+		}
+
+		prs[i].TimelineItems = nil
 		cs[i].Changeset.Metadata = prs[i]
+		// TODO: If the changeset.Events already contained events (because
+		// they've been previously saved to database) we need to merge them here
+		// based on they `Key`
+		cs[i].Changeset.Events = events
 	}
 
 	return nil
