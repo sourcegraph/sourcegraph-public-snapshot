@@ -101,7 +101,7 @@ function requireRestart(oldConfiguration: Configuration, newConfiguration: Confi
  *
  * @param onChange The callback to invoke each time the configuration is read.
  */
-async function updateConfiguration(onChange: (configuration: Configuration) => void): Promise<void> {
+async function updateConfiguration(onChange: (configuration: Configuration) => void): Promise<never> {
     const start = Date.now()
     while (true) {
         try {
@@ -116,7 +116,7 @@ async function updateConfiguration(onChange: (configuration: Configuration) => v
         }
 
         // Do a jittery sleep _up to_ the config poll interval.
-        const durationMs = Math.floor(Math.random() * CONFIG_POLL_INTERVAL * 1000)
+        const durationMs = Math.random() * CONFIG_POLL_INTERVAL * 1000
         await new Promise(resolve => setTimeout(resolve, durationMs))
     }
 }
