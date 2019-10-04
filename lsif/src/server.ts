@@ -24,10 +24,10 @@ import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } fro
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { monitor, MonitoringContext } from './monitoring'
-import { Tracer } from 'opentracing'
+import { Tracer, Span } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
-import * as LightStep from 'lightstep-tracer'
 import { waitForConfiguration, ConfigurationContext } from './config'
+import { createTracer } from './tracing'
 
 const pipeline = promisify(_pipeline)
 
@@ -106,21 +106,6 @@ const errorHandler = (
     }
 }
 
-// TODO - document
-// TODO - move to tracing.ts
-function createTracer(ctx: ConfigurationContext): Tracer {
-    if (ctx.current.useJaeger) {
-        // TODO
-    }
-
-    // TODO - can do both?
-
-    return new LightStep.Tracer({
-        access_token: ctx.current.lightstepAccessToken,
-        component_name: ctx.current.lightstepProject,
-    })
-}
-
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  *
@@ -130,8 +115,8 @@ async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
     const ctx = await waitForConfiguration(logger)
 
-    // Configure tracing
-    const tracer = createTracer(ctx)
+    // Configure distributed tracing
+    const tracer = createTracer('lsif-server', ctx)
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -147,7 +132,11 @@ async function main(logger: Logger): Promise<void> {
     const queue = await setupQueue(logger)
 
     const app = express()
-    app.use(tracingMiddleware({ tracer }))
+
+    if (tracer !== undefined) {
+        app.use(tracingMiddleware({ tracer }))
+    }
+
     app.use(
         loggingMiddleware({
             winstonInstance: logger,
@@ -232,7 +221,7 @@ async function lsifEndpoints(
     queue: Queue,
     ctx: ConfigurationContext,
     logger: Logger,
-    tracer: Tracer
+    tracer: Tracer | undefined
 ): Promise<express.Router> {
     const router = express.Router()
 
@@ -245,6 +234,13 @@ async function lsifEndpoints(
     const connection = await createPostgresConnection(ctx, logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
+    /**
+     * Return the name of the database file for the given repository and commit
+     * if it exists, returning undefined otherwise.
+     *
+     * @param repository The repository name.
+     * @param commit The commit.
+     */
     const createDatabaseFilenameStat = async (repository: string, commit: string): Promise<string | undefined> => {
         const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
 
@@ -261,7 +257,14 @@ async function lsifEndpoints(
         return file
     }
 
-    const tryLoadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+    /**
+     * Create a database for the given repository and commit if the underlying
+     * file exists.
+     *
+     * @param repository The repository name.
+     * @param commit The commit.
+     */
+    const tryCreateDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
         const file = await createDatabaseFilenameStat(repository, commit)
         if (!file) {
             return undefined
@@ -279,14 +282,22 @@ async function lsifEndpoints(
         )
     }
 
-    const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
-        const ctx = {
-            logger: logger.child({ repository, commit }),
-            span: tracer.startSpan('load database'),
-        }
-
+    /**
+     * Create a database for the given repository and a commit nearest to the
+     * given commit or which we have LSIF data commit. This may request more
+     * data from gitserver on-demand.
+     *
+     * @param repository The repository name.
+     * @param commit The commit.
+     * @param ctx The monitoring context.
+     */
+    const createDatabase = async (
+        repository: string,
+        commit: string,
+        ctx: MonitoringContext
+    ): Promise<Database | undefined> => {
         // Try to construct database for the exact commit
-        const database = await tryLoadDatabase(repository, commit)
+        const database = await tryCreateDatabase(repository, commit)
         if (database) {
             return database
         }
@@ -310,25 +321,51 @@ async function lsifEndpoints(
         }
 
         // Try to construct a database for the approximate commit
-        return tryLoadDatabase(repository, commitWithData)
+        return tryCreateDatabase(repository, commitWithData)
     }
+
+    /**
+     * Create a monitoring context from the request logger and tracing span
+     * tagged with the currently request repository and commit.
+     *
+     * @param req The express request.
+     * @param repository The repository name.
+     * @param commit The commit.
+     */
+    const createMonitoringContext = (
+        req: express.Request & { span?: Span },
+        repository: string,
+        commit: string
+    ): MonitoringContext => ({
+        // Tag logger with target repo/commit
+        logger: logger.child({ repository, commit }),
+        // Pull span from request (injected by middleware)
+        span: req.span && req.span,
+    })
 
     router.post(
         '/upload',
         wrap(
-            async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+            async (
+                req: express.Request & { span?: Span },
+                res: express.Response,
+                next: express.NextFunction
+            ): Promise<void> => {
                 const { repository, commit } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
 
+                const ctx = createMonitoringContext(req, repository, commit)
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const output = fs.createWriteStream(filename)
 
                 try {
-                    const elements = readGzippedJsonElements(req)
-                    const lsifElements = validateIfEnabled(elements)
-                    const stringifiedLines = stringifyJsonLines(lsifElements)
-                    await pipeline(Readable.from(stringifiedLines), createGzip(), output)
+                    await monitor(ctx, 'uploading dump', async () => {
+                        const elements = readGzippedJsonElements(req)
+                        const lsifElements = validateIfEnabled(elements)
+                        const stringifiedLines = stringifyJsonLines(lsifElements)
+                        await pipeline(Readable.from(stringifiedLines), createGzip(), output)
+                    })
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }
@@ -344,12 +381,13 @@ async function lsifEndpoints(
     router.post(
         '/exists',
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
                 const { repository, commit, file } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const db = await loadDatabase(repository, commit)
+                const ctx = createMonitoringContext(req, repository, commit)
+                const db = await monitor(ctx, 'creating database', ctx => createDatabase(repository, commit, ctx))
                 if (!db) {
                     res.json(false)
                     return
@@ -366,7 +404,7 @@ async function lsifEndpoints(
         '/request',
         bodyParser.json({ limit: '1mb' }),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
                 const { path, position, method } = req.body
                 checkRepository(repository)
@@ -374,7 +412,8 @@ async function lsifEndpoints(
                 checkMethod(method, ['definitions', 'references', 'hover'])
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-                const db = await loadDatabase(repository, commit)
+                const ctx = createMonitoringContext(req, repository, commit)
+                const db = await monitor(ctx, 'creating database', ctx => createDatabase(repository, commit, ctx))
                 if (!db) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,

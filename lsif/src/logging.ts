@@ -48,7 +48,7 @@ export function createLogger(service: string): Logger {
 }
 
 /**
- * Log the beginning and end of an operation.
+ * Log the beginning, end, and exception of an operation.
  *
  * @param name The log message to output.
  * @param logger The logger instance.

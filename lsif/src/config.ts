@@ -54,11 +54,6 @@ export interface Configuration {
     gitServers: string[]
 
     /**
-     * The project name for lightstep tracing.
-     */
-    lightstepProject: string
-
-    /**
      * The access token for lightstep tracing.
      */
     lightstepAccessToken: string
@@ -102,9 +97,8 @@ export async function waitForConfiguration(logger: Logger): Promise<Configuratio
  * @param newConfiguration The new configuration instance.
  */
 function requireRestart(oldConfiguration: Configuration, newConfiguration: Configuration): boolean {
-    const fields: ('postgresDSN' | 'lightstepProject' | 'lightstepAccessToken' | 'useJaeger')[] = [
+    const fields: ('postgresDSN' | 'lightstepAccessToken' | 'useJaeger')[] = [
         'postgresDSN',
-        'lightstepProject',
         'lightstepAccessToken',
         'useJaeger',
     ]
@@ -129,7 +123,6 @@ function watchConfig(logger: Logger, onChange: (newConfiguration: Configuration)
     const emptyConfiguration: Configuration = {
         postgresDSN: '',
         gitServers: [],
-        lightstepProject: '',
         lightstepAccessToken: '',
         useJaeger: false,
     }
@@ -195,7 +188,6 @@ async function loadConfiguration(): Promise<Configuration> {
     return {
         gitServers: serviceConnections.gitServers,
         postgresDSN: serviceConnections.postgresDSN,
-        lightstepProject: critical.lightstepProject,
         lightstepAccessToken: critical.lightstepAccessToken,
         useJaeger: critical.useJaeger || false,
     }

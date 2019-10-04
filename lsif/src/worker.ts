@@ -15,6 +15,7 @@ import { XrepoDatabase } from './xrepo'
 import { Tracer } from 'opentracing'
 import { MonitoringContext, monitor } from './monitoring'
 import { waitForConfiguration } from './config'
+import { createTracer } from './tracing'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -50,12 +51,12 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 function createConvertJob(
     xrepoDatabase: XrepoDatabase,
     logger: Logger,
-    tracer: Tracer
+    tracer: Tracer | undefined
 ): (repository: string, commit: string, filename: string) => Promise<void> {
     return async (repository, commit, filename) => {
         const ctx = {
             logger: logger.child({ jobId: uuid.v4(), repository, commit }),
-            span: tracer.startSpan('create convert job'),
+            span: tracer && tracer.startSpan('create convert job'),
         }
 
         await monitor(ctx, 'converting LSIF data', async (ctx: MonitoringContext) => {
@@ -97,8 +98,8 @@ async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
     const ctx = await waitForConfiguration(logger)
 
-    // Configure tracing
-    const tracer = new Tracer()
+    // Configure distributed tracing
+    const tracer = createTracer('lsif-server', ctx)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
