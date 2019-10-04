@@ -86,16 +86,6 @@ export class Correlator {
      */
     public projectRoot?: URL
 
-    /**
-     * The number of processed vertices.
-     */
-    public numVertices = 0
-
-    /**
-     * The number of processed edges.
-     */
-    public numEdges = 0
-
     // Vertex data
     public documentPaths = new Map<DocumentId, string>()
     public rangeData = new Map<RangeId, RangeData>()
@@ -137,8 +127,6 @@ export class Correlator {
      */
     public insert(element: Vertex | Edge): void {
         if (element.type === ElementTypes.vertex) {
-            this.numVertices++
-
             switch (element.label) {
                 case VertexLabels.metaData:
                     this.handleMetaData(element)
@@ -208,8 +196,6 @@ export class Correlator {
         }
 
         if (element.type === ElementTypes.edge) {
-            this.numEdges++
-
             switch (element.label) {
                 case EdgeLabels.contains:
                     this.handleContains(element)
