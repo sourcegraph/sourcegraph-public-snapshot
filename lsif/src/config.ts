@@ -149,7 +149,7 @@ function watchConfig(onChange: (newConfiguration: Configuration) => void): Confi
  *
  * @param onChange The callback to invoke each time the configuration is read.
  */
-async function updateConfiguration(onChange: (configuration: Configuration) => void): Promise<void> {
+async function updateConfiguration(onChange: (configuration: Configuration) => void): Promise<never> {
     const start = Date.now()
     while (true) {
         try {
