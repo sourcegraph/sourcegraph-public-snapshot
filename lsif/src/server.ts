@@ -18,8 +18,9 @@ import { promisify } from 'util'
 import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
-import { XrepoDatabase } from './xrepo.js'
+import { XrepoDatabase } from './xrepo'
 import { waitForConfiguration } from './config'
+import { updateCommits } from './commits'
 
 const pipeline = promisify(_pipeline)
 
@@ -81,7 +82,7 @@ const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex 
  */
 async function main(): Promise<void> {
     // Read configuration from frontend
-    const configuration = (await waitForConfiguration())()
+    const configurationFetcher = await waitForConfiguration()
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -93,16 +94,19 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
+    // Create queue to publish jobs for worker
+    const queue = await setupQueue()
+
     // Prepare caches
     const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
     const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(configuration)
+    const connection = await createPostgresConnection(configurationFetcher())
     const xrepoDatabase = new XrepoDatabase(connection)
 
-    const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+    const createDatabaseFilenameStat = async (repository: string, commit: string): Promise<string | undefined> => {
         const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
 
         try {
@@ -113,6 +117,15 @@ async function main(): Promise<void> {
             }
 
             throw e
+        }
+
+        return file
+    }
+
+    const tryLoadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+        const file = await createDatabaseFilenameStat(repository, commit)
+        if (!file) {
+            return undefined
         }
 
         return new Database(
@@ -127,8 +140,33 @@ async function main(): Promise<void> {
         )
     }
 
-    // Create queue to publish jobs for worker
-    const queue = await setupQueue()
+    const loadDatabase = async (
+        gitserverUrls: string[],
+        repository: string,
+        commit: string
+    ): Promise<Database | undefined> => {
+        // Try to construct database for the exact commit
+        const database = await tryLoadDatabase(repository, commit)
+        if (database) {
+            return database
+        }
+
+        // Request updated commit data from gitserver if this commit isn't
+        // already tracked. This will pull back ancestors for this commit
+        // up to a certain (configurable) depth and insert them into the
+        // cross-repository database. This populates the necessary data for
+        // the following query.
+        await updateCommits(gitserverUrls, xrepoDatabase, repository, commit)
+
+        // Determine the closest commit that we actually have LSIF data for
+        const commitWithData = await xrepoDatabase.findClosestCommitWithData(repository, commit)
+        if (!commitWithData) {
+            return undefined
+        }
+
+        // Try to construct a database for the approximate commit
+        return tryLoadDatabase(repository, commitWithData)
+    }
 
     const app = express()
     app.use(errorHandler)
@@ -170,7 +208,7 @@ async function main(): Promise<void> {
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const db = await loadDatabase(repository, commit)
+                const db = await loadDatabase(configurationFetcher().gitServers, repository, commit)
                 if (!db) {
                     res.json(false)
                     return
@@ -195,7 +233,7 @@ async function main(): Promise<void> {
                 checkMethod(method, ['definitions', 'references', 'hover'])
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-                const db = await loadDatabase(repository, commit)
+                const db = await loadDatabase(configurationFetcher().gitServers, repository, commit)
                 if (!db) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,
