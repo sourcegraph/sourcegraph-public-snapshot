@@ -1056,7 +1056,7 @@ type SearchFilterDiscreteValues {
     values: [String!]!
 }
 
-# Predefined suggestions about search filters.
+# Predefined suggestions for search filters.
 type SearchFilterSuggestions {
     # The suggestions for search filters.
     filters: [DescriptiveValue!]!
