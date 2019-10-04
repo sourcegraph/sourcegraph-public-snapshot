@@ -2,6 +2,7 @@ import * as crypto from 'crypto'
 import got from 'got'
 import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
+import { log } from './logging'
 
 /**
  * The URLs of the gitservers to query for branch and commit data.
@@ -38,16 +39,8 @@ export async function updateCommits(
     }
 
     const gitserverUrl = addrFor(gitserverUrls, repository)
-
-    const queryCommitsTimer = logger.startTimer()
-    logger.debug('querying commits', { gitserverUrl })
-    const commits = await getCommitsNear(gitserverUrl, repository, commit)
-    queryCommitsTimer.done({ message: 'retrieved commits', level: 'debug' })
-
-    const updateCommitsTimer = logger.startTimer()
-    logger.debug('updating commits')
-    await xrepoDatabase.updateCommits(repository, commits)
-    updateCommitsTimer.done({ message: 'updated commits', level: 'debug' })
+    const commits = await log('querying commits', logger, () => getCommitsNear(gitserverUrl, repository, commit))
+    await log('updating commits', logger, () => xrepoDatabase.updateCommits(repository, commits))
 }
 
 /**

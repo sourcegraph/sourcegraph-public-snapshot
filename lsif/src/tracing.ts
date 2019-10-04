@@ -1,6 +1,6 @@
 import { Span } from 'opentracing'
 
-export async function trace<T>(name: string, parent: Span, f: (span: Span) => Promise<T>): Promise<T> {
+export async function trace<T>(name: string, parent: Span, f: (span: Span) => Promise<T> | T): Promise<T> {
     const span = parent.tracer().startSpan(name, { childOf: parent })
 
     try {

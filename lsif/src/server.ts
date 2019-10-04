@@ -9,7 +9,7 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { createGzip } from 'zlib'
-import { createLogger } from './logging'
+import { createLogger, log } from './logging'
 import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
@@ -211,7 +211,7 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection()
+    const connection = await createPostgresConnection(logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const createDatabaseFilenameStat = async (repository: string, commit: string): Promise<string | undefined> => {
@@ -263,18 +263,15 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (!(await xrepoDatabase.isCommitTracked(repository, commit))) {
-            const updateCommitsTimer = dbLogger.startTimer()
-            dbLogger.debug('updating commits for repo')
-            await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, dbLogger)
-            updateCommitsTimer.done({ message: 'updated commits for repo', level: 'debug' })
+            await log('updating commits for repo', dbLogger, () =>
+                updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, dbLogger)
+            )
         }
 
         // Determine the closest commit that we actually have LSIF data for
-        const findClosestCommitTimer = dbLogger.startTimer()
-        dbLogger.debug('querying closest commit with LISF data')
-        const commitWithData = await xrepoDatabase.findClosestCommitWithData(repository, commit)
-        findClosestCommitTimer.done({ message: 'retrieved closest commit with LSISF data', level: 'debug' })
-
+        const commitWithData = await log('querying closest commit with LISF data', dbLogger, () =>
+            xrepoDatabase.findClosestCommitWithData(repository, commit)
+        )
         if (!commitWithData) {
             return undefined
         }

@@ -6,6 +6,7 @@ import { DefaultMap } from './default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
+import { log } from './logging'
 import { isEqual, uniqWith } from 'lodash'
 import { Logger } from 'winston'
 import { Package, SymbolReferences } from './xrepo'
@@ -101,18 +102,11 @@ export async function importLsif(
     logger: Logger
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
-    const correlationTimer = logger.startTimer()
     const correlator = new Correlator()
-    logger.debug('correlating LSIF data')
-    for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
-        correlator.insert(element)
-    }
-
-    correlationTimer.done({
-        message: 'correlated LSIF data',
-        level: 'debug',
-        vertices: correlator.numVertices,
-        edges: correlator.numEdges,
+    await log('correlating LSIF data', logger, async () => {
+        for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
+            correlator.insert(element)
+        }
     })
 
     if (correlator.lsifVersion === undefined) {
@@ -123,10 +117,9 @@ export async function importLsif(
     // reference result for each set so that we can remap all identifiers to the
     // chosen one.
 
-    const canonicalizeReferenceResultsTimer = logger.startTimer()
-    logger.debug('canonicalizing reference results')
-    const canonicalReferenceResultIds = canonicalizeReferenceResults(correlator)
-    canonicalizeReferenceResultsTimer.done({ message: 'canonicalized reference results', level: 'debug' })
+    const canonicalReferenceResultIds = await log('canonicalizing reference results', logger, () =>
+        canonicalizeReferenceResults(correlator)
+    )
 
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
@@ -138,45 +131,47 @@ export async function importLsif(
     await metaInserter.flush()
 
     // Insert documents
-    const populateDocumentsTimer = logger.startTimer()
-    logger.debug('populating documents')
-    const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize, inserterMetrics)
-    await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
-    await documentInserter.flush()
-    populateDocumentsTimer.done({ message: 'populated documents', level: 'debug' })
+    await log('populating documents', logger, async () => {
+        const documentInserter = new TableInserter(
+            entityManager,
+            DocumentModel,
+            DocumentModel.BatchSize,
+            inserterMetrics
+        )
+        await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
+        await documentInserter.flush()
+    })
 
     // Insert result chunks
-    const populateResultChunkTimer = logger.startTimer()
-    logger.debug('populating result chunks')
-    const resultChunkInserter = new TableInserter(
-        entityManager,
-        ResultChunkModel,
-        ResultChunkModel.BatchSize,
-        inserterMetrics
-    )
-    await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
-    await resultChunkInserter.flush()
-    populateResultChunkTimer.done({ message: 'populated result chunks', level: 'debug' })
+    await log('populating result chunks', logger, async () => {
+        const resultChunkInserter = new TableInserter(
+            entityManager,
+            ResultChunkModel,
+            ResultChunkModel.BatchSize,
+            inserterMetrics
+        )
+        await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
+        await resultChunkInserter.flush()
+    })
 
     // Insert definitions and references
-    const populateDefinitionAndReferencesTimer = logger.startTimer()
-    logger.debug('populating definitions and references')
-    const definitionInserter = new TableInserter(
-        entityManager,
-        DefinitionModel,
-        DefinitionModel.BatchSize,
-        inserterMetrics
-    )
-    const referenceInserter = new TableInserter(
-        entityManager,
-        ReferenceModel,
-        ReferenceModel.BatchSize,
-        inserterMetrics
-    )
-    await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
-    await definitionInserter.flush()
-    await referenceInserter.flush()
-    populateDefinitionAndReferencesTimer.done({ message: 'populated definitions and references', level: 'debug' })
+    await log('populating definitions and references', logger, async () => {
+        const definitionInserter = new TableInserter(
+            entityManager,
+            DefinitionModel,
+            DefinitionModel.BatchSize,
+            inserterMetrics
+        )
+        const referenceInserter = new TableInserter(
+            entityManager,
+            ReferenceModel,
+            ReferenceModel.BatchSize,
+            inserterMetrics
+        )
+        await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
+        await definitionInserter.flush()
+        await referenceInserter.flush()
+    })
 
     // Return data to populate cross-repo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }

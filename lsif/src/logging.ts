@@ -46,3 +46,18 @@ export function createLogger(service: string): Logger {
         transports: [new transports.Console({})],
     })
 }
+
+/**
+ * Log the beginning and end of an operation.
+ *
+ * @param name The log message to output.
+ * @param logger The logger instance.
+ * @param f The operation to perform.
+ */
+export async function log<T>(name: string, logger: Logger, f: () => Promise<T> | T): Promise<T> {
+    const timer = logger.startTimer()
+    logger.debug(name)
+    const value = await f()
+    timer.done({ message: `${name} finished`, level: 'debug' })
+    return value
+}
