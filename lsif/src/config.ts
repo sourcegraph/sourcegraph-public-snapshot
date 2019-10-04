@@ -73,7 +73,7 @@ export async function waitForConfiguration(logger: Logger): Promise<Configuratio
 
             oldConfiguration = configuration
             resolve()
-        }).catch(() => { })
+        }).catch(() => {})
     })
 
     return () => oldConfiguration!

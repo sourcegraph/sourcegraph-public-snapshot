@@ -96,15 +96,15 @@ const errorHandler = (
     res: express.Response,
     next: express.NextFunction
 ): void => {
-        if (!error || !error.status) {
-            // Only log errors that don't have a status attached
-            logger.error('uncaught exception', { error })
-        }
-
-        if (!res.headersSent) {
-            res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
-        }
+    if (!error || !error.status) {
+        // Only log errors that don't have a status attached
+        logger.error('uncaught exception', { error })
     }
+
+    if (!res.headersSent) {
+        res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+    }
+}
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -389,7 +389,9 @@ async function lsifEndpoints(
                 checkCommit(commit)
 
                 const ctx = createMonitoringContext(req, repository, commit)
-                const db = await monitor(ctx, 'creating database', ctx => createDatabase(configurationFetcher().gitServers, repository, commit, ctx))
+                const db = await monitor(ctx, 'creating database', ctx =>
+                    createDatabase(configurationFetcher().gitServers, repository, commit, ctx)
+                )
                 if (!db) {
                     res.json(false)
                     return
@@ -415,7 +417,9 @@ async function lsifEndpoints(
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 const ctx = createMonitoringContext(req, repository, commit)
-                const db = await monitor(ctx, 'creating database', ctx => createDatabase(configurationFetcher().gitServers, repository, commit, ctx))
+                const db = await monitor(ctx, 'creating database', ctx =>
+                    createDatabase(configurationFetcher().gitServers, repository, commit, ctx)
+                )
                 if (!db) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,
