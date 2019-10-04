@@ -13,13 +13,26 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
+- Our external service syncing model will stream in new repositories to Sourcegraph. Previously we could only add a repository to our database and clone it once we had synced all information from all external services (to detect deletions and renames). Now adding a repository to an external service configuration should be reflected much sooner, even on large instances. [#5145](https://github.com/sourcegraph/sourcegraph/issues/5145)
 
 ### Changed
 
+- Allow single trailing hyphen in usernames and org names [#5680](https://github.com/sourcegraph/sourcegraph/pull/5680)
+- Indexed search won't spam the logs on startup if the frontend API is not yet available. [zoekt#30](https://github.com/sourcegraph/zoekt/pull/30)
+- Sourcegraph now creates a secondary database within the configured PostgreSQL instance. This database has a name of the form `{PGDATABASE}_lsif`, where `{PGDATABASE}` is the name of the primary database. This is done automatically, but please ensure the configured PostgreSQL user has permission to perform `CREATE DATABASE` if using an external database before upgrading.
+
 ### Fixed
 
+- Fixed an issue that rendered the search filter `repohascommitafter` unusable in the presence of an empty repository. [#5149](https://github.com/sourcegraph/sourcegraph/issues/5149)
+- An issue where `externalURL` not being configured in the management console could go unnoticed. [#3899](https://github.com/sourcegraph/sourcegraph/issues/3899)
+
 ### Removed
+
+## 3.8.1
+
+### Added
+
+- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
 
 ## 3.8.0
 

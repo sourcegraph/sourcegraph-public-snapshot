@@ -146,7 +146,7 @@ func Test_parseConfig(t *testing.T) {
 					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(tt.wantProviders), spew.Sdump(gotProviders), false)),
 				)
 			}
-			if !reflect.DeepEqual(gotProblems, tt.wantProblems) {
+			if !reflect.DeepEqual(gotProblems.Messages(), tt.wantProblems) {
 				t.Errorf("parseConfig() gotProblems = %v, want %v", gotProblems, tt.wantProblems)
 			}
 		})

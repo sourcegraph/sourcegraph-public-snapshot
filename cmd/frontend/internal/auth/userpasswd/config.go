@@ -47,7 +47,7 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var builtinAuthProviders int
 	for _, p := range c.Critical.AuthProviders {
 		if p.Builtin != nil {
@@ -55,7 +55,7 @@ func validateConfig(c conf.Unified) (problems []string) {
 		}
 	}
 	if builtinAuthProviders >= 2 {
-		problems = append(problems, `at most 1 builtin auth provider may be used`)
+		problems = append(problems, conf.NewCriticalProblem(`at most 1 builtin auth provider may be used`))
 	}
 	return problems
 }

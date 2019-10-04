@@ -1,15 +1,19 @@
-import { Column, Entity, Index, PrimaryColumn, PrimaryGeneratedColumn, ViewColumn, ViewEntity } from 'typeorm'
-import { EncodedBloomFilter } from './encoding'
-import { getBatchSize } from './util'
+import {
+    Column,
+    Entity,
+    PrimaryColumn,
+    PrimaryGeneratedColumn,
+    ViewColumn,
+    ViewEntity
+    } from 'typeorm';
+import { EncodedBloomFilter } from './encoding';
+import { getBatchSize } from './util';
 
 /**
  * An entity within the cross-repo database. This tracks commit parentage and branch
  * heads for all known repositories.
  */
 @Entity({ name: 'commits' })
-@Index(['repository', 'commit', 'parentCommit'], { unique: true })
-@Index(['repository', 'commit'])
-@Index(['repository', 'parentCommit'])
 export class Commit {
     /**
      * The number of model instances that can be inserted at once.
@@ -39,7 +43,7 @@ export class Commit {
      * with the same boolean fields. This value is an empty string for a
      * commit with no parent.
      */
-    @Column('text')
+    @Column('text', { name: 'parent_commit' })
     public parentCommit!: string
 }
 
@@ -47,7 +51,7 @@ export class Commit {
  * An entity within the cross-repo database. A row with a repository and commit
  * indicates that there exists LSIF data for that pair.
  */
-@Entity({ name: 'lsifDataMarkers' })
+@Entity({ name: 'lsif_data_markers' })
 export class LsifDataMarker {
     /**
      * The name of the source repository.
@@ -114,8 +118,6 @@ class Package {
  * pair to the package that it provides to other projects.
  */
 @Entity({ name: 'packages' })
-@Index(['scheme', 'name', 'version'], { unique: true })
-@Index(['repository', 'commit'])
 export class PackageModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
@@ -128,8 +130,6 @@ export class PackageModel extends Package {
  * repository and commit pair to support find global reference operations.
  */
 @Entity({ name: 'references' })
-@Index(['scheme', 'name', 'version'])
-@Index(['repository', 'commit'])
 export class ReferenceModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
@@ -150,20 +150,22 @@ export class ReferenceModel extends Package {
 }
 
 /**
- * A view that adds a `hasLsifData` column to the `commits` table.
+ * A view that adds a `hasLsifData` column to the `commits` table. We define the view
+ * in a migration as well as inline so that when we run unit tests (via a SQLite db)
+ * we will also have access to the view.
  */
 @ViewEntity({
-    name: 'commitWithLsifMarkers',
+    name: 'commit_with_lsif_markers',
     expression: `
         select
             c.repository,
             c."commit",
-            c.parentCommit,
+            c.parent_commit,
             exists (
-                select *
-                from lsifDataMarkers m
+                select 1
+                from lsif_data_markers m
                 where m.repository = c.repository and m."commit" = c."commit"
-            ) as hasLsifData
+            ) as has_lsif_data
         from commits c
     `,
 })

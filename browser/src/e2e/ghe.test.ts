@@ -27,7 +27,7 @@ const REPO_PREFIX = new URL(GHE_BASE_URL).hostname
 // location.
 jest.setTimeout(1000 * 60 * 1000)
 
-const { sourcegraphBaseUrl } = getConfig(['sourcegraphBaseUrl'])
+const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')
 
 /**
  * Logs into GitHub Enterprise enterprise.

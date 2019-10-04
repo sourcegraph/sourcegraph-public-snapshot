@@ -97,30 +97,30 @@ export class XrepoDatabase {
     public findClosestCommitWithData(repository: string, commit: string): Promise<string | undefined> {
         return this.withConnection(async connection => {
             const query = `
-                with recursive lineage(repository, "commit", parentCommit, hasLsifData, distance, direction) as (
+                with recursive lineage(repository, "commit", parent_commit, has_lsif_data, distance, direction) as (
                     -- seed result set with the target repository and commit marked
                     -- with both ancestor and descendant directions
                     select l.* from (
-                        select c.*, 0, 'A' from commitWithLsifMarkers c union
-                        select c.*, 0, 'D' from commitWithLsifMarkers c
+                        select c.*, 0, 'A' from commit_with_lsif_markers c union
+                        select c.*, 0, 'D' from commit_with_lsif_markers c
                     ) l
-                    where l.repository = ? and l."commit" = ?
+                    where l.repository = $1 and l."commit" = $2
 
                     union
 
                     -- get the next commit in the ancestor or descendant direction
                     select c.*, l.distance + 1, l.direction from lineage l
-                    join commitWithLsifMarkers c on (
-                        (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parentCommit) or
-                        (l.direction = 'D' and c.repository = l.repository and c.parentCommit = l."commit")
+                    join commit_with_lsif_markers c on (
+                        (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parent_commit) or
+                        (l.direction = 'D' and c.repository = l.repository and c.parent_commit = l."commit")
                     )
                     -- limit traversal distance
-                    where l.distance < ?
+                    where l.distance < $3
                 )
 
                 -- lineage is ordered by distance to the target commit by
                 -- construction; get the nearest commit that has LSIF data
-                select l."commit" from lineage l where l.hasLsifData limit 1
+                select l."commit" from lineage l where l.has_lsif_data limit 1
             `
 
             const results = (await connection.query(query, [repository, commit, MAX_TRAVERSAL_LIMIT])) as {
@@ -168,9 +168,15 @@ export class XrepoDatabase {
      * @param name The package name.
      * @param version The package version.
      */
-    public async getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
-        return await this.withConnection(connection =>
-            connection.getRepository(PackageModel).findOne({ where: { scheme, name, version } })
+    public getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
+        return this.withConnection(connection =>
+            connection.getRepository(PackageModel).findOne({
+                where: {
+                    scheme,
+                    name,
+                    version,
+                },
+            })
         )
     }
 

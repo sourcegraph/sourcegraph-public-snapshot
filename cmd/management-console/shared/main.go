@@ -18,8 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/shared/internal/tlscertgen"
@@ -28,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const port = "2633"
@@ -221,6 +220,14 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error("argument LastID decoding failed", "error", err)
 		httpError(w, errors.Wrap(err, "Unexpected error when decoding LastID argument").Error(), "bad_request")
+		return
+	}
+
+	err = validateConfig(args.Contents,
+		validateExternalURL,
+	)
+	if err != nil {
+		httpError(w, errors.Wrap(err, "Invalid critical configuration found").Error(), "bad_request")
 		return
 	}
 

@@ -153,10 +153,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		query := args.Pattern
-		k := zoektResultCountFactor(len(zoektRepos), query)
-		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, args.Zoekt.Client, opts, true, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args, zoektRepos, true, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {

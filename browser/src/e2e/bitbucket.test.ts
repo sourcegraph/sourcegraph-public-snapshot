@@ -21,7 +21,7 @@ const REPO_PATH_PREFIX = new URL(BITBUCKET_BASE_URL).hostname
 
 const BITBUCKET_INTEGRATION_JAR_URL = 'https://storage.googleapis.com/sourcegraph-for-bitbucket-server/latest.jar'
 
-const { sourcegraphBaseUrl } = getConfig(['sourcegraphBaseUrl'])
+const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the

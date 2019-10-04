@@ -10,7 +10,7 @@ import (
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
 		input        conf.Unified
-		wantProblems []string
+		wantProblems conf.Problems
 	}{
 		"duplicates": {
 			input: conf.Unified{Critical: schema.CriticalConfiguration{
@@ -20,7 +20,7 @@ func TestValidateCustom(t *testing.T) {
 					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
 				},
 			}},
-			wantProblems: []string{"OpenID Connect auth provider at index 1 is duplicate of index 0"},
+			wantProblems: conf.NewCriticalProblems("OpenID Connect auth provider at index 1 is duplicate of index 0"),
 		},
 	}
 	for name, test := range tests {

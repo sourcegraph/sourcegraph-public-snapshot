@@ -46,20 +46,122 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 	"useAlertManager":       {},
 }
 
+// problemKind represents the kind of a configuration problem.
+type problemKind string
+
+const (
+	problemCritical problemKind = "CriticalConfig"
+	problemSite     problemKind = "SiteConfig"
+)
+
+// Problem contains kind and description of a specific configuration problem.
+type Problem struct {
+	kind        problemKind
+	description string
+}
+
+// NewCriticalProblem creates a new critical config problem with given message.
+func NewCriticalProblem(msg string) *Problem {
+	return &Problem{
+		kind:        problemCritical,
+		description: msg,
+	}
+}
+
+// NewSiteProblem creates a new site config problem with given message.
+func NewSiteProblem(msg string) *Problem {
+	return &Problem{
+		kind:        problemSite,
+		description: msg,
+	}
+}
+
+// IsCritical returns true if the problem is about critical config.
+func (p Problem) IsCritical() bool {
+	return p.kind == problemCritical
+}
+
+// IsSite returns true if the problem is about site config.
+func (p Problem) IsSite() bool {
+	return p.kind == problemSite
+}
+
+func (p Problem) String() string {
+	return p.description
+}
+
+// Problems is a list of problems.
+type Problems []*Problem
+
+// newProblems converts a list of messages with their kind into problems.
+func newProblems(kind problemKind, messages ...string) Problems {
+	problems := make([]*Problem, len(messages))
+	for i := range messages {
+		problems[i] = &Problem{
+			kind:        kind,
+			description: messages[i],
+		}
+	}
+	return problems
+}
+
+// NewCriticalProblems converts a list of messages into critical config problems.
+func NewCriticalProblems(messages ...string) Problems {
+	return newProblems(problemCritical, messages...)
+}
+
+// NewSiteProblems converts a list of messages into site config problems.
+func NewSiteProblems(messages ...string) Problems {
+	return newProblems(problemSite, messages...)
+}
+
+// Messages returns the list of problems in strings.
+func (ps Problems) Messages() []string {
+	if len(ps) == 0 {
+		return nil
+	}
+
+	msgs := make([]string, len(ps))
+	for i := range ps {
+		msgs[i] = ps[i].String()
+	}
+	return msgs
+}
+
+// Critical returns all critical config problems in the list.
+func (ps Problems) Critical() (problems Problems) {
+	for i := range ps {
+		if ps[i].IsCritical() {
+			problems = append(problems, ps[i])
+		}
+	}
+	return problems
+}
+
+// Site returns all site config problems in the list.
+func (ps Problems) Site() (problems Problems) {
+	for i := range ps {
+		if ps[i].IsSite() {
+			problems = append(problems, ps[i])
+		}
+	}
+	return problems
+}
+
 // Validate validates the configuration against the JSON Schema and other
 // custom validation checks.
-func Validate(input conftypes.RawUnified) (problems []string, err error) {
+func Validate(input conftypes.RawUnified) (problems Problems, err error) {
 	criticalProblems, err := doValidate(input.Critical, schema.CriticalSchemaJSON)
 	if err != nil {
 		return nil, err
 	}
-	problems = append(problems, criticalProblems...)
+	problems = append(problems, NewCriticalProblems(criticalProblems...)...)
 
 	siteProblems, err := doValidate(input.Site, schema.SiteSchemaJSON)
 	if err != nil {
 		return nil, err
 	}
-	problems = append(problems, siteProblems...)
+	problems = append(problems, NewSiteProblems(siteProblems...)...)
 
 	customProblems, err := validateCustomRaw(conftypes.RawUnified{
 		Critical: string(jsonc.Normalize(input.Critical)),
@@ -73,20 +175,25 @@ func Validate(input conftypes.RawUnified) (problems []string, err error) {
 }
 
 // ValidateSite is like Validate, except it only validates the site configuration.
-func ValidateSite(input string) (problems []string, err error) {
+func ValidateSite(input string) (messages []string, err error) {
 	raw := Raw()
 	raw.Site = input
-	return Validate(raw)
+
+	problems, err := Validate(raw)
+	if err != nil {
+		return nil, err
+	}
+	return problems.Messages(), nil
 }
 
-func doValidate(inputStr, schema string) (problems []string, err error) {
-	input := []byte(jsonc.Normalize(inputStr))
+func doValidate(inputStr, schema string) (messages []string, err error) {
+	input := jsonc.Normalize(inputStr)
 
 	res, err := validate([]byte(schema), input)
 	if err != nil {
 		return nil, err
 	}
-	problems = make([]string, 0, len(res.Errors()))
+	messages = make([]string, 0, len(res.Errors()))
 	for _, e := range res.Errors() {
 		if _, ok := ignoreLegacyKubernetesFields[e.Field()]; ok {
 			continue
@@ -99,9 +206,9 @@ func doValidate(inputStr, schema string) (problems []string, err error) {
 			keyPath = e.Field()
 		}
 
-		problems = append(problems, fmt.Sprintf("%s: %s", keyPath, e.Description()))
+		messages = append(messages, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
-	return problems, nil
+	return messages, nil
 }
 
 func validate(schema, input []byte) (*gojsonschema.Result, error) {
@@ -168,7 +275,7 @@ func mustValidate(name string, cfg conftypes.RawUnified) conftypes.RawUnified {
 		panic(fmt.Sprintf("Error with %q: %s", name, err))
 	}
 	if len(problems) > 0 {
-		panic(fmt.Sprintf("conf: problems with default configuration for %q:\n  %s", name, strings.Join(problems, "\n  ")))
+		panic(fmt.Sprintf("conf: problems with default configuration for %q:\n  %s", name, strings.Join(problems.Messages(), "\n  ")))
 	}
 	return cfg
 }

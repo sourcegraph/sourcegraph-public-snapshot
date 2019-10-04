@@ -284,19 +284,11 @@ func convertRestRepo(restRepo restRepository) *Repository {
 // This is only intended to be called for GitHub Enterprise, so no rate limit information is returned.
 // https://developer.github.com/v3/repos/#list-all-public-repositories
 func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
-	var restRepos []restRepository
 	path := "repositories"
 	if sinceRepoID > 0 {
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
 	}
-	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
-		return nil, err
-	}
-	var repos []*Repository
-	for _, restRepo := range restRepos {
-		repos = append(repos, convertRestRepo(restRepo))
-	}
-	return repos, nil
+	return c.listRepositories(ctx, path)
 }
 
 // getRepositoryByNodeIDFromAPI attempts to fetch a repository by GraphQL node ID from the GitHub
@@ -461,21 +453,17 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
-// ListUserRepositories lists GitHub repositories affiliated with the client
+// ListAffiliatedRepositories lists GitHub repositories affiliated with the client
 // token. page is the page of results to return. Pages are 1-indexed (so the
 // first call should be for page 1).
-func (c *Client) ListUserRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	var restRepos []restRepository
+func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
-	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
-		return nil, false, 1, err
+	repos, err = c.listRepositories(ctx, path)
+	if err == nil {
+		// 🚨 SECURITY: must forward token here to ensure caching by token
+		c.addRepositoriesToCache("", repos)
 	}
-	repos = make([]*Repository, 0, len(restRepos))
-	for _, restRepo := range restRepos {
-		repos = append(repos, convertRestRepo(restRepo))
-	}
-	// 🚨 SECURITY: must forward token here to ensure caching by token
-	c.addRepositoriesToCache("", repos)
+
 	return repos, len(repos) > 0, 1, nil
 }
 
@@ -483,16 +471,17 @@ func (c *Client) ListUserRepositories(ctx context.Context, page int) (repos []*R
 // org is the name of the organization. page is the page of results to return.
 // Pages are 1-indexed (so the first call should be for page 1).
 func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	var restRepos []restRepository
 	path := fmt.Sprintf("orgs/%s/repos?sort=pushed&page=%d&per_page=100", org, page)
-	if err := c.requestGet(ctx, "", path, &restRepos); err != nil {
-		return nil, false, 1, err
-	}
-	repos = make([]*Repository, 0, len(restRepos))
-	for _, restRepo := range restRepos {
-		repos = append(repos, convertRestRepo(restRepo))
-	}
-	return repos, len(repos) > 0, 1, nil
+	repos, err = c.listRepositories(ctx, path)
+	return repos, len(repos) > 0, 1, err
+}
+
+// ListUserRepositories lists GitHub repositories from the specified user.
+// Pages are 1-indexed (so the first call should be for page 1)
+func (c *Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+	path := fmt.Sprintf("users/%s/repos?sort=pushed&type=owner&page=%d&per_page=100", user, page)
+	repos, err = c.listRepositories(ctx, path)
+	return repos, len(repos) > 0, 1, err
 }
 
 type restSearchResponse struct {

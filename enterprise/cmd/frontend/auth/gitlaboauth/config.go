@@ -1,7 +1,6 @@
 package gitlaboauth
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -12,8 +11,8 @@ import (
 const PkgName = "gitlaboauth"
 
 func init() {
-	conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
-		_, problems = parseConfig(&cfg)
+	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
+		_, problems := parseConfig(&cfg)
 		return problems
 	})
 	go func() {
@@ -32,7 +31,7 @@ func init() {
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, problems []string) {
+func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
 	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
 	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Gitlab == nil {
@@ -40,19 +39,19 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.
 		}
 
 		if cfg.Critical.ExternalURL == "" {
-			problems = append(problems, "`externalURL` was empty and it is needed to determine the OAuth callback URL.")
+			problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is needed to determine the OAuth callback URL."))
 			continue
 		}
 		externalURL, err := url.Parse(cfg.Critical.ExternalURL)
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
+			problems = append(problems, conf.NewCriticalProblem("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
 			continue
 		}
 		callbackURL := *externalURL
 		callbackURL.Path = "/.auth/gitlab/callback"
 
-		provider, providerProblems := parseProvider(callbackURL.String(), pr.Gitlab, pr)
-		problems = append(problems, providerProblems...)
+		provider, providerMessages := parseProvider(callbackURL.String(), pr.Gitlab, pr)
+		problems = append(problems, conf.NewCriticalProblems(providerMessages...)...)
 		if provider != nil {
 			ps[*pr.Gitlab] = provider
 		}
