@@ -29,15 +29,15 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 	}
 
 	return &searchFilterSuggestions{
-		repogroup: repogroups,
-		repo:      repos,
+		repogroups: repogroups,
+		repos:      repos,
 	}, nil
 }
 
 // searchFilterSuggestions holds suggestions of search filters and their default values.
 type searchFilterSuggestions struct {
-	repogroup []string
-	repo      []string
+	repogroups []string
+	repos      []string
 }
 
 // Filters returns a list of filters and their description.
@@ -168,10 +168,10 @@ func (s *searchFilterSuggestions) File() []descriptiveValue {
 func (s *searchFilterSuggestions) Lang() []string { return []string{"javascript", "go", "markdown"} }
 
 // Repogroup returns all repository groups defined in the settings.
-func (s *searchFilterSuggestions) Repogroup() []string { return s.repogroup }
+func (s *searchFilterSuggestions) Repogroup() []string { return s.repogroups }
 
 // Repo returns a list of repositories as the default value for suggestion.
-func (s *searchFilterSuggestions) Repo() []string { return s.repo }
+func (s *searchFilterSuggestions) Repo() []string { return s.repos }
 
 // Repohasfile returns example values of search filter "repohasfile:".
 func (s *searchFilterSuggestions) Repohasfile() []string {
