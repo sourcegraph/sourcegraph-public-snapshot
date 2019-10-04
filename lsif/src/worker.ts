@@ -9,6 +9,7 @@ import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } 
 import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
+import { waitForConfiguration } from './config'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -77,13 +78,16 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
+    // Read configuration from frontend
+    const configuration = (await waitForConfiguration())()
+
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection()
+    const connection = await createPostgresConnection(configuration)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {

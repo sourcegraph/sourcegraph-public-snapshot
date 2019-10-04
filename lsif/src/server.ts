@@ -19,6 +19,7 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
+import { waitForConfiguration } from './config'
 
 const pipeline = promisify(_pipeline)
 
@@ -79,6 +80,9 @@ const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex 
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
+    // Read configuration from frontend
+    const configuration = (await waitForConfiguration())()
+
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
     documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
@@ -95,7 +99,7 @@ async function main(): Promise<void> {
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection()
+    const connection = await createPostgresConnection(configuration)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
