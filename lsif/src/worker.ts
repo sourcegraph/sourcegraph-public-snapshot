@@ -95,7 +95,7 @@ function createConvertJob(
  */
 async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
-    const ctx = await waitForConfiguration()
+    const ctx = await waitForConfiguration(logger)
 
     // Configure tracing
     const tracer = new Tracer()

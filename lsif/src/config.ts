@@ -1,6 +1,7 @@
 import got from 'got'
 import { readEnvInt } from './util'
 import * as json5 from 'json5'
+import { Logger } from 'winston'
 
 /**
  * HTTP address for internal frontend HTTP API.
@@ -73,18 +74,21 @@ export interface Configuration {
  * of the fields that cannot be updated while the process remains up
  * changes, it will forcibly exit the process to allow whatever orchestrator
  * is running this process restart it.
+ *
+ * @param logger The logger instance.
  */
-export async function waitForConfiguration(): Promise<ConfigurationContext> {
+export async function waitForConfiguration(logger: Logger): Promise<ConfigurationContext> {
     let oldConfiguration: Configuration | undefined
-    const context = watchConfig(newConfiguration => {
+    const onUpdate = (newConfiguration: Configuration): void => {
         if (oldConfiguration !== undefined && requireRestart(oldConfiguration, newConfiguration)) {
             console.error('Detected configuration change, restarting to take effect')
             process.exit(1)
         }
 
         oldConfiguration = newConfiguration
-    })
+    }
 
+    const context = watchConfig(logger, onUpdate)
     await context.initialized
     return context
 }
@@ -118,9 +122,10 @@ function requireRestart(oldConfiguration: Configuration, newConfiguration: Confi
  * Create a configuration context instance. This will also start
  * polling the frontend server on an infinite loop in the background.
  *
+ * @param logger The logger instance.
  * @param onChange The callback to invoke each time the configuration is read.
  */
-function watchConfig(onChange: (newConfiguration: Configuration) => void): ConfigurationContext {
+function watchConfig(logger: Logger, onChange: (newConfiguration: Configuration) => void): ConfigurationContext {
     const emptyConfiguration: Configuration = {
         postgresDSN: '',
         gitServers: [],
@@ -132,11 +137,14 @@ function watchConfig(onChange: (newConfiguration: Configuration) => void): Confi
     const ctx: ConfigurationContext = {
         current: emptyConfiguration,
         initialized: new Promise<void>(resolve => {
-            updateConfiguration(configuration => {
+            const onUpdate = (configuration: Configuration): void => {
                 ctx.current = configuration
                 onChange(configuration)
                 resolve()
-            }).catch(() => {})
+            }
+
+            // Can't fail, but call catch to reduce lint noise
+            updateConfiguration(logger, onUpdate).catch(() => {})
         }),
     }
 
@@ -147,10 +155,12 @@ function watchConfig(onChange: (newConfiguration: Configuration) => void): Confi
  * Read the configuration from the frontend on a loop. This function is async but does not
  * return any meaningful value (the returned promise neither resolves nor rejects).
  *
+ * @param logger The logger instance.
  * @param onChange The callback to invoke each time the configuration is read.
  */
-async function updateConfiguration(onChange: (configuration: Configuration) => void): Promise<void> {
+async function updateConfiguration(logger: Logger, onChange: (configuration: Configuration) => void): Promise<void> {
     const start = Date.now()
+
     while (true) {
         try {
             onChange(await loadConfiguration())
@@ -159,7 +169,7 @@ async function updateConfiguration(onChange: (configuration: Configuration) => v
             // given the frontend enough time to initialize (in case other services start up before
             // the frontend), to reduce log spam.
             if (Date.now() - start > DELAY_BEFORE_UNREACHABLE_LOG * 1000 || error.code !== 'ECONNREFUSED') {
-                console.error(error)
+                logger.error('failed to retrieve configuration from frontend', { error })
             }
         }
 
