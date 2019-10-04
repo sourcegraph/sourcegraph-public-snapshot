@@ -322,7 +322,7 @@ export function getRepoDetailsFromRevisionID(
 
 async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<PhabricatorRepoDetails | null> {
     if (isExtension) {
-        const items = await storage.sync.get()
+        const items = await storage.managed.get()
         if (items.phabricatorMappings) {
             for (const mapping of items.phabricatorMappings) {
                 if (mapping.callsign === repo.fields.callsign) {

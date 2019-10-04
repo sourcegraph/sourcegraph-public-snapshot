@@ -9,8 +9,7 @@ import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { storage } from '../../browser/storage'
-import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/types'
+import { BackgroundMessageHandlers } from '../../browser/types'
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
@@ -160,25 +159,9 @@ async function main(): Promise<void> {
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
 
-    browser.runtime.onInstalled.addListener(async () => {
-        setDefaultBrowserAction()
-        const items = await storage.sync.get()
-        // Enterprise deployments of Sourcegraph are passed a configuration file.
-        const managedItems = await storage.managed.get()
-        await storage.sync.set({
-            ...defaultStorageItems,
-            ...items,
-            ...managedItems,
-        })
-    })
-
-    function setDefaultBrowserAction(): void {
-        browser.browserAction.setBadgeText({ text: '' })
-        browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
-    }
-
     browser.browserAction.onClicked.addListener(noop)
-    setDefaultBrowserAction()
+    browser.browserAction.setBadgeText({ text: '' })
+    browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
 
     // Add "Enable Sourcegraph on this domain" context menu item
     addDomainPermissionToggle()

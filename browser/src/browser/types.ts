@@ -1,7 +1,6 @@
 import { GraphQLResult } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ExtensionHoverAlertType } from '../libs/code_intelligence/hover_alerts'
-import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
 
 export interface PhabricatorMapping {
     callsign: string
@@ -37,11 +36,11 @@ export const featureFlagDefaults: FeatureFlags = {
     experimentalTextFieldCompletion: false,
 }
 
-export interface StorageItems {
+interface SourcegraphURL {
     sourcegraphURL: string
+}
 
-    identity: string
-    phabricatorMappings: PhabricatorMapping[]
+export interface SyncStorageItems extends SourcegraphURL {
     sourcegraphAnonymousUid: string
     /**
      * Temporarily disable the browser extension features.
@@ -55,23 +54,17 @@ export interface StorageItems {
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
-    sideloadedExtensionURL: string | null
     dismissedHoverAlerts: {
         [alertType in ExtensionHoverAlertType]?: boolean
     }
 }
 
-export const defaultStorageItems: StorageItems = {
-    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+export interface LocalStorageItems {
+    sideloadedExtensionURL: string | null
+}
 
-    identity: '',
-    phabricatorMappings: [],
-    sourcegraphAnonymousUid: '',
-    disableExtension: false,
-    featureFlags: featureFlagDefaults,
-    clientSettings: '',
-    sideloadedExtensionURL: null,
-    dismissedHoverAlerts: {},
+export interface ManagedStorageItems extends SourcegraphURL {
+    phabricatorMappings: PhabricatorMapping[]
 }
 
 /**
