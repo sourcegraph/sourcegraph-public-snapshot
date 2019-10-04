@@ -401,12 +401,16 @@ func (c *cmdReader) Close() error {
 
 // WaitForGitServers retries a noop request to all gitserver instances until
 // getting back a successful response.
-func (c *Client) WaitForGitServers(ctx context.Context) {
+func (c *Client) WaitForGitServers(ctx context.Context) error {
 	for {
 		if errs := c.pingAll(ctx); len(errs) == 0 {
-			return
+			return nil
 		}
-		time.Sleep(250 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(250 * time.Millisecond):
+		}
 	}
 }
 

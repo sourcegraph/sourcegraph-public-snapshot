@@ -1,4 +1,4 @@
-import '../../config/polyfill'
+import '../polyfills'
 
 import * as H from 'history'
 import React from 'react'

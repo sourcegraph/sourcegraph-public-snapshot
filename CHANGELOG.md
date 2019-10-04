@@ -18,15 +18,22 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Allow single trailing hyphen in usernames and org names [#5680](https://github.com/sourcegraph/sourcegraph/pull/5680)
-- Indexed search won't spam the logs on startup if the frontend API is not yet available. [zoekt#30](https://github.com/sourcegraph/zoekt/pull/30)
+- Indexed search won't spam the logs on startup if the frontend API is not yet available. [zoekt#30](https://github.com/sourcegraph/zoekt/pull/30), [#5866](https://github.com/sourcegraph/sourcegraph/pull/5866)
 - Sourcegraph now creates a secondary database within the configured PostgreSQL instance. This database has a name of the form `{PGDATABASE}_lsif`, where `{PGDATABASE}` is the name of the primary database. This is done automatically, but please ensure the configured PostgreSQL user has permission to perform `CREATE DATABASE` if using an external database before upgrading.
 
 ### Fixed
 
 - Fixed an issue that rendered the search filter `repohascommitafter` unusable in the presence of an empty repository. [#5149](https://github.com/sourcegraph/sourcegraph/issues/5149)
 - An issue where `externalURL` not being configured in the management console could go unnoticed. [#3899](https://github.com/sourcegraph/sourcegraph/issues/3899)
+- Listing branches and refs now falls back to a fast path if there are a large number of branches. Previously we would time out. [#4581](https://github.com/sourcegraph/sourcegraph/issues/4581)
 
 ### Removed
+
+## 3.8.2
+
+### Fixed
+
+- Sourcegraph cluster deployments now run a more stable syntax highlighting server which can self-recover from rarer failure cases such as getting stuck at high CPU usage when highlighting some specific files. [#5406](https://github.com/sourcegraph/sourcegraph/issues/5406) This will be ported to single-container deployments [at a later date](https://github.com/sourcegraph/sourcegraph/issues/5841).
 
 ## 3.8.1
 

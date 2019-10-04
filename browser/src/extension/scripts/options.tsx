@@ -1,6 +1,5 @@
 // We want to polyfill first.
-// prettier-ignore
-import '../../config/polyfill'
+import '../polyfills'
 
 import * as React from 'react'
 import { render } from 'react-dom'

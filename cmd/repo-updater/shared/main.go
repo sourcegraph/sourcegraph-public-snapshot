@@ -47,7 +47,9 @@ func Main(newPreSync repos.NewPreSync) {
 	}
 	log15.Debug("detected frontend ready")
 
-	gitserver.DefaultClient.WaitForGitServers(ctx)
+	if err := gitserver.DefaultClient.WaitForGitServers(ctx); err != nil {
+		log.Fatalf("gitservers not reachable: %v", err)
+	}
 	log15.Debug("detected gitservers ready")
 
 	dsn := conf.Get().ServiceConnections.PostgresDSN

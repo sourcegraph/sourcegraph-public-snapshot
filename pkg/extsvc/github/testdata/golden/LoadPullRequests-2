@@ -28,266 +28,373 @@
      "URL": "https://github.com/felixfbecker"
     }
    ],
-   "Reviews": [
+   "TimelineItems": [
     {
-     "Body": "Thanks for the fix! The chaining logic looks brilliant to me (as a non-FE dev).",
-     "State": "APPROVED",
-     "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086",
-     "Author": {
-      "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
-      "Login": "unknwon",
-      "URL": "https://github.com/unknwon"
-     },
-     "Commit": {
-      "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Committer": {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-       "Email": "loic@sourcegraph.com",
-       "Name": "Loïc Guychard",
-       "User": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-        "Login": "lguychard",
-        "URL": "https://github.com/lguychard"
-       }
+       "Login": "lguychard",
+       "URL": "https://github.com/lguychard"
       },
-      "Status": {
-       "Contexts": [
-        {
-         "AvatarURL": "https://avatars1.githubusercontent.com/oa/46194?s=40\u0026u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31\u0026v=4",
-         "Context": "buildkite/sourcegraph",
-         "Description": "Build #42686 passed (15 minutes, 37 seconds)",
-         "State": "SUCCESS",
-         "TargetURL": "https://buildkite.com/sourcegraph/sourcegraph/builds/42686",
-         "CreatedAt": "2019-09-12T10:21:27Z",
-         "Creator": {
-          "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
-          "Login": "felixfbecker",
-          "URL": "https://github.com/felixfbecker"
-         }
-        },
-        {
-         "AvatarURL": "https://avatars2.githubusercontent.com/in/398?s=40\u0026v=4",
-         "Context": "percy/Sourcegraph",
-         "Description": "Visual review automatically approved, no visual changes found.",
-         "State": "SUCCESS",
-         "TargetURL": "https://percy.io/Sourcegraph/Sourcegraph/builds/2575964?utm_campaign=Sourcegraph\u0026utm_content=Sourcegraph\u0026utm_source=github_status_public",
-         "CreatedAt": "2019-09-12T10:21:17Z",
-         "Creator": {
-          "AvatarURL": "https://avatars0.githubusercontent.com/in/398?v=4",
-          "Login": "percy",
-          "URL": "https://github.com/apps/percy"
-         }
-        }
-       ],
-       "State": "SUCCESS"
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
+       "Login": "unknwon",
+       "URL": "https://github.com/unknwon"
       },
-      "CommittedDate": "2019-09-12T10:05:39Z",
-      "PushedDate": "2019-09-12T10:05:45Z"
-     },
-     "CreatedAt": "2019-09-12T15:57:28Z",
-     "SubmittedAt": "2019-09-12T15:57:27Z"
+      "CreatedAt": "2019-09-12T10:06:09Z"
+     }
     },
     {
-     "Body": "",
-     "State": "COMMENTED",
-     "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355",
-     "Author": {
-      "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
-      "Login": "felixfbecker",
-      "URL": "https://github.com/felixfbecker"
-     },
-     "Commit": {
-      "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Committer": {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-       "Email": "loic@sourcegraph.com",
-       "Name": "Loïc Guychard",
-       "User": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-        "Login": "lguychard",
-        "URL": "https://github.com/lguychard"
-       }
+       "Login": "lguychard",
+       "URL": "https://github.com/lguychard"
       },
-      "Status": {
-       "Contexts": [
-        {
-         "AvatarURL": "https://avatars1.githubusercontent.com/oa/46194?s=40\u0026u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31\u0026v=4",
-         "Context": "buildkite/sourcegraph",
-         "Description": "Build #42686 passed (15 minutes, 37 seconds)",
-         "State": "SUCCESS",
-         "TargetURL": "https://buildkite.com/sourcegraph/sourcegraph/builds/42686",
-         "CreatedAt": "2019-09-12T10:21:27Z",
-         "Creator": {
-          "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
-          "Login": "felixfbecker",
-          "URL": "https://github.com/felixfbecker"
-         }
-        },
-        {
-         "AvatarURL": "https://avatars2.githubusercontent.com/in/398?s=40\u0026v=4",
-         "Context": "percy/Sourcegraph",
-         "Description": "Visual review automatically approved, no visual changes found.",
-         "State": "SUCCESS",
-         "TargetURL": "https://percy.io/Sourcegraph/Sourcegraph/builds/2575964?utm_campaign=Sourcegraph\u0026utm_content=Sourcegraph\u0026utm_source=github_status_public",
-         "CreatedAt": "2019-09-12T10:21:17Z",
-         "Creator": {
-          "AvatarURL": "https://avatars0.githubusercontent.com/in/398?v=4",
-          "Login": "percy",
-          "URL": "https://github.com/apps/percy"
-         }
-        }
-       ],
-       "State": "SUCCESS"
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
+       "Login": "felixfbecker",
+       "URL": "https://github.com/felixfbecker"
       },
-      "CommittedDate": "2019-09-12T10:05:39Z",
-      "PushedDate": "2019-09-12T10:05:45Z"
-     },
-     "CreatedAt": "2019-09-12T16:18:08Z",
-     "SubmittedAt": "2019-09-12T16:18:58Z"
+      "CreatedAt": "2019-09-12T10:06:09Z"
+     }
     },
     {
-     "Body": "",
-     "State": "COMMENTED",
-     "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287892741",
-     "Author": {
-      "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-      "Login": "lguychard",
-      "URL": "https://github.com/lguychard"
-     },
-     "Commit": {
-      "OID": "111be496f5b94e92842adf4b344f3d8ebecb9c0a",
-      "Message": "No need to explicitly remove the subscription",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/111be496f5b94e92842adf4b344f3d8ebecb9c0a",
-      "Committer": {
-       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-       "Email": "loic@sourcegraph.com",
-       "Name": "Loïc Guychard",
-       "User": {
+     "Type": "PullRequestReview",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
+       "Login": "unknwon",
+       "URL": "https://github.com/unknwon"
+      },
+      "AuthorAssociation": "MEMBER",
+      "Body": "Thanks for the fix! The chaining logic looks brilliant to me (as a non-FE dev).",
+      "State": "APPROVED",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086",
+      "CreatedAt": "2019-09-12T15:57:28Z",
+      "UpdatedAt": "2019-09-12T15:57:28Z",
+      "Commit": {
+       "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
+       "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
+       "Committer": {
         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-        "Login": "lguychard",
-        "URL": "https://github.com/lguychard"
-       }
-      },
-      "Status": {
-       "Contexts": [
-        {
-         "AvatarURL": "https://avatars1.githubusercontent.com/oa/46194?s=40\u0026u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31\u0026v=4",
-         "Context": "buildkite/sourcegraph",
-         "Description": "Build #42779 failed (10 minutes, 9 seconds)",
-         "State": "FAILURE",
-         "TargetURL": "https://buildkite.com/sourcegraph/sourcegraph/builds/42779",
-         "CreatedAt": "2019-09-13T09:11:12Z",
-         "Creator": {
-          "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
-          "Login": "felixfbecker",
-          "URL": "https://github.com/felixfbecker"
-         }
+        "Email": "loic@sourcegraph.com",
+        "Name": "Loïc Guychard",
+        "User": {
+         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+         "Login": "lguychard",
+         "URL": "https://github.com/lguychard"
         }
-       ],
-       "State": "FAILURE"
+       },
+       "CommittedDate": "2019-09-12T10:05:39Z",
+       "PushedDate": "2019-09-12T10:05:45Z"
       },
-      "CommittedDate": "2019-09-13T09:00:49Z",
-      "PushedDate": "2019-09-13T09:00:57Z"
-     },
-     "CreatedAt": "2019-09-13T09:01:10Z",
-     "SubmittedAt": "2019-09-13T09:01:10Z"
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "PullRequestReview",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
+       "Login": "felixfbecker",
+       "URL": "https://github.com/felixfbecker"
+      },
+      "AuthorAssociation": "MEMBER",
+      "Body": "",
+      "State": "COMMENTED",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355",
+      "CreatedAt": "2019-09-12T16:18:08Z",
+      "UpdatedAt": "2019-09-12T16:18:58Z",
+      "Commit": {
+       "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
+       "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
+       "Committer": {
+        "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+        "Email": "loic@sourcegraph.com",
+        "Name": "Loïc Guychard",
+        "User": {
+         "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+         "Login": "lguychard",
+         "URL": "https://github.com/lguychard"
+        }
+       },
+       "CommittedDate": "2019-09-12T10:05:39Z",
+       "PushedDate": "2019-09-12T10:05:45Z"
+      },
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "IssueComment",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/in/254?v=4",
+       "Login": "codecov",
+       "URL": "https://github.com/apps/codecov"
+      },
+      "Editor": null,
+      "AuthorAssociation": "NONE",
+      "Body": "# [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph/pull/5550?src=pr\u0026el=h1) Report\n\u003e Merging [#5550](https://codecov.io/gh/sourcegraph/sourcegraph/pull/5550?src=pr\u0026el=desc) into [master](https://codecov.io/gh/sourcegraph/sourcegraph/commit/f7097fe19816d0a9d637dc759722f6f43fd057ea?src=pr\u0026el=desc) will **decrease** coverage by `\u003c.01%`.\n\u003e The diff coverage is `0%`.\n\n```diff\n@@            Coverage Diff             @@\n##           master    #5550      +/-   ##\n==========================================\n- Coverage   46.57%   46.56%   -0.01%     \n==========================================\n  Files         741      741              \n  Lines       44953    44954       +1     \n  Branches     2628     2630       +2     \n==========================================\n  Hits        20935    20935              \n- Misses      21963    21964       +1     \n  Partials     2055     2055\n```\n\n| [Impacted Files](https://codecov.io/gh/sourcegraph/sourcegraph/pull/5550?src=pr\u0026el=tree) | Coverage Δ | |\n|---|---|---|\n| [...r/src/libs/code\\_intelligence/code\\_intelligence.tsx](https://codecov.io/gh/sourcegraph/sourcegraph/pull/5550/diff?src=pr\u0026el=tree#diff-YnJvd3Nlci9zcmMvbGlicy9jb2RlX2ludGVsbGlnZW5jZS9jb2RlX2ludGVsbGlnZW5jZS50c3g=) | `67.46% \u003c0%\u003e (-0.33%)` | :arrow_down: |\n",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#issuecomment-531172813",
+      "CreatedAt": "2019-09-13T09:41:29Z",
+      "UpdatedAt": "2019-09-13T09:41:29Z",
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "MergedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+       "Login": "lguychard",
+       "URL": "https://github.com/lguychard"
+      },
+      "MergeRefName": "master",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#event-2631781468",
+      "Commit": {
+       "OID": "f66b0addcbeb51d29350f3abc2af7ffb238af48a",
+       "Message": "Fix disableExtension flag for native integrations (#5550)\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/f66b0addcbeb51d29350f3abc2af7ffb238af48a",
+       "Committer": {
+        "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
+        "Email": "noreply@github.com",
+        "Name": "GitHub"
+       },
+       "CommittedDate": "2019-09-13T09:44:37Z",
+       "PushedDate": "2019-09-13T09:44:39Z"
+      },
+      "CreatedAt": "2019-09-13T09:44:38Z"
+     }
+    },
+    {
+     "Type": "ClosedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+       "Login": "lguychard",
+       "URL": "https://github.com/lguychard"
+      },
+      "CreatedAt": "2019-09-13T09:44:38Z",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#event-2631781475"
+     }
     }
    ],
    "CreatedAt": "2019-09-12T10:06:09Z",
    "UpdatedAt": "2019-09-13T09:44:39Z"
   },
   {
-   "ID": "MDExOlB1bGxSZXF1ZXN0MzE2ODMzMTA3",
-   "Title": "graphql: Remove init() and inject parsed Schema where needed",
-   "Body": "After running into nil panics because the schema was parsed _before_\r\n`dbconn.Global` was initialized, this changes the code so that we can\r\ninject a database connection into the schema constructor.\r\n\r\nPreviously all stores in the `db` package used `dbconn.Global` and there\r\nwas an implicit order of the calls (first the `dbconn.Global` was\r\ninitialized, then the stores were called, ...).\r\n\r\nThis makes the initialization order explicit by changing the `Main()`\r\nfunction in the `cli` package to first set up a database connection and\r\nthen parse the schema and then set up the handlers.\r\n",
-   "State": "MERGED",
-   "URL": "https://github.com/sourcegraph/sourcegraph/pull/5551",
-   "Number": 5551,
+   "ID": "MDExOlB1bGxSZXF1ZXN0MzIzNzkyNTA0",
+   "Title": "[WIP] a8n: ChangesetEvents",
+   "Body": "\r\n\u003c!-- Reminder: Have you updated the changelog and relevant docs ? --\u003e\r\n\r\nTest plan: \u003c!-- Required: What is the test plan for this change? --\u003e\r\n",
+   "State": "OPEN",
+   "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834",
+   "Number": 5834,
    "Author": {
-    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-    "Login": "mrnugget",
-    "URL": "https://github.com/mrnugget"
+    "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+    "Login": "tsenart",
+    "URL": "https://github.com/tsenart"
    },
    "Participants": [
-    {
-     "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-     "Login": "mrnugget",
-     "URL": "https://github.com/mrnugget"
-    },
     {
      "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
      "Login": "tsenart",
      "URL": "https://github.com/tsenart"
     }
    ],
-   "Reviews": [
+   "TimelineItems": [
     {
-     "Body": "",
-     "State": "APPROVED",
-     "URL": "https://github.com/sourcegraph/sourcegraph/pull/5551#pullrequestreview-287333738",
-     "Author": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
-      "Login": "tsenart",
-      "URL": "https://github.com/tsenart"
-     },
-     "Commit": {
-      "OID": "b453eefd560dbedcc7bcead53e21be50b483998c",
-      "Message": "graphql: Remove init() and inject parsed Schema where needed\n\nAfter running into nil panics because the schema was parsed _before_\n`dbconn.Global` was initialized, this changes the code so that we can\ninject a database connection into the schema constructor.\n\nPreviously all stores in the `db` package used `dbconn.Global` and there\nwas an implicit order of the calls (first the `dbconn.Global` was\ninitialized, then the stores were called, ...).\n\nThis makes the initialization order explicit by changing the `Main()`\nfunction in the `cli` package to first set up a database connection and\nthen parse the schema and then set up the handlers.",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/b453eefd560dbedcc7bcead53e21be50b483998c",
-      "Committer": {
-       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-       "Email": "mrnugget@gmail.com",
-       "Name": "Thorsten Ball",
-       "User": {
-        "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-        "Login": "mrnugget",
-        "URL": "https://github.com/mrnugget"
-       }
+     "Type": "RenamedTitleEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
       },
-      "Status": {
-       "Contexts": [
-        {
-         "AvatarURL": "https://avatars1.githubusercontent.com/oa/46194?s=40\u0026u=45d59e9c4b18ea0bb3f1b83261e6ef7e7906ab31\u0026v=4",
-         "Context": "buildkite/sourcegraph",
-         "Description": "Build #42689 passed (15 minutes, 7 seconds)",
-         "State": "SUCCESS",
-         "TargetURL": "https://buildkite.com/sourcegraph/sourcegraph/builds/42689",
-         "CreatedAt": "2019-09-12T10:29:40Z",
-         "Creator": {
-          "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
-          "Login": "felixfbecker",
-          "URL": "https://github.com/felixfbecker"
-         }
-        },
-        {
-         "AvatarURL": "https://avatars2.githubusercontent.com/in/398?s=40\u0026v=4",
-         "Context": "percy/Sourcegraph",
-         "Description": "Visual review automatically approved, no visual changes found.",
-         "State": "SUCCESS",
-         "TargetURL": "https://percy.io/Sourcegraph/Sourcegraph/builds/2575995?utm_campaign=Sourcegraph\u0026utm_content=Sourcegraph\u0026utm_source=github_status_public",
-         "CreatedAt": "2019-09-12T10:29:34Z",
-         "Creator": {
-          "AvatarURL": "https://avatars0.githubusercontent.com/in/398?v=4",
-          "Login": "percy",
-          "URL": "https://github.com/apps/percy"
-         }
+      "PreviousTitle": "A8n/changeset events",
+      "CurrentTitle": "a8n: ChangesetEvents",
+      "CreatedAt": "2019-10-02T14:49:45Z"
+     }
+    },
+    {
+     "Type": "AssignedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "Assignee": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "CreatedAt": "2019-10-03T12:05:41Z"
+     }
+    },
+    {
+     "Type": "IssueComment",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "Editor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "AuthorAssociation": "MEMBER",
+      "Body": "This is a comment. EDIT",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537920237",
+      "CreatedAt": "2019-10-03T12:18:21Z",
+      "UpdatedAt": "2019-10-03T12:22:14Z",
+      "IncludesCreatedEdit": true
+     }
+    },
+    {
+     "Type": "ClosedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "CreatedAt": "2019-10-03T14:02:51Z",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#event-2684174597"
+     }
+    },
+    {
+     "Type": "ReopenedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "CreatedAt": "2019-10-03T14:02:54Z"
+     }
+    },
+    {
+     "Type": "PullRequestReview",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "AuthorAssociation": "MEMBER",
+      "Body": "A review",
+      "State": "COMMENTED",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-296894453",
+      "CreatedAt": "2019-10-03T14:03:23Z",
+      "UpdatedAt": "2019-10-03T14:03:23Z",
+      "Commit": {
+       "OID": "0830ebfae3fa8f6405d30c1d0bb6dbdfba514e3f",
+       "Message": "a8n: Fix CreateChangesetEvent query",
+       "URL": "https://github.com/sourcegraph/sourcegraph/commit/0830ebfae3fa8f6405d30c1d0bb6dbdfba514e3f",
+       "Committer": {
+        "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+        "Email": "tsenart@gmail.com",
+        "Name": "Tomás Senart",
+        "User": {
+         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+         "Login": "tsenart",
+         "URL": "https://github.com/tsenart"
         }
-       ],
-       "State": "SUCCESS"
+       },
+       "CommittedDate": "2019-10-02T14:41:15Z",
+       "PushedDate": "2019-10-02T14:41:30Z"
       },
-      "CommittedDate": "2019-09-12T10:08:42Z",
-      "PushedDate": "2019-09-12T10:14:27Z"
-     },
-     "CreatedAt": "2019-09-12T10:28:39Z",
-     "SubmittedAt": "2019-09-12T10:28:39Z"
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "IssueComment",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "Editor": null,
+      "AuthorAssociation": "MEMBER",
+      "Body": "Making this PR the playground for fetching timeline events from Github. ",
+      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537960109",
+      "CreatedAt": "2019-10-03T14:04:06Z",
+      "UpdatedAt": "2019-10-03T14:04:06Z",
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/1646931?v=4",
+       "Login": "beyang",
+       "URL": "https://github.com/beyang"
+      },
+      "CreatedAt": "2019-10-03T14:04:11Z"
+     }
+    },
+    {
+     "Type": "ReviewRequestedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/3173176?v=4",
+       "Login": "slimsag",
+       "URL": "https://github.com/slimsag"
+      },
+      "CreatedAt": "2019-10-03T14:04:11Z"
+     }
+    },
+    {
+     "Type": "RenamedTitleEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "PreviousTitle": "a8n: ChangesetEvents",
+      "CurrentTitle": "[WIP] a8n: ChangesetEvents",
+      "CreatedAt": "2019-10-03T14:04:27Z"
+     }
+    },
+    {
+     "Type": "UnassignedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "Assignee": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "CreatedAt": "2019-10-03T14:04:58Z"
+     }
     }
    ],
-   "CreatedAt": "2019-09-12T10:15:39Z",
-   "UpdatedAt": "2019-09-12T10:41:41Z"
+   "CreatedAt": "2019-10-02T14:49:31Z",
+   "UpdatedAt": "2019-10-03T14:04:58Z"
   },
   {
    "ID": "MDExOlB1bGxSZXF1ZXN0MTMxMjUxNjg=",
@@ -313,7 +420,71 @@
      "URL": "https://github.com/tsenart"
     }
    ],
-   "Reviews": [],
+   "TimelineItems": [
+    {
+     "Type": "IssueComment",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "Editor": null,
+      "AuthorAssociation": "OWNER",
+      "Body": "Many files have changed mode. This isn't something you should do when issuing a PR (unless you have a good reason for it).\n",
+      "URL": "https://github.com/tsenart/vegeta/pull/50#issuecomment-36845213",
+      "CreatedAt": "2014-03-06T11:06:57Z",
+      "UpdatedAt": "2014-03-06T11:06:57Z",
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "IssueComment",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "Editor": null,
+      "AuthorAssociation": "OWNER",
+      "Body": "You're also including your other PR's changeset here. It's confusing to review if not commit by commit.\n",
+      "URL": "https://github.com/tsenart/vegeta/pull/50#issuecomment-36845273",
+      "CreatedAt": "2014-03-06T11:07:35Z",
+      "UpdatedAt": "2014-03-06T11:07:35Z",
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "IssueComment",
+     "Item": {
+      "Author": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "Editor": null,
+      "AuthorAssociation": "OWNER",
+      "Body": "Sorry, I don't feel this patch is good enough to make it into master, both in terms of semantics and implementation.\n",
+      "URL": "https://github.com/tsenart/vegeta/pull/50#issuecomment-36845573",
+      "CreatedAt": "2014-03-06T11:11:42Z",
+      "UpdatedAt": "2014-03-06T11:11:42Z",
+      "IncludesCreatedEdit": false
+     }
+    },
+    {
+     "Type": "ClosedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
+       "Login": "tsenart",
+       "URL": "https://github.com/tsenart"
+      },
+      "CreatedAt": "2014-03-06T11:11:42Z",
+      "URL": "https://github.com/tsenart/vegeta/pull/50#event-99444167"
+     }
+    }
+   ],
    "CreatedAt": "2014-03-03T18:08:45Z",
    "UpdatedAt": "2014-03-06T11:11:42Z"
   }
