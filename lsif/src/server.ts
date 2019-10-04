@@ -19,6 +19,7 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
+import { Configuration, watchConfig, ConfigurationContext } from './config'
 
 const pipeline = promisify(_pipeline)
 
@@ -79,6 +80,9 @@ const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex 
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  */
 async function main(): Promise<void> {
+    // Read configuration from frontend
+    const ctx = await waitForConfiguration()
+
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
     documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
@@ -95,7 +99,7 @@ async function main(): Promise<void> {
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection()
+    const connection = await createPostgresConnection(ctx)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
@@ -208,6 +212,28 @@ async function main(): Promise<void> {
             console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
         }
     })
+}
+
+/**
+ * Create a configuration context and wait for it to initialize. If the
+ * PostgresDNS configuration changes, it will forcibly exit the process.
+ */
+async function waitForConfiguration(): Promise<ConfigurationContext> {
+    let oldConfiguration: Configuration | undefined
+    const context = watchConfig(newConfiguration => {
+        if (oldConfiguration !== undefined && newConfiguration.postgresDSN !== oldConfiguration.postgresDSN) {
+            // The DSN was changed (e.g. by someone modifying the env vars on the frontend).
+            // We need to respect the new DSN. Easiest way to do that is to restart our
+            // service (kubernetes/docker/goreman will handle starting us back up).
+            console.error('Detected Postgres DSN change, restarting to take effect')
+            process.exit(1)
+        }
+
+        oldConfiguration = newConfiguration
+    })
+
+    await context.initialized
+    return context
 }
 
 /**

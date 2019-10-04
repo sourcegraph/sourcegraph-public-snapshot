@@ -1,8 +1,8 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
-import { userInfo } from 'os'
 import { entities } from './models.xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
+import { ConfigurationContext } from './config'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -58,45 +58,32 @@ export function createSqliteConnection(
  * a configured time) until the connection is established, then blocks
  * indefinitely while the database migration state is behind the
  * expected minimum, or dirty.
+ *
+ * @param ctx The configuration context instance.
  */
-export async function createPostgresConnection(): Promise<Connection> {
-    // Get configuration for **frontend** database
-    const connectionOptions = createPostgresConnectionOptions()
+export async function createPostgresConnection(ctx: ConfigurationContext): Promise<Connection> {
+    // Parse current PostgresDSN into connection options usable by
+    // the typeorm postgres adapter.
+    const url = new URL(ctx.current.postgresDSN)
+    const connectionOptions = {
+        host: url.hostname,
+        port: parseInt(url.port, 10) || 5432,
+        username: url.username,
+        password: url.password,
+        database: url.pathname.substring(1),
+        ssl: url.searchParams.get('sslmode') === 'disable' ? false : undefined,
+    }
+
     // Override the database name we're connecting to
-    const connection = await connect({ ...connectionOptions, database: connectionOptions.database + '_lsif' })
+    const connection = await connect({
+        ...connectionOptions,
+        database: connectionOptions.database + '_lsif',
+    })
+
     // Poll the schema migrations table until we are up to date
     await waitForMigrations(connection, connectionOptions.database || '')
 
     return connection
-}
-
-/**
- * Create Postgres typeorm connection options from environment variables. This will
- * first try to read `PGDATASOURCE`, if set, and falls back to the values in the
- * variables `PG{HOST,PORT,USER,PASSWORD,DATABASE,SSLMODE}`.
- */
-function createPostgresConnectionOptions(): PostgresConnectionCredentialsOptions {
-    if (process.env.PGDATASOURCE) {
-        const url = new URL(process.env.PGDATASOURCE)
-
-        return {
-            host: url.hostname,
-            port: parseInt(url.port, 10) || 5432,
-            username: url.username || 'postgres',
-            password: url.password,
-            database: url.pathname,
-            ssl: url.searchParams.get('sslmode') === 'disable' ? false : undefined,
-        }
-    }
-
-    return {
-        host: process.env.PGHOST || '127.0.0.1',
-        port: process.env.PGPORT ? parseInt(process.env.PGPORT, 10) : 5432,
-        username: process.env.PGUSER || userInfo().username || 'postgres',
-        password: process.env.PGPASSWORD,
-        database: process.env.PGDATABASE || 'sourcegraph',
-        ssl: process.env.PGSSLMODE === '' ? false : undefined,
-    }
 }
 
 /**

@@ -9,6 +9,7 @@ import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } 
 import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
+import { Configuration, ConfigurationContext, watchConfig } from './config'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -77,13 +78,16 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
+    // Read configuration from frontend
+    const ctx = await waitForConfiguration()
+
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection()
+    const connection = await createPostgresConnection(ctx)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {
@@ -99,6 +103,28 @@ async function main(): Promise<void> {
     if (LOG_READY) {
         console.log('Listening for uploads')
     }
+}
+
+/**
+ * Create a configuration context and wait for it to initialize. If the
+ * PostgresDNS configuration changes, it will forcibly exit the process.
+ */
+async function waitForConfiguration(): Promise<ConfigurationContext> {
+    let oldConfiguration: Configuration | undefined
+    const context = watchConfig(newConfiguration => {
+        if (oldConfiguration !== undefined && newConfiguration.postgresDSN !== oldConfiguration.postgresDSN) {
+            // The DSN was changed (e.g. by someone modifying the env vars on the frontend).
+            // We need to respect the new DSN. Easiest way to do that is to restart our
+            // service (kubernetes/docker/goreman will handle starting us back up).
+            console.error('Detected Postgres DSN change, restarting to take effect')
+            process.exit(1)
+        }
+
+        oldConfiguration = newConfiguration
+    })
+
+    await context.initialized
+    return context
 }
 
 /**
