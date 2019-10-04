@@ -113,21 +113,17 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 		effectiveRepoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
 
-		// Only care about the first valid value.
-		i := 0
+		validValues := effectiveRepoFieldValues[:0]
 		for _, v := range effectiveRepoFieldValues {
 			if _, err := regexp.Compile(v); err == nil {
-				effectiveRepoFieldValues[i] = v
-				i++
-				break
+				validValues = append(validValues, v)
 			}
 		}
-		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
-		if len(effectiveRepoFieldValues) == 0 {
+		if len(validValues) == 0 {
 			return nil, nil
 		}
 
-		repoRevs, _, _, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+		repoRevs, _, _, err := r.resolveRepositories(ctx, validValues)
 		if err != nil {
 			return nil, err
 		} else if len(repoRevs) == 0 {
