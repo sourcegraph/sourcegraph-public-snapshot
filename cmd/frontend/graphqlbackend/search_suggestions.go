@@ -106,7 +106,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 	showLangSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
 		// The "repo:" field must be specified for showing language suggestions.
-		// For performance reason, only try to get languages of the first repository found
+		// For performance reasons, only try to get languages of the first repository found
 		// within the scope of the "repo:" field value.
 		if len(r.query.Values(query.FieldRepo)) == 0 {
 			return nil, nil
