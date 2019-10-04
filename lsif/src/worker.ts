@@ -41,7 +41,7 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
- * @param logger The worker's logger instance.
+ * @param logger The logger instance.
  */
 function createConvertJob(
     xrepoDatabase: XrepoDatabase,
@@ -87,7 +87,7 @@ function createConvertJob(
 /**
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  *
- * @param logger The application logger instance.
+ * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
     // Ensure storage roots exist
@@ -111,7 +111,7 @@ async function main(logger: Logger): Promise<void> {
 /**
  * Connect to redis and begin processing work with the given hash of job functions.
  *
- * @param logger The worker's logger instance.
+ * @param logger The logger instance.
  * @param jobFunctions An object whose values are the functions to execute for a job name matching its key.
  */
 async function startWorker(
@@ -153,7 +153,7 @@ async function startWorker(
 /**
  * Create an express server that only has /healthz and /metric endpoints.
  *
- * @param logger The worker's logger instance.
+ * @param logger The logger instance.
  */
 function startMetricsServer(logger: Logger): void {
     const app = express()

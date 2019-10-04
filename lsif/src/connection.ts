@@ -3,6 +3,7 @@ import { userInfo } from 'os'
 import { entities } from './models.xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
+import { Logger } from 'winston'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -12,6 +13,11 @@ import { readEnvInt } from './util'
  * migrating).
  */
 const MINIMUM_MIGRATION_VERSION = 1528395596
+
+/**
+ * How many times to check if the database schema is up to date on startup.
+ */
+const MAX_SCHEMA_POLLS = readEnvInt('MAX_SCHEMA_POLLS', 60)
 
 /**
  * How long to wait between queries to check the current database migration version on startup.
@@ -58,14 +64,19 @@ export function createSqliteConnection(
  * a configured time) until the connection is established, then blocks
  * indefinitely while the database migration state is behind the
  * expected minimum, or dirty.
+ *
+ * @param logger The logger instance.
  */
-export async function createPostgresConnection(): Promise<Connection> {
+export async function createPostgresConnection(logger: Logger): Promise<Connection> {
     // Get configuration for **frontend** database
     const connectionOptions = createPostgresConnectionOptions()
     // Override the database name we're connecting to
-    const connection = await connect({ ...connectionOptions, database: connectionOptions.database + '_lsif' })
+    const connection = await connect(
+        { ...connectionOptions, database: connectionOptions.database + '_lsif' },
+        logger
+    )
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection, connectionOptions.database || '')
+    await waitForMigrations(connection, connectionOptions.database || '', logger)
 
     return connection
 }
@@ -107,9 +118,12 @@ function createPostgresConnectionOptions(): PostgresConnectionCredentialsOptions
  * `CONNECTION_RETRY_INTERVAL` environment variables.
  *
  * @param connectionOptions The connection options.
+ * @param logger The logger instance.
  */
-async function connect(connectionOptions: PostgresConnectionCredentialsOptions): Promise<Connection> {
-    for (let attempts = 0; ; attempts++) {
+async function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
+    for (let attempt = 0; attempt < MAX_CONNECTION_RETRIES; attempt++) {
+        logger.debug('connecting to cross-repository database')
+
         try {
             return await _createConnection({
                 type: 'postgres',
@@ -124,15 +138,18 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions):
             // invalid_catalog_name in:
             // https://www.postgresql.org/docs/9.4/errcodes-appendix.html.
 
-            if (error && error.code === '3D000' && attempts + 1 < MAX_CONNECTION_RETRIES) {
-                // snooze for a bit then retry
-                await new Promise(resolve => setTimeout(resolve, CONNECTION_RETRY_INTERVAL * 1000))
+            if (error && error.code === '3D000') {
+                // wait for migration
+                await sleep(CONNECTION_RETRY_INTERVAL)
                 continue
             }
 
             throw error
         }
     }
+
+    // just bail
+    throw new Error('cross-repository database does not exist')
 }
 
 /**
@@ -141,26 +158,33 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions):
  *
  * @param connection The connection to use.
  * @param database The target database in which to perform the query.
+ * @param logger The logger instance.
  */
-async function waitForMigrations(connection: Connection, database: string): Promise<void> {
-    while (true) {
-        try {
-            // Get migration version from frontend database
-            const currentVersion = await getMigrationVersion(connection, database)
+async function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
+    for (let attempt = 0; attempt < MAX_SCHEMA_POLLS; attempt++) {
+        logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
-            // Check to see if the current version is at least the minimum version
-            if (parseInt(currentVersion, 10) >= MINIMUM_MIGRATION_VERSION) {
-                return
-            }
-
-            console.log(`waiting for migrations to be applied (${currentVersion} < ${MINIMUM_MIGRATION_VERSION})`)
-        } catch (error) {
-            console.log('failed to determine current database migration state', error)
+        // Note: this can't fail "normally" (due to pre-migration races) as the
+        // cross-repository databases to which we connected exists, meaning that
+        // the primary sourcegraph database also exists. An error here is a real
+        // big deal, don't retry.
+        const { version, dirty } = await getMigrationVersion(connection, database)
+        if (dirty) {
+            // requires user intervention
+            throw new Error('database is dirty')
         }
 
-        // snooze for a bit then retry
-        await new Promise(resolve => setTimeout(resolve, SCHEMA_POLL_INTERVAL * 1000))
+        if (parseInt(version, 10) < MINIMUM_MIGRATION_VERSION) {
+            // Wait for migration
+            await sleep(SCHEMA_POLL_INTERVAL)
+            continue
+        }
+
+        return
     }
+
+    // just bail
+    throw new Error('database is not up to date')
 }
 
 /**
@@ -175,7 +199,10 @@ async function waitForMigrations(connection: Connection, database: string): Prom
  * @param connection The database connection.
  * @param database The target database in which to perform the query.
  */
-async function getMigrationVersion(connection: Connection, database: string): Promise<string> {
+async function getMigrationVersion(
+    connection: Connection,
+    database: string
+): Promise<{ version: string; dirty: boolean }> {
     const query = `
         select * from
         dblink('dbname=' || $1 || ' user=' || current_user, 'select * from schema_migrations')
@@ -187,9 +214,19 @@ async function getMigrationVersion(connection: Connection, database: string): Pr
         dirty: boolean
     }[]
 
-    if (rows.length > 0 && !rows[0].dirty) {
-        return rows[0].version
+    if (rows.length > 0) {
+        return rows[0]
     }
 
     throw new Error('Unusable migration state.')
+}
+
+/**
+ * Simulate sleep.
+ *
+ * @param durationMs How long to sleep.
+ */
+function sleep(durationMs: number): Promise<void> {
+    // TODO - is there a package for this?
+    return new Promise(resolve => setTimeout(resolve, durationMs))
 }

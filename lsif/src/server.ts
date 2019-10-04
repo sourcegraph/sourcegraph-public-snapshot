@@ -81,7 +81,7 @@ const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  *
- * @param logger The server's logger instance.
+ * @param logger The logger instance.
  */
 const errorHandler = (
     logger: Logger
@@ -104,7 +104,7 @@ const errorHandler = (
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  *
- * @param logger The application logger instance.
+ * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
     // Update cache capacities on startup
@@ -149,7 +149,7 @@ async function main(logger: Logger): Promise<void> {
  * master election via a redis key and will check for dead workers attached
  * to the queue.
  *
- * @param logger The server's logger instance.
+ * @param logger The logger instance.
  */
 async function setupQueue(logger: Logger): Promise<Queue> {
     const [host, port] = REDIS_ENDPOINT.split(':', 2)
@@ -197,7 +197,7 @@ function metaEndpoints(): express.Router {
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param queue The queue containing LSIF jobs.
- * @param logger The server's logger instance.
+ * @param logger The logger instance.
  */
 async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Router> {
     const router = express.Router()
@@ -246,13 +246,13 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
     }
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
+        const dbLogger = logger.child({ repository, commit })
+
         // Try to construct database for the exact commit
         const database = await tryLoadDatabase(repository, commit)
         if (database) {
             return database
         }
-
-        // TODO - log here as well
 
         // If we don't know about this commit, request updated commit data
         // from the gitserver. This will pull back ancestors for this commit
@@ -260,11 +260,18 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (!(await xrepoDatabase.isCommitTracked(repository, commit))) {
-            await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, logger)
+            const updateCommitsTimer = dbLogger.startTimer()
+            dbLogger.debug('updating commits for repo')
+            await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, dbLogger)
+            updateCommitsTimer.done({ message: 'updated commits for repo', level: 'debug' })
         }
 
         // Determine the closest commit that we actually have LSIF data for
+        const findClosestCommitTimer = dbLogger.startTimer()
+        dbLogger.debug('querying closest commit with LISF data')
         const commitWithData = await xrepoDatabase.findClosestCommitWithData(repository, commit)
+        findClosestCommitTimer.done({ message: 'retrieved closest commit with LSISF data', level: 'debug' })
+
         if (!commitWithData) {
             return undefined
         }
@@ -294,7 +301,7 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
                 }
 
                 // Enqueue convert job
-                logger.info('enqueueing convert job', { repository, commit })
+                logger.debug('enqueueing convert job', { repository, commit })
                 await queue.enqueue('lsif', 'convert', [repository, commit, filename])
                 res.json(null)
             }

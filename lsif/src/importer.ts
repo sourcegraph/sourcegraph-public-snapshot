@@ -67,7 +67,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  *
  * @param input The input stream containing JSON-encoded LSIF data.
  * @param database The filepath of the database to populate.
- * @param logger The logger tagged with the request's repo and commit.
+ * @param logger The logger instance.
  */
 export async function convertLsif(
     input: Readable,
@@ -93,7 +93,7 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param logger The logger tagged with the request's repo and commit.
+ * @param logger The logger instance.
  */
 export async function importLsif(
     entityManager: EntityManager,
