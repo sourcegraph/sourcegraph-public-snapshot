@@ -8,14 +8,14 @@ import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { createLogger } from './logging'
 import { createPostgresConnection } from './connection'
-import { GITSERVER_URLS, updateCommits } from './commits'
 import { JobsHash, Worker } from 'node-resque'
 import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
 import { Tracer } from 'opentracing'
 import { MonitoringContext, monitor } from './monitoring'
-import { waitForConfiguration } from './config'
+import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createTracer } from './tracing'
+import { updateCommits } from './commits'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -45,11 +45,13 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
+ * @param configurationFetcher A function that returns the current configuration.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 function createConvertJob(
     xrepoDatabase: XrepoDatabase,
+    configurationFetcher: ConfigurationFetcher,
     logger: Logger,
     tracer: Tracer | undefined
 ): (repository: string, commit: string, filename: string) => Promise<void> {
@@ -81,7 +83,7 @@ function createConvertJob(
             }
 
             // Update commit parentage information for this commit
-            await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, ctx)
+            await updateCommits(configurationFetcher().gitServers, xrepoDatabase, repository, commit, ctx)
 
             // Remove input
             await fs.unlink(filename)
@@ -96,10 +98,10 @@ function createConvertJob(
  */
 async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
-    const configuration = (await waitForConfiguration(logger))()
+    const configurationFetcher = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-worker', configuration)
+    const tracer = createTracer('lsif-worker', configurationFetcher())
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -107,7 +109,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(configuration, logger)
+    const connection = await createPostgresConnection(configurationFetcher(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     // Start metrics server
@@ -115,7 +117,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Create worker and start processing jobs
     await startWorker(logger, {
-        convert: createConvertJob(xrepoDatabase, logger, tracer),
+        convert: createConvertJob(xrepoDatabase, configurationFetcher, logger, tracer),
     })
 }
 

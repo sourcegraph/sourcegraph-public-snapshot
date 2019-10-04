@@ -13,7 +13,7 @@ import { createLogger } from './logging'
 import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
-import { GITSERVER_URLS, updateCommits } from './commits'
+import { updateCommits } from './commits'
 import { identity } from 'lodash'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
@@ -26,7 +26,7 @@ import { XrepoDatabase } from './xrepo'
 import { monitor, MonitoringContext } from './monitoring'
 import { Tracer, Span } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
-import { waitForConfiguration, Configuration } from './config'
+import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createTracer } from './tracing'
 
 const pipeline = promisify(_pipeline)
@@ -96,15 +96,15 @@ const errorHandler = (
     res: express.Response,
     next: express.NextFunction
 ): void => {
-    if (!error || !error.status) {
-        // Only log errors that don't have a status attached
-        logger.error('uncaught exception', { error })
-    }
+        if (!error || !error.status) {
+            // Only log errors that don't have a status attached
+            logger.error('uncaught exception', { error })
+        }
 
-    if (!res.headersSent) {
-        res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+        if (!res.headersSent) {
+            res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+        }
     }
-}
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -113,10 +113,10 @@ const errorHandler = (
  */
 async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
-    const configuration = (await waitForConfiguration(logger))()
+    const configurationFetcher = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-server', configuration)
+    const tracer = createTracer('lsif-server', configurationFetcher())
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -150,7 +150,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, configuration, logger, tracer))
+    app.use(await lsifEndpoints(queue, configurationFetcher, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -213,13 +213,13 @@ function metaEndpoints(): express.Router {
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param queue The queue containing LSIF jobs.
- * @param configuration The current configuration.
+ * @param configurationFetcher A function that returns the current configuration.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 async function lsifEndpoints(
     queue: Queue,
-    configuration: Configuration,
+    configurationFetcher: ConfigurationFetcher,
     logger: Logger,
     tracer: Tracer | undefined
 ): Promise<express.Router> {
@@ -231,7 +231,7 @@ async function lsifEndpoints(
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(configuration, logger)
+    const connection = await createPostgresConnection(configurationFetcher(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     /**
@@ -287,11 +287,13 @@ async function lsifEndpoints(
      * given commit or which we have LSIF data commit. This may request more
      * data from gitserver on-demand.
      *
+     * @param gitserverUrls The set of ordered gitserver urls.
      * @param repository The repository name.
      * @param commit The commit.
      * @param ctx The monitoring context.
      */
     const createDatabase = async (
+        gitserverUrls: string[],
         repository: string,
         commit: string,
         ctx: MonitoringContext
@@ -308,7 +310,7 @@ async function lsifEndpoints(
         // cross-repository database. This populates the necessary data for
         // the following query.
         await monitor(ctx, 'updating commits for repo', (ctx: MonitoringContext) =>
-            updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, ctx)
+            updateCommits(gitserverUrls, xrepoDatabase, repository, commit, ctx)
         )
 
         // Determine the closest commit that we actually have LSIF data for
@@ -387,7 +389,7 @@ async function lsifEndpoints(
                 checkCommit(commit)
 
                 const ctx = createMonitoringContext(req, repository, commit)
-                const db = await monitor(ctx, 'creating database', ctx => createDatabase(repository, commit, ctx))
+                const db = await monitor(ctx, 'creating database', ctx => createDatabase(configurationFetcher().gitServers, repository, commit, ctx))
                 if (!db) {
                     res.json(false)
                     return
@@ -413,7 +415,7 @@ async function lsifEndpoints(
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 const ctx = createMonitoringContext(req, repository, commit)
-                const db = await monitor(ctx, 'creating database', ctx => createDatabase(repository, commit, ctx))
+                const db = await monitor(ctx, 'creating database', ctx => createDatabase(configurationFetcher().gitServers, repository, commit, ctx))
                 if (!db) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,

@@ -4,11 +4,6 @@ import { XrepoDatabase } from './xrepo'
 import { MonitoringContext, monitor } from './monitoring'
 
 /**
- * The URLs of the gitservers to query for branch and commit data.
- */
-export const GITSERVER_URLS = (process.env.SRC_GIT_SERVERS || 'http://gitserver:3178').split(/\s+/)
-
-/**
  * THe number of commits to ask gitserver for when updating commit data for
  * a particular repository.
  */

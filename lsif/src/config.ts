@@ -59,7 +59,7 @@ export type ConfigurationFetcher = () => Configuration
  * the process remains up changes, it will forcibly exit the process to allow
  * whatever orchestrator is running this process restart it.
  *
- * * @param logger The logger instance.
+ * @param logger The logger instance.
  */
 export async function waitForConfiguration(logger: Logger): Promise<ConfigurationFetcher> {
     let oldConfiguration: Configuration | undefined
@@ -73,7 +73,7 @@ export async function waitForConfiguration(logger: Logger): Promise<Configuratio
 
             oldConfiguration = configuration
             resolve()
-        }).catch(() => {})
+        }).catch(() => { })
     })
 
     return () => oldConfiguration!
@@ -101,7 +101,6 @@ function requireRestart(oldConfiguration: Configuration, newConfiguration: Confi
  */
 async function updateConfiguration(logger: Logger, onChange: (configuration: Configuration) => void): Promise<never> {
     const start = Date.now()
-
     while (true) {
         try {
             onChange(await loadConfiguration())
