@@ -1,5 +1,5 @@
 import * as LightStep from 'lightstep-tracer'
-import { ConfigurationContext } from './config'
+import { Configuration } from './config'
 import { Span, Tracer } from 'opentracing'
 import { initTracerFromEnv } from 'jaeger-client'
 
@@ -7,10 +7,10 @@ import { initTracerFromEnv } from 'jaeger-client'
  * Create a distributed tracer.
  *
  * @param serviceName The name of the process.
- * @param ctx The configuration context instance.
+ * @param configuration The current configuration.
  */
-export function createTracer(serviceName: string, ctx: ConfigurationContext): Tracer | undefined {
-    if (ctx.current.useJaeger) {
+export function createTracer(serviceName: string, configuration: Configuration): Tracer | undefined {
+    if (configuration.useJaeger) {
         const config = {
             serviceName,
             sampler: {
@@ -22,9 +22,9 @@ export function createTracer(serviceName: string, ctx: ConfigurationContext): Tr
         return initTracerFromEnv(config, {})
     }
 
-    if (ctx.current.lightstepAccessToken !== '') {
+    if (configuration.lightstepAccessToken !== '') {
         return new LightStep.Tracer({
-            access_token: ctx.current.lightstepAccessToken,
+            access_token: configuration.lightstepAccessToken,
             component_name: serviceName,
         })
     }

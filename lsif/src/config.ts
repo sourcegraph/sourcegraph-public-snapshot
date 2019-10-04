@@ -2,6 +2,7 @@ import got from 'got'
 import { readEnvInt } from './util'
 import * as json5 from 'json5'
 import { Logger } from 'winston'
+import { isEqual, pick } from 'lodash'
 
 /**
  * HTTP address for internal frontend HTTP API.
@@ -20,24 +21,6 @@ const DELAY_BEFORE_UNREACHABLE_LOG = readEnvInt('DELAY_BEFORE_UNREACHABLE_LOG', 
  * How long to wait between polling config.
  */
 const CONFIG_POLL_INTERVAL = 5
-
-/**
- * A container for the current configuration data. This object should
- * be passed around and its current field should be read fresh each
- * time it is used. It will be mutable updated in the background.
- */
-export interface ConfigurationContext {
-    /**
-     * The current configuration.
-     */
-    current: Configuration
-
-    /**
-     * A promise that resolves once the current configuration has been
-     * successfully read for the first time.
-     */
-    initialized: Promise<void>
-}
 
 /**
  * Service configuration data pulled from the frontend.
@@ -65,27 +48,35 @@ export interface Configuration {
 }
 
 /**
- * Create a configuration context and wait for it to initialize. If any
- * of the fields that cannot be updated while the process remains up
- * changes, it will forcibly exit the process to allow whatever orchestrator
- * is running this process restart it.
- *
- * @param logger The logger instance.
+ * A function that returns the current configuration.
  */
-export async function waitForConfiguration(logger: Logger): Promise<ConfigurationContext> {
+export type ConfigurationFetcher = () => Configuration
+
+/**
+ * Create a configuration fetcher function and block until the first payload
+ * can be read from teh frontend. Continue reading the configuration from the
+ * frontend in the background. If one of the fields that cannot be updated while
+ * the process remains up changes, it will forcibly exit the process to allow
+ * whatever orchestrator is running this process restart it.
+ *
+ * * @param logger The logger instance.
+ */
+export async function waitForConfiguration(logger: Logger): Promise<ConfigurationFetcher> {
     let oldConfiguration: Configuration | undefined
-    const onUpdate = (newConfiguration: Configuration): void => {
-        if (oldConfiguration !== undefined && requireRestart(oldConfiguration, newConfiguration)) {
-            console.error('Detected configuration change, restarting to take effect')
-            process.exit(1)
-        }
 
-        oldConfiguration = newConfiguration
-    }
+    await new Promise<void>(resolve => {
+        updateConfiguration(logger, configuration => {
+            if (oldConfiguration !== undefined && requireRestart(oldConfiguration, configuration)) {
+                console.error('Detected configuration change, restarting to take effect')
+                process.exit(1)
+            }
 
-    const context = watchConfig(logger, onUpdate)
-    await context.initialized
-    return context
+            oldConfiguration = configuration
+            resolve()
+        }).catch(() => {})
+    })
+
+    return () => oldConfiguration!
 }
 
 /**
@@ -97,51 +88,8 @@ export async function waitForConfiguration(logger: Logger): Promise<Configuratio
  * @param newConfiguration The new configuration instance.
  */
 function requireRestart(oldConfiguration: Configuration, newConfiguration: Configuration): boolean {
-    const fields: ('postgresDSN' | 'lightstepAccessToken' | 'useJaeger')[] = [
-        'postgresDSN',
-        'lightstepAccessToken',
-        'useJaeger',
-    ]
-
-    for (const field of fields) {
-        if (oldConfiguration[field] !== newConfiguration[field]) {
-            return true
-        }
-    }
-
-    return false
-}
-
-/**
- * Create a configuration context instance. This will also start
- * polling the frontend server on an infinite loop in the background.
- *
- * @param logger The logger instance.
- * @param onChange The callback to invoke each time the configuration is read.
- */
-function watchConfig(logger: Logger, onChange: (newConfiguration: Configuration) => void): ConfigurationContext {
-    const emptyConfiguration: Configuration = {
-        postgresDSN: '',
-        gitServers: [],
-        lightstepAccessToken: '',
-        useJaeger: false,
-    }
-
-    const ctx: ConfigurationContext = {
-        current: emptyConfiguration,
-        initialized: new Promise<void>(resolve => {
-            const onUpdate = (configuration: Configuration): void => {
-                ctx.current = configuration
-                onChange(configuration)
-                resolve()
-            }
-
-            // Can't fail, but call catch to reduce lint noise
-            updateConfiguration(logger, onUpdate).catch(() => {})
-        }),
-    }
-
-    return ctx
+    const fields = ['postgresDSN', 'lightstepProject', 'lightstepAccessToken', 'useJaeger']
+    return !isEqual(pick(oldConfiguration, fields), pick(newConfiguration, fields))
 }
 
 /**
@@ -151,7 +99,7 @@ function watchConfig(logger: Logger, onChange: (newConfiguration: Configuration)
  * @param logger The logger instance.
  * @param onChange The callback to invoke each time the configuration is read.
  */
-async function updateConfiguration(logger: Logger, onChange: (configuration: Configuration) => void): Promise<void> {
+async function updateConfiguration(logger: Logger, onChange: (configuration: Configuration) => void): Promise<never> {
     const start = Date.now()
 
     while (true) {
@@ -167,7 +115,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
         }
 
         // Do a jittery sleep _up to_ the config poll interval.
-        const durationMs = Math.floor(Math.random() * CONFIG_POLL_INTERVAL * 1000)
+        const durationMs = Math.random() * CONFIG_POLL_INTERVAL * 1000
         await new Promise(resolve => setTimeout(resolve, durationMs))
     }
 }

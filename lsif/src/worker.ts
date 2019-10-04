@@ -96,10 +96,10 @@ function createConvertJob(
  */
 async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
-    const ctx = await waitForConfiguration(logger)
+    const configuration = (await waitForConfiguration(logger))()
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-worker', ctx)
+    const tracer = createTracer('lsif-worker', configuration)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -107,7 +107,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(ctx, logger)
+    const connection = await createPostgresConnection(configuration, logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     // Start metrics server

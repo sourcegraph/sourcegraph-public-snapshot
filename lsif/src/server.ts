@@ -26,7 +26,7 @@ import { XrepoDatabase } from './xrepo'
 import { monitor, MonitoringContext } from './monitoring'
 import { Tracer, Span } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
-import { waitForConfiguration, ConfigurationContext } from './config'
+import { waitForConfiguration, Configuration } from './config'
 import { createTracer } from './tracing'
 
 const pipeline = promisify(_pipeline)
@@ -113,10 +113,10 @@ const errorHandler = (
  */
 async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
-    const ctx = await waitForConfiguration(logger)
+    const configuration = (await waitForConfiguration(logger))()
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-server', ctx)
+    const tracer = createTracer('lsif-server', configuration)
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -150,7 +150,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, ctx, logger, tracer))
+    app.use(await lsifEndpoints(queue, configuration, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -213,13 +213,13 @@ function metaEndpoints(): express.Router {
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param queue The queue containing LSIF jobs.
- * @param ctx The configuration context instance.
+ * @param configuration The current configuration.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 async function lsifEndpoints(
     queue: Queue,
-    ctx: ConfigurationContext,
+    configuration: Configuration,
     logger: Logger,
     tracer: Tracer | undefined
 ): Promise<express.Router> {
@@ -231,7 +231,7 @@ async function lsifEndpoints(
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(ctx, logger)
+    const connection = await createPostgresConnection(configuration, logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     /**
