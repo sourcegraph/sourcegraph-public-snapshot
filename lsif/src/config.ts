@@ -164,7 +164,7 @@ async function updateConfiguration(onChange: (configuration: Configuration) => v
         }
 
         // Do a jittery sleep _up to_ the config poll interval.
-        const durationMs = Math.floor(Math.random() * CONFIG_POLL_INTERVAL * 1000)
+        const durationMs = Math.random() * CONFIG_POLL_INTERVAL * 1000
         await new Promise(resolve => setTimeout(resolve, durationMs))
     }
 }
