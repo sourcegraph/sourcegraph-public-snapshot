@@ -22,7 +22,7 @@ SELECT remote_exec('_lsif', '
         SELECT
             c.repository,
             c."commit",
-            c.parent_Commit,
+            c.parent_commit,
             EXISTS (
                 SELECT 1
                 FROM lsif_data_markers m
