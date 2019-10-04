@@ -106,6 +106,21 @@ const errorHandler = (
     }
 }
 
+// TODO - document
+// TODO - move to tracing.ts
+function createTracer(ctx: ConfigurationContext): Tracer {
+    if (ctx.current.useJaeger) {
+        // TODO
+    }
+
+    // TODO - can do both?
+
+    return new LightStep.Tracer({
+        access_token: ctx.current.lightstepAccessToken,
+        component_name: ctx.current.lightstepProject,
+    })
+}
+
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
  *
@@ -116,10 +131,7 @@ async function main(logger: Logger): Promise<void> {
     const ctx = await waitForConfiguration()
 
     // Configure tracing
-    const tracer = new LightStep.Tracer({
-        access_token: 'foo', // TODO
-        component_name: 'bar', // TODO
-    })
+    const tracer = createTracer(ctx)
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
