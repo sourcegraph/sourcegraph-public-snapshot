@@ -27,7 +27,7 @@ import { monitor, MonitoringContext } from './monitoring'
 import { Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import * as LightStep from 'lightstep-tracer'
-import { waitForConfiguration } from './config'
+import { waitForConfiguration, ConfigurationContext } from './config'
 
 const pipeline = promisify(_pipeline)
 
@@ -149,7 +149,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, logger, tracer))
+    app.use(await lsifEndpoints(queue, ctx, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -212,10 +212,16 @@ function metaEndpoints(): express.Router {
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param queue The queue containing LSIF jobs.
+ * @param ctx The configuration context instance.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
-async function lsifEndpoints(queue: Queue, logger: Logger, tracer: Tracer): Promise<express.Router> {
+async function lsifEndpoints(
+    queue: Queue,
+    ctx: ConfigurationContext,
+    logger: Logger,
+    tracer: Tracer
+): Promise<express.Router> {
     const router = express.Router()
 
     // Create cross-repo database
