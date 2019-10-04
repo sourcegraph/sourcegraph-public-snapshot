@@ -262,16 +262,14 @@ async function lsifEndpoints(queue: Queue, logger: Logger, tracer: Tracer): Prom
             return database
         }
 
-        // If we don't know about this commit, request updated commit data
-        // from the gitserver. This will pull back ancestors for this commit
+        // Request updated commit data from gitserver if this commit isn't
+        // already tracked. This will pull back ancestors for this commit
         // up to a certain (configurable) depth and insert them into the
         // cross-repository database. This populates the necessary data for
         // the following query.
-        if (!(await xrepoDatabase.isCommitTracked(repository, commit))) {
-            await monitor(ctx, 'updating commits for repo', (ctx: MonitoringContext) =>
-                updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, ctx)
-            )
-        }
+        await monitor(ctx, 'updating commits for repo', (ctx: MonitoringContext) =>
+            updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, ctx)
+        )
 
         // Determine the closest commit that we actually have LSIF data for
         const commitWithData = await monitor(ctx, 'querying closest commit with LISF data', () =>
