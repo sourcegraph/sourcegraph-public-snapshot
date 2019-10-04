@@ -4,7 +4,7 @@ import { XrepoDatabase } from './xrepo'
 import { MonitoringContext, monitor } from './monitoring'
 
 /**
- * THe number of commits to ask gitserver for when updating commit data for
+ * The number of commits to ask gitserver for when updating commit data for
  * a particular repository.
  */
 const MAX_COMMITS_PER_UPDATE = 5000
