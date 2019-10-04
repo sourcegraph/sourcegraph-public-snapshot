@@ -9,6 +9,8 @@ Sourcegraph by default provides its own PostgreSQL and Redis databases for data 
 
 You can use your own PostgreSQL server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server.
 
+Prior to 3.9, Sourcegraph used a single database within PostgreSQL. As of version 3.9, it uses a second database which is automatically created as part of the frontend migration. This database has a name of the form `{PGDATABASE}_lsif`, where `{PGDATABASE}` is the name of the primary database. This second database is a sibling to the original in the same PostgreSQL instance. This necessitates that the configured PostgreSQL user has sufficient grants to perform the `CREATE DATABASE` query.
+
 Simply add the standard PostgreSQL environment variables to your `docker run` command and Sourcegraph will use that PostgreSQL server instead of its built-in one. For example:
 
 ### Version requirements
