@@ -81,11 +81,11 @@ func (s *searchFilterSuggestions) Filters() []descriptiveValue {
 		},
 		{
 			value:       "lang",
-			description: "lang-name (include results from the named language)",
+			description: "lang-name (include results from the named language, e.g. go)",
 		},
 		{
 			value:       "-lang",
-			description: "lang-name (exclude results from the named language)",
+			description: "lang-name (exclude results from the named language, e.g. go)",
 		},
 		{
 			value:       "fork",
@@ -97,11 +97,11 @@ func (s *searchFilterSuggestions) Filters() []descriptiveValue {
 		},
 		{
 			value:       "count",
-			description: "integer (number of results to fetch)",
+			description: "integer (number of results to fetch, e.g. 1000)",
 		},
 		{
 			value:       "timeout",
-			description: `"string specifying time duration" (duration before timeout)`,
+			description: `"string specifying time duration" (duration before timeout, e.g. 30s)`,
 		},
 	}
 }
