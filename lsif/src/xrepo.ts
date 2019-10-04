@@ -1,7 +1,3 @@
-import { Commit, LsifDataMarker, PackageModel, ReferenceModel } from './models.xrepo'
-import { Connection, EntityManager } from 'typeorm'
-import { createFilter, testFilter } from './encoding'
-import { TableInserter } from './inserter'
 import {
     bloomFilterEventsCounter,
     instrument,
@@ -9,6 +5,12 @@ import {
     xrepoQueryDurationHistogram,
     xrepoQueryErrorsCounter,
 } from './metrics'
+import { Connection, EntityManager } from 'typeorm'
+import { createFilter, testFilter } from './encoding'
+import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
+import { TableInserter } from './inserter'
+
+
 
 /**
  * The maximum traversal distance when finding the closest commit.
