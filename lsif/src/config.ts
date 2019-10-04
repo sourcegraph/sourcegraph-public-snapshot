@@ -1,5 +1,6 @@
 import got from 'got'
 import { readEnvInt } from './util'
+import * as json5 from 'json5'
 
 /**
  * HTTP address for internal frontend HTTP API.
@@ -50,6 +51,67 @@ export interface Configuration {
      * The (ordered) URLs of the registered gitservers.
      */
     gitServers: string[]
+
+    /**
+     * The project name for lightstep tracing.
+     */
+    lightstepProject: string
+
+    /**
+     * The access token for lightstep tracing.
+     */
+    lightstepAccessToken: string
+
+    /**
+     * Whether or not to enable Jaeger.
+     */
+    useJaeger: boolean
+}
+
+/**
+ * Create a configuration context and wait for it to initialize. If any
+ * of the fields that cannot be updated while the process remains up
+ * changes, it will forcibly exit the process to allow whatever orchestrator
+ * is running this process restart it.
+ */
+export async function waitForConfiguration(): Promise<ConfigurationContext> {
+    let oldConfiguration: Configuration | undefined
+    const context = watchConfig(newConfiguration => {
+        if (oldConfiguration !== undefined && requireRestart(oldConfiguration, newConfiguration)) {
+            console.error('Detected configuration change, restarting to take effect')
+            process.exit(1)
+        }
+
+        oldConfiguration = newConfiguration
+    })
+
+    await context.initialized
+    return context
+}
+
+/**
+ * Determine if the two configurations differ by a field that cannot be changed
+ * while the process remains up and a restart would be required for the change to
+ * take effect.
+ *
+ * @param oldConfiguration The old configuration instance.
+ * @param newConfiguration The new configuration instance.
+ */
+function requireRestart(oldConfiguration: Configuration, newConfiguration: Configuration): boolean {
+    const fields: ('postgresDSN' | 'lightstepProject' | 'lightstepAccessToken' | 'useJaeger')[] = [
+        'postgresDSN',
+        'lightstepProject',
+        'lightstepAccessToken',
+        'useJaeger',
+    ]
+
+    for (const field of fields) {
+        if (oldConfiguration[field] !== newConfiguration[field]) {
+            return true
+        }
+    }
+
+    return false
 }
 
 /**
@@ -58,10 +120,13 @@ export interface Configuration {
  *
  * @param onChange The callback to invoke each time the configuration is read.
  */
-export function watchConfig(onChange: (newConfiguration: Configuration) => void): ConfigurationContext {
+function watchConfig(onChange: (newConfiguration: Configuration) => void): ConfigurationContext {
     const emptyConfiguration: Configuration = {
         postgresDSN: '',
         gitServers: [],
+        lightstepProject: '',
+        lightstepAccessToken: '',
+        useJaeger: false,
     }
 
     const ctx: ConfigurationContext = {
@@ -112,8 +177,16 @@ async function loadConfiguration(): Promise<Configuration> {
     const resp = await got.post(url, { followRedirect: true })
     const payload = JSON.parse(resp.body)
 
+    // Already parsed
+    const serviceConnections = payload.ServiceConnections
+    // Need to parse but must support comments + trailing commas
+    const critical = json5.parse(payload.Critical)
+
     return {
-        gitServers: payload.ServiceConnections.gitServers,
-        postgresDSN: payload.ServiceConnections.postgresDSN,
+        gitServers: serviceConnections.gitServers,
+        postgresDSN: serviceConnections.postgresDSN,
+        lightstepProject: critical.lightstepProject,
+        lightstepAccessToken: critical.lightstepAccessToken,
+        useJaeger: critical.useJaeger || false,
     }
 }

@@ -19,7 +19,7 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo.js'
-import { Configuration, watchConfig, ConfigurationContext } from './config'
+import { waitForConfiguration } from './config'
 
 const pipeline = promisify(_pipeline)
 
@@ -212,28 +212,6 @@ async function main(): Promise<void> {
             console.log(`Listening for HTTP requests on port ${HTTP_PORT}`)
         }
     })
-}
-
-/**
- * Create a configuration context and wait for it to initialize. If the
- * PostgresDNS configuration changes, it will forcibly exit the process.
- */
-async function waitForConfiguration(): Promise<ConfigurationContext> {
-    let oldConfiguration: Configuration | undefined
-    const context = watchConfig(newConfiguration => {
-        if (oldConfiguration !== undefined && newConfiguration.postgresDSN !== oldConfiguration.postgresDSN) {
-            // The DSN was changed (e.g. by someone modifying the env vars on the frontend).
-            // We need to respect the new DSN. Easiest way to do that is to restart our
-            // service (kubernetes/docker/goreman will handle starting us back up).
-            console.error('Detected Postgres DSN change, restarting to take effect')
-            process.exit(1)
-        }
-
-        oldConfiguration = newConfiguration
-    })
-
-    await context.initialized
-    return context
 }
 
 /**

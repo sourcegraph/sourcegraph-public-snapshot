@@ -9,7 +9,7 @@ import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } 
 import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
-import { Configuration, ConfigurationContext, watchConfig } from './config'
+import { waitForConfiguration } from './config'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -103,28 +103,6 @@ async function main(): Promise<void> {
     if (LOG_READY) {
         console.log('Listening for uploads')
     }
-}
-
-/**
- * Create a configuration context and wait for it to initialize. If the
- * PostgresDNS configuration changes, it will forcibly exit the process.
- */
-async function waitForConfiguration(): Promise<ConfigurationContext> {
-    let oldConfiguration: Configuration | undefined
-    const context = watchConfig(newConfiguration => {
-        if (oldConfiguration !== undefined && newConfiguration.postgresDSN !== oldConfiguration.postgresDSN) {
-            // The DSN was changed (e.g. by someone modifying the env vars on the frontend).
-            // We need to respect the new DSN. Easiest way to do that is to restart our
-            // service (kubernetes/docker/goreman will handle starting us back up).
-            console.error('Detected Postgres DSN change, restarting to take effect')
-            process.exit(1)
-        }
-
-        oldConfiguration = newConfiguration
-    })
-
-    await context.initialized
-    return context
 }
 
 /**
