@@ -6,9 +6,7 @@ import { DefaultMap } from './default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
-import { log } from './logging'
 import { isEqual, uniqWith } from 'lodash'
-import { Logger } from 'winston'
 import { Package, SymbolReferences } from './xrepo'
 import { Readable } from 'stream'
 import { readGzippedJsonElements } from './input'
@@ -33,6 +31,7 @@ import {
     HoverResultId,
     entities,
 } from './models.database'
+import { MonitoringContext, monitor } from './monitoring'
 
 /**
  * The insertion metrics for the database.
@@ -68,12 +67,12 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  *
  * @param input The input stream containing JSON-encoded LSIF data.
  * @param database The filepath of the database to populate.
- * @param logger The logger instance.
+ * @param ctx The monitoring context.
  */
 export async function convertLsif(
     input: Readable,
     database: string,
-    logger: Logger
+    ctx: MonitoringContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, entities)
 
@@ -81,7 +80,7 @@ export async function convertLsif(
         await connection.query('PRAGMA synchronous = OFF')
         await connection.query('PRAGMA journal_mode = OFF')
 
-        return await connection.transaction(entityManager => importLsif(entityManager, input, logger))
+        return await connection.transaction(entityManager => importLsif(entityManager, input, ctx))
     } finally {
         await connection.close()
     }
@@ -94,16 +93,16 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param logger The logger instance.
+ * @param ctx The monitoring context.
  */
 export async function importLsif(
     entityManager: EntityManager,
     input: Readable,
-    logger: Logger
+    ctx: MonitoringContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
     const correlator = new Correlator()
-    await log('correlating LSIF data', logger, async () => {
+    await monitor(ctx, 'correlating LSIF data', async () => {
         for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
             correlator.insert(element)
         }
@@ -117,7 +116,7 @@ export async function importLsif(
     // reference result for each set so that we can remap all identifiers to the
     // chosen one.
 
-    const canonicalReferenceResultIds = await log('canonicalizing reference results', logger, () =>
+    const canonicalReferenceResultIds = await monitor(ctx, 'canonicalizing reference results', () =>
         canonicalizeReferenceResults(correlator)
     )
 
@@ -131,7 +130,7 @@ export async function importLsif(
     await metaInserter.flush()
 
     // Insert documents
-    await log('populating documents', logger, async () => {
+    await monitor(ctx, 'populating documents', async () => {
         const documentInserter = new TableInserter(
             entityManager,
             DocumentModel,
@@ -143,7 +142,7 @@ export async function importLsif(
     })
 
     // Insert result chunks
-    await log('populating result chunks', logger, async () => {
+    await monitor(ctx, 'populating result chunks', async () => {
         const resultChunkInserter = new TableInserter(
             entityManager,
             ResultChunkModel,
@@ -155,7 +154,7 @@ export async function importLsif(
     })
 
     // Insert definitions and references
-    await log('populating definitions and references', logger, async () => {
+    await monitor(ctx, 'populating definitions and references', async () => {
         const definitionInserter = new TableInserter(
             entityManager,
             DefinitionModel,

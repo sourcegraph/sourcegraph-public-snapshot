@@ -57,7 +57,13 @@ export function createLogger(service: string): Logger {
 export async function log<T>(name: string, logger: Logger, f: () => Promise<T> | T): Promise<T> {
     const timer = logger.startTimer()
     logger.debug(name)
-    const value = await f()
-    timer.done({ message: `${name} finished`, level: 'debug' })
-    return value
+
+    try {
+        const value = await f()
+        timer.done({ message: `${name} finished`, level: 'debug' })
+        return value
+    } catch (error) {
+        timer.done({ message: `${name} failed`, level: 'error', error })
+        throw error
+    }
 }

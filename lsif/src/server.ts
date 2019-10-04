@@ -9,7 +9,7 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { createGzip } from 'zlib'
-import { createLogger, log } from './logging'
+import { createLogger } from './logging'
 import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
@@ -23,6 +23,7 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
+import { monitor, MonitoringContext } from './monitoring'
 import { Tracer } from 'opentracing'
 
 const pipeline = promisify(_pipeline)
@@ -137,7 +138,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, logger))
+    app.use(await lsifEndpoints(queue, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -201,8 +202,9 @@ function metaEndpoints(): express.Router {
  *
  * @param queue The queue containing LSIF jobs.
  * @param logger The logger instance.
+ * @param tracer The tracer instance.
  */
-async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Router> {
+async function lsifEndpoints(queue: Queue, logger: Logger, tracer: Tracer): Promise<express.Router> {
     const router = express.Router()
 
     // Create cross-repo database
@@ -249,7 +251,10 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
     }
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
-        const dbLogger = logger.child({ repository, commit })
+        const ctx = {
+            logger: logger.child({ repository, commit }),
+            span: tracer.startSpan('load database'),
+        }
 
         // Try to construct database for the exact commit
         const database = await tryLoadDatabase(repository, commit)
@@ -263,15 +268,16 @@ async function lsifEndpoints(queue: Queue, logger: Logger): Promise<express.Rout
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (!(await xrepoDatabase.isCommitTracked(repository, commit))) {
-            await log('updating commits for repo', dbLogger, () =>
-                updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, dbLogger)
+            await monitor(ctx, 'updating commits for repo', (ctx: MonitoringContext) =>
+                updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, ctx)
             )
         }
 
         // Determine the closest commit that we actually have LSIF data for
-        const commitWithData = await log('querying closest commit with LISF data', dbLogger, () =>
+        const commitWithData = await monitor(ctx, 'querying closest commit with LISF data', () =>
             xrepoDatabase.findClosestCommitWithData(repository, commit)
         )
+
         if (!commitWithData) {
             return undefined
         }

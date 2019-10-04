@@ -2,14 +2,7 @@ import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
-import {
-    createCommit,
-    createLocation,
-    createRemoteLocation,
-    createSilentLogger,
-    getCleanSqliteDatabase,
-    getTestData,
-} from './test-utils'
+import { createCommit, createLocation, createRemoteLocation, getCleanSqliteDatabase, getTestData } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { entities } from './models.xrepo'
@@ -29,7 +22,7 @@ describe('Database', () => {
 
         for (const { input, repository, commit } of await createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
-            const { packages, references } = await convertLsif(input, database, createSilentLogger())
+            const { packages, references } = await convertLsif(input, database, {})
             await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         }
     })
