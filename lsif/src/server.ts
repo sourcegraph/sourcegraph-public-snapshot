@@ -25,6 +25,8 @@ import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { monitor, MonitoringContext } from './monitoring'
 import { Tracer } from 'opentracing'
+import { middleware as tracingMiddleware } from 'express-opentracing'
+import * as LightStep from 'lightstep-tracer'
 
 const pipeline = promisify(_pipeline)
 
@@ -109,7 +111,10 @@ const errorHandler = (
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
-    const tracer = new Tracer()
+    const tracer = new LightStep.Tracer({
+        access_token: 'foo', // TODO
+        component_name: 'bar', // TODO
+    })
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -125,6 +130,7 @@ async function main(logger: Logger): Promise<void> {
     const queue = await setupQueue(logger)
 
     const app = express()
+    app.use(tracingMiddleware({ tracer }))
     app.use(
         loggingMiddleware({
             winstonInstance: logger,
