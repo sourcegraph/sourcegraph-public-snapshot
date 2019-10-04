@@ -11,13 +11,15 @@ import { initTracerFromEnv } from 'jaeger-client'
  */
 export function createTracer(serviceName: string, ctx: ConfigurationContext): Tracer | undefined {
     if (ctx.current.useJaeger) {
-        return initTracerFromEnv(
-            {
-                serviceName,
-                sampler: { type: 'const', param: 1 },
+        const config = {
+            serviceName,
+            sampler: {
+                type: 'const',
+                param: 1,
             },
-            {}
-        )
+        }
+
+        return initTracerFromEnv(config, {})
     }
 
     if (ctx.current.lightstepAccessToken !== '') {
