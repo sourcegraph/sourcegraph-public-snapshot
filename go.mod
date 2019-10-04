@@ -159,7 +159,6 @@ require (
 	github.com/spf13/viper v1.4.0 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
-	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/stripe/stripe-go v63.0.0+incompatible
 	github.com/stvp/tempredis v0.0.0-20190104202742-b82af8480203 // indirect
 	github.com/temoto/robotstxt v1.1.1
@@ -167,7 +166,7 @@ require (
 	github.com/uber/gonduit v0.4.0
 	github.com/uber/jaeger-client-go v2.17.0+incompatible
 	github.com/uber/jaeger-lib v2.1.1+incompatible
-	github.com/ugorji/go v1.1.7 // indirect
+	github.com/ugorji/go/codec v1.1.7 // indirect
 	github.com/ultraware/funlen v0.0.2 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
