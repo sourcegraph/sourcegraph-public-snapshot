@@ -3,11 +3,6 @@ import { XrepoDatabase } from './xrepo'
 import * as crypto from 'crypto'
 
 /**
- * The URLs of the gitservers to query for branch and commit data.
- */
-export const GITSERVER_URLS = (process.env.SRC_GIT_SERVERS || 'http://gitserver:3178').split(/\s+/)
-
-/**
  * THe number of commits to ask gitserver for when updating commit data for
  * a particular repository.
  */
