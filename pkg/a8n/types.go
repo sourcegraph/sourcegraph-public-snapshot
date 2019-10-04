@@ -83,7 +83,6 @@ type Changeset struct {
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
-	Events              []*ChangesetEvent
 }
 
 // Clone returns a clone of a Changeset.
@@ -180,6 +179,24 @@ func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 	return selectReviewState(states), nil
 }
 
+// Events returns the list of ChangesetEvents from the Changeset's metadata.
+func (t *Changeset) Events() (events []*ChangesetEvent) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
+		for _, ti := range m.TimelineItems {
+			events = append(events, &ChangesetEvent{
+				ChangesetID: t.ID,
+				Source:      ChangesetEventSourceGitHubAPI,
+				Kind:        ChangesetEventKind(ti.Item),
+				Key:         ti.Item.(interface{ Key() string }).Key(),
+				Metadata:    ti.Item,
+			})
+		}
+	}
+	return events
+}
+
 func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
 	// If any review requested changes, that state takes precedence over all
 	// other review states, followed by explicit approval. Everything else is
@@ -214,6 +231,37 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 	return &ee
 }
 
+// ChangesetEventKind returns the changesetEventKind for the given
+// specific code host event.
+func ChangesetEventKind(e interface{}) changesetEventKind {
+	switch e := e.(type) {
+	case *github.AssignedEvent:
+		return ChangesetEventKindGitHubAssigned
+	case *github.ClosedEvent:
+		return ChangesetEventKindGitHubClosed
+	case *github.IssueComment:
+		return ChangesetEventKindGitHubCommented
+	case *github.RenamedTitleEvent:
+		return ChangesetEventKindGitHubRenamedTitle
+	case *github.MergedEvent:
+		return ChangesetEventKindGitHubMerged
+	case *github.PullRequestReview:
+		return ChangesetEventKindGitHubReviewed
+	case *github.ReopenedEvent:
+		return ChangesetEventKindGitHubReopened
+	case *github.ReviewDismissedEvent:
+		return ChangesetEventKindGitHubReviewDismissed
+	case *github.ReviewRequestRemovedEvent:
+		return ChangesetEventKindGitHubReviewRequestRemoved
+	case *github.ReviewRequestedEvent:
+		return ChangesetEventKindGitHubReviewRequested
+	case *github.UnassignedEvent:
+		return ChangesetEventKindGitHubUnassigned
+	default:
+		panic(errors.Errorf("unknown changeset event kind for %T", e))
+	}
+}
+
 // changesetEventSource defines the source of a ChangesetEvent. This type is unexported
 // so that users of ChangesetEvent can't instantiate it with a Source being an arbitrary
 // string.
@@ -234,38 +282,17 @@ type changesetEventKind string
 
 // Valid ChangesetEvent kinds
 const (
-	// ChangesetEventKindAssigned is AssignedEvent on GitHub and doesnt exist on BBS
-	ChangesetEventKindAssigned changesetEventKind = "assigned"
-
-	// ChangesetEventKindClosed is ClosedEvent on GitHub and DECLINED on BBS
-	ChangesetEventKindClosed changesetEventKind = "closed"
-
-	// ChangesetEventKindCommented is IssueComment on GitHub and COMMENTED on BBS
-	ChangesetEventKindCommented changesetEventKind = "commented"
-
-	// ChangesetEventKindRenamedTitle is RenamedTitleEvent on GitHub and doesn't exist on BBS
-	ChangesetEventKindRenamedTitle changesetEventKind = "renamed"
-
-	// ChangesetEventKindMerged is MergedEvent on GitHub and MERGED on BBS
-	ChangesetEventKindMerged changesetEventKind = "merged"
-
-	// ChangesetEventKindApproved is PullRequestReviewEvent(APPROVED) on GitHub and APPROVED on BBS
-	ChangesetEventKindApproved changesetEventKind = "approved"
-
-	// ChangesetEventKindReopened is ReopenedEvent on GitHub and doesn't exist on BBS
-	ChangesetEventKindReopened changesetEventKind = "reopened"
-
-	// ChangesetEventKindReviewDismissed is ReviewDismissedEvent on GitHub and doesn't exist on BBS
-	ChangesetEventKindReviewDismissed changesetEventKind = "review_dismissed"
-
-	// ChangesetEventKindReviewRequestRemoved is ReviewRequestRemovedEvent on GitHub and doesn't exist on BBS
-	ChangesetEventKindReviewRequestRemoved changesetEventKind = "review_request_removed"
-
-	// ChangesetEventKindReviewRequested is ReviewRequestedEvent on GitHub and doesn't exist on BBS
-	ChangesetEventKindReviewRequested changesetEventKind = "review_requested"
-
-	// ChangesetEventKindUnassigned is UnassignedEvent on GitHub and doesnt exist on BBS
-	ChangesetEventKindUnassigned changesetEventKind = "unassigned"
+	ChangesetEventKindGitHubAssigned             changesetEventKind = "github:assigned"
+	ChangesetEventKindGitHubClosed               changesetEventKind = "github:closed"
+	ChangesetEventKindGitHubCommented            changesetEventKind = "github:commented"
+	ChangesetEventKindGitHubRenamedTitle         changesetEventKind = "github:renamed"
+	ChangesetEventKindGitHubMerged               changesetEventKind = "github:merged"
+	ChangesetEventKindGitHubReviewed             changesetEventKind = "github:reviewed"
+	ChangesetEventKindGitHubReopened             changesetEventKind = "github:reopened"
+	ChangesetEventKindGitHubReviewDismissed      changesetEventKind = "github:review_dismissed"
+	ChangesetEventKindGitHubReviewRequestRemoved changesetEventKind = "github:review_request_removed"
+	ChangesetEventKindGitHubReviewRequested      changesetEventKind = "github:review_requested"
+	ChangesetEventKindGitHubUnassigned           changesetEventKind = "github:unassigned"
 
 	// TODO: Full set of Bitbucket Server pull request actions:
 	//   - APPROVED

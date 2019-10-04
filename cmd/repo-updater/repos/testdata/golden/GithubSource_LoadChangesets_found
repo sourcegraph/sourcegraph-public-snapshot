@@ -33,22 +33,8 @@
       "URL": "https://github.com/felixfbecker"
      }
     ],
-    "TimelineItems": null,
-    "CreatedAt": "2019-09-12T10:06:09Z",
-    "UpdatedAt": "2019-09-13T09:44:39Z"
-   },
-   "CampaignIDs": null,
-   "ExternalID": "5550",
-   "ExternalServiceType": "",
-   "Events": [
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "review_requested",
-     "Source": "github:api",
-     "Key": "review_requested:2019-09-12T10:06:09Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+    "TimelineItems": [
+     {
       "Type": "ReviewRequestedEvent",
       "Item": {
        "Actor": {
@@ -63,16 +49,8 @@
        },
        "CreatedAt": "2019-09-12T10:06:09Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "review_requested",
-     "Source": "github:api",
-     "Key": "review_requested:2019-09-12T10:06:09Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "ReviewRequestedEvent",
       "Item": {
        "Actor": {
@@ -87,18 +65,11 @@
        },
        "CreatedAt": "2019-09-12T10:06:09Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "approved",
-     "Source": "github:api",
-     "Key": "approved:2019-09-12T15:57:28Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "PullRequestReview",
       "Item": {
+       "DatabaseID": 287537086,
        "Author": {
         "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?v=4",
         "Login": "unknwon",
@@ -129,18 +100,11 @@
        },
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "",
-     "Source": "github:api",
-     "Key": ":2019-09-12T16:18:08Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "PullRequestReview",
       "Item": {
+       "DatabaseID": 287549355,
        "Author": {
         "AvatarURL": "https://avatars0.githubusercontent.com/u/10532611?v=4",
         "Login": "felixfbecker",
@@ -171,18 +135,11 @@
        },
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "commented",
-     "Source": "github:api",
-     "Key": "commented:2019-09-13T09:41:29Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "IssueComment",
       "Item": {
+       "DatabaseID": 531172813,
        "Author": {
         "AvatarURL": "https://avatars2.githubusercontent.com/in/254?v=4",
         "Login": "codecov",
@@ -196,16 +153,8 @@
        "UpdatedAt": "2019-09-13T09:41:29Z",
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "merged",
-     "Source": "github:api",
-     "Key": "merged:2019-09-13T09:44:38Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "MergedEvent",
       "Item": {
        "Actor": {
@@ -229,16 +178,8 @@
        },
        "CreatedAt": "2019-09-13T09:44:38Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "closed",
-     "Source": "github:api",
-     "Key": "closed:2019-09-13T09:44:38Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "ClosedEvent",
       "Item": {
        "Actor": {
@@ -250,8 +191,13 @@
        "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#event-2631781475"
       }
      }
-    }
-   ]
+    ],
+    "CreatedAt": "2019-09-12T10:06:09Z",
+    "UpdatedAt": "2019-09-13T09:44:39Z"
+   },
+   "CampaignIDs": null,
+   "ExternalID": "5550",
+   "ExternalServiceType": ""
   },
   {
    "ID": 0,
@@ -282,24 +228,11 @@
       "URL": "https://github.com/tsenart"
      }
     ],
-    "TimelineItems": null,
-    "CreatedAt": "2014-03-03T18:08:45Z",
-    "UpdatedAt": "2014-03-06T11:11:42Z"
-   },
-   "CampaignIDs": null,
-   "ExternalID": "50",
-   "ExternalServiceType": "",
-   "Events": [
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "commented",
-     "Source": "github:api",
-     "Key": "commented:2014-03-06T11:06:57Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+    "TimelineItems": [
+     {
       "Type": "IssueComment",
       "Item": {
+       "DatabaseID": 36845213,
        "Author": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
         "Login": "tsenart",
@@ -313,18 +246,11 @@
        "UpdatedAt": "2014-03-06T11:06:57Z",
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "commented",
-     "Source": "github:api",
-     "Key": "commented:2014-03-06T11:07:35Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "IssueComment",
       "Item": {
+       "DatabaseID": 36845273,
        "Author": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
         "Login": "tsenart",
@@ -338,18 +264,11 @@
        "UpdatedAt": "2014-03-06T11:07:35Z",
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "commented",
-     "Source": "github:api",
-     "Key": "commented:2014-03-06T11:11:42Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "IssueComment",
       "Item": {
+       "DatabaseID": 36845573,
        "Author": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
         "Login": "tsenart",
@@ -363,16 +282,8 @@
        "UpdatedAt": "2014-03-06T11:11:42Z",
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "closed",
-     "Source": "github:api",
-     "Key": "closed:2014-03-06T11:11:42Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "ClosedEvent",
       "Item": {
        "Actor": {
@@ -384,8 +295,13 @@
        "URL": "https://github.com/tsenart/vegeta/pull/50#event-99444167"
       }
      }
-    }
-   ]
+    ],
+    "CreatedAt": "2014-03-03T18:08:45Z",
+    "UpdatedAt": "2014-03-06T11:11:42Z"
+   },
+   "CampaignIDs": null,
+   "ExternalID": "50",
+   "ExternalServiceType": ""
   },
   {
    "ID": 0,
@@ -409,24 +325,15 @@
       "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
       "Login": "tsenart",
       "URL": "https://github.com/tsenart"
+     },
+     {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
      }
     ],
-    "TimelineItems": null,
-    "CreatedAt": "2019-10-02T14:49:31Z",
-    "UpdatedAt": "2019-10-04T09:03:59Z"
-   },
-   "CampaignIDs": null,
-   "ExternalID": "5834",
-   "ExternalServiceType": "",
-   "Events": [
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "renamed",
-     "Source": "github:api",
-     "Key": "renamed:2019-10-02T14:49:45Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+    "TimelineItems": [
+     {
       "Type": "RenamedTitleEvent",
       "Item": {
        "Actor": {
@@ -438,16 +345,8 @@
        "CurrentTitle": "a8n: ChangesetEvents",
        "CreatedAt": "2019-10-02T14:49:45Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "assigned",
-     "Source": "github:api",
-     "Key": "assigned:2019-10-03T12:05:41Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "AssignedEvent",
       "Item": {
        "Actor": {
@@ -462,18 +361,11 @@
        },
        "CreatedAt": "2019-10-03T12:05:41Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "commented",
-     "Source": "github:api",
-     "Key": "commented:2019-10-03T12:18:21Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "IssueComment",
       "Item": {
+       "DatabaseID": 537920237,
        "Author": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
         "Login": "tsenart",
@@ -484,23 +376,15 @@
         "Login": "tsenart",
         "URL": "https://github.com/tsenart"
        },
-       "AuthorAssociation": "CONTRIBUTOR",
+       "AuthorAssociation": "MEMBER",
        "Body": "This is a comment. EDIT",
        "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537920237",
        "CreatedAt": "2019-10-03T12:18:21Z",
        "UpdatedAt": "2019-10-03T12:22:14Z",
        "IncludesCreatedEdit": true
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "closed",
-     "Source": "github:api",
-     "Key": "closed:2019-10-03T14:02:51Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "ClosedEvent",
       "Item": {
        "Actor": {
@@ -511,16 +395,8 @@
        "CreatedAt": "2019-10-03T14:02:51Z",
        "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#event-2684174597"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "reopened",
-     "Source": "github:api",
-     "Key": "reopened:2019-10-03T14:02:54Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "ReopenedEvent",
       "Item": {
        "Actor": {
@@ -530,24 +406,17 @@
        },
        "CreatedAt": "2019-10-03T14:02:54Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "",
-     "Source": "github:api",
-     "Key": ":2019-10-03T14:03:23Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "PullRequestReview",
       "Item": {
+       "DatabaseID": 296894453,
        "Author": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
         "Login": "tsenart",
         "URL": "https://github.com/tsenart"
        },
-       "AuthorAssociation": "CONTRIBUTOR",
+       "AuthorAssociation": "MEMBER",
        "Body": "A review",
        "State": "COMMENTED",
        "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-296894453",
@@ -572,41 +441,26 @@
        },
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "commented",
-     "Source": "github:api",
-     "Key": "commented:2019-10-03T14:04:06Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "IssueComment",
       "Item": {
+       "DatabaseID": 537960109,
        "Author": {
         "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
         "Login": "tsenart",
         "URL": "https://github.com/tsenart"
        },
        "Editor": null,
-       "AuthorAssociation": "CONTRIBUTOR",
+       "AuthorAssociation": "MEMBER",
        "Body": "Making this PR the playground for fetching timeline events from Github. ",
        "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537960109",
        "CreatedAt": "2019-10-03T14:04:06Z",
        "UpdatedAt": "2019-10-03T14:04:06Z",
        "IncludesCreatedEdit": false
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "review_requested",
-     "Source": "github:api",
-     "Key": "review_requested:2019-10-03T14:04:11Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "ReviewRequestedEvent",
       "Item": {
        "Actor": {
@@ -621,16 +475,8 @@
        },
        "CreatedAt": "2019-10-03T14:04:11Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "review_requested",
-     "Source": "github:api",
-     "Key": "review_requested:2019-10-03T14:04:11Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "ReviewRequestedEvent",
       "Item": {
        "Actor": {
@@ -645,16 +491,8 @@
        },
        "CreatedAt": "2019-10-03T14:04:11Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "renamed",
-     "Source": "github:api",
-     "Key": "renamed:2019-10-03T14:04:27Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "RenamedTitleEvent",
       "Item": {
        "Actor": {
@@ -666,16 +504,8 @@
        "CurrentTitle": "[WIP] a8n: ChangesetEvents",
        "CreatedAt": "2019-10-03T14:04:27Z"
       }
-     }
-    },
-    {
-     "ID": 0,
-     "ChangesetID": 0,
-     "Kind": "unassigned",
-     "Source": "github:api",
-     "Key": "unassigned:2019-10-03T14:04:58Z",
-     "CreatedAt": "0001-01-01T00:00:00Z",
-     "Metadata": {
+     },
+     {
       "Type": "UnassignedEvent",
       "Item": {
        "Actor": {
@@ -691,7 +521,12 @@
        "CreatedAt": "2019-10-03T14:04:58Z"
       }
      }
-    }
-   ]
+    ],
+    "CreatedAt": "2019-10-02T14:49:31Z",
+    "UpdatedAt": "2019-10-04T12:12:30Z"
+   },
+   "CampaignIDs": null,
+   "ExternalID": "5834",
+   "ExternalServiceType": ""
   }
  ]

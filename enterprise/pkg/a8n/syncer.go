@@ -125,7 +125,6 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 	if err = s.Store.UpdateChangesets(ctx, cs...); err != nil {
 		return err
 	}
-
 	return nil
 }
 
