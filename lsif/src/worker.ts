@@ -14,6 +14,7 @@ import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
 import { Tracer } from 'opentracing'
 import { MonitoringContext, monitor } from './monitoring'
+import { waitForConfiguration } from './config'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -93,6 +94,10 @@ function createConvertJob(
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    // Read configuration from frontend
+    const ctx = await waitForConfiguration()
+
+    // Configure tracing
     const tracer = new Tracer()
 
     // Ensure storage roots exist
@@ -101,7 +106,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(logger)
+    const connection = await createPostgresConnection(ctx, logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     // Start metrics server

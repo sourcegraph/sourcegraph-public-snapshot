@@ -27,6 +27,7 @@ import { monitor, MonitoringContext } from './monitoring'
 import { Tracer } from 'opentracing'
 import { middleware as tracingMiddleware } from 'express-opentracing'
 import * as LightStep from 'lightstep-tracer'
+import { waitForConfiguration } from './config'
 
 const pipeline = promisify(_pipeline)
 
@@ -111,6 +112,10 @@ const errorHandler = (
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    // Read configuration from frontend
+    const ctx = await waitForConfiguration()
+
+    // Configure tracing
     const tracer = new LightStep.Tracer({
         access_token: 'foo', // TODO
         component_name: 'bar', // TODO
@@ -219,7 +224,7 @@ async function lsifEndpoints(queue: Queue, logger: Logger, tracer: Tracer): Prom
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(logger)
+    const connection = await createPostgresConnection(ctx, logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const createDatabaseFilenameStat = async (repository: string, commit: string): Promise<string | undefined> => {
