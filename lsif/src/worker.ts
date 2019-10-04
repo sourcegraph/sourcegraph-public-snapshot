@@ -99,7 +99,7 @@ async function main(logger: Logger): Promise<void> {
     const ctx = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-server', ctx)
+    const tracer = createTracer('lsif-worker', ctx)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
