@@ -175,7 +175,7 @@ func (s *searchFilterSuggestions) Repo() []string { return s.repo }
 
 // Repohasfile returns example values of search filter "repohasfile:".
 func (s *searchFilterSuggestions) Repohasfile() []string {
-	return []string{"go.mod", "package.json", "Gemfile"}
+	return []string{"go.mod", "package.json", "Dockerfile"}
 }
 
 // Repohascommitafter returns example values of search filter "repohascommitafter:".
