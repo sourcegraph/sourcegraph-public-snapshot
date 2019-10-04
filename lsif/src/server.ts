@@ -9,7 +9,7 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
 import { createGzip } from 'zlib'
-import { createLogger } from './logger'
+import { createLogger } from './logging'
 import { createPostgresConnection } from './connection'
 import { Database } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
@@ -23,6 +23,7 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
+import { Tracer } from 'opentracing'
 
 const pipeline = promisify(_pipeline)
 
@@ -107,6 +108,8 @@ const errorHandler = (
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    const tracer = new Tracer()
+
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
     documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)

@@ -6,12 +6,13 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
-import { createLogger } from './logger'
+import { createLogger } from './logging'
 import { createPostgresConnection } from './connection'
 import { GITSERVER_URLS, updateCommits } from './commits'
 import { JobsHash, Worker } from 'node-resque'
 import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
+import { Tracer } from 'opentracing'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -50,7 +51,7 @@ function createConvertJob(
     return async (repository, commit, filename) => {
         const jobLogger = logger.child({ jobId: uuid.v4(), repository, commit })
         const jobTimer = jobLogger.startTimer()
-        jobLogger.info('converting LSIF data')
+        jobLogger.debug('converting LSIF data')
 
         const input = fs.createReadStream(filename)
         const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
@@ -77,7 +78,7 @@ function createConvertJob(
         // Update commit parentage information for this commit
         await updateCommits(GITSERVER_URLS, xrepoDatabase, repository, commit, jobLogger)
 
-        jobTimer.done({ message: 'converted LSIF data', level: 'info' })
+        jobTimer.done({ message: 'converted LSIF data', level: 'debug' })
 
         // Remove input
         await fs.unlink(filename)
@@ -90,13 +91,15 @@ function createConvertJob(
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    const tracer = new Tracer()
+
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection()
+    const connection = await createPostgresConnection(logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     // Start metrics server
