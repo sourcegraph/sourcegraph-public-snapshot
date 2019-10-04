@@ -25,7 +25,7 @@ import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { monitor, MonitoringContext } from './monitoring'
 import { Tracer } from 'opentracing'
-import { middleware as tracingMiddleware } from 'express-opentracing'
+import { default as tracingMiddleware } from 'express-opentracing'
 import * as LightStep from 'lightstep-tracer'
 import { waitForConfiguration } from './config'
 
