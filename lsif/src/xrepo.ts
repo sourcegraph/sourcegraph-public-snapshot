@@ -10,8 +10,6 @@ import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
 import { TableInserter } from './inserter'
 
-
-
 /**
  * The maximum traversal distance when finding the closest commit.
  */
