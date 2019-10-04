@@ -81,7 +81,7 @@ const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex 
  */
 async function main(): Promise<void> {
     // Read configuration from frontend
-    const ctx = await waitForConfiguration()
+    const configuration = (await waitForConfiguration())()
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -99,7 +99,7 @@ async function main(): Promise<void> {
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(ctx)
+    const connection = await createPostgresConnection(configuration)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {

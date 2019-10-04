@@ -2,7 +2,7 @@ import { Connection, createConnection as _createConnection } from 'typeorm'
 import { entities } from './models.xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
-import { ConfigurationContext } from './config'
+import { Configuration } from './config'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -59,12 +59,12 @@ export function createSqliteConnection(
  * indefinitely while the database migration state is behind the
  * expected minimum, or dirty.
  *
- * @param ctx The configuration context instance.
+ * @param configuration The current configuration.
  */
-export async function createPostgresConnection(ctx: ConfigurationContext): Promise<Connection> {
+export async function createPostgresConnection(configuration: Configuration): Promise<Connection> {
     // Parse current PostgresDSN into connection options usable by
     // the typeorm postgres adapter.
-    const url = new URL(ctx.current.postgresDSN)
+    const url = new URL(configuration.postgresDSN)
     const connectionOptions = {
         host: url.hostname,
         port: parseInt(url.port, 10) || 5432,

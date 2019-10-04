@@ -1,6 +1,7 @@
 import got from 'got'
 import { readEnvInt } from './util'
 import * as json5 from 'json5'
+import { isEqual, pick } from 'lodash'
 
 /**
  * HTTP address for internal frontend HTTP API.
@@ -19,24 +20,6 @@ const DELAY_BEFORE_UNREACHABLE_LOG = readEnvInt('DELAY_BEFORE_UNREACHABLE_LOG', 
  * How long to wait between polling config.
  */
 const CONFIG_POLL_INTERVAL = 5
-
-/**
- * A container for the current configuration data. This object should
- * be passed around and its current field should be read fresh each
- * time it is used. It will be mutable updated in the background.
- */
-export interface ConfigurationContext {
-    /**
-     * The current configuration.
-     */
-    current: Configuration
-
-    /**
-     * A promise that resolves once the current configuration has been
-     * successfully read for the first time.
-     */
-    initialized: Promise<void>
-}
 
 /**
  * Service configuration data pulled from the frontend.
@@ -69,24 +52,33 @@ export interface Configuration {
 }
 
 /**
- * Create a configuration context and wait for it to initialize. If any
- * of the fields that cannot be updated while the process remains up
- * changes, it will forcibly exit the process to allow whatever orchestrator
- * is running this process restart it.
+ * A function that returns the current configuration.
  */
-export async function waitForConfiguration(): Promise<ConfigurationContext> {
-    let oldConfiguration: Configuration | undefined
-    const context = watchConfig(newConfiguration => {
-        if (oldConfiguration !== undefined && requireRestart(oldConfiguration, newConfiguration)) {
-            console.error('Detected configuration change, restarting to take effect')
-            process.exit(1)
-        }
+export type ConfigurationFetcher = () => Configuration
 
-        oldConfiguration = newConfiguration
+/**
+ * Create a configuration fetcher function and block until the first payload
+ * can be read from teh frontend. Continue reading the configuration from the
+ * frontend in the background. If one of the fields that cannot be updated while
+ * the process remains up changes, it will forcibly exit the process to allow
+ * whatever orchestrator is running this process restart it.
+ */
+export async function waitForConfiguration(): Promise<ConfigurationFetcher> {
+    let oldConfiguration: Configuration | undefined
+
+    await new Promise<void>(resolve => {
+        updateConfiguration(configuration => {
+            if (oldConfiguration !== undefined && requireRestart(oldConfiguration, configuration)) {
+                console.error('Detected configuration change, restarting to take effect')
+                process.exit(1)
+            }
+
+            oldConfiguration = configuration
+            resolve()
+        }).catch(() => {})
     })
 
-    await context.initialized
-    return context
+    return () => oldConfiguration!
 }
 
 /**
@@ -98,49 +90,9 @@ export async function waitForConfiguration(): Promise<ConfigurationContext> {
  * @param newConfiguration The new configuration instance.
  */
 function requireRestart(oldConfiguration: Configuration, newConfiguration: Configuration): boolean {
-    const fields: ('postgresDSN' | 'lightstepProject' | 'lightstepAccessToken' | 'useJaeger')[] = [
-        'postgresDSN',
-        'lightstepProject',
-        'lightstepAccessToken',
-        'useJaeger',
-    ]
+    const fields = ['postgresDSN', 'lightstepProject', 'lightstepAccessToken', 'useJaeger']
 
-    for (const field of fields) {
-        if (oldConfiguration[field] !== newConfiguration[field]) {
-            return true
-        }
-    }
-
-    return false
-}
-
-/**
- * Create a configuration context instance. This will also start
- * polling the frontend server on an infinite loop in the background.
- *
- * @param onChange The callback to invoke each time the configuration is read.
- */
-function watchConfig(onChange: (newConfiguration: Configuration) => void): ConfigurationContext {
-    const emptyConfiguration: Configuration = {
-        postgresDSN: '',
-        gitServers: [],
-        lightstepProject: '',
-        lightstepAccessToken: '',
-        useJaeger: false,
-    }
-
-    const ctx: ConfigurationContext = {
-        current: emptyConfiguration,
-        initialized: new Promise<void>(resolve => {
-            updateConfiguration(configuration => {
-                ctx.current = configuration
-                onChange(configuration)
-                resolve()
-            }).catch(() => {})
-        }),
-    }
-
-    return ctx
+    return !isEqual(pick(oldConfiguration, fields), pick(newConfiguration, fields))
 }
 
 /**

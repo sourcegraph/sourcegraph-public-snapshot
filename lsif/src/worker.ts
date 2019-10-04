@@ -79,7 +79,7 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
  */
 async function main(): Promise<void> {
     // Read configuration from frontend
-    const ctx = await waitForConfiguration()
+    const configuration = (await waitForConfiguration())()
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -87,7 +87,7 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(ctx)
+    const connection = await createPostgresConnection(configuration)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {
