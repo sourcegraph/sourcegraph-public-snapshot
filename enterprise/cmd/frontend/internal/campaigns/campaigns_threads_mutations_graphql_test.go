@@ -56,7 +56,7 @@ func TestGraphQL_AddRemoveThreadsToFromCampaign(t *testing.T) {
 					Schema:  graphqlbackend.GraphQLSchema,
 					Query: `
 				mutation {
-					` + name + `(campaign: "Q2FtcGFpZ246Mg==", threads: ["RGlzY3Vzc2lvblRocmVhZDoiMyI="]) {
+					` + name + `(campaign: "` + string(graphqlbackend.MarshalCampaignID(wantCampaignID)) + `", threads: ["RGlzY3Vzc2lvblRocmVhZDoiMyI="]) {
 						__typename
 					}
 				}

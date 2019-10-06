@@ -42,7 +42,7 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					createCampaign(input: { namespace: "T3JnOjE=", name: "n", extensionData: { rawDiagnostics: [], rawFileDiffs: [] } }) {
+					expCreateCampaign(input: { namespace: "T3JnOjE=", name: "n", extensionData: { rawDiagnostics: [], rawFileDiffs: [] } }) {
 						id
 						name
 					}
@@ -50,8 +50,8 @@ func TestGraphQL_CreateCampaign(t *testing.T) {
 			`,
 			ExpectedResult: `
 				{
-					"createCampaign": {
-						"id": "Q2FtcGFpZ246Mg==",
+					"expCreateCampaign": {
+						"id": "` + string(graphqlbackend.MarshalCampaignID(2)) + `",
 						"name": "n"
 					}
 				}
@@ -86,7 +86,7 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					updateCampaign(input: { id: "Q2FtcGFpZ246Mg==", name: "n1" }) {
+					expUpdateCampaign(input: { id: "` + string(graphqlbackend.MarshalCampaignID(wantID)) + `", name: "n1" }) {
 						id
 						name
 					}
@@ -94,8 +94,8 @@ func TestGraphQL_UpdateCampaign(t *testing.T) {
 			`,
 			ExpectedResult: `
 				{
-					"updateCampaign": {
-						"id": "Q2FtcGFpZ246Mg==",
+					"expUpdateCampaign": {
+						"id": "` + string(graphqlbackend.MarshalCampaignID(wantID)) + `",
 						"name": "n1"
 					}
 				}
@@ -126,14 +126,14 @@ func TestGraphQL_DeleteCampaign(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				mutation {
-					deleteCampaign(campaign: "Q2FtcGFpZ246Mg==") {
+					expDeleteCampaign(campaign: "` + string(graphqlbackend.MarshalCampaignID(wantID)) + `") {
 						alwaysNil
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"deleteCampaign": null
+					"expDeleteCampaign": null
 				}
 			`,
 		},

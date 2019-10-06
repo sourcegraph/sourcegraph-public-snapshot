@@ -32,7 +32,7 @@ func TestGraphQL_Namespace_CampaignConnection(t *testing.T) {
 				{
 					node(id: "T3JnOjM=") {
 						... on Org {
-							campaigns {
+							expCampaigns {
 								nodes {
 									name
 								}
@@ -48,7 +48,7 @@ func TestGraphQL_Namespace_CampaignConnection(t *testing.T) {
 			ExpectedResult: `
 				{
 					"node": {
-						"campaigns": {
+						"expCampaigns": {
 							"nodes": [
 								{
 									"name": "n"

@@ -33,7 +33,7 @@ func TestGraphQL_RuleContainer_RuleConnection(t *testing.T) {
 			Query: `
 				query($container: ID!) {
 					node(id: $container) {
-						... on Campaign {
+						... on ExpCampaign {
 							rules {
 								nodes {
 									name

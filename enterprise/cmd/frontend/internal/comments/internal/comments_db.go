@@ -154,7 +154,7 @@ func (o DBCommentsListOptions) sqlConditions() []*sqlf.Query {
 		}
 	}
 	addObjectCondition(o.Object.ThreadID, "thread_id", "threads")
-	addObjectCondition(o.Object.CampaignID, "campaign_id", "campaigns")
+	addObjectCondition(o.Object.CampaignID, "campaign_id", "exp_campaigns")
 
 	return conds
 }

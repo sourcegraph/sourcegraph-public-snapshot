@@ -31,7 +31,7 @@ func (dbCampaignsThreads) AddThreadsToCampaign(ctx context.Context, campaign int
 WITH insert_values AS (
   SELECT $1::bigint AS campaign_id, unnest($2::bigint[]) AS thread_id
 )
-INSERT INTO campaigns_threads(campaign_id, thread_id) SELECT * FROM insert_values
+INSERT INTO exp_campaigns_threads(campaign_id, thread_id) SELECT * FROM insert_values
 `,
 		campaign, pq.Array(threads),
 	)

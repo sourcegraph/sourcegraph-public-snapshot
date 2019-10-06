@@ -222,7 +222,7 @@ func (v *gqlThread) RepositoryComparison(ctx context.Context) (graphqlbackend.Re
 	})
 }
 
-func (v *gqlThread) Campaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
+func (v *gqlThread) ExpCampaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
 	return graphqlbackend.CampaignsWithObject(ctx, v.ID(), arg)
 }
 

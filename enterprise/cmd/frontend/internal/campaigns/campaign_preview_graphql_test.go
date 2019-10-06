@@ -31,14 +31,14 @@ func TestGraphQL_CampaignPreview(t *testing.T) {
 			Schema:  graphqlbackend.GraphQLSchema,
 			Query: `
 				 query {
-					campaignPreview(input: { campaign: { namespace: "T3JnOjE=", name: "n", extensionData: { rawDiagnostics: [], rawFileDiffs: [] } } }) {
+					expCampaignPreview(input: { campaign: { namespace: "T3JnOjE=", name: "n", extensionData: { rawDiagnostics: [], rawFileDiffs: [] } } }) {
 						name
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"campaignPreview": {
+					"expCampaignPreview": {
 						"name": "n"
 					}
 				}

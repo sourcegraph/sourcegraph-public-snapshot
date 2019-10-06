@@ -65,7 +65,7 @@ func (dbCampaigns) Create(ctx context.Context, campaign *dbCampaign, comment com
 			commentID,
 		}
 		query := sqlf.Sprintf(
-			`INSERT INTO campaigns(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`, DEFAULT,  DEFAULT) RETURNING `+selectColumns,
+			`INSERT INTO exp_campaigns(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`, DEFAULT,  DEFAULT) RETURNING `+selectColumns,
 			args...,
 		)
 		var err error
