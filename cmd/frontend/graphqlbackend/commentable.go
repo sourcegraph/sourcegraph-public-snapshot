@@ -73,4 +73,4 @@ func (v ToCommentable) Comments(ctx context.Context, arg *graphqlutil.Connection
 }
 
 func (v ToCommentable) ToExpCampaign() (Campaign, bool) { return v.Campaign, v.Campaign != nil }
-func (v ToCommentable) ToThread() (Thread, bool)     { return v.Thread, v.Thread != nil }
+func (v ToCommentable) ToThread() (Thread, bool)        { return v.Thread, v.Thread != nil }
