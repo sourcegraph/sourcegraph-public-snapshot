@@ -17,6 +17,7 @@ type CombyQueryArgs struct {
 func (schemaResolver) Comby(ctx context.Context, arg *struct {
 	CombyQueryArgs
 }) (combyPayload, error) {
+	// TODO!(sqs): narrow down first
 	repoNames := []string{
 		"github.com/sd9/about",
 		"github.com/sd9/codeintellify",
