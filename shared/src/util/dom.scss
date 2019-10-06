@@ -25,6 +25,7 @@
 .theme-hc-black {
     .selection-highlight,
     .selection-highlight-sticky {
+        // stylelint-disable
         text-decoration: underline yellow;
     }
 }
