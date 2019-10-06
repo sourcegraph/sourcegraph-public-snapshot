@@ -1,7 +1,7 @@
 import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
-import { createSqliteConnection } from './connection'
+import { createConnection } from './connection'
 import { DocumentData, ResultChunkData } from './models.database'
 import {
     connectionCacheEventsCounter,
@@ -340,7 +340,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[],
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        return this.withValue(database, () => createSqliteConnection(database, entities), callback)
+        return this.withValue(database, () => createConnection(database, entities), callback)
     }
 
     /**
