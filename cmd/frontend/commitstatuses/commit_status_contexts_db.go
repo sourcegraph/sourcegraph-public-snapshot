@@ -50,6 +50,7 @@ func (dbCommitStatusContexts) Create(ctx context.Context, commitStatusContext *d
 		nnz.Int32(commitStatusContext.Actor.UserID),
 		nnz.String(commitStatusContext.Actor.ExternalActorUsername),
 		nnz.String(commitStatusContext.Actor.ExternalActorURL),
+		commitStatusContext.CreatedAt,
 	}
 	query := sqlf.Sprintf(
 		`INSERT INTO commit_status_contexts(`+selectColumns+`) VALUES(DEFAULT`+strings.Repeat(", %v", len(args))+`) RETURNING `+selectColumns,
