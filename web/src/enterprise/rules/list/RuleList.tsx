@@ -1,5 +1,6 @@
+/* eslint-disable react/jsx-no-bind */
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import H, { locationsAreEqual } from 'history'
+import H from 'history'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useCallback } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -8,7 +9,6 @@ import { Modal } from 'reactstrap'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { pluralize } from '../../../../../shared/src/util/strings'
 import { EditRuleForm } from '../form/EditRuleForm'
 import { NewRuleForm } from '../form/NewRuleForm'
 import { useRules } from '../useRules'
@@ -94,7 +94,6 @@ export const RuleList: React.FunctionComponent<Props> = ({
                 </Route>
                 <Route
                     path={`${match.url}/:ruleID`}
-                    // eslint-disable-next-line react/jsx-no-bind
                     render={(routeComponentProps: RouteComponentProps<{ ruleID: string }>) => {
                         const rule =
                             rules !== LOADING && !isErrorLike(rules)

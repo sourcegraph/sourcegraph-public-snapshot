@@ -1,7 +1,7 @@
 import FindReplaceIcon from 'mdi-react/FindReplaceIcon'
 import { FindReplaceCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/findReplace'
 import React, { useCallback, useEffect } from 'react'
-import { RuleTemplate, RuleTemplateComponentContext } from './'
+import { RuleTemplate, RuleTemplateComponentContext } from '.'
 import { RuleDefinition } from '../../../rules/types'
 import TextareaAutosize from 'react-textarea-autosize'
 

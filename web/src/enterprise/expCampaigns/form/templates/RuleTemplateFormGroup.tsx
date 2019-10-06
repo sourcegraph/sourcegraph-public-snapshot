@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { CampaignFormControl } from '../CampaignForm'
-import { RuleTemplate, RULE_TEMPLATES } from './'
+import { RuleTemplate, RULE_TEMPLATES } from '.'
 import { ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 
 interface Props extends CampaignFormControl {

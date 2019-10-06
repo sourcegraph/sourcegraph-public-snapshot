@@ -1,6 +1,6 @@
 import NpmIcon from 'mdi-react/NpmIcon'
 import React, { useCallback, useEffect } from 'react'
-import { RuleTemplate, RuleTemplateComponentContext } from './'
+import { RuleTemplate, RuleTemplateComponentContext } from '.'
 import { PackageJsonDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/packageJsonDependency'
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../rules/types'

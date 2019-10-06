@@ -1,6 +1,6 @@
 import EyePlusIcon from 'mdi-react/EyePlusIcon'
 import React from 'react'
-import { RuleTemplate, RuleTemplateComponentContext } from './'
+import { RuleTemplate, RuleTemplateComponentContext } from '.'
 
 interface Props extends RuleTemplateComponentContext {}
 

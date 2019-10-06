@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -98,7 +99,6 @@ export const ConnectionListFilterDropdownButton = <
                     itemsFiltered.slice(0, 15 /* TODO!(sqs) hack */).map(item => (
                         <DropdownItem
                             key={item.queryPart}
-                            // eslint-disable-next-line react/jsx-no-bind
                             onClick={() => onSelect(item)}
                             className="d-flex align-items-center"
                         >
