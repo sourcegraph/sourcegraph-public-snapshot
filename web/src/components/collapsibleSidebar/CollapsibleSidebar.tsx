@@ -61,6 +61,7 @@ export const CollapsibleSidebar: React.FunctionComponent<Props> = ({
         >
             <div>{children(isExpanded)}</div>
             <button
+                type="button"
                 className={`btn btn-link text-decoration-none py-3 border-top d-flex align-items-center ${
                     isExpanded ? 'px-2' : 'justify-content-center px-0'
                 }`}

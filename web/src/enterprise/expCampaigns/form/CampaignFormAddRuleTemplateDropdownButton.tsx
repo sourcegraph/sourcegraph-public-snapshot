@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 import { CampaignFormControl } from './CampaignForm'
@@ -40,7 +41,6 @@ export const CampaignFormAddRuleTemplateDropdownButton: React.FunctionComponent<
                 {RULE_TEMPLATES.filter(template => !template.isEmpty).map(template => (
                     <DropdownItem
                         key={template.id}
-                        // eslint-disable-next-line react/jsx-no-bind
                         onClick={() => onSelect(template)}
                         className="d-flex align-items-start"
                         style={{ wordWrap: 'normal', whiteSpace: 'normal' }}

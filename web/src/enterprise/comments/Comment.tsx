@@ -114,7 +114,7 @@ export const Comment: React.FunctionComponent<Props> = ({
         if (!confirm('Really delete this comment?')) {
             return
         }
-        // tslint:disable-next-line: no-floating-promises
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         ;(async () => {
             setIsDeleteLoading(true)
             try {
@@ -160,6 +160,7 @@ export const Comment: React.FunctionComponent<Props> = ({
                         )}
                         {comment.__typename === 'CommentReply' && (
                             <button
+                                type="button"
                                 className="btn btn-sm btn-link text-muted p-1"
                                 onClick={onDelete}
                                 aria-label="Delete comment"

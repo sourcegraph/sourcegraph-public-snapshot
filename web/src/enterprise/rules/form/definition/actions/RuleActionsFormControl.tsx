@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { useState, useCallback } from 'react'
 import { ExtensionsControllerProps } from '../../../../../../../shared/src/extensions/controller'
 import { RULE_ACTION_TYPES, GenericRuleAction } from '.'
@@ -43,7 +44,6 @@ export const RuleActionsFormControl: React.FunctionComponent<Props> = ({ classNa
                     // eslint-disable-next-line react/no-array-index-key
                     key={i}
                     value={ruleAction}
-                    // eslint-disable-next-line react/jsx-no-bind
                     onChange={value => onRuleActionChange(i, value)}
                     listActions={
                         <button

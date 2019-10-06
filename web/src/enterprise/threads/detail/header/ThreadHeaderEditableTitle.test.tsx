@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import React from 'react'
 import renderer, { act } from 'react-test-renderer'
 import sinon from 'sinon'
 import { NotificationType } from '../../../../../../shared/src/api/client/services/notifications'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { updateThread } from '../../../../discussions/backend'
-import { ThreadHeaderEditableName } from './CampaignHeaderEditableTitle'
+import { ThreadHeaderEditableTitle } from './ThreadHeaderEditableTitle'
+import { updateThread } from '../../common/EditThreadForm'
 
 describe('ThreadHeaderEditableTitle', () => {
     const create = ({
@@ -15,8 +15,8 @@ describe('ThreadHeaderEditableTitle', () => {
         _updateThread?: typeof updateThread
     } = {}) =>
         renderer.create(
-            <ThreadHeaderEditableName
-                thread={{ id: 'a1', idWithoutKind: '1', title: 't' }}
+            <ThreadHeaderEditableTitle
+                thread={{ id: 'a1', number: '1', title: 't' }}
                 onThreadUpdate={sinon.spy()}
                 className="c"
                 extensionsController={{
@@ -47,7 +47,7 @@ describe('ThreadHeaderEditableTitle', () => {
         act(() => e.root.findByType('button').props.onClick())
         expect(e.root.findByType('input')).toBeTruthy()
 
-        act(() => e.root.findByProps({ type: 'reset' }).props.onClick({ preventDefault: () => void 0 }))
+        act(() => e.root.findByProps({ type: 'reset' }).props.onClick({ preventDefault: () => undefined }))
         expect(e.toJSON()).toEqual(viewingSnapshot)
         expect(e.root.findAllByType('input').length).toBe(0)
     })
@@ -59,7 +59,7 @@ describe('ThreadHeaderEditableTitle', () => {
         act(() => e.root.findByType('button').props.onClick())
         act(() => {
             e.root.findByType('input').props.onChange({ currentTarget: { value: 't2' } })
-            e.root.findByProps({ type: 'reset' }).props.onClick({ preventDefault: () => void 0 })
+            e.root.findByProps({ type: 'reset' }).props.onClick({ preventDefault: () => undefined })
         })
         expect(e.toJSON()).toEqual(viewingSnapshot)
         expect(e.root.findAllByType('input').length).toBe(0)
@@ -69,13 +69,13 @@ describe('ThreadHeaderEditableTitle', () => {
     })
 
     test('save', async () => {
-        let resolve: (value: GQL.IDiscussionThread) => void
-        const updateThreadResult = new Promise<GQL.IDiscussionThread>(resolve_ => {
+        let resolve: () => void
+        const updateThreadResult = new Promise<void>(resolve_ => {
             resolve = resolve_
         })
         const e = create({
             _updateThread: input => {
-                expect(input.threadID).toBe('a')
+                expect(input.id).toBe('a')
                 expect(input.title).toBe('t2')
                 return updateThreadResult
             },
@@ -84,7 +84,7 @@ describe('ThreadHeaderEditableTitle', () => {
         act(() => e.root.findByType('button').props.onClick())
         act(() => e.root.findByType('input').props.onChange({ currentTarget: { value: 't2' } }))
         act(() => {
-            e.root.findByType('form').props.onSubmit({ preventDefault: () => void 0 })
+            e.root.findByType('form').props.onSubmit({ preventDefault: () => undefined })
         })
 
         // Loading.
@@ -98,7 +98,7 @@ describe('ThreadHeaderEditableTitle', () => {
         // not wrapped in act(...).`. The fix is to use async `act` when it is in the released
         // version of React (see https://github.com/facebook/react/issues/14775).
         act(() => {
-            resolve({ title: 't2' } as any)
+            resolve()
         })
         await updateThreadResult
         expect(e.root.findAllByType('input').length).toBe(0)
@@ -106,7 +106,7 @@ describe('ThreadHeaderEditableTitle', () => {
 
     test('error saving', async () => {
         let reject: (error: any) => void
-        const updateThreadResult = new Promise<GQL.IDiscussionThread>((_resolve, reject_) => {
+        const updateThreadResult = new Promise<void>((_resolve, reject_) => {
             reject = reject_
         })
 
@@ -116,7 +116,7 @@ describe('ThreadHeaderEditableTitle', () => {
         act(() => e.root.findByType('button').props.onClick())
         act(() => e.root.findByType('input').props.onChange({ currentTarget: { value: 't2' } }))
         act(() => {
-            e.root.findByType('form').props.onSubmit({ preventDefault: () => void 0 })
+            e.root.findByType('form').props.onSubmit({ preventDefault: () => undefined })
         })
 
         // TODO: This prints harmless warnings like `Warning: An update to null inside a test was
@@ -125,7 +125,7 @@ describe('ThreadHeaderEditableTitle', () => {
         act(() => {
             reject({ message: 'x' })
         })
-        await updateThreadResult.catch(() => void 0)
+        await updateThreadResult.catch(() => undefined)
         expect(showMessagesNext.callCount).toBe(1)
         expect(showMessagesNext.firstCall.args).toEqual([
             {

@@ -35,7 +35,7 @@ export const ThreadsDropdownMenu: React.FunctionComponent<Props> = ({ onSelect, 
                     .filter(thread => thread.title.toLowerCase().includes(query.toLowerCase()))
                     .slice(0, 20 /* TODO!(sqs) hack */)
                     .map(thread => (
-                        // tslint:disable-next-line: jsx-no-lambda
+                        // eslint-disable-next-line react/jsx-no-bind
                         <DropdownItem key={thread.id} onClick={() => onSelect(thread)}>
                             <ThreadStateIcon thread={thread} className="small mr-1" />
                             <small className="text-muted">#{thread.number}</small> {thread.title}

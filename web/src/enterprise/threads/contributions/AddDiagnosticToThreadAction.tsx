@@ -43,7 +43,7 @@ export function register({ extensionsController }: ExtensionsControllerProps): U
                 if (thread !== null) {
                     await addDiagnosticsToThread({ thread, rawDiagnostics: [JSON.stringify(diagnostic)] })
                     extensionsController.services.notifications.showMessages.next({
-                        message: `Added diagnostic to thread`,
+                        message: 'Added diagnostic to thread',
                         type: NotificationType.Info,
                     })
                 }

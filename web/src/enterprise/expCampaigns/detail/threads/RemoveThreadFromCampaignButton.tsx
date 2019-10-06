@@ -6,7 +6,7 @@ import { ExtensionsControllerNotificationProps } from '../../../../../../shared/
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { mutateGraphQL } from '../../../../backend/graphql'
-import { ThreadStateFields } from '../../threads/common/threadState/threadState'
+import { ThreadStateFields } from '../../../threads/common/threadState/threadState'
 
 const removeThreadsFromCampaign = (input: GQL.IRemoveThreadsFromCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
@@ -53,7 +53,12 @@ export const RemoveThreadFromCampaignButton: React.FunctionComponent<Props> = ({
     }, [campaign.id, extensionsController.services.notifications.showMessages, onUpdate, thread.id])
 
     return (
-        <button className="btn btn-link btn-sm p-1" aria-label="Remove thread from campaign" onClick={onRemoveClick}>
+        <button
+            type="button"
+            className="btn btn-link btn-sm p-1"
+            aria-label="Remove thread from campaign"
+            onClick={onRemoveClick}
+        >
             <CloseIcon className="icon-inline" />
         </button>
     )

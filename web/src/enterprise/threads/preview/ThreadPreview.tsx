@@ -14,7 +14,7 @@ import { ThreadStateBadge } from '../common/threadState/ThreadStateBadge'
 import { THREAD_COMMENT_CREATED_VERB, THREAD_COMMENT_EMPTY_BODY } from '../detail/ThreadOverview'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
-    thread: GQL.IThreadPreview
+    thread: GQL.ThreadOrThreadPreview
 
     titleRight?: React.ReactFragment
 
@@ -68,14 +68,18 @@ export const ThreadPreview: React.FunctionComponent<Props> = ({ thread, titleRig
                             oldPath: parseRepoURI(d.oldPath!).filePath!,
                             newPath: parseRepoURI(d.newPath!).filePath!,
                         }}
-                        base={{
-                            repoName: c.baseRepository.name,
-                            repoID: c.baseRepository.id,
-                        }}
-                        head={{
-                            repoName: c.headRepository.name,
-                            repoID: c.headRepository.id,
-                        }}
+                        base={
+                            {
+                                repoName: c.baseRepository.name,
+                                repoID: c.baseRepository.id,
+                            } as any
+                        }
+                        head={
+                            {
+                                repoName: c.headRepository.name,
+                                repoID: c.headRepository.id,
+                            } as any
+                        }
                         lineNumbers={false}
                         className="mb-0"
                     />

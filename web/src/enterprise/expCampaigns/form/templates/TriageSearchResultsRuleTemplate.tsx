@@ -1,6 +1,6 @@
 import FileSearchIcon from 'mdi-react/FileSearchIcon'
 import React from 'react'
-import { RuleTemplate, RuleTemplateComponentContext } from '../templates'
+import { RuleTemplate, RuleTemplateComponentContext } from './'
 
 interface Props extends RuleTemplateComponentContext {}
 

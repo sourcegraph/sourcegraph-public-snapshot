@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState } from 'react'
@@ -61,7 +62,11 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
     const breadcrumbs = <Breadcrumbs items={breadcrumbItems} className="my-4" />
 
     const removeHeader = (
-        <style>{`.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: 100%; max-width: unset !important; overflow:hidden; padding: unset; } /* TODO!(sqs): hack */`}</style>
+        <style>
+            {
+                '.user-area-header, .org-header { display: none; } .org-area > .container, .user-area > .container { margin: unset; margin-top: unset !important; width: 100%; max-width: unset !important; overflow:hidden; padding: unset; } /* TODO!(sqs): hack */'
+            }
+        </style>
     )
 
     return (
@@ -73,7 +78,6 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
             <Route
                 path={newCampaignURL}
                 exact={true}
-                // eslint-disable-next-line react/jsx-no-bind
                 render={(routeComponentProps: RouteComponentProps<{}>) => (
                     <>
                         {breadcrumbs}
@@ -83,7 +87,6 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
             />
             <Route
                 path={`${context.campaignsURL}/:campaignID`}
-                // eslint-disable-next-line react/jsx-no-bind
                 render={(routeComponentProps: RouteComponentProps<{ campaignID: string }>) => (
                     <>
                         {removeHeader}

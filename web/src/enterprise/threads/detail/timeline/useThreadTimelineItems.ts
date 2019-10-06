@@ -26,7 +26,7 @@ const { fragment: eventFragment, query: eventQuery } = queryAndFragmentForUnion<
         'RemoveDiagnosticFromThreadEvent',
     ],
     ['id', 'createdAt'],
-    [`actor { ${ActorQuery} }`, `thread { ...ThreadFragment }`],
+    [`actor { ${ActorQuery} }`, 'thread { ...ThreadFragment }'],
     [ActorFragment, ThreadFragment]
 )
 

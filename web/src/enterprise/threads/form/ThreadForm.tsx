@@ -52,7 +52,7 @@ export const ThreadForm: React.FunctionComponent<Props> = ({
     useEffect(() => setHeadRef(initialValue.headRef), [initialValue.headRef])
 
     const onSubmit = useCallback<React.FormEventHandler>(
-        async e => {
+        e => {
             e.preventDefault()
             onSubmitThread({ title, baseRef, headRef })
         },
@@ -72,7 +72,7 @@ export const ThreadForm: React.FunctionComponent<Props> = ({
                             className="form-control"
                             required={true}
                             placeholder="Base ref"
-                            value={baseRef}
+                            value={baseRef || undefined}
                             onChange={onBaseRefChange}
                         />
                         <DotsHorizontalIcon className="icon-inline mx-2" />
@@ -82,7 +82,7 @@ export const ThreadForm: React.FunctionComponent<Props> = ({
                             className="form-control"
                             required={true}
                             placeholder="Head ref"
-                            value={headRef}
+                            value={headRef || undefined}
                             onChange={onHeadRefChange}
                         />
                     </div>

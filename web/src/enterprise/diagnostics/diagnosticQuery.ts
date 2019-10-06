@@ -43,7 +43,7 @@ export function parseDiagnosticQuery(query: string): ParsedDiagnosticQuery {
                 }
                 parsed.document.push({ pattern: `git://${value}**/*` }) // TODO!(sqs)
                 break
-            case 'is:':
+            case 'is:': {
                 const status =
                     value === DiagnosticResolutionStatus.Unresolved
                         ? DiagnosticResolutionStatus.Unresolved
@@ -58,6 +58,7 @@ export function parseDiagnosticQuery(query: string): ParsedDiagnosticQuery {
                     }
                 }
                 break
+            }
             case 'tag:':
                 if (!parsed.tag) {
                     parsed.tag = []

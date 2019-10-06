@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React, { useCallback, useState } from 'react'
 import H from 'history'
 import {
@@ -96,7 +97,6 @@ export const ImportThreadsFromExternalServiceToCampaignDropdownButton: React.Fun
                     <NavLink
                         className={`flex-1 text-nowrap ${activeTab === 'repository-and-number' ? 'active' : ''}`}
                         href="#"
-                        // eslint-disable-next-line react/jsx-no-bind
                         onClick={() => setActiveTab('repository-and-number')}
                     >
                         By number
@@ -104,7 +104,6 @@ export const ImportThreadsFromExternalServiceToCampaignDropdownButton: React.Fun
                     <NavLink
                         className={`flex-1 text-nowrap ${activeTab === 'query' ? 'active' : ''}`}
                         href="#"
-                        // eslint-disable-next-line react/jsx-no-bind
                         onClick={() => setActiveTab('query')}
                     >
                         By query

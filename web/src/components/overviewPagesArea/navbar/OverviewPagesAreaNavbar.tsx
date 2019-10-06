@@ -17,6 +17,7 @@ const NAV_LINK_CLASS_NAME =
 export const OverviewPagesAreaNavbar: React.FunctionComponent<Props> = ({ areaUrl, pages, className = '' }) => (
     <nav className={`overview-pages-area-navbar border-bottom ${className}`}>
         <div className="container">
+            {/* eslint-disable-next-line react/forbid-dom-props */}
             <ul className="nav flex-nowrap" style={{ overflowX: 'auto' }}>
                 {pages.map(({ title, icon: Icon, count, path, exact }) => (
                     <li key={path} className="overview-pages-area-navbar__nav-item nav-item">

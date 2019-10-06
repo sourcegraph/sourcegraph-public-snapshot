@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -66,7 +67,6 @@ export const OverviewPagesArea = <P extends object>({
                                 path={`${match.url}${page.path}`}
                                 strict={true}
                                 exact={page.exact}
-                                // eslint-disable-next-line react/jsx-no-bind
                                 render={routeComponentProps => page.render({ ...routeComponentProps, ...context })}
                             />
                         ))}

@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo, useState } from 'react'
@@ -28,6 +29,7 @@ export interface RepositoryThreadsAreaContext
     setBreadcrumbItem?: (breadcrumbItem: BreadcrumbItem | undefined) => void
 
     location: H.Location
+    history: H.History
     authenticatedUser: GQL.IUser | null
 }
 
@@ -67,7 +69,7 @@ export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <style>{`.repo-header{display:none !important;}` /* TODO!(sqs) */}</style>
+            <style>{'.repo-header{display:none !important;}' /* TODO!(sqs) */}</style>
             <RepoHeaderContributionPortal
                 position="nav"
                 element={<RepoHeaderBreadcrumbNavItem key="threads">Threads</RepoHeaderBreadcrumbNavItem>}
@@ -88,7 +90,6 @@ export const RepositoryThreadsArea: React.FunctionComponent<Props> = ({
                 </Route>
                 <Route
                     path={`${context.threadsURL}/:threadNumber`}
-                    // tslint:disable-next-line:jsx-no-lambda
                     render={(routeComponentProps: RouteComponentProps<{ threadNumber: string }>) => (
                         <ThreadArea
                             {...context}

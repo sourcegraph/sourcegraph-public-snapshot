@@ -6,7 +6,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { Label } from '../../../components/Label'
 
-const getRandomColor = () => randomColor() as string
+const getRandomColor = (): string => randomColor() as string
 
 export interface LabelFormData extends Pick<GQL.ILabel, 'name' | 'description' | 'color'> {}
 
@@ -59,7 +59,7 @@ export const LabelForm: React.FunctionComponent<Props> = ({
     useEffect(() => setColor(initialValue.color || getRandomColor()), [initialValue.color])
 
     const onSubmit = useCallback<React.FormEventHandler>(
-        async e => {
+        e => {
             e.preventDefault()
             onSubmitLabel({ name, color, description })
         },

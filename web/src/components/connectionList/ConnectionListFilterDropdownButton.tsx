@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { pluralize } from '../../../../shared/src/util/strings'
-import { DropdownMenuFilter } from '../../components/dropdownMenuFilter/DropdownMenuFilter'
+import { DropdownMenuFilter } from '../dropdownMenuFilter/DropdownMenuFilter'
 import { QueryParameterProps } from '../../util/useQueryParameter'
 
 const LOADING = 'loading' as const
@@ -98,7 +98,7 @@ export const ConnectionListFilterDropdownButton = <
                     itemsFiltered.slice(0, 15 /* TODO!(sqs) hack */).map(item => (
                         <DropdownItem
                             key={item.queryPart}
-                            // tslint:disable-next-line: jsx-no-lambda
+                            // eslint-disable-next-line react/jsx-no-bind
                             onClick={() => onSelect(item)}
                             className="d-flex align-items-center"
                         >

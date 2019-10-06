@@ -28,7 +28,8 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
     history,
     ...props
 }) => {
-    const isOpen = new URLSearchParams(location.hash.slice(1)).get('thread') === thread.internalID
+    const threadID = thread.__typename === 'ThreadPreview' ? thread.internalID : thread.id
+    const isOpen = new URLSearchParams(location.hash.slice(1)).get('thread') === threadID
     const hideThreadModal = useCallback(() => {
         const hashParams = new URLSearchParams(location.hash.slice(1))
         hashParams.delete('thread')
@@ -59,7 +60,7 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
             </button>
             <Link
                 className="btn btn-secondary mt-2"
-                to={{ ...location, hash: new URLSearchParams({ thread: thread.internalID }).toString() }}
+                to={{ ...location, hash: new URLSearchParams({ thread: threadID }).toString() }}
             >
                 Show preview
             </Link>
@@ -76,6 +77,7 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
                 innerRef={REMOVE_MODAL_DIALOG_CLASS}
             >
                 {isOpen && (
+                    // eslint-disable-next-line react/forbid-dom-props
                     <div className="overflow-auto" style={{ maxHeight: '80vh' }}>
                         <ThreadPreview
                             {...props}

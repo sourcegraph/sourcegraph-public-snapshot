@@ -30,7 +30,7 @@ export const CampaignsDropdownMenu: React.FunctionComponent<Props> = ({ onSelect
                 <DropdownItem header={true}>No campaigns exist</DropdownItem>
             ) : (
                 campaigns.nodes.map(campaign => (
-                    // tslint:disable-next-line: jsx-no-lambda
+                    // eslint-disable-next-line react/jsx-no-bind
                     <DropdownItem key={campaign.id} onClick={() => onSelect(campaign)}>
                         <small className="text-muted">#{campaign.namespace.namespaceName}</small> {campaign.name}
                     </DropdownItem>

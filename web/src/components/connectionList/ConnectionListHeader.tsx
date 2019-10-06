@@ -26,6 +26,7 @@ export const ConnectionListHeader: React.FunctionComponent<Props> = ({ items, it
             <input
                 type="checkbox"
                 className="form-check mx-1 my-2"
+                // eslint-disable-next-line react/forbid-dom-props
                 style={{ verticalAlign: 'middle' }}
                 aria-label="Select item"
             />
