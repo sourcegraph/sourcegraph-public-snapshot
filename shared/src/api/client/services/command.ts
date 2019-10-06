@@ -1,4 +1,6 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
+import { WorkspaceEdit, SerializedWorkspaceEdit } from '../../types/workspaceEdit'
+import { Diagnostic } from '@sourcegraph/extension-api-types'
 
 /** A registered command in the command registry. */
 export interface CommandEntry {
@@ -43,6 +45,15 @@ export class CommandRegistry {
 
     public executeCommand(params: ExecuteCommandParams): Promise<any> {
         return executeCommand(this.commandsSnapshot, params)
+    }
+
+    public async executeActionEditCommand(
+        diagnostic: Diagnostic | null,
+        params: ExecuteCommandParams
+    ): Promise<SerializedWorkspaceEdit> {
+        return WorkspaceEdit.fromJSON(
+            await this.executeCommand({ ...params, arguments: [diagnostic, ...(params.arguments || [])] })
+        )
     }
 
     /** All commands, emitted whenever the set of registered commands changed. */

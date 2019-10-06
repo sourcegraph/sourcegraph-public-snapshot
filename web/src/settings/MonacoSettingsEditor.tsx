@@ -117,6 +117,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
                 options={{
+                    fontSize: 12,
                     lineNumbers: 'off',
                     automaticLayout: true,
                     minimap: { enabled: false },

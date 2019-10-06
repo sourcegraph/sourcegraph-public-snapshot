@@ -11,13 +11,13 @@ export type ProvideCompletionItemSignature = (
     params: TextDocumentPositionParams
 ) => Observable<CompletionList | null | undefined>
 
-/** Provides hovers from all extensions. */
+/** Provides completion items from all extensions. */
 export class CompletionItemProviderRegistry extends DocumentFeatureProviderRegistry<ProvideCompletionItemSignature> {
     /**
      * Returns an observable that emits all providers' results whenever any of the last-emitted set
-     * of providers emits hovers. If any provider emits an error, the error is logged and the
-     * provider result is omitted from the emission of the observable (the observable does not emit
-     * the error).
+     * of providers emits completion items. If any provider emits an error, the error is logged and
+     * the provider result is omitted from the emission of the observable (the observable does not
+     * emit the error).
      */
     public getCompletionItems(params: TextDocumentPositionParams): Observable<CompletionList | null> {
         return getCompletionItems(this.providersForDocument(params.textDocument), params)

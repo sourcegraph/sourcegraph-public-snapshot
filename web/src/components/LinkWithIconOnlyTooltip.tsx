@@ -17,6 +17,9 @@ export const LinkWithIconOnlyTooltip: React.FunctionComponent<{
 }> = ({ to, text, tooltip = text, icon: Icon, className = '', activeClassName }) => {
     const LinkComponent = activeClassName ? NavLink : Link
     const linkProps = { to, className: `${className} d-flex align-items-center`, activeClassName }
+    if (linkProps.activeClassName===undefined) {
+        delete linkProps.activeClassName
+    }
     return (
         <LinkComponent {...linkProps}>
             <Icon className="icon-inline d-lg-none" data-tooltip={tooltip} />

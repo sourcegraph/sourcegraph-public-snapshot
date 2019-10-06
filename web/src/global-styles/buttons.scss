@@ -1,6 +1,12 @@
 @import 'bootstrap/scss/buttons';
 @import 'bootstrap/scss/button-group';
 
+.btn-link {
+    // No underline on .btn-link because it frequently contains icons, in which case the underline
+    // appears in the space between the icon and text label, which looks weird.
+    text-decoration: none !important;
+}
+
 // Light theme button variants
 .theme-light {
     @each $color, $value in $theme-colors-light {

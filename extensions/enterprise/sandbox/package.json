@@ -1,0 +1,36 @@
+{
+  "name": "automation-preview",
+  "publisher": "sourcegraph",
+  "wip": true,
+  "description": "Campaign automation for dependency upgrades, npm credential leaks, etc.",
+  "publisher": "sourcegraph",
+  "activationEvents": [
+    "*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph",
+    "dir": "extensions/enterprise/sandbox"
+  },
+  "contributes": {},
+  "main": "dist/extension.js",
+  "scripts": {
+    "tslint": "../../../node_modules/.bin/tslint -p tsconfig.json './src/**/*.ts'",
+    "typecheck": "../../../node_modules/.bin/tsc -p tsconfig.json",
+    "test": "jest",
+    "build": "../../../node_modules/.bin/parcel build --out-file dist/extension.js src/extension.ts",
+    "serve": "../../../node_modules/.bin/parcel serve --no-hmr --out-file dist/extension.js src/extension.ts",
+    "watch:typecheck": "../../../node_modules/.bin/tsc -p tsconfig.json -w",
+    "watch:build": "../../../node_modules/.bin/tsc -p tsconfig.dist.json -w",
+    "sourcegraph:prepublish": "yarn run build"
+  },
+  "browserslist": [
+    "last 1 Chrome versions",
+    "last 1 Firefox versions",
+    "last 1 Edge versions",
+    "last 1 Safari versions"
+  ],
+  "eslintConfig": {
+    "extends": "../../../.eslintrc.js"
+  }
+}

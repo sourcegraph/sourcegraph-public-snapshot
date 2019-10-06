@@ -114,6 +114,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}, nil
 }
 
+func (s GithubSource) Client() *github.Client { return s.client }
+
 type githubResult struct {
 	err  error
 	repo *github.Repository

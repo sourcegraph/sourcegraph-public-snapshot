@@ -2,11 +2,11 @@ import { Position } from '@sourcegraph/extension-api-types'
 import { Observable, of, Subscription, Unsubscribable } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
 import { CompletionList } from 'sourcegraph'
+import { ModelService } from '../../../../../shared/src/api/client/services/modelService'
 import { COMMENT_URI_SCHEME, positionToOffset } from '../../../../../shared/src/api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getWordAtText } from '../../../../../shared/src/util/wordHelpers'
 import { fetchAllUsers } from '../../../site-admin/backend'
-import { ModelService } from '../../../../../shared/src/api/client/services/modelService'
 
 /**
  * Registers contributions for username mention completion in discussion comments.

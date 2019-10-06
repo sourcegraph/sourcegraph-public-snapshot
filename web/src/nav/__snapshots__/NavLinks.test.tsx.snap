@@ -4,7 +4,6 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
 Array [
   "Search /search",
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "WebCommandListPopoverButton",
   "UserNavItem",
 ]
@@ -13,7 +12,6 @@ Array [
 exports[`NavLinks authed Sourcegraph.com /search 1`] = `
 Array [
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "WebCommandListPopoverButton",
   "UserNavItem",
 ]
@@ -23,7 +21,6 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
 Array [
   "Search /search",
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "WebCommandListPopoverButton",
   "UserNavItem",
 ]
@@ -32,7 +29,6 @@ Array [
 exports[`NavLinks authed self-hosted /search 1`] = `
 Array [
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "WebCommandListPopoverButton",
   "UserNavItem",
 ]
@@ -42,7 +38,6 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
 Array [
   "Search /search",
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "Extensions /extensions",
   "Sign in /sign-in",
   "About https://about.sourcegraph.com",
@@ -54,7 +49,6 @@ Array [
 exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
 Array [
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "Extensions /extensions",
   "Sign in /sign-in",
   "About https://about.sourcegraph.com",
@@ -67,7 +61,6 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
 Array [
   "Search /search",
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "Extensions /extensions",
   "Sign in /sign-in",
   "Help /help",
@@ -78,7 +71,6 @@ Array [
 exports[`NavLinks unauthed self-hosted /search 1`] = `
 Array [
   "WebActionsNavItems",
-  "CampaignsNavItem",
   "Extensions /extensions",
   "Sign in /sign-in",
   "Help /help",

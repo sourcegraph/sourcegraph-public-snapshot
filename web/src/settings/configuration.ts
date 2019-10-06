@@ -16,7 +16,7 @@ export function parseJSON(text: string): any {
             errors.map(v => ({
                 ...v,
                 code: ParseErrorCode[v.error],
-                message: `Configuration parse error, code: ${v.error} (offset: ${v.offset}, length: ${v.length})`,
+                message: `Parse error, code: ${v.error} (offset: ${v.offset}, length: ${v.length})`,
             }))
         )
     }

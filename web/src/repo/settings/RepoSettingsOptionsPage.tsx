@@ -4,6 +4,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { ExternalServiceCard } from '../../components/ExternalServiceCard'
 import { Form } from '../../components/Form'
@@ -12,7 +13,7 @@ import { getExternalService } from '../../site-admin/externalServices'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<any>, ExtensionsControllerProps {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }

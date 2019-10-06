@@ -4,7 +4,7 @@ import { Range } from './location'
 /**
  * A decoration to apply to a text document.
  *
- * @see module:sourcgraph.TextDocumentDecoration
+ * @see module:sourcegraph.TextDocumentDecoration
  */
 export interface TextDocumentDecoration
     extends Pick<sourcegraph.TextDocumentDecoration, Exclude<keyof sourcegraph.TextDocumentDecoration, 'range'>> {

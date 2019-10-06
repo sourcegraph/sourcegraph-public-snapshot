@@ -399,6 +399,12 @@ type Extensions struct {
 	// RemoteRegistry description: The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.
 	RemoteRegistry interface{} `json:"remoteRegistry,omitempty"`
 }
+type ExtensionsContainers struct {
+	// From description: Proxy HTTP requests from this URL path on Sourcegraph (must begin with /.api/extension-containers/).
+	From string `json:"from"`
+	// To description: Proxy HTTP requests to this URL (which must be accessible to the Sourcegraph instance).
+	To string `json:"to"`
+}
 type ExternalIdentity struct {
 	// AuthProviderID description: The value of the `configID` field of the targeted authentication provider.
 	AuthProviderID string `json:"authProviderID"`
@@ -874,6 +880,8 @@ type SiteConfiguration struct {
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
 	Extensions *Extensions `json:"extensions,omitempty"`
+	// ExtensionsContainers description: Configures server-side containers for extension functionality.
+	ExtensionsContainers []*ExtensionsContainers `json:"extensions.containers,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently to update repositories.

@@ -3,15 +3,17 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemeProps } from '../theme'
 import { RouteDescriptor } from '../util/contributions'
 import { PatternTypeProps } from '../search'
+import { PlatformContextProps } from '../../../shared/src/platform/context'
 
 /**
  * Properties passed to all page components in the namespace area.
  */
 export interface NamespaceAreaContext
     extends ExtensionsControllerProps,
+    PlatformContextProps,
         ThemeProps,
         Omit<PatternTypeProps, 'togglePatternType'> {
-    namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
+    namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'namespaceName'| 'url'>
 
     authenticatedUser: GQL.IUser | null
 }

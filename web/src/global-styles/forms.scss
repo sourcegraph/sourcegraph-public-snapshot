@@ -31,3 +31,14 @@
 :not(output):-moz-ui-invalid:-moz-focusring:not(:focus) {
     box-shadow: none;
 }
+
+.bg-form-control {
+    background-color: $input-bg !important;
+}
+
+// Support input groups with a focus ring around the entire group.
+.form-control-focus {
+    @include box-shadow($input-box-shadow);
+    background-color: $input-focus-bg !important;
+    border: $input-border-width solid $input-focus-border-color !important;
+}

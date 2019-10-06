@@ -23,6 +23,13 @@ export function fromLocation(location: sourcegraph.Location): clientType.Locatio
     }
 }
 
+export function toLocation(location: clientType.Location): sourcegraph.Location {
+    return {
+        uri: new URL(location.uri),
+        range: location.range ? Range.fromPlain(location.range) : undefined,
+    }
+}
+
 /**
  * Converts from an instance of {@link Hover} to the plain object {@link clientType.Hover}.
  *
@@ -41,6 +48,9 @@ export function fromHover(hover: sourcegraph.Hover): clientType.Hover {
  *
  * @internal
  */
+export function fromRange(range: Range | sourcegraph.Range): clientType.Range
+export function fromRange(range: undefined): undefined
+export function fromRange(range: Range | sourcegraph.Range | undefined): clientType.Range | undefined
 export function fromRange(range: Range | sourcegraph.Range | undefined): clientType.Range | undefined {
     if (!range) {
         return undefined

@@ -1,0 +1,435 @@
+[
+  {
+    "name": "actionpack",
+    "version": "6.0.0",
+    "range": "8:4-8:22",
+    "directAncestors": [
+      "railties",
+      "rspec-rails"
+    ]
+  },
+  {
+    "name": "actionview",
+    "version": "6.0.0",
+    "range": "15:4-15:22",
+    "directAncestors": [
+      "actionpack"
+    ]
+  },
+  {
+    "name": "activemodel",
+    "version": "6.0.0",
+    "range": "21:4-21:23",
+    "directAncestors": [
+      "activerecord"
+    ]
+  },
+  {
+    "name": "activerecord",
+    "version": "6.0.0",
+    "range": "23:4-23:24",
+    "directAncestors": []
+  },
+  {
+    "name": "activesupport",
+    "version": "6.0.0",
+    "range": "26:4-26:25",
+    "directAncestors": [
+      "actionpack",
+      "actionview",
+      "activemodel",
+      "activerecord",
+      "rails-dom-testing",
+      "railties",
+      "rspec-rails"
+    ]
+  },
+  {
+    "name": "appraisal",
+    "version": "2.2.0",
+    "range": "32:4-32:21",
+    "directAncestors": []
+  },
+  {
+    "name": "barrier",
+    "version": "1.0.2",
+    "range": "36:4-36:19",
+    "directAncestors": []
+  },
+  {
+    "name": "builder",
+    "version": "3.2.3",
+    "range": "37:4-37:19",
+    "directAncestors": [
+      "actionview"
+    ]
+  },
+  {
+    "name": "bundler",
+    "directAncestors": [
+      "appraisal"
+    ]
+  },
+  {
+    "name": "byebug",
+    "version": "11.0.1",
+    "range": "38:4-38:19",
+    "directAncestors": []
+  },
+  {
+    "name": "coderay",
+    "version": "1.1.2",
+    "range": "39:4-39:19",
+    "directAncestors": [
+      "pry"
+    ]
+  },
+  {
+    "name": "concurrent-ruby",
+    "version": "1.1.5",
+    "range": "40:4-40:27",
+    "directAncestors": [
+      "activesupport",
+      "i18n"
+    ]
+  },
+  {
+    "name": "crass",
+    "version": "1.0.4",
+    "range": "41:4-41:17",
+    "directAncestors": [
+      "loofah"
+    ]
+  },
+  {
+    "name": "database_cleaner",
+    "version": "1.7.0",
+    "range": "42:4-42:28",
+    "directAncestors": []
+  },
+  {
+    "name": "diff-lcs",
+    "version": "1.3",
+    "range": "43:4-43:18",
+    "directAncestors": [
+      "rspec-expectations",
+      "rspec-mocks"
+    ]
+  },
+  {
+    "name": "erubi",
+    "version": "1.9.0",
+    "range": "44:4-44:17",
+    "directAncestors": [
+      "actionview"
+    ]
+  },
+  {
+    "name": "ffi",
+    "version": "1.11.1",
+    "range": "45:4-45:16",
+    "directAncestors": [
+      "rb-inotify"
+    ]
+  },
+  {
+    "name": "formatador",
+    "version": "0.2.5",
+    "range": "46:4-46:22",
+    "directAncestors": [
+      "guard"
+    ]
+  },
+  {
+    "name": "guard",
+    "version": "2.15.1",
+    "range": "47:4-47:18",
+    "directAncestors": [
+      "guard-rspec"
+    ]
+  },
+  {
+    "name": "guard-compat",
+    "version": "1.2.1",
+    "range": "56:4-56:24",
+    "directAncestors": [
+      "guard-rspec"
+    ]
+  },
+  {
+    "name": "guard-rspec",
+    "version": "4.7.3",
+    "range": "57:4-57:23",
+    "directAncestors": []
+  },
+  {
+    "name": "i18n",
+    "version": "1.6.0",
+    "range": "61:4-61:16",
+    "directAncestors": [
+      "activesupport"
+    ]
+  },
+  {
+    "name": "listen",
+    "version": "3.1.5",
+    "range": "63:4-63:18",
+    "directAncestors": [
+      "guard"
+    ]
+  },
+  {
+    "name": "loofah",
+    "version": "2.3.0",
+    "range": "67:4-67:18",
+    "directAncestors": [
+      "rails-html-sanitizer"
+    ]
+  },
+  {
+    "name": "lumberjack",
+    "version": "1.0.13",
+    "range": "70:4-70:23",
+    "directAncestors": [
+      "guard"
+    ]
+  },
+  {
+    "name": "method_source",
+    "version": "0.9.2",
+    "range": "71:4-71:25",
+    "directAncestors": [
+      "pry",
+      "railties"
+    ]
+  },
+  {
+    "name": "mini_portile2",
+    "version": "2.4.0",
+    "range": "72:4-72:25",
+    "directAncestors": [
+      "nokogiri"
+    ]
+  },
+  {
+    "name": "minitest",
+    "version": "5.12.2",
+    "range": "73:4-73:21",
+    "directAncestors": [
+      "activesupport"
+    ]
+  },
+  {
+    "name": "nenv",
+    "version": "0.3.0",
+    "range": "74:4-74:16",
+    "directAncestors": [
+      "guard",
+      "notiffany"
+    ]
+  },
+  {
+    "name": "nokogiri",
+    "version": "1.10.4",
+    "range": "75:4-75:21",
+    "directAncestors": [
+      "loofah",
+      "rails-dom-testing"
+    ]
+  },
+  {
+    "name": "notiffany",
+    "version": "0.1.3",
+    "range": "77:4-77:21",
+    "directAncestors": [
+      "guard"
+    ]
+  },
+  {
+    "name": "pry",
+    "version": "0.12.2",
+    "range": "80:4-80:16",
+    "directAncestors": [
+      "guard"
+    ]
+  },
+  {
+    "name": "rack",
+    "version": "2.0.7",
+    "range": "83:4-83:16",
+    "directAncestors": [
+      "actionpack",
+      "rack-test"
+    ]
+  },
+  {
+    "name": "rack-test",
+    "version": "1.1.0",
+    "range": "84:4-84:21",
+    "directAncestors": [
+      "actionpack"
+    ]
+  },
+  {
+    "name": "rails-dom-testing",
+    "version": "2.0.3",
+    "range": "86:4-86:29",
+    "directAncestors": [
+      "actionpack",
+      "actionview"
+    ]
+  },
+  {
+    "name": "rails-html-sanitizer",
+    "version": "1.2.0",
+    "range": "89:4-89:32",
+    "directAncestors": [
+      "actionpack",
+      "actionview"
+    ]
+  },
+  {
+    "name": "railties",
+    "version": "6.0.0",
+    "range": "91:4-91:20",
+    "directAncestors": [
+      "rspec-rails"
+    ]
+  },
+  {
+    "name": "rake",
+    "version": "13.0.0",
+    "range": "97:4-97:17",
+    "directAncestors": [
+      "appraisal",
+      "railties"
+    ]
+  },
+  {
+    "name": "rb-fsevent",
+    "version": "0.10.3",
+    "range": "98:4-98:23",
+    "directAncestors": [
+      "listen"
+    ]
+  },
+  {
+    "name": "rb-inotify",
+    "version": "0.10.0",
+    "range": "99:4-99:23",
+    "directAncestors": [
+      "listen"
+    ]
+  },
+  {
+    "name": "rspec",
+    "version": "3.8.0",
+    "range": "101:4-101:17",
+    "directAncestors": [
+      "guard-rspec"
+    ]
+  },
+  {
+    "name": "rspec-core",
+    "version": "3.8.2",
+    "range": "105:4-105:22",
+    "directAncestors": [
+      "rspec",
+      "rspec-its",
+      "rspec-rails"
+    ]
+  },
+  {
+    "name": "rspec-expectations",
+    "version": "3.8.4",
+    "range": "107:4-107:30",
+    "directAncestors": [
+      "rspec",
+      "rspec-its",
+      "rspec-rails"
+    ]
+  },
+  {
+    "name": "rspec-its",
+    "version": "1.3.0",
+    "range": "110:4-110:21",
+    "directAncestors": []
+  },
+  {
+    "name": "rspec-mocks",
+    "version": "3.8.1",
+    "range": "113:4-113:23",
+    "directAncestors": [
+      "rspec",
+      "rspec-rails"
+    ]
+  },
+  {
+    "name": "rspec-rails",
+    "version": "3.8.2",
+    "range": "116:4-116:23",
+    "directAncestors": []
+  },
+  {
+    "name": "rspec-support",
+    "version": "3.8.2",
+    "range": "124:4-124:25",
+    "directAncestors": [
+      "rspec-core",
+      "rspec-expectations",
+      "rspec-mocks",
+      "rspec-rails"
+    ]
+  },
+  {
+    "name": "ruby_dep",
+    "version": "1.5.0",
+    "range": "125:4-125:20",
+    "directAncestors": [
+      "listen"
+    ]
+  },
+  {
+    "name": "shellany",
+    "version": "0.0.1",
+    "range": "126:4-126:20",
+    "directAncestors": [
+      "guard",
+      "notiffany"
+    ]
+  },
+  {
+    "name": "thor",
+    "version": "0.20.3",
+    "range": "127:4-127:17",
+    "directAncestors": [
+      "appraisal",
+      "guard",
+      "railties"
+    ]
+  },
+  {
+    "name": "thread_safe",
+    "version": "0.3.6",
+    "range": "128:4-128:23",
+    "directAncestors": [
+      "tzinfo"
+    ]
+  },
+  {
+    "name": "tzinfo",
+    "version": "1.2.5",
+    "range": "129:4-129:18",
+    "directAncestors": [
+      "activesupport"
+    ]
+  },
+  {
+    "name": "zeitwerk",
+    "version": "2.1.10",
+    "range": "131:4-131:21",
+    "directAncestors": [
+      "activesupport"
+    ]
+  }
+]

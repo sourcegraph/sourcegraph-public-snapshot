@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, switchMap, tap, share, shareReplay } from 'rxjs/operators'
 import {
     ConfiguredExtension,
     getScriptURLFromExtensionManifest,
@@ -88,15 +88,16 @@ export class ExtensionsService {
         )
     }
 
-    private get sideloadedExtension(): Subscribable<ConfiguredExtension | null> {
-        return from(this.platformContext.sideloadedExtensionURL).pipe(
-            switchMap(url => (url ? this.fetchSideloadedExtension(url) : of(null))),
-            catchError(err => {
-                console.error(`Error sideloading extension: ${err}`)
-                return of(null)
-            })
-        )
-    }
+    private sideloadedExtension: Subscribable<ConfiguredExtension | null> = from(
+        this.platformContext.sideloadedExtensionURL
+    ).pipe(
+        switchMap(url => (url ? this.fetchSideloadedExtension(url) : of(null))),
+        catchError(err => {
+            console.error(`Error sideloading extension: ${err}`)
+            return of(null)
+        }),
+        shareReplay()
+    )
 
     /**
      * Returns an observable that emits the set of extensions that should be active, based on the previous and

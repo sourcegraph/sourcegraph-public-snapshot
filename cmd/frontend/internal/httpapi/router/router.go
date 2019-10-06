@@ -15,9 +15,10 @@ const (
 
 	Registry = "registry"
 
-	RepoShield  = "repo.shield"
-	RepoRefresh = "repo.refresh"
-	Telemetry   = "telemetry"
+	RepoShield              = "repo.shield"
+	RepoRefresh             = "repo.refresh"
+	Telemetry               = "telemetry"
+	ExtensionContainerProxy = "extension-container-proxy"
 
 	GitHubWebhooks = "github.webhooks"
 
@@ -76,6 +77,8 @@ func New(base *mux.Router) *mux.Router {
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Name(RepoShield)
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
+
+	base.PathPrefix("/extension-containers").Name(ExtensionContainerProxy)
 
 	return base
 }

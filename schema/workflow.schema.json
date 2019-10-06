@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "workflow.schema.json#",
+  "title": "Workflow",
+  "description": "The definition of a Sourcegraph campaign workflow.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "variables": {
+      "$ref": "#/definitions/WorkflowVariables"
+    },
+    "extensions": {
+      "$ref": "#/definitions/WorkflowRequiredExtensions"
+    },
+    "template": {
+      "type": "string"
+    },
+    "run": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/WorkflowRun"
+      }
+    },
+    "behaviors": {
+      "$ref": "#/definitions/WorkflowBehaviors"
+    }
+  },
+  "definitions": {
+    "WorkflowVariables": {
+      "title": "Workflow variables",
+      "description": "Variables that are available to the workflow item. Top-level variables are available to all templates, runs, and triggers in the workflow.",
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^\\w+$" }
+    },
+    "WorkflowRun": {
+      "title": "Workflow run",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "variables": {
+          "$ref": "#/definitions/WorkflowVariables"
+        },
+        "extensions": {
+          "$ref": "#/definitions/WorkflowRequiredExtensions"
+        },
+        "diagnostics": {
+          "description": "Diagnostics providers to run.",
+          "type": "object",
+          "required": ["id"],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "The ID of a diagnostics provider.",
+              "type": "string"
+            }
+          }
+        },
+        "codeActions": {
+          "description": "Code actions to run for each diagnostic to produce edits.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Command"
+          }
+        },
+        "commands": {
+          "description": "Commands to run to produce side effects.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Command"
+          }
+        }
+      }
+    },
+    "WorkflowRequiredExtensions": {
+      "title": "Workflow required extensions",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[\\w./-]+$" }
+    },
+    "Command": {
+      "title": "Command",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command"],
+      "properties": {
+        "command": {
+          "description": "The ID of the command to run.",
+          "type": "string"
+        },
+        "arguments": {
+          "description": "Extra arguments for the command.",
+          "type": "array"
+        }
+      }
+    },
+    "WorkflowBehaviors": {
+      "title": "Workflow behaviors",
+      "description": "The specification of what to do with diagnostics, edits, and other intended side effects produced by the workflow's runs.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "edits": {
+          "$ref": "#/definitions/Command"
+        }
+      }
+    }
+  }
+}

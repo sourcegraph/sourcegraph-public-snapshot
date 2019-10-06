@@ -1,8 +1,9 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyValue, proxyValueSymbol, ProxyResult } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
-import { TextModelUpdate } from '../../client/services/modelService'
+import { TextModelUpdate, TextModel } from '../../client/services/modelService'
 import { ExtDocument } from './textDocument'
+import { ClientDocumentsAPI } from '../../client/api/documents'
 
 /** @internal */
 export interface ExtDocumentsAPI extends ProxyValue {
@@ -15,7 +16,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
 
     private documents = new Map<string, ExtDocument>()
 
-    constructor(private sync: () => Promise<void>) {}
+    constructor(private proxy: ProxyResult<ClientDocumentsAPI>, private sync: () => Promise<void>) {}
 
     /**
      * Returns the known document with the given URI.
@@ -61,9 +62,8 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
         for (const update of modelUpdates) {
             switch (update.type) {
                 case 'added': {
-                    const { uri, languageId, text } = update
-                    const doc = new ExtDocument({ uri, languageId, text })
-                    this.documents.set(update.uri, doc)
+                    const { uri, text, languageId }: TextModel = update
+                    const doc = this.addDocument({ uri, text, languageId })
                     this.openedTextDocuments.next(doc)
                     break
                 }
@@ -77,5 +77,21 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
                     break
             }
         }
+    }
+
+    public async openTextDocument(uri: URL): Promise<ExtDocument> {
+        const uriStr = uri.toString()
+        const doc = this.documents.get(uriStr)
+        if (doc) {
+            return doc
+        }
+        const model = await this.proxy.$openTextDocument(uri.toString())
+        return this.addDocument(model)
+    }
+
+    private addDocument(model: TextModel): ExtDocument {
+        const doc = new ExtDocument(model)
+        this.documents.set(model.uri, doc)
+        return doc
     }
 }
