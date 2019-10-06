@@ -11,6 +11,8 @@ import (
 )
 
 func TestDB_CommitStatusContexts(t *testing.T) {
+	t.Skip("TODO!(sqs)")
+
 	if testing.Short() {
 		t.Skip()
 	}
