@@ -53,7 +53,7 @@ describe('Documents (integration)', () => {
                 services: { model: modelService, fileSystem },
                 extensionAPI,
             } = await integrationTestContext(undefined, { editors: [], roots: [] })
-            fileSystem.setProvider(async () => 't')
+            fileSystem.setProvider(() => Promise.resolve('t'))
             const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
             expect(modelService.hasModel('file:///f')).toBeFalsy()
             const doc = await extensionAPI.workspace.openTextDocument(new URL('file:///f'))
@@ -67,7 +67,7 @@ describe('Documents (integration)', () => {
                 services: { model: modelService, fileSystem },
                 extensionAPI,
             } = await integrationTestContext()
-            fileSystem.setProvider(async () => 't')
+            fileSystem.setProvider(() => Promise.resolve('t'))
             const values = collectSubscribableValues(extensionAPI.workspace.openedTextDocuments)
             expect(modelService.hasModel('file:///f')).toBeTruthy()
             const doc = await extensionAPI.workspace.openTextDocument(new URL('file:///f'))

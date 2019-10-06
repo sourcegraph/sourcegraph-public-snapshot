@@ -5,7 +5,7 @@ import { Services } from '../api/client/services'
 import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
-import { createAggregateError } from '../util/errors'
+import { createAggregateError, ErrorLike } from '../util/errors'
 import { isDefined } from '../util/types'
 import { makeRepoURI } from '../util/url'
 
@@ -92,7 +92,7 @@ function formatIncludeExcludePatterns(
         prefix: string,
         keyword: string,
         patterns: IncludeExcludePatterns['includes'] | IncludeExcludePatterns['excludes']
-    ) => {
+    ): string | undefined | ErrorLike => {
         if (!patterns || patterns.length === 0) {
             return undefined
         }

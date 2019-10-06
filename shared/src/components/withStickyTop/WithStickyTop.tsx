@@ -1,3 +1,4 @@
+/* eslint-disable react/forbid-dom-props */
 import React, { useCallback, useState } from 'react'
 
 export interface StickyTopComponentProps {
@@ -20,48 +21,52 @@ export const WithStickyTop: React.FunctionComponent<{
 }> = ({ scrollContainerSelector, children }) => {
     const [isStuck, setIsStuck] = useState(false)
 
-    const setSentinelTop = useCallback((sentinelTop: HTMLElement | null) => {
-        if (!sentinelTop) {
-            return
-        }
+    const setSentinelTop = useCallback(
+        (sentinelTop: HTMLElement | null) => {
+            if (!sentinelTop) {
+                return
+            }
 
-        // Find scrolling container.
-        const container = sentinelTop.closest(scrollContainerSelector)
-        if (!container) {
-            setIsStuck(false)
-            console.error('WithStickyTop: scrolling container not found')
-            return
-        }
+            // Find scrolling container.
+            const container = sentinelTop.closest(scrollContainerSelector)
+            if (!container) {
+                setIsStuck(false)
+                console.error('WithStickyTop: scrolling container not found')
+                return
+            }
 
-        const observer = new IntersectionObserver(
-            records => {
-                for (const record of records) {
-                    const targetInfo = record.boundingClientRect
-                    const rootBoundsInfo = record.rootBounds
+            const observer = new IntersectionObserver(
+                records => {
+                    for (const record of records) {
+                        const targetInfo = record.boundingClientRect
+                        const rootBoundsInfo = record.rootBounds
 
-                    // Started sticking.
-                    if (targetInfo.bottom < rootBoundsInfo.top) {
-                        setIsStuck(true)
+                        if (rootBoundsInfo) {
+                            // Started sticking.
+                            if (targetInfo.bottom < rootBoundsInfo.top) {
+                                setIsStuck(true)
+                            }
+
+                            // Stopped sticking.
+                            if (targetInfo.bottom >= rootBoundsInfo.top && targetInfo.bottom < rootBoundsInfo.bottom) {
+                                setIsStuck(false)
+                            }
+                        }
                     }
+                },
+                { threshold: [0], root: container }
+            )
 
-                    // Stopped sticking.
-                    if (targetInfo.bottom >= rootBoundsInfo.top && targetInfo.bottom < rootBoundsInfo.bottom) {
-                        setIsStuck(false)
-                    }
-                }
-            },
-            { threshold: [0], root: container }
-        )
-
-        observer.observe(sentinelTop)
-    }, [])
+            observer.observe(sentinelTop)
+        },
+        [scrollContainerSelector]
+    )
 
     return (
         <>
             <div
                 className="with-sticky-top__sentinel-top"
                 ref={setSentinelTop}
-                // tslint:disable-next-line: jsx-ban-props
                 style={{
                     position: 'absolute',
                     left: 0,
