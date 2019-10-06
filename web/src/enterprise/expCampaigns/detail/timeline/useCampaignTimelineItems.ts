@@ -47,7 +47,7 @@ export const useCampaignTimelineItems = (campaign: Pick<GQL.IExpCampaign, 'id'>)
                 query CampaignTimelineItems($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
-                        ... on Campaign {
+                        ... on ExpCampaign {
                             timelineItems {
                                 nodes {
                                     ${eventQuery}
@@ -97,7 +97,7 @@ export const useCampaignTimelineItems = (campaign: Pick<GQL.IExpCampaign, 'id'>)
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data.node || data.node.__typename !== 'Campaign') {
+                    if (!data.node || data.node.__typename !== 'ExpCampaign') {
                         throw new Error('not a campaign')
                     }
                     return data.node.timelineItems

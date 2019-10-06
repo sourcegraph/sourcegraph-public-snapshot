@@ -28,7 +28,7 @@ function queryCampaignRepositories(campaign: Pick<GQL.IExpCampaign, 'id'>): Obse
             query CampaignRepositories($campaign: ID!) {
                 node(id: $campaign) {
                     __typename
-                    ... on Campaign {
+                    ... on ExpCampaign {
                         repositoryComparisons {
                             baseRepository {
                                 id
@@ -69,7 +69,7 @@ function queryCampaignRepositories(campaign: Pick<GQL.IExpCampaign, 'id'>): Obse
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data || !data.node || data.node.__typename !== 'Campaign') {
+            if (!data || !data.node || data.node.__typename !== 'ExpCampaign') {
                 throw new Error('campaign not found')
             }
             return data.node.repositoryComparisons

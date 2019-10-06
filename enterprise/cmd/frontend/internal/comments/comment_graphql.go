@@ -25,7 +25,7 @@ func commentObjectFromGQLID(id graphql.ID) (types.CommentObject, error) {
 	case "Thread":
 		threadID, err := graphqlbackend.UnmarshalThreadID(id)
 		return types.CommentObject{ThreadID: threadID}, err
-	case "Campaign":
+	case graphqlbackend.GQLTypeExpCampaign:
 		// TODO!(sqs): reduce duplication of logic and constants?
 		var dbID int64
 		err := relay.UnmarshalSpec(id, &dbID)

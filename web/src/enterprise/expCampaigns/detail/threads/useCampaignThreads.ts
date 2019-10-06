@@ -32,7 +32,7 @@ export const useCampaignThreads = (
                 query CampaignThreads($campaign: ID!, $threadsFirst: Int, $threadsFilters: ThreadFilters) {
                     node(id: $campaign) {
                         __typename
-                        ... on Campaign {
+                        ... on ExpCampaign {
                             threads(first: $threadsFirst, filters: $threadsFilters) {
                                 ...ThreadOrThreadPreviewConnectionFragment
                             }
@@ -50,7 +50,7 @@ export const useCampaignThreads = (
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data.node || data.node.__typename !== 'Campaign') {
+                    if (!data.node || data.node.__typename !== 'ExpCampaign') {
                         throw new Error('not a campaign')
                     }
                     return data.node.threads

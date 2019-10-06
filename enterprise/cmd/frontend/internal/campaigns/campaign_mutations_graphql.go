@@ -87,7 +87,7 @@ func (GraphQLResolver) UpdateCampaign(ctx context.Context, arg *graphqlbackend.E
 	if arg.Input.Rules != nil {
 		// TODO!(sqs): actually perform a delta-update of threads here instead of deleting them all and
 		// then recreating them.
-		if _, err := dbconn.Global.ExecContext(ctx, `DELETE FROM threads USING campaigns_threads WHERE threads.id=campaigns_threads.thread_id AND campaigns_threads.campaign_id=$1`, campaign.ID); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, `DELETE FROM threads USING exp_campaigns_threads WHERE threads.id=exp_campaigns_threads.thread_id AND exp_campaigns_threads.campaign_id=$1`, campaign.ID); err != nil {
 			return nil, err
 		}
 

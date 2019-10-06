@@ -26,7 +26,7 @@ export const useCampaignByID = (campaign: GQL.ID): [Result, (update?: Partial<GQ
                 query CampaignByID($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
-                        ... on Campaign {
+                        ... on ExpCampaign {
                             id
                             namespace {
                                 id
@@ -78,7 +78,7 @@ export const useCampaignByID = (campaign: GQL.ID): [Result, (update?: Partial<GQ
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data.node || data.node.__typename !== 'Campaign') {
+                    if (!data.node || data.node.__typename !== 'ExpCampaign') {
                         return null
                     }
                     return data.node

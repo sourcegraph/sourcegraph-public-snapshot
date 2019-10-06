@@ -30,7 +30,7 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.IExpCampaign, 'id'>)
                 query CampaignFileDiffs($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
-                        ... on Campaign {
+                        ... on ExpCampaign {
                             threads {
                                 nodes {
                                     kind
@@ -63,7 +63,7 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.IExpCampaign, 'id'>)
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data || !data.node || data.node.__typename !== 'Campaign') {
+                    if (!data || !data.node || data.node.__typename !== 'ExpCampaign') {
                         throw new Error('campaign not found')
                     }
                     const result: CampaignImpactSummary = {

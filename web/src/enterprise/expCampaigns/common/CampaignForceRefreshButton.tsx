@@ -16,7 +16,7 @@ const queryCampaignRules = (campaign: Pick<GQL.IExpCampaign, 'id'>): Promise<Rul
             query CampaignRules($campaign: ID!) {
                 node(id: $campaign) {
                     __typename
-                    ... on Campaign {
+                    ... on ExpCampaign {
                         rules {
                             nodes {
                                 definition {
@@ -33,7 +33,7 @@ const queryCampaignRules = (campaign: Pick<GQL.IExpCampaign, 'id'>): Promise<Rul
         .pipe(
             map(dataOrThrowErrors),
             map(data => {
-                if (!data.node || data.node.__typename !== 'Campaign') {
+                if (!data.node || data.node.__typename !== 'ExpCampaign') {
                     throw new Error('invalid campaign')
                 }
                 return data.node.rules.nodes.map(rule => rule.definition.parsed as RuleDefinition)

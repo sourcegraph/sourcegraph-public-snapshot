@@ -25,7 +25,7 @@ export const useCampaignBurndownChart = (campaign: Pick<GQL.IExpCampaign, 'id'>)
                 query CampaignBurndownChart($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
-                        ... on Campaign {
+                        ... on ExpCampaign {
                             burndownChart {
                                 dates
                                 openThreads
@@ -42,7 +42,7 @@ export const useCampaignBurndownChart = (campaign: Pick<GQL.IExpCampaign, 'id'>)
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data.node || data.node.__typename !== 'Campaign') {
+                    if (!data.node || data.node.__typename !== 'ExpCampaign') {
                         throw new Error('not a campaign')
                     }
                     return data.node.burndownChart

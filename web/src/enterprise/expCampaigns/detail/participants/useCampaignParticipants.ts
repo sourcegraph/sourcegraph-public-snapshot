@@ -23,7 +23,7 @@ export const useCampaignParticipants = (campaign: Pick<GQL.IExpCampaign, 'id'>):
                 query CampaignParticipants($campaign: ID!) {
                     node(id: $campaign) {
                         __typename
-                        ... on Campaign {
+                        ... on ExpCampaign {
                             participants {
                                 edges {
                                     actor {
@@ -43,7 +43,7 @@ export const useCampaignParticipants = (campaign: Pick<GQL.IExpCampaign, 'id'>):
             .pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                    if (!data.node || data.node.__typename !== 'Campaign') {
+                    if (!data.node || data.node.__typename !== 'ExpCampaign') {
                         throw new Error('not a campaign')
                     }
                     return data.node.participants

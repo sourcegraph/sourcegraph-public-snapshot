@@ -31,7 +31,7 @@ function queryCampaignFileDiffs(campaign: Pick<GQL.IExpCampaign, 'id'>): Observa
             query CampaignFileDiffs($campaign: ID!) {
                 node(id: $campaign) {
                     __typename
-                    ... on Campaign {
+                    ... on ExpCampaign {
                         repositoryComparisons {
                             baseRepository {
                                 id
@@ -72,7 +72,7 @@ function queryCampaignFileDiffs(campaign: Pick<GQL.IExpCampaign, 'id'>): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data || !data.node || data.node.__typename !== 'Campaign') {
+            if (!data || !data.node || data.node.__typename !== 'ExpCampaign') {
                 throw new Error('campaign not found')
             }
             return data.node.repositoryComparisons
