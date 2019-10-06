@@ -1,8 +1,6 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { from, Subscription, Unsubscribable } from 'rxjs'
-import { concatMap } from 'rxjs/operators'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Subscription, Unsubscribable } from 'rxjs'
 import { getModeFromPath } from '../../../languages'
-import { ExtDocumentsAPI } from '../../extension/api/documents'
 import { FileSystemService } from '../services/fileSystemService'
 import { ModelService, TextModel } from '../services/modelService'
 
@@ -17,17 +15,7 @@ export class ClientDocuments implements ClientDocumentsAPI, Unsubscribable {
 
     private subscriptions = new Subscription()
 
-    constructor(
-        proxy: ProxyResult<ExtDocumentsAPI>,
-        private fileSystemService: Pick<FileSystemService, 'readFile'>,
-        private modelService: ModelService
-    ) {
-        this.subscriptions.add(
-            from(modelService.models)
-                .pipe(concatMap(models => proxy.$acceptDocumentData(models)))
-                .subscribe()
-        )
-    }
+    constructor(private fileSystemService: Pick<FileSystemService, 'readFile'>, private modelService: ModelService) {}
 
     public async $openTextDocument(uri: string): Promise<TextModel> {
         const model: TextModel = {

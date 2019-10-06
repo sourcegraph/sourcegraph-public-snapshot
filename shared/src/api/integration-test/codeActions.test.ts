@@ -1,9 +1,8 @@
-import { Range } from '@sourcegraph/extension-api-classes'
+import { Range, DiagnosticSeverity } from '@sourcegraph/extension-api-classes'
 import { first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { CodeActionsParams } from '../client/services/codeActions'
 import { TextModel } from '../client/services/modelService'
-import { DiagnosticSeverity } from '../types/diagnosticCollection'
 import { WorkspaceEdit } from '../types/workspaceEdit'
 import { integrationTestContext } from './testHelpers'
 

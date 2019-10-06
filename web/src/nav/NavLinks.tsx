@@ -17,14 +17,14 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KeyboardShortcutsProps,
 } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThreadsIcon } from '../enterprise/exp/threads/icons'
+import { ThreadsIcon } from '../enterprise/threads/icons'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 import { GlobalDebugModalButton, SHOW_DEBUG } from '../global/GlobalDebugModalButton'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
-import { CampaignsNavItem as ExpCampaignsNavItem } from '../enterprise/exp/campaigns/global/nav/CampaignsNavItem'
+import { CampaignsNavItem as ExpCampaignsNavItem } from '../enterprise/expCampaigns/global/nav/CampaignsNavItem'
 
 interface Props
     extends SettingsCascadeProps,

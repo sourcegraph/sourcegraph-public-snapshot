@@ -1,5 +1,5 @@
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { CampaignsIcon } from '../exp/campaigns/icons'
+import { CampaignsIcon } from '../expCampaigns/icons'
 
 export const enterpriseNamespaceAreaHeaderNavItems: readonly Pick<
     NavItemWithIconDescriptor,

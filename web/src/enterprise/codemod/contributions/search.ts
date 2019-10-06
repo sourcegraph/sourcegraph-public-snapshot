@@ -126,11 +126,11 @@ export function registerCodemodSearchContributions({
     return subscriptions
 }
 
-function createCampaign(input: GQL.ICreateCampaignInput): Promise<GQL.IExpCampaign> {
+function createCampaign(input: GQL.IExpCreateCampaignInput): Promise<GQL.IExpCampaign> {
     return mutateGraphQL(
         gql`
-            mutation CreateCampaign($input: CreateCampaignInput!) {
-                createCampaign(input: $input) {
+            mutation CreateCampaign($input: ExpCreateCampaignInput!) {
+                expCreateCampaign(input: $input) {
                     id
                     url
                 }
@@ -140,7 +140,7 @@ function createCampaign(input: GQL.ICreateCampaignInput): Promise<GQL.IExpCampai
     )
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.createCampaign)
+            map(data => data.expCreateCampaign)
         )
         .toPromise()
 }

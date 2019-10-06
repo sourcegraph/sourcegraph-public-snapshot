@@ -76,7 +76,7 @@ export async function createExtensionHostClientConnection(
     const clientDiagnostics = createClientDiagnostics(services.diagnostics)
     subscription.add(clientDiagnostics)
 
-    const clientDocuments = new ClientDocuments(proxy.documents, services.fileSystem, services.model)
+    const clientDocuments = new ClientDocuments(services.fileSystem, services.model)
     subscription.add(clientDocuments)
 
     // Sync models and editors to the extension host

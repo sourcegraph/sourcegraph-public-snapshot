@@ -27,12 +27,12 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
     },
     {
         path: '/exp/campaigns',
-        render: lazyComponent(() => import('./exp/campaigns/global/GlobalCampaignsArea'), 'GlobalCampaignsArea'),
+        render: lazyComponent(() => import('./expCampaigns/global/GlobalCampaignsArea'), 'GlobalCampaignsArea'),
         condition: props => props.showCampaigns,
     },
     {
         path: '/exp/threads',
-        render: lazyComponent(() => import('./exp/threads/global/GlobalThreadsArea'), 'GlobalThreadsArea'),
+        render: lazyComponent(() => import('./threads/global/GlobalThreadsArea'), 'GlobalThreadsArea'),
         condition: props => props.showCampaigns,
     },
     ...routes,
