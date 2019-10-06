@@ -78,6 +78,66 @@ Triggers:
 
 ```
 
+# Table "public.comments"
+```
+             Column             |           Type           |                       Modifiers                       
+--------------------------------+--------------------------+-------------------------------------------------------
+ id                             | bigint                   | not null default nextval('comments_id_seq'::regclass)
+ author_user_id                 | integer                  | 
+ author_external_actor_username | text                     | 
+ author_external_actor_url      | text                     | 
+ body                           | text                     | not null
+ created_at                     | timestamp with time zone | not null default now()
+ updated_at                     | timestamp with time zone | not null default now()
+ parent_comment_id              | bigint                   | 
+ thread_id                      | bigint                   | 
+ campaign_id                    | bigint                   | 
+Indexes:
+    "comments_pkey" PRIMARY KEY, btree (id)
+    "comments_campaign_id" UNIQUE, btree (campaign_id)
+    "comments_thread_id" UNIQUE, btree (thread_id)
+    "comments_author_user_id" btree (author_user_id)
+Foreign-key constraints:
+    "comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE SET NULL
+    "comments_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+    "comments_parent_comment_id_fkey" FOREIGN KEY (parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE
+    "comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "comments" CONSTRAINT "comments_parent_comment_id_fkey" FOREIGN KEY (parent_comment_id) REFERENCES comments(id) ON DELETE CASCADE
+    TABLE "events" CONSTRAINT "events_comment_id_fkey" FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
+    TABLE "exp_campaigns" CONSTRAINT "exp_campaigns_primary_comment_id_fkey" FOREIGN KEY (primary_comment_id) REFERENCES comments(id) ON DELETE RESTRICT
+    TABLE "threads" CONSTRAINT "threads_primary_comment_id_fkey" FOREIGN KEY (primary_comment_id) REFERENCES comments(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.commit_status_contexts"
+```
+         Column          |           Type           |                              Modifiers                              
+-------------------------+--------------------------+---------------------------------------------------------------------
+ id                      | bigint                   | not null default nextval('commit_status_contexts_id_seq'::regclass)
+ repository_id           | integer                  | not null
+ commit_oid              | text                     | not null
+ context                 | text                     | not null
+ state                   | text                     | not null
+ description             | text                     | 
+ target_url              | text                     | 
+ actor_user_id           | integer                  | 
+ external_actor_username | text                     | 
+ external_actor_url      | text                     | 
+ created_at              | timestamp with time zone | not null default now()
+ external_service_id     | bigint                   | 
+ external_id             | text                     | 
+ external_metadata       | jsonb                    | 
+Indexes:
+    "commit_status_contexts_pkey" PRIMARY KEY, btree (id)
+    "commit_status_contexts_repository_commit_context" btree (repository_id, commit_oid, context)
+Foreign-key constraints:
+    "commit_status_contexts_actor_user_id_fkey" FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+    "commit_status_contexts_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
+    "commit_status_contexts_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -227,6 +287,96 @@ Check constraints:
 
 ```
 
+# Table "public.events"
+```
+          Column           |           Type           |                      Modifiers                      
+---------------------------+--------------------------+-----------------------------------------------------
+ id                        | bigint                   | not null default nextval('events_id_seq'::regclass)
+ type                      | text                     | not null
+ actor_user_id             | integer                  | 
+ external_actor_username   | text                     | 
+ external_actor_url        | text                     | 
+ created_at                | timestamp with time zone | not null
+ data                      | jsonb                    | 
+ thread_id                 | bigint                   | 
+ campaign_id               | bigint                   | 
+ comment_id                | bigint                   | 
+ repository_id             | integer                  | 
+ user_id                   | integer                  | 
+ organization_id           | integer                  | 
+ registry_extension_id     | integer                  | 
+ external_service_id       | bigint                   | 
+ rule_id                   | bigint                   | 
+ thread_diagnostic_edge_id | bigint                   | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+    "events_campaign_id" btree (campaign_id, created_at) WHERE thread_id IS NOT NULL
+    "events_external_service_id" btree (external_service_id)
+    "events_thread_id" btree (thread_id, created_at) WHERE thread_id IS NOT NULL
+Foreign-key constraints:
+    "events_actor_user_id_fkey" FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+    "events_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+    "events_comment_id_fkey" FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE
+    "events_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
+    "events_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "events_registry_extension_id_fkey" FOREIGN KEY (registry_extension_id) REFERENCES registry_extensions(id) ON DELETE CASCADE
+    "events_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    "events_rule_id_fkey" FOREIGN KEY (rule_id) REFERENCES rules(id) ON DELETE CASCADE
+    "events_thread_diagnostic_edge_id_fkey" FOREIGN KEY (thread_diagnostic_edge_id) REFERENCES thread_diagnostic_edges(id) ON DELETE SET NULL
+    "events_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+    "events_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.exp_campaigns"
+```
+       Column       |           Type           |                         Modifiers                          
+--------------------+--------------------------+------------------------------------------------------------
+ id                 | bigint                   | not null default nextval('exp_campaigns_id_seq'::regclass)
+ namespace_user_id  | integer                  | 
+ namespace_org_id   | integer                  | 
+ name               | text                     | not null
+ created_at         | timestamp with time zone | not null default now()
+ updated_at         | timestamp with time zone | not null default now()
+ primary_comment_id | bigint                   | not null
+ is_draft           | boolean                  | not null default false
+ start_date         | timestamp with time zone | 
+ due_date           | timestamp with time zone | 
+ extension_data     | jsonb                    | 
+Indexes:
+    "exp_campaigns_pkey" PRIMARY KEY, btree (id)
+    "exp_campaigns_namespace_org_id" btree (namespace_org_id)
+    "exp_campaigns_namespace_user_id" btree (namespace_user_id)
+Check constraints:
+    "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
+Foreign-key constraints:
+    "exp_campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "exp_campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+    "exp_campaigns_primary_comment_id_fkey" FOREIGN KEY (primary_comment_id) REFERENCES comments(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "comments" CONSTRAINT "comments_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+    TABLE "events" CONSTRAINT "events_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+    TABLE "exp_campaigns_threads" CONSTRAINT "exp_campaigns_threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+    TABLE "rules" CONSTRAINT "rules_container_campaign_id_fkey" FOREIGN KEY (container_campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+
+```
+
+# Table "public.exp_campaigns_threads"
+```
+   Column    |  Type  | Modifiers 
+-------------+--------+-----------
+ campaign_id | bigint | not null
+ thread_id   | bigint | not null
+Indexes:
+    "exp_campaigns_threads_uniq" UNIQUE, btree (campaign_id, thread_id)
+    "exp_campaigns_threads_campaign_id" btree (campaign_id)
+    "exp_campaigns_threads_thread_id" btree (thread_id) WHERE thread_id IS NOT NULL
+Foreign-key constraints:
+    "exp_campaigns_threads_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+    "exp_campaigns_threads_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+
+```
+
 # Table "public.external_services"
 ```
     Column    |           Type           |                           Modifiers                            
@@ -242,6 +392,10 @@ Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
+Referenced by:
+    TABLE "commit_status_contexts" CONSTRAINT "commit_status_contexts_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
+    TABLE "events" CONSTRAINT "events_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
+    TABLE "threads" CONSTRAINT "threads_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
 
 ```
 
@@ -255,6 +409,43 @@ Check constraints:
  mgmt_password_bcrypt    | text    | not null default ''::text
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
+
+```
+
+# Table "public.labels"
+```
+    Column     |  Type   |                      Modifiers                      
+---------------+---------+-----------------------------------------------------
+ id            | bigint  | not null default nextval('labels_id_seq'::regclass)
+ repository_id | integer | 
+ name          | citext  | not null
+ description   | text    | 
+ color         | text    | not null
+Indexes:
+    "labels_pkey" PRIMARY KEY, btree (id)
+    "labels_name_project_uniq" UNIQUE, btree (name, repository_id)
+    "labels_name" btree (name)
+    "labels_repository_id" btree (repository_id)
+Foreign-key constraints:
+    "labels_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "labels_objects" CONSTRAINT "labels_objects_label_id_fkey" FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE CASCADE
+
+```
+
+# Table "public.labels_objects"
+```
+  Column   |  Type  | Modifiers 
+-----------+--------+-----------
+ label_id  | bigint | not null
+ thread_id | bigint | 
+Indexes:
+    "labels_objects_uniq" UNIQUE, btree (label_id, thread_id)
+    "labels_objects_label_id" btree (label_id)
+    "labels_objects_thread_id" btree (thread_id) WHERE thread_id IS NOT NULL
+Foreign-key constraints:
+    "labels_objects_label_id_fkey" FOREIGN KEY (label_id) REFERENCES labels(id) ON DELETE CASCADE
+    "labels_objects_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
 
 ```
 
@@ -355,6 +546,8 @@ Check constraints:
     "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
 Referenced by:
     TABLE "campaigns" CONSTRAINT "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "events" CONSTRAINT "events_organization_id_fkey" FOREIGN KEY (organization_id) REFERENCES orgs(id) ON DELETE CASCADE
+    TABLE "exp_campaigns" CONSTRAINT "exp_campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -477,7 +670,7 @@ Foreign-key constraints:
  deleted_at        | timestamp with time zone | 
 Indexes:
     "registry_extensions_pkey" PRIMARY KEY, btree (id)
-    "registry_extensions_publisher_name" UNIQUE, btree ((COALESCE(publisher_user_id, 0)), (COALESCE(publisher_org_id, 0)), name) WHERE deleted_at IS NULL
+    "registry_extensions_publisher_name" UNIQUE, btree (COALESCE(publisher_user_id, 0), COALESCE(publisher_org_id, 0), name) WHERE deleted_at IS NULL
     "registry_extensions_uuid" UNIQUE, btree (uuid)
 Check constraints:
     "registry_extensions_name_length" CHECK (char_length(name::text) > 0 AND char_length(name::text) <= 128)
@@ -487,6 +680,7 @@ Foreign-key constraints:
     "registry_extensions_publisher_org_id_fkey" FOREIGN KEY (publisher_org_id) REFERENCES orgs(id)
     "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
 Referenced by:
+    TABLE "events" CONSTRAINT "events_registry_extension_id_fkey" FOREIGN KEY (registry_extension_id) REFERENCES registry_extensions(id) ON DELETE CASCADE
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_registry_extension_id_fkey" FOREIGN KEY (registry_extension_id) REFERENCES registry_extensions(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
@@ -526,8 +720,39 @@ Check constraints:
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "commit_status_contexts" CONSTRAINT "commit_status_contexts_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "events" CONSTRAINT "events_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "labels" CONSTRAINT "labels_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "threads" CONSTRAINT "threads_head_repository_id_fkey" FOREIGN KEY (head_repository_id) REFERENCES repo(id) ON DELETE SET NULL
+    TABLE "threads" CONSTRAINT "threads_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
+# Table "public.rules"
+```
+        Column         |           Type           |                     Modifiers                      
+-----------------------+--------------------------+----------------------------------------------------
+ id                    | bigint                   | not null default nextval('rules_id_seq'::regclass)
+ container_campaign_id | bigint                   | 
+ container_thread_id   | bigint                   | 
+ name                  | text                     | not null
+ template_id           | text                     | 
+ template_context      | text                     | 
+ description           | text                     | 
+ definition            | text                     | not null
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | not null default now()
+Indexes:
+    "rules_pkey" PRIMARY KEY, btree (id)
+    "rules_container_campaign_id" btree (container_campaign_id)
+    "rules_container_thread_id" btree (container_thread_id)
+Foreign-key constraints:
+    "rules_container_campaign_id_fkey" FOREIGN KEY (container_campaign_id) REFERENCES exp_campaigns(id) ON DELETE CASCADE
+    "rules_container_thread_id_fkey" FOREIGN KEY (container_thread_id) REFERENCES threads(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "events" CONSTRAINT "events_rule_id_fkey" FOREIGN KEY (rule_id) REFERENCES rules(id) ON DELETE CASCADE
 
 ```
 
@@ -630,6 +855,72 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.thread_diagnostic_edges"
+```
+  Column   |  Type  |                              Modifiers                               
+-----------+--------+----------------------------------------------------------------------
+ id        | bigint | not null default nextval('thread_diagnostic_edges_id_seq'::regclass)
+ thread_id | bigint | not null
+ type      | text   | not null
+ data      | jsonb  | not null
+Indexes:
+    "thread_diagnostic_edges_pkey" PRIMARY KEY, btree (id)
+    "thread_diagnostic_edges_thread_id" btree (thread_id)
+Foreign-key constraints:
+    "thread_diagnostic_edges_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "events" CONSTRAINT "events_thread_diagnostic_edge_id_fkey" FOREIGN KEY (thread_diagnostic_edge_id) REFERENCES thread_diagnostic_edges(id) ON DELETE SET NULL
+
+```
+
+# Table "public.threads"
+```
+              Column              |           Type           |                      Modifiers                       
+----------------------------------+--------------------------+------------------------------------------------------
+ id                               | bigint                   | not null default nextval('threads_id_seq'::regclass)
+ repository_id                    | integer                  | not null
+ title                            | text                     | not null
+ state                            | text                     | not null
+ assignee_user_id                 | integer                  | 
+ assignee_external_actor_username | text                     | 
+ assignee_external_actor_url      | text                     | 
+ created_at                       | timestamp with time zone | not null default now()
+ updated_at                       | timestamp with time zone | not null default now()
+ base_ref                         | text                     | 
+ base_ref_oid                     | text                     | 
+ head_repository_id               | integer                  | 
+ head_ref                         | text                     | 
+ head_ref_oid                     | text                     | 
+ external_service_id              | bigint                   | 
+ external_id                      | text                     | 
+ external_metadata                | jsonb                    | 
+ primary_comment_id               | bigint                   | not null
+ is_draft                         | boolean                  | not null default false
+ is_pending_external_creation     | boolean                  | not null default false
+ pending_patch                    | text                     | 
+Indexes:
+    "threads_pkey" PRIMARY KEY, btree (id)
+    "threads_external" UNIQUE, btree (external_service_id, external_id) WHERE external_service_id IS NOT NULL
+    "threads_external_service_id" btree (external_service_id)
+    "threads_repository_id" btree (repository_id)
+Check constraints:
+    "external_thread_has_id_and_data" CHECK ((external_service_id IS NULL) = (external_id IS NULL) AND (external_id IS NULL) = (external_metadata IS NULL))
+Foreign-key constraints:
+    "threads_assignee_user_id_fkey" FOREIGN KEY (assignee_user_id) REFERENCES users(id) ON DELETE SET NULL
+    "threads_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
+    "threads_head_repository_id_fkey" FOREIGN KEY (head_repository_id) REFERENCES repo(id) ON DELETE SET NULL
+    "threads_primary_comment_id_fkey" FOREIGN KEY (primary_comment_id) REFERENCES comments(id) ON DELETE RESTRICT
+    "threads_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "comments" CONSTRAINT "comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+    TABLE "events" CONSTRAINT "events_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+    TABLE "exp_campaigns_threads" CONSTRAINT "exp_campaigns_threads_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+    TABLE "labels_objects" CONSTRAINT "labels_objects_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+    TABLE "rules" CONSTRAINT "rules_container_thread_id_fkey" FOREIGN KEY (container_thread_id) REFERENCES threads(id) ON DELETE CASCADE
+    TABLE "thread_diagnostic_edges" CONSTRAINT "thread_diagnostic_edges_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
+
+```
+
 # Table "public.user_emails"
 ```
       Column       |           Type           |       Modifiers        
@@ -717,9 +1008,14 @@ Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "campaigns" CONSTRAINT "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "comments" CONSTRAINT "comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "commit_status_contexts" CONSTRAINT "commit_status_contexts_actor_user_id_fkey" FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "events" CONSTRAINT "events_actor_user_id_fkey" FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "events" CONSTRAINT "events_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "exp_campaigns" CONSTRAINT "exp_campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
@@ -731,6 +1027,7 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "threads" CONSTRAINT "threads_assignee_user_id_fkey" FOREIGN KEY (assignee_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
