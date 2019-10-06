@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/threads"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
@@ -172,12 +171,18 @@ func (v *gqlCampaignUpdatePreview) RepositoryComparisons(ctx context.Context) (*
 		if err != nil {
 			return nil, err
 		}
+		if new[i] == nil {
+			log.Printf("WARNING: nil repo comparison for thread in repo %d", t.Common().Internal_RepositoryID())
+		}
 	}
 
 	// TODO!(sqs): doesnt support >1 thread per repo
 	mapByRepo := func(cs []graphqlbackend.RepositoryComparison) map[api.RepoID]graphqlbackend.RepositoryComparison {
 		byRepo := make(map[api.RepoID]graphqlbackend.RepositoryComparison, len(cs))
 		for _, c := range cs {
+			if c == nil {
+				continue // TODO!(sqs): eliminate this skipping of nil when the 'range newThreads' loop above no longer has nil entries
+			}
 			byRepo[c.BaseRepository().DBID()] = c
 		}
 		return byRepo
@@ -198,26 +203,11 @@ func (v *gqlCampaignUpdatePreview) RepositoryComparisons(ctx context.Context) (*
 				New_:        new,
 			})
 		} else {
-			// Check for change in diff.
-			oldDiff, err := old.FileDiffs(&graphqlutil.ConnectionArgs{}).RawDiff(ctx)
+			isEqual, err := threads.RepoComparisonDiffEqual(ctx, old, new)
 			if err != nil {
 				return nil, err
 			}
-			newDiff, err := new.FileDiffs(&graphqlutil.ConnectionArgs{}).RawDiff(ctx)
-			if err != nil {
-				return nil, err
-			}
-
-			oldDiff, err = threads.StripDiffPathPrefixes(oldDiff)
-			if err != nil {
-				return nil, err
-			}
-			newDiff, err = threads.StripDiffPathPrefixes(newDiff)
-			if err != nil {
-				return nil, err
-			}
-
-			if oldDiff != newDiff {
+			if !isEqual {
 				results = append(results, &graphqlbackend.RepositoryComparisonUpdatePreview{
 					Repository_: new.HeadRepository(),
 					Old_:        old,

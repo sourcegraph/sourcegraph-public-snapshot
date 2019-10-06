@@ -13,15 +13,6 @@ interface Props extends RuleTemplateComponentContext {}
 
 const ALL_VERSION_RANGE = '*'
 
-const SAMPLE_PACKAGE_NAMES: { packageName: string; count: number }[] = [
-    { packageName: 'typescript', count: 351 },
-    { packageName: 'react', count: 91 },
-    { packageName: 'lodash', count: 126 },
-    { packageName: 'mdi-react', count: 53 },
-    { packageName: 'glob', count: 29 },
-    { packageName: '@sourcegraph/codeintellify', count: 15 },
-]
-
 const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
     value,
     onChange,
@@ -138,15 +129,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     onChange={onPackageNameChange}
                     autoFocus={true}
                     disabled={disabled}
-                    list="campaign-template-form__packageName-datalist"
                 />
-                <datalist id="campaign-template-form__packageName-datalist">
-                    {SAMPLE_PACKAGE_NAMES.map(({ packageName, count }) => (
-                        <option key={packageName} value={packageName}>
-                            {count} {pluralize('dependent', count)}
-                        </option>
-                    ))}
-                </datalist>
             </div>
             <div className="form-group">
                 <label htmlFor="campaign-template-form__versionRange">Version range (to deprecate)</label>

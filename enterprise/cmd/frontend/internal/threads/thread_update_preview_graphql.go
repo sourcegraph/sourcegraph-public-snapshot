@@ -2,6 +2,9 @@ package threads
 
 import (
 	"context"
+	"log"
+	"reflect"
+	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -18,7 +21,7 @@ func NewGQLThreadUpdatePreviewForUpdate(ctx context.Context, old graphqlbackend.
 	//
 	// TODO!(sqs): handle more kinds of changes
 	var changed bool
-	if old.Title() == newInput.Title {
+	if old.Title() != newInput.Title {
 		changed = true
 	}
 	if !changed {
@@ -26,17 +29,20 @@ func NewGQLThreadUpdatePreviewForUpdate(ctx context.Context, old graphqlbackend.
 		if err != nil {
 			return nil, err
 		}
-		if equal, err := repoComparisonDiffEqual(ctx, oldRepoComparison, newRepoComparison); err != nil {
+		if equal, err := RepoComparisonDiffEqual(ctx, oldRepoComparison, newRepoComparison); err != nil {
 			return nil, err
 		} else if !equal {
 			changed = true
 		}
 	}
 
-	return &gqlThreadUpdatePreview{old: old, new: NewGQLThreadPreview(newInput, newRepoComparison)}, nil
+	if changed {
+		return &gqlThreadUpdatePreview{old: old, new: NewGQLThreadPreview(newInput, newRepoComparison)}, nil
+	}
+	return nil, nil
 }
 
-func repoComparisonDiffEqual(ctx context.Context, a, b graphqlbackend.RepositoryComparison) (bool, error) {
+func RepoComparisonDiffEqual(ctx context.Context, a, b graphqlbackend.RepositoryComparison) (bool, error) {
 	// TODO!(sqs): check all fields
 	aDiff, err := a.FileDiffs(&graphqlutil.ConnectionArgs{}).RawDiff(ctx)
 	if err != nil {
@@ -48,31 +54,49 @@ func repoComparisonDiffEqual(ctx context.Context, a, b graphqlbackend.Repository
 	}
 
 	// Treat 2 diffs as equal even if they are to/between different revisions.
-	aDiff, err = StripDiffPathPrefixes(aDiff)
+	aDiff, err = StripDiffPathPrefixes(aDiff, true)
 	if err != nil {
 		return false, err
 	}
-	bDiff, err = StripDiffPathPrefixes(bDiff)
+	bDiff, err = StripDiffPathPrefixes(bDiff, false)
 	if err != nil {
 		return false, err
 	}
 
-	return aDiff == bDiff, nil
+	// TODO!(sqs): this doesnt always work because 2 diffs can be equivalent in a way that is hard to
+	// determine, such as one has more lines of context than the other.
+	getChangedLines := func(rawDiff string) []string {
+		var l []string
+		for _, line := range strings.Split(rawDiff, "\n") {
+			if len(line) > 0 && (line[0] == '-' || line[0] == '+') {
+				l = append(l, line)
+			}
+		}
+		return l
+	}
+
+	log.Printf("======== aDiff\n%s\n\n======== bDiff\n%s\n\n", aDiff, bDiff)
+
+	return reflect.DeepEqual(getChangedLines(aDiff), getChangedLines(bDiff)), nil
 }
 
-// TODO!(sqs): this doesnt work because 2 diffs can be equivalent in a way that is hard to
-// determine, such as one has more lines of context than the other.
-func StripDiffPathPrefixes(rawDiff string) (string, error) {
+func StripDiffPathPrefixes(rawDiff string, alsoStripAOrBPrefix bool) (string, error) {
 	fileDiffs, err := diff.ParseMultiFileDiff([]byte(rawDiff))
 	if err != nil {
 		return "", err
 	}
 	stripPathPrefix := func(uriStr string) string {
+		strip := func(s string) string {
+			if alsoStripAOrBPrefix {
+				s = strings.TrimPrefix(strings.TrimPrefix(s, "b/"), "a/") // HACK TODO!(sqs)
+			}
+			return s
+		}
 		u, err := gituri.Parse(uriStr)
 		if err != nil {
-			return uriStr
+			return strip(uriStr)
 		}
-		return u.FilePath()
+		return strip(u.FilePath())
 	}
 	for _, fd := range fileDiffs {
 		fd.Extended = nil

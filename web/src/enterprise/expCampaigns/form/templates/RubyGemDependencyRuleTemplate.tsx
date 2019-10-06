@@ -12,17 +12,6 @@ const TEMPLATE_ID = 'rubyGemDependency'
 
 interface Props extends RuleTemplateComponentContext {}
 
-const ALL_VERSION_RANGE = '*'
-
-const SAMPLE_PACKAGE_NAMES: { gemName: string; count: number }[] = [
-    { gemName: 'rails', count: 351 },
-    { gemName: 'rake', count: 91 },
-    { gemName: 'guard', count: 126 },
-    { gemName: 'guard-rspec', count: 53 },
-    { gemName: 'omniauth', count: 29 },
-    { gemName: 'omniauth-openid', count: 15 },
-]
-
 const RubyGemDependencyRuleTemplateForm: React.FunctionComponent<Props> = ({
     value,
     onChange,
@@ -110,15 +99,7 @@ const RubyGemDependencyRuleTemplateForm: React.FunctionComponent<Props> = ({
                     onChange={onGemNameChange}
                     autoFocus={true}
                     disabled={disabled}
-                    list="campaign-template-form__gemName-datalist"
                 />
-                <datalist id="campaign-template-form__gemName-datalist">
-                    {SAMPLE_PACKAGE_NAMES.map(({ gemName, count }) => (
-                        <option key={gemName} value={gemName}>
-                            {count} {pluralize('dependent', count)}
-                        </option>
-                    ))}
-                </datalist>
             </div>
             <div className="form-group">
                 <label>Options</label>
