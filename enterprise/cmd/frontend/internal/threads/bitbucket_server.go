@@ -154,7 +154,11 @@ type bitbucketServerExternalServiceClient struct {
 
 func getBitbucketServerRepositoryInput(repo api.RepoName) bitbucketServerRepository {
 	// TODO!!(sqs) validate this assumption, can be violated by repositoryPathPattern
-	parts := strings.SplitN(string(repo), "/", 2)
+	parts := strings.SplitN(string(repo), "/", 3)
+	if len(parts) == 3 {
+		// TODO!(sqs): chop off ip address prefix
+		parts = parts[1:]
+	}
 	return bitbucketServerRepository{
 		Slug: parts[1],
 		Project: bitbucketServerProject{
