@@ -5,13 +5,16 @@ exports[`ListHeaderQueryLinks simple 1`] = `
   className="nav "
 >
   <li
-    className="nav-item d-flex align-items-center"
+    className="nav-item"
   >
     <a
-      className="nav-link "
+      className="nav-link  "
       to={
         Object {
+          "hash": "",
+          "pathname": "/",
           "search": "a=b&q=is%3Aa",
+          "state": "",
         }
       }
     >
@@ -21,13 +24,16 @@ exports[`ListHeaderQueryLinks simple 1`] = `
     </a>
   </li>
   <li
-    className="nav-item d-flex align-items-center"
+    className="nav-item"
   >
     <a
-      className="nav-link active font-weight-bold"
+      className="nav-link  "
       to={
         Object {
+          "hash": "",
+          "pathname": "/",
           "search": "a=b&q=is%3Ab",
+          "state": "",
         }
       }
     >

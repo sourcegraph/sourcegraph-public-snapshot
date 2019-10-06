@@ -28,21 +28,30 @@ export const ThreadHeaderEditableTitle: React.FunctionComponent<Props> = ({
     const [state, setState] = useState<'viewing' | 'editing' | 'loading'>('viewing')
     const [uncommittedTitle, setUncommittedTitle] = useState(thread.title)
 
-    const onSubmit: React.FormEventHandler = async e => {
-        e.preventDefault()
-        setState('loading')
-        try {
-            await _updateThread({ id: thread.id, title: uncommittedTitle })
-            onThreadUpdate()
-        } catch (err) {
-            extensionsController.services.notifications.showMessages.next({
-                message: `Error editing thread title: ${err.message}`,
-                type: NotificationType.Error,
-            })
-        } finally {
-            setState('viewing')
-        }
-    }
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
+        async e => {
+            e.preventDefault()
+            setState('loading')
+            try {
+                await _updateThread({ id: thread.id, title: uncommittedTitle })
+                onThreadUpdate()
+            } catch (err) {
+                extensionsController.services.notifications.showMessages.next({
+                    message: `Error editing thread title: ${err.message}`,
+                    type: NotificationType.Error,
+                })
+            } finally {
+                setState('viewing')
+            }
+        },
+        [
+            _updateThread,
+            extensionsController.services.notifications.showMessages,
+            onThreadUpdate,
+            thread.id,
+            uncommittedTitle,
+        ]
+    )
 
     const onEditClick = useCallback(() => setState('editing'), [])
     const onCancelClick = useCallback<React.MouseEventHandler>(

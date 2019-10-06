@@ -50,21 +50,30 @@ export const CampaignHeaderEditableName: React.FunctionComponent<Props> = ({
     const [state, setState] = useState<'viewing' | 'editing' | 'loading'>('viewing')
     const [uncommittedName, setUncommittedName] = useState(campaign.name)
 
-    const onSubmit: React.FormEventHandler = async e => {
-        e.preventDefault()
-        setState('loading')
-        try {
-            await _updateCampaign({ input: { id: campaign.id, name: uncommittedName } })
-            onCampaignUpdate()
-        } catch (err) {
-            extensionsController.services.notifications.showMessages.next({
-                message: `Error editing campaign name: ${err.message}`,
-                type: NotificationType.Error,
-            })
-        } finally {
-            setState('viewing')
-        }
-    }
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
+        async e => {
+            e.preventDefault()
+            setState('loading')
+            try {
+                await _updateCampaign({ input: { id: campaign.id, name: uncommittedName } })
+                onCampaignUpdate()
+            } catch (err) {
+                extensionsController.services.notifications.showMessages.next({
+                    message: `Error editing campaign name: ${err.message}`,
+                    type: NotificationType.Error,
+                })
+            } finally {
+                setState('viewing')
+            }
+        },
+        [
+            _updateCampaign,
+            campaign.id,
+            extensionsController.services.notifications.showMessages,
+            onCampaignUpdate,
+            uncommittedName,
+        ]
+    )
 
     const onEditClick = useCallback(() => setState('editing'), [])
     const onCancelClick = useCallback<React.MouseEventHandler>(

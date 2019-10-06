@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ThreadHeaderEditableTitle enter editing state 1`] = `
+exports[`CampaignHeaderEditableName enter editing state 1`] = `
 <form
   className="form d-flex c "
   onInvalid={[Function]}
@@ -9,7 +9,7 @@ exports[`ThreadHeaderEditableTitle enter editing state 1`] = `
   <input
     autoComplete="off"
     autoFocus={true}
-    className="form-control form-control-lg flex-1 mr-2"
+    className="form-control flex-1 mr-2"
     disabled={false}
     onChange={[Function]}
     placeholder="Title"
@@ -20,7 +20,7 @@ exports[`ThreadHeaderEditableTitle enter editing state 1`] = `
     className="text-nowrap flex-0 d-flex align-items-center"
   >
     <button
-      className="btn btn-success btn-lg"
+      className="btn btn-success"
       disabled={false}
       type="submit"
     >
@@ -38,21 +38,17 @@ exports[`ThreadHeaderEditableTitle enter editing state 1`] = `
 </form>
 `;
 
-exports[`ThreadHeaderEditableTitle viewing state 1`] = `
+exports[`CampaignHeaderEditableName viewing state 1`] = `
 <div
-  className="d-flex align-items-start justify-content-between flex-wrap c"
+  className="d-flex align-items-start justify-content-between c"
 >
   <h1
-    className="font-weight-normal"
+    className="font-weight-normal mb-0 h2 mr-2"
   >
-    <span
-      className="icon-inline text-muted small"
-    />
-     
     t
   </h1>
   <button
-    className="btn btn-secondary btn-sm mt-2"
+    className="btn btn-secondary btn-sm mt-1"
     onClick={[Function]}
     type="button"
   >

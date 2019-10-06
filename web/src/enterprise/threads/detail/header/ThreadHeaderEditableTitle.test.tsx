@@ -75,7 +75,7 @@ describe('ThreadHeaderEditableTitle', () => {
         })
         const e = create({
             _updateThread: input => {
-                expect(input.id).toBe('a')
+                expect(input.id).toBe('a1')
                 expect(input.title).toBe('t2')
                 return updateThreadResult
             },
@@ -129,7 +129,7 @@ describe('ThreadHeaderEditableTitle', () => {
         expect(showMessagesNext.callCount).toBe(1)
         expect(showMessagesNext.firstCall.args).toEqual([
             {
-                message: 'Error editing title of thread: x',
+                message: 'Error editing thread title: x',
                 type: NotificationType.Error,
             },
         ])

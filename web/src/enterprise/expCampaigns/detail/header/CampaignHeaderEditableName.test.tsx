@@ -75,7 +75,7 @@ describe('CampaignHeaderEditableName', () => {
         })
         const e = create({
             _updateCampaign: ({ input }) => {
-                expect(input.id).toBe('a')
+                expect(input.id).toBe('a1')
                 expect(input.name).toBe('t2')
                 return updateCampaignResult
             },
@@ -129,7 +129,7 @@ describe('CampaignHeaderEditableName', () => {
         expect(showMessagesNext.callCount).toBe(1)
         expect(showMessagesNext.firstCall.args).toEqual([
             {
-                message: 'Error editing name of campaign: x',
+                message: 'Error editing campaign name: x',
                 type: NotificationType.Error,
             },
         ])

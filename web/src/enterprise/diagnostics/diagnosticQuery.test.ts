@@ -28,13 +28,13 @@ describe('parseDiagnosticQuery', () => {
             status: undefined,
         }))
     test('repo', () =>
-        expect(parseDiagnosticQuery('repo:a')).toEqual({ input: 'repo:a', document: [{ pattern: 'git://a/**' }] }))
+        expect(parseDiagnosticQuery('repo:a')).toEqual({ input: 'repo:a', document: [{ pattern: 'git://a**/*' }] }))
     test('combined', () =>
         expect(parseDiagnosticQuery('a repo:b tag:c d type:e is:pending repo:f tag:g')).toEqual({
             input: 'a repo:b tag:c d type:e is:pending repo:f tag:g',
             message: 'a d',
             type: 'e',
-            document: [{ pattern: 'git://b/**' }, { pattern: 'git://f/**' }],
+            document: [{ pattern: 'git://b**/*' }, { pattern: 'git://f**/*' }],
             tag: ['c', 'g'],
             status: DiagnosticResolutionStatus.PendingResolution,
         }))
