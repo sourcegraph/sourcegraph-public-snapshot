@@ -2,7 +2,7 @@ import { FormattingOptions } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
-const defaultFormattingOptions: FormattingOptions = {
+export const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
     insertSpaces: true,
     tabSize: 2,

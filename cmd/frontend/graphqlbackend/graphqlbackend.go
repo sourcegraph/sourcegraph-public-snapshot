@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
+	graphql "github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
@@ -52,6 +52,8 @@ func NewSchema(a8n A8NResolver) (*graphql.Schema, error) {
 	)
 }
 
+var GraphQLSchema, _ = NewSchema(nil)
+
 // EmptyResponse is a type that can be used in the return signature for graphql queries
 // that don't require a return value.
 type EmptyResponse struct{}
@@ -90,6 +92,16 @@ func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToExpCampaign() (Campaign, bool) {
+	n, ok := r.Node.(Campaign)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCommitStatusContext() (CommitStatusContext, bool) {
+	n, ok := r.Node.(CommitStatusContext)
+	return n, ok
+}
+
 func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
 	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok
@@ -120,6 +132,11 @@ func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToLabel() (Label, bool) {
+	n, ok := r.Node.(Label)
+	return n, ok
+}
+
 func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 	n, ok := r.Node.(*GitRefResolver)
 	return n, ok
@@ -127,6 +144,16 @@ func (r *NodeResolver) ToGitRef() (*GitRefResolver, bool) {
 
 func (r *NodeResolver) ToRepository() (*RepositoryResolver, bool) {
 	n, ok := r.Node.(*RepositoryResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRule() (Rule, bool) {
+	n, ok := r.Node.(Rule)
+	return n, ok
+}
+
+func (r *NodeResolver) ToThread() (Thread, bool) {
+	n, ok := r.Node.(Thread)
 	return n, ok
 }
 
@@ -187,6 +214,8 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 	return &NodeResolver{n}, nil
 }
 
+var NodeByID = ((*schemaResolver)(nil)).nodeByID
+
 func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
@@ -201,6 +230,10 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 			return nil, onlyInEnterprise
 		}
 		return r.a8nResolver.ChangesetByID(ctx, id)
+	case GQLTypeExpCampaign:
+		return CampaignByID(ctx, id)
+	case GQLTypeCommitStatusContext:
+		return CommitStatusContextByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
@@ -219,10 +252,14 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return externalAccountByID(ctx, id)
 	case externalServiceIDKind:
 		return externalServiceByID(ctx, id)
+	case GQLTypeLabel:
+		return LabelByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
+	case GQLTypeRule:
+		return RuleByID(ctx, id)
 	case "User":
 		return UserByID(ctx, id)
 	case "Org":
@@ -237,6 +274,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
+	case GQLTypeThread:
+		return ThreadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

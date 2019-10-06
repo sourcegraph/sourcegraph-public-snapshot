@@ -1,0 +1,58 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignHeaderEditableName enter editing state 1`] = `
+<form
+  className="form d-flex c "
+  onInvalid={[Function]}
+  onSubmit={[Function]}
+>
+  <input
+    autoComplete="off"
+    autoFocus={true}
+    className="form-control flex-1 mr-2"
+    disabled={false}
+    onChange={[Function]}
+    placeholder="Title"
+    type="text"
+    value="t"
+  />
+  <div
+    className="text-nowrap flex-0 d-flex align-items-center"
+  >
+    <button
+      className="btn btn-success"
+      disabled={false}
+      type="submit"
+    >
+      Save
+    </button>
+    <button
+      className="btn btn-link"
+      disabled={false}
+      onClick={[Function]}
+      type="reset"
+    >
+      Cancel
+    </button>
+  </div>
+</form>
+`;
+
+exports[`CampaignHeaderEditableName viewing state 1`] = `
+<div
+  className="d-flex align-items-start justify-content-between c"
+>
+  <h1
+    className="font-weight-normal mb-0 h2 mr-2"
+  >
+    t
+  </h1>
+  <button
+    className="btn btn-secondary btn-sm mt-1"
+    onClick={[Function]}
+    type="button"
+  >
+    Edit
+  </button>
+</div>
+`;

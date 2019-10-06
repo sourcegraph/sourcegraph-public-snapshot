@@ -1,0 +1,11 @@
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: java-gradle-exec
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: sourcegraph/a8n-java-gradle-exec:openjdk8-gradle4.8.1
+          imagePullPolicy: Always

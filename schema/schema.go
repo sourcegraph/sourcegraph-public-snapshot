@@ -248,6 +248,10 @@ type Extensions struct {
 	Disabled              *bool       `json:"disabled,omitempty"`
 	RemoteRegistry        interface{} `json:"remoteRegistry,omitempty"`
 }
+type ExtensionsContainers struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
 type ExternalIdentity struct {
 	AuthProviderID   string `json:"authProviderID"`
 	AuthProviderType string `json:"authProviderType"`
@@ -525,6 +529,7 @@ type SiteConfiguration struct {
 	EmailSmtp                         *SMTPServerConfig           `json:"email.smtp,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures       `json:"experimentalFeatures,omitempty"`
 	Extensions                        *Extensions                 `json:"extensions,omitempty"`
+	ExtensionsContainers              []*ExtensionsContainers     `json:"extensions.containers,omitempty"`
 	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
 	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
 	GithubClientID                    string                      `json:"githubClientID,omitempty"`

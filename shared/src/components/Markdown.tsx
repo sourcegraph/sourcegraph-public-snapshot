@@ -18,7 +18,7 @@ export const Markdown: React.FunctionComponent<Props> = (props: Props) => {
     return (
         <Tag
             ref={props.refFn}
-            className={`markdown ${props.inline ? 'markdown--inline' : ''} ${props.className}`}
+            className={`markdown ${props.inline ? 'markdown--inline ' : ''}${props.className}`}
             dangerouslySetInnerHTML={{ __html: props.dangerousInnerHTML }}
         />
     )

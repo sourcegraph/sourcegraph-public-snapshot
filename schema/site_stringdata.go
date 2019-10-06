@@ -360,6 +360,27 @@ const SiteSchemaJSON = `{
       ],
       "group": "Extensions"
     },
+    "extensions.containers": {
+      "description": "Configures server-side containers for extension functionality.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Proxy HTTP requests from this URL path on Sourcegraph (must begin with /.api/extension-containers/)."
+          },
+          "to": {
+            "type": "string",
+            "format": "uri",
+            "description": "Proxy HTTP requests to this URL (which must be accessible to the Sourcegraph instance)."
+          }
+        }
+      },
+      "group": "Extensions",
+      "examples": [[{ "from": "/.api/extension-containers/foo", "to": "http://example.com:1234/foo" }]]
+    },
     "discussions": {
       "description": "Configures Sourcegraph code discussions.",
       "type": "object",

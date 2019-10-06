@@ -6,4 +6,7 @@
 export interface WorkspaceRoot {
     /** The root URI of the workspace. */
     readonly uri: string
+
+    /** The base URI, used when the workspace is opened for comparison. */
+    readonly baseUri?: string
 }

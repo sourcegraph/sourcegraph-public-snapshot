@@ -154,7 +154,10 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
                         <div
                             ref={this.setTableContainerElement}
-                            dangerouslySetInnerHTML={{ __html: this.makeTableHTML(this.state.blobLinesOrError) }}
+                            dangerouslySetInnerHTML={{
+                                // this.state.blobLinesOrError.filter(x => x !== '</tr>' /* TODO!(sqs): hack */)
+                                __html: this.makeTableHTML(this.state.blobLinesOrError),
+                            }}
                         />
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (

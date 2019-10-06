@@ -1,4 +1,7 @@
+export * from './action'
+export * from './diagnostic'
 export * from './hover'
 export * from './location'
 export * from './textDocument'
+export * from './textEdit'
 export * from './workspace'

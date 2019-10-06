@@ -21,3 +21,4 @@ lsif-server: yarn --cwd lsif run run:server
 lsif-worker: yarn --cwd lsif run run:worker
 prometheus: ./dev/prometheus.sh
 grafana: ./dev/grafana.sh
+builtin-extensions: cd ./extensions/enterprise/sandbox && yarn -s && yarn -s serve --port 1235

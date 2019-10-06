@@ -112,6 +112,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/mattn/goreman v0.3.4
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
+	github.com/mdempsky/gocode v0.0.0-20190203001940-7fb65232883f // indirect
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c

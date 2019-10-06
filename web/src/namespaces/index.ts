@@ -7,5 +7,5 @@ export interface NamespaceProps {
     /**
      * The namespace.
      */
-    namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
+    namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url' | 'namespaceName'>
 }
