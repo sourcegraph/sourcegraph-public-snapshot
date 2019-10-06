@@ -4,7 +4,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignsIcon } from '../icons'
 
 interface Props {
-    campaign: Pick<GQL.ICampaign, 'name' | 'id' | 'description'>
+    campaign: Pick<GQL.IExpCampaign, 'name' | 'id' | 'description'>
 }
 
 /**

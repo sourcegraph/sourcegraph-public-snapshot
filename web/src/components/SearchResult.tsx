@@ -31,29 +31,32 @@ export class SearchResult extends React.Component<Props> {
         super(props)
     }
 
-    private renderTitle = () => (
-        <div className="search-result__title">
-            <span
-                dangerouslySetInnerHTML={{
-                    __html: this.props.result.label.html
-                        ? decode(this.props.result.label.html)
-                        : renderMarkdown(this.props.result.label.text),
-                }}
-            />
-            {this.props.result.detail && (
-                <>
-                    <span className="search-result__spacer" />
-                    <small
+    private renderTitle = () =>
+        this.props.result.label ? (
+            <>
+                <div className="search-result__title">
+                    <span
                         dangerouslySetInnerHTML={{
-                            __html: this.props.result.detail.html
-                                ? decode(this.props.result.detail.html)
-                                : renderMarkdown(this.props.result.detail.text),
+                            __html: this.props.result.label.html
+                                ? decode(this.props.result.label.html)
+                                : renderMarkdown(this.props.result.label.text),
                         }}
                     />
-                </>
-            )}
-        </div>
-    )
+                    {this.props.result.detail && (
+                        <>
+                            <span className="search-result__spacer" />
+                            <small
+                                dangerouslySetInnerHTML={{
+                                    __html: this.props.result.detail.html
+                                        ? decode(this.props.result.detail.html)
+                                        : renderMarkdown(this.props.result.detail.text),
+                                }}
+                            />
+                        </>
+                    )}
+                </div>
+            </>
+        ) : null
 
     private renderBody = () => (
         <>
@@ -84,7 +87,7 @@ export class SearchResult extends React.Component<Props> {
             <ResultContainer
                 stringIcon={this.props.result.icon}
                 icon={FileIcon}
-                collapsible={this.props.result && this.props.result.matches.length > 0}
+                collapsible={this.props.result && this.props.result.matches && this.props.result.matches.length > 0}
                 defaultExpanded={true}
                 title={this.renderTitle()}
                 expandedChildren={this.renderBody()}

@@ -1,0 +1,11 @@
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: ruby-bundler-exec
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: sqs1/a8n-ruby-bundler-exec:ruby2.6.4
+          imagePullPolicy: Always

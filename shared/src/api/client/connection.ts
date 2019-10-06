@@ -11,6 +11,7 @@ import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
 import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
+import { ClientDocuments } from './api/documents'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientRoots } from './api/roots'
@@ -26,6 +27,7 @@ import {
 } from './services/notifications'
 import { TextModelUpdate } from './services/modelService'
 import { EditorUpdate } from './services/editorService'
+import { createClientDiagnostics } from './api/diagnostics'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -71,6 +73,12 @@ export async function createExtensionHostClientConnection(
     const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
 
+    const clientDiagnostics = createClientDiagnostics(services.diagnostics)
+    subscription.add(clientDiagnostics)
+
+    const clientDocuments = new ClientDocuments(proxy.documents, services.fileSystem, services.model)
+    subscription.add(clientDocuments)
+
     // Sync models and editors to the extension host
     subscription.add(
         merge(
@@ -84,6 +92,8 @@ export async function createExtensionHostClientConnection(
             .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
             .subscribe()
     )
+
+    // Sync editors to the extension host
     subscription.add(
         merge(
             of(
@@ -128,9 +138,10 @@ export async function createExtensionHostClientConnection(
         services.textDocumentDefinition,
         services.textDocumentReferences,
         services.textDocumentLocations,
-        services.completionItems
+        services.completionItems,
+        services.codeActions
     )
-    const clientSearch = new ClientSearch(services.queryTransformer)
+    const clientSearch = new ClientSearch(services.queryTransformer, services.searchProviders)
     const clientCommands = new ClientCommands(services.commands)
     subscription.add(new ClientRoots(proxy.roots, services.workspace))
     subscription.add(new ClientExtensions(proxy.extensions, services.extensions, services.telemetryService))
@@ -148,6 +159,8 @@ export async function createExtensionHostClientConnection(
         codeEditor: clientCodeEditor,
         views: clientViews,
         content: clientContent,
+        diagnostics: clientDiagnostics,
+        documents: clientDocuments,
     }
     comlink.expose(clientAPI, endpoints.expose)
 

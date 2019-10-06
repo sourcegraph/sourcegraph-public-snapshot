@@ -1,0 +1,46 @@
+{
+  "name": "sandbox",
+  "description": "This extension is loaded by default for all users in the local dev Sourcegraph instance. You can use it as a sandbox to try out extension features in local dev.",
+  "publisher": "sourcegraph",
+  "activationEvents": [
+    "*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph",
+    "dir": "extensions/enterprise/sandbox"
+  },
+  "contributes": {},
+  "main": "dist/extension.js",
+  "scripts": {
+    "tslint": "../../../node_modules/.bin/tslint -p tsconfig.json './src/**/*.ts'",
+    "typecheck": "../../../node_modules/.bin/tsc -p tsconfig.json",
+    "test": "jest",
+    "build": "../../../node_modules/.bin/parcel build --out-file dist/extension.js src/extension.ts",
+    "serve": "../../../node_modules/.bin/parcel serve --no-hmr --out-file dist/extension.js src/extension.ts",
+    "watch:typecheck": "../../../node_modules/.bin/tsc -p tsconfig.json -w",
+    "watch:build": "../../../node_modules/.bin/tsc -p tsconfig.dist.json -w",
+    "sourcegraph:prepublish": "yarn run build"
+  },
+  "browserslist": [
+    "last 1 Chrome versions",
+    "last 1 Firefox versions",
+    "last 1 Edge versions",
+    "last 1 Safari versions"
+  ],
+  "eslintConfig": {
+    "extends": "../../../.eslintrc.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.2",
+    "@babel/preset-env": "^7.6.2",
+    "@babel/preset-typescript": "^7.6.0",
+    "@types/eslint": "^4.16.6",
+    "babel-jest": "^24.9.0",
+    "jest": "^24.9.0",
+    "sourcegraph": "link:../../../packages/sourcegraph-extension-api"
+  },
+  "dependencies": {
+    "localforage": "^1.7.3"
+  }
+}

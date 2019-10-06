@@ -1,6 +1,6 @@
 import { Hoverifier } from '@sourcegraph/codeintellify'
+import H from 'history'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
@@ -16,6 +16,46 @@ import { ThemeProps } from '../../theme'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+
+export const fileDiffFieldsFragment = gql`
+    fragment FileDiffFields on FileDiff {
+        oldPath
+        newPath
+        mostRelevantFile {
+            url
+        }
+        hunks {
+            oldRange {
+                ...FileDiffHunkRangeFields
+            }
+            oldNoNewlineAt
+            newRange {
+                ...FileDiffHunkRangeFields
+            }
+            section
+            body
+        }
+        stat {
+            ...DiffStatFields
+        }
+        internalID
+    }
+`
+
+export const fileDiffHunkRangeFieldsFragment = gql`
+    fragment FileDiffHunkRangeFields on FileDiffHunkRange {
+        startLine
+        lines
+    }
+`
+
+export const diffStatFieldsFragment = gql`
+    fragment DiffStatFields on DiffStat {
+        added
+        changed
+        deleted
+    }
+`
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID
@@ -45,40 +85,9 @@ export function queryRepositoryComparisonFileDiffs(args: {
                     }
                 }
             }
-
-            fragment FileDiffFields on FileDiff {
-                oldPath
-                newPath
-                mostRelevantFile {
-                    url
-                }
-                hunks {
-                    oldRange {
-                        ...FileDiffHunkRangeFields
-                    }
-                    oldNoNewlineAt
-                    newRange {
-                        ...FileDiffHunkRangeFields
-                    }
-                    section
-                    body
-                }
-                stat {
-                    ...DiffStatFields
-                }
-                internalID
-            }
-
-            fragment FileDiffHunkRangeFields on FileDiffHunkRange {
-                startLine
-                lines
-            }
-
-            fragment DiffStatFields on DiffStat {
-                added
-                changed
-                deleted
-            }
+            ${fileDiffFieldsFragment}
+            ${fileDiffHunkRangeFieldsFragment}
+            ${diffStatFieldsFragment}
         `,
         args
     ).pipe(
@@ -96,8 +105,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
 }
 
 interface RepositoryCompareDiffPageProps
-    extends RepositoryCompareAreaPageProps,
-        RouteComponentProps<{}>,
+    extends Pick<RepositoryCompareAreaPageProps, 'repo'>,
         PlatformContextProps,
         ExtensionsControllerProps,
         ThemeProps {
@@ -106,7 +114,12 @@ interface RepositoryCompareDiffPageProps
 
     /** The head of the comparison. */
     head: { repoName: string; repoID: GQL.ID; rev: string | null; commitID: string }
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+
+    showRepository?: boolean
+
+    location: H.Location
+    history: H.History
 }
 
 /** A page with the file diffs in the comparison. */
@@ -131,6 +144,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
+                    shouldUpdateURLQuery={false}
                     extensionsController={this.props.extensionsController}
                 />
             </div>

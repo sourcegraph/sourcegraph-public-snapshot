@@ -66,6 +66,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	results[0].raw = nil
 
 	wantCommit := GitCommitResolver{
 		repo:   &RepositoryResolver{repo: &types.Repo{ID: 1, Name: "repo"}},

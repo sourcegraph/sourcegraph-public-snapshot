@@ -1,0 +1,62 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ThreadHeaderEditableTitle enter editing state 1`] = `
+<form
+  className="form d-flex c "
+  onInvalid={[Function]}
+  onSubmit={[Function]}
+>
+  <input
+    autoComplete="off"
+    autoFocus={true}
+    className="form-control form-control-lg flex-1 mr-2"
+    disabled={false}
+    onChange={[Function]}
+    placeholder="Title"
+    type="text"
+    value="t"
+  />
+  <div
+    className="text-nowrap flex-0 d-flex align-items-center"
+  >
+    <button
+      className="btn btn-success btn-lg"
+      disabled={false}
+      type="submit"
+    >
+      Save
+    </button>
+    <button
+      className="btn btn-link"
+      disabled={false}
+      onClick={[Function]}
+      type="reset"
+    >
+      Cancel
+    </button>
+  </div>
+</form>
+`;
+
+exports[`ThreadHeaderEditableTitle viewing state 1`] = `
+<div
+  className="d-flex align-items-start justify-content-between flex-wrap c"
+>
+  <h1
+    className="font-weight-normal"
+  >
+    <span
+      className="icon-inline text-muted small"
+    />
+     
+    t
+  </h1>
+  <button
+    className="btn btn-secondary btn-sm mt-2"
+    onClick={[Function]}
+    type="button"
+  >
+    Edit
+  </button>
+</div>
+`;

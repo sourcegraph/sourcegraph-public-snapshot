@@ -4,6 +4,8 @@ $nav-tabs-border-color: var(--border-color);
 $nav-tabs-link-hover-border-color: var(--border-color) var(--border-color) transparent;
 $nav-tabs-link-active-color: var(--body-color);
 $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) transparent;
+$nav-link-padding-y: $spacer;
+$nav-link-padding-x: $spacer * 2;
 
 @import 'bootstrap/scss/nav';
 @import 'bootstrap/scss/navbar';

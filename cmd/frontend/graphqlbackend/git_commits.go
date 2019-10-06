@@ -9,6 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
+// GitCommitConnection is the GraphQL GitCommitConnection type.
+type GitCommitConnection interface {
+	Nodes(context.Context) ([]*GitCommitResolver, error)
+	TotalCount(context.Context) (*int32, error)
+	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+}
+
 type gitCommitConnectionResolver struct {
 	revisionRange string
 

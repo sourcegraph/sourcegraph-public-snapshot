@@ -140,6 +140,13 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         // will return the same value.
         const additionalLine = this.props.context === 0 ? 1 : 0
 
+        try {
+            console.log('QQ0', this.state.blobLinesOrError)
+            console.log('QQ', this.makeTableHTML(this.state.blobLinesOrError))
+        } catch (err) {
+            console.error('EE', err)
+        }
+
         return (
             <VisibilitySensor
                 onChange={this.onChangeVisibility}
@@ -154,7 +161,10 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
                         <div
                             ref={this.setTableContainerElement}
-                            dangerouslySetInnerHTML={{ __html: this.makeTableHTML(this.state.blobLinesOrError) }}
+                            dangerouslySetInnerHTML={{
+                                // this.state.blobLinesOrError.filter(x => x !== '</tr>' /* TODO!(sqs): hack */)
+                                __html: this.makeTableHTML(this.state.blobLinesOrError),
+                            }}
                         />
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (

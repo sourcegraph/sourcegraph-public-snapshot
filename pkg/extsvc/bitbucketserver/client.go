@@ -443,6 +443,10 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
+func (c *Client) Page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
+	return c.page(ctx, path, qry, token, results)
+}
+
 func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) error {
 	if qry == nil {
 		qry = make(url.Values)
@@ -463,6 +467,10 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	}
 
 	return c.do(ctx, req, result)
+}
+
+func (c *Client) Send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) error {
+	return c.send(ctx, method, path, qry, payload, result)
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {

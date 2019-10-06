@@ -393,7 +393,7 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 		TimelineItems struct{ Nodes []TimelineItem }
 	}
 
-	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	err := c.RequestGraphQL(ctx, "", q.String(), nil, &results)
 	if err != nil {
 		return err
 	}

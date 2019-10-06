@@ -53,7 +53,7 @@ export async function webpackDevServer(): Promise<void> {
     addDevServerEntrypoints(webpackConfig, options)
     const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
     await new Promise<void>((resolve, reject) => {
-        server.listen(3080, '0.0.0.0', (err?: Error) => (err ? reject(err) : resolve()))
+        server.listen(3080, '127.0.0.1', (err?: Error) => (err ? reject(err) : resolve()))
     })
 }
 

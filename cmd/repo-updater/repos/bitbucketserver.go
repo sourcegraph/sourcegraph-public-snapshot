@@ -97,6 +97,8 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	}, nil
 }
 
+func (s BitbucketServerSource) Client() *bitbucketserver.Client { return s.client }
+
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {

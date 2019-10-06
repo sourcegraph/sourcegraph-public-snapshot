@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ListHeaderQueryLinks simple 1`] = `
+<ul
+  className="nav "
+>
+  <li
+    className="nav-item d-flex align-items-center"
+  >
+    <a
+      className="nav-link "
+      to={
+        Object {
+          "search": "a=b&q=is%3Aa",
+        }
+      }
+    >
+      1
+       
+      a
+    </a>
+  </li>
+  <li
+    className="nav-item d-flex align-items-center"
+  >
+    <a
+      className="nav-link active font-weight-bold"
+      to={
+        Object {
+          "search": "a=b&q=is%3Ab",
+        }
+      }
+    >
+      2
+       
+      b
+    </a>
+  </li>
+</ul>
+`;

@@ -30,6 +30,8 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
+import { LabelIcon } from '../enterprise/labels/icons'
+import { ThreadsIcon } from '../enterprise/threads/icons'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
@@ -246,6 +248,14 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         </Link>
                                         <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/tags`}>
                                             <TagIcon className="icon-inline" /> Tags
+                                        </Link>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/threads`}>
+                                            {/* TODO(sqs): Inject via enterprise */}
+                                            <ThreadsIcon className="icon-inline mr-1" /> Threads
+                                        </Link>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/labels`}>
+                                            {/* TODO(sqs): Inject via enterprise */}
+                                            <LabelIcon className="icon-inline mr-1" /> Labels
                                         </Link>
                                         <Link
                                             className="btn btn-secondary"
