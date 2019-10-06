@@ -372,8 +372,3 @@ export interface PackageInformationData {
      */
     version: string | null
 }
-
-/**
- * The entities composing the database models.
- */
-export const entities = [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel]
