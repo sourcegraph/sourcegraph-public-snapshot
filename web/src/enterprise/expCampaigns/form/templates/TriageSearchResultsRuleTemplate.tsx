@@ -4,7 +4,7 @@ import { RuleTemplate, RuleTemplateComponentContext } from '.'
 
 interface Props extends RuleTemplateComponentContext {}
 
-const TriageSearchResultsCampaignTemplateForm: React.FunctionComponent<Props> = ({}) => <p>hello world</p>
+const TriageSearchResultsCampaignTemplateForm: React.FunctionComponent<Props> = () => <p>hello world</p>
 
 export const TriageSearchResultsRuleTemplate: RuleTemplate = {
     id: 'triageSearchResults',

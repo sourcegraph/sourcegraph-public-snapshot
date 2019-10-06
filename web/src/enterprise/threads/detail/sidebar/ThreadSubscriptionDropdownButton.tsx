@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { UnmuteIcon } from '../../../../../util/octicons'
+import { UnmuteIcon } from '../../../../util/octicons'
 
 interface Props {
     className?: string

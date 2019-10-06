@@ -272,3 +272,12 @@ README.md @sqs
 /go.sum @sourcegraph/core-services
 /go.mod @sourcegraph/core-services
 /CHANGELOG.md
+
+# a8n/wip
+/extensions @sqs
+/sandbox @sqs
+/README.codemod-ui.md @sqs
+/lodash-repos.txt @sqs
+/add-lodash-repos.bash @sqs
+/repo-create.bash @sqs
+/codemod-demo.sql @sqs

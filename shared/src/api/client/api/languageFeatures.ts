@@ -1,16 +1,16 @@
 import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { Hover, Location, Action } from '@sourcegraph/extension-api-types'
+import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { map } from 'rxjs/operators'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
-import { CodeActionsParams, ProvideCodeActionsSignature } from '../services/codeActions'
+import { ProvideCodeActionsSignature } from '../services/codeActions'
 import { ProvideCompletionItemSignature } from '../services/completion'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
 import { wrapRemoteObservable } from './common'
-import { toAction, fromCodeActionsParams, toCodeActionsParams, PlainCodeActionsParams } from '../../types/action'
+import { toAction, fromCodeActionsParams, PlainCodeActionsParams, Action } from '../../types/action'
 
 /** @internal */
 export interface ClientLanguageFeaturesAPI extends ProxyValue {

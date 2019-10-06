@@ -16,8 +16,8 @@ const LOADING: 'loading' = 'loading'
 
 export function useThreadFileDiffs(
     thread: Pick<GQL.IThread, 'id'>
-): typeof LOADING | GQL.IRepositoryComparison | ErrorLike {
-    const [result, setResult] = useState<typeof LOADING | GQL.IRepositoryComparison | ErrorLike>(LOADING)
+): typeof LOADING | GQL.IRepositoryComparison | null | ErrorLike {
+    const [result, setResult] = useState<typeof LOADING | GQL.IRepositoryComparison | null | ErrorLike>(LOADING)
     useEffect(() => {
         const subscription = queryThreadFileDiffs(thread).subscribe(setResult, err => setResult(asError(err)))
         return () => subscription.unsubscribe()

@@ -62,17 +62,19 @@ export const RuleDefinitionFormControl: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <div className="form-group">
-                <label htmlFor="rule-definition-form-control__query">Query</label>
-                <input
-                    type="text"
-                    id="rule-definition-form-control__query"
-                    className="form-control"
-                    placeholder="Search query"
-                    value={parsed.query ? parsed.query.input : ''}
-                    onChange={onQueryChange}
-                />
-            </div>
+            {parsed.type === 'DiagnosticRule' && (
+                <div className="form-group">
+                    <label htmlFor="rule-definition-form-control__query">Query</label>
+                    <input
+                        type="text"
+                        id="rule-definition-form-control__query"
+                        className="form-control"
+                        placeholder="Search query"
+                        value={parsed.query ? parsed.query.input : ''}
+                        onChange={onQueryChange}
+                    />
+                </div>
+            )}
             <div className="form-group">
                 <label htmlFor="rule-definition-form-control__action">Action</label>
                 <input

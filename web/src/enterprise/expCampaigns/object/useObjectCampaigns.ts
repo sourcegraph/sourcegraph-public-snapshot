@@ -24,7 +24,7 @@ export const useObjectCampaigns = (object: Pick<GQL.ExpCampaignNode, 'id'>): [Re
         const subscription = queryGraphQL(
             gql`
                 query ObjectCampaigns($object: ID!) {
-                    campaigns(object: $object) {
+                    expCampaigns(object: $object) {
                         nodes {
                             id
                             name
@@ -38,7 +38,7 @@ export const useObjectCampaigns = (object: Pick<GQL.ExpCampaignNode, 'id'>): [Re
         )
             .pipe(
                 map(dataOrThrowErrors),
-                map(data => data.campaigns),
+                map(data => data.expCampaigns),
                 startWith(LOADING)
             )
             .subscribe(setResult, err => setResult(asError(err)))

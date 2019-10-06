@@ -66,7 +66,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 
 export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
     /** Do not wrap this route's fragment in a container. */
-    noContainer: boolean
+    noContainer?: boolean
 }
 
 interface Props

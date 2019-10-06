@@ -30,6 +30,8 @@ export const ThreadFileDiffsList: React.FunctionComponent<Props> = ({ thread, cl
                 <LoadingSpinner className="icon-inline mt-3" />
             ) : isErrorLike(repositoryComparison) ? (
                 <div className="alert alert-danger mt-3">{repositoryComparison.message}</div>
+            ) : !repositoryComparison ? (
+                <div className="text-muted mt-3">No diff.</div>
             ) : (
                 <RepositoryCompareDiffPage
                     {...props}
@@ -37,14 +39,14 @@ export const ThreadFileDiffsList: React.FunctionComponent<Props> = ({ thread, cl
                     base={{
                         repoName: repositoryComparison.baseRepository.name,
                         repoID: repositoryComparison.baseRepository.id,
-                        rev: repositoryComparison.range.baseRevSpec.expr,
-                        commitID: repositoryComparison.range.baseRevSpec.object!.oid, // TODO!(sqs)
+                        rev: repositoryComparison.range!.baseRevSpec.expr,
+                        commitID: repositoryComparison.range!.baseRevSpec.object!.oid, // TODO!(sqs)
                     }}
                     head={{
                         repoName: repositoryComparison.headRepository.name,
                         repoID: repositoryComparison.headRepository.id,
-                        rev: repositoryComparison.range.headRevSpec.expr,
-                        commitID: repositoryComparison.range.headRevSpec.object!.oid, // TODO!(sqs)
+                        rev: repositoryComparison.range!.headRevSpec.expr,
+                        commitID: repositoryComparison.range!.headRevSpec.object!.oid, // TODO!(sqs)
                     }}
                     showRepository={true}
                 />

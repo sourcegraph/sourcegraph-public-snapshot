@@ -165,14 +165,18 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                                             oldPath: parseRepoURI(d.oldPath!).filePath!,
                                                             newPath: parseRepoURI(d.newPath!).filePath!,
                                                         }}
-                                                        base={{
-                                                            repoName: c.baseRepository.name,
-                                                            repoID: c.baseRepository.id,
-                                                        }}
-                                                        head={{
-                                                            repoName: c.headRepository.name,
-                                                            repoID: c.headRepository.id,
-                                                        }}
+                                                        base={
+                                                            {
+                                                                repoName: c.baseRepository.name,
+                                                                repoID: c.baseRepository.id,
+                                                            } as any
+                                                        }
+                                                        head={
+                                                            {
+                                                                repoName: c.headRepository.name,
+                                                                repoID: c.headRepository.id,
+                                                            } as any
+                                                        }
                                                         showRepository={true}
                                                         lineNumbers={false}
                                                         className="mb-0 border-top-0 border-left-0 border-right-0"

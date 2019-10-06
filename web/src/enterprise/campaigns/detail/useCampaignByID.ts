@@ -10,7 +10,7 @@ import { useMemo } from 'react'
  *
  * @param campaign The campaign ID.
  */
-export const useCampaignByID = (campaign: GQL.ID): undefined | GQL.IExpCampaign | null =>
+export const useCampaignByID = (campaign: GQL.ID): undefined | GQL.ICampaign | null =>
     useObservable(
         useMemo(
             () =>
