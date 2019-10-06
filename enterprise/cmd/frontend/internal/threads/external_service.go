@@ -22,7 +22,7 @@ type CreateChangesetData struct {
 type externalServiceClient interface {
 	CreateOrUpdateThread(ctx context.Context, repoName api.RepoName, repoID api.RepoID, extRepo api.ExternalRepoSpec, data CreateChangesetData) (threadID int64, err error)
 	RefreshThreadMetadata(ctx context.Context, threadID, threadExternalServiceID int64, externalID string, repoID api.RepoID) error
-	GetThreadTimelineItems(ctx context.Context, threadExternalID string) ([]events.CreationData, error)
+	GetThreadTimelineItems(ctx context.Context, threadExternalID string, repoID api.RepoID) ([]events.CreationData, error)
 }
 
 var cliFactory = repos.NewHTTPClientFactory()

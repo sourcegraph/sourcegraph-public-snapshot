@@ -23,5 +23,5 @@ func Refresh(ctx context.Context, dbID int64) error {
 		return err
 	}
 
-	return ImportGitHubThreadEvents(ctx, dbID, dbThread.ExternalServiceID, dbThread.ExternalID, dbThread.RepositoryID)
+	return ImportThreadEvents(ctx, dbID, dbThread.ExternalServiceID, dbThread.ExternalID, dbThread.RepositoryID)
 }

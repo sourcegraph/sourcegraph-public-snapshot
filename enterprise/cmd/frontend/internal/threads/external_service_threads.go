@@ -66,8 +66,8 @@ func CreateOnExternalService(ctx context.Context, existingThreadID int64, thread
 	}
 
 	return extSvcClient.CreateOrUpdateThread(ctx, api.RepoName(repo.Name()), repo.DBID(), repo.DBExternalRepo(), CreateChangesetData{
-		BaseRefName:      defaultBranch.AbbrevName(),
-		HeadRefName:      branchName,
+		BaseRefName:      defaultBranch.Name(),
+		HeadRefName:      refName,
 		Title:            threadTitle,
 		Body:             threadBody + fmt.Sprintf("\n\nCampaign: [%s](#)", campaignName),
 		ExistingThreadID: existingThreadID,
@@ -87,14 +87,15 @@ func ensureExternalThreadIsPersisted(ctx context.Context, externalThread externa
 			threadID, err = dbCreateExternalThread(ctx, nil, externalThread)
 		} else {
 			// Thread does exist on Sourcegraph. Link it to the newly created external thread.
-			tmp := false
+			falseVal := false
 			if _, err := (dbThreads{}).Update(ctx, existingThreadID, dbThreadUpdate{
 				BaseRef:    &externalThread.thread.BaseRef,
 				BaseRefOID: &externalThread.thread.BaseRefOID,
 				HeadRef:    &externalThread.thread.HeadRef,
 				HeadRefOID: &externalThread.thread.HeadRefOID,
 
-				IsPendingExternalCreation: &tmp,
+				IsDraft:                   &falseVal,
+				IsPendingExternalCreation: &falseVal,
 				ClearPendingPatch:         true,
 				ExternalThreadData:        &externalThread.thread.ExternalThreadData,
 			}); err != nil {

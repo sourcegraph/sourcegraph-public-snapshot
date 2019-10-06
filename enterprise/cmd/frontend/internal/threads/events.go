@@ -3,9 +3,11 @@ package threads
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 const (
@@ -92,4 +94,27 @@ func init() {
 		}
 		return nil
 	})
+}
+
+func ImportThreadEvents(ctx context.Context, threadID, threadExternalServiceID int64, threadExternalID string, repoID api.RepoID) error {
+	client, externalServiceID, err := getClientForRepo(ctx, repoID)
+	if err != nil {
+		return err
+	}
+	if externalServiceID != threadExternalServiceID {
+		// TODO!(sqs): handle this case, not sure when it would happen, also is complicated by when
+		// there are multiple external services for a repo.  TODO!(sqs): also make this look up the
+		// external service using the externalServiceID directly when repo-updater exposes an API to
+		// do that.
+		return fmt.Errorf("thread %d: external service %d in DB does not match repository external service %d", threadID, threadExternalServiceID, externalServiceID)
+	}
+
+	toImport, err := client.GetThreadTimelineItems(ctx, threadExternalID, repoID)
+	if err != nil {
+		return err
+	}
+	for i := range toImport {
+		toImport[i].Objects.Thread = threadID
+	}
+	return events.ImportExternalEvents(ctx, externalServiceID, events.Objects{Thread: threadID}, toImport)
 }

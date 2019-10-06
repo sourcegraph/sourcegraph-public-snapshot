@@ -31,9 +31,14 @@ func dbCreateExternalThread(ctx context.Context, tx *sql.Tx, x externalThread) (
 }
 
 func dbUpdateExternalThread(ctx context.Context, threadID int64, x externalThread) error {
+	falseVal := false
 	update := dbThreadUpdate{
 		Title: &x.thread.Title,
 		State: &x.thread.State,
+
+		IsDraft:                   &falseVal,
+		IsPendingExternalCreation: &falseVal,
+		ClearPendingPatch:         true,
 	}
 	if x.thread.BaseRef != "" {
 		update.BaseRef = &x.thread.BaseRef

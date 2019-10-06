@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/neelance/parallel"
@@ -207,7 +208,10 @@ func (x *rulesExecutor) syncChangeset(ctx context.Context, campaignID int64, cam
 	}
 
 	if err := addRemoveThreadsToFromCampaign(ctx, graphqlbackend.MarshalCampaignID(campaignID), []graphql.ID{graphqlbackend.MarshalThreadID(threadID)}, nil); err != nil {
-		return err
+		// HACK!(sqs) TODO!(sqs)
+		if !strings.Contains(err.Error(), "duplicate key value") {
+			return err
+		}
 	}
 
 	diagConnection, err := thread.Diagnostics(ctx, &graphqlutil.ConnectionArgs{})

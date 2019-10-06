@@ -44,7 +44,7 @@ const queryCampaignRules = (campaign: Pick<GQL.IExpCampaign, 'id'>): Promise<Rul
 const forceRefreshCampaign = (args: GQL.IForceRefreshCampaignOnMutationArguments): Promise<void> =>
     mutateGraphQL(
         gql`
-            mutation ForceRefreshCampaign($campaign: ID!, $extensionData: CampaignExtensionData!) {
+            mutation ForceRefreshCampaign($campaign: ID!, $extensionData: ExpCampaignExtensionData!) {
                 forceRefreshCampaign(campaign: $campaign, extensionData: $extensionData) {
                     id
                 }

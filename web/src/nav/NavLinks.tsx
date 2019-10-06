@@ -44,6 +44,8 @@ interface Props
     className?: string
 }
 
+const EXP_CAMPAIGNS = true
+
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
@@ -68,7 +70,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {this.props.showCampaigns && (
+                {!EXP_CAMPAIGNS && this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
                     </li>

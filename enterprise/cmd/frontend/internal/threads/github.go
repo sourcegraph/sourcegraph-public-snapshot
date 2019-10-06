@@ -224,8 +224,8 @@ mutation CreatePullRequest($input: CreatePullRequestInput!) {
 `+githubActorFieldsFragment, map[string]interface{}{
 		"input": map[string]interface{}{
 			"repositoryId": githubRepositoryID,
-			"baseRefName":  data.BaseRefName,
-			"headRefName":  data.HeadRefName,
+			"baseRefName":  strings.TrimPrefix(data.BaseRefName, "refs/heads/"),
+			"headRefName":  strings.TrimPrefix(data.HeadRefName, "refs/heads/"),
 			"title":        data.Title,
 			"body":         data.Body,
 		},
@@ -258,7 +258,7 @@ query GetPullRequest($repositoryId: ID!, $headRefName: String!) {
 }
 `+githubActorFieldsFragment, map[string]interface{}{
 		"repositoryId": githubRepositoryID,
-		"headRefName":  data.HeadRefName,
+		"headRefName":  strings.TrimPrefix(data.HeadRefName, "refs/heads/"),
 	}, &resp); err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ query($id: ID!) {
 	return dbUpdateExternalThread(ctx, threadID, externalThread)
 }
 
-func (c *githubExternalServiceClient) GetThreadTimelineItems(ctx context.Context, threadExternalID string) ([]events.CreationData, error) {
+func (c *githubExternalServiceClient) GetThreadTimelineItems(ctx context.Context, threadExternalID string, repoID api.RepoID) ([]events.CreationData, error) {
 	result, err := c.getGitHubIssueOrPullRequestTimelineItems(ctx, graphql.ID(threadExternalID))
 	if err != nil {
 		return nil, err
@@ -328,19 +328,19 @@ func (c *githubExternalServiceClient) GetThreadTimelineItems(ctx context.Context
 	})
 
 	// GitHub timeline events.
-	for _, ghEvent := range result.TimelineItems.Nodes {
-		if eventType, ok := githubEventTypes[ghEvent.Typename]; ok {
+	for _, e := range result.TimelineItems.Nodes {
+		if eventType, ok := githubEventTypes[e.Typename]; ok {
 			data := events.CreationData{
 				Type:      eventType,
-				Data:      ghEvent,
-				CreatedAt: ghEvent.CreatedAt,
+				Data:      e,
+				CreatedAt: e.CreatedAt,
 			}
 
 			var actor *githubActor
-			if ghEvent.Author != nil {
-				actor = ghEvent.Author
-			} else if ghEvent.Actor != nil {
-				actor = ghEvent.Actor
+			if e.Author != nil {
+				actor = e.Author
+			} else if e.Actor != nil {
+				actor = e.Actor
 			}
 			if actor != nil {
 				data.ExternalActorUsername = actor.Login
@@ -351,35 +351,6 @@ func (c *githubExternalServiceClient) GetThreadTimelineItems(ctx context.Context
 		}
 	}
 	return items, nil
-}
-
-var MockImportGitHubThreadEvents func() error // TODO!(sqs)
-
-func ImportGitHubThreadEvents(ctx context.Context, threadID, threadExternalServiceID int64, threadExternalID string, repoID api.RepoID) error {
-	if MockImportGitHubThreadEvents != nil {
-		return MockImportGitHubThreadEvents()
-	}
-
-	client, externalServiceID, err := getClientForRepo(ctx, repoID)
-	if err != nil {
-		return err
-	}
-	if externalServiceID != threadExternalServiceID {
-		// TODO!(sqs): handle this case, not sure when it would happen, also is complicated by when
-		// there are multiple external services for a repo.  TODO!(sqs): also make this look up the
-		// external service using the externalServiceID directly when repo-updater exposes an API to
-		// do that.
-		return fmt.Errorf("thread %d: external service %d in DB does not match repository external service %d", threadID, threadExternalServiceID, externalServiceID)
-	}
-
-	toImport, err := client.GetThreadTimelineItems(ctx, threadExternalID)
-	if err != nil {
-		return err
-	}
-	for i := range toImport {
-		toImport[i].Objects.Thread = threadID
-	}
-	return events.ImportExternalEvents(ctx, externalServiceID, events.Objects{Thread: threadID}, toImport)
 }
 
 var githubEventTypes = map[string]events.Type{
@@ -413,7 +384,7 @@ const (
 			author { ...ActorFields }
 			createdAt
 `
-	githubIssueOrPullRequestEventCommonTimelineItemTypes = `ISSUE_COMMENT, CLOSED_EVENT, REOPENED_EVENT`
+	githubIssueOrPullRequestEventCommonTimelineItemTypes = `CLOSED_EVENT, REOPENED_EVENT`
 	githubIssueOrPullRequestEventCommonQuery             = `
 ... on IssueComment {
 	id

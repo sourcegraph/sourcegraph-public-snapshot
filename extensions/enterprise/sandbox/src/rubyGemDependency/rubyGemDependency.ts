@@ -46,12 +46,12 @@ const DEPENDENCY_TAG = 'type:rubyGemDependency'
 
 const LOADING = 'loading' as const
 
-const provideDiagnostics = (
+function provideDiagnostics (
     context: RubyGemDependencyCampaignContext
-): Observable<sourcegraph.Diagnostic[] | typeof LOADING> =>
-    context.gemName
+): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
+    return context.gemName
         ? from(sourcegraph.workspace.rootChanges).pipe(
-              startWith(void 0),
+              startWith(undefined),
               map(() => sourcegraph.workspace.roots),
               switchMap(async roots => {
                   if (roots.length > 0) {
@@ -87,7 +87,7 @@ const provideDiagnostics = (
                   )
 
                   await Promise.all(
-                      results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
+                      results.map( ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
                   )
 
                   return from(settingsObservable<Settings>()).pipe(
@@ -174,6 +174,7 @@ const provideDiagnostics = (
               startWith(LOADING)
           )
         : of<sourcegraph.Diagnostic[]>([])
+            }
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {

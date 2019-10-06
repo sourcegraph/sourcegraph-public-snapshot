@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/events"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -18,28 +17,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func newBitbucketServerExternalThread(result *bitbucketServerPullRequest, repoID api.RepoID, externalServiceID int64) externalThread {
+func newBitbucketServerExternalThread(result *bitbucketServerPullRequest, resultComments []bitbucketServerPullRequestComment, repoID api.RepoID, externalServiceID int64) externalThread {
 	thread, threadComment := bitbucketServerPullRequestToThread(result)
 	thread.RepositoryID = repoID
 	thread.ExternalServiceID = externalServiceID
 
-	// replyComments := make([]comments.ExternalComment, len(result.Comments.Nodes))
-	// for i, c := range result.Comments.Nodes {
-	// 	replyComments[i] = bitbucketServerPullRequestCommentToExternalComment(c)
-	// }
+	replyComments := make([]comments.ExternalComment, len(resultComments))
+	for i, c := range resultComments {
+		replyComments[i] = bitbucketServerPullRequestCommentToExternalComment(c)
+	}
 	return externalThread{
 		thread:        thread,
 		threadComment: threadComment,
-		comments:      nil, // TODO!!(sqs) support comments
+		comments:      replyComments,
 	}
+}
+
+func fromBitbucketServerDate(date int64) time.Time {
+	return time.Unix(0, date*int64(time.Millisecond))
 }
 
 func bitbucketServerPullRequestToThread(v *bitbucketServerPullRequest) (*DBThread, commentobjectdb.DBObjectCommentFields) {
 	thread := &DBThread{
 		Title:      v.Title,
 		State:      v.State,
-		CreatedAt:  time.Unix(0, v.CreatedDate*int64(time.Millisecond)),
-		UpdatedAt:  time.Unix(0, v.UpdatedDate*int64(time.Millisecond)),
+		CreatedAt:  fromBitbucketServerDate(v.CreatedDate),
+		UpdatedAt:  fromBitbucketServerDate(v.UpdatedDate),
 		BaseRef:    v.ToRef.ID,
 		BaseRefOID: v.ToRef.LatestCommit,
 		// TODO!(sqs): fill in headrepository
@@ -62,8 +65,8 @@ func bitbucketServerPullRequestToThread(v *bitbucketServerPullRequest) (*DBThrea
 
 	comment := commentobjectdb.DBObjectCommentFields{
 		Body:      v.Description,
-		CreatedAt: time.Unix(0, v.CreatedDate*int64(time.Millisecond)),
-		UpdatedAt: time.Unix(0, v.UpdatedDate*int64(time.Millisecond)),
+		CreatedAt: fromBitbucketServerDate(v.CreatedDate),
+		UpdatedAt: fromBitbucketServerDate(v.UpdatedDate),
 	}
 	bitbucketServerUserSetDBObjectCommentFields(v.Author.User, &comment)
 	return thread, comment
@@ -75,11 +78,11 @@ func bitbucketServerUserSetDBObjectCommentFields(user *bitbucketServerUser, f *c
 	f.Author.ExternalActorURL = user.Links.Self[0].Href
 }
 
-func bitbucketServerPullRequestCommentToExternalComment(v *bitbucketServerPullRequestComment) comments.ExternalComment {
+func bitbucketServerPullRequestCommentToExternalComment(v bitbucketServerPullRequestComment) comments.ExternalComment {
 	comment := comments.ExternalComment{}
 	bitbucketServerUserSetDBObjectCommentFields(v.Author, &comment.DBObjectCommentFields)
-	comment.CreatedAt = time.Unix(0, v.CreatedDate*int64(time.Millisecond))
-	comment.UpdatedAt = time.Unix(0, v.UpdatedDate*int64(time.Millisecond))
+	comment.CreatedAt = fromBitbucketServerDate(v.CreatedDate)
+	comment.UpdatedAt = fromBitbucketServerDate(v.UpdatedDate)
 	comment.Body = v.Text
 	return comment
 }
@@ -130,57 +133,12 @@ type bitbucketServerPullRequestParticipant struct {
 }
 
 type bitbucketServerPullRequestComment struct {
-	ID          int `json:"id"`
-	Text        string
+	ID          int                  `json:"id"`
+	Text        string               `json:"text"`
 	Author      *bitbucketServerUser `json:"author"`
 	CreatedDate int64                `json:"createdDate"`
 	UpdatedDate int64                `json:"updatedDate"`
 }
-
-const (
-	bitbucketServerPullRequestCommonQuery = `
-__typename
-id
-repository {
-	id
-	nameWithOwner
-}
-number
-title
-body
-createdAt
-updatedAt
-url
-state
-author {
-	...ActorFields
-}
-assignees(first: 1) {
-	nodes {
-		login
-		url
-	}
-}
-comments(first: 10) {
-	nodes {
-		id
-		author { ... ActorFields  }
-		body
-		url
-		createdAt
-		updatedAt
-	}
-}
-`
-
-	bitbucketServerPullRequestQuery = `
-baseRefName
-baseRefOid
-headRefName
-headRefOid
-isCrossRepository
-`
-)
 
 type bitbucketServerUser struct {
 	ID           int                     `json:"id"`
@@ -189,19 +147,6 @@ type bitbucketServerUser struct {
 	EmailAddress string                  `json:"emailAddress"`
 	Links        bitbucketServerSelfLink `json:"links"`
 }
-
-const bitbucketServerUserFieldsFragment = `
-fragment ActorFields on Actor {
-	... on User {
-		login
-		url
-	}
-	... on Bot {
-		login
-		url
-	}
-}
-`
 
 type bitbucketServerExternalServiceClient struct {
 	src *repos.BitbucketServerSource
@@ -220,15 +165,21 @@ func getBitbucketServerRepositoryInput(repo api.RepoName) bitbucketServerReposit
 
 func (c *bitbucketServerExternalServiceClient) CreateOrUpdateThread(ctx context.Context, repoName api.RepoName, repoID api.RepoID, extRepo api.ExternalRepoSpec, data CreateChangesetData) (threadID int64, err error) {
 	bitbucketServerRepository := getBitbucketServerRepositoryInput(repoName)
-	thread, err := c.createBitbucketServerPullRequest(ctx, bitbucketServerRepository, data)
+	pull, err := c.createBitbucketServerPullRequest(ctx, bitbucketServerRepository, data)
 	if err != nil && strings.Contains(err.Error(), "Only one pull request may be open for a given source and target") {
-		thread, err = c.getExistingBitbucketServerPullRequest(ctx, bitbucketServerRepository, data)
+		pull, err = c.getExistingBitbucketServerPullRequest(ctx, bitbucketServerRepository, data)
 	}
 	if err != nil {
 		return 0, err
 	}
 	// TODO!(sqs): doesnt actually update title/body/etc.
-	return ensureExternalThreadIsPersisted(ctx, newBitbucketServerExternalThread(thread, repoID, c.src.ExternalServices()[0].ID), data.ExistingThreadID)
+
+	comments, err := c.getPullRequestComments(ctx, strconv.Itoa(pull.ID), repoID)
+	if err != nil {
+		return 0, err
+	}
+
+	return ensureExternalThreadIsPersisted(ctx, newBitbucketServerExternalThread(pull, comments, repoID, c.src.ExternalServices()[0].ID), data.ExistingThreadID)
 }
 
 func (c *bitbucketServerExternalServiceClient) createBitbucketServerPullRequest(ctx context.Context, repo bitbucketServerRepository, data CreateChangesetData) (*bitbucketServerPullRequest, error) {
@@ -256,6 +207,7 @@ func (c *bitbucketServerExternalServiceClient) getExistingBitbucketServerPullReq
 	params.Set("withAttributes", "true")
 	params.Set("withProperties", "true")
 	params.Set("state", "OPEN")
+	params.Set("direction", "OUTGOING")
 
 	// TODO!(sqs) support pagination
 	var pulls []bitbucketServerPullRequest
@@ -270,119 +222,126 @@ func (c *bitbucketServerExternalServiceClient) getExistingBitbucketServerPullReq
 	return nil, fmt.Errorf("no bitbucketServer pull requests in repository %+v with head ref %q", repo, data.HeadRefName)
 }
 
-func (c *bitbucketServerExternalServiceClient) RefreshThreadMetadata(ctx context.Context, threadID, threadExternalServiceID int64, externalID string, repoID api.RepoID) error {
+func (c *bitbucketServerExternalServiceClient) pullRequestURL(ctx context.Context, threadExternalID string, repoID api.RepoID) (string, error) {
 	repoObj, err := backend.Repos.Get(ctx, repoID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	repo := getBitbucketServerRepositoryInput(repoObj.Name)
 
-	pullRequestID, err := strconv.Atoi(externalID)
+	pullRequestID, err := strconv.Atoi(threadExternalID)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", repo.Project.Key, repo.Slug, pullRequestID), nil
+}
+
+func (c *bitbucketServerExternalServiceClient) RefreshThreadMetadata(ctx context.Context, threadID, threadExternalServiceID int64, externalID string, repoID api.RepoID) error {
+	pull, comments, err := c.getPullRequestAndComments(ctx, externalID, repoID)
 	if err != nil {
 		return err
 	}
-	var pull bitbucketServerPullRequest
-	if err := c.src.Client().Send(ctx, "GET", fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s/pull-requests/%d", repo.Project.Key, repo.Slug, pullRequestID), nil, nil, &pull); err != nil {
-		return err
-	}
-	externalThread := newBitbucketServerExternalThread(&pull, repoID, threadExternalServiceID)
+	externalThread := newBitbucketServerExternalThread(pull, comments, repoID, threadExternalServiceID)
 	return dbUpdateExternalThread(ctx, threadID, externalThread)
 }
 
-func (c *bitbucketServerExternalServiceClient) GetThreadTimelineItems(ctx context.Context, threadExternalID string) ([]events.CreationData, error) {
-	panic("TODO!(sqs)")
-	// result, err := c.getBitbucketServerPullRequestOrPullRequestTimelineItems(ctx, graphql.ID(threadExternalID))
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// items := make([]events.CreationData, 0, len(result.TimelineItems.Nodes)+1)
-
-	// // Creation event.
-	// items = append(items, events.CreationData{
-	// 	Type:                  eventTypeCreateThread,
-	// 	ActorUserID:           0, // TODO!(sqs): determine this, map from bitbucketServer if needed
-	// 	ExternalActorUsername: result.Author.Login,
-	// 	ExternalActorURL:      result.Author.URL,
-	// 	CreatedAt:             result.CreatedAt,
-	// })
-
-	// // BitbucketServer timeline events.
-	// for _, ghEvent := range result.TimelineItems.Nodes {
-	// 	if eventType, ok := bitbucketServerEventTypes[ghEvent.Typename]; ok {
-	// 		data := events.CreationData{
-	// 			Type:      eventType,
-	// 			Data:      ghEvent,
-	// 			CreatedAt: ghEvent.CreatedAt,
-	// 		}
-
-	// 		var actor *bitbucketServerUser
-	// 		if ghEvent.Author != nil {
-	// 			actor = ghEvent.Author
-	// 		} else if ghEvent.Actor != nil {
-	// 			actor = ghEvent.Actor
-	// 		}
-	// 		if actor != nil {
-	// 			data.ExternalActorUsername = actor.Login
-	// 			data.ExternalActorURL = actor.URL
-	// 		}
-
-	// 		items = append(items, data)
-	// 	}
-	// }
-	// return items, nil
-}
-
-var MockImportBitbucketServerThreadEvents func() error // TODO!(sqs)
-
-func ImportBitbucketServerThreadEvents(ctx context.Context, threadID, threadExternalServiceID int64, threadExternalID string, repoID api.RepoID) error {
-	if MockImportBitbucketServerThreadEvents != nil {
-		return MockImportBitbucketServerThreadEvents()
-	}
-
-	client, externalServiceID, err := getClientForRepo(ctx, repoID)
+func (c *bitbucketServerExternalServiceClient) getPullRequestAndComments(ctx context.Context, threadExternalID string, repoID api.RepoID) (*bitbucketServerPullRequest, []bitbucketServerPullRequestComment, error) {
+	pullRequestURL, err := c.pullRequestURL(ctx, threadExternalID, repoID)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	if externalServiceID != threadExternalServiceID {
-		// TODO!(sqs): handle this case, not sure when it would happen, also is complicated by when
-		// there are multiple external services for a repo.  TODO!(sqs): also make this look up the
-		// external service using the externalServiceID directly when repo-updater exposes an API to
-		// do that.
-		return fmt.Errorf("thread %d: external service %d in DB does not match repository external service %d", threadID, threadExternalServiceID, externalServiceID)
+	var pull bitbucketServerPullRequest
+	if err := c.src.Client().Send(ctx, "GET", pullRequestURL, nil, nil, &pull); err != nil {
+		return nil, nil, err
 	}
 
-	toImport, err := client.GetThreadTimelineItems(ctx, threadExternalID)
+	comments, err := c.getPullRequestComments(ctx, threadExternalID, repoID)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	for i := range toImport {
-		toImport[i].Objects.Thread = threadID
+
+	return &pull, comments, nil
+}
+
+func (c *bitbucketServerExternalServiceClient) getPullRequestComments(ctx context.Context, threadExternalID string, repoID api.RepoID) ([]bitbucketServerPullRequestComment, error) {
+	activities, err := c.getBitbucketServerPullRequestActivities(ctx, threadExternalID, repoID)
+	if err != nil {
+		return nil, err
 	}
-	return events.ImportExternalEvents(ctx, externalServiceID, events.Objects{Thread: threadID}, toImport)
+	var cs []bitbucketServerPullRequestComment
+	for _, a := range activities {
+		if bitbucketServerActionToEventType[a.Action] == comments.EventTypeComment && a.Comment != nil {
+			cs = append(cs, *a.Comment)
+		}
+	}
+	return cs, nil
 }
 
-var bitbucketServerEventTypes = map[string]events.Type{
-	"IssueComment":         comments.EventTypeComment,
-	"PullRequestReview":    eventTypeReview,
-	"ReviewRequestedEvent": eventTypeReviewRequested,
-	"MergedEvent":          eventTypeMergeThread,
-	"ClosedEvent":          eventTypeCloseThread,
-	"ReopenedEvent":        eventTypeReopenThread,
+func (c *bitbucketServerExternalServiceClient) GetThreadTimelineItems(ctx context.Context, threadExternalID string, repoID api.RepoID) ([]events.CreationData, error) {
+	activities, err := c.getBitbucketServerPullRequestActivities(ctx, threadExternalID, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Bitbucket Server timeline events.
+	items := make([]events.CreationData, 0, len(activities))
+	for _, e := range activities {
+		if eventType, ok := bitbucketServerActionToEventType[e.Action]; ok {
+			if eventType == comments.EventTypeComment {
+				// Skip because these will be added to the events table AND the comments table at
+				// the same time.
+				continue
+			}
+
+			data := events.CreationData{
+				Type:      eventType,
+				Data:      e,
+				CreatedAt: fromBitbucketServerDate(e.CreatedDate),
+			}
+
+			var actor *bitbucketServerUser
+			if e.User != nil {
+				actor = e.User
+			}
+			if actor != nil {
+				data.ExternalActorUsername = actor.Name
+				data.ExternalActorURL = actor.Links.Self[0].Href
+			}
+
+			items = append(items, data)
+		}
+	}
+	return items, nil
 }
 
-type bitbucketServerPullRequestTimelineData struct {
-	Values []bitbucketServerEvent `json:"values"`
+var bitbucketServerActionToEventType = map[string]events.Type{
+	"OPENED":    eventTypeCreateThread,
+	"COMMENTED": comments.EventTypeComment,
+	"MERGED":    eventTypeMergeThread,
+	"CLOSED":    eventTypeCloseThread,
+	// TODO!(sqs): add review events
 }
 
-type bitbucketServerEvent struct {
-	ID            int                  `json:"id"`
-	Action        string               `json:"action"`                  // OPENED, COMMENTED
-	CommentAction string               `json:"commentAction,omitempty"` // ADDED
-	User          *bitbucketServerUser `json:"user,omitempty"`
-	CreatedDate   int                  `json:"createdDate"`
+type bitbucketServerActivity struct {
+	ID            int                                `json:"id"`
+	Action        string                             `json:"action"`                  // OPENED, COMMENTED
+	CommentAction string                             `json:"commentAction,omitempty"` // ADDED
+	User          *bitbucketServerUser               `json:"user,omitempty"`
+	CreatedDate   int64                              `json:"createdDate"`
+	Comment       *bitbucketServerPullRequestComment `json:"comment,omitempty"`
 }
 
-func (c *bitbucketServerExternalServiceClient) getBitbucketServerPullRequestOrPullRequestTimelineItems(ctx context.Context, bitbucketServerPullRequestID graphql.ID) (pull *bitbucketServerPullRequestTimelineData, err error) {
-	return &bitbucketServerPullRequestTimelineData{}, nil
+func (c *bitbucketServerExternalServiceClient) getBitbucketServerPullRequestActivities(ctx context.Context, threadExternalID string, repoID api.RepoID) (activities []bitbucketServerActivity, err error) {
+	pullRequestURL, err := c.pullRequestURL(ctx, threadExternalID, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := url.Values{}
+	params.Set("limit", "100")
+	// TODO!(sqs): get all pages
+	if _, err := c.src.Client().Page(ctx, fmt.Sprintf("%s/activities", pullRequestURL), params, nil, &activities); err != nil {
+		return nil, err
+	}
+	return activities, nil
 }
