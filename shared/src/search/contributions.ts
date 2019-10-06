@@ -97,7 +97,7 @@ function formatIncludeExcludePatterns(
             return undefined
         }
         if (patterns.length >= 2) {
-            throw new Error(`2+ patterns in IncludeExcludePatterns is not supported`)
+            throw new Error('2+ patterns in IncludeExcludePatterns is not supported')
         }
         return `${prefix}${keyword}${patterns[0]}`
     }

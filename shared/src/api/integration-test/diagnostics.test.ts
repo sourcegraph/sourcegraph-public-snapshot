@@ -23,7 +23,7 @@ describe('Diagnostics (integration)', () => {
             await extensionAPI.internal.sync()
 
             expect(
-                await from(services.diagnostics.observeDiagnostics({}))
+                await from(services.diagnostics.observeDiagnostics({}, {}))
                     .pipe(first())
                     .toPromise()
             ).toEqual([{ ...FIXTURE_DIAGNOSTIC_1, type: PROVIDER_TYPE }])
