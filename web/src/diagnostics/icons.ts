@@ -1,3 +1,3 @@
-import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon';
+import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 
 export const DiagnosticsIcon = AlertCircleOutlineIcon

@@ -79,11 +79,7 @@ export const ThreadsNewPage: React.FunctionComponent<Props> = ({ repo, setBreadc
             <PageTitle title="New thread" />
             <ModalPage>
                 <h2>New thread</h2>
-                <ThreadForm
-                    onSubmit={onSubmit}
-                    buttonText="Create thread"
-                    isLoading={creationOrError === LOADING}
-                />
+                <ThreadForm onSubmit={onSubmit} buttonText="Create thread" isLoading={creationOrError === LOADING} />
                 {isErrorLike(creationOrError) && (
                     <div className="alert alert-danger mt-3">{creationOrError.message}</div>
                 )}

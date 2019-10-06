@@ -9,6 +9,7 @@
    ```
    ["lyft/amundsenfrontendlibrary", "lyft/pipelines", "sourcegraph/codeintellify", "sourcegraph/react-loading-spinner", "sourcegraph/about"]
    ```
+
 1. [Sideload](https://docs.sourcegraph.com/extensions/authoring/local_development) the extension at http://localhost:1235. (This is the extension in `./extensions/enterprise/sandbox`, and the main Procfile now starts a Parcel server for it.)
 1. In the UI, go to **Campaigns** in the global navbar.
 
@@ -19,8 +20,7 @@ There are DB migrations, so if you downgrade to `master`, it may complain. You c
 1. Run `sudo -u postgres createdb -O ${PGUSER-$USER} sg-codemod-ui` to create a new database owned by your PostgreSQL user.
 1. When using `codemod-ui`, use `PGDATABASE=sg-codemod-ui enterprise/dev/start.sh` to start the server in the separate DB.
 
-You *might* see some weirdness because Redis isn't similarly isolated. I don't know the solution because I haven't encountered any problems, but there's probably an easy way to use a separate Redis namespace, too.
-
+You _might_ see some weirdness because Redis isn't similarly isolated. I don't know the solution because I haven't encountered any problems, but there's probably an easy way to use a separate Redis namespace, too.
 
 ---
 
@@ -69,15 +69,13 @@ TODO: how to cover new usages of your code, active people on this repo, diagnost
 
 - Diagnostic type: let extensions register diagnostic types, which specify a common set of actions. Should this be registerDiagnosticType (no because that would mean the eslint extension would need to call that too many times, once per eslint rule id); registerDiagnosticActionTemplate (complex, kind of duplicates provideCodeActions); provideBatchCodeActions(takes multiple docs/locations/diagnostics plus a query) which returns a plan? Also it would let you set up notifications. TODO!(sqs): define and simplify the new concepts being introduced.
 
-** The idea is that the heavy lifting is done on the backend beforehand, and the extensions provide the crucial UX flows to make use of that data.
-
+\*\* The idea is that the heavy lifting is done on the backend beforehand, and the extensions provide the crucial UX flows to make use of that data.
 
 ## Notification
 
 A notification consists of a message, actions, and contextual information about the current state. It is derived from a diagnostics query.
 
-
---------
+---
 
 A status contains one or more checks, acts as a container instance for configuring them, plus has the ability to roll-up their results into a single status.
 
@@ -92,8 +90,7 @@ A check defines a class of diagnostics and common actions that can be taken on t
 
 DiagnosticQuery - some have actions associated with them (eg up-to-date npm deps), some actions are for the entire set of checks (eg TS build config, wouldn't want to do any single step independently...although that probably only applies to auto-changesets, when this is still manual you may want to run some of the steps manually to (eg) create a PR to standardize prettierrc)
 
-** Calling them Status is weird because it adds a new layer/concept above Checks, but it's nice because it can also be used to communicate the status of other things like language analysis, what people are doing, etc. (although that can go in "activity")
-
+\*\* Calling them Status is weird because it adds a new layer/concept above Checks, but it's nice because it can also be used to communicate the status of other things like language analysis, what people are doing, etc. (although that can go in "activity")
 
 .
 
@@ -101,18 +98,17 @@ DiagnosticQuery - some have actions associated with them (eg up-to-date npm deps
 
 The extension API for diagnostics is "push" instead of "pull", which is the opposite of the extension APIs for hovers, references, etc. Extensions monitor the workspace state on their own and update diagnostics on their own, instead of registering a diagnostic provider that is invoked per file. The diagnostics API is "push" because the client has no way of knowing which actions might trigger an update of diagnostics (e.g., a change to one file might cause errors in hundreds of other files), so it needs to rely on the extension to listen for its own triggers. TODO!(sqs): Maybe the simple reason is that in VS Code, there is no streaming (ie only Promises, not Observables), so they needed to do it this way (although VS Code's current way has a benefit of being able to send partial updates and not re-sending the entire diagnostics set each time)?
 
-Why have both annotations/diagnostics *and* decorations? They serve different purposes. Annotations/diagnostics are for things that are permanent/long-lived, derived from the code itself and not per-user state, are viewed in aggregate/summary or in a list, and are semantically meaningful to other consumers. Decorations are purely visual and for interactive consumption by a user.
+Why have both annotations/diagnostics _and_ decorations? They serve different purposes. Annotations/diagnostics are for things that are permanent/long-lived, derived from the code itself and not per-user state, are viewed in aggregate/summary or in a list, and are semantically meaningful to other consumers. Decorations are purely visual and for interactive consumption by a user.
 
 Make diagnostics into a provider
 
 DiagnosticQuery
 
-
 Pipelines, rules, statuses, workflows, policies? They are a diagnostic query (or null) -> action? In general, they are event -> action.
 
 For ESLint:
 
-- TS/JS code that is not checked by ESLint -> set of diagnostics to show where, then null action (or fail build, notify $USER, submit PR to add ESLint)
+- TS/JS code that is not checked by ESLint -> set of diagnostics to show where, then null action (or fail build, notify \$USER, submit PR to add ESLint)
 - New ESLint rules -> action to notify someone
 
 For updating a dep:
@@ -155,19 +151,17 @@ Show all diagnostics individually, but make it easy to batch them when fixing:
 1. Set diagnostic query
 1. Default action = ignore, can be changed (batch > apply to all 37)
 1. Choose actions for each diagnostic
-1. 
+1.
 
 - "Fix all"
 
-TODO - show a bar above "Filter v" or at the bottom that shows (1) the number of actions chosen for diagnostics, (2) the total diffstat and number of repos affected, (3) "Batch" > "Apply $TITLE to all (N)", (4) "New changeset"
+TODO - show a bar above "Filter v" or at the bottom that shows (1) the number of actions chosen for diagnostics, (2) the total diffstat and number of repos affected, (3) "Batch" > "Apply \$TITLE to all (N)", (4) "New changeset"
 
 ---
 
-An operation is an action applied to a set of diagnostics, or just an action. 
+An operation is an action applied to a set of diagnostics, or just an action.
 
-
---------
-
+---
 
 - Changeset = (repository, branch, PR link, operation[], rule[])
 - Changeset campaign = (name, changeset[], rule[]) - cross-repository
@@ -191,7 +185,7 @@ For fixing invalid codeowners:
 
 == Rules have conditions (which is the same as search syntax) + actions --- this reuses search stuff and makes it easy to go from a search to a rule
 
-TODO think about how this would work for "i want all instances of ___ to be reviewed and approved" eg call sites
+TODO think about how this would work for "i want all instances of \_\_\_ to be reviewed and approved" eg call sites
 
 Campaign rules:
 
@@ -209,20 +203,17 @@ Review API consumers workflow:
 - Find all instances of ee
 - Create issues, grouped by (repository, code owner)
 
-
--------
+---
 
 Diagnostic providers are responsible for querying the diagnostics GraphQL API (by whatever criteria they use for canonicalizing/deduping diagnostics) to see if a diagnostic is currently contained in any threads.
 
 Diagnostic providers can also 'resolve' a diagnostic given the data stored in the database. This is faster than running the provider over the entire workspace again.
 
-
--------
+---
 
 Key insight is that there is no meaningful distinction between issues and changesets in a world with automation? When you aren't reviewing the diff line-by-line, you might "approve" and "merge" changes that you only see a high-level description of (the intent of), not the actual changes. In that world, things that look like issues (with no code diff) have "approve" and "merge" buttons.
 
-
--------
+---
 
 # Demos
 
@@ -246,7 +237,7 @@ Because of this pain, way too few large-scale code changes are made. Automatical
 
 We want to give you the power to automate and manage large-scale code changes so you can focus on the coding tasks that truly engage your brain, without all that background noise. Let's jump in and see how you can deprecate a dependency across your entire company with Sourcegraph.
 
-Sourcegraph wants to make this much easier for you, so you can 
+Sourcegraph wants to make this much easier for you, so you can
 
 1. Go to Campaigns
 1. Select the organization that will own the campaign
@@ -256,12 +247,11 @@ Campaign rules
 
 ## Eliminate code duplication
 
-
-----
+---
 
 make CreateCampaignInput take all the stuff, including the rules and threads, and also make a one-shot preview endpoint that lets us show live stats on the new-campaign page
 
-----
+---
 
 demo todos:
 
