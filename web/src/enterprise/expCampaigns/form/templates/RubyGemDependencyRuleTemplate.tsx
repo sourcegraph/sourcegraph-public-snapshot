@@ -1,7 +1,7 @@
 import RubyIcon from 'mdi-react/RubyIcon'
 import React, { useCallback, useEffect } from 'react'
 import { RuleTemplate, RuleTemplateComponentContext } from '.'
-import { RubyGemDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/rubyGemDependency'
+import { RubyGemDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/rubyGemDependency/rubyGemDependency'
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../rules/types'
 import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormControl'

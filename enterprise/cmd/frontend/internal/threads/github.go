@@ -203,7 +203,7 @@ func (c *githubExternalServiceClient) CreateOrUpdateThread(ctx context.Context, 
 		return 0, err
 	}
 	// TODO!(sqs): doesnt actually update title/body/etc.
-	return ensureExternalThreadIsPersisted(ctx, newGitHubExternalThread(thread, repoID, c.src.ExternalServices()[0].ID), 0)
+	return ensureExternalThreadIsPersisted(ctx, newGitHubExternalThread(thread, repoID, c.src.ExternalServices()[0].ID), data.ExistingThreadID)
 }
 
 func (c *githubExternalServiceClient) createGitHubPullRequest(ctx context.Context, githubRepositoryID graphql.ID, data CreateChangesetData) (*githubIssueOrPullRequest, error) {

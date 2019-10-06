@@ -79,6 +79,7 @@ func ensureExternalThreadIsPersisted(ctx context.Context, externalThread externa
 
 	// Thread does not yet exist on Sourcegraph.
 	thread, err := dbThreads{}.GetByExternal(ctx, externalThread.thread.ExternalServiceID, externalThread.thread.ExternalID)
+	// TODO!(sqs): there is a bug where if this thread exists in another campaign then it will find that one but not add the thread to the desired campaign
 	if err == nil {
 		threadID = thread.ID
 	} else if err == errThreadNotFound {
@@ -100,6 +101,7 @@ func ensureExternalThreadIsPersisted(ctx context.Context, externalThread externa
 				return 0, err
 			}
 			threadID = existingThreadID
+			err = nil
 		}
 	}
 	return threadID, err

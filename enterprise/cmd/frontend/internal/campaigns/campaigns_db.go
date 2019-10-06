@@ -117,7 +117,7 @@ func (s dbCampaigns) Update(ctx context.Context, id int64, update dbCampaignUpda
 	}
 	setFields = append(setFields, sqlf.Sprintf("updated_at=now()"))
 
-	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE campaigns SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
+	results, err := s.query(ctx, sqlf.Sprintf(`UPDATE exp_campaigns SET %v WHERE id=%s RETURNING `+selectColumns, sqlf.Join(setFields, ", "), id))
 	if err != nil {
 		return nil, err
 	}

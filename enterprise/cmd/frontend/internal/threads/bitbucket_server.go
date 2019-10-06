@@ -228,7 +228,7 @@ func (c *bitbucketServerExternalServiceClient) CreateOrUpdateThread(ctx context.
 		return 0, err
 	}
 	// TODO!(sqs): doesnt actually update title/body/etc.
-	return ensureExternalThreadIsPersisted(ctx, newBitbucketServerExternalThread(thread, repoID, c.src.ExternalServices()[0].ID), 0)
+	return ensureExternalThreadIsPersisted(ctx, newBitbucketServerExternalThread(thread, repoID, c.src.ExternalServices()[0].ID), data.ExistingThreadID)
 }
 
 func (c *bitbucketServerExternalServiceClient) createBitbucketServerPullRequest(ctx context.Context, repo bitbucketServerRepository, data CreateChangesetData) (*bitbucketServerPullRequest, error) {
