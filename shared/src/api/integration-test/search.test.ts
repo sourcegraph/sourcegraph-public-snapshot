@@ -1,6 +1,7 @@
-import { from } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { first, take } from 'rxjs/operators'
 import { integrationTestContext } from './testHelpers'
+import { TextSearchResult } from 'sourcegraph'
 
 describe('search (integration)', () => {
     test('registers a query transformer', async () => {
@@ -55,7 +56,8 @@ describe('search (integration)', () => {
 
     describe('findTextInFiles', () => {
         test('', async () => {
-            const { extensionAPI } = await integrationTestContext()
+            const { extensionAPI, services } = await integrationTestContext()
+            services.searchProviders.registerProvider({}, () => of([{ uri: 'file:///SR1' }]))
             const results = await from(extensionAPI.search.findTextInFiles({ pattern: 'p', type: 'regexp' }))
                 .pipe(first())
                 .toPromise()

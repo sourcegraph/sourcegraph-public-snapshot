@@ -1,7 +1,8 @@
-import { Observable, BehaviorSubject, from, combineLatest } from 'rxjs'
+import { Observable, BehaviorSubject, from } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { switchMap, catchError, map, distinctUntilChanged } from 'rxjs/operators'
 import { isEqual, flatten, compact } from 'lodash'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 
 export interface DiagnosticWithType extends sourcegraph.Diagnostic {
     /**
@@ -48,9 +49,7 @@ export function createDiagnosticService(logErrors = true): DiagnosticService {
         observeDiagnostics: (scope, context, type) =>
             registrations.pipe(
                 switchMap(registrations =>
-                    // Use combineLatest not combineLatestOrDefault because we don't want to falsely
-                    // report "0 diagnostics" if a provider has not been registered yet.
-                    combineLatest(
+                    combineLatestOrDefault(
                         (type === undefined ? registrations : registrations.filter(r => r.type === type)).map(
                             ({ type, provider }) =>
                                 from(provider.provideDiagnostics(scope, context)).pipe(
@@ -75,7 +74,7 @@ export function createDiagnosticService(logErrors = true): DiagnosticService {
             }
             const reg: Registration = { type, provider }
             registrations.next([...registrations.value, reg])
-            const unregister = () => registrations.next(registrations.value.filter(r => r !== reg))
+            const unregister = (): void => registrations.next(registrations.value.filter(r => r !== reg))
             return { unsubscribe: unregister }
         },
     }

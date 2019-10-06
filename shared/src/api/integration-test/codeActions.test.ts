@@ -21,13 +21,20 @@ FIXTURE_WORKSPACE_EDIT.replace(new URL('file:///2'), new Range(1, 3, 5, 7), 'x')
 const FIXTURE_CODE_ACTION: sourcegraph.Action = {
     title: 'a',
     command: { title: 'c', command: 'c' },
-    diagnostics: [{ message: 'm', range: new Range(5, 6, 7, 8), severity: DiagnosticSeverity.Hint }],
+    diagnostics: [
+        {
+            resource: new URL('file:///1'),
+            message: 'm',
+            range: new Range(5, 6, 7, 8),
+            severity: DiagnosticSeverity.Hint,
+        },
+    ],
     edit: FIXTURE_WORKSPACE_EDIT,
 }
 
 const FIXTURE_CODE_ACTIONS: sourcegraph.Action[] = [FIXTURE_CODE_ACTION]
 
-const FIXTURE_CODE_ACTIONS_CONTEXT: sourcegraph.ActionContext = { diagnostics: [] }
+const FIXTURE_CODE_ACTIONS_CONTEXT: sourcegraph.CodeActionContext = { diagnostics: [] }
 
 describe('Code actions (integration)', () => {
     describe('languages.registerCodeActionProvider', () => {

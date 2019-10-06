@@ -25,7 +25,7 @@ const SCOPE: Parameters<sourcegraph.DiagnosticProvider['provideDiagnostics']>[0]
 describe('DiagnosticService', () => {
     test('no providers yields empty array', () =>
         scheduler().run(({ expectObservable }) =>
-            expectObservable(createDiagnosticService(false).observeDiagnostics(SCOPE)).toBe('a', {
+            expectObservable(createDiagnosticService(false).observeDiagnostics(SCOPE, {})).toBe('a', {
                 a: [],
             })
         ))
@@ -33,7 +33,7 @@ describe('DiagnosticService', () => {
     test('single provider', () => {
         scheduler().run(({ cold, expectObservable }) => {
             const service = createDiagnosticService(false)
-            service.registerDiagnosticProvider('', {
+            service.registerDiagnosticProvider('1', {
                 provideDiagnostics: () =>
                     cold<sourcegraph.Diagnostic[]>('abcd', {
                         a: [],
@@ -42,10 +42,10 @@ describe('DiagnosticService', () => {
                         d: [],
                     }),
             })
-            expectObservable(service.observeDiagnostics(SCOPE)).toBe('abcd', {
+            expectObservable(service.observeDiagnostics(SCOPE, {})).toBe('abcd', {
                 a: [],
-                b: [DIAGNOSTIC_1],
-                c: [DIAGNOSTIC_1, DIAGNOSTIC_2],
+                b: [{ ...DIAGNOSTIC_1, type: '1' }],
+                c: [{ ...DIAGNOSTIC_1, type: '1' }, { ...DIAGNOSTIC_2, type: '1' }],
                 d: [],
             })
         })
@@ -69,10 +69,10 @@ describe('DiagnosticService', () => {
                     unsub2.unsubscribe()
                 },
             }).subscribe(f => f())
-            expectObservable(service.observeDiagnostics(SCOPE)).toBe('ab(cd)', {
-                a: [DIAGNOSTIC_1],
-                b: [DIAGNOSTIC_1, DIAGNOSTIC_2],
-                c: [DIAGNOSTIC_2],
+            expectObservable(service.observeDiagnostics(SCOPE, {})).toBe('ab(cd)', {
+                a: [{ ...DIAGNOSTIC_1, type: '1' }],
+                b: [{ ...DIAGNOSTIC_1, type: '1' }, { ...DIAGNOSTIC_2, type: '2' }],
+                c: [{ ...DIAGNOSTIC_2, type: '2' }],
                 d: [],
             })
         })
@@ -84,7 +84,7 @@ describe('DiagnosticService', () => {
             service.registerDiagnosticProvider('a', {
                 provideDiagnostics: () => throwError(new Error('x')),
             })
-            expectObservable(service.observeDiagnostics(SCOPE)).toBe('a', {
+            expectObservable(service.observeDiagnostics(SCOPE, {})).toBe('a', {
                 a: [],
             })
         })
