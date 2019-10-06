@@ -20,7 +20,7 @@ const LOADING: 'loading' = 'loading'
  */
 export const useCampaignThreads = (
     campaign: Pick<GQL.IExpCampaign, 'id'>,
-    arg: GQL.IThreadsOnCampaignArguments
+    arg: GQL.IThreadsOnExpCampaignArguments
 ): [typeof LOADING | GQL.IThreadOrThreadPreviewConnection | ErrorLike, () => void] => {
     const [updateSequence, setUpdateSequence] = useState(0)
     const incrementUpdateSequence = useCallback(() => setUpdateSequence(updateSequence + 1), [updateSequence])

@@ -53,7 +53,6 @@ export const ImportThreadsFromExternalServiceToCampaignDropdownButton: React.Fun
     campaign,
     onChange,
     className = '',
-    location,
     extensionsController,
 }) => {
     const [isOpen, setIsOpen] = useState(false)

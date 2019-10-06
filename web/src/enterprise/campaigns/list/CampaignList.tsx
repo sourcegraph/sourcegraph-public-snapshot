@@ -5,7 +5,7 @@ import { CampaignListItem } from './CampaignListItem'
 import { Link } from '../../../../../shared/src/components/Link'
 
 interface Props {
-    campaigns?: GQL.IExpCampaignConnection
+    campaigns?: GQL.ICampaignConnection
 }
 
 /**

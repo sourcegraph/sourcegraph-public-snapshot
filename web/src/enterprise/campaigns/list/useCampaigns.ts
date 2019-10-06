@@ -10,7 +10,7 @@ import { useMemo } from 'react'
  *
  * @param namespace The (optional) namespace in which to observe the campaigns defined.
  */
-export const useCampaigns = (): undefined | GQL.IExpCampaignConnection =>
+export const useCampaigns = (): undefined | GQL.ICampaignConnection =>
     useObservable(
         useMemo(
             () =>

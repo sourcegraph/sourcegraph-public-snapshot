@@ -1,6 +1,6 @@
 import H from 'history'
 import React from 'react'
-import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ConnectionListFilterContext } from '../../../../components/connectionList/ConnectionListFilterDropdownButton'
 import { ConnectionListFilterQueryInput } from '../../../../components/connectionList/ConnectionListFilterQueryInput'
@@ -9,8 +9,10 @@ import { ListHeaderQueryLinksButtonGroup } from '../../../../components/listHead
 import { ThreadsIcon } from '../../icons'
 import { ThreadList, ThreadListHeaderCommonFilters } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
+import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
+import { ThemeProps } from '../../../../theme'
 
-interface Props extends ExtensionsControllerNotificationProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     location: H.Location
     history: H.History
 }
@@ -21,12 +23,13 @@ const QUERY_FIELDS_IN_USE = ['involves', 'author', 'mentions']
  * A list of all threads.
  */
 export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
-    const [query, onQueryChange] = useQueryParameter(props)
+    const [query, onQueryChange, locationWithQuery] = useQueryParameter(props)
     const threads = useThreads({ query })
     const filterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
         connection: threads,
         query,
         onQueryChange,
+        locationWithQuery,
     }
     return (
         <>
@@ -64,7 +67,11 @@ export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
                     />
                 </div>
                 <div className="flex-1 mb-3">
-                    <ConnectionListFilterQueryInput query={query} onQueryChange={onQueryChange} />
+                    <ConnectionListFilterQueryInput
+                        query={query}
+                        onQueryChange={onQueryChange}
+                        locationWithQuery={locationWithQuery}
+                    />
                 </div>
             </div>
             <ThreadList
@@ -72,6 +79,7 @@ export const GlobalThreadsListPage: React.FunctionComponent<Props> = props => {
                 threads={threads}
                 query={query}
                 onQueryChange={onQueryChange}
+                locationWithQuery={locationWithQuery}
                 itemCheckboxes={true}
                 showRepository={true}
                 headerItems={{

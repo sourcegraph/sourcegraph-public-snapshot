@@ -69,7 +69,7 @@ export const ThreadUpdatePreviewListItem: React.FunctionComponent<Props> = ({
                 )}
             </span>,
         ]}
-        right={<ShowThreadPreviewModalButton {...props} thread={(preview.newThread || preview.oldThread)!} />}
+        right={[<ShowThreadPreviewModalButton key={0} {...props} thread={(preview.newThread || preview.oldThread)!} />]}
         className={className}
     />
 )

@@ -1,17 +1,21 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ConnectionListFilterContext } from '../../../../components/connectionList/ConnectionListFilterDropdownButton'
 import { useQueryParameter } from '../../../../util/useQueryParameter'
 import { ThreadList, ThreadListContext, ThreadListHeaderCommonFilters } from '../../list/ThreadList'
 import { useThreads } from '../../list/useThreads'
 import { RepositoryThreadsAreaContext } from '../RepositoryThreadsArea'
+import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
+import { ThemeProps } from '../../../../theme'
 
 interface Props
     extends Pick<RepositoryThreadsAreaContext, 'repo'>,
         ThreadListContext,
-        ExtensionsControllerNotificationProps {
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps {
     newThreadURL: string | null
 }
 
@@ -19,12 +23,13 @@ interface Props
  * Lists a repository's threads.
  */
 export const RepositoryThreadsListPage: React.FunctionComponent<Props> = ({ newThreadURL, repo, ...props }) => {
-    const [query, onQueryChange] = useQueryParameter(props)
+    const [query, onQueryChange, locationWithQuery] = useQueryParameter(props)
     const threads = useThreads({ query, repositories: [repo.id] })
     const filterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
         connection: threads,
         query,
         onQueryChange,
+        locationWithQuery,
     }
     return (
         <div className="repository-threads-list-page">
@@ -38,6 +43,7 @@ export const RepositoryThreadsListPage: React.FunctionComponent<Props> = ({ newT
                 threads={threads}
                 query={query}
                 onQueryChange={onQueryChange}
+                locationWithQuery={locationWithQuery}
                 itemCheckboxes={true}
                 headerItems={{
                     right: (

@@ -8,7 +8,6 @@ import { map } from 'rxjs/operators'
 import { toDiagnostic } from '../../types/diagnostic'
 import { ContextValues } from 'sourcegraph'
 
-/** @internal */
 export interface ClientDiagnosticsAPI extends ProxyValue {
     $registerDiagnosticProvider(
         name: string,
@@ -18,7 +17,6 @@ export interface ClientDiagnosticsAPI extends ProxyValue {
     ): Unsubscribable & ProxyValue
 }
 
-/** @internal */
 export const createClientDiagnostics = (
     diagnosticService: Pick<DiagnosticService, 'registerDiagnosticProvider'>
 ): ClientDiagnosticsAPI & Unsubscribable => {

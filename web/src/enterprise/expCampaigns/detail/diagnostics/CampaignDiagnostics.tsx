@@ -6,8 +6,9 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { DiagnosticListByResource } from '../../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { useCampaignDiagnostics } from './useCampaignDiagnostics'
+import { ThemeProps } from '../../../../theme'
 
-interface Props extends ExtensionsControllerProps {
+interface Props extends ExtensionsControllerProps, ThemeProps {
     campaign: Pick<GQL.IExpCampaign, 'id' | 'url'>
 
     className?: string

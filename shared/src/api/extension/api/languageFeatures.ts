@@ -19,7 +19,7 @@ import { syncSubscription } from '../../util'
 import { toProxyableSubscribable } from './common'
 import { ExtDocuments } from './documents'
 import { fromHover, fromLocation, toPosition } from './types'
-import { fromAction, PlainCodeActionsParams, toCodeActionsParams } from '../../types/action'
+import { fromAction, PlainCodeActionsParams, toCodeActionsParams, Action as clientTypeAction } from '../../types/action'
 
 /** @internal */
 export class ExtLanguageFeatures {
@@ -104,7 +104,7 @@ export class ExtLanguageFeatures {
 
             return toProxyableSubscribable(
                 provider.provideCodeActions(await this.documents.getSync(textDocument.uri), rangeOrSelection, context),
-                (items: null | undefined | Action[]): clientType.Action[] => (items ? items.map(fromAction) : [])
+                (items: null | undefined | Action[]): clientTypeAction[] => (items ? items.map(fromAction) : [])
             )
         })
         return syncSubscription(this.proxy.$registerCodeActionProvider(selector, providerFunction))

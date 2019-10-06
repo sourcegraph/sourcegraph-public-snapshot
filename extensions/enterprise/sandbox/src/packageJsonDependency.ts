@@ -19,12 +19,14 @@ export interface PackageJsonDependencyCampaignContext {
     campaignName?: string
 }
 
+const LOADING = 'loading' as const
+
 export function register(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
         sourcegraph.workspace.registerDiagnosticProvider('packageJsonDependency', {
             provideDiagnostics: (_scope, context) =>
-                provideDiagnostics(context).pipe(
+                provideDiagnostics((context as any) as PackageJsonDependencyCampaignContext).pipe(
                     filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING)
                 ),
         })
@@ -32,6 +34,9 @@ export function register(): Unsubscribable {
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     subscriptions.add(
         sourcegraph.commands.registerActionEditCommand(REMOVE_COMMAND, async diagnostic => {
+            if (!diagnostic) {
+                return new sourcegraph.WorkspaceEdit()
+            }
             const doc = await sourcegraph.workspace.openTextDocument(diagnostic.resource)
             return computeRemoveDependencyEdit(diagnostic, doc)
         })
@@ -41,14 +46,12 @@ export function register(): Unsubscribable {
 
 const DEPENDENCY_TAG = 'type:packageJsonDependency'
 
-const LOADING = 'loading' as const
-
-const provideDiagnostics = (
+function provideDiagnostics(
     context: PackageJsonDependencyCampaignContext
-): Observable<sourcegraph.Diagnostic[] | typeof LOADING> =>
-    context.packageName
+): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
+    return context.packageName
         ? from(sourcegraph.workspace.rootChanges).pipe(
-              startWith(void 0),
+              startWith(undefined),
               map(() => sourcegraph.workspace.roots),
               switchMap(async roots => {
                   if (roots.length > 0) {
@@ -81,22 +84,22 @@ const provideDiagnostics = (
                   )
 
                   const docs = await Promise.all(
-                      results.map(async ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
+                      results.map(({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
                   )
                   return from(settingsObservable<Settings>()).pipe(
                       map(() =>
                           flatten(
                               docs
-                                  .filter(doc => doc.text.length < 25000 /* TODO!(sqs) */)
+                                  .filter(doc => doc.text!.length < 25000 /* TODO!(sqs) */)
                                   .map(({ uri, text }) => {
                                       const diagnostics: sourcegraph.Diagnostic[] = parseDependencies(
-                                          text,
-                                          globToRegExpDepName(context.packageName)
+                                          text!,
+                                          globToRegExpDepName(context.packageName!)
                                       ).map<sourcegraph.Diagnostic>(({ range, ...dep }) => ({
                                           resource: new URL(uri),
                                           message: `npm dependency '${dep.name}' is deprecated`,
                                           detail: `see campaign [${context.campaignName}](#)`,
-                                          range: range,
+                                          range,
                                           severity: sourcegraph.DiagnosticSeverity.Warning,
                                           data: JSON.stringify(dep),
                                           tags: [
@@ -115,6 +118,7 @@ const provideDiagnostics = (
               startWith(LOADING)
           )
         : of([])
+}
 
 function globToRegExp(glob: string): RegExp {
     if (glob.endsWith('.*')) {
@@ -146,7 +150,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
             }
             return of([
                 {
-                    title: `Remove dependency from package.json (further edits required)`,
+                    title: 'Remove dependency from package.json (further edits required)',
                     edit: computeRemoveDependencyEdit(diag, doc),
                     computeEdit: { title: 'Remove', command: REMOVE_COMMAND },
                     diagnostics: [diag],
@@ -172,7 +176,7 @@ function parseDependencies(text: string, packageName?: RegExp): (Dependency & { 
             ...Object.keys(data.peerDependencies || {}),
         ])
         return depNames
-            .filter(name => packageName.test(name))
+            .filter(name => packageName!.test(name))
             .map(name => ({ name, range: findDependencyMatchRange(text, name) }))
             .filter(propertyIsDefined('range'))
     } catch (err) {
@@ -195,7 +199,7 @@ function findDependencyMatchRange(text: string, depName: string): sourcegraph.Ra
 }
 
 function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
-    return diag.tags && diag.tags.includes(DEPENDENCY_TAG)
+    return !!diag.tags && diag.tags.includes(DEPENDENCY_TAG)
 }
 
 function getDiagnosticData(diag: sourcegraph.Diagnostic): Dependency {
@@ -208,14 +212,16 @@ function computeRemoveDependencyEdit(
     edit = new sourcegraph.WorkspaceEdit()
 ): sourcegraph.WorkspaceEdit {
     const dep = getDiagnosticData(diag)
-    const range = findDependencyMatchRange(doc.text, dep.name)
-    // TODO!(sqs): assumes dependency key-value is all on one line and only appears once
-    edit.delete(
-        new URL(doc.uri),
-        new sourcegraph.Range(
-            range.start.with({ character: 0 }),
-            range.end.with({ line: range.end.line + 1, character: 0 })
+    const range = findDependencyMatchRange(doc.text!, dep.name)
+    if (range) {
+        // TODO!(sqs): assumes dependency key-value is all on one line and only appears once
+        edit.delete(
+            new URL(doc.uri),
+            new sourcegraph.Range(
+                range.start.with({ character: 0 }),
+                range.end.with({ line: range.end.line + 1, character: 0 })
+            )
         )
-    )
+    }
     return edit
 }

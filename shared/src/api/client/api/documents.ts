@@ -4,12 +4,10 @@ import { getModeFromPath } from '../../../languages'
 import { FileSystemService } from '../services/fileSystemService'
 import { ModelService, TextModel } from '../services/modelService'
 
-/** @internal */
 export interface ClientDocumentsAPI extends ProxyValue {
     $openTextDocument(uri: string): Promise<TextModel>
 }
 
-/** @internal */
 export class ClientDocuments implements ClientDocumentsAPI, Unsubscribable {
     public readonly [proxyValueSymbol] = true
 

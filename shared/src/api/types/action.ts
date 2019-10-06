@@ -49,7 +49,7 @@ export function toCodeActionsParams(params: PlainCodeActionsParams): CodeActions
         ...params,
         range: RangeImpl.isRange(params.range)
             ? RangeImpl.fromPlain(params.range)
-            : SelectionImpl.fromPlain(params.range),
+            : SelectionImpl.fromPlain(params.range as any /* TODO!(sqs) */),
         context: { ...params.context, diagnostics: params.context.diagnostics.map(toDiagnostic) },
     }
 }

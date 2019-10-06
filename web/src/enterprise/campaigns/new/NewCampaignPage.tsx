@@ -13,7 +13,7 @@ import { Observable, concat } from 'rxjs'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CampaignsIcon } from '../icons'
 
-export const createCampaign = (input: GQL.ICreateCampaignInput): Observable<GQL.IExpCampaign> =>
+export const createCampaign = (input: GQL.ICreateCampaignInput): Observable<GQL.ICampaign> =>
     mutateGraphQL(
         gql`
             mutation CreateCampaign($input: CreateCampaignInput!) {

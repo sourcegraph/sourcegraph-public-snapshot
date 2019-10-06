@@ -89,7 +89,7 @@ export class SearchResult extends React.Component<Props> {
                 icon={FileIcon}
                 collapsible={this.props.result && this.props.result.matches && this.props.result.matches.length > 0}
                 defaultExpanded={true}
-                title={this.renderTitle()}
+                title={this.renderTitle() || ''}
                 expandedChildren={this.renderBody()}
             />
         )

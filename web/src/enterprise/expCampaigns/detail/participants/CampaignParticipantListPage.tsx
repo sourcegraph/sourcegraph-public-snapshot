@@ -14,12 +14,18 @@ interface Props extends Pick<CampaignAreaContext, 'campaign'>, ExtensionsControl
 }
 
 export const CampaignParticipantListPage: React.FunctionComponent<Props> = ({ campaign, className = '', ...props }) => {
-    const [query, onQueryChange] = useQueryParameter(props)
+    const [query, onQueryChange, locationWithQuery] = useQueryParameter(props)
     const participants = useCampaignParticipants(campaign)
 
     return (
         <div className={`campaign-participant-list-page ${className}`}>
-            <ParticipantList {...props} participants={participants} query={query} onQueryChange={onQueryChange} />
+            <ParticipantList
+                {...props}
+                participants={participants}
+                query={query}
+                onQueryChange={onQueryChange}
+                locationWithQuery={locationWithQuery}
+            />
         </div>
     )
 }

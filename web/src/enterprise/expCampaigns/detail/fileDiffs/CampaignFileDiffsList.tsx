@@ -45,14 +45,18 @@ export const CampaignFileDiffsList: React.FunctionComponent<Props> = ({ campaign
                                     oldPath: (d.oldPath || '').slice(2),
                                     newPath: (d.newPath || '').slice(2),
                                 }}
-                                base={{
-                                    repoName: c.baseRepository.name,
-                                    repoID: c.baseRepository.id,
-                                }}
-                                head={{
-                                    repoName: c.headRepository.name,
-                                    repoID: c.headRepository.id,
-                                }}
+                                base={
+                                    {
+                                        repoName: c.baseRepository.name,
+                                        repoID: c.baseRepository.id,
+                                    } as any
+                                }
+                                head={
+                                    {
+                                        repoName: c.headRepository.name,
+                                        repoID: c.headRepository.id,
+                                    } as any
+                                }
                                 showRepository={true}
                                 lineNumbers={false}
                                 className="mb-0 border-top-0 border-left-0 border-right-0"

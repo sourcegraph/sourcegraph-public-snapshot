@@ -37,6 +37,7 @@ export const ParticipantList: React.FunctionComponent<Props> = ({
     itemCheckboxes,
     query,
     onQueryChange,
+    locationWithQuery,
     className = '',
     ...props
 }) => {
@@ -66,6 +67,7 @@ export const ParticipantList: React.FunctionComponent<Props> = ({
                                     <ConnectionListFilterQueryInput
                                         query={query}
                                         onQueryChange={onQueryChange}
+                                        locationWithQuery={locationWithQuery}
                                         instant={true}
                                     />
                                 </>

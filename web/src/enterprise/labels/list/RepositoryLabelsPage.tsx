@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { useCallback, useMemo, useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { map } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
@@ -61,7 +61,10 @@ export const RepositoryLabelsPage: React.FunctionComponent<Props> = ({ repo: rep
             setLabelsOrError(asError(err))
         }
     }, [repository])
-    useEffect(loadLabels, [repository])
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        loadLabels()
+    }, [loadLabels, repository])
 
     const [isShowingNewLabelForm, setIsShowingNewLabelForm] = useState(false)
     const toggleIsShowingNewLabelForm = useCallback(() => setIsShowingNewLabelForm(!isShowingNewLabelForm), [

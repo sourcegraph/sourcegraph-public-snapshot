@@ -46,20 +46,20 @@ async function rewrite(context: FindReplaceCampaignContext): Promise<sourcegraph
         throw new Error(`GraphQL response error: ${errors[0].message}`)
     }
     const canonicalURLs: string[] = data.comby.results.map(
-        r => `git://${r.file.commit.repository.name}?${r.file.commit.oid}#${r.file.path}`
+        (r: any) => `git://${r.file.commit.repository.name}?${r.file.commit.oid}#${r.file.path}`
     )
-    const docs = await Promise.all(canonicalURLs.map(async url => sourcegraph.workspace.openTextDocument(new URL(url))))
+    const docs = await Promise.all(canonicalURLs.map(url => sourcegraph.workspace.openTextDocument(new URL(url))))
 
     const edit = new sourcegraph.WorkspaceEdit()
     for (const doc of docs) {
-        if (doc.text.length > 15000) {
+        if (doc.text!.length > 15000) {
             continue // TODO!(sqs): skip too large
         }
 
         // TODO!(sqs): actually implement comby by hitting the api or something
         let i = 0
-        while (i !== -1 && i < doc.text.length) {
-            i = doc.text.indexOf(context.matchTemplate, i)
+        while (i !== -1 && i < doc.text!.length) {
+            i = doc.text!.indexOf(context.matchTemplate, i)
             if (i !== -1) {
                 const start = doc.positionAt(i)
                 const end = doc.positionAt(i + context.matchTemplate.length)
@@ -69,5 +69,5 @@ async function rewrite(context: FindReplaceCampaignContext): Promise<sourcegraph
         }
     }
 
-    return edit.toJSON()
+    return (edit as any).toJSON()
 }

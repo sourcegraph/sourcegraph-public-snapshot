@@ -1,5 +1,4 @@
 import React from 'react'
-import { isDefined } from '../../../../../shared/src/util/types'
 
 export interface ThreadListItemContext {}
 
@@ -13,7 +12,7 @@ interface Props {
     title: React.ReactFragment
     afterTitle?: React.ReactFragment
     detail?: React.ReactFragment[]
-    right?: React.ReactFragment | React.ReactFragment[]
+    right?: React.ReactFragment[]
 
     className?: string
 }

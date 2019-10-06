@@ -1,6 +1,6 @@
 import PencilIcon from 'mdi-react/PencilIcon'
 import H from 'history'
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
