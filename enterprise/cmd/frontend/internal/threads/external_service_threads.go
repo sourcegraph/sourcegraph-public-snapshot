@@ -69,7 +69,7 @@ func CreateOnExternalService(ctx context.Context, existingThreadID int64, thread
 		BaseRefName:      defaultBranch.AbbrevName(),
 		HeadRefName:      branchName,
 		Title:            threadTitle,
-		Body:             threadBody + fmt.Sprintf("\n\n"+`<img src="https://about.sourcegraph.com/sourcegraph-mark.png" width=12 height=12> Campaign: [%s](#)`, campaignName),
+		Body:             threadBody + fmt.Sprintf("\n\nCampaign: [%s](#)", campaignName),
 		ExistingThreadID: existingThreadID,
 	})
 }
