@@ -9,15 +9,20 @@ import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { observeStorageKey, storage } from '../../browser/storage'
+import { storage } from '../../browser/storage'
 import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/types'
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
 import { getHeaders } from '../../shared/backend/headers'
 import { fromBrowserEvent } from '../../shared/util/browser'
-import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
+import { observeSourcegraphURL } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
+import { observeStorageKey } from '../../browser/storage'
+import { isDefined } from '../../../../shared/src/util/types'
+import { storage } from 'webextension-polyfill'
+
+const IS_EXTENSION = true
 
 assertEnv('BACKGROUND')
 
@@ -53,7 +58,7 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
     request: string
     variables: {}
 }): Observable<GraphQLResult<T>> =>
-    observeStorageKey('sync', 'sourcegraphURL').pipe(
+    observeSourcegraphURL(IS_EXTENSION).pipe(
         take(1),
         switchMap(baseUrl =>
             requestGraphQLCommon<T>({
@@ -69,23 +74,16 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
 initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
-    let { sourcegraphURL } = await storage.sync.get()
-    // If no sourcegraphURL is set ensure we default back to https://sourcegraph.com.
-    if (!sourcegraphURL) {
-        await storage.sync.set({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
-        sourcegraphURL = DEFAULT_SOURCEGRAPH_URL
-    }
+    // Mirror the managed sourcegraphURL to sync storage
+    observeStorageKey('managed', 'sourcegraphURL')
+        .pipe(filter(isDefined))
+        .subscribe(sourcegraphURL => {
+            storage.sync.set({ sourcegraphURL })
+        })
 
-    configureOmnibox(sourcegraphURL)
-
-    storage.onChanged.addListener(async (changes, areaName) => {
-        if (areaName === 'managed') {
-            return
-        }
-
-        if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
-            configureOmnibox(changes.sourcegraphURL.newValue)
-        }
+    // Configure the omnibox when the sourcegraphURL changes.
+    observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+        configureOmnibox(sourcegraphURL)
     })
 
     const permissions = await browser.permissions.getAll()

@@ -12,6 +12,11 @@
           "children": { "$ref": "ListOfCallsignMappings" }
         }
       }
+    },
+    "sourcegraphURL": {
+      "type": "string",
+      "title": "Sourcegraph URL",
+      "description": "The URL of your self-hosted Sourcegraph instance."
     }
   }
 }
