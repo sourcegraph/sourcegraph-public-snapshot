@@ -1,20 +1,22 @@
-'use strict'
-
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import semver from 'semver'
 import { makeNode } from '../npm/logicalTree'
 import { parse as parseLockfile } from '@yarnpkg/lockfile'
 
-export function yarnLogicalTree(pkg, yarnLock) {
+export function yarnLogicalTree(pkg: any, yarnLock: any) {
     yarnLock = parseLockfile(yarnLock).object
     const tree = makeNode(pkg.name, null, pkg)
     const allDeps = new Map()
-    const pkgDeps = Object.assign({}, pkg.devDependencies || {}, pkg.optionalDependencies || {}, pkg.dependencies || {})
+    const pkgDeps = { ...(pkg.devDependencies || {}), ...(pkg.optionalDependencies || {}), ...(pkg.dependencies || {}) }
     Object.keys(pkgDeps).forEach(name => {
         const semverString = pkgDeps[name]
         let dep = allDeps.get(`${name}@${semverString}`)
         if (!dep) {
             const semverString = pkgDeps[name]
             const depNode = yarnLock[`${name}@${semverString}`]
+            if (!depNode) {
+                return // TODO!(sqs): otherwise has an exception
+            }
             if (!semver.validRange(semverString)) {
                 // eg. file, url, etc.
                 depNode.version = semverString
@@ -26,14 +28,14 @@ export function yarnLogicalTree(pkg, yarnLock) {
     return tree
 }
 
-function addChild(dep, treeNode, allDeps, yarnLock) {
+function addChild(dep: any, treeNode: any, allDeps: any, yarnLock: any) {
     const tree = treeNode.node
     const { node, semverString } = dep
     const lockNode = yarnLock[`${node.name}@${semverString}`]
     if (!lockNode) {
         return // TODO!(sqs)??? otherwise has an exception
     }
-    const dependencies = Object.assign({}, lockNode.optionalDependencies || {}, lockNode.dependencies || {})
+    const dependencies = { ...(lockNode.optionalDependencies || {}), ...(lockNode.dependencies || {}) }
     tree.addDep(node)
     allDeps.set(`${node.name}@${semverString}`, dep)
     Object.keys(dependencies).forEach(name => {

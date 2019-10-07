@@ -106,10 +106,12 @@ function getPackageLockDependency(
     // TODO!(sqs): this has a bug where if a package-lock.json delegates to a parent file, it throws an exception
     const tree = lockTree(JSON.parse(packageJson), JSON.parse(packageLock))
     let found: any
-    tree.forEach((dep, next) => {
+    // eslint-disable-next-line ban/ban
+    tree.forEach((dep: any, next: any) => {
         if (dep.name === packageName) {
             found = dep
         } else {
+            // eslint-disable-next-line callback-return
             next()
         }
     })

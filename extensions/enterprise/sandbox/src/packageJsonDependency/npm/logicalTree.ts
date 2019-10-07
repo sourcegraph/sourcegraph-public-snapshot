@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 // from https://raw.githubusercontent.com/npm/logical-tree/latest/index.js
 'use strict'
 
@@ -38,38 +39,38 @@ class LogicalTree implements Opts {
         this.requiredBy = new Set()
     }
 
-    get isRoot() {
+    public get isRoot(): boolean {
         return !this.requiredBy.size
     }
 
-    addDep(dep) {
+    public addDep(dep: any) {
         this.dependencies.set(dep.name, dep)
         dep.requiredBy.add(this)
         return this
     }
 
-    delDep(dep) {
+    public delDep(dep: any) {
         this.dependencies.delete(dep.name)
         dep.requiredBy.delete(this)
         return this
     }
 
-    getDep(name) {
+    public getDep(name: string) {
         return this.dependencies.get(name)
     }
 
-    path(prefix) {
+    public path(prefix: string) {
         if (this.isRoot) {
             // The address of the root is the prefix itself.
             return prefix || ''
         }
-        return path.join(prefix || '', 'node_modules', this.address.replace(/:/g, '/node_modules/'))
+        return path.join(prefix || '', 'node_modules', this.address!.replace(/:/g, '/node_modules/'))
     }
 
     // This finds cycles _from_ a given node: if some deeper dep has
     // its own cycle, but that cycle does not refer to this node,
     // it will return false.
-    hasCycle(_seen, _from) {
+    public hasCycle(_seen?: any, _from?: any) {
         if (!_seen) {
             _seen = new Set()
         }
@@ -88,7 +89,7 @@ class LogicalTree implements Opts {
         return false
     }
 
-    forEachAsync(fn, opts, _pending) {
+    public forEachAsync(fn: any, opts: any, _pending?: any) {
         if (!opts) {
             opts = _pending || {}
         }
@@ -100,15 +101,15 @@ class LogicalTree implements Opts {
             return P.resolve(this.hasCycle() || _pending.get(this))
         }
         const pending = P.resolve().then(() =>
-            fn(this, () => {
-                return promiseMap(this.dependencies.values(), dep => dep.forEachAsync(fn, opts, _pending), opts)
-            })
+            fn(this, () =>
+                promiseMap(this.dependencies.values(), (dep: any) => dep.forEachAsync(fn, opts, _pending), opts)
+            )
         )
         _pending.set(this, pending)
         return pending
     }
 
-    forEach(fn, _seen) {
+    public forEach(fn: any, _seen?: any) {
         if (!_seen) {
             _seen = new Set()
         }
@@ -124,7 +125,7 @@ class LogicalTree implements Opts {
     }
 }
 
-export function lockTree(pkg, pkgLock) {
+export function lockTree(pkg: any, pkgLock: any) {
     const tree = makeNode(pkg.name, null, pkg)
     const allDeps = new Map()
     Array.from(
@@ -144,11 +145,11 @@ export function lockTree(pkg, pkgLock) {
     return tree
 }
 
-export function makeNode(name, address, opts) {
+export function makeNode(name: any, address: any, opts?: any) {
     return new LogicalTree(name, address, opts || {})
 }
 
-function addChild(dep, tree, allDeps, pkgLock) {
+function addChild(dep: any, tree: any, allDeps: any, pkgLock: any) {
     tree.addDep(dep)
     allDeps.set(dep.address, dep)
     const addr = dep.address
@@ -171,7 +172,7 @@ function addChild(dep, tree, allDeps, pkgLock) {
     })
 }
 
-function reqAddr(pkgLock, name, fromAddr) {
+function reqAddr(pkgLock: any, name: any, fromAddr: any) {
     const lockNode = atAddr(pkgLock, fromAddr)
     const child = (lockNode.dependencies || {})[name]
     if (child) {
@@ -189,14 +190,16 @@ function reqAddr(pkgLock, name, fromAddr) {
             }
         }
     }
-    const err = new Error(`${name} not accessible from ${fromAddr}`)
+    const err: Error & { pkgLock?: any; target?: any; from?: any } = new Error(
+        `${name} not accessible from ${fromAddr}`
+    )
     err.pkgLock = pkgLock
     err.target = name
     err.from = fromAddr
     throw err
 }
 
-function atAddr(pkgLock, addr) {
+function atAddr(pkgLock: any, addr: string) {
     if (!addr.length) {
         return pkgLock
     }
@@ -204,7 +207,7 @@ function atAddr(pkgLock, addr) {
     return parts.reduce((acc, next) => acc && (acc.dependencies || {})[next], pkgLock)
 }
 
-function promiseMap(arr, fn, opts, _index) {
+function promiseMap(arr: any, fn: any, opts: any, _index?: any) {
     _index = _index || 0
     const P = (opts && opts.Promise) || Promise
     if (P.map) {
@@ -215,7 +218,6 @@ function promiseMap(arr, fn, opts, _index) {
     }
     if (_index >= arr.length) {
         return P.resolve()
-    } else {
-        return P.resolve(fn(arr[_index], _index, arr)).then(() => promiseMap(arr, fn, opts, _index + 1))
     }
+    return P.resolve(fn(arr[_index], _index, arr)).then(() => promiseMap(arr, fn, opts, _index + 1))
 }

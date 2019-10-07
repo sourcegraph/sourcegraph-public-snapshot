@@ -101,10 +101,12 @@ function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }
 function getYarnLockDependency(packageJson: string, yarnLock: string, packageName: string): { version: string } | null {
     const tree = yarnLogicalTree(JSON.parse(packageJson), yarnLock)
     let found: any
-    tree.forEach((dep, next) => {
+    // eslint-disable-next-line ban/ban
+    tree.forEach((dep: { name: string }, next: () => void) => {
         if (dep.name === packageName) {
             found = dep
         } else {
+            // eslint-disable-next-line callback-return
             next()
         }
     })

@@ -130,7 +130,7 @@ function provideDiagnostics(
                                                                 {
                                                                     resource: new URL(gemfileUriStr),
                                                                     message: `Ruby gem '${dep.name}' is banned`,
-                                                                    range: dep.range,
+                                                                    range: dep.range!,
                                                                 },
                                                             ]
                                                           : dep.directAncestors.map(directAncestor => {
@@ -140,7 +140,7 @@ function provideDiagnostics(
                                                                 return {
                                                                     resource: new URL(gemfileUriStr + '.lock'), // TODO!(sqs): might not be in lockfile
                                                                     message: `Ruby gem '${directAncestorDep.name}' transitively depends on banned Ruby gem '${dep.name}'`,
-                                                                    range: directAncestorDep.range,
+                                                                    range: directAncestorDep.range!,
                                                                 }
                                                             })
                                                   return partial.map(partial => ({
@@ -183,7 +183,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
             }
             return [
                 {
-                    title: `Remove Ruby gem dependency from Gemfile`,
+                    title: 'Remove Ruby gem dependency from Gemfile',
                     edit: await computeRemoveDependencyEdit(diag, doc),
                     computeEdit: { title: 'Remove', command: REMOVE_COMMAND },
                     diagnostics: [diag],
@@ -245,7 +245,7 @@ async function computeRemoveDependencyEdit(
     if (isLikelyDirectDependency) {
         await addBundlerRemoveEdits(gemfile, edit)
     }
-    const countEdits = () => Array.from(edit.textEdits()).length
+    const countEdits = (): number => Array.from(edit.textEdits()).length
     if (!isLikelyDirectDependency && countEdits() === 0) {
         await addBundlerRemoveEdits(gemfile, edit)
     }

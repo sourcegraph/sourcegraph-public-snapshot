@@ -1,6 +1,7 @@
-import { BundlerExecutionContext, executeBundlerCommand } from './rubyBundler'
 import { sortBy } from 'lodash'
 import * as sourcegraph from 'sourcegraph'
+import { RepositoryContext } from '../execServer/client'
+import { rubyBundlerExecClient } from './rubyBundler'
 
 export interface RubyGemfileDependency {
     name: string
@@ -35,7 +36,7 @@ export const parseRubyGemfileLock = (gemfileLock: string): RubyGemfileDependency
     /** The last-seen parent dependency (whose dependencies we're enumerating). */
     let inGemSection = false
     let inGemSpecsSection = false
-    let parentDependency: RubyGemfileDependency | undefined = undefined
+    let parentDependency: RubyGemfileDependency | undefined
     for (const [i, line] of gemfileLock.split(/\n+/).entries()) {
         if (line === '' || line.startsWith('#')) {
             continue
@@ -138,7 +139,7 @@ const SUPPORT_MISSING_GEMFILE_LOCK = false
  */
 export const rubyGemfileDependencies = async (
     files: { Gemfile: string; ['Gemfile.lock']?: string },
-    context: BundlerExecutionContext
+    context: RepositoryContext
 ): Promise<RubyGemfileDependency[]> => {
     // Prefer using Gemfile.lock.
     if (files['Gemfile.lock']) {
@@ -149,7 +150,7 @@ export const rubyGemfileDependencies = async (
         return []
     }
 
-    const result = await executeBundlerCommand({
+    const result = await rubyBundlerExecClient({
         commands: [['bundler', 'lock']],
         context,
     })

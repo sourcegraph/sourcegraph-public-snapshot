@@ -62,7 +62,7 @@ export const ParticipantList: React.FunctionComponent<Props> = ({
                                 </>
                             ),
                             right: (
-                                <>
+                                <div className="d-none">
                                     {headerItems && headerItems.right}
                                     <ConnectionListFilterQueryInput
                                         query={query}
@@ -70,7 +70,7 @@ export const ParticipantList: React.FunctionComponent<Props> = ({
                                         locationWithQuery={locationWithQuery}
                                         instant={true}
                                     />
-                                </>
+                                </div>
                             ),
                         }}
                         itemCheckboxes={itemCheckboxes}

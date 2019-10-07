@@ -77,7 +77,7 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
             thread.__typename === 'Thread' ? (
                 <>
                     {/* TODO!(sqs): hack */}
-                    {parseInt(thread.number, 10) % 3 === 0 ? (
+                    {/* parseInt(thread.number, 10) % 3 === 0 ? (
                         <span className="badge badge-danger">Build failing</span>
                     ) : parseInt(thread.number, 10) % 3 === 1 ? (
                         <>
@@ -86,7 +86,7 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
                         </>
                     ) : (
                         <span className="badge badge-warning">Build in progress</span>
-                    )}
+                    )*/}
                     {thread.isPendingExternalCreation && (
                         <PublishThreadToExternalServiceButton
                             {...props}
@@ -125,7 +125,7 @@ export const CampaignThreadList: React.FunctionComponent<Props> = ({
                         />
                     </div>
                 </div>
-                {action}
+                <div className="d-none">{action}</div>
             </header>
             <ThreadList
                 {...props}
