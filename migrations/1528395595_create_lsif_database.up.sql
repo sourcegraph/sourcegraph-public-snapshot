@@ -10,7 +10,9 @@ CREATE EXTENSION IF NOT EXISTS dblink;
 
 CREATE OR REPLACE FUNCTION remote_exec(suffix text, query text) RETURNS void AS $$
 BEGIN
-    PERFORM dblink_exec('dbname=' || current_database() || suffix || ' user=' || current_user, query);
+    PERFORM dblink_connect_u('migration' || suffix, 'dbname=' || current_database() || suffix || ' user=' || current_user);
+    PERFORM dblink('migration' || suffix, query);
+    PERFORM dblink_disconnect('migration' || suffix);
 END;
 $$
 LANGUAGE plpgsql;
