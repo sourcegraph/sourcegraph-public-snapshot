@@ -433,10 +433,6 @@ func TestRemoveBadRefs(t *testing.T) {
 			t.Fatalf("git tag %s failed to be removed: %s", name, got)
 		}
 
-		if got := cmd("git", "rev-parse", name); got != want {
-			t.Fatalf("git tag %s failed to be removed: %s", name, got)
-		}
-
 		// Ref
 		if err := ioutil.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(want), 0600); err != nil {
 			t.Fatal(err)
@@ -449,10 +445,6 @@ func TestRemoveBadRefs(t *testing.T) {
 		removeBadRefs(context.Background(), dir)
 
 		if got := cmd("git", "rev-parse", "HEAD"); got != want {
-			t.Fatalf("git ref %s failed to be removed: %s", name, got)
-		}
-
-		if got := cmd("git", "rev-parse", name); got != want {
 			t.Fatalf("git ref %s failed to be removed: %s", name, got)
 		}
 	}
