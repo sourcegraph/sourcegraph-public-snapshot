@@ -184,7 +184,7 @@ find # mimic 'git ls-files'
 }
 
 func main() {
-	log.Print("ruby-bundler-exec started")
+	log.Print("started")
 
 	http.HandleFunc("/", handler)
 

@@ -1,0 +1,11 @@
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: npm-exec
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+        - image: sourcegraph/a8n-npm-exec:npm6.9.0
+          imagePullPolicy: Always

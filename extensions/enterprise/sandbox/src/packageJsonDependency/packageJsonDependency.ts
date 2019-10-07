@@ -1,20 +1,17 @@
 import * as sourcegraph from 'sourcegraph'
-import { flatten, sortedUniq } from 'lodash'
+import { flatten } from 'lodash'
 import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
-import { map, switchMap, startWith, toArray, filter } from 'rxjs/operators'
-import { settingsObservable, memoizedFindTextInFiles } from '../util'
-import { propertyIsDefined } from '../../../../../shared/src/util/types'
+import { map, switchMap, startWith, filter } from 'rxjs/operators'
+import { isDefined } from '../../../../../shared/src/util/types'
+import { npmPackageManager } from './npm/npm'
 
-const REMOVE_COMMAND = 'packageJsonDependency.remove'
-
-interface Settings {}
+const UPGRADE_DEPENDENCY_COMMAND = 'packageJsonDependency.upgrade'
 
 export interface PackageJsonDependencyCampaignContext {
     packageName?: string
     upgradeToVersion?: string
     createChangesets: boolean
     filters?: string
-    campaignName?: string
 }
 
 const LOADING = 'loading' as const
@@ -31,12 +28,12 @@ export function register(): Unsubscribable {
     )
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     subscriptions.add(
-        sourcegraph.commands.registerActionEditCommand(REMOVE_COMMAND, async diagnostic => {
+        sourcegraph.commands.registerActionEditCommand(UPGRADE_DEPENDENCY_COMMAND, async diagnostic => {
             if (!diagnostic) {
                 return new sourcegraph.WorkspaceEdit()
             }
             const doc = await sourcegraph.workspace.openTextDocument(diagnostic.resource)
-            return computeRemoveDependencyEdit(diagnostic, doc)
+            return computeUpgradeDependencyEdit(diagnostic, doc)
         })
     )
     return subscriptions
@@ -44,182 +41,129 @@ export function register(): Unsubscribable {
 
 const DEPENDENCY_TAG = 'type:packageJsonDependency'
 
-function provideDiagnostics(
-    context: PackageJsonDependencyCampaignContext
-): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
-    return context.packageName
+interface DiagnosticData {
+    dependency: Pick<PackageJsonDependencyCampaignContext, 'packageName' | 'upgradeToVersion'>
+    packageJson: { uri: string; text: string }
+    lockfile: { uri: string; text: string }
+}
+
+function provideDiagnostics({
+    packageName,
+    upgradeToVersion,
+}: PackageJsonDependencyCampaignContext): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
+    return packageName && upgradeToVersion
         ? from(sourcegraph.workspace.rootChanges).pipe(
               startWith(undefined),
               map(() => sourcegraph.workspace.roots),
               switchMap(async roots => {
                   if (roots.length > 0) {
-                      return of<sourcegraph.Diagnostic[]>([]) // TODO!(sqs): dont run in comparison mode
+                      return [] as sourcegraph.Diagnostic[] // TODO!(sqs): dont run in comparison mode
                   }
 
-                  const results = flatten(
-                      await from(
-                          memoizedFindTextInFiles(
-                              {
-                                  pattern: context.packageName ? globToRegExp(context.packageName).source : '',
-                                  type: 'regexp',
-                              },
-                              {
-                                  repositories: {
-                                      includes: [],
-                                      type: 'regexp',
-                                  },
-                                  files: {
-                                      includes: ['(^|/)package.json$'],
-                                      excludes: ['node_modules'],
-                                      type: 'regexp',
-                                  },
-                                  maxResults: 100, // TODO!(sqs): increase
+                  const hits = await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange({
+                      name: packageName,
+                      version: upgradeToVersion,
+                  })
+                  return flatten(
+                      hits
+                          .map(hit => {
+                              const packageNameMatchString = `"${packageName}"`
+                              let matchRange = findMatchRange(hit.packageJson.text!, packageNameMatchString)
+                              let matchDoc: sourcegraph.TextDocument | undefined
+                              if (matchRange) {
+                                  matchDoc = hit.packageJson
                               }
-                          )
-                      )
-                          .pipe(toArray())
-                          .toPromise()
-                  )
+                              if (!matchRange) {
+                                  matchRange = findMatchRange(hit.lockfile.text!, packageNameMatchString)
+                                  if (matchRange) {
+                                      matchDoc = hit.lockfile
+                                  }
+                              }
 
-                  const docs = await Promise.all(
-                      results.map(({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
-                  )
-                  return from(settingsObservable<Settings>()).pipe(
-                      map(() =>
-                          flatten(
-                              docs
-                                  .filter(doc => doc.text!.length < 25000 /* TODO!(sqs) */)
-                                  .map(({ uri, text }) => {
-                                      const diagnostics: sourcegraph.Diagnostic[] = parseDependencies(
-                                          text!,
-                                          globToRegExpDepName(context.packageName!)
-                                      ).map<sourcegraph.Diagnostic>(({ range, ...dep }) => ({
-                                          resource: new URL(uri),
-                                          message: `npm dependency '${dep.name}' is deprecated`,
-                                          detail: `see campaign [${context.campaignName}](#)`,
-                                          range,
-                                          severity: sourcegraph.DiagnosticSeverity.Warning,
-                                          data: JSON.stringify(dep),
-                                          tags: [
-                                              DEPENDENCY_TAG,
-                                              dep.name,
-                                              dep.name.replace(/\..*$/, '') /** TODO!(sqs): for lodash */,
-                                          ],
-                                      }))
-                                      return diagnostics
-                                  })
-                          )
-                      )
+                              if (!matchRange || !matchDoc) {
+                                  return null
+                              }
+
+                              const diagnostic: sourcegraph.Diagnostic = {
+                                  resource: new URL(matchDoc.uri),
+                                  message: `npm dependency '${packageName}' must be upgraded to ${upgradeToVersion}`,
+                                  range: matchRange,
+                                  severity: sourcegraph.DiagnosticSeverity.Warning,
+                                  // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                  data: JSON.stringify({
+                                      dependency: { packageName, upgradeToVersion },
+                                      packageJson: { uri: hit.packageJson.uri, text: hit.packageJson.text },
+                                      lockfile: { uri: hit.lockfile.uri, text: hit.lockfile.text },
+                                  } as DiagnosticData),
+                                  tags: [DEPENDENCY_TAG, packageName],
+                              }
+                              return [diagnostic]
+                          })
+                          .filter(isDefined)
                   )
               }),
-              switchMap(results => results),
               startWith(LOADING)
           )
-        : of([])
-}
-
-function globToRegExp(glob: string): RegExp {
-    if (glob.endsWith('.*')) {
-        return new RegExp(`"${glob.slice(0, -2)}`)
-    }
-    return new RegExp(`"${glob}"`)
-}
-
-function globToRegExpDepName(glob: string): RegExp {
-    if (glob.endsWith('.*')) {
-        return new RegExp(`^${glob.slice(0, -2)}(\\.|$)`)
-    }
-    return new RegExp(`^${glob}$`)
-}
-
-function globToRegExpObjectProperty(glob: string): RegExp {
-    if (glob.endsWith('.*')) {
-        return new RegExp(`"${glob.slice(0, -2)}[^"]*":`, 'g')
-    }
-    return new RegExp(`"${glob}":`, 'g')
+        : of<sourcegraph.Diagnostic[]>([])
 }
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: (doc, _rangeOrSelection, context): Observable<sourcegraph.Action[]> => {
+        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(isProviderDiagnostic)
             if (!diag) {
-                return of([])
+                return []
             }
-            return of([
+            const data = getDiagnosticData(diag)
+            return [
                 {
-                    title: 'Remove dependency from package.json (further edits required)',
-                    edit: computeRemoveDependencyEdit(diag, doc),
-                    computeEdit: { title: 'Remove', command: REMOVE_COMMAND },
+                    title: 'Upgrade dependency in package.json',
+                    edit: await npmPackageManager.editForDependencyUpgrade(
+                        {
+                            packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
+                            lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
+                        },
+                        { name: data.dependency.packageName!, version: data.dependency.upgradeToVersion! }
+                    ),
+                    computeEdit: { title: 'Upgrade dependency', command: UPGRADE_DEPENDENCY_COMMAND },
                     diagnostics: [diag],
                 },
-            ])
+            ]
         },
     }
 }
 
-interface Dependency {
-    name: string
-}
-
-/**
- * Parses and returns all dependencies from a package.json file.
- */
-function parseDependencies(text: string, packageName?: RegExp): (Dependency & { range: sourcegraph.Range })[] {
-    try {
-        const data = JSON.parse(text)
-        const depNames = sortedUniq([
-            ...Object.keys(data.dependencies || {}),
-            ...Object.keys(data.devDependencies || {}),
-            ...Object.keys(data.peerDependencies || {}),
-        ])
-        return depNames
-            .filter(name => packageName!.test(name))
-            .map(name => ({ name, range: findDependencyMatchRange(text, name) }))
-            .filter(propertyIsDefined('range'))
-    } catch (err) {
-        // TODO!(sqs): better error handling
-        console.error('Error parsing package.json:', err)
-        return []
-    }
-}
-
-function findDependencyMatchRange(text: string, depName: string): sourcegraph.Range | null {
+function findMatchRange(text: string, str: string): sourcegraph.Range | null {
     for (const [i, line] of text.split('\n').entries()) {
-        const pat = globToRegExpObjectProperty(depName)
-        const match = pat.exec(line)
-        if (match) {
-            return new sourcegraph.Range(i, match.index, i, match.index + match[0].length)
+        const j = line.indexOf(str)
+        if (j !== -1) {
+            return new sourcegraph.Range(i, j, i, j + str.length)
         }
     }
     return null
-    // throw new Error(`dependency ${depName} not found in package.json`)
 }
 
 function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
     return !!diag.tags && diag.tags.includes(DEPENDENCY_TAG)
 }
 
-function getDiagnosticData(diag: sourcegraph.Diagnostic): Dependency {
+function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
     return JSON.parse(diag.data!)
 }
 
-function computeRemoveDependencyEdit(
+function computeUpgradeDependencyEdit(
     diag: sourcegraph.Diagnostic,
     doc: sourcegraph.TextDocument,
     edit = new sourcegraph.WorkspaceEdit()
 ): sourcegraph.WorkspaceEdit {
-    const dep = getDiagnosticData(diag)
-    const range = findDependencyMatchRange(doc.text!, dep.name)
-    if (range) {
-        // TODO!(sqs): assumes dependency key-value is all on one line and only appears once
-        edit.delete(
-            new URL(doc.uri),
-            new sourcegraph.Range(
-                range.start.with({ character: 0 }),
-                range.end.with({ line: range.end.line + 1, character: 0 })
-            )
+    // const data = getDiagnosticData(diag)
+    // TODO!(sqs): assumes dependency key-value is all on one line and only appears once
+    edit.delete(
+        new URL(doc.uri),
+        new sourcegraph.Range(
+            diag.range.start.with({ character: 0 }),
+            diag.range.end.with({ line: diag.range.end.line + 1, character: 0 })
         )
-    }
+    )
     return edit
 }

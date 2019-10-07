@@ -1,9 +1,4 @@
-FROM golang:1.13 as builder
-WORKDIR /work
-COPY go.* ./
-RUN go mod download
-COPY . ./
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o server
+FROM sourcegraph/a8n-exec-server:latest as builder
 
 FROM sqs1/a8n-base:latest
 USER root
