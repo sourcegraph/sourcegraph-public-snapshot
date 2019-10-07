@@ -13,7 +13,7 @@ template='{{with $pkg := .}}{{ range $pkg.Deps }}{{ printf "%s imports %s\n" $pk
 if go list ./../../cmd/... ../../enterprise/cmd/... \
         | grep -Ev "$allowed" \
         | xargs go list -f "$template" \
-        | grep "github.com/sourcegraph/sourcegraph/pkg/db/dbconn"; then
+        | grep "github.com/sourcegraph/sourcegraph/internal/db/dbconn"; then
     echo "Error: the above service(s) are not allowed to import pkg/db/dbconn"
     exit 1
 fi
