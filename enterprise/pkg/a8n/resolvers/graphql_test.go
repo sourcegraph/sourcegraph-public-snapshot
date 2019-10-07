@@ -463,8 +463,12 @@ func TestCampaigns(t *testing.T) {
 		changesetIDs = append(changesetIDs, c.ID)
 	}
 
-	countsFrom := now.AddDate(0, 0, -7)
-	countsTo := now
+	// Date when PR #999 from above was created
+	timestamp, _ := time.Parse(time.RFC3339, "2018-11-14T22:07:45Z")
+	countsFrom := timestamp
+	// Date when PR #999 from above was merged
+	timestamp, _ = time.Parse(time.RFC3339, "2018-12-04T08:10:07Z")
+	countsTo := timestamp
 
 	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
@@ -560,12 +564,13 @@ func TestCampaigns(t *testing.T) {
 	{
 		counts := addChangesetsResult.Campaign.ChangesetCountsOverTime
 
-		if have, want := len(counts), 1; have != want {
+		// There's 20 1-day intervals between countsFrom and including countsTo
+		if have, want := len(counts), 20; have != want {
 			t.Errorf("wrong changeset counts length %d, have=%d", want, have)
 		}
 
 		for _, c := range counts {
-			if have, want := c.Total, int32(99); have != want {
+			if have, want := c.Total, int32(1); have != want {
 				t.Errorf("wrong changeset counts total %d, have=%d", want, have)
 			}
 		}

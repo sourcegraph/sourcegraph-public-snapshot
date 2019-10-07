@@ -359,16 +359,49 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
-	resolvers = append(resolvers, &changesetCountsResolver{
-		date:                 time.Now(),
-		total:                99,
-		merged:               99,
-		closed:               99,
-		open:                 99,
-		openApproved:         99,
-		openChangesRequested: 99,
-		openPending:          99,
-	})
+
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID}
+	cs, _, err := r.store.ListChangesets(ctx, opts)
+	if err != nil {
+		return resolvers, err
+	}
+
+	from := r.Campaign.CreatedAt
+	if args.From != nil {
+		// TODO: using min(from, args.From) here makes testing really hard,
+		// because `CreatedAt` is always "fresh"
+		from = args.From.Time
+	}
+
+	to := time.Now()
+	if args.To != nil && args.To.Time.Before(to) {
+		to = args.To.Time
+	}
+
+	rs := []*changesetCountsResolver{}
+	for d := to; d.After(from); d = d.Add(-24 * time.Hour) {
+		rs = append(rs, &changesetCountsResolver{date: d})
+	}
+
+	for _, c := range cs {
+		for _, r := range rs {
+			d := r.date
+
+			created, err := c.ExternalCreatedAt()
+			if err != nil {
+				return resolvers, err
+			}
+
+			if created.Before(d) {
+				r.total++
+			}
+		}
+	}
+
+	for _, r := range rs {
+		resolvers = append(resolvers, r)
+	}
+
 	return resolvers, nil
 }
 

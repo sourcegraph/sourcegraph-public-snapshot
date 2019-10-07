@@ -104,6 +104,18 @@ func (t *Changeset) Title() (string, error) {
 	}
 }
 
+// ExternalCreatedAt is when the Changeset was created on the codehost
+func (t *Changeset) ExternalCreatedAt() (time.Time, error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return m.CreatedAt, nil
+	case *bitbucketserver.PullRequest:
+		return unixMilliToTime(int64(m.CreatedDate)), nil
+	default:
+		return time.Time{}, errors.New("unknown changeset type")
+	}
+}
+
 // Body of the Changeset.
 func (t *Changeset) Body() (string, error) {
 	switch m := t.Metadata.(type) {
@@ -621,3 +633,7 @@ const (
 	//   - UNAPPROVED
 	//   - UPDATED
 )
+
+func unixMilliToTime(ms int64) time.Time {
+	return time.Unix(0, ms*int64(time.Millisecond))
+}
