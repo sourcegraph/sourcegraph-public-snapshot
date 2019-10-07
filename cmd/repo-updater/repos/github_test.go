@@ -101,12 +101,12 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				return
 			}
 
-			changesets := make([]*a8n.Changeset, 0, len(tc.cs))
+			meta := make([]*github.PullRequest, 0, len(tc.cs))
 			for _, cs := range tc.cs {
-				changesets = append(changesets, cs.Changeset)
+				meta = append(meta, cs.Changeset.Metadata.(*github.PullRequest))
 			}
 
-			data, err := json.MarshalIndent(changesets, " ", " ")
+			data, err := json.MarshalIndent(meta, " ", " ")
 			if err != nil {
 				t.Fatal(err)
 			}
