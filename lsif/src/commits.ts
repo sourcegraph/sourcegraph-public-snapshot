@@ -1,10 +1,10 @@
-import * as crypto from 'crypto'
 import got from 'got'
 import { XrepoDatabase } from './xrepo'
+import * as crypto from 'crypto'
 import { MonitoringContext, monitor } from './monitoring'
 
 /**
- * The number of commits to ask gitserver for when updating commit data for
+ * THe number of commits to ask gitserver for when updating commit data for
  * a particular repository.
  */
 const MAX_COMMITS_PER_UPDATE = 5000
@@ -15,24 +15,24 @@ const MAX_COMMITS_PER_UPDATE = 5000
  * already have commit parentage information for this commit, this function
  * will do nothing.
  *
- * @param gitserverUrls The set of ordered gitserver urls.
  * @param xrepoDatabase The cross-repo database.
  * @param repository The repository name.
  * @param commit The commit from which the gitserver queries should start.
+ * @param gitserverUrls The set of ordered gitserver urls.
  * @param ctx The monitoring context.
  */
-export async function updateCommits(
-    gitserverUrls: string[],
+export async function discoverAndUpdateCommit(
     xrepoDatabase: XrepoDatabase,
     repository: string,
     commit: string,
+    gitserverUrls: string[],
     ctx: MonitoringContext
 ): Promise<void> {
     if (await xrepoDatabase.isCommitTracked(repository, commit)) {
         return
     }
 
-    const gitserverUrl = addrFor(gitserverUrls, repository)
+    const gitserverUrl = addrFor(repository, gitserverUrls)
     const commits = await monitor(ctx, 'querying commits', () => getCommitsNear(gitserverUrl, repository, commit))
     await monitor(ctx, 'updating commits', () => xrepoDatabase.updateCommits(repository, commits))
 }
@@ -43,10 +43,10 @@ export async function updateCommits(
  * set of gitserverUrls must be the same (and in the same order) as the frontend for
  * this to return consistent results.
  *
- * @param gitserverUrls The set of ordered gitserver urls.
  * @param repository The repository name.
+ * @param gitserverUrls The set of ordered gitserver urls.
  */
-function addrFor(gitserverUrls: string[], repository: string): string {
+function addrFor(repository: string, gitserverUrls: string[]): string {
     if (gitserverUrls.length === 0) {
         throw new Error('No gitserverUrls provided.')
     }
@@ -93,14 +93,46 @@ export function mod(sum: string, max: number): number {
  * second element is an empty string if the first element has no parent. Commits may
  * appear multiple times, but each pair is unique.
  *
+ * If the repository or commit is unknown by gitserver, then the the results will be
+ * empty but no error will be thrown. Any other error type will b thrown without
+ * modification.
+ *
  * @param gitserverUrl The url of the gitserver for this repository.
  * @param repository The repository name.
  * @param commit The commit from which the gitserver queries should start.
  */
 async function getCommitsNear(gitserverUrl: string, repository: string, commit: string): Promise<[string, string][]> {
     const args = ['git', 'log', '--pretty=%H %P', commit, `-${MAX_COMMITS_PER_UPDATE}`]
-    const lines = await gitserverExecLines(gitserverUrl, repository, args)
-    return lines.map(line => line.split(' ', 2) as [string, string])
+
+    try {
+        return flattenCommitParents(await gitserverExecLines(gitserverUrl, repository, args))
+    } catch (error) {
+        if (error.statusCode === 404) {
+            // repository unknown
+            return []
+        }
+
+        throw error
+    }
+}
+
+/**
+ * Convert git log output into a map of (`child`, `parent`) commits. Each line should
+ * have the form `commit parent1 parent2...`. Commits with no parents appear on a line
+ * of their own.
+ *
+ * @param lines The output lines of `git log`.
+ */
+export function flattenCommitParents(lines: string[]): [string, string][] {
+    return lines.flatMap(line => {
+        const commits = line.split(' ')
+        if (commits.length === 1) {
+            return [[line, '']]
+        }
+
+        const child = commits.shift()!
+        return commits.map<[string, string]>(commit => [child, commit])
+    })
 }
 
 /**
@@ -111,7 +143,7 @@ async function getCommitsNear(gitserverUrl: string, repository: string, commit: 
  * @param args The command to run in the repository's git directory.
  */
 async function gitserverExecLines(gitserverUrl: string, repository: string, args: string[]): Promise<string[]> {
-    return (await gitserverExec(gitserverUrl, repository, args)).split('\n').filter(line => !!line)
+    return (await gitserverExec(gitserverUrl, repository, args)).split('\n').filter(line => Boolean(line))
 }
 
 /**

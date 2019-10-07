@@ -20,7 +20,7 @@ async function getTokenWithSelector(
 ): Promise<puppeteer.ElementHandle> {
     const elements = await page.$$(selector)
 
-    let element: puppeteer.ElementHandle<HTMLElement> | undefined
+    let element: puppeteer.ElementHandle | undefined
     for (const elem of elements) {
         const text = await page.evaluate(element => element.textContent, elem)
         if (text === token) {

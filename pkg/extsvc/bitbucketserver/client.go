@@ -366,6 +366,24 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) error {
 	return c.send(ctx, "POST", "rest/api/1.0/projects", nil, p, p)
 }
 
+// LoadPullRequest loads the given PullRequest returning an error in case of failure.
+func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+	return c.send(ctx, "GET", path, nil, nil, pr)
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -708,6 +726,55 @@ type Project struct {
 	Public bool   `json:"public"`
 	Type   string `json:"type"`
 	Links  struct {
+		Self []struct {
+			Href string `json:"href"`
+		} `json:"self"`
+	} `json:"links"`
+}
+
+type Ref struct {
+	ID         string `json:"id"`
+	Repository struct {
+		Slug    string `json:"slug"`
+		Project struct {
+			Key string `json:"key"`
+		} `json:"project"`
+	} `json:"repository"`
+}
+
+type PullRequest struct {
+	ID          int    `json:"id"`
+	Version     int    `json:"version"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	State       string `json:"state"`
+	Open        bool   `json:"open"`
+	Closed      bool   `json:"closed"`
+	CreatedDate int    `json:"createdDate"`
+	UpdatedDate int    `json:"updatedDate"`
+	FromRef     Ref    `json:"fromRef"`
+	ToRef       Ref    `json:"toRef"`
+	Locked      bool   `json:"locked"`
+	Author      struct {
+		User     *User  `json:"user"`
+		Role     string `json:"role"`
+		Approved bool   `json:"approved"`
+		Status   string `json:"status"`
+	} `json:"author"`
+	Reviewers []struct {
+		User               *User  `json:"user"`
+		LastReviewedCommit string `json:"lastReviewedCommit"`
+		Role               string `json:"role"`
+		Approved           bool   `json:"approved"`
+		Status             string `json:"status"`
+	} `json:"reviewers"`
+	Participants []struct {
+		User     *User  `json:"user"`
+		Role     string `json:"role"`
+		Approved bool   `json:"approved"`
+		Status   string `json:"status"`
+	} `json:"participants"`
+	Links struct {
 		Self []struct {
 			Href string `json:"href"`
 		} `json:"self"`

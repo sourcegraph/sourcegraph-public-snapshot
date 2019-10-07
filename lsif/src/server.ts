@@ -7,13 +7,11 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
-import { createDatabaseFilename, ensureDirectory, hasErrorCode, readEnvInt } from './util'
-import { createGzip } from 'zlib'
-import { createLogger } from './logging'
+import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
-import { Database } from './database.js'
+import { Database, tryCreateDatabase } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
-import { updateCommits } from './commits'
 import { identity } from 'lodash'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
@@ -24,10 +22,11 @@ import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } fro
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { monitor, MonitoringContext } from './monitoring'
-import { Tracer, Span } from 'opentracing'
+import { Span } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createTracer } from './tracing'
+import { createLogger } from './logging'
 
 const pipeline = promisify(_pipeline)
 
@@ -96,15 +95,15 @@ const errorHandler = (
     res: express.Response,
     next: express.NextFunction
 ): void => {
-    if (!error || !error.status) {
-        // Only log errors that don't have a status attached
-        logger.error('uncaught exception', { error })
-    }
+        if (!error || !error.status) {
+            // Only log errors that don't have a status attached
+            logger.error('uncaught exception', { error })
+        }
 
-    if (!res.headersSent) {
-        res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+        if (!res.headersSent) {
+            res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+        }
     }
-}
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -113,10 +112,10 @@ const errorHandler = (
  */
 async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
-    const configurationFetcher = await waitForConfiguration(logger)
+    const fetchConfiguration = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-server', configurationFetcher())
+    const tracer = createTracer('lsif-server', fetchConfiguration())
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -150,7 +149,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, configurationFetcher, logger, tracer))
+    app.use(await lsifEndpoints(queue, fetchConfiguration, logger))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -213,15 +212,13 @@ function metaEndpoints(): express.Router {
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param queue The queue containing LSIF jobs.
- * @param configurationFetcher A function that returns the current configuration.
+ * @param fetchConfiguration A function that returns the current configuration.
  * @param logger The logger instance.
- * @param tracer The tracer instance.
  */
 async function lsifEndpoints(
     queue: Queue,
-    configurationFetcher: ConfigurationFetcher,
-    logger: Logger,
-    tracer: Tracer | undefined
+    fetchConfiguration: ConfigurationFetcher,
+    logger: Logger
 ): Promise<express.Router> {
     const router = express.Router()
 
@@ -231,46 +228,27 @@ async function lsifEndpoints(
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(configurationFetcher(), logger)
+    const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     /**
-     * Return the name of the database file for the given repository and commit
-     * if it exists, returning undefined otherwise.
+     * Create a database instance for the given repository at the commit
+     * closest to the target commit for which we have LSIF data. Returns
+     * undefined if no such database can be created.
      *
      * @param repository The repository name.
-     * @param commit The commit.
+     * @param commit The target commit.
+     * @param ctx The monitoring context.
+     * @param gitserverUrls The set of ordered gitserver urls.
      */
-    const createDatabaseFilenameStat = async (repository: string, commit: string): Promise<string | undefined> => {
-        const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
-
-        try {
-            await fs.stat(file)
-        } catch (e) {
-            if (hasErrorCode(e, 'ENOENT')) {
-                return undefined
-            }
-
-            throw e
-        }
-
-        return file
-    }
-
-    /**
-     * Create a database for the given repository and commit if the underlying
-     * file exists.
-     *
-     * @param repository The repository name.
-     * @param commit The commit.
-     */
-    const tryCreateDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
-        const file = await createDatabaseFilenameStat(repository, commit)
-        if (!file) {
-            return undefined
-        }
-
-        return new Database(
+    const loadDatabase = async (
+        repository: string,
+        commit: string,
+        ctx: MonitoringContext,
+        gitserverUrls: string[]
+    ): Promise<Database | undefined> => {
+        // Try to construct database for the exact commit
+        const database = await tryCreateDatabase(
             STORAGE_ROOT,
             xrepoDatabase,
             connectionCache,
@@ -278,52 +256,33 @@ async function lsifEndpoints(
             resultChunkCache,
             repository,
             commit,
-            file
+            createDatabaseFilename(STORAGE_ROOT, repository, commit)
         )
-    }
-
-    /**
-     * Create a database for the given repository and a commit nearest to the
-     * given commit or which we have LSIF data commit. This may request more
-     * data from gitserver on-demand.
-     *
-     * @param gitserverUrls The set of ordered gitserver urls.
-     * @param repository The repository name.
-     * @param commit The commit.
-     * @param ctx The monitoring context.
-     */
-    const createDatabase = async (
-        gitserverUrls: string[],
-        repository: string,
-        commit: string,
-        ctx: MonitoringContext
-    ): Promise<Database | undefined> => {
-        // Try to construct database for the exact commit
-        const database = await tryCreateDatabase(repository, commit)
         if (database) {
             return database
         }
 
-        // Request updated commit data from gitserver if this commit isn't
-        // already tracked. This will pull back ancestors for this commit
-        // up to a certain (configurable) depth and insert them into the
-        // cross-repository database. This populates the necessary data for
-        // the following query.
-        await monitor(ctx, 'updating commits for repo', (ctx: MonitoringContext) =>
-            updateCommits(gitserverUrls, xrepoDatabase, repository, commit, ctx)
+        // Determine the closest commit that we actually have LSIF data for. If the commit is
+        // not tracked, then commit data is requested from gitserver and insert the ancestors
+        // data for this commit.
+        const commitWithData = await monitor(ctx, 'determining closest commit', (ctx: MonitoringContext) =>
+            xrepoDatabase.findClosestCommitWithData(repository, commit, ctx, gitserverUrls)
         )
-
-        // Determine the closest commit that we actually have LSIF data for
-        const commitWithData = await monitor(ctx, 'querying closest commit with LISF data', () =>
-            xrepoDatabase.findClosestCommitWithData(repository, commit)
-        )
-
         if (!commitWithData) {
             return undefined
         }
 
         // Try to construct a database for the approximate commit
-        return tryCreateDatabase(repository, commitWithData)
+        return tryCreateDatabase(
+            STORAGE_ROOT,
+            xrepoDatabase,
+            connectionCache,
+            documentCache,
+            resultChunkCache,
+            repository,
+            commitWithData,
+            createDatabaseFilename(STORAGE_ROOT, repository, commitWithData)
+        )
     }
 
     /**
@@ -390,7 +349,7 @@ async function lsifEndpoints(
 
                 const ctx = createMonitoringContext(req, repository, commit)
                 const db = await monitor(ctx, 'creating database', ctx =>
-                    createDatabase(configurationFetcher().gitServers, repository, commit, ctx)
+                    loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
                 )
                 if (!db) {
                     res.json(false)
@@ -418,7 +377,7 @@ async function lsifEndpoints(
 
                 const ctx = createMonitoringContext(req, repository, commit)
                 const db = await monitor(ctx, 'creating database', ctx =>
-                    createDatabase(configurationFetcher().gitServers, repository, commit, ctx)
+                    loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
                 )
                 if (!db) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {

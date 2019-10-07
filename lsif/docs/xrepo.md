@@ -17,9 +17,9 @@ This table contains all commits known for a repository for which LSIF data has b
 | 5   | github.com/sourcegraph/sample | d67b8de3509be8638fa6724c4c61a42a15ca994a | 323e23f7b0dbb6aff988097dbe5d3c62e847afa5 |
 | 6   | github.com/sourcegraph/sample | 323e23f7b0dbb6aff988097dbe5d3c62e847afa5 |                                          |
 
-This table allows us to ues recursive CTEs and window queries to find ancestor and descendant commits with a particular property (as indicated by the existence of an entry in the `lsifDataMarkers` table) and enables closest commit functionality.
+This table allows us to ues recursive CTEs to find ancestor and descendant commits with a particular property (as indicated by the existence of an entry in the `lsif_data_markers` table) and enables closest commit functionality.
 
-**`lsifDataMarkers` table**
+**`lsif_data_markers` table**
 
 This table contains an entry for each commit that has had LSIF data uploaded.
 

@@ -476,30 +476,30 @@ Object {
 }
 `;
 
-exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Refined Github line number 62 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Refined Github line number 13 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
-  "content": "if len(parsedUrl.Opaque) > 0 {",
+  "content": "export class TestResourceManager {",
   "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition",
 }
 `;
 
-exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Refined Github line number 62 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Refined Github line number 13 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
-  "content": "if len(parsedUrl.Opaque) > 0 {",
+  "content": "export class TestResourceManager {",
   "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition",
 }
 `;
 
-exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Vanilla line number 62 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Vanilla line number 13 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
-  "content": "if len(parsedUrl.Opaque) > 0 {",
-  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition",
+  "content": "export class TestResourceManager {",
+  "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition > SPAN.blob-code-inner.blob-code-marker-addition.annotated",
 }
 `;
 
-exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Vanilla line number 62 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+exports[`GitHub DOM functions diffDomFunctions github.com Pull Request Discussion page Vanilla line number 13 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
 Object {
-  "content": "if len(parsedUrl.Opaque) > 0 {",
+  "content": "export class TestResourceManager {",
   "selector": "TR:nth-child(4) > TD.blob-code.blob-code-addition",
 }
 `;

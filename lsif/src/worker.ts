@@ -13,9 +13,9 @@ import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
 import { Tracer } from 'opentracing'
 import { MonitoringContext, monitor } from './monitoring'
-import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createTracer } from './tracing'
-import { updateCommits } from './commits'
+import { waitForConfiguration, ConfigurationFetcher } from './config'
+import { discoverAndUpdateCommit } from './commits'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -45,50 +45,50 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
- * @param configurationFetcher A function that returns the current configuration.
+ * @param fetchConfiguration A function that returns the current configuration.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
-function createConvertJob(
+const createConvertJob = (
     xrepoDatabase: XrepoDatabase,
-    configurationFetcher: ConfigurationFetcher,
+    fetchConfiguration: ConfigurationFetcher,
     logger: Logger,
     tracer: Tracer | undefined
-): (repository: string, commit: string, filename: string) => Promise<void> {
-    return async (repository, commit, filename) => {
-        const ctx = {
-            logger: logger.child({ jobId: uuid.v4(), repository, commit }),
-            span: tracer && tracer.startSpan('create convert job'),
-        }
-
-        await monitor(ctx, 'converting LSIF data', async (ctx: MonitoringContext) => {
-            const input = fs.createReadStream(filename)
-            const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
-
-            try {
-                // Create database in a temp path
-                const { packages, references } = await convertLsif(input, tempFile, ctx)
-
-                // Move the temp file where it can be found by the server
-                await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
-
-                // Add the new database to the xrepo db
-                await monitor(ctx, 'populating cross-repo database', () =>
-                    xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
-                )
-            } catch (e) {
-                // Don't leave busted artifacts
-                await fs.unlink(tempFile)
-                throw e
-            }
-
-            // Update commit parentage information for this commit
-            await updateCommits(configurationFetcher().gitServers, xrepoDatabase, repository, commit, ctx)
-
-            // Remove input
-            await fs.unlink(filename)
-        })
+) => async (repository: string, commit: string, filename: string): Promise<void> => {
+    const ctx = {
+        logger: logger.child({ jobId: uuid.v4(), repository, commit }),
+        span: tracer && tracer.startSpan('create convert job'),
     }
+
+    console.log(`Converting ${repository}@${commit}`)
+
+    await monitor(ctx, 'converting LSIF data', async (ctx: MonitoringContext) => {
+        const input = fs.createReadStream(filename)
+        const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
+
+        try {
+            // Create database in a temp path
+            const { packages, references } = await convertLsif(input, tempFile, ctx)
+
+            // Move the temp file where it can be found by the server
+            await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
+
+            // Add the new database to the xrepo db
+            await monitor(ctx, 'populating cross-repo database', () =>
+                xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+            )
+        } catch (e) {
+            // Don't leave busted artifacts
+            await fs.unlink(tempFile)
+            throw e
+        }
+    })
+
+    // Update commit parentage information for this commit
+    await discoverAndUpdateCommit(xrepoDatabase, repository, commit, fetchConfiguration().gitServers, ctx)
+
+    // Remove input
+    await fs.unlink(filename)
 }
 
 /**
@@ -98,10 +98,10 @@ function createConvertJob(
  */
 async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
-    const configurationFetcher = await waitForConfiguration(logger)
+    const fetchConfiguration = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-worker', configurationFetcher())
+    const tracer = createTracer('lsif-worker', fetchConfiguration())
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -109,7 +109,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(configurationFetcher(), logger)
+    const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     // Start metrics server
@@ -117,7 +117,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Create worker and start processing jobs
     await startWorker(logger, {
-        convert: createConvertJob(xrepoDatabase, configurationFetcher, logger, tracer),
+        convert: createConvertJob(xrepoDatabase, fetchConfiguration, logger, tracer),
     })
 }
 

@@ -137,10 +137,21 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		otlog.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 10))),
 	)
 
+	var stabilizeTimeout time.Duration
+	if p.DisableTimeout {
+		// The user wants to wait longer for results, so the default 10s worker
+		// timeout is too aggressive. We will let it try to highlight the file
+		// for 30s and will then terminate the process. Note this means in the
+		// worst case one of syntect_server's threads could be stuck at 100%
+		// CPU for 30s.
+		stabilizeTimeout = 30 * time.Second
+	}
+
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
-		Code:     code,
-		Filepath: p.Filepath,
-		Theme:    themechoice,
+		Code:             code,
+		Filepath:         p.Filepath,
+		Theme:            themechoice,
+		StabilizeTimeout: stabilizeTimeout,
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -158,22 +169,31 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		table, err2 := generatePlainTable(code)
 		return table, true, err2
 	} else if err != nil {
-		if cause := errors.Cause(err); cause == gosyntect.ErrRequestTooLarge || cause == gosyntect.ErrPanic {
-			log15.Error(
-				"syntax highlighting failed (this is a bug, please report it)",
-				"filepath", p.Filepath,
-				"repo_name", p.Metadata.RepoName,
-				"revision", p.Metadata.Revision,
-				"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
-				"error", err,
-			)
-			if cause == gosyntect.ErrPanic {
-				tr.LogFields(otlog.Bool("panic", true))
-				prometheusStatus = "panic"
-			}
-
-			// Failed to highlight code, e.g. for a text file. We still need to
-			// generate the table.
+		log15.Error(
+			"syntax highlighting failed (this is a bug, please report it)",
+			"filepath", p.Filepath,
+			"repo_name", p.Metadata.RepoName,
+			"revision", p.Metadata.Revision,
+			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+			"error", err,
+		)
+		var problem string
+		switch errors.Cause(err) {
+		case gosyntect.ErrRequestTooLarge:
+			problem = "request_too_large"
+		case gosyntect.ErrPanic:
+			problem = "panic"
+		case gosyntect.ErrHSSWorkerTimeout:
+			problem = "hss_worker_timeout"
+		}
+		if problem != "" {
+			// A problem that can sometimes be expected has occurred. We will
+			// identify such problems through metrics/logs and resolve them on
+			// a case-by-case basis, but they are frequent enough that we want
+			// to fallback to plaintext rendering instead of just giving the
+			// user an error.
+			tr.LogFields(otlog.Bool(problem, true))
+			prometheusStatus = problem
 			table, err2 := generatePlainTable(code)
 			return table, false, err2
 		}

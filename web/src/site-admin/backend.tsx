@@ -1,9 +1,11 @@
+import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable, Subject } from 'rxjs'
 import { map, mergeMap, startWith, tap } from 'rxjs/operators'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { Settings } from '../../../shared/src/settings/settings'
 
 /**
  * Fetches all users.
@@ -301,6 +303,130 @@ export function fetchSite(): Observable<GQL.ISite> {
     `).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
+    )
+}
+
+/**
+ * Placeholder for the type of the external service config (to avoid explicit 'any' type)
+ */
+interface ExternalServiceConfig {}
+
+type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> & {
+    contents: Settings
+}
+
+/**
+ * All configuration and settings in one place. Excludes critical site config for now, because this
+ * must be fetched from management console
+ */
+export interface AllConfig {
+    site: GQL.ISiteConfiguration
+    critical: GQL.ICriticalConfiguration
+    externalServices: Partial<Record<GQL.ExternalServiceKind, ExternalServiceConfig>>
+    settings: {
+        subjects: SettingsSubject[]
+        final: Settings | null
+    }
+}
+
+/**
+ * Fetches all the configuration and settings (requires site admin privileges).
+ */
+export function fetchAllConfigAndSettings(): Observable<AllConfig> {
+    return queryGraphQL(
+        gql`
+            query AllConfig($first: Int) {
+                site {
+                    id
+                    configuration {
+                        id
+                        effectiveContents
+                    }
+                    criticalConfiguration {
+                        id
+                        effectiveContents
+                    }
+                    latestSettings {
+                        contents
+                    }
+                    settingsCascade {
+                        final
+                    }
+                }
+
+                externalServices(first: $first) {
+                    nodes {
+                        id
+                        kind
+                        displayName
+                        config
+                        createdAt
+                        updatedAt
+                        warning
+                    }
+                }
+
+                viewerSettings {
+                    ...SettingsCascadeFields
+                }
+            }
+
+            fragment SettingsCascadeFields on SettingsCascade {
+                subjects {
+                    __typename
+                    latestSettings {
+                        id
+                        contents
+                    }
+                    settingsURL
+                }
+                final
+            }
+        `,
+        { first: 100 } // assume no more than 100 external services added
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            const externalServices: Partial<
+                Record<GQL.ExternalServiceKind, ExternalServiceConfig[]>
+            > = data.externalServices.nodes
+                .filter(svc => svc.config)
+                .map((svc): [GQL.ExternalServiceKind, ExternalServiceConfig] => [svc.kind, parseJSONC(svc.config)])
+                .reduce<Partial<{ [k in GQL.ExternalServiceKind]: ExternalServiceConfig[] }>>(
+                    (externalServicesByKind, [kind, config]) => {
+                        let services = externalServicesByKind[kind]
+                        if (!services) {
+                            services = []
+                            externalServicesByKind[kind] = services
+                        }
+                        services.push(config)
+                        return externalServicesByKind
+                    },
+                    {}
+                )
+            const settingsSubjects = data.viewerSettings.subjects.map(settings => ({
+                __typename: settings.__typename,
+                settingsURL: settings.settingsURL,
+                contents: settings.latestSettings ? parseJSONC(settings.latestSettings.contents) : null,
+            }))
+            const finalSettings = parseJSONC(data.viewerSettings.final)
+            return {
+                site:
+                    data.site &&
+                    data.site.configuration &&
+                    data.site.configuration.effectiveContents &&
+                    parseJSONC(data.site.configuration.effectiveContents),
+                critical:
+                    data.site &&
+                    data.site.criticalConfiguration &&
+                    parseJSONC(data.site.criticalConfiguration.effectiveContents),
+                externalServices,
+                settings: {
+                    subjects: settingsSubjects,
+                    final: finalSettings,
+                },
+            }
+        })
     )
 }
 

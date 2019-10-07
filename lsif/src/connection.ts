@@ -15,11 +15,6 @@ import { Configuration } from './config'
 const MINIMUM_MIGRATION_VERSION = 1528395596
 
 /**
- * How many times to check if the database schema is up to date on startup.
- */
-const MAX_SCHEMA_POLLS = readEnvInt('MAX_SCHEMA_POLLS', 60)
-
-/**
  * How long to wait between queries to check the current database migration version on startup.
  */
 const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
@@ -124,7 +119,7 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions, 
             // invalid_catalog_name in:
             // https://www.postgresql.org/docs/9.4/errcodes-appendix.html.
 
-            if (error && error.code === '3D000') {
+            if (error && error.code === '3D000' && attempt + 1 < MAX_CONNECTION_RETRIES) {
                 // wait for migration
                 await sleep(CONNECTION_RETRY_INTERVAL)
                 continue
@@ -147,30 +142,26 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions, 
  * @param logger The logger instance.
  */
 async function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
-    for (let attempt = 0; attempt < MAX_SCHEMA_POLLS; attempt++) {
+    while (true) {
         logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
-        // Note: this can't fail "normally" (due to pre-migration races) as the
-        // cross-repository databases to which we connected exists, meaning that
-        // the primary sourcegraph database also exists. An error here is a real
-        // big deal, don't retry.
-        const { version, dirty } = await getMigrationVersion(connection, database)
-        if (dirty) {
-            // requires user intervention
-            throw new Error('database is dirty')
+        try {
+            // Get migration version from frontend database
+            const currentVersion = await getMigrationVersion(connection, database)
+
+            // Check to see if the current version is at least the minimum version
+            if (parseInt(currentVersion, 10) >= MINIMUM_MIGRATION_VERSION) {
+                return
+            }
+
+            console.log(`waiting for migrations to be applied (${currentVersion} < ${MINIMUM_MIGRATION_VERSION})`)
+        } catch (error) {
+            console.log('failed to determine current database migration state', error)
         }
 
-        if (parseInt(version, 10) < MINIMUM_MIGRATION_VERSION) {
-            // Wait for migration
-            await sleep(SCHEMA_POLL_INTERVAL)
-            continue
-        }
-
-        return
+        // snooze for a bit then retry
+        await new Promise(resolve => setTimeout(resolve, SCHEMA_POLL_INTERVAL * 1000))
     }
-
-    // just bail
-    throw new Error('database is not up to date')
 }
 
 /**
@@ -185,10 +176,7 @@ async function waitForMigrations(connection: Connection, database: string, logge
  * @param connection The database connection.
  * @param database The target database in which to perform the query.
  */
-async function getMigrationVersion(
-    connection: Connection,
-    database: string
-): Promise<{ version: string; dirty: boolean }> {
+async function getMigrationVersion(connection: Connection, database: string): Promise<string> {
     const query = `
         select * from
         dblink('dbname=' || $1 || ' user=' || current_user, 'select * from schema_migrations')
@@ -200,8 +188,8 @@ async function getMigrationVersion(
         dirty: boolean
     }[]
 
-    if (rows.length > 0) {
-        return rows[0]
+    if (rows.length > 0 && !rows[0].dirty) {
+        return rows[0].version
     }
 
     throw new Error('Unusable migration state.')

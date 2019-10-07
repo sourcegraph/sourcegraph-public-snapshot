@@ -50,6 +50,10 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "tsenart/vegeta"}},
 					Changeset: &a8n.Changeset{ExternalID: "50"},
 				},
+				{
+					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+					Changeset: &a8n.Changeset{ExternalID: "5834"},
+				},
 			},
 		},
 	}
