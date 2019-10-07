@@ -5,7 +5,7 @@
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient } from './util/GraphQLClient'
-import { setTestDefaults, createAndInitializeDriver } from './util/init'
+import { getTestFixtures } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
@@ -59,7 +59,8 @@ describe('Onboarding', () => {
         'testUserPassword',
         'headless',
         'slowMo',
-        'logBrowserConsole'
+        'logBrowserConsole',
+        'keepBrowser'
     )
     const testExternalServiceConfig = {
         kind: GQL.ExternalServiceKind.GITHUB,
@@ -71,21 +72,15 @@ describe('Onboarding', () => {
             repositoryQuery: ['none'],
         },
     }
+    const testUsername = 'test-onboarding-regression-test-user'
+
     let driver: Driver
     let gqlClient: GraphQLClient
+    let resourceManager: TestResourceManager
     let screenshots: ScreenshotVerifier
-    const testUsername = 'test-onboarding-regression-test-user'
-    const resourceManager = new TestResourceManager()
-
     beforeAll(
         async () => {
-            driver = await createAndInitializeDriver(config)
-            gqlClient = GraphQLClient.newForPuppeteerTest({
-                baseURL: config.sourcegraphBaseUrl,
-                sudoToken: config.sudoToken,
-                username: config.sudoUsername,
-            })
-            await setTestDefaults(driver, gqlClient)
+            ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
             screenshots = new ScreenshotVerifier(driver)
 
             await resourceManager.create({
