@@ -495,7 +495,7 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 }
 
 // CountChangesetEventsOpts captures the query options needed for
-// counting changesets.
+// counting changeset events.
 type CountChangesetEventsOpts struct {
 	ChangesetID int64
 }
