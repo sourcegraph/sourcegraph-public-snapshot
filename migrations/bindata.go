@@ -249,6 +249,8 @@
 // 1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql (1.543kB)
 // 1528395593_allows_trailing_hyphen_in_usernames.down.sql (387B)
 // 1528395593_allows_trailing_hyphen_in_usernames.up.sql (391B)
+// 1528395594_create_changeset_events_table.down.sql (56B)
+// 1528395594_create_changeset_events_table.up.sql (588B)
 // 1528395594_create_lsif_database.down.sql (236B)
 // 1528395594_create_lsif_database.up.sql (1.697kB)
 // 1528395595_lsif_xrepo_init.down.sql (418B)
@@ -5301,6 +5303,46 @@ func _1528395593_allows_trailing_hyphen_in_usernamesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395594_create_changeset_events_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\x4f\x2d\x4b\xcd\x2b\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x63\x8c\xac\xd5\x38\x00\x00\x00")
+
+func _1528395594_create_changeset_events_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395594_create_changeset_events_tableDownSql,
+		"1528395594_create_changeset_events_table.down.sql",
+	)
+}
+
+func _1528395594_create_changeset_events_tableDownSql() (*asset, error) {
+	bytes, err := _1528395594_create_changeset_events_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395594_create_changeset_events_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x60, 0x23, 0xad, 0xb7, 0x2c, 0xb0, 0x5d, 0xd5, 0xe, 0x7d, 0x63, 0x28, 0x9, 0xc6, 0x5e, 0x18, 0x9, 0xbc, 0x50, 0x49, 0xa6, 0x6, 0xed, 0xf0, 0xaa, 0xf7, 0x60, 0xd8, 0xa3, 0x68, 0xe4, 0x46}}
+	return a, nil
+}
+
+var __1528395594_create_changeset_events_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x91\x41\x6e\xdb\x30\x14\x44\xf7\x3c\xc5\x74\x25\x09\xf0\x0d\x8c\x2c\x18\xe9\xa7\x25\x42\xd1\x2d\x4d\x2f\xbc\x12\x68\xeb\x37\x61\x5c\x53\xa9\x45\x37\x55\x8b\xde\xbd\x90\x9a\xc2\x02\x12\x2f\x89\x79\xf3\x87\x98\xb9\xa5\x8f\xca\x2c\x85\x28\x2d\x49\x47\x70\xf2\x56\x13\xf6\x8f\x3e\x3e\x70\xcf\xa9\xe1\x1f\x1c\x53\x8f\x5c\x00\xa1\xc5\x2e\x3c\xf4\x7c\x0a\xfe\x1b\x3e\x5b\x55\x4b\xbb\xc5\x3d\x6d\x17\x02\x33\xc3\x3f\x2a\xc4\x04\xb3\x72\x30\x1b\xad\x61\xe9\x8e\x2c\x99\x92\xd6\x17\xae\xcf\x43\x5b\x08\x00\x58\x19\x54\xa4\xc9\x11\x4a\xb9\x2e\x65\x45\xa8\x46\xde\x4e\x1f\x51\x46\x39\x25\xb5\xde\x42\xd5\x35\x55\x4a\x3a\x1a\xe3\x0e\x21\xb6\x48\xfc\x73\x16\x52\x7e\xa2\xf2\x1e\xf9\xa4\x7c\xb8\x41\x96\x15\x23\xd8\x77\xe7\xd3\x9e\xdf\x47\x5f\xb5\x0b\x7c\xe0\xe1\xca\x51\x1e\x66\xd8\xfe\xc4\x3e\x71\xdb\xf8\x84\x14\x8e\xdc\x27\x7f\x7c\xc6\x4b\x48\x8f\xd3\x13\xbf\xba\xc8\x97\x0b\x15\xdd\xc9\x8d\x76\x88\xdd\x4b\x3e\xb9\x8f\x9c\x7c\xeb\x93\xc7\x53\xdf\xc5\xdd\x5b\x30\xfb\xfd\x27\x9b\x7a\x79\xcd\x9e\xb0\x26\x0d\xcf\xdc\x7d\xcd\xff\x9b\x0b\xdc\x20\xeb\x76\x4f\xbc\x4f\x59\x21\x8a\xa5\x10\x52\x3b\xb2\x57\xd6\x13\xb2\xaa\x50\xae\xcc\xda\x59\xa9\x8c\x7b\xa3\x37\xf3\xf5\x9a\xb1\xc1\xe6\xc0\x43\x73\x8e\xe1\xfb\x99\xc5\xc6\xa8\x2f\x1b\x42\x3e\x87\x16\xd3\x02\x8b\xb1\xb1\x31\xbc\x5c\xd5\xb5\x72\x4b\xf1\x37\x00\x00\xff\xff\xf3\x40\x80\x0d\x4c\x02\x00\x00")
+
+func _1528395594_create_changeset_events_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395594_create_changeset_events_tableUpSql,
+		"1528395594_create_changeset_events_table.up.sql",
+	)
+}
+
+func _1528395594_create_changeset_events_tableUpSql() (*asset, error) {
+	bytes, err := _1528395594_create_changeset_events_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395594_create_changeset_events_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa7, 0xa4, 0x98, 0x5c, 0xde, 0x72, 0x89, 0x9e, 0x92, 0xff, 0x35, 0x11, 0xab, 0xe2, 0x12, 0x8, 0xa5, 0x9b, 0x92, 0xb1, 0x7a, 0x8, 0x73, 0xda, 0x38, 0xea, 0xe9, 0x66, 0xe1, 0x38, 0x6f, 0x9a}}
+	return a, nil
+}
+
 var __1528395594_create_lsif_databaseDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\x8e\xb1\x6a\xc3\x30\x14\x45\x77\x7d\xc5\x25\x8b\x62\x48\xf2\x03\x9e\xdc\x58\x06\x41\x48\x4a\xa5\x42\x37\xa3\xd8\xcf\x8d\xa8\x22\x19\xf9\x19\x32\xe4\xe3\x8b\x5b\x02\x5e\xee\x70\x87\x73\xce\x7e\x8f\x3a\xa7\x11\x7c\x23\x9c\x8c\x6e\xd0\x3b\x76\x57\x37\xd1\x01\x86\x08\xf3\x88\xbb\xff\xce\x8e\x7d\x8a\x18\x52\x46\x4f\xec\x7c\x98\x90\x22\xfa\x6b\xf0\xf1\xe7\x20\x8c\x3a\xa9\xa3\x45\xa6\x7b\x62\x6a\xe9\x41\xdd\x56\xca\x1d\x64\xfd\x71\x79\x47\x5d\xd9\xea\xad\x32\x0a\xba\x81\xfa\xd2\xc6\x1a\x6c\x24\x9e\x4f\x74\x73\xce\x14\xb9\x7d\xf9\xb6\xc5\xf2\xca\x36\x4c\x7e\xd8\x94\xb2\x28\x85\x78\xb5\xfd\x8b\x70\xa3\x30\x52\xc6\x30\xc7\x6e\xc9\x11\x7f\xfc\xe6\xf3\x7c\xb4\xfa\x72\x5e\xf1\xd7\x21\x4c\x0f\xde\x61\xd9\xa2\x14\xbf\x01\x00\x00\xff\xff\xe8\x0f\x72\x07\xec\x00\x00\x00")
 
 func _1528395594_create_lsif_databaseDownSqlBytes() ([]byte, error) {
@@ -5970,6 +6012,10 @@ var _bindata = map[string]func() (*asset, error){
 
 	"1528395593_allows_trailing_hyphen_in_usernames.up.sql": _1528395593_allows_trailing_hyphen_in_usernamesUpSql,
 
+	"1528395594_create_changeset_events_table.down.sql": _1528395594_create_changeset_events_tableDownSql,
+
+	"1528395594_create_changeset_events_table.up.sql": _1528395594_create_changeset_events_tableUpSql,
+
 	"1528395594_create_lsif_database.down.sql": _1528395594_create_lsif_databaseDownSql,
 
 	"1528395594_create_lsif_database.up.sql": _1528395594_create_lsif_databaseUpSql,
@@ -6269,6 +6315,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql":   {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql, map[string]*bintree{}},
 	"1528395593_allows_trailing_hyphen_in_usernames.down.sql":               {_1528395593_allows_trailing_hyphen_in_usernamesDownSql, map[string]*bintree{}},
 	"1528395593_allows_trailing_hyphen_in_usernames.up.sql":                 {_1528395593_allows_trailing_hyphen_in_usernamesUpSql, map[string]*bintree{}},
+	"1528395594_create_changeset_events_table.down.sql":                     {_1528395594_create_changeset_events_tableDownSql, map[string]*bintree{}},
+	"1528395594_create_changeset_events_table.up.sql":                       {_1528395594_create_changeset_events_tableUpSql, map[string]*bintree{}},
 	"1528395594_create_lsif_database.down.sql":                              {_1528395594_create_lsif_databaseDownSql, map[string]*bintree{}},
 	"1528395594_create_lsif_database.up.sql":                                {_1528395594_create_lsif_databaseUpSql, map[string]*bintree{}},
 	"1528395595_lsif_xrepo_init.down.sql":                                   {_1528395595_lsif_xrepo_initDownSql, map[string]*bintree{}},

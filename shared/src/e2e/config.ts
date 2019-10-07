@@ -15,6 +15,7 @@ export interface Config {
     logBrowserConsole: boolean
     slowMo: number
     headless: boolean
+    keepBrowser: boolean
 }
 
 interface Field<T = string> {
@@ -78,6 +79,12 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description:
             "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production",
+    },
+    keepBrowser: {
+        envVar: 'KEEP_BROWSER',
+        parser: parseBool,
+        description: 'If true, browser window will remain open after tests run',
+        defaultValue: false,
     },
     logBrowserConsole: {
         envVar: 'LOG_BROWSER_CONSOLE',

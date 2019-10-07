@@ -581,6 +581,88 @@ func (r *changesetResolver) ReviewState() (a8n.ChangesetReviewState, error) {
 	return r.Changeset.ReviewState()
 }
 
+func (r *changesetResolver) Events(ctx context.Context, args *struct {
+	graphqlutil.ConnectionArgs
+}) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
+	return &changesetEventsConnectionResolver{
+		store:     r.store,
+		changeset: r.Changeset,
+		opts: ee.ListChangesetEventsOpts{
+			ChangesetID: r.Changeset.ID,
+			Limit:       int(args.ConnectionArgs.GetFirst()),
+		},
+	}, nil
+}
+
+type changesetEventsConnectionResolver struct {
+	store     *ee.Store
+	changeset *a8n.Changeset
+	opts      ee.ListChangesetEventsOpts
+
+	// cache results because they are used by multiple fields
+	once            sync.Once
+	changesetEvents []*a8n.ChangesetEvent
+	next            int64
+	err             error
+}
+
+func (r *changesetEventsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetEventResolver, error) {
+	changesetEvents, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ChangesetEventResolver, 0, len(changesetEvents))
+	for _, c := range changesetEvents {
+		resolvers = append(resolvers, &changesetEventResolver{store: r.store, changeset: r.changeset, ChangesetEvent: c})
+	}
+	return resolvers, nil
+}
+
+func (r *changesetEventsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	opts := ee.CountChangesetEventsOpts{ChangesetID: r.opts.ChangesetID}
+	count, err := r.store.CountChangesetEvents(ctx, opts)
+	return int32(count), err
+}
+
+func (r *changesetEventsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(next != 0), nil
+}
+
+func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*a8n.ChangesetEvent, int64, error) {
+	r.once.Do(func() {
+		r.changesetEvents, r.next, r.err = r.store.ListChangesetEvents(ctx, r.opts)
+	})
+	return r.changesetEvents, r.next, r.err
+}
+
+type changesetEventResolver struct {
+	store     *ee.Store
+	changeset *a8n.Changeset
+	*a8n.ChangesetEvent
+}
+
+const changesetEventIDKind = "ChangesetEvent"
+
+func marshalchangesetEventID(id int64) graphql.ID {
+	return relay.MarshalID(changesetEventIDKind, id)
+}
+
+func (r *changesetEventResolver) ID() graphql.ID {
+	return marshalchangesetEventID(r.ChangesetEvent.ID)
+}
+
+func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.ChangesetEvent.CreatedAt}
+}
+
+func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
+	return &changesetResolver{store: r.store, Changeset: r.changeset}, nil
+}
+
 func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)

@@ -457,7 +457,7 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 // token. page is the page of results to return. Pages are 1-indexed (so the
 // first call should be for page 1).
 func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("user/repos?sort=pushed&page=%d&per_page=100", page)
+	path := fmt.Sprintf("user/repos?sort=created&page=%d&per_page=100", page)
 	repos, err = c.listRepositories(ctx, path)
 	if err == nil {
 		// 🚨 SECURITY: must forward token here to ensure caching by token
@@ -471,7 +471,7 @@ func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repo
 // org is the name of the organization. page is the page of results to return.
 // Pages are 1-indexed (so the first call should be for page 1).
 func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("orgs/%s/repos?sort=pushed&page=%d&per_page=100", org, page)
+	path := fmt.Sprintf("orgs/%s/repos?sort=created&page=%d&per_page=100", org, page)
 	repos, err = c.listRepositories(ctx, path)
 	return repos, len(repos) > 0, 1, err
 }
@@ -479,7 +479,7 @@ func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) 
 // ListUserRepositories lists GitHub repositories from the specified user.
 // Pages are 1-indexed (so the first call should be for page 1)
 func (c *Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("users/%s/repos?sort=pushed&type=owner&page=%d&per_page=100", user, page)
+	path := fmt.Sprintf("users/%s/repos?sort=created&type=owner&page=%d&per_page=100", user, page)
 	repos, err = c.listRepositories(ctx, path)
 	return repos, len(repos) > 0, 1, err
 }

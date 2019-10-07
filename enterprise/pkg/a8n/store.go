@@ -427,6 +427,236 @@ func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
 }
 
+// ListChangesetEventsOpts captures the query options needed for
+// listing changeset events.
+type ListChangesetEventsOpts struct {
+	ChangesetID int64
+	Cursor      int64
+	Limit       int
+}
+
+// ListChangesetEvents lists ChangesetEvents with the given filters.
+func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*a8n.ChangesetEvent, next int64, err error) {
+	q := listChangesetEventsQuery(&opts)
+
+	cs = make([]*a8n.ChangesetEvent, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var c a8n.ChangesetEvent
+		if err = scanChangesetEvent(&c, sc); err != nil {
+			return 0, 0, err
+		}
+		cs = append(cs, &c)
+		return int64(c.ID), 1, err
+	})
+
+	if len(cs) == opts.Limit {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
+}
+
+var listChangesetEventsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListChangesetEvents
+SELECT
+    id,
+    changeset_id,
+    kind,
+    source,
+    key,
+    created_at,
+    metadata
+FROM changeset_events
+WHERE %s
+ORDER BY id ASC
+LIMIT %s
+`
+
+func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("id >= %s", opts.Cursor),
+	}
+
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
+	}
+
+	return sqlf.Sprintf(
+		listChangesetEventsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
+	)
+}
+
+// CountChangesetEventsOpts captures the query options needed for
+// counting changeset events.
+type CountChangesetEventsOpts struct {
+	ChangesetID int64
+}
+
+// CountChangesetEvents returns the number of changeset events in the database.
+func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (count int64, _ error) {
+	q := countChangesetEventsQuery(&opts)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countChangesetEventsQueryFmtstr = `
+-- source: pkg/a8n/store.go:CountChangesetEvents
+SELECT COUNT(id)
+FROM changeset_events
+WHERE %s
+`
+
+func countChangesetEventsQuery(opts *CountChangesetEventsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countChangesetEventsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
+// UpsertChangesetEvents creates or updates the given ChangesetEvents.
+func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) error {
+	q, err := s.upsertChangesetEventsQuery(cs)
+	if err != nil {
+		return err
+	}
+
+	i := -1
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		i++
+		err = scanChangesetEvent(cs[i], sc)
+		return int64(cs[i].ID), 1, err
+	})
+}
+
+const changesetEventsBatchQueryPrefix = `
+WITH batch AS (
+  SELECT * FROM ROWS FROM (
+  json_to_recordset(%s)
+  AS (
+      id           bigint,
+      changeset_id integer,
+      kind         text,
+      source       text,
+      key          text,
+      created_at   timestamptz,
+      metadata     jsonb
+    )
+  )
+  WITH ORDINALITY
+)
+`
+
+const batchChangesetEventsQuerySuffix = `
+SELECT
+  changed.id,
+  changed.changeset_id,
+  changed.kind,
+  changed.source,
+  changed.key,
+  changed.created_at,
+  changed.metadata
+FROM changed
+LEFT JOIN batch
+ON batch.changeset_id = changed.changeset_id
+AND batch.kind = changed.kind
+AND batch.key = changed.key
+ORDER BY batch.ordinality
+`
+
+var upsertChangesetEventsQueryFmtstr = changesetEventsBatchQueryPrefix + `,
+-- source: pkg/a8n/store.go:UpsertChangesetEvents
+changed AS (
+  INSERT INTO changeset_events (
+    changeset_id,
+    kind,
+    source,
+    key,
+    created_at,
+    metadata
+  )
+  SELECT
+    changeset_id,
+    kind,
+    source,
+    key,
+    created_at,
+    metadata
+  FROM batch
+  ON CONFLICT ON CONSTRAINT
+    changeset_events_changeset_id_kind_key_unique
+  DO UPDATE
+  SET
+    source   = excluded.source,
+    metadata = excluded.metadata
+    -- TODO: Set updated_at column
+  RETURNING changeset_events.*
+)
+` + batchChangesetEventsQuerySuffix
+
+func (s *Store) upsertChangesetEventsQuery(es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
+	now := s.now()
+	for _, e := range es {
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = now
+		}
+	}
+	return batchChangesetEventsQuery(upsertChangesetEventsQueryFmtstr, es)
+}
+
+func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
+	type record struct {
+		ID          int64           `json:"id"`
+		ChangesetID int64           `json:"changeset_id"`
+		Kind        string          `json:"kind"`
+		Source      string          `json:"source"`
+		Key         string          `json:"key"`
+		CreatedAt   time.Time       `json:"created_at"`
+		Metadata    json.RawMessage `json:"metadata"`
+	}
+
+	records := make([]record, 0, len(es))
+
+	for _, e := range es {
+		metadata, err := metadataColumn(e.Metadata)
+		if err != nil {
+			return nil, err
+		}
+
+		records = append(records, record{
+			ID:          e.ID,
+			ChangesetID: e.ChangesetID,
+			Kind:        string(e.Kind),
+			Source:      string(e.Source),
+			Key:         e.Key,
+			CreatedAt:   e.CreatedAt,
+			Metadata:    metadata,
+		})
+	}
+
+	batch, err := json.MarshalIndent(records, "    ", "    ")
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(fmtstr, string(batch)), nil
+}
+
 // CreateCampaign creates the given Campaign.
 func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	q, err := s.createCampaignQuery(c)
@@ -803,6 +1033,56 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 
 	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
 		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.ExternalServiceType)
+	}
+
+	return nil
+}
+
+func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
+	var metadata json.RawMessage
+
+	err := s.Scan(
+		&e.ID,
+		&e.ChangesetID,
+		&e.Kind,
+		&e.Source,
+		&e.Key,
+		&e.CreatedAt,
+		&metadata,
+	)
+	if err != nil {
+		return err
+	}
+
+	switch e.Kind {
+	case a8n.ChangesetEventKindGitHubAssigned:
+		e.Metadata = new(github.AssignedEvent)
+	case a8n.ChangesetEventKindGitHubClosed:
+		e.Metadata = new(github.ClosedEvent)
+	case a8n.ChangesetEventKindGitHubCommented:
+		e.Metadata = new(github.IssueComment)
+	case a8n.ChangesetEventKindGitHubRenamedTitle:
+		e.Metadata = new(github.RenamedTitleEvent)
+	case a8n.ChangesetEventKindGitHubMerged:
+		e.Metadata = new(github.MergedEvent)
+	case a8n.ChangesetEventKindGitHubReviewed:
+		e.Metadata = new(github.PullRequestReview)
+	case a8n.ChangesetEventKindGitHubReopened:
+		e.Metadata = new(github.ReopenedEvent)
+	case a8n.ChangesetEventKindGitHubReviewDismissed:
+		e.Metadata = new(github.ReviewDismissedEvent)
+	case a8n.ChangesetEventKindGitHubReviewRequestRemoved:
+		e.Metadata = new(github.ReviewRequestRemovedEvent)
+	case a8n.ChangesetEventKindGitHubReviewRequested:
+		e.Metadata = new(github.ReviewRequestedEvent)
+	case a8n.ChangesetEventKindGitHubUnassigned:
+		e.Metadata = new(github.UnassignedEvent)
+	default:
+		panic(errors.Errorf("unknown changeset event kind for %T", e))
+	}
+
+	if err = json.Unmarshal(metadata, e.Metadata); err != nil {
+		return errors.Wrapf(err, "scanChangesetEvent: failed to unmarshal %q metadata", e.Source)
 	}
 
 	return nil
