@@ -9,7 +9,7 @@ interactions:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/orgs/gorilla/repos?sort=pushed&page=1&per_page=100
+    url: https://api.github.com/orgs/gorilla/repos?sort=created&page=1&per_page=100
     method: GET
   response:
     body: "[{\"id\":40097643,\"node_id\":\"MDEwOlJlcG9zaXRvcnk0MDA5NzY0Mw==\",\"name\":\"csrf\",\"full_name\":\"gorilla/csrf\",\"private\":false,\"owner\":{\"login\":\"gorilla\",\"id\":489566,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjQ4OTU2Ng==\",\"avatar_url\":\"https://avatars0.githubusercontent.com/u/489566?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/gorilla\",\"html_url\":\"https://github.com/gorilla\",\"followers_url\":\"https://api.github.com/users/gorilla/followers\",\"following_url\":\"https://api.github.com/users/gorilla/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/gorilla/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/gorilla/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/gorilla/subscriptions\",\"organizations_url\":\"https://api.github.com/users/gorilla/orgs\",\"repos_url\":\"https://api.github.com/users/gorilla/repos\",\"events_url\":\"https://api.github.com/users/gorilla/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/gorilla/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/gorilla/csrf\",\"description\":\"gorilla/csrf
@@ -105,7 +105,7 @@ interactions:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/orgs/gorilla/repos?sort=pushed&page=2&per_page=100
+    url: https://api.github.com/orgs/gorilla/repos?sort=created&page=2&per_page=100
     method: GET
   response:
     body: '[]'
@@ -129,9 +129,9 @@ interactions:
       Etag:
       - '"c68033e496a627f8ac8608297764ab04"'
       Link:
-      - <https://api.github.com/organizations/489566/repos?sort=pushed&page=1&per_page=100>;
-        rel="prev", <https://api.github.com/organizations/489566/repos?sort=pushed&page=1&per_page=100>;
-        rel="last", <https://api.github.com/organizations/489566/repos?sort=pushed&page=1&per_page=100>;
+      - <https://api.github.com/organizations/489566/repos?sort=created&page=1&per_page=100>;
+        rel="prev", <https://api.github.com/organizations/489566/repos?sort=created&page=1&per_page=100>;
+        rel="last", <https://api.github.com/organizations/489566/repos?sort=created&page=1&per_page=100>;
         rel="first"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin

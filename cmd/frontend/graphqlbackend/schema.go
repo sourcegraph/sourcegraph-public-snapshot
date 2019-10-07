@@ -466,6 +466,9 @@ type Changeset implements Node {
     # The campaigns that have this changeset in them.
     campaigns(first: Int): CampaignConnection!
 
+    # The events belonging to this changeset.
+    events(first: Int): ChangesetEventConnection!
+
     # The date and time when the changeset was created.
     createdAt: DateTime!
 
@@ -490,10 +493,34 @@ type Changeset implements Node {
 
 # A list of changesets.
 type ChangesetConnection {
-    # A list of campaigns.
+    # A list of changesets.
     nodes: [Changeset!]!
 
     # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A changeset event in a code host (e.g. a comment on a PR on Github)
+type ChangesetEvent implements Node {
+    # The unique ID for the changeset event.
+    id: ID!
+
+    # The changeset this event belongs to.
+    changeset: Changeset!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+}
+
+# A list of changeset events.
+type ChangesetEventConnection {
+    # A list of changeset events.
+    nodes: [ChangesetEvent!]!
+
+    # The total number of changeset events in the connection.
     totalCount: Int!
 
     # Pagination information.

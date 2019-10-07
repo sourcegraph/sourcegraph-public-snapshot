@@ -11,7 +11,7 @@ import { Configuration } from './config'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395596
+const MINIMUM_MIGRATION_VERSION = 1528395597
 
 /**
  * How long to wait between queries to check the current database migration version on startup.

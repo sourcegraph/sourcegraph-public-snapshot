@@ -211,7 +211,7 @@ func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 // Use this function when you intend on mutating the transport.
 func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 	if cli.Transport == nil {
-		cli.Transport = defaultTransportClone()
+		cli.Transport = http.DefaultTransport
 	}
 
 	tr, ok := cli.Transport.(*http.Transport)
@@ -219,26 +219,8 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		return nil, errors.New("http.Client.Transport is not an *http.Transport")
 	}
 
-	if tr == http.DefaultTransport {
-		tr = defaultTransportClone()
-		cli.Transport = tr
-	}
+	tr = tr.Clone()
+	cli.Transport = tr
 
 	return tr, nil
-}
-
-func defaultTransportClone() *http.Transport {
-	// TODO(keegancsmith) Once go1.13 is out we can use
-	// http.DefaultTransport.Clone
-	// https://github.com/sourcegraph/sourcegraph/issues/4664 For now
-	// we set the same fields DefaultClient is initialized with.
-	t := http.DefaultTransport.(*http.Transport)
-	return &http.Transport{
-		Proxy:                 t.Proxy,
-		DialContext:           t.DialContext,
-		MaxIdleConns:          t.MaxIdleConns,
-		IdleConnTimeout:       t.IdleConnTimeout,
-		TLSHandshakeTimeout:   t.TLSHandshakeTimeout,
-		ExpectContinueTimeout: t.ExpectContinueTimeout,
-	}
 }
