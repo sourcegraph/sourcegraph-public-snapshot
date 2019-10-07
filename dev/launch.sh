@@ -15,7 +15,7 @@ if [ -f .env ]; then
 fi
 
 export GO111MODULE=on
-go run ./pkg/version/minversion
+go run ./internal/version/minversion
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
