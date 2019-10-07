@@ -21,7 +21,6 @@ import {
     DocumentPathRangeId,
     DefinitionReferenceResultId,
     RangeId,
-    entities,
 } from './models.database'
 
 /**
@@ -555,8 +554,11 @@ export class Database {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await this.connectionCache.withConnection(this.databasePath, entities, connection =>
-            instrument(databaseQueryDurationHistogram, databaseQueryErrorsCounter, () => callback(connection))
+        return await this.connectionCache.withConnection(
+            this.databasePath,
+            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
+            connection =>
+                instrument(databaseQueryDurationHistogram, databaseQueryErrorsCounter, () => callback(connection))
         )
     }
 }

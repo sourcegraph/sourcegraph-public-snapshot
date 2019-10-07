@@ -6,6 +6,7 @@ import {
     xrepoQueryErrorsCounter,
 } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
+import { ConnectionCache } from './cache'
 import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel } from './models.xrepo'
 import { TableInserter } from './inserter'
@@ -59,11 +60,12 @@ export interface SymbolReferences {
  */
 export class XrepoDatabase {
     /**
-     * Create a new `XrepoDatabase` backed by the given database connection.
+     * Create a new ` XrepoDatabase` backed by the given database filename.
      *
-     * @param connection The Postgres connection.
+     * @param connectionCache The cache of SQLite connections.
+     * @param database The filename of the database.
      */
-    constructor(private connection: Connection) {}
+    constructor(private connectionCache: ConnectionCache, private database: string) {}
 
     /**
      * Find the package that defines the given `scheme`, `name`, and `version`.
@@ -72,8 +74,8 @@ export class XrepoDatabase {
      * @param name The package name.
      * @param version The package version.
      */
-    public getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
-        return this.withConnection(connection =>
+    public async getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
+        return await this.withConnection(connection =>
             connection.getRepository(PackageModel).findOne({
                 where: {
                     scheme,
@@ -93,13 +95,13 @@ export class XrepoDatabase {
      * @param packages The list of packages that this repository defines (scheme, name, and version).
      * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      */
-    public addPackagesAndReferences(
+    public async addPackagesAndReferences(
         repository: string,
         commit: string,
         packages: Package[],
         references: SymbolReferences[]
     ): Promise<void> {
-        return this.withTransactionalEntityManager(async entityManager => {
+        return await this.withTransactionalEntityManager(async entityManager => {
             const packageInserter = new TableInserter(
                 entityManager,
                 PackageModel,
@@ -199,8 +201,10 @@ export class XrepoDatabase {
      *
      * @param callback The function invoke with the SQLite connection.
      */
-    private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return instrument(xrepoQueryDurationHistogram, xrepoQueryErrorsCounter, () => callback(this.connection))
+    private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
+        return await this.connectionCache.withConnection(this.database, [PackageModel, ReferenceModel], connection =>
+            instrument(xrepoQueryDurationHistogram, xrepoQueryErrorsCounter, () => callback(connection))
+        )
     }
 
     /**
@@ -209,7 +213,11 @@ export class XrepoDatabase {
      *
      * @param callback The function invoke with the entity manager.
      */
-    private withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
-        return this.withConnection(connection => connection.transaction(callback))
+    private async withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
+        return await this.connectionCache.withTransactionalEntityManager(
+            this.database,
+            [PackageModel, ReferenceModel],
+            callback
+        )
     }
 }

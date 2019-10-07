@@ -1,24 +1,23 @@
 import * as fs from 'mz/fs'
+import * as path from 'path'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { convertLsif } from './importer'
-import { createCommit, createLocation, createRemoteLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
+import { createCommit, createLocation, createRemoteLocation, getTestData } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { Readable } from 'stream'
 import { XrepoDatabase } from './xrepo'
-import { PackageModel, ReferenceModel } from './models.xrepo'
 
 describe('Database', () => {
     let storageRoot!: string
-    let xrepoDatabase!: XrepoDatabase
     const connectionCache = new ConnectionCache(10)
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, [PackageModel, ReferenceModel]))
+        const xrepoDatabase = new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db'))
 
         for (const { input, repository, commit } of await createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
@@ -32,7 +31,7 @@ describe('Database', () => {
     const loadDatabase = (repository: string, commit: string): Database =>
         new Database(
             storageRoot,
-            xrepoDatabase,
+            new XrepoDatabase(connectionCache, path.join(storageRoot, 'xrepo.db')),
             connectionCache,
             documentCache,
             resultChunkCache,

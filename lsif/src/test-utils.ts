@@ -1,8 +1,5 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as uuid from 'uuid'
-import { Connection } from 'typeorm'
-import { createSqliteConnection } from './connection'
 import { lsp } from 'lsif-protocol'
 import { Readable } from 'stream'
 
@@ -14,22 +11,6 @@ import { Readable } from 'stream'
  */
 export async function getTestData(filename: string): Promise<Readable> {
     return fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
-}
-
-/**
- * Create a new SQLite database connection with a randomized filename and
- * connection cache key.
- *
- * @param storageRoot The directory in which to create the database.
- * @param entities The set of expected entities present in this schema.
- */
-export function getCleanSqliteDatabase(
-    storageRoot: string,
-    // Decorators are not possible type check
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    entities: Function[]
-): Promise<Connection> {
-    return createSqliteConnection(path.join(storageRoot, `${uuid.v4()}.db`), entities)
 }
 
 export function createLocation(
