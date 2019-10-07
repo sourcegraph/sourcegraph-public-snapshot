@@ -113,7 +113,7 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 for pkg in github.com/sourcegraph/sourcegraph/cmd/replacer; do
-    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
 docker build -f cmd/replacer/Dockerfile -t $IMAGE $OUTPUT \

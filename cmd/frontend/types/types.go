@@ -4,7 +4,7 @@ package types
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // RepoFields are lazy loaded data fields on a Repo (from the DB).

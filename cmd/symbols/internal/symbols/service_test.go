@@ -17,10 +17,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
 func init() {

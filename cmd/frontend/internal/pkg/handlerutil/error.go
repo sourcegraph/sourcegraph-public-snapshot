@@ -1,6 +1,6 @@
 package handlerutil
 
-import "github.com/sourcegraph/sourcegraph/pkg/api"
+import "github.com/sourcegraph/sourcegraph/internal/api"
 
 // URLMovedError should be returned when a requested resource has moved to a new
 // address.

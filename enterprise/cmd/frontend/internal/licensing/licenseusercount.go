@@ -7,7 +7,7 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/pkg/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

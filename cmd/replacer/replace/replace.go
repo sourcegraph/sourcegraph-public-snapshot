@@ -33,7 +33,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"github.com/sourcegraph/sourcegraph/internal/store"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/schema"

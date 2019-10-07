@@ -6,7 +6,7 @@ import (
 	"html"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

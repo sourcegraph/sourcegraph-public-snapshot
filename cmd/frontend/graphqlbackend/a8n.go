@@ -8,7 +8,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/a8n"
 )
 
 // NewA8NResolver will be set by enterprise

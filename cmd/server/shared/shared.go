@@ -58,7 +58,7 @@ var defaultEnv = map[string]string{
 }
 
 // Set verbosity based on simple interpretation of env var to avoid external dependencies (such as
-// on github.com/sourcegraph/sourcegraph/pkg/env).
+// on github.com/sourcegraph/sourcegraph/internal/env).
 var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
 
 // Main is the main server command function which is shared between Sourcegraph

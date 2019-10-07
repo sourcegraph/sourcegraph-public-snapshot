@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
