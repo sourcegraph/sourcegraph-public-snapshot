@@ -34,7 +34,14 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 	}
 }
 
-var mockShowLangSuggestions func() ([]*searchSuggestionResolver, error)
+type showSearchSuggestionResolvers func() ([]*searchSuggestionResolver, error)
+
+var (
+	mockShowRepoSuggestions showSearchSuggestionResolvers
+	mockShowFileSuggestions showSearchSuggestionResolvers
+	mockShowLangSuggestions showSearchSuggestionResolvers
+	mockShowSymbolMatches   showSearchSuggestionResolvers
+)
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
 	args.applyDefaultsAndConstraints()
@@ -54,6 +61,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	var suggesters []func(ctx context.Context) ([]*searchSuggestionResolver, error)
 
 	showRepoSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+		if mockShowRepoSuggestions != nil {
+			return mockShowRepoSuggestions()
+		}
+
 		// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
@@ -92,6 +103,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showRepoSuggestions)
 
 	showFileSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+		if mockShowFileSuggestions != nil {
+			return mockShowFileSuggestions()
+		}
+
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file
 		// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
 		// make it easy to jump to files by just typing in their name, not `file:<their name>`).
@@ -171,6 +186,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showLangSuggestions)
 
 	showSymbolMatches := func(ctx context.Context) (results []*searchSuggestionResolver, err error) {
+		if mockShowSymbolMatches != nil {
+			return mockShowSymbolMatches()
+		}
+
 		repoRevs, _, _, err := r.resolveRepositories(ctx, nil)
 		if err != nil {
 			return nil, err
