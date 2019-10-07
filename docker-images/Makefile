@@ -1,9 +1,12 @@
 images += alpine
+images += prometheus
+images += grafana
 
 default:
 	@echo Possible targets: $(images)
 
 $(images):
+	[ ! -f $@/Makefile ] || (cd $@; $(MAKE))
 	$(eval tag := $(shell ./version.sh $@))
 	$(eval image := sourcegraph/$@)
 	docker build -t $(image):$(tag) $@

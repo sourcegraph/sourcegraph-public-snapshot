@@ -29,7 +29,7 @@ docker run --rm \
     -p 0.0.0.0:3000:3000 \
     -v ${GRAFANA_DISK}:/var/lib/grafana \
     -v ${DIR}/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
-    -v ${DIR}/../docker-images/grafana/config/provisioning/dashboards/sourcegraph:/sg_grafana_additional_dashboards \
+    -v ${DIR}/../docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
     ${IMAGE} >> ${GRAFANA_DISK}/logs/grafana.log 2>&1 &
 wait $!
 

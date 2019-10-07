@@ -19,6 +19,7 @@ useChokidar() {
         $(dirs_starstar $GO_DIRS) \
         cmd/frontend/graphqlbackend/schema.graphql \
         "'schema/*.json'" \
+        "'docker-images/grafana/jsonnet/*.jsonnet'" \
         "'cmd/symbols/**/*'" \
         "'cmd/symbols/.ctags.d/*'" \
         -c "'./dev/handle-change.sh {path}'"
@@ -34,6 +35,7 @@ execInotifywrapper() {
         -match '\.go$' \
         -match 'cmd/frontend/graphqlbackend/schema\.graphql' \
         -match 'schema/.*.json' \
+        -match 'docker-images/grafana/jsonnet/*.jsonnet' \
         -cmd './dev/handle-change.sh'
 }
 
@@ -49,6 +51,7 @@ execWatchman() {
     ["suffix", "go"],
     ["dirname", "cmd/symbols"],
     ["dirname", "schema"],
+    ["dirname", "docker-images/grafana/jsonnet"],
     ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
   ],
   "fields": ["name"]
