@@ -7,5 +7,5 @@ spec:
   template:
     spec:
       containers:
-        - image: sqs1/a8n-ruby-bundler-exec:ruby2.6.4
+        - image: sourcegraph/a8n-ruby-bundler-exec:ruby2.6.4
           imagePullPolicy: Always
