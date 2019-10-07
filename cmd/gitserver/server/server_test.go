@@ -317,7 +317,7 @@ func TestCloneRepo(t *testing.T) {
 			"GIT_AUTHOR_NAME=a",
 			"GIT_AUTHOR_EMAIL=a@a.com",
 		}
-		b, err := c.Output()
+		b, err := c.CombinedOutput()
 		if err != nil {
 			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
 		}
@@ -330,6 +330,8 @@ func TestCloneRepo(t *testing.T) {
 	cmd("git", "add", "hello.txt")
 	cmd("git", "commit", "-m", "hello")
 	wantCommit := cmd("git", "rev-parse", "HEAD")
+	// Add a bad tag
+	cmd("git", "tag", "HEAD")
 
 	reposDir, cleanup2 := tmpDir(t)
 	defer cleanup2()
@@ -361,7 +363,7 @@ func TestCloneRepo(t *testing.T) {
 	repo = dst
 	gotCommit := cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
-		t.Fatal("failed to clone")
+		t.Fatal("failed to clone:", gotCommit)
 	}
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
@@ -385,6 +387,65 @@ func TestCloneRepo(t *testing.T) {
 	repo = dst
 	gotCommit = cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
-		t.Fatal("failed to clone")
+		t.Fatal("failed to clone:", gotCommit)
+	}
+}
+
+func TestRemoveBadRefs(t *testing.T) {
+	dir, cleanup := tmpDir(t)
+	defer cleanup()
+
+	cmd := func(name string, arg ...string) string {
+		t.Helper()
+		c := exec.Command(name, arg...)
+		c.Dir = dir
+		c.Env = []string{
+			"GIT_COMMITTER_NAME=a",
+			"GIT_COMMITTER_EMAIL=a@a.com",
+			"GIT_AUTHOR_NAME=a",
+			"GIT_AUTHOR_EMAIL=a@a.com",
+		}
+		b, err := c.CombinedOutput()
+		if err != nil {
+			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
+		}
+		return string(b)
+	}
+
+	// Setup a repo with a commit so we can add bad refs
+	cmd("git", "init", ".")
+	cmd("sh", "-c", "echo hello world > hello.txt")
+	cmd("git", "add", "hello.txt")
+	cmd("git", "commit", "-m", "hello")
+	want := cmd("git", "rev-parse", "HEAD")
+
+	for _, name := range []string{"HEAD", "head", "Head", "HeAd"} {
+		// Tag
+		cmd("git", "tag", name)
+
+		if dontWant := cmd("git", "rev-parse", "HEAD"); dontWant == want {
+			t.Logf("WARNING: git tag %s failed to produce ambiguous output: %s", name, dontWant)
+		}
+
+		removeBadRefs(context.Background(), dir)
+
+		if got := cmd("git", "rev-parse", "HEAD"); got != want {
+			t.Fatalf("git tag %s failed to be removed: %s", name, got)
+		}
+
+		// Ref
+		if err := ioutil.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(want), 0600); err != nil {
+			t.Fatal(err)
+		}
+
+		if dontWant := cmd("git", "rev-parse", "HEAD"); dontWant == want {
+			t.Logf("WARNING: git ref %s failed to produce ambiguous output: %s", name, dontWant)
+		}
+
+		removeBadRefs(context.Background(), dir)
+
+		if got := cmd("git", "rev-parse", "HEAD"); got != want {
+			t.Fatalf("git ref %s failed to be removed: %s", name, got)
+		}
 	}
 }
