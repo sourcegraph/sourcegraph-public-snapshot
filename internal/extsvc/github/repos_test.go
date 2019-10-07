@@ -14,9 +14,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func TestSplitRepositoryNameWithOwner(t *testing.T) {

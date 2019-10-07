@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 type clientConfigurationResolver struct {

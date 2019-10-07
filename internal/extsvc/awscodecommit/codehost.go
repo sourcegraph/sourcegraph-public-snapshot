@@ -2,7 +2,7 @@ package awscodecommit
 
 import (
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // ServiceType is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit

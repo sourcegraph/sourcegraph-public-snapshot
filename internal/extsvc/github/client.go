@@ -18,11 +18,11 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/metrics"
-	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

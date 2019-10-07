@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")

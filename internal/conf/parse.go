@@ -3,8 +3,8 @@ package conf
 import (
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

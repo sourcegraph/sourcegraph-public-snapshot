@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 type mockHTTPResponseBody struct {

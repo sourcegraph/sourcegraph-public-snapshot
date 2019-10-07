@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // InsecureAddCommentToThread handles adding a new comment to an existing

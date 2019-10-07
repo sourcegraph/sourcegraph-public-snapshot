@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.

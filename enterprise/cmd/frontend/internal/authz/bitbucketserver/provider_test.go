@@ -18,9 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
 
 var update = flag.Bool("update", false, "update testdata")

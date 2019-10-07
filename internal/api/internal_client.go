@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
 )

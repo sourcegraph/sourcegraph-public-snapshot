@@ -19,9 +19,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 var (

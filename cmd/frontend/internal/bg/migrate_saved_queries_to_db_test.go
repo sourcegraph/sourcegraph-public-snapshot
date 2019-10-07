@@ -7,8 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestMigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(t *testing.T) {

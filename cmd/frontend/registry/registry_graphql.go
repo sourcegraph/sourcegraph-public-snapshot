@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"github.com/sourcegraph/sourcegraph/internal/registry"
 )
 
 func init() {

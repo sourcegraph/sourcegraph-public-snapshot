@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 var trackedRepo = []string{

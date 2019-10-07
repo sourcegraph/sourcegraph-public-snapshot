@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one

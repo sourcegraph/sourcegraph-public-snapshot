@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gittest"
 )
 
 func TestReadFile(t *testing.T) {

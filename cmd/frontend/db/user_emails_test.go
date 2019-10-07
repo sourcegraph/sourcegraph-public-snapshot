@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func TestUserEmails_Get(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

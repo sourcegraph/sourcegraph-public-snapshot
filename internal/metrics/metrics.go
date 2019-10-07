@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

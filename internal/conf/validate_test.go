@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

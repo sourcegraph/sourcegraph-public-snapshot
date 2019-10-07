@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)

@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

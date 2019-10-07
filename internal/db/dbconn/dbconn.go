@@ -27,7 +27,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/migrations"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

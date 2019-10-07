@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 // NewTx opens a transaction off of the given db, returning that

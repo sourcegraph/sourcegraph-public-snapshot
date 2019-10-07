@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 
 func TestSearchRepositories(t *testing.T) {

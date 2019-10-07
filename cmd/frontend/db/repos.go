@@ -12,11 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type repoNotFoundErr struct {

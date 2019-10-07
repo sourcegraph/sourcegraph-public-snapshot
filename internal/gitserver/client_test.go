@@ -17,9 +17,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gittest"
 )
 
 func TestClient_Archive(t *testing.T) {

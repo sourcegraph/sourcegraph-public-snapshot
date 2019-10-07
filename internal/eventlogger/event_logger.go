@@ -7,8 +7,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/google/uuid"
 	"golang.org/x/net/context"

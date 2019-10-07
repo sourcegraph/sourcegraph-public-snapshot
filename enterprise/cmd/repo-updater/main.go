@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 func main() {

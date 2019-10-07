@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // TestZipCacheDelete ensures that zip cache deletion is correctly hooked up to cache eviction.

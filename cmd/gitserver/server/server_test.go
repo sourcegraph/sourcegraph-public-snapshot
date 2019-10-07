@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 )
 
 type Test struct {

@@ -17,9 +17,9 @@ import (
 	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
 // Lstat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the

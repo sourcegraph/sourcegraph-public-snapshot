@@ -1,6 +1,6 @@
 package vcs
 
-import "github.com/sourcegraph/sourcegraph/pkg/api"
+import "github.com/sourcegraph/sourcegraph/internal/api"
 
 // RepoNotExistError is an error that reports a repository doesn't exist.
 type RepoNotExistError struct {

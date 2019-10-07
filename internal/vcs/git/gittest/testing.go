@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var logTmpDirs = flag.Bool("logtmpdirs", false, "log the temporary directories used by each test for inspection/debugging")

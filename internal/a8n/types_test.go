@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 func TestChangesetMetadata(t *testing.T) {

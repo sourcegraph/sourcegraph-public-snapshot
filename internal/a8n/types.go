@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 // A Campaign of changesets over multiple Repos over time.

@@ -11,11 +11,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

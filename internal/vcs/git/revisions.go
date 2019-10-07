@@ -7,9 +7,9 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.

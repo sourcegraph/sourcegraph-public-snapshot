@@ -10,12 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

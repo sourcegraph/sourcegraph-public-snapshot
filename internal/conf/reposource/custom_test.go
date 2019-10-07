@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func Test_customCloneURLToRepoName(t *testing.T) {

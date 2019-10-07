@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/httpheader"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/saml"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

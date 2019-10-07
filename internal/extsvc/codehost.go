@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type CodeHost struct {

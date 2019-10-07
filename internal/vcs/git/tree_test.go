@@ -10,10 +10,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gittest"
 )
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {

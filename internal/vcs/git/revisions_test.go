@@ -3,10 +3,10 @@ package git_test
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git/gittest"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gittest"
 )
 
 func TestIsAbsoluteRevision(t *testing.T) {

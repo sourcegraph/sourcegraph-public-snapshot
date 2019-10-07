@@ -12,9 +12,9 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

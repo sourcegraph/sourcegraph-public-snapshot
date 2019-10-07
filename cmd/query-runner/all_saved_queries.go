@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 )
 
 func GetenvTestBitbucketCloudUsername() string {

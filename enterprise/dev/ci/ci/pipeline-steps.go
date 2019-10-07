@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	bk "github.com/sourcegraph/sourcegraph/pkg/buildkite"
+	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
 
 var allDockerImages = []string{

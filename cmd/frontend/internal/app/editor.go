@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplicit bool) (string, error) {

@@ -20,9 +20,9 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/pkg/errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func TestUnmarshal(t *testing.T) {
