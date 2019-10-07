@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -30,7 +31,7 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 	}
 	repoNames := make([]string, len(repos))
 	for i := range repos {
-		repoNames[i] = string(repos[i].Name)
+		repoNames[i] = "^" + regexp.QuoteMeta(string(repos[i].Name)) + "$"
 	}
 
 	return &searchFilterSuggestions{
