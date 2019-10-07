@@ -208,6 +208,13 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
+		// Mock to bypass language suggestions.
+		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) {
+			return nil, nil
+		}
+		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
@@ -223,12 +230,6 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
-		// Mock to bypass language suggestions.
-		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
-			return &inventory.Inventory{}, nil
-		}
-		defer func() { backend.Mocks.Repos.GetInventory = nil }()
-
 		testSuggestions(t, "repo:foo", []string{"repo:foo-repo", "file:dir/file"})
 		if !calledReposList {
 			t.Error("!calledReposList")
@@ -239,24 +240,12 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("repo: field for language suggestions", func(t *testing.T) {
-		var mu sync.Mutex
 		calledReposList := false
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			mu.Lock()
-			defer mu.Unlock()
+		db.Mocks.Repos.List = func(_ context.Context, _ db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
-
-			want := db.ReposListOptions{
-				IncludePatterns: []string{"foo"},
-				OnlyRepoIDs:     true,
-				Enabled:         true,
-				LimitOffset:     limitOffset,
-			}
-			if !reflect.DeepEqual(op, want) {
-				t.Errorf("got %+v, want %+v", op, want)
-			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
 
 		calledReposGetInventory := false
 		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
@@ -300,7 +289,13 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { db.Mocks.Repos.List = nil }()
+
+		// Mock to bypass language suggestions.
+		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) {
+			return nil, nil
+		}
+		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
@@ -315,12 +310,6 @@ func TestSearchSuggestions(t *testing.T) {
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
-
-		// Mock to bypass language suggestions.
-		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
-			return &inventory.Inventory{}, nil
-		}
-		defer func() { backend.Mocks.Repos.GetInventory = nil }()
 
 		testSuggestions(t, "repo:foo file:bar", []string{"file:dir/bar-file"})
 		if !calledReposList {

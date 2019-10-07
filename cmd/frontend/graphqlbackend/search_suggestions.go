@@ -34,6 +34,8 @@ func (a *searchSuggestionsArgs) applyDefaultsAndConstraints() {
 	}
 }
 
+var mockShowLangSuggestions func() ([]*searchSuggestionResolver, error)
+
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
 	args.applyDefaultsAndConstraints()
 
@@ -105,6 +107,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	suggesters = append(suggesters, showFileSuggestions)
 
 	showLangSuggestions := func(ctx context.Context) ([]*searchSuggestionResolver, error) {
+		if mockShowLangSuggestions != nil {
+			return mockShowLangSuggestions()
+		}
+
 		// The "repo:" field must be specified for showing language suggestions.
 		// For performance reasons, only try to get languages of the first repository found
 		// within the scope of the "repo:" field value.
@@ -127,6 +133,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		repos, err := backend.Repos.List(ctx, db.ReposListOptions{
 			IncludePatterns: validValues,
 			Enabled:         true,
+			OnlyRepoIDs:     true,
 			LimitOffset: &db.LimitOffset{
 				Limit: 1,
 			},
