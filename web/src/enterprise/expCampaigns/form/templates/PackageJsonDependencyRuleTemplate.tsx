@@ -1,7 +1,7 @@
 import NpmIcon from 'mdi-react/NpmIcon'
 import React, { useCallback, useEffect } from 'react'
 import { RuleTemplate, RuleTemplateComponentContext } from '.'
-import { PackageJsonDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/packageJsonDependency'
+import { PackageJsonDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/packageJsonDependency/packageJsonDependency'
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../rules/types'
 import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormControl'
@@ -9,8 +9,6 @@ import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormContro
 const TEMPLATE_ID = 'packageJsonDependency'
 
 interface Props extends RuleTemplateComponentContext {}
-
-const ALL_VERSION_RANGE = '*'
 
 const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
     value,
@@ -28,12 +26,8 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             const newContext = { ...context, ...update }
             const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
                 parseDiagnosticQuery(`${newContext.filters || ''}${newContext.filters ? ' ' : ''}${query}`)
-            const campaignName = `${newContext.ban ? 'Ban' : 'Deprecate'} ${newContext.packageName || '<package>'}${
-                newContext.versionRange && newContext.versionRange !== ALL_VERSION_RANGE
-                    ? `@${newContext.versionRange}`
-                    : ''
-            } (npm)`
-            // TODO!(sqs): figure out how to make showWarnings also show warnings - is it a separate rule?
+            const campaignName = `Upgrade npm dependency ${newContext.packageName ||
+                '<package>'} to ${newContext.upgradeToVersion || '<version>'}`
             onCampaignChange({
                 isValid: !!newContext.packageName,
                 name: campaignName,
@@ -67,16 +61,13 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             if (packageName !== null) {
                 update.packageName = packageName
             }
-            const versionRange = params.get('versionRange')
-            if (versionRange !== null) {
-                update.versionRange = versionRange
+            const upgradeToVersion = params.get('upgradeToVersion')
+            if (upgradeToVersion !== null) {
+                update.upgradeToVersion = upgradeToVersion
             }
 
             updateContext({
-                versionRange: ALL_VERSION_RANGE,
                 createChangesets: true,
-                showWarnings: true,
-                ban: false,
                 ...update,
             })
         }
@@ -87,23 +78,13 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         [updateContext]
     )
 
-    const onVersionRangeChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => updateContext({ versionRange: e.currentTarget.value }),
+    const onUpgradeToVersionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => updateContext({ upgradeToVersion: e.currentTarget.value }),
         [updateContext]
     )
 
     const onCreateChangesetsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => updateContext({ createChangesets: e.currentTarget.checked }),
-        [updateContext]
-    )
-
-    const onShowWarningsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => updateContext({ showWarnings: e.currentTarget.checked }),
-        [updateContext]
-    )
-
-    const onBanChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => updateContext({ ban: e.currentTarget.checked }),
         [updateContext]
     )
 
@@ -131,21 +112,22 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                 />
             </div>
             <div className="form-group">
-                <label htmlFor="campaign-template-form__versionRange">Version range (to deprecate)</label>
+                <label htmlFor="campaign-template-form__upgradeToVersion">Upgrade to version</label>
                 <input
                     type="text"
-                    id="campaign-template-form__versionRange"
+                    id="campaign-template-form__upgradeToVersion"
                     className="form-control"
                     placeholder="semver range (e.g., <1.2.3)"
-                    value={context.versionRange || ''}
-                    onChange={onVersionRangeChange}
+                    value={context.upgradeToVersion || ''}
+                    onChange={onUpgradeToVersionChange}
                     disabled={disabled}
                 />
-                <p className="form-help text-muted small mb-0">
-                    <a href="https://docs.npmjs.com/misc/semver#ranges" target="_blank" rel="noopener noreferrer">
-                        How to specify version ranges
+                <p className="form-help text-muted small mb-0 mt-1">
+                    <a href="https://semver.npmjs.com/" target="_blank" rel="noopener noreferrer">
+                        Version range calculator
                     </a>{' '}
-                    (<code>{ALL_VERSION_RANGE}</code> matches all versions)
+                    &bull; Examples: <code className="border-bottom mr-3">&gt;=1.10.0</code>
+                    <code className="border-bottom mr-3">~0.2.2 || ^0.3.2</code>
                 </p>
             </div>
             <div className="form-group">
@@ -164,32 +146,6 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                             Create changesets with dependency removed from package.json
                         </label>
                     </li>
-                    <li className="form-check">
-                        <input
-                            type="checkbox"
-                            id="campaign-template-form__showWarnings"
-                            className="form-check-input"
-                            checked={context.showWarnings}
-                            onChange={onShowWarningsChange}
-                            disabled={disabled}
-                        />
-                        <label className="form-check-label" htmlFor="campaign-template-form__showWarnings">
-                            Show diagnostics on all active branches
-                        </label>
-                    </li>
-                    <li className="form-check">
-                        <input
-                            type="checkbox"
-                            id="campaign-template-form__ban"
-                            className="form-check-input"
-                            checked={context.ban}
-                            onChange={onBanChange}
-                            disabled={disabled}
-                        />
-                        <label className="form-check-label" htmlFor="campaign-template-form__ban">
-                            Ban (immediately fail all builds, including default branches, with this dependency version)
-                        </label>
-                    </li>
                 </ul>
             </div>
             <CampaignFormFiltersFormControl
@@ -203,9 +159,9 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
 
 export const PackageJsonDependencyRuleTemplate: RuleTemplate = {
     id: TEMPLATE_ID,
-    title: 'package.json dependency deprecation/ban',
+    title: 'package.json dependency upgrade',
     detail:
-        'Deprecate or ban an npm/yarn dependency in package.json manifests, opening issues/changesets for all affected code owners.',
+        'Upgrade an npm/yarn dependency in package.json files, opening issues/changesets for all affected code owners.',
     icon: NpmIcon,
     renderForm: PackageJsonDependencyCampaignTemplateForm,
 }

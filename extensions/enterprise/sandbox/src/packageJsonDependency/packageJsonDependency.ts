@@ -2,8 +2,8 @@ import * as sourcegraph from 'sourcegraph'
 import { flatten, sortedUniq } from 'lodash'
 import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
 import { map, switchMap, startWith, toArray, filter } from 'rxjs/operators'
-import { settingsObservable, memoizedFindTextInFiles } from './util'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { settingsObservable, memoizedFindTextInFiles } from '../util'
+import { propertyIsDefined } from '../../../../../shared/src/util/types'
 
 const REMOVE_COMMAND = 'packageJsonDependency.remove'
 
@@ -11,10 +11,8 @@ interface Settings {}
 
 export interface PackageJsonDependencyCampaignContext {
     packageName?: string
-    versionRange?: string
+    upgradeToVersion?: string
     createChangesets: boolean
-    showWarnings: boolean
-    ban: boolean
     filters?: string
     campaignName?: string
 }
