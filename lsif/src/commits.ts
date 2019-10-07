@@ -1,6 +1,7 @@
 import got from 'got'
 import { XrepoDatabase } from './xrepo'
 import * as crypto from 'crypto'
+import { MonitoringContext, monitor } from './monitoring'
 
 /**
  * THe number of commits to ask gitserver for when updating commit data for
@@ -18,19 +19,22 @@ const MAX_COMMITS_PER_UPDATE = 5000
  * @param repository The repository name.
  * @param commit The commit from which the gitserver queries should start.
  * @param gitserverUrls The set of ordered gitserver urls.
+ * @param ctx The monitoring context.
  */
 export async function discoverAndUpdateCommit(
     xrepoDatabase: XrepoDatabase,
     repository: string,
     commit: string,
-    gitserverUrls: string[]
+    gitserverUrls: string[],
+    ctx: MonitoringContext
 ): Promise<void> {
     if (await xrepoDatabase.isCommitTracked(repository, commit)) {
         return
     }
 
     const gitserverUrl = addrFor(repository, gitserverUrls)
-    await xrepoDatabase.updateCommits(repository, await getCommitsNear(gitserverUrl, repository, commit))
+    const commits = await monitor(ctx, 'querying commits', () => getCommitsNear(gitserverUrl, repository, commit))
+    await monitor(ctx, 'updating commits', () => xrepoDatabase.updateCommits(repository, commits))
 }
 
 /**

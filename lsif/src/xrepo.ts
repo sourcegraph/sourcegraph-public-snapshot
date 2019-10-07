@@ -10,6 +10,7 @@ import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
+import { MonitoringContext } from './monitoring'
 
 /**
  * The maximum traversal distance when finding the closest commit.
@@ -94,11 +95,13 @@ export class XrepoDatabase {
      *
      * @param repository The name of the repository.
      * @param commit The target commit.
+     * @param ctx The monitoring context.
      * @param gitserverUrls The set of ordered gitserver urls.
      */
     public async findClosestCommitWithData(
         repository: string,
         commit: string,
+        ctx: MonitoringContext,
         gitserverUrls?: string[]
     ): Promise<string | undefined> {
         // Request updated commit data from gitserver if this commit isn't
@@ -107,7 +110,7 @@ export class XrepoDatabase {
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (gitserverUrls) {
-            await discoverAndUpdateCommit(this, repository, commit, gitserverUrls)
+            await discoverAndUpdateCommit(this, repository, commit, gitserverUrls, ctx)
         }
 
         return this.withConnection(async connection => {

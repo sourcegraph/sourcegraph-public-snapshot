@@ -2,6 +2,7 @@ import { Connection, createConnection as _createConnection } from 'typeorm'
 import { entities } from './models.xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
+import { Logger } from 'winston'
 import { Configuration } from './config'
 
 /**
@@ -60,8 +61,9 @@ export function createSqliteConnection(
  * expected minimum, or dirty.
  *
  * @param configuration The current configuration.
+ * @param logger The logger instance.
  */
-export async function createPostgresConnection(configuration: Configuration): Promise<Connection> {
+export async function createPostgresConnection(configuration: Configuration, logger: Logger): Promise<Connection> {
     // Parse current PostgresDSN into connection options usable by
     // the typeorm postgres adapter.
     const url = new URL(configuration.postgresDSN)
@@ -75,13 +77,16 @@ export async function createPostgresConnection(configuration: Configuration): Pr
     }
 
     // Override the database name we're connecting to
-    const connection = await connect({
-        ...connectionOptions,
-        database: connectionOptions.database + '_lsif',
-    })
+    const connection = await connect(
+        {
+            ...connectionOptions,
+            database: connectionOptions.database + '_lsif',
+        },
+        logger
+    )
 
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection, connectionOptions.database || '')
+    await waitForMigrations(connection, connectionOptions.database || '', logger)
 
     return connection
 }
@@ -94,9 +99,12 @@ export async function createPostgresConnection(configuration: Configuration): Pr
  * `CONNECTION_RETRY_INTERVAL` environment variables.
  *
  * @param connectionOptions The connection options.
+ * @param logger The logger instance.
  */
-async function connect(connectionOptions: PostgresConnectionCredentialsOptions): Promise<Connection> {
-    for (let attempts = 0; ; attempts++) {
+async function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
+    for (let attempt = 0; attempt < MAX_CONNECTION_RETRIES; attempt++) {
+        logger.debug('connecting to cross-repository database')
+
         try {
             return await _createConnection({
                 type: 'postgres',
@@ -111,15 +119,18 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions):
             // invalid_catalog_name in:
             // https://www.postgresql.org/docs/9.4/errcodes-appendix.html.
 
-            if (error && error.code === '3D000' && attempts + 1 < MAX_CONNECTION_RETRIES) {
-                // snooze for a bit then retry
-                await new Promise(resolve => setTimeout(resolve, CONNECTION_RETRY_INTERVAL * 1000))
+            if (error && error.code === '3D000' && attempt + 1 < MAX_CONNECTION_RETRIES) {
+                // wait for migration
+                await sleep(CONNECTION_RETRY_INTERVAL)
                 continue
             }
 
             throw error
         }
     }
+
+    // just bail
+    throw new Error('cross-repository database does not exist')
 }
 
 /**
@@ -128,9 +139,12 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions):
  *
  * @param connection The connection to use.
  * @param database The target database in which to perform the query.
+ * @param logger The logger instance.
  */
-async function waitForMigrations(connection: Connection, database: string): Promise<void> {
+async function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
     while (true) {
+        logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
+
         try {
             // Get migration version from frontend database
             const currentVersion = await getMigrationVersion(connection, database)
@@ -179,4 +193,14 @@ async function getMigrationVersion(connection: Connection, database: string): Pr
     }
 
     throw new Error('Unusable migration state.')
+}
+
+/**
+ * Simulate sleep.
+ *
+ * @param durationMs How long to sleep.
+ */
+function sleep(durationMs: number): Promise<void> {
+    // TODO - is there a package for this?
+    return new Promise(resolve => setTimeout(resolve, durationMs))
 }
