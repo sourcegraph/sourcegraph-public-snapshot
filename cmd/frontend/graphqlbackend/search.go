@@ -588,7 +588,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if gitserver.IsRevisionNotFound(err) {
+					if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
 						continue
 					}
 

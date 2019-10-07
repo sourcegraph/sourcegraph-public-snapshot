@@ -85,6 +85,11 @@ func (r *NodeResolver) ToChangeset() (ChangesetResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
+	n, ok := r.Node.(ChangesetEventResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
 	n, ok := r.Node.(*discussionCommentResolver)
 	return n, ok

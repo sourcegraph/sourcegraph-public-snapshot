@@ -146,4 +146,17 @@ type ChangesetResolver interface {
 	ReviewState() (a8n.ChangesetReviewState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
+	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
+}
+
+type ChangesetEventsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]ChangesetEventResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type ChangesetEventResolver interface {
+	ID() graphql.ID
+	Changeset(ctx context.Context) (ChangesetResolver, error)
+	CreatedAt() DateTime
 }

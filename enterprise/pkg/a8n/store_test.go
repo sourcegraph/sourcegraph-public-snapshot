@@ -548,4 +548,153 @@ func TestStore(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("ChangesetEvents", func(t *testing.T) {
+		events := make([]*a8n.ChangesetEvent, 0, 3)
+
+		issueComment := &github.IssueComment{
+			DatabaseID: 443827703,
+			Author: github.Actor{
+				AvatarURL: "https://avatars0.githubusercontent.com/u/1976?v=4",
+				Login:     "sqs",
+				URL:       "https://github.com/sqs",
+			},
+			Editor:              nil,
+			AuthorAssociation:   "MEMBER",
+			Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
+			URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
+			CreatedAt:           now,
+			UpdatedAt:           now,
+			IncludesCreatedEdit: false,
+		}
+
+		t.Run("Upsert", func(t *testing.T) {
+			for i := 1; i < cap(events); i++ {
+				e := &a8n.ChangesetEvent{
+					ChangesetID: int64(i),
+					Kind:        a8n.ChangesetEventKindGitHubCommented,
+					Source:      a8n.ChangesetEventSourceGitHubAPI,
+					Key:         issueComment.Key(),
+					CreatedAt:   now,
+					Metadata:    issueComment,
+				}
+
+				events = append(events, e)
+			}
+
+			// Verify that no duplicates are introduced and no error is returned.
+			for i := 0; i < 2; i++ {
+				err := s.UpsertChangesetEvents(ctx, events...)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			for _, have := range events {
+				if have.ID == 0 {
+					t.Fatal("id should not be zero")
+				}
+
+				want := have.Clone()
+
+				want.ID = have.ID
+				want.CreatedAt = now
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("Count", func(t *testing.T) {
+			count, err := s.CountChangesetEvents(ctx, CountChangesetEventsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(len(events)); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+
+			count, err = s.CountChangesetEvents(ctx, CountChangesetEventsOpts{ChangesetID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(1); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("List", func(t *testing.T) {
+			for i := 1; i <= len(events); i++ {
+				opts := ListChangesetEventsOpts{ChangesetID: int64(i)}
+
+				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				have, want := ts, events[i-1:i]
+				if len(have) != len(want) {
+					t.Fatalf("listed %d events, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			for i := 1; i <= len(events); i++ {
+				cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: i})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				{
+					have, want := next, int64(0)
+					if i < len(events) {
+						want = events[i].ID
+					}
+
+					if have != want {
+						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					}
+				}
+
+				{
+					have, want := cs, events[:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d events, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			}
+
+			{
+				var cursor int64
+				for i := 1; i <= len(events); i++ {
+					opts := ListChangesetEventsOpts{Cursor: cursor, Limit: 1}
+					have, next, err := s.ListChangesetEvents(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := events[i-1 : i]
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+					cursor = next
+				}
+			}
+		})
+	})
 }

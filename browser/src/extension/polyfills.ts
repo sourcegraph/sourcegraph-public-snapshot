@@ -1,4 +1,6 @@
-// Same polyfills as the webapp
+// Polyfills for all scripts running in the browser extension
+
+// Include same polyfills as the webapp and native integrations
 import '../../../shared/src/polyfills'
 
 // Polyfill global browser API for Chrome

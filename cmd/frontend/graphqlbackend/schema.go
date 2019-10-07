@@ -466,6 +466,9 @@ type Changeset implements Node {
     # The campaigns that have this changeset in them.
     campaigns(first: Int): CampaignConnection!
 
+    # The events belonging to this changeset.
+    events(first: Int): ChangesetEventConnection!
+
     # The date and time when the changeset was created.
     createdAt: DateTime!
 
@@ -490,10 +493,34 @@ type Changeset implements Node {
 
 # A list of changesets.
 type ChangesetConnection {
-    # A list of campaigns.
+    # A list of changesets.
     nodes: [Changeset!]!
 
     # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A changeset event in a code host (e.g. a comment on a PR on Github)
+type ChangesetEvent implements Node {
+    # The unique ID for the changeset event.
+    id: ID!
+
+    # The changeset this event belongs to.
+    changeset: Changeset!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+}
+
+# A list of changeset events.
+type ChangesetEventConnection {
+    # A list of changeset events.
+    nodes: [ChangesetEvent!]!
+
+    # The total number of changeset events in the connection.
     totalCount: Int!
 
     # Pagination information.
@@ -1418,6 +1445,10 @@ type Repository implements Node & GenericSearchResultInterface {
         type: GitRefType
         # Ordering for Git refs in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git branches.
     branches(
@@ -1427,6 +1458,10 @@ type Repository implements Node & GenericSearchResultInterface {
         query: String
         # Ordering for Git branches in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git tags.
     tags(
@@ -1717,8 +1752,8 @@ type RepositoryContributor {
 
 # A code symbol (e.g., a function, variable, type, class, etc.).
 #
-# It is derived from symbols as defined in the Language Server Protocol (see
-# https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+# It is derived from DocumentSymbol as defined in the Language Server Protocol (see
+# https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
 type Symbol {
     # The name of the symbol.
     name: String!
@@ -2947,6 +2982,8 @@ type Site implements SettingsSubject {
     siteID: String!
     # The site's configuration. Only visible to site admins.
     configuration: SiteConfiguration!
+    # The site's critical configuration. Only visible to site admins.
+    criticalConfiguration: CriticalConfiguration!
     # The site's latest site-wide settings (which are the second-lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
@@ -3052,6 +3089,14 @@ type SiteConfiguration {
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
+}
+
+# The critical configuration for a site.
+type CriticalConfiguration {
+    # The unique identifier of this site configuration version.
+    id: Int!
+    # The effective configuration JSON.
+    effectiveContents: String!
 }
 
 # Information about software updates for Sourcegraph.

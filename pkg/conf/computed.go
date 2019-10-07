@@ -2,7 +2,6 @@ package conf
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"os"
 	"strconv"
@@ -11,8 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/legacyconf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,57 +19,7 @@ func init() {
 		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployCluster, DeployDocker, DeployDev, deployType)
 	}
 
-	defaultConfig := defaultConfigForDeployment()
-
-	// If a legacy configuration file is available (specified via
-	// SOURCEGRAPH_CONFIG_FILE), use it as the default for the critical and
-	// site configs.
-	//
-	// This relies on the fact that the old v2.13.6 site config schema has
-	// most fields align directly with the v3.0+ critical and site config
-	// schemas.
-	//
-	// This code can be removed in the next significant version after 3.0 (NOT
-	// preview), after which critical/site config schemas no longer need to
-	// align generally.
-	//
-	// TODO(slimsag): Remove after 3.0 (NOT preview).
-	{
-		legacyConf := jsonc.Normalize(legacyconf.Raw())
-
-		var criticalDecoded schema.CriticalConfiguration
-		_ = json.Unmarshal(legacyConf, &criticalDecoded)
-
-		// Backwards compatability for deprecated environment variables
-		// that we previously considered deprecated but are actually
-		// widespread in use in user's deployments and/or are suggested for
-		// use in our public documentation (i.e., even though these were
-		// long deprecated, our docs were not up to date).
-		criticalBackcompatVars := map[string]func(value string){
-			"LIGHTSTEP_PROJECT":      func(v string) { criticalDecoded.LightstepProject = v },
-			"LIGHTSTEP_ACCESS_TOKEN": func(v string) { criticalDecoded.LightstepAccessToken = v },
-		}
-		for envVar, setter := range criticalBackcompatVars {
-			val := os.Getenv(envVar)
-			if val != "" {
-				setter(val)
-			}
-		}
-
-		critical, err := json.MarshalIndent(criticalDecoded, "", "  ")
-		if string(critical) != "{}" && err == nil {
-			defaultConfig.Critical = string(critical)
-		}
-
-		var siteDecoded schema.SiteConfiguration
-		_ = json.Unmarshal(legacyConf, &siteDecoded)
-		site, err := json.MarshalIndent(siteDecoded, "", "  ")
-		if string(site) != "{}" && err == nil {
-			defaultConfig.Site = string(site)
-		}
-	}
-
-	confdefaults.Default = defaultConfig
+	confdefaults.Default = defaultConfigForDeployment()
 }
 
 func defaultConfigForDeployment() conftypes.RawUnified {

@@ -39,7 +39,12 @@ type SelectTextMethod = 'selectall' | 'keyboard'
 type EnterTextMethod = 'type' | 'paste'
 
 export class Driver {
-    constructor(public browser: puppeteer.Browser, public page: puppeteer.Page, public sourcegraphBaseUrl: string) {}
+    constructor(
+        public browser: puppeteer.Browser,
+        public page: puppeteer.Page,
+        public sourcegraphBaseUrl: string,
+        public keepBrowser?: boolean
+    ) {}
 
     public async ensureLoggedIn({
         username,
@@ -93,7 +98,9 @@ export class Driver {
     }
 
     public async close(): Promise<void> {
-        await this.browser.close()
+        if (!this.keepBrowser) {
+            await this.browser.close()
+        }
     }
 
     public async newPage(): Promise<void> {
@@ -472,10 +479,13 @@ interface DriverOptions extends LaunchOptions {
 
     /** If true, print browser console messages to stdout. */
     logBrowserConsole?: boolean
+
+    /** If true, keep browser open when driver is closed */
+    keepBrowser?: boolean
 }
 
 export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
-    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole } = options
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
     const args = ['--window-size=1280,1024']
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
@@ -505,5 +515,5 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
             console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
         })
     }
-    return new Driver(browser, page, sourcegraphBaseUrl)
+    return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)
 }

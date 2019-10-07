@@ -1,10 +1,11 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { createDatabaseFilename, hashKey, mustGet } from './util'
+import { createDatabaseFilename, hashKey, mustGet, hasErrorCode } from './util'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter, instrument } from './metrics'
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
+import * as fs from 'mz/fs'
 import { isEqual, uniqWith } from 'lodash'
 import { PackageModel } from './models.xrepo'
 import { XrepoDatabase } from './xrepo'
@@ -21,6 +22,7 @@ import {
     DocumentPathRangeId,
     DefinitionReferenceResultId,
     RangeId,
+    entities,
 } from './models.database'
 
 /**
@@ -554,11 +556,8 @@ export class Database {
      * @param callback The function invoke with the SQLite connection.
      */
     private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await this.connectionCache.withConnection(
-            this.databasePath,
-            [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel],
-            connection =>
-                instrument(databaseQueryDurationHistogram, databaseQueryErrorsCounter, () => callback(connection))
+        return await this.connectionCache.withConnection(this.databasePath, entities, connection =>
+            instrument(databaseQueryDurationHistogram, databaseQueryErrorsCounter, () => callback(connection))
         )
     }
 }
@@ -683,4 +682,49 @@ export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: strin
     }
 
     return locations
+}
+
+/**
+ * Create a new `Database` backed by the given file. A databases is only
+ * created if the file exists.
+ *
+ * @param storageRoot The path where SQLite databases are stored.
+ * @param xrepoDatabase The cross-repo database.
+ * @param connectionCache The cache of SQLite connections.
+ * @param documentCache The cache of loaded documents.
+ * @param resultChunkCache The cache of loaded result chunks.
+ * @param repository The repository for which this database answers queries.
+ * @param commit The commit for which this database answers queries.
+ * @param databasePath The path to the database file.
+ */
+export async function tryCreateDatabase(
+    storageRoot: string,
+    xrepoDatabase: XrepoDatabase,
+    connectionCache: ConnectionCache,
+    documentCache: DocumentCache,
+    resultChunkCache: ResultChunkCache,
+    repository: string,
+    commit: string,
+    databasePath: string
+): Promise<Database | undefined> {
+    try {
+        await fs.stat(databasePath)
+    } catch (e) {
+        if (hasErrorCode(e, 'ENOENT')) {
+            return undefined
+        }
+
+        throw e
+    }
+
+    return new Database(
+        storageRoot,
+        xrepoDatabase,
+        connectionCache,
+        documentCache,
+        resultChunkCache,
+        repository,
+        commit,
+        databasePath
+    )
 }

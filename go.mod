@@ -146,7 +146,7 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20190205151546-7939fa138765
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
-	github.com/sourcegraph/gosyntect v0.0.0-20190512033712-1205f5e776e1
+	github.com/sourcegraph/gosyntect v0.0.0-20191003053245-e91d603ba4eb
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spf13/afero v1.2.2 // indirect
@@ -199,7 +199,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20191001080155-fb5ac48a08e1
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20191004083501-73044befd78b
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

@@ -267,13 +267,18 @@ func TestCampaigns(t *testing.T) {
 		}),
 	}
 
+	bbsURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if bbsURL == "" {
+		// The test fixtures and golden files were generated with
+		// this config pointed to bitbucket.sgdev.org
+		bbsURL = "https://bitbucket.sgdev.org"
+	}
+
 	bbsExtSvc := &repos.ExternalService{
 		Kind:        "BITBUCKETSERVER",
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
-			// The test fixtures and golden files were generated with
-			// this config pointed to bitbucket.sgdev.org
-			Url:   os.Getenv("BITBUCKET_SERVER_URL"),
+			Url:   bbsURL,
 			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 			Repos: []string{"SOUR/vegeta"},
 		}),
@@ -310,6 +315,10 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	type ChangesetEventConnection struct {
+		TotalCount int
+	}
+
 	type Changeset struct {
 		ID          string
 		Repository  struct{ ID string }
@@ -324,6 +333,7 @@ func TestCampaigns(t *testing.T) {
 			ServiceType string
 		}
 		ReviewState string
+		Events      ChangesetEventConnection
 	}
 
 	var result struct {
@@ -353,6 +363,9 @@ func TestCampaigns(t *testing.T) {
 				serviceType
 			}
 			reviewState
+			events(first: 100) {
+				totalCount
+			}
 		}
 		mutation() {
 			changesets: createChangesets(input: %s) {
@@ -375,6 +388,9 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "github",
 				},
 				ReviewState: "APPROVED",
+				Events: ChangesetEventConnection{
+					TotalCount: 26,
+				},
 			},
 			{
 				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
@@ -388,6 +404,9 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "bitbucketServer",
 				},
 				ReviewState: "CHANGES_REQUESTED",
+				Events: ChangesetEventConnection{
+					TotalCount: 0,
+				},
 			},
 		}
 
