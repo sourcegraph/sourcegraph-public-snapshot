@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/env"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 

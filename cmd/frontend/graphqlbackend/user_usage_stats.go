@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/pubsub/pubsubutil"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/env"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/pubsub/pubsubutil"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/version"
 )
 
 // pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.

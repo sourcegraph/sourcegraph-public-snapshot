@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/httpcli"
 	"github.com/uber/gonduit"
 	"github.com/uber/gonduit/core"
 	"github.com/uber/gonduit/requests"

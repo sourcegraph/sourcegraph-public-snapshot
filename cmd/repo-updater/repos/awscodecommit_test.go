@@ -3,8 +3,8 @@ package repos
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

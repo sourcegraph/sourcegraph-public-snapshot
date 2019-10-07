@@ -8,9 +8,9 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

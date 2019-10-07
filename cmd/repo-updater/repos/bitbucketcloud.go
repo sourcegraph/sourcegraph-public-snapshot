@@ -7,12 +7,12 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
 )

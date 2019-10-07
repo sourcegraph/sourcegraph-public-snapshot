@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/schema"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs"
 )
 
 // HTTP returns the most appropriate HTTP status code that describes

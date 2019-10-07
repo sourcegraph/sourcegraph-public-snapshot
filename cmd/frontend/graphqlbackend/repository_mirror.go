@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/repoupdater"
+	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/cmd/internal/repoupdater/protocol"
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {

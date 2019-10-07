@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
 	"golang.org/x/net/context/ctxhttp"
 )
 

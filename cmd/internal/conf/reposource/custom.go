@@ -7,8 +7,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

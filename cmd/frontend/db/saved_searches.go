@@ -9,9 +9,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/trace"
 )
 
 type savedSearches struct{}

@@ -14,10 +14,10 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/env"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/version"
 )
 
 var ravenClient *raven.Client

@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/env"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

@@ -7,8 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/errcode"
 )
 
 var ErrMustBeSiteAdmin = errors.New("must be site admin")

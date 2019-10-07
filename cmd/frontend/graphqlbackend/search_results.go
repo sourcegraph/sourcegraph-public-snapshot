@@ -29,11 +29,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs/git"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs

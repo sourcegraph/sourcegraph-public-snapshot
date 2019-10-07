@@ -11,8 +11,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbconn"
 )
 
 // Config contains the contents of a critical/site config along with associated metadata.

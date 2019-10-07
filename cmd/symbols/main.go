@@ -22,11 +22,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/env"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/tracer"
 )
 
 const port = "3184"

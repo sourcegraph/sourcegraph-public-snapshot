@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/randstring"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/randstring"
 	"golang.org/x/crypto/bcrypt"
 )
 

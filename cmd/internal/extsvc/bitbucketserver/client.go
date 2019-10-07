@@ -20,8 +20,8 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/metrics"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/metrics"
 	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

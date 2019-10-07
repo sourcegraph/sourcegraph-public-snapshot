@@ -11,9 +11,9 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc"
 )
 
 func init() {

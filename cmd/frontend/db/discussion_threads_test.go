@@ -7,8 +7,8 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbtesting"
 )
 
 // TODO(slimsag:discussions): future: test that DiscussionThreadsListOptions.AuthorUserID works

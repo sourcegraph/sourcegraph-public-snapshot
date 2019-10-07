@@ -3,7 +3,7 @@ package reposource
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

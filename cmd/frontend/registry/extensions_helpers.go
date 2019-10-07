@@ -3,7 +3,7 @@ package registry
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/registry"
 )
 
 // FilterRegistryExtensions returns the subset of extensions that match the query. It does not

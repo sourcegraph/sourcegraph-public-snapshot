@@ -11,13 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs/git"
 )
 
 // CachedGitRepo returns a handle to the Git repository that does not know the remote URL. If

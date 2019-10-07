@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbtesting"
 )
 
 func TestEventLogs_ValidInfo(t *testing.T) {

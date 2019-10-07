@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/errcode"
 )
 
 func init() {

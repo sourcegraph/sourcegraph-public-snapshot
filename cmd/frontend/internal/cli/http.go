@@ -21,10 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
+	tracepkg "github.com/sourcegraph/sourcegraph/cmd/internal/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/version"
 )
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to

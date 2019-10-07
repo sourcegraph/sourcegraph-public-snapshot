@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

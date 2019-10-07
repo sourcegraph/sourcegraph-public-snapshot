@@ -27,7 +27,7 @@ func TestPreSpansToTable_Complex(t *testing.T) {
 </span><span style="color:#323232;">
 </span><span style="font-weight:bold;color:#a71d5d;">import </span><span style="color:#323232;">(
 </span><span style="color:#323232;">	</span><span style="color:#183691;">&quot;net/http&quot;
-</span><span style="color:#323232;">	</span><span style="color:#183691;">&quot;github.com/sourcegraph/sourcegraph/pkg/api/legacyerr&quot;
+</span><span style="color:#323232;">	</span><span style="color:#183691;">&quot;github.com/sourcegraph/sourcegraph/cmd/internal/api/legacyerr&quot;
 </span><span style="color:#323232;">)
 </span><span style="color:#323232;">
 </span><span style="color:#323232;">
@@ -38,7 +38,7 @@ func TestPreSpansToTable_Complex(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">import </span><span style="color:#323232;">(
 </span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
-</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/pkg/api/legacyerr&#34;
+</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/cmd/internal/api/legacyerr&#34;
 </span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">)
 </span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
 </span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="color:#323232;">

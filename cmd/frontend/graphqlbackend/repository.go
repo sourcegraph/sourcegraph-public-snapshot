@@ -14,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs/git"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

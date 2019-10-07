@@ -10,14 +10,14 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/gitolite"
 )
 
 // A Store exposes methods to read and write repos and external services.

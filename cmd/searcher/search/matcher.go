@@ -15,8 +15,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/pathmatch"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/store"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"

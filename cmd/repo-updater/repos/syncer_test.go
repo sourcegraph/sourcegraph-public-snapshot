@@ -12,13 +12,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/gitolite"
 )
 
 func TestSyncer_Sync(t *testing.T) {

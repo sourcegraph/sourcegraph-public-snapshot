@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/httptestutil"
 )
 
 // NewTestClient returns a bitbucketserver.Client that records its interactions

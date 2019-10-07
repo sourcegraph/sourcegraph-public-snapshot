@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/highlight"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/highlight"
 )
 
 func TestIsBinary(t *testing.T) {

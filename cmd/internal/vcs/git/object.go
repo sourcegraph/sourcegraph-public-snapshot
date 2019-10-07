@@ -8,7 +8,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
 )
 
 // OID is a Git OID (40-char hex-encoded).

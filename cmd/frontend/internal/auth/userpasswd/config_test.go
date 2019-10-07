@@ -3,7 +3,7 @@ package userpasswd
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

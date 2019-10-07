@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/version"
 )
 
 type eventLogs struct{}

@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/actor"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/errcode"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames and org names.

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf/confdefaults"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs/util"
 )
 
 func TestContext_Tree(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

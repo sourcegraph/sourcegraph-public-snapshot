@@ -11,11 +11,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/honey"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/honey"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

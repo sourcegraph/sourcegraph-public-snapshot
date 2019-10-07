@@ -1,6 +1,6 @@
 package gitolite
 
-import "github.com/sourcegraph/sourcegraph/pkg/api"
+import "github.com/sourcegraph/sourcegraph/cmd/internal/api"
 
 const ServiceType = "gitolite"
 

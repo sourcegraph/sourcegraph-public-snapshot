@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
 )
 
 type RepoUpdateSchedulerInfoArgs struct {

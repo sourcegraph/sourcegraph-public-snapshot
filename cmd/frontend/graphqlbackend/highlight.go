@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+import "github.com/sourcegraph/sourcegraph/cmd/internal/vcs/git"
 
 type highlightedRange struct {
 	line      int32

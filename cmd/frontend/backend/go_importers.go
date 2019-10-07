@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
 )
 

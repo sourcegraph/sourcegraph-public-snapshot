@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/highlight"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs/git"
 )
 
 func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {

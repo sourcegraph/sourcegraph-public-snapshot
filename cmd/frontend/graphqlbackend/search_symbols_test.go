@@ -8,9 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/vcs/git"
 )
 
 func TestMakeFileMatchURIFromSymbol(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/redispool"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/redispool"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

@@ -10,9 +10,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/rcache"
 )
 
 // Provider implements authz.Provider for GitHub repository permissions.

@@ -10,9 +10,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/diskcache"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gitserver"
 )
 
 // Service is the symbols service.

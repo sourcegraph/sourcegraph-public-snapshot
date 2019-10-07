@@ -10,8 +10,8 @@ import (
 	"net/smtp"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/txemail/txtypes"
 	gophermail "gopkg.in/jpoehls/gophermail.v0"
 )
 

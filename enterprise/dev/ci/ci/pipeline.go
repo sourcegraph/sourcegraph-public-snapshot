@@ -5,7 +5,7 @@ package ci
 import (
 	"time"
 
-	bk "github.com/sourcegraph/sourcegraph/pkg/buildkite"
+	bk "github.com/sourcegraph/sourcegraph/cmd/internal/buildkite"
 )
 
 func init() {

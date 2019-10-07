@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/extsvc/github"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")

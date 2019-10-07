@@ -14,11 +14,11 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/gituri"
+	searchbackend "github.com/sourcegraph/sourcegraph/cmd/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/trace"
 )
 
 func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {

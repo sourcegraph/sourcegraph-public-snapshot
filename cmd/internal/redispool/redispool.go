@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/cmd/internal/env"
 )
 
 var (
