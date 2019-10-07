@@ -172,7 +172,11 @@ async function waitForMigrations(connection: Connection, database: string): Prom
  * @param database The name of the dblink connection to query through.
  */
 async function getMigrationVersion(connection: Connection, connectionName: string): Promise<string> {
-    const query = `SELECT * FROM dblink($1, 'select * from schema_migrations') as temp(version text, dirty bool);`
+    const query = `
+        SELECT * FROM
+        dblink($1, 'select * from schema_migrations')
+        as temp(version text, dirty bool);
+    `
 
     const rows = (await connection.query(query, [connectionName])) as {
         version: string
