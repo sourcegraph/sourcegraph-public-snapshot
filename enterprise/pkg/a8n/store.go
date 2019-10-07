@@ -599,12 +599,12 @@ changed AS (
     metadata
   FROM batch
   ON CONFLICT ON CONSTRAINT
-	changeset_events_changeset_id_kind_key_unique
+    changeset_events_changeset_id_kind_key_unique
   DO UPDATE
   SET
     source   = excluded.source,
     metadata = excluded.metadata
-	-- TODO: Set updated_at column
+    -- TODO: Set updated_at column
   RETURNING changeset_events.*
 )
 ` + batchChangesetEventsQuerySuffix
