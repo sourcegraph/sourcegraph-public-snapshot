@@ -315,6 +315,19 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	type ChangesetEvent struct {
+		ID        string
+		Changeset struct{ ID string }
+	}
+
+	type ChangesetEventConnection struct {
+		Nodes      []ChangesetEvent
+		TotalCount int
+		PageInfo   struct {
+			HasNextPage bool
+		}
+	}
+
 	type Changeset struct {
 		ID          string
 		Repository  struct{ ID string }
@@ -329,6 +342,7 @@ func TestCampaigns(t *testing.T) {
 			ServiceType string
 		}
 		ReviewState string
+		Events      ChangesetEventConnection
 	}
 
 	var result struct {
@@ -358,6 +372,9 @@ func TestCampaigns(t *testing.T) {
 				serviceType
 			}
 			reviewState
+			events(first: 100) {
+				totalCount
+			}
 		}
 		mutation() {
 			changesets: createChangesets(input: %s) {
@@ -380,6 +397,9 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "github",
 				},
 				ReviewState: "APPROVED",
+				Events: ChangesetEventConnection{
+					TotalCount: 26,
+				},
 			},
 			{
 				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
@@ -393,6 +413,9 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "bitbucketServer",
 				},
 				ReviewState: "CHANGES_REQUESTED",
+				Events: ChangesetEventConnection{
+					TotalCount: 0,
+				},
 			},
 		}
 
