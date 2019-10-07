@@ -13,9 +13,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -123,18 +123,24 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, nil
 		}
 
-		repoRevs, _, _, err := r.resolveRepositories(ctx, validValues)
+		// Only care about the first found repository.
+		repos, err := backend.Repos.List(ctx, db.ReposListOptions{
+			IncludePatterns: validValues,
+			Enabled:         true,
+			LimitOffset: &db.LimitOffset{
+				Limit: 1,
+			},
+		})
 		if err != nil {
 			return nil, err
-		} else if len(repoRevs) == 0 {
+		} else if len(repos) == 0 {
 			return nil, nil
 		}
+		repo := repos[0]
 
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		// Only care about the first found repository.
-		repo := &types.Repo{Name: repoRevs[0].Repo.Name}
 		commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
 		if err != nil {
 			return nil, err
