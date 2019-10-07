@@ -1049,9 +1049,9 @@ type Search {
 
 # A value with its description.
 type DescriptiveValue {
-    # The value itself.
+    # The value itself, e.g. "repo".
     value: String!
-    # Description of the value.
+    # Description of the value, e.g. "regex-pattern (include results whose repository path matches)".
     description: String!
 }
 
