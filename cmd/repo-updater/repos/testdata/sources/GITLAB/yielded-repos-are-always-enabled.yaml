@@ -7,7 +7,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://gitlab.com/api/v4/projects?order_by=last_activity_at&per_page=100&search=gokulkarthick
+    url: https://gitlab.com/api/v4/projects?per_page=100&search=gokulkarthick
     method: GET
   response:
     body: '[{"id":927197,"description":"","name":"gokulkarthick","name_with_namespace":"Gokul
@@ -24,8 +24,8 @@ interactions:
       Etag:
       - W/"2e213a0bf612bec448cc4972d255ca73"
       Link:
-      - <https://gitlab.com/api/v4/projects?membership=false&order_by=last_activity_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&search=gokulkarthick&simple=false&sort=desc&starred=false&statistics=false&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
-        rel="first", <https://gitlab.com/api/v4/projects?membership=false&order_by=last_activity_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&search=gokulkarthick&simple=false&sort=desc&starred=false&statistics=false&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+      - <https://gitlab.com/api/v4/projects?membership=false&owned=false&page=1&per_page=100&repository_checksum_failed=false&search=gokulkarthick&simple=false&sort=desc&starred=false&statistics=false&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="first", <https://gitlab.com/api/v4/projects?membership=false&owned=false&page=1&per_page=100&repository_checksum_failed=false&search=gokulkarthick&simple=false&sort=desc&starred=false&statistics=false&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
         rel="last"
       Referrer-Policy:
       - strict-origin-when-cross-origin

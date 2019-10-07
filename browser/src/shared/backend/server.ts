@@ -4,29 +4,6 @@ import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 
-/**
- * @returns Observable that emits the client configuration details.
- *         Errors
- */
-export const resolveClientConfiguration = (
-    requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<GQL.IClientConfigurationDetails> =>
-    requestGraphQL<GQL.IQuery>({
-        request: gql`query ClientConfiguration() {
-            clientConfiguration {
-                contentScriptUrls
-                parentSourcegraph {
-                    url
-                }
-            }
-        }`,
-        variables: {},
-        mightContainPrivateInfo: false,
-    }).pipe(
-        map(dataOrThrowErrors),
-        map(({ clientConfiguration }) => clientConfiguration, catchError((err, caught) => caught))
-    )
-
 export const fetchCurrentUser = (
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<GQL.IUser | undefined> =>

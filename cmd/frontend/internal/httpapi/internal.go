@@ -470,5 +470,24 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("pong"))
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "could not parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	for _, service := range r.Form["service"] {
+		switch service {
+		case "gitserver":
+			if err := gitserver.DefaultClient.WaitForGitServers(r.Context()); err != nil {
+				http.Error(w, "wait for gitservers failed: "+err.Error(), http.StatusBadGateway)
+				return
+			}
+
+		default:
+			http.Error(w, "unknown service: "+service, http.StatusBadRequest)
+			return
+		}
+	}
+
+	_, _ = w.Write([]byte("pong"))
 }

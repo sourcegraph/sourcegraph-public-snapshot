@@ -122,6 +122,12 @@ tslint.config.js @felixfbecker
 /cmd/frontend/internal/pkg/usagestats @dadlerj
 /pkg/eventlogger @dadlerj
 
+# Automation
+*/a8n/* @sourcegraph/automation
+/enterprise/pkg/a8n @sourcegraph/automation
+/pkg/a8n @sourcegraph/automation
+**/campaigns/** @sourcegraph/automation
+
 # Auth
 /cmd/frontend/auth/ @beyang
 /cmd/frontend/internal/auth/ @beyang
