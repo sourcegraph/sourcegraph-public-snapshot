@@ -88,6 +88,11 @@ type AssignedEvent struct {
 	CreatedAt time.Time
 }
 
+// Key is a unique key identifying this event in the context of its pull request.
+func (e AssignedEvent) Key() string {
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
+}
+
 // ClosedEvent represents a 'closed' event on a PullRequest.
 type ClosedEvent struct {
 	Actor     Actor
@@ -95,9 +100,15 @@ type ClosedEvent struct {
 	URL       string
 }
 
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ClosedEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+}
+
 // IssueComment represents a comment on an PullRequest that isn't
 // a commit or review comment.
 type IssueComment struct {
+	DatabaseID          int64
 	Author              Actor
 	Editor              *Actor
 	AuthorAssociation   string
@@ -108,12 +119,22 @@ type IssueComment struct {
 	IncludesCreatedEdit bool
 }
 
+// Key is a unique key identifying this event in the context of its pull request.
+func (e IssueComment) Key() string {
+	return strconv.FormatInt(e.DatabaseID, 10)
+}
+
 // RenamedTitleEvent represents a 'renamed' event on a given pull request.
 type RenamedTitleEvent struct {
 	Actor         Actor
 	PreviousTitle string
 	CurrentTitle  string
 	CreatedAt     time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e RenamedTitleEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
 }
 
 // MergedEvent represents a 'merged' event on a given pull request.
@@ -125,8 +146,14 @@ type MergedEvent struct {
 	CreatedAt    time.Time
 }
 
+// Key is a unique key identifying this event in the context of its pull request.
+func (e MergedEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+}
+
 // PullRequestReview represents a review on a given pull request.
 type PullRequestReview struct {
+	DatabaseID          int64
 	Author              Actor
 	AuthorAssociation   string
 	Body                string
@@ -138,10 +165,20 @@ type PullRequestReview struct {
 	IncludesCreatedEdit bool
 }
 
+// Key is a unique key identifying this event in the context of its pull request.
+func (e PullRequestReview) Key() string {
+	return strconv.FormatInt(e.DatabaseID, 10)
+}
+
 // ReopenedEvent represents a 'reopened' event on a pull request.
 type ReopenedEvent struct {
 	Actor     Actor
 	CreatedAt time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ReopenedEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
 }
 
 // ReviewDismissedEvent represents a 'review_dismissed' event on a pull request.
@@ -152,12 +189,32 @@ type ReviewDismissedEvent struct {
 	CreatedAt        time.Time
 }
 
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ReviewDismissedEvent) Key() string {
+	return fmt.Sprintf(
+		"%s:%d:%d",
+		e.Actor.Login,
+		e.Review.DatabaseID,
+		e.CreatedAt.UnixNano(),
+	)
+}
+
 // ReviewRequestRemovedEvent represents a 'review_request_removed' event on a
 // pull request.
 type ReviewRequestRemovedEvent struct {
 	Actor             Actor
 	RequestedReviewer Actor
 	CreatedAt         time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ReviewRequestRemovedEvent) Key() string {
+	return fmt.Sprintf(
+		"%s:%s:%d",
+		e.Actor.Login,
+		e.RequestedReviewer.Login,
+		e.CreatedAt.UnixNano(),
+	)
 }
 
 // ReviewRequestedRevent represents a 'review_requested' event on a
@@ -168,11 +225,26 @@ type ReviewRequestedEvent struct {
 	CreatedAt         time.Time
 }
 
+// Key is a unique key identifying this event in the context of its pull request.
+func (e ReviewRequestedEvent) Key() string {
+	return fmt.Sprintf(
+		"%s:%s:%d",
+		e.Actor.Login,
+		e.RequestedReviewer.Login,
+		e.CreatedAt.UnixNano(),
+	)
+}
+
 // UnassignedEvent represents an 'unassigned' event on a pull request.
 type UnassignedEvent struct {
 	Actor     Actor
 	Assignee  Actor
 	CreatedAt time.Time
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e UnassignedEvent) Key() string {
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
 }
 
 // TimelineItem is a union type of all supported pull request timeline items.
@@ -272,6 +344,7 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
       }
     }
     fragment review on PullRequestReview {
+      databaseId
       author { ...actor }
       authorAssociation
       body
@@ -315,6 +388,7 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
             url
           }
           ... on IssueComment {
+            databaseId
             author { ...actor }
             authorAssociation
             body
