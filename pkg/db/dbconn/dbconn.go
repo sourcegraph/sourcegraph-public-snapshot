@@ -233,7 +233,10 @@ func NewMigrate(db *sql.DB) *migrate.Migrate {
 }
 
 func DoMigrate(m *migrate.Migrate) (err error) {
+	started := time.Now()
+	fmt.Printf("About to migrate\n")
 	err = m.Up()
+	fmt.Printf("Migrated in %.2fms: %#v\n", err, time.Now().Sub(started)/time.Millisecond)
 	if err == nil || err == migrate.ErrNoChange {
 		return nil
 	}
