@@ -1,6 +1,68 @@
-import { PrimaryGeneratedColumn, Column, Entity } from 'typeorm'
+import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, ViewEntity, ViewColumn } from 'typeorm'
 import { getBatchSize } from './util'
 import { EncodedBloomFilter } from './encoding'
+
+/**
+ * An entity within the cross-repo database. This tracks commit parentage and branch
+ * heads for all known repositories.
+ */
+@Entity({ name: 'commits' })
+export class Commit {
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(3)
+
+    /**
+     * A unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
+    public id!: number
+
+    /**
+     * The name of the source repository.
+     */
+    @Column('text')
+    public repository!: string
+
+    /**
+     * The source commit.
+     */
+    @Column('text')
+    public commit!: string
+
+    /**
+     * A parent commit. Multiple parents are represented by distinct rows
+     * with the same `repository` and `commit`` fields. This value is an
+     * empty string for a commit with no parent.
+     */
+    @Column('text', { name: 'parent_commit' })
+    public parentCommit!: string
+}
+
+/**
+ * An entity within the cross-repo database. A row with a repository and commit
+ * indicates that there exists LSIF data for that pair.
+ */
+@Entity({ name: 'lsif_data_markers' })
+export class LsifDataMarker {
+    /**
+     * The name of the source repository.
+     */
+    @PrimaryColumn('text')
+    public repository!: string
+
+    /**
+     * The source commit.
+     */
+    @PrimaryColumn('text')
+    public commit!: string
+
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = getBatchSize(2)
+}
 
 /**
  * The base class for `PackageModel` and `ReferenceModel` as they have nearly
@@ -81,6 +143,40 @@ export class ReferenceModel extends Package {
 }
 
 /**
+ * A view that adds a `hasLsifData` column to the `commits` table. We define the view
+ * in a migration as well as inline so that when we run unit tests (via a SQLite db)
+ * we will also have access to the view.
+ */
+@ViewEntity({
+    name: 'commits_with_lsif_data_markers',
+    expression: `
+        select
+            c.repository,
+            c."commit",
+            c.parent_commit,
+            exists (
+                select 1
+                from lsif_data_markers m
+                where m.repository = c.repository and m."commit" = c."commit"
+            ) as has_lsif_data
+        from commits c
+    `,
+})
+export class CommitWithLsifMarkers {
+    @ViewColumn()
+    public repository!: string
+
+    @ViewColumn()
+    public commit!: string
+
+    @ViewColumn()
+    public parentCommit!: string
+
+    @ViewColumn()
+    public hasLsifData!: boolean
+}
+
+/**
  * The entities composing the cross-repository database models.
  */
-export const entities = [PackageModel, ReferenceModel]
+export const entities = [Commit, CommitWithLsifMarkers, LsifDataMarker, PackageModel, ReferenceModel]

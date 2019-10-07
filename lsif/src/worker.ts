@@ -9,7 +9,8 @@ import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } 
 import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
-import { waitForConfiguration } from './config'
+import { waitForConfiguration, ConfigurationFetcher } from './config'
+import { discoverAndUpdateCommit } from './commits'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -44,8 +45,9 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
+ * @param fetchConfiguration A function that returns the current configuration.
  */
-const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
+const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: ConfigurationFetcher) => async (
     repository: string,
     commit: string,
     filename: string
@@ -70,6 +72,9 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
         throw e
     }
 
+    // Update commit parentage information for this commit
+    await discoverAndUpdateCommit(xrepoDatabase, repository, commit, fetchConfiguration().gitServers)
+
     // Remove input
     await fs.unlink(filename)
 }
@@ -79,7 +84,7 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
  */
 async function main(): Promise<void> {
     // Read configuration from frontend
-    const configuration = (await waitForConfiguration())()
+    const fetchConfiguration = await waitForConfiguration()
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -87,11 +92,11 @@ async function main(): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(configuration)
+    const connection = await createPostgresConnection(fetchConfiguration())
     const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
+        convert: createConvertJob(xrepoDatabase, fetchConfiguration),
     }
 
     // Start metrics server

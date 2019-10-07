@@ -33,6 +33,14 @@ import {
 } from './models.database'
 
 /**
+ * The insertion metrics for the database.
+ */
+const inserterMetrics = {
+    durationHistogram: databaseInsertionDurationHistogram,
+    errorsCounter: databaseInsertionErrorsCounter,
+}
+
+/**
  * The internal version of our SQLite databases. We need to keep this in case
  * we add something that can't be done transparently; if we change how we process
  * something in the future we'll need to consider a number of previous version
@@ -105,11 +113,6 @@ export async function importLsif(
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
-
-    const inserterMetrics = {
-        durationHistogram: databaseInsertionDurationHistogram,
-        errorsCounter: databaseInsertionErrorsCounter,
-    }
 
     // Insert metadata
     const metaInserter = new TableInserter(entityManager, MetaModel, MetaModel.BatchSize, inserterMetrics)

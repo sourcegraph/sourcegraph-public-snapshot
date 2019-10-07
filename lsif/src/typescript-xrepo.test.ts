@@ -7,7 +7,7 @@ import { createDatabaseFilename } from './util'
 import { Database } from './database'
 import { Readable } from 'stream'
 import { XrepoDatabase } from './xrepo'
-import { PackageModel, ReferenceModel } from './models.xrepo'
+import { entities } from './models.xrepo'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -18,7 +18,7 @@ describe('Database', () => {
 
     beforeAll(async () => {
         storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, [PackageModel, ReferenceModel]))
+        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, entities))
 
         for (const { input, repository, commit } of await createTestInputs()) {
             const database = createDatabaseFilename(storageRoot, repository, commit)
