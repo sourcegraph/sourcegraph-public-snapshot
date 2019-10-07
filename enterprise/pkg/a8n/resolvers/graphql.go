@@ -651,11 +651,6 @@ func marshalchangesetEventID(id int64) graphql.ID {
 	return relay.MarshalID(changesetEventIDKind, id)
 }
 
-func unmarshalchangesetEventID(id graphql.ID) (changesetEventID int64, err error) {
-	err = relay.UnmarshalSpec(id, &changesetEventID)
-	return
-}
-
 func (r *changesetEventResolver) ID() graphql.ID {
 	return marshalchangesetEventID(r.ChangesetEvent.ID)
 }
