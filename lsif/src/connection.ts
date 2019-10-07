@@ -3,6 +3,7 @@ import { entities } from './models.xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
 import { Configuration } from './config'
+import * as uuid from 'uuid'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -81,7 +82,7 @@ export async function createPostgresConnection(configuration: Configuration): Pr
     })
 
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection, connectionOptions.database || '', connectionOptions.password || '')
+    await waitForMigrations(connection, connectionOptions.database || '')
 
     return connection
 }
@@ -128,13 +129,20 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions):
  *
  * @param connection The connection to use.
  * @param database The target database in which to perform the query.
- * @param password The currently authed user's password.
  */
-async function waitForMigrations(connection: Connection, database: string, password: string): Promise<void> {
+async function waitForMigrations(connection: Connection, database: string): Promise<void> {
+    // We need to create a dblink connection which will be used by getMigrationVersion below.
+    // We pick a random connection name to avoid conflicts with other processes, and only do
+    // this once (active connection names must be unique).
+
+    const connectionName = uuid.v4()
+    const query = `SELECT * FROM dblink_connect_u($1, 'dbname=' || $2 || ' user=' || current_user);`
+    await connection.query(query, [connectionName, database])
+
     while (true) {
         try {
             // Get migration version from frontend database
-            const currentVersion = await getMigrationVersion(connection, database, password)
+            const currentVersion = await getMigrationVersion(connection, connectionName)
 
             // Check to see if the current version is at least the minimum version
             if (parseInt(currentVersion, 10) >= MINIMUM_MIGRATION_VERSION) {
@@ -161,17 +169,12 @@ async function waitForMigrations(connection: Connection, database: string, passw
  * 'remote' database without creating a second connection.
  *
  * @param connection The database connection.
- * @param database The target database in which to perform the query.
- * @param password The currently authed user's password.
+ * @param database The name of the dblink connection to query through.
  */
-async function getMigrationVersion(connection: Connection, database: string, password: string): Promise<string> {
-    const query = `
-        select * from
-        dblink('dbname=' || $1 || ' user=' || current_user || ' password=' || $2, 'select * from schema_migrations')
-        as temp(version text, dirty bool);
-    `
+async function getMigrationVersion(connection: Connection, connectionName: string): Promise<string> {
+    const query = `SELECT * FROM dblink($1, 'select * from schema_migrations') as temp(version text, dirty bool);`
 
-    const rows = (await connection.query(query, [database, password])) as {
+    const rows = (await connection.query(query, [connectionName])) as {
         version: string
         dirty: boolean
     }[]
