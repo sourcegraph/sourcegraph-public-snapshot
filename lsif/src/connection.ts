@@ -136,7 +136,7 @@ async function waitForMigrations(connection: Connection, database: string): Prom
     // this once (active connection names must be unique).
 
     const connectionName = uuid.v4()
-    const query = 'SELECT * FROM dblink_connect_u($1, \'dbname=\' || $2 || \' user=\' || current_user);'
+    const query = "SELECT * FROM dblink_connect_u($1, 'dbname=' || $2 || ' user=' || current_user);"
     await connection.query(query, [connectionName, database])
 
     while (true) {
@@ -172,7 +172,7 @@ async function waitForMigrations(connection: Connection, database: string): Prom
  * @param connectionName The name of the dblink connection to query through.
  */
 async function getMigrationVersion(connection: Connection, connectionName: string): Promise<string> {
-    const query = 'SELECT * FROM dblink($1, \'select * from schema_migrations\') as temp(version text, dirty bool);'
+    const query = "SELECT * FROM dblink($1, 'select * from schema_migrations') as temp(version text, dirty bool);"
     const rows = (await connection.query(query, [connectionName])) as {
         version: string
         dirty: boolean
