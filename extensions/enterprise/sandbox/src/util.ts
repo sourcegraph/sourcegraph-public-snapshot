@@ -4,9 +4,9 @@ import localforage from 'localforage'
 import { first } from 'rxjs/operators'
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
-localforage.clear()
+// localforage.clear()
 
-const USE_PERSISTENT_MEMOIZATION_CACHE = false
+const USE_PERSISTENT_MEMOIZATION_CACHE = true
 
 interface Cache<T> {
     get(key: string): Promise<T | undefined>

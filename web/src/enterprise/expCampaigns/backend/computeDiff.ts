@@ -50,8 +50,8 @@ export const computeDiffFromEdits = async (
             })
         )
 
-        if (oldText.length > 15000 || newText.length > 15000) {
-            console.log('SKIPPING', uri.toString())
+        if (oldText.length > 1500000 || newText.length > 1500000) {
+            console.log('SKIPPING', uri.toString(), newText.length)
             continue
         }
         const { hunks } = structuredPatch(uri.toString(), uri.toString(), oldText, newText, undefined, undefined, {
