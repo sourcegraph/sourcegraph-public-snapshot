@@ -7,10 +7,10 @@ import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
-import { createDatabaseFilename, ensureDirectory, hasErrorCode, logErrorAndExit, readEnvInt } from './util'
+import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
-import { Database } from './database.js'
+import { Database, tryCreateDatabase } from './database.js'
 import { Edge, Vertex } from 'lsif-protocol'
 import { identity } from 'lodash'
 import { pipeline as _pipeline, Readable } from 'stream'
@@ -20,7 +20,6 @@ import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } fro
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { waitForConfiguration } from './config'
-import { updateCommits } from './commits'
 
 const pipeline = promisify(_pipeline)
 
@@ -82,7 +81,7 @@ const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex 
  */
 async function main(): Promise<void> {
     // Read configuration from frontend
-    const configurationFetcher = await waitForConfiguration()
+    const fetchConfiguration = await waitForConfiguration()
 
     // Update cache capacities on startup
     connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
@@ -103,42 +102,8 @@ async function main(): Promise<void> {
     const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
 
     // Create cross-repo database
-    const connection = await createPostgresConnection(configurationFetcher())
+    const connection = await createPostgresConnection(fetchConfiguration())
     const xrepoDatabase = new XrepoDatabase(connection)
-
-    const createDatabaseFilenameStat = async (repository: string, commit: string): Promise<string | undefined> => {
-        const file = createDatabaseFilename(STORAGE_ROOT, repository, commit)
-
-        try {
-            await fs.stat(file)
-        } catch (e) {
-            if (hasErrorCode(e, 'ENOENT')) {
-                return undefined
-            }
-
-            throw e
-        }
-
-        return file
-    }
-
-    const tryLoadDatabase = async (repository: string, commit: string): Promise<Database | undefined> => {
-        const file = await createDatabaseFilenameStat(repository, commit)
-        if (!file) {
-            return undefined
-        }
-
-        return new Database(
-            STORAGE_ROOT,
-            xrepoDatabase,
-            connectionCache,
-            documentCache,
-            resultChunkCache,
-            repository,
-            commit,
-            file
-        )
-    }
 
     const loadDatabase = async (
         gitserverUrls: string[],
@@ -146,26 +111,39 @@ async function main(): Promise<void> {
         commit: string
     ): Promise<Database | undefined> => {
         // Try to construct database for the exact commit
-        const database = await tryLoadDatabase(repository, commit)
+        const database = await tryCreateDatabase(
+            STORAGE_ROOT,
+            xrepoDatabase,
+            connectionCache,
+            documentCache,
+            resultChunkCache,
+            repository,
+            commit,
+            createDatabaseFilename(STORAGE_ROOT, repository, commit)
+        )
         if (database) {
             return database
         }
 
-        // Request updated commit data from gitserver if this commit isn't
-        // already tracked. This will pull back ancestors for this commit
-        // up to a certain (configurable) depth and insert them into the
-        // cross-repository database. This populates the necessary data for
-        // the following query.
-        await updateCommits(gitserverUrls, xrepoDatabase, repository, commit)
-
-        // Determine the closest commit that we actually have LSIF data for
-        const commitWithData = await xrepoDatabase.findClosestCommitWithData(repository, commit)
+        // Determine the closest commit that we actually have LSIF data for. If the commit is
+        // not tracked, then commit data is requested from gitserver and insert the ancestors
+        // data for this commit.
+        const commitWithData = await xrepoDatabase.findClosestCommitWithData(repository, commit, gitserverUrls)
         if (!commitWithData) {
             return undefined
         }
 
         // Try to construct a database for the approximate commit
-        return tryLoadDatabase(repository, commitWithData)
+        return tryCreateDatabase(
+            STORAGE_ROOT,
+            xrepoDatabase,
+            connectionCache,
+            documentCache,
+            resultChunkCache,
+            repository,
+            commitWithData,
+            createDatabaseFilename(STORAGE_ROOT, repository, commitWithData)
+        )
     }
 
     const app = express()
@@ -208,7 +186,7 @@ async function main(): Promise<void> {
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const db = await loadDatabase(configurationFetcher().gitServers, repository, commit)
+                const db = await loadDatabase(fetchConfiguration().gitServers, repository, commit)
                 if (!db) {
                     res.json(false)
                     return
@@ -233,7 +211,7 @@ async function main(): Promise<void> {
                 checkMethod(method, ['definitions', 'references', 'hover'])
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-                const db = await loadDatabase(configurationFetcher().gitServers, repository, commit)
+                const db = await loadDatabase(fetchConfiguration().gitServers, repository, commit)
                 if (!db) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,

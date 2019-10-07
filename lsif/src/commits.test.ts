@@ -1,4 +1,22 @@
-import { hashmod } from './commits'
+import { hashmod, flattenCommitParents } from './commits'
+
+describe('flattenCommitParents', () => {
+    it('should handle multiple commits', () => {
+        const parents = flattenCommitParents(['a', 'b c', 'd e f', 'g h i j k l'])
+
+        expect(parents).toEqual([
+            ['a', ''],
+            ['b', 'c'],
+            ['d', 'e'],
+            ['d', 'f'],
+            ['g', 'h'],
+            ['g', 'i'],
+            ['g', 'j'],
+            ['g', 'k'],
+            ['g', 'l'],
+        ])
+    })
+})
 
 describe('hashmod', () => {
     /**

@@ -18,7 +18,7 @@ SELECT remote_exec('_lsif', '
     CREATE INDEX IF NOT EXISTS commits_repo_commit ON commits(repository, "commit");
     CREATE INDEX IF NOT EXISTS commits_repo_parent_commit ON commits(repository, "commit");
 
-    CREATE OR REPLACE VIEW commit_with_lsif_markers AS
+    CREATE OR REPLACE VIEW commits_with_lsif_data_markers AS
         SELECT
             c.repository,
             c."commit",

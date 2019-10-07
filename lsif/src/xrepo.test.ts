@@ -4,7 +4,7 @@ import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
 import { getCleanSqliteDatabase } from './test-utils'
 import { entities } from './models.xrepo'
 
-describe('XrepopDatabase', () => {
+describe('XrepoDatabase', () => {
     let storageRoot!: string
 
     beforeAll(async () => {
