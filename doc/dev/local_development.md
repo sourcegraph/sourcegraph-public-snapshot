@@ -179,6 +179,10 @@ You need a fresh Postgres database and a database user that has full ownership o
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
 
+    Note: Sourcegraph will create a secondary database in the same PostgreSQL
+    instance with a name of the form `{PGDATABASE}_lsif`. It is assumed the
+    PostgreSQL instance is dedicated solely to Sourcegraph.
+
 ### More info
 
 For more information about data storage, [read our full PostgreSQL Guide
@@ -216,7 +220,7 @@ cd sourcegraph
 ./dev/launch.sh
 ```
 
-This will continuously compile your code and live reload your locally running instance of Sourcegraph. 
+This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
 Navigate your browser to http://localhost:3080 to see if everything worked.
 

@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, Index } from 'typeorm'
+import { PrimaryGeneratedColumn, Column, Entity } from 'typeorm'
 import { getBatchSize } from './util'
 import { EncodedBloomFilter } from './encoding'
 
@@ -49,8 +49,6 @@ class Package {
  * pair to the package that it provides to other projects.
  */
 @Entity({ name: 'packages' })
-@Index(['scheme', 'name', 'version'], { unique: true })
-@Index(['repository', 'commit'])
 export class PackageModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
@@ -63,8 +61,6 @@ export class PackageModel extends Package {
  * repository and commit pair to support find global reference operations.
  */
 @Entity({ name: 'references' })
-@Index(['scheme', 'name', 'version'])
-@Index(['repository', 'commit'])
 export class ReferenceModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
@@ -73,9 +69,18 @@ export class ReferenceModel extends Package {
 
     /**
      * A serialized bloom filter that encodes the set of symbols that this repository
-     * and commit imports from the given package. Testing this filter will prevent the
-     * backend from opening databases that will yield no results for a particular symbol.
+     * and commit imports from the given package. Testing this filter will prevent
+     * the backend from opening databases that will yield no results for a particular
+     * symbol.
+     *
+     * The type of the column is determined by the database backend: we use Postgres
+     * with type `bytea` in production, but use SQLite in unit tests with type `blob`.
      */
-    @Column('blob')
+    @Column(process.env.JEST_WORKER_ID !== undefined ? 'blob' : 'bytea')
     public filter!: EncodedBloomFilter
 }
+
+/**
+ * The entities composing the cross-repository database models.
+ */
+export const entities = [PackageModel, ReferenceModel]
