@@ -1070,6 +1070,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string
 	}
 }
 
+var (
+	badRefsOnce sync.Once
+	badRefs     []string
+)
+
 // removeBadRefs removes bad refs and tags from the git repo at dir. This
 // should be run after a clone or fetch. If your repository contains a ref or
 // tag called HEAD (case insensitive), most commands will output a warning
@@ -1079,11 +1084,28 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string
 //
 // Instead we just remove this ref.
 func removeBadRefs(ctx context.Context, dir string) {
-	cmd := exec.CommandContext(ctx, "git", "branch", "-D", "HEAD")
+	// older versions of git do not remove tags case insensitively, so we
+	// generate every possible case of HEAD (2^4 = 16)
+	badRefsOnce.Do(func() {
+		for bits := uint8(0); bits < (1 << 4); bits++ {
+			s := []byte("HEAD")
+			for i, c := range s {
+				// lowercase if the i'th bit of bits is 1
+				if bits&(1<<i) != 0 {
+					s[i] = c - 'A' + 'a'
+				}
+			}
+			badRefs = append(badRefs, string(s))
+		}
+	})
+
+	args := append([]string{"branch", "-D"}, badRefs...)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
 	_ = cmd.Run()
 
-	cmd = exec.CommandContext(ctx, "git", "tag", "-d", "HEAD")
+	args = append([]string{"tag", "-d"}, badRefs...)
+	cmd = exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
 	_ = cmd.Run()
 }
