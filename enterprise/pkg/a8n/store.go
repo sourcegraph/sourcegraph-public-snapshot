@@ -494,6 +494,41 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 	)
 }
 
+// CountChangesetEventsOpts captures the query options needed for
+// counting changesets.
+type CountChangesetEventsOpts struct {
+	ChangesetID int64
+}
+
+// CountChangesetEvents returns the number of changesets in the database.
+func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (count int64, _ error) {
+	q := countChangesetEventsQuery(&opts)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countChangesetEventsQueryFmtstr = `
+-- source: pkg/a8n/store.go:CountChangesetEvents
+SELECT COUNT(id)
+FROM changeset_events
+WHERE %s
+`
+
+func countChangesetEventsQuery(opts *CountChangesetEventsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countChangesetEventsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
 // UpsertChangesetEvents creates or updates the given ChangesetEvents.
 func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) error {
 	q, err := s.upsertChangesetEventsQuery(cs)

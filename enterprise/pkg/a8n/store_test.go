@@ -606,6 +606,26 @@ func TestStore(t *testing.T) {
 			}
 		})
 
+		t.Run("Count", func(t *testing.T) {
+			count, err := s.CountChangesetEvents(ctx, CountChangesetEventsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(len(events)); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+
+			count, err = s.CountChangesetEvents(ctx, CountChangesetEventsOpts{ChangesetID: 1})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := count, int64(1); have != want {
+				t.Fatalf("have count: %d, want: %d", have, want)
+			}
+		})
+
 		t.Run("List", func(t *testing.T) {
 			for i := 1; i <= len(events); i++ {
 				opts := ListChangesetEventsOpts{ChangesetID: int64(i)}
