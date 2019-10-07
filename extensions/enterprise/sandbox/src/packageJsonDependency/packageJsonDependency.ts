@@ -4,6 +4,8 @@ import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
 import { map, switchMap, startWith, filter } from 'rxjs/operators'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { npmPackageManager } from './npm/npm'
+import { yarnPackageManager } from './yarn/yarn'
+import { PackageJsonDependency } from './packageManager'
 
 const UPGRADE_DEPENDENCY_COMMAND = 'packageJsonDependency.upgrade'
 
@@ -28,12 +30,11 @@ export function register(): Unsubscribable {
     )
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     subscriptions.add(
-        sourcegraph.commands.registerActionEditCommand(UPGRADE_DEPENDENCY_COMMAND, async diagnostic => {
+        sourcegraph.commands.registerActionEditCommand(UPGRADE_DEPENDENCY_COMMAND, diagnostic => {
             if (!diagnostic) {
                 return new sourcegraph.WorkspaceEdit()
             }
-            const doc = await sourcegraph.workspace.openTextDocument(diagnostic.resource)
-            return computeUpgradeDependencyEdit(diagnostic, doc)
+            return computeUpgradeDependencyEdit(diagnostic)
         })
     )
     return subscriptions
@@ -45,6 +46,7 @@ interface DiagnosticData {
     dependency: Pick<PackageJsonDependencyCampaignContext, 'packageName' | 'upgradeToVersion'>
     packageJson: { uri: string; text: string }
     lockfile: { uri: string; text: string }
+    type: 'npm' | 'yarn'
 }
 
 function provideDiagnostics({
@@ -60,14 +62,24 @@ function provideDiagnostics({
                       return [] as sourcegraph.Diagnostic[] // TODO!(sqs): dont run in comparison mode
                   }
 
-                  const hits = await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange({
+                  const dep: PackageJsonDependency = {
                       name: packageName,
                       version: upgradeToVersion,
-                  })
+                  }
+                  const hits = [
+                      ...(await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep)).map(d => ({
+                          ...d,
+                          type: 'npm' as const,
+                      })),
+                      ...(await yarnPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep)).map(d => ({
+                          ...d,
+                          type: 'yarn' as const,
+                      })),
+                  ]
                   return flatten(
                       hits
-                          .map(hit => {
-                              const packageNameMatchString = `"${packageName}"`
+                          .map(({ type, ...hit }) => {
+                              const packageNameMatchString = type === 'npm' ? `"${packageName}"` : `${packageName}@`
                               let matchRange = findMatchRange(hit.packageJson.text!, packageNameMatchString)
                               let matchDoc: sourcegraph.TextDocument | undefined
                               if (matchRange) {
@@ -92,8 +104,9 @@ function provideDiagnostics({
                                   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                   data: JSON.stringify({
                                       dependency: { packageName, upgradeToVersion },
-                                      packageJson: { uri: hit.packageJson.uri, text: hit.packageJson.text },
-                                      lockfile: { uri: hit.lockfile.uri, text: hit.lockfile.text },
+                                      packageJson: { uri: hit.packageJson.uri },
+                                      lockfile: { uri: hit.lockfile.uri },
+                                      type,
                                   } as DiagnosticData),
                                   tags: [DEPENDENCY_TAG, packageName],
                               }
@@ -109,22 +122,15 @@ function provideDiagnostics({
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: async (doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
+        provideCodeActions: async (_doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(isProviderDiagnostic)
             if (!diag) {
                 return []
             }
-            const data = getDiagnosticData(diag)
             return [
                 {
                     title: 'Upgrade dependency in package.json',
-                    edit: await npmPackageManager.editForDependencyUpgrade(
-                        {
-                            packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
-                            lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
-                        },
-                        { name: data.dependency.packageName!, version: data.dependency.upgradeToVersion! }
-                    ),
+                    edit: await computeUpgradeDependencyEdit(diag),
                     computeEdit: { title: 'Upgrade dependency', command: UPGRADE_DEPENDENCY_COMMAND },
                     diagnostics: [diag],
                 },
@@ -151,19 +157,13 @@ function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
     return JSON.parse(diag.data!)
 }
 
-function computeUpgradeDependencyEdit(
-    diag: sourcegraph.Diagnostic,
-    doc: sourcegraph.TextDocument,
-    edit = new sourcegraph.WorkspaceEdit()
-): sourcegraph.WorkspaceEdit {
-    // const data = getDiagnosticData(diag)
-    // TODO!(sqs): assumes dependency key-value is all on one line and only appears once
-    edit.delete(
-        new URL(doc.uri),
-        new sourcegraph.Range(
-            diag.range.start.with({ character: 0 }),
-            diag.range.end.with({ line: diag.range.end.line + 1, character: 0 })
-        )
+async function computeUpgradeDependencyEdit(diag: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
+    const data = getDiagnosticData(diag)
+    return await (data.type === 'npm' ? npmPackageManager : yarnPackageManager).editForDependencyUpgrade(
+        {
+            packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
+            lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
+        },
+        { name: data.dependency.packageName!, version: data.dependency.upgradeToVersion! }
     )
-    return edit
 }

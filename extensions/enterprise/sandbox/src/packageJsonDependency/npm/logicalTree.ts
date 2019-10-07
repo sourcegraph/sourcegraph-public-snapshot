@@ -144,7 +144,7 @@ export function lockTree(pkg, pkgLock) {
     return tree
 }
 
-function makeNode(name, address, opts) {
+export function makeNode(name, address, opts) {
     return new LogicalTree(name, address, opts || {})
 }
 

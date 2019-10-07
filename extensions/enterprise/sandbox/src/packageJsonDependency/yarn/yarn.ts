@@ -10,11 +10,11 @@ import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../../shared/src/util/types'
 import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { createExecServerClient } from '../../execServer/client'
-import { lockTree } from './logicalTree'
+import { yarnLogicalTree } from './logicalTree'
 
-const npmExecClient = createExecServerClient('a8n-npm-exec', ['package.json', 'package-lock.json'])
+const yarnExecClient = createExecServerClient('a8n-yarn-exec', ['package.json', 'yarn.lock'])
 
-export const npmPackageManager: PackageJsonPackageManager = {
+export const yarnPackageManager: PackageJsonPackageManager = {
     packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }) => {
         const parsedVersionRange = new semver.Range(version)
 
@@ -22,7 +22,7 @@ export const npmPackageManager: PackageJsonPackageManager = {
             await from(
                 memoizedFindTextInFiles(
                     {
-                        pattern: `"${name}"`,
+                        pattern: `\\b${name}\\b`,
                         type: 'regexp',
                     },
                     {
@@ -31,7 +31,7 @@ export const npmPackageManager: PackageJsonPackageManager = {
                             type: 'regexp',
                         },
                         files: {
-                            includes: ['(^|/)package-lock.json$'],
+                            includes: ['(^|/)yarn.lock$'],
                             excludes: ['node_modules'],
                             type: 'regexp',
                         },
@@ -45,17 +45,17 @@ export const npmPackageManager: PackageJsonPackageManager = {
 
         const check = async (result: sourcegraph.TextSearchResult): Promise<PackageJsonPackage | null> => {
             const packageJson = await sourcegraph.workspace.openTextDocument(
-                new URL(result.uri.replace(/package-lock\.json$/, 'package.json'))
+                new URL(result.uri.replace(/yarn\.lock$/, 'package.json'))
             )
             const lockfile = await sourcegraph.workspace.openTextDocument(new URL(result.uri))
             try {
-                const dep = getPackageLockDependency(packageJson.text!, lockfile.text!, name)
+                const dep = getYarnLockDependency(packageJson.text!, lockfile.text!, name)
                 if (!dep) {
                     return null
                 }
                 return semver.satisfies(dep.version, parsedVersionRange) ? null : { packageJson, lockfile }
             } catch (err) {
-                console.error(`Error checking package-lock.json and package.json for ${result.uri}.`, err, {
+                console.error(`Error checking yarn.lock and package.json for ${result.uri}.`, err, {
                     lockfile: lockfile.text,
                     packagejson: packageJson.text,
                 })
@@ -67,8 +67,8 @@ export const npmPackageManager: PackageJsonPackageManager = {
 
     editForDependencyUpgrade: async (pkg, dep) => {
         const p = parseRepoURI(pkg.packageJson.uri)
-        const result = await npmExecClient({
-            commands: [['npm', 'install', '--', `${dep.name}@${dep.version}`]],
+        const result = await yarnExecClient({
+            commands: [['yarn', 'upgrade', '--', `${dep.name}@${dep.version}`]],
             context: {
                 repository: p.repoName,
                 commit: p.commitID!,
@@ -78,7 +78,7 @@ export const npmPackageManager: PackageJsonPackageManager = {
         })
         return computeDiffs([
             { old: pkg.packageJson, newText: result.files['package.json'] },
-            { old: pkg.lockfile, newText: result.files['package-lock.json'] },
+            { old: pkg.lockfile, newText: result.files['yarn.lock'] },
         ])
     },
 }
@@ -98,13 +98,8 @@ function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }
     return edit
 }
 
-function getPackageLockDependency(
-    packageJson: string,
-    packageLock: string,
-    packageName: string
-): { version: string } | null {
-    // TODO!(sqs): this has a bug where if a package-lock.json delegates to a parent file, it throws an exception
-    const tree = lockTree(JSON.parse(packageJson), JSON.parse(packageLock))
+function getYarnLockDependency(packageJson: string, yarnLock: string, packageName: string): { version: string } | null {
+    const tree = yarnLogicalTree(JSON.parse(packageJson), yarnLock)
     let found: any
     tree.forEach((dep, next) => {
         if (dep.name === packageName) {

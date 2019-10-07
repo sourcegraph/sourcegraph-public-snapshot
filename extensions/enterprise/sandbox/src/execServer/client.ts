@@ -3,9 +3,8 @@ import * as sourcegraph from 'sourcegraph'
 
 export type ExecServerClient = ({
     commands,
-    dir,
     context,
-}: Pick<Params, 'commands' | 'dir'> & { context: RepositoryContext }) => Promise<Result>
+}: Pick<Params, 'commands'> & { context: RepositoryContext }) => Promise<Result>
 
 export interface RepositoryContext {
     repository: string
@@ -36,11 +35,11 @@ export const createExecServerClient = (
 ): ExecServerClient => {
     const baseUrl = new URL(`/.api/extension-containers/${containerName}`, sourcegraph.internal.sourcegraphURL)
 
-    const do2: ExecServerClient = async ({ commands, dir, context }) => {
+    const do2: ExecServerClient = async ({ commands, context }) => {
         const params: Params = {
             archiveURL: getPublicRepoArchiveUrl(context.repository, context.commit),
             commands,
-            dir,
+            dir: context.path,
             includeFiles,
         }
 
@@ -76,8 +75,15 @@ function getPublicRepoArchiveUrl(repo: string, commit: string): string {
         'SID/sidekiq': 'github.com/mperham/sidekiq',
         'SOL/solidus': 'github.com/solidusio/solidus',
         'SPREE/spree': 'github.com/spree/spree',
+        'github.com/sd9/openapi-generator': 'github.com/OpenAPITools/openapi-generator',
+        'github.com/sd9/redbird': 'github.com/OptimalBits/redbird',
+        'github.com/sd9org/react-router': 'github.com/ReactTraining/react-router',
+        'github.com/sd9/react-loading-spinner': 'github.com/sourcegraph/react-loading-spinner',
+        'github.com/sd9/graphql-dotnet': 'github.com/graphql-dotnet/graphql-dotnet',
+        'github.com/sd9/taskbotjs': 'github.com/eropple/taskbotjs',
+        'github.com/sd9/ReactStateMuseum': 'github.com/GantMan/ReactStateMuseum',
     }
-    if (repo in MAP) {
+    if (repo in MAP || sourcegraph.internal.sourcegraphURL.hostname === 'localhost') {
         return `https://sourcegraph.com/${MAP[repo] || repo}@${commit}/-/raw/`
     }
     // TODO!(sqs): requires token
