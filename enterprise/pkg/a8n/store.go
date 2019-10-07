@@ -500,7 +500,7 @@ type CountChangesetEventsOpts struct {
 	ChangesetID int64
 }
 
-// CountChangesetEvents returns the number of changesets in the database.
+// CountChangesetEvents returns the number of changeset events in the database.
 func (s *Store) CountChangesetEvents(ctx context.Context, opts CountChangesetEventsOpts) (count int64, _ error) {
 	q := countChangesetEventsQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
