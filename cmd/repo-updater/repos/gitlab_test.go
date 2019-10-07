@@ -14,23 +14,23 @@ func Test_projectQueryToURL(t *testing.T) {
 	}{{
 		projectQuery: "?membership=true",
 		perPage:      100,
-		expURL:       "projects?membership=true&order_by=last_activity_at&per_page=100",
+		expURL:       "projects?membership=true&per_page=100",
 	}, {
 		projectQuery: "projects?membership=true",
 		perPage:      100,
-		expURL:       "projects?membership=true&order_by=last_activity_at&per_page=100",
+		expURL:       "projects?membership=true&per_page=100",
 	}, {
 		projectQuery: "groups/groupID/projects",
 		perPage:      100,
-		expURL:       "groups/groupID/projects?order_by=last_activity_at&per_page=100",
+		expURL:       "groups/groupID/projects?per_page=100",
 	}, {
 		projectQuery: "groups/groupID/projects?foo=bar",
 		perPage:      100,
-		expURL:       "groups/groupID/projects?foo=bar&order_by=last_activity_at&per_page=100",
+		expURL:       "groups/groupID/projects?foo=bar&per_page=100",
 	}, {
 		projectQuery: "",
 		perPage:      100,
-		expURL:       "projects?order_by=last_activity_at&per_page=100",
+		expURL:       "projects?per_page=100",
 	}, {
 		projectQuery: "https://somethingelse.com/foo/bar",
 		perPage:      100,
