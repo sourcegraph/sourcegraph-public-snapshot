@@ -402,10 +402,26 @@
       },
       "CreatedAt": "2019-10-03T14:04:58Z"
      }
+    },
+    {
+     "Type": "ReviewRequestRemovedEvent",
+     "Item": {
+      "Actor": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/1646931?v=4",
+       "Login": "beyang",
+       "URL": "https://github.com/beyang"
+      },
+      "RequestedReviewer": {
+       "AvatarURL": "https://avatars2.githubusercontent.com/u/1646931?v=4",
+       "Login": "beyang",
+       "URL": "https://github.com/beyang"
+      },
+      "CreatedAt": "2019-10-04T19:23:05Z"
+     }
     }
    ],
    "CreatedAt": "2019-10-02T14:49:31Z",
-   "UpdatedAt": "2019-10-04T15:08:34Z"
+   "UpdatedAt": "2019-10-04T19:23:05Z"
   },
   {
    "ID": "MDExOlB1bGxSZXF1ZXN0MTMxMjUxNjg=",

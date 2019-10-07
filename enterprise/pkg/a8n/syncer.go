@@ -116,17 +116,29 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		})
 	}
 
+	var events []*a8n.ChangesetEvent
 	for _, b := range batches {
 		if err = b.LoadChangesets(ctx, b.Changesets...); err != nil {
 			return err
 		}
+
+		for _, c := range b.Changesets {
+			events = append(events, c.Events()...)
+		}
 	}
 
-	if err = s.Store.UpdateChangesets(ctx, cs...); err != nil {
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	defer tx.Done(&err)
+
+	if err = tx.UpdateChangesets(ctx, cs...); err != nil {
+		return err
+	}
+
+	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
 func (s *ChangesetSyncer) listAllChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {
