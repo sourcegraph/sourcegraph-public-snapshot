@@ -81,7 +81,7 @@ export async function createPostgresConnection(configuration: Configuration): Pr
     })
 
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection, connectionOptions.database || '')
+    await waitForMigrations(connection, connectionOptions.database || '', connectionOptions.password || '')
 
     return connection
 }
@@ -128,12 +128,13 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions):
  *
  * @param connection The connection to use.
  * @param database The target database in which to perform the query.
+ * @param password The currently authed user's password.
  */
-async function waitForMigrations(connection: Connection, database: string): Promise<void> {
+async function waitForMigrations(connection: Connection, database: string, password: string): Promise<void> {
     while (true) {
         try {
             // Get migration version from frontend database
-            const currentVersion = await getMigrationVersion(connection, database)
+            const currentVersion = await getMigrationVersion(connection, database, password)
 
             // Check to see if the current version is at least the minimum version
             if (parseInt(currentVersion, 10) >= MINIMUM_MIGRATION_VERSION) {
@@ -161,15 +162,16 @@ async function waitForMigrations(connection: Connection, database: string): Prom
  *
  * @param connection The database connection.
  * @param database The target database in which to perform the query.
+ * @param password The currently authed user's password.
  */
-async function getMigrationVersion(connection: Connection, database: string): Promise<string> {
+async function getMigrationVersion(connection: Connection, database: string, password: string): Promise<string> {
     const query = `
         select * from
-        dblink('dbname=' || $1 || ' user=' || current_user, 'select * from schema_migrations')
+        dblink('dbname=' || $1 || ' user=' || current_user || ' password=' || $2, 'select * from schema_migrations')
         as temp(version text, dirty bool);
     `
 
-    const rows = (await connection.query(query, [database])) as {
+    const rows = (await connection.query(query, [database, password])) as {
         version: string
         dirty: boolean
     }[]
