@@ -433,15 +433,27 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
+	type ChangesetCounts struct {
+		Date                 graphqlbackend.DateTime
+		Total                int32
+		Merged               int32
+		Closed               int32
+		Open                 int32
+		OpenApproved         int32
+		OpenChangesRequested int32
+		OpenPending          int32
+	}
+
 	type CampaignWithChangesets struct {
-		ID          string
-		Name        string
-		Description string
-		Author      User
-		CreatedAt   string
-		UpdatedAt   string
-		Namespace   UserOrg
-		Changesets  ChangesetConnection
+		ID                      string
+		Name                    string
+		Description             string
+		Author                  User
+		CreatedAt               string
+		UpdatedAt               string
+		Namespace               UserOrg
+		Changesets              ChangesetConnection
+		ChangesetCountsOverTime []ChangesetCounts
 	}
 
 	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
@@ -450,6 +462,9 @@ func TestCampaigns(t *testing.T) {
 	for _, c := range result.Changesets {
 		changesetIDs = append(changesetIDs, c.ID)
 	}
+
+	countsFrom := now.AddDate(0, 0, -7)
+	countsTo := now
 
 	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
@@ -483,13 +498,28 @@ func TestCampaigns(t *testing.T) {
 				totalCount
 				pageInfo { hasNextPage }
 			}
+			changesetCountsOverTime(from: %s, to: %s) {
+			    date
+				total
+				merged
+				closed
+				open
+				openApproved
+				openChangesRequested
+				openPending
+			}
 		}
 		mutation() {
 			campaign: addChangesetsToCampaign(campaign: %q, changesets: %s) {
 				...c
 			}
 		}
-	`, campaigns.Admin.ID, marshalJSON(t, changesetIDs)))
+	`,
+		marshalDateTime(t, countsFrom),
+		marshalDateTime(t, countsTo),
+		campaigns.Admin.ID,
+		marshalJSON(t, changesetIDs),
+	))
 
 	{
 		have := addChangesetsResult.Campaign.Changesets.TotalCount
@@ -524,6 +554,20 @@ func TestCampaigns(t *testing.T) {
 
 		if !have[campaigns.Admin.ID] || len(have) != 1 {
 			t.Errorf("wrong campaign added to changeset. want=%v, have=%v", campaigns.Admin.ID, have)
+		}
+	}
+
+	{
+		counts := addChangesetsResult.Campaign.ChangesetCountsOverTime
+
+		if have, want := len(counts), 1; have != want {
+			t.Errorf("wrong changeset counts length %d, have=%d", want, have)
+		}
+
+		for _, c := range counts {
+			if have, want := c.Total, int32(99); have != want {
+				t.Errorf("wrong changeset counts total %d, have=%d", want, have)
+			}
 		}
 	}
 
@@ -644,6 +688,19 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	t.Helper()
 
 	bs, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(bs)
+}
+
+func marshalDateTime(t testing.TB, ts time.Time) string {
+	t.Helper()
+
+	dt := graphqlbackend.DateTime{ts}
+
+	bs, err := dt.MarshalJSON()
 	if err != nil {
 		t.Fatal(err)
 	}

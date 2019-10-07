@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"path"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -353,6 +354,24 @@ func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	}
 }
 
+func (r *campaignResolver) ChangesetCountsOverTime(
+	ctx context.Context,
+	args *graphqlbackend.ChangesetCountsArgs,
+) ([]graphqlbackend.ChangesetCountsResolver, error) {
+	resolvers := []graphqlbackend.ChangesetCountsResolver{}
+	resolvers = append(resolvers, &changesetCountsResolver{
+		date:                 time.Now(),
+		total:                99,
+		merged:               99,
+		closed:               99,
+		open:                 99,
+		openApproved:         99,
+		openChangesRequested: 99,
+		openPending:          99,
+	})
+	return resolvers, nil
+}
+
 func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ChangesetResolver, err error) {
 	// 🚨 SECURITY: Only site admins may create changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -666,4 +685,47 @@ func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("R
 func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
+}
+
+type changesetCountsResolver struct {
+	date                 time.Time
+	total                int32
+	merged               int32
+	closed               int32
+	open                 int32
+	openApproved         int32
+	openChangesRequested int32
+	openPending          int32
+}
+
+func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{time.Now()}
+}
+
+func (r *changesetCountsResolver) Total() int32 {
+	return r.total
+}
+
+func (r *changesetCountsResolver) Merged() int32 {
+	return r.merged
+}
+
+func (r *changesetCountsResolver) Closed() int32 {
+	return r.closed
+}
+
+func (r *changesetCountsResolver) Open() int32 {
+	return r.open
+}
+
+func (r *changesetCountsResolver) OpenApproved() int32 {
+	return r.openApproved
+}
+
+func (r *changesetCountsResolver) OpenChangesRequested() int32 {
+	return r.openChangesRequested
+}
+
+func (r *changesetCountsResolver) OpenPending() int32 {
+	return r.openPending
 }
