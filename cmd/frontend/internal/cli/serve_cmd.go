@@ -18,7 +18,6 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
@@ -79,18 +78,21 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main() error {
+func Main(githubWebhook http.Handler) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	// Connect to the database and start the configuration server.
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
+	if dbconn.Global == nil {
+		// Connect to the database and start the configuration server.
+		if err := dbconn.ConnectToDB(""); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
 	}
+
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
 
@@ -159,9 +161,6 @@ func Main() error {
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
-	if hooks.AfterDBInit != nil {
-		hooks.AfterDBInit()
-	}
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
 	// being initialized
@@ -170,17 +169,18 @@ func Main() error {
 	}
 
 	// graphqlbackend.A8NResolver is set by enterprise frontend
-	var a8n graphqlbackend.A8NResolver
+	var a8nResolver graphqlbackend.A8NResolver
 	if graphqlbackend.NewA8NResolver != nil {
-		a8n = graphqlbackend.NewA8NResolver(dbconn.Global)
+		a8nResolver = graphqlbackend.NewA8NResolver(dbconn.Global)
 	}
-	schema, err := graphqlbackend.NewSchema(a8n)
+
+	schema, err := graphqlbackend.NewSchema(a8nResolver)
 	if err != nil {
 		return err
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(context.Background(), schema)
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook)
 	if err != nil {
 		return err
 	}
