@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
 type symbolsArgs struct {

@@ -41,7 +41,7 @@ for pkg in $server_pkg \
 
     go build \
       -trimpath \
-      -ldflags "-X github.com/sourcegraph/sourcegraph/pkg/version.version=$VERSION"  \
+      -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"  \
       -buildmode exe \
       -installsuffix netgo \
       -tags "dist netgo" \

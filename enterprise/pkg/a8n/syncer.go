@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

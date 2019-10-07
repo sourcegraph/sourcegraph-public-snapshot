@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

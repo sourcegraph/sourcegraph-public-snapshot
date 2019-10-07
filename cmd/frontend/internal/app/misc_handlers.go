@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 var allowRobotsVar = env.Get("ROBOTS_TXT_ALLOW", "false", "allow search engines to index the site")

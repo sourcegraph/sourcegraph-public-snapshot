@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 // unexported key type prevents collisions

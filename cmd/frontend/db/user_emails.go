@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 )
 
 // UserEmail represents a row in the `user_emails` table.
