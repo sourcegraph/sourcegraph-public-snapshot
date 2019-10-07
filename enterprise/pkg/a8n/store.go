@@ -460,7 +460,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 var listChangesetEventsQueryFmtstr = `
 -- source: pkg/a8n/store.go:ListChangesetEvents
 SELECT
-	id,
+    id,
     changeset_id,
     kind,
     source,
