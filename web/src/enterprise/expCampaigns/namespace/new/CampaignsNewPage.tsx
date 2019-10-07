@@ -72,24 +72,24 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
     }, [setBreadcrumbItem])
 
     const ruleTemplateID = new URLSearchParams(location.search).get('template')
-
-    // Persist the user's create-or-draft choice.
-    const [defaultDraft, setDefaultDraft] = useLocalStorage('CampaignsNewPage.draft', false)
-
-    const initialValue = useMemo<CampaignFormData>(
-        () => ({
-            name: '',
-            namespace: namespace.id,
-            draft: USE_CAMPAIGN_RULES ? defaultDraft : false,
-            isValid: true,
-            rules: ruleTemplateID
+    const defaultRules = useMemo<CampaignFormData['rules']>(
+        () =>
+            ruleTemplateID
                 ? [{ name: '', template: { template: ruleTemplateID, context: undefined }, definition: '{}' }]
                 : undefined,
-        }),
-        [defaultDraft, namespace.id, ruleTemplateID]
+        [ruleTemplateID]
     )
-    const [value, setValue] = useState<CampaignFormData>(initialValue)
-    useEffect(() => setValue(initialValue), [initialValue])
+
+    // Persist the user's create-or-draft choice.
+    const [defaultDraft, setDefaultDraft] = useLocalStorage('CampaignsNewPage.draft', true)
+
+    const [value, setValue] = useState<CampaignFormData>({
+        name: '',
+        namespace: namespace.id,
+        draft: USE_CAMPAIGN_RULES ? defaultDraft : false,
+        isValid: true,
+    })
+    useEffect(() => setValue(prevValue => ({ ...prevValue, rules: defaultRules })), [defaultRules])
     const onChange = useCallback(
         (newValue: Partial<CampaignFormData>) => {
             if (newValue.draft !== undefined && newValue.draft !== defaultDraft) {

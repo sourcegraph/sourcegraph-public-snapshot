@@ -18,6 +18,8 @@ export interface RubyGemDependencyCampaignContext {
     campaignName?: string
 }
 
+const LOADING = 'loading' as const
+
 export function register(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
@@ -44,9 +46,7 @@ export function register(): Unsubscribable {
 
 const DEPENDENCY_TAG = 'type:rubyGemDependency'
 
-const LOADING = 'loading' as const
-
-function provideDiagnostics (
+function provideDiagnostics(
     context: RubyGemDependencyCampaignContext
 ): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
     return context.gemName
@@ -86,9 +86,7 @@ function provideDiagnostics (
                           .toPromise()
                   )
 
-                  await Promise.all(
-                      results.map( ({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri)))
-                  )
+                  await Promise.all(results.map(({ uri }) => sourcegraph.workspace.openTextDocument(new URL(uri))))
 
                   return from(settingsObservable<Settings>()).pipe(
                       switchMap(async () =>
@@ -174,7 +172,7 @@ function provideDiagnostics (
               startWith(LOADING)
           )
         : of<sourcegraph.Diagnostic[]>([])
-            }
+}
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {

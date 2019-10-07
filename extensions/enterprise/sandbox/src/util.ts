@@ -3,6 +3,7 @@ import { Observable, from } from 'rxjs'
 import localforage from 'localforage'
 import { first } from 'rxjs/operators'
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 // localforage.clear()
 
 const USE_PERSISTENT_MEMOIZATION_CACHE = true
@@ -16,17 +17,17 @@ interface Cache<T> {
 const createMemoizationCache = <T>(): Cache<T> => {
     const map = new Map<string, Promise<T>>()
     const cache: Cache<T> = {
-        get: async key => {
+        get: (key): Promise<T | undefined> => {
             const localValue = map.get(key)
             if (localValue !== undefined) {
                 return localValue
             }
-            return localforage.getItem<Promise<T>>(key)
+            return localforage.getItem<Promise<T>>(key).then(item => item)
         },
-        set: async (key, value) => {
+        set: (key, value): Promise<void> => {
             map.set(key, Promise.resolve(value))
-            Promise.resolve(value)
-                .then(value => localforage.setItem(key, value))
+            return Promise.resolve(value)
+                .then(value => localforage.setItem(key, value).then(() => undefined))
                 .catch(err => console.error(err))
         },
         delete: async key => {
@@ -40,15 +41,17 @@ const createMemoizationCache = <T>(): Cache<T> => {
 const createVolatileCache = <T>(): Cache<T> => {
     const map = new Map<string, Promise<T>>()
     const cache: Cache<T> = {
-        get: async key => {
+        get: key => {
             const value = map.get(key)
             return value !== undefined ? value : Promise.resolve(undefined)
         },
-        set: async (key, value) => {
+        set: (key, value) => {
             map.set(key, Promise.resolve(value))
+            return Promise.resolve(undefined)
         },
-        delete: async key => {
+        delete: key => {
             map.delete(key)
+            return Promise.resolve(undefined)
         },
     }
     return cache
@@ -84,9 +87,8 @@ export function memoizeAsync<P, T>(
 }
 
 export const queryGraphQL = memoizeAsync(
-    async ({ query, vars }: { query: string; vars: { [name: string]: any } }): Promise<any> => {
-        return sourcegraph.commands.executeCommand<any>('queryGraphQL', query, vars)
-    },
+    ({ query, vars }: { query: string; vars: { [name: string]: any } }): Promise<any> =>
+        sourcegraph.commands.executeCommand<any>('queryGraphQL', query, vars),
     arg => JSON.stringify({ query: arg.query, vars: arg.vars }) + Math.random()
 )
 
@@ -98,10 +100,11 @@ const _findTextInFiles = memoizeAsync(
     args => JSON.stringify(args)
 )
 
-export const memoizedFindTextInFiles = (...args: Parameters<typeof sourcegraph.search.findTextInFiles>) =>
-    _findTextInFiles(args)
+export const memoizedFindTextInFiles = (
+    ...args: Parameters<typeof sourcegraph.search.findTextInFiles>
+): ReturnType<typeof sourcegraph.search.findTextInFiles> => from(_findTextInFiles(args))
 
-export const settingsObservable = <T extends object>() =>
+export const settingsObservable = <T extends object>(): sourcegraph.Subscribable<T> =>
     new Observable<T>(subscriber =>
         sourcegraph.configuration.subscribe(() => {
             subscriber.next(sourcegraph.configuration.get<T>().value)

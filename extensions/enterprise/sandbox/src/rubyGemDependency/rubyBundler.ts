@@ -1,4 +1,5 @@
 import { memoizeAsync } from '../util'
+import * as sourcegraph from 'sourcegraph'
 
 export interface BundlerExecutionContext {
     repository: string
@@ -15,8 +16,10 @@ export interface BundlerExecutionResult {
     files: { [path: string]: string }
 }
 
-const RUBY_BUNDLER_EXEC_SERVICE_URL = 'http://localhost:5151'
-// const RUBY_BUNDLER_EXEC_SERVICE_URL= 'http://ruby-bundler-exec.default.knative.sqs-sandbox.sgdev.org'
+const RUBY_BUNDLER_EXEC_SERVICE_URL = new URL(
+    '/.api/extension-containers/a8n-ruby-bundler-exec',
+    sourcegraph.internal.sourcegraphURL
+)
 
 /**
  * Executes a Ruby `bundle` command in a repository tree and returns the resulting contents of
@@ -29,12 +32,11 @@ const executeBundlerCommandUncached = async ({
     commands: string[][]
     context: BundlerExecutionContext
 }): Promise<BundlerExecutionResult> => {
-    const resp = await fetch(RUBY_BUNDLER_EXEC_SERVICE_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json; charset=utf-8',
-        },
-        body: JSON.stringify({
+    const url = new URL('', RUBY_BUNDLER_EXEC_SERVICE_URL)
+    url.searchParams.set(
+        'params',
+        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+        JSON.stringify({
             archiveURL: getPublicRepoArchiveUrl(context.repository, context.commit),
             commands,
             // TODO!(sqs): support changes to all Gemfile.* and anything else that `bundler remove` might touch
@@ -44,7 +46,12 @@ const executeBundlerCommandUncached = async ({
             dir?: string
             commands: string[][]
             includeFiles: string[]
-        }),
+        })
+    )
+    const resp = await fetch(url.toString(), {
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+        },
     })
     if (!resp.ok) {
         throw new Error(`error executing bundler command in ${context.repository}: HTTP ${resp.status}`)

@@ -1,34 +1,57 @@
 package httpapi
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"reflect"
 	"strings"
+	"sync"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var extensionContainerProxyHandler http.Handler
+func extensionContainerProxy(w http.ResponseWriter, r *http.Request) {
+	extensionContainerProxyHandlerMu.Lock()
+	h := extensionContainerProxyHandler
+	extensionContainerProxyHandlerMu.Unlock()
+	if h != nil {
+		h.ServeHTTP(w, r)
+	} else {
+		http.Error(w, "extension container proxy is not yet ready", http.StatusTooEarly)
+	}
+}
 
-var extensionContainers = env.Get("EXTENSION_CONTAINERS", "", "a space-separated list of proxy mappings from URL path to external URL, such as: /.api/extension-containers/FOO->http://FOO:1234")
+var (
+	extensionContainerProxyHandlerMu sync.Mutex
+	extensionContainerProxyHandler   http.Handler
+)
 
 func init() {
-	mappings, err := parseExtensionContainerMappings(extensionContainers)
-	if err != nil {
-		log.Fatalf("EXTENSION_CONTAINERS: %s", err)
-	}
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("PROXY %q", r.URL)
-	})
-	for path, toURL := range mappings {
-		log.Printf("MAP %q -> %q", path, toURL)
-		mux.Handle(path, http.StripPrefix(path, newExtensionContainerReverseProxy(toURL)))
-	}
-	extensionContainerProxyHandler = mux
+	var lastValue []*schema.ExtensionsContainers
+	go func() {
+		conf.Watch(func() {
+			nextValue := conf.Get().ExtensionsContainers
+			if reflect.DeepEqual(lastValue, nextValue) {
+				return // no change
+			}
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "no extension container proxy for this path", http.StatusNotFound)
+			})
+			mappings := parseExtensionContainerMappings(nextValue)
+			for path, toURL := range mappings {
+				mux.Handle(path, http.StripPrefix(path, newExtensionContainerReverseProxy(toURL)))
+			}
+
+			extensionContainerProxyHandlerMu.Lock()
+			defer extensionContainerProxyHandlerMu.Unlock()
+			extensionContainerProxyHandler = mux
+		})
+	}()
 }
 
 func newExtensionContainerReverseProxy(toURL url.URL) *httputil.ReverseProxy {
@@ -39,36 +62,41 @@ func newExtensionContainerReverseProxy(toURL url.URL) *httputil.ReverseProxy {
 				RawQuery: r.URL.RawQuery,
 			})
 			r.Host = toURL.Host
+			r.Header.Del("Authorization")
+			r.Header.Del("Cookie")
+			// TODO!(sqs): whitelist cookies and headers
+		},
+		ModifyResponse: func(resp *http.Response) error {
+			// TODO!(sqs): whitelist cookies and headers
+			resp.Header.Del("Set-Cookie")
+			return nil
 		},
 	}
 }
 
-func parseExtensionContainerMappings(mappingsStr string) (map[string]url.URL, error) {
-	mappingsStrs := strings.Fields(mappingsStr)
-	mappings := make(map[string]url.URL, len(mappingsStrs))
-	for _, s := range mappingsStrs {
-		parts := strings.Split(s, "->")
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid extension containers mapping entry %q (does not contain \"->\")", s)
-		}
-
-		fromPath := parts[0]
+func parseExtensionContainerMappings(rawMappings []*schema.ExtensionsContainers) map[string]url.URL {
+	mappings := make(map[string]url.URL, len(rawMappings))
+	for _, m := range rawMappings {
+		fromPath := m.From
 		const wantPrefix = "/.api/extension-containers/"
 		if !strings.HasPrefix(fromPath, wantPrefix) {
-			return nil, fmt.Errorf("invalid extension containers mapping entry %q (path must begin with %q)", s, wantPrefix)
+			log15.Warn("Invalid extensions.containers configuration value (from path must begin with prefix).", "from", m.From, "requiredPrefix", wantPrefix)
+			continue
 		}
 		fromPath = strings.TrimPrefix(fromPath, wantPrefix[:len(wantPrefix)-1]) // preserve leading slash
 		fromPath = strings.TrimSuffix(fromPath, "/")
 
-		toURL, err := url.Parse(parts[1])
+		toURL, err := url.Parse(m.To)
 		if err != nil {
-			return nil, fmt.Errorf("invalid extension containers mapping entry %q (%s)", s, err)
+			log15.Warn("Invalid extensions.containers configuration value (to URL is not a valid URL).", "to", m.To)
+			continue
 		}
 		if otherURL, exists := mappings[fromPath]; exists {
-			return nil, fmt.Errorf("duplicate extension containers mapping entries for path %q (URLs: %q %q)", fromPath, toURL, otherURL)
+			log15.Warn("Duplicate mappings in extensions.containers configuration value. Behavior is undefined.", "from", fromPath, "to1", toURL.String(), "to2", otherURL.String())
+			continue
 		}
 
 		mappings[fromPath] = *toURL
 	}
-	return mappings, nil
+	return mappings
 }

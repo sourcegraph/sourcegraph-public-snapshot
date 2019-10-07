@@ -13,11 +13,11 @@ import (
 )
 
 type Params struct {
-	ArchiveURL string
-	Dir        string
-	Commands   [][]string // TODO!(sqs): this allows arbitrary execution
+	ArchiveURL string     `json:"archiveURL"`
+	Dir        string     `json:"dir,omitempty"`
+	Commands   [][]string `json:"commands"` // TODO!(sqs): this allows arbitrary execution
 
-	IncludeFiles []string // paths of files (relative to Dir) whose contents to return in Response
+	IncludeFiles []string `json:"includeFiles,omitempty"` // paths of files (relative to Dir) whose contents to return in Response
 }
 
 type Result struct {
@@ -32,21 +32,14 @@ type CommandResult struct {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	// Allow CORS.
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Content-Length, X-Requested-With")
-
-	if r.Method == "OPTIONS" {
-		return
-	}
-	if r.Method != "POST" {
+	if r.Method != "GET" {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
 
+	paramsStr := r.URL.Query().Get("params")
 	var params Params
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+	if err := json.Unmarshal([]byte(paramsStr), &params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -184,6 +177,7 @@ find # mimic 'git ls-files'
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Cache-Control", "max-age=3600, public")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Write(respBody)
 	w.Write([]byte("\n"))

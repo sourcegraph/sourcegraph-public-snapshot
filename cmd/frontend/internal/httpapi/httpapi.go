@@ -63,7 +63,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 
-	m.Get(apirouter.ExtensionContainerProxy).Handler(trace.TraceRoute(http.StripPrefix("/.api/extension-containers", extensionContainerProxyHandler)))
+	m.Get(apirouter.ExtensionContainerProxy).Handler(trace.TraceRoute(http.StripPrefix("/.api/extension-containers", http.HandlerFunc(extensionContainerProxy))))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
