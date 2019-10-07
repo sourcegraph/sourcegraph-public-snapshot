@@ -552,15 +552,31 @@ func TestStore(t *testing.T) {
 	t.Run("ChangesetEvents", func(t *testing.T) {
 		events := make([]*a8n.ChangesetEvent, 0, 3)
 
-		t.Run("Create", func(t *testing.T) {
-			for i := 0; i < cap(events); i++ {
+		issueComment := &github.IssueComment{
+			DatabaseID: 443827703,
+			Author: github.Actor{
+				AvatarURL: "https://avatars0.githubusercontent.com/u/1976?v=4",
+				Login:     "sqs",
+				URL:       "https://github.com/sqs",
+			},
+			Editor:              nil,
+			AuthorAssociation:   "MEMBER",
+			Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
+			URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
+			CreatedAt:           now,
+			UpdatedAt:           now,
+			IncludesCreatedEdit: false,
+		}
+
+		t.Run("Upsert", func(t *testing.T) {
+			for i := 1; i < cap(events); i++ {
 				e := &a8n.ChangesetEvent{
-					ChangesetID: 42,
-					Kind:        "CommentAdded",
+					ChangesetID: int64(i),
+					Kind:        a8n.ChangesetEventKindGitHubCommented,
 					Source:      a8n.ChangesetEventSourceGitHubAPI,
-					Key:         fmt.Sprintf("%d:deduplication:key:changeme", i),
+					Key:         issueComment.Key(),
 					CreatedAt:   now,
-					Metadata:    []byte("{}"),
+					Metadata:    issueComment,
 				}
 
 				events = append(events, e)
@@ -586,6 +602,77 @@ func TestStore(t *testing.T) {
 
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatal(diff)
+				}
+			}
+		})
+
+		t.Run("List", func(t *testing.T) {
+			for i := 1; i <= len(events); i++ {
+				opts := ListChangesetEventsOpts{ChangesetID: int64(i)}
+
+				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				have, want := ts, events[i-1:i]
+				if len(have) != len(want) {
+					t.Fatalf("listed %d events, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			for i := 1; i <= len(events); i++ {
+				cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: i})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				{
+					have, want := next, int64(0)
+					if i < len(events) {
+						want = events[i].ID
+					}
+
+					if have != want {
+						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					}
+				}
+
+				{
+					have, want := cs, events[:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d events, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			}
+
+			{
+				var cursor int64
+				for i := 1; i <= len(events); i++ {
+					opts := ListChangesetEventsOpts{Cursor: cursor, Limit: 1}
+					have, next, err := s.ListChangesetEvents(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := events[i-1 : i]
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+					cursor = next
 				}
 			}
 		})

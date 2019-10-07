@@ -427,6 +427,73 @@ func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
 }
 
+// ListChangesetEventsOpts captures the query options needed for
+// listing changeset events.
+type ListChangesetEventsOpts struct {
+	ChangesetID int64
+	Cursor      int64
+	Limit       int
+}
+
+// ListChangesetEvents lists ChangesetEvents with the given filters.
+func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*a8n.ChangesetEvent, next int64, err error) {
+	q := listChangesetEventsQuery(&opts)
+
+	cs = make([]*a8n.ChangesetEvent, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var c a8n.ChangesetEvent
+		if err = scanChangesetEvent(&c, sc); err != nil {
+			return 0, 0, err
+		}
+		cs = append(cs, &c)
+		return int64(c.ID), 1, err
+	})
+
+	if len(cs) == opts.Limit {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
+}
+
+var listChangesetEventsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListChangesetEvents
+SELECT
+	id,
+    changeset_id,
+    kind,
+    source,
+    key,
+    created_at,
+    metadata
+FROM changeset_events
+WHERE %s
+ORDER BY id ASC
+LIMIT %s
+`
+
+func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("id >= %s", opts.Cursor),
+	}
+
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
+	}
+
+	return sqlf.Sprintf(
+		listChangesetEventsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
+	)
+}
+
 // UpsertChangesetEvents creates or updates the given ChangesetEvents.
 func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) error {
 	q, err := s.upsertChangesetEventsQuery(cs)
@@ -952,9 +1019,31 @@ func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
 		return err
 	}
 
-	switch e.Source {
+	switch e.Kind {
+	case a8n.ChangesetEventKindGitHubAssigned:
+		e.Metadata = new(github.AssignedEvent)
+	case a8n.ChangesetEventKindGitHubClosed:
+		e.Metadata = new(github.ClosedEvent)
+	case a8n.ChangesetEventKindGitHubCommented:
+		e.Metadata = new(github.IssueComment)
+	case a8n.ChangesetEventKindGitHubRenamedTitle:
+		e.Metadata = new(github.RenamedTitleEvent)
+	case a8n.ChangesetEventKindGitHubMerged:
+		e.Metadata = new(github.MergedEvent)
+	case a8n.ChangesetEventKindGitHubReviewed:
+		e.Metadata = new(github.PullRequestReview)
+	case a8n.ChangesetEventKindGitHubReopened:
+		e.Metadata = new(github.ReopenedEvent)
+	case a8n.ChangesetEventKindGitHubReviewDismissed:
+		e.Metadata = new(github.ReviewDismissedEvent)
+	case a8n.ChangesetEventKindGitHubReviewRequestRemoved:
+		e.Metadata = new(github.ReviewRequestRemovedEvent)
+	case a8n.ChangesetEventKindGitHubReviewRequested:
+		e.Metadata = new(github.ReviewRequestedEvent)
+	case a8n.ChangesetEventKindGitHubUnassigned:
+		e.Metadata = new(github.UnassignedEvent)
 	default:
-		return nil
+		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
 
 	if err = json.Unmarshal(metadata, e.Metadata); err != nil {
