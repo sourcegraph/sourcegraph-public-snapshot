@@ -59,21 +59,24 @@ The release captain should create a tracking issue using the [release issue temp
 
 | Version | Captain | Release Date |
 |---------|---------|--------------|
-| 3.0 | @nicksnyder | 2019-02-07 (Wednesday) |
-| 3.1 | @nicksnyder | 2019-02-20 (Wednesday) |
-| 3.2 | @nicksnyder | 2019-03-20 (Wednesday) |
-| 3.3 | @slimsag | 2019-04-20 (Saturday) |
-| 3.4 | @beyang | 2019-05-20 (Monday) |
-| 3.5 | @ggilmore | 2019-06-20 (Thursday) |
-| 3.6 | @keegancsmith | 2019-07-20 (Saturday) |
-| 3.7 | @attfarhan | 2019-08-20 (Tuesday) |
-| 3.8 | @lguychard | 2019-09-20 (Friday) |
-| 3.9 | @tsenart| 2019-10-20 (Sunday) |
-| 3.10 | @beyang | 2019-11-20 (Wednesday) |
-| 3.11 | @chrismwendt | 2019-12-20 (Saturday) |
-| 3.12 | @vanesa | 2020-01-20 (Monday, MLK) |
-| 3.13 | @felixfbecker | 2020-02-20 (Thursday) |
-| 3.14 | @ijt | 2020-03-20 (Friday) |
+| 3.0 | @nicksnyder | 2019-02-07 |
+| 3.1 | @nicksnyder | 2019-02-20 |
+| 3.2 | @nicksnyder | 2019-03-20 |
+| 3.3 | @slimsag | 2019-04-20 |
+| 3.4 | @beyang | 2019-05-20 |
+| 3.5 | @ggilmore | 2019-06-20 |
+| 3.6 | @keegancsmith | 2019-07-20 |
+| 3.7 | @attfarhan | 2019-08-20 |
+| 3.8 | @lguychard | 2019-09-20 |
+| 3.9 | @tsenart| 2019-10-20 |
+| 3.10 | @beyang | 2019-11-20 |
+| 3.11 | @chrismwendt | 2019-12-20 |
+| 3.12 | @uwedeportivo | 2020-01-20 |
+| 3.13 | @felixfbecker | 2020-02-20 |
+| 3.14 | @efritz | 2020-03-20 |
+| 3.15 | @unknwon | 2020-04-20 |
+| 3.16 | @rvantonder | 2020-05-20 |
+| 3.17 | @hadrian-git | 2020-06-20 |
 
 Release captains may trade rotations with each other by updating this schedule.
 

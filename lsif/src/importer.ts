@@ -42,6 +42,14 @@ const inserterMetrics = {
 }
 
 /**
+ * The insertion metrics for the database.
+ */
+const inserterMetrics = {
+    durationHistogram: databaseInsertionDurationHistogram,
+    errorsCounter: databaseInsertionErrorsCounter,
+}
+
+/**
  * The internal version of our SQLite databases. We need to keep this in case
  * we add something that can't be done transparently; if we change how we process
  * something in the future we'll need to consider a number of previous version

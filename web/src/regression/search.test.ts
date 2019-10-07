@@ -4,89 +4,13 @@
 
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { setTestDefaults, createAndInitializeDriver } from './util/init'
+import { getTestFixtures } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureTestExternalService, waitForRepos, deleteUser, ensureNoTestExternalServices } from './util/api'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
-
-const testRepoSlugs = [
-    'auth0/go-jwt-middleware',
-    'kyoshidajp/ghkw',
-    'PalmStoneGames/kube-cert-manager',
-    'adjust/go-wrk',
-    'P3GLEG/Whaler',
-    'sajari/docconv',
-    'marianogappa/chart',
-    'divan/gobenchui',
-    'tuna/tunasync',
-    'mthbernardes/GTRS',
-    'antonmedv/expr',
-    'kshvakov/clickhouse',
-    'xwb1989/sqlparser',
-    'henrylee2cn/pholcus_lib',
-    'itcloudy/ERP',
-    'iovisor/kubectl-trace',
-    'minio/highwayhash',
-    'matryer/moq',
-    'vkuznecovas/mouthful',
-    'DirectXMan12/k8s-prometheus-adapter',
-    'stephens2424/php',
-    'ericchiang/k8s',
-    'jonmorehouse/terraform-provisioner-ansible',
-    'solo-io/supergloo',
-    'intel-go/bytebuf',
-    'xtaci/smux',
-    'MatchbookLab/local-persist',
-    'ossrs/go-oryx',
-    'yep/eth-tweet',
-    'deckarep/gosx-notifier',
-    'zentures/sequence',
-    'nishanths/license',
-    'beego/mux',
-    'status-im/status-go',
-    'antonmedv/countdown',
-    'lonng/nanoserver',
-    'vbauerster/mpb',
-    'evilsocket/sg1',
-    'zhenghaoz/gorse',
-    'nsf/godit',
-    '3xxx/engineercms',
-    'howtowhale/dvm',
-    'gosuri/uitable',
-    'github/vulcanizer',
-    'metaparticle-io/package',
-    'bwmarrin/snowflake',
-    'wyh267/FalconEngine',
-    'moul/sshportal',
-    'fogleman/fauxgl',
-    'DataDog/datadog-agent',
-    'line/line-bot-sdk-go',
-    'pinterest/bender',
-    'esimov/diagram',
-    'nytimes/openapi2proto',
-    'iris-contrib/examples',
-    'munnerz/kube-plex',
-    'inbucket/inbucket',
-    'golangci/awesome-go-linters',
-    'htcat/htcat',
-    'tidwall/pinhole',
-    'gocraft/health',
-    'ivpusic/grpool',
-    'Antonito/gfile',
-    'yinqiwen/gscan',
-    'facebookarchive/httpcontrol',
-    'josharian/impl',
-    'salihciftci/liman',
-    'kelseyhightower/konfd',
-    'mohanson/daze',
-    'google/ko',
-    'freedomofdevelopers/fod',
-    'sgtest/mux',
-    'facebook/react',
-]
 
 /**
  * Reads the number of results from the text at the top of the results page
@@ -125,37 +49,109 @@ function hasNoResultsOrError(): boolean {
 }
 
 describe('Search regression test suite', () => {
-    let driver: Driver
-    let gqlClient: GraphQLClient
+    /**
+     * Test data
+     */
     const testUsername = 'test-search'
     const testExternalServiceInfo = {
         kind: GQL.ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (search.test.ts)',
     }
+    const testRepoSlugs = [
+        'auth0/go-jwt-middleware',
+        'kyoshidajp/ghkw',
+        'PalmStoneGames/kube-cert-manager',
+        'adjust/go-wrk',
+        'P3GLEG/Whaler',
+        'sajari/docconv',
+        'marianogappa/chart',
+        'divan/gobenchui',
+        'tuna/tunasync',
+        'mthbernardes/GTRS',
+        'antonmedv/expr',
+        'kshvakov/clickhouse',
+        'xwb1989/sqlparser',
+        'henrylee2cn/pholcus_lib',
+        'itcloudy/ERP',
+        'iovisor/kubectl-trace',
+        'minio/highwayhash',
+        'matryer/moq',
+        'vkuznecovas/mouthful',
+        'DirectXMan12/k8s-prometheus-adapter',
+        'stephens2424/php',
+        'ericchiang/k8s',
+        'jonmorehouse/terraform-provisioner-ansible',
+        'solo-io/supergloo',
+        'intel-go/bytebuf',
+        'xtaci/smux',
+        'MatchbookLab/local-persist',
+        'ossrs/go-oryx',
+        'yep/eth-tweet',
+        'deckarep/gosx-notifier',
+        'zentures/sequence',
+        'nishanths/license',
+        'beego/mux',
+        'status-im/status-go',
+        'antonmedv/countdown',
+        'lonng/nanoserver',
+        'vbauerster/mpb',
+        'evilsocket/sg1',
+        'zhenghaoz/gorse',
+        'nsf/godit',
+        '3xxx/engineercms',
+        'howtowhale/dvm',
+        'gosuri/uitable',
+        'github/vulcanizer',
+        'metaparticle-io/package',
+        'bwmarrin/snowflake',
+        'wyh267/FalconEngine',
+        'moul/sshportal',
+        'fogleman/fauxgl',
+        'DataDog/datadog-agent',
+        'line/line-bot-sdk-go',
+        'pinterest/bender',
+        'esimov/diagram',
+        'nytimes/openapi2proto',
+        'iris-contrib/examples',
+        'munnerz/kube-plex',
+        'inbucket/inbucket',
+        'golangci/awesome-go-linters',
+        'htcat/htcat',
+        'tidwall/pinhole',
+        'gocraft/health',
+        'ivpusic/grpool',
+        'Antonito/gfile',
+        'yinqiwen/gscan',
+        'facebookarchive/httpcontrol',
+        'josharian/impl',
+        'salihciftci/liman',
+        'kelseyhightower/konfd',
+        'mohanson/daze',
+        'google/ko',
+        'freedomofdevelopers/fod',
+        'sgtest/mux',
+        'facebook/react',
+    ]
+    const config = getConfig(
+        'sudoToken',
+        'sudoUsername',
+        'gitHubToken',
+        'sourcegraphBaseUrl',
+        'noCleanup',
+        'testUserPassword',
+        'logBrowserConsole',
+        'slowMo',
+        'headless',
+        'keepBrowser'
+    )
 
     describe('Search over a dozen repositories', () => {
-        const resourceManager = new TestResourceManager()
-        const config = getConfig(
-            'sudoToken',
-            'sudoUsername',
-            'gitHubToken',
-            'sourcegraphBaseUrl',
-            'noCleanup',
-            'testUserPassword',
-            'logBrowserConsole',
-            'slowMo',
-            'headless'
-        )
+        let driver: Driver
+        let gqlClient: GraphQLClient
+        let resourceManager: TestResourceManager
         beforeAll(
             async () => {
-                driver = await createAndInitializeDriver(config)
-                gqlClient = GraphQLClient.newForPuppeteerTest({
-                    baseURL: config.sourcegraphBaseUrl,
-                    sudoToken: config.sudoToken,
-                    username: config.sudoUsername,
-                })
-                await setTestDefaults(driver, gqlClient)
-
+                ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
                 await resourceManager.create({
                     type: 'User',
                     name: testUsername,

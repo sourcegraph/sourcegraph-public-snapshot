@@ -95,15 +95,15 @@ const errorHandler = (
     res: express.Response,
     next: express.NextFunction
 ): void => {
-        if (!error || !error.status) {
-            // Only log errors that don't have a status attached
-            logger.error('uncaught exception', { error })
-        }
-
-        if (!res.headersSent) {
-            res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
-        }
+    if (!error || !error.status) {
+        // Only log errors that don't have a status attached
+        logger.error('uncaught exception', { error })
     }
+
+    if (!res.headersSent) {
+        res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+    }
+}
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.

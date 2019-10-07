@@ -284,17 +284,9 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	if u.Scheme != "" || u.Host != "" {
 		return "", schemeOrHostNotEmptyErr
 	}
-	normalizeQuery(u, perPage)
-
-	return u.String(), nil
-}
-
-func normalizeQuery(u *url.URL, perPage int) {
 	q := u.Query()
-	if q.Get("order_by") == "" && q.Get("sort") == "" {
-		// Apply default ordering to get the likely more relevant projects first.
-		q.Set("order_by", "last_activity_at")
-	}
 	q.Set("per_page", strconv.Itoa(perPage))
 	u.RawQuery = q.Encode()
+
+	return u.String(), nil
 }

@@ -87,6 +87,9 @@ const createConvertJob = (
     // Update commit parentage information for this commit
     await discoverAndUpdateCommit(xrepoDatabase, repository, commit, fetchConfiguration().gitServers, ctx)
 
+    // Update commit parentage information for this commit
+    await discoverAndUpdateCommit(xrepoDatabase, repository, commit, fetchConfiguration().gitServers)
+
     // Remove input
     await fs.unlink(filename)
 }
