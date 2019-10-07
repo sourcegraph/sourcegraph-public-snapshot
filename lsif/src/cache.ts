@@ -1,7 +1,7 @@
 import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
-import { createConnection } from './connection'
+import { createSqliteConnection } from './connection'
 import { DocumentData, ResultChunkData } from './models.database'
 import {
     connectionCacheEventsCounter,
@@ -330,7 +330,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * be disposed by cache eviction while the callback is active.
      *
      * @param database The database filename.
-     * @param entities The set of expected entities present in this schema.
+     * @param entities The set of entities to create on a new connection.
      * @param callback The function invoke with the SQLite connection.
      */
     public withConnection<T>(
@@ -340,7 +340,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[],
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        return this.withValue(database, () => createConnection(database, entities), callback)
+        return this.withValue(database, () => createSqliteConnection(database, entities), callback)
     }
 
     /**
@@ -348,7 +348,7 @@ export class ConnectionCache extends GenericCache<string, Connection> {
      * before invoking the callback.
      *
      * @param database The database filename.
-     * @param entities The set of expected entities present in this schema.
+     * @param entities The set of entities to create on a new connection.
      * @param callback The function invoke with a SQLite transaction connection.
      */
     public withTransactionalEntityManager<T>(

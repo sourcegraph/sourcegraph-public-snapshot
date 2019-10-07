@@ -128,7 +128,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 			name: "success",
 			prs: []*PullRequest{
 				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5550},
-				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5551},
+				{RepoWithOwner: "sourcegraph/sourcegraph", Number: 5834},
 				{RepoWithOwner: "tsenart/vegeta", Number: 50},
 			},
 		},

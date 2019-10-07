@@ -15,7 +15,6 @@ import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
 import { getHeaders } from '../../shared/backend/headers'
-import { resolveClientConfiguration } from '../../shared/backend/server'
 import { fromBrowserEvent } from '../../shared/util/browser'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
@@ -77,20 +76,6 @@ async function main(): Promise<void> {
         sourcegraphURL = DEFAULT_SOURCEGRAPH_URL
     }
 
-    async function syncClientConfiguration(): Promise<void> {
-        const config = await resolveClientConfiguration(requestGraphQL).toPromise()
-        // ClientConfiguration is the new storage option.
-        // Request permissions for the urls.
-        await storage.sync.set({
-            clientConfiguration: {
-                parentSourcegraph: {
-                    url: config.parentSourcegraph.url,
-                },
-                contentScriptUrls: config.contentScriptUrls,
-            },
-        })
-    }
-
     configureOmnibox(sourcegraphURL)
 
     // Sync managed enterprise URLs
@@ -115,7 +100,6 @@ async function main(): Promise<void> {
         }
 
         if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
-            await syncClientConfiguration()
             configureOmnibox(changes.sourcegraphURL.newValue)
         }
     })

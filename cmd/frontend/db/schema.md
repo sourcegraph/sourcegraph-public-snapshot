@@ -51,6 +51,30 @@ Triggers:
 
 ```
 
+# Table "public.changeset_events"
+```
+    Column    |           Type           |                           Modifiers                           
+--------------+--------------------------+---------------------------------------------------------------
+ id           | bigint                   | not null default nextval('changeset_events_id_seq'::regclass)
+ changeset_id | bigint                   | not null
+ kind         | text                     | not null
+ source       | text                     | not null
+ key          | text                     | not null
+ created_at   | timestamp with time zone | not null default now()
+ metadata     | jsonb                    | not null default '{}'::jsonb
+Indexes:
+    "changeset_events_pkey" PRIMARY KEY, btree (id)
+    "changeset_events_changeset_id_kind_key_unique" UNIQUE CONSTRAINT, btree (changeset_id, kind, key)
+Check constraints:
+    "changeset_events_key_check" CHECK (key <> ''::text)
+    "changeset_events_kind_check" CHECK (kind <> ''::text)
+    "changeset_events_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+    "changeset_events_source_check" CHECK (source <> ''::text)
+Foreign-key constraints:
+    "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.changesets"
 ```
         Column         |           Type           |                        Modifiers                        
@@ -73,6 +97,8 @@ Check constraints:
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Foreign-key constraints:
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
     trig_delete_changeset_reference_on_campaigns AFTER DELETE ON changesets FOR EACH ROW EXECUTE PROCEDURE delete_changeset_reference_on_campaigns()
 

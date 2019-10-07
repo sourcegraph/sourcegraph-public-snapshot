@@ -57,7 +57,6 @@ export interface StorageItems {
      * Storage for feature flags.
      */
     featureFlags: Partial<FeatureFlags>
-    clientConfiguration: ClientConfigurationDetails
     /**
      * Overrides settings from Sourcegraph.
      */
@@ -65,13 +64,6 @@ export interface StorageItems {
     sideloadedExtensionURL: string | null
     dismissedHoverAlerts: {
         [alertType in ExtensionHoverAlertType]?: boolean
-    }
-}
-
-interface ClientConfigurationDetails {
-    contentScriptUrls: string[]
-    parentSourcegraph: {
-        url: string
     }
 }
 
@@ -85,12 +77,6 @@ export const defaultStorageItems: StorageItems = {
     sourcegraphAnonymousUid: '',
     disableExtension: false,
     featureFlags: featureFlagDefaults,
-    clientConfiguration: {
-        contentScriptUrls: [],
-        parentSourcegraph: {
-            url: DEFAULT_SOURCEGRAPH_URL,
-        },
-    },
     clientSettings: '',
     sideloadedExtensionURL: null,
     dismissedHoverAlerts: {},

@@ -4,12 +4,13 @@ import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
 import uuid from 'uuid'
-import { ConnectionCache } from './cache'
-import { connectionCacheCapacityGauge } from './metrics'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, logErrorAndExit, readEnvInt } from './util'
+import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { XrepoDatabase } from './xrepo'
+import { waitForConfiguration, ConfigurationFetcher } from './config'
+import { discoverAndUpdateCommit } from './commits'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -29,13 +30,6 @@ const WORKER_METRICS_PORT = readEnvInt('WORKER_METRICS_PORT', 3187)
 const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_ENDPOINT || 'redis-store:6379'
 
 /**
- * The number of SQLite connections that can be opened at once. This
- * value may be exceeded for a short period if many handles are held
- * at once.
- */
-const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
-
-/**
  * Whether or not to log a message when the HTTP server is ready and listening.
  */
 const LOG_READY = process.env.DEPLOY_TYPE === 'dev'
@@ -51,8 +45,9 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * the cross-repo database for this dump.
  *
  * @param xrepoDatabase The cross-repo database.
+ * @param fetchConfiguration A function that returns the current configuration.
  */
-const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
+const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: ConfigurationFetcher) => async (
     repository: string,
     commit: string,
     filename: string
@@ -77,6 +72,9 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
         throw e
     }
 
+    // Update commit parentage information for this commit
+    await discoverAndUpdateCommit(xrepoDatabase, repository, commit, fetchConfiguration().gitServers)
+
     // Remove input
     await fs.unlink(filename)
 }
@@ -85,21 +83,20 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase) => async (
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  */
 async function main(): Promise<void> {
-    // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
+    // Read configuration from frontend
+    const fetchConfiguration = await waitForConfiguration()
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
-    // Create backend
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const filename = path.join(STORAGE_ROOT, 'xrepo.db')
-    const xrepoDatabase = new XrepoDatabase(connectionCache, filename)
+    // Create cross-repo database
+    const connection = await createPostgresConnection(fetchConfiguration())
+    const xrepoDatabase = new XrepoDatabase(connection)
 
     const jobFunctions = {
-        convert: createConvertJob(xrepoDatabase),
+        convert: createConvertJob(xrepoDatabase, fetchConfiguration),
     }
 
     // Start metrics server

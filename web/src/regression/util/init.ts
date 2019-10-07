@@ -5,6 +5,7 @@ import { Config } from '../../../../shared/src/e2e/config'
 import { currentProductVersion } from './api'
 import { GraphQLClient } from './GraphQLClient'
 import * as semver from 'semver'
+import { TestResourceManager } from './TestResourceManager'
 
 /**
  * Semver constraint on the Sourcegraph product version. Uses the syntax specified in
@@ -56,13 +57,45 @@ export async function setTestDefaults(driver: Driver, gqlClient: GraphQLClient):
     )
 }
 
+export async function getTestFixtures(
+    config: Pick<
+        Config,
+        | 'sourcegraphBaseUrl'
+        | 'logBrowserConsole'
+        | 'slowMo'
+        | 'headless'
+        | 'sudoToken'
+        | 'sudoUsername'
+        | 'keepBrowser'
+    >
+): Promise<{
+    gqlClient: GraphQLClient
+    driver: Driver
+    resourceManager: TestResourceManager
+}> {
+    const driver = await createAndInitializeDriver(config)
+    const gqlClient = GraphQLClient.newForPuppeteerTest({
+        baseURL: config.sourcegraphBaseUrl,
+        sudoToken: config.sudoToken,
+        username: config.sudoUsername,
+    })
+    await setTestDefaults(driver, gqlClient)
+    const resourceManager = new TestResourceManager()
+
+    return {
+        driver,
+        gqlClient,
+        resourceManager,
+    }
+}
+
 /**
  * Returns a Puppeteer driver with a 5s command timeout. It is important that none of the Jest test
  * timeouts is under 5s. Otherwise, the timeout error will be a cryptic Jest timeout error, instead
  * of an error pointing to the timed-out Puppeteer command.
  */
 export async function createAndInitializeDriver(
-    config: Pick<Config, 'sourcegraphBaseUrl' | 'logBrowserConsole' | 'slowMo' | 'headless'>
+    config: Pick<Config, 'sourcegraphBaseUrl' | 'logBrowserConsole' | 'slowMo' | 'headless' | 'keepBrowser'>
 ): Promise<Driver> {
     const driver = await createDriverForTest(config)
     driver.page.setDefaultNavigationTimeout(5 * 1000) // 5s navigation timeout

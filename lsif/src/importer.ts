@@ -1,6 +1,6 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
-import { createConnection } from './connection'
+import { createSqliteConnection } from './connection'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './metrics'
 import { DefaultMap } from './default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
@@ -8,8 +8,8 @@ import { EntityManager } from 'typeorm'
 import { gzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from './xrepo'
-import { readGzippedJsonElements } from './input'
 import { Readable } from 'stream'
+import { readGzippedJsonElements } from './input'
 import { TableInserter } from './inserter'
 import {
     DefinitionModel,
@@ -29,7 +29,16 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
+    entities,
 } from './models.database'
+
+/**
+ * The insertion metrics for the database.
+ */
+const inserterMetrics = {
+    durationHistogram: databaseInsertionDurationHistogram,
+    errorsCounter: databaseInsertionErrorsCounter,
+}
 
 /**
  * The internal version of our SQLite databases. We need to keep this in case
@@ -62,13 +71,7 @@ export async function convertLsif(
     input: Readable,
     database: string
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const connection = await createConnection(database, [
-        DefinitionModel,
-        DocumentModel,
-        MetaModel,
-        ReferenceModel,
-        ResultChunkModel,
-    ])
+    const connection = await createSqliteConnection(database, entities)
 
     try {
         await connection.query('PRAGMA synchronous = OFF')
@@ -110,11 +113,6 @@ export async function importLsif(
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
-
-    const inserterMetrics = {
-        durationHistogram: databaseInsertionDurationHistogram,
-        errorsCounter: databaseInsertionErrorsCounter,
-    }
 
     // Insert metadata
     const metaInserter = new TableInserter(entityManager, MetaModel, MetaModel.BatchSize, inserterMetrics)
