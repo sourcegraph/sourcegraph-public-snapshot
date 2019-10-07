@@ -2,6 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
 // SearchFilterSuggestions provides search filter and default value suggestions.
@@ -10,27 +13,29 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 	if err != nil {
 		return nil, err
 	}
-	repogroups := make([]string, 0, len(groupsByName))
+	repoGroups := make([]string, 0, len(groupsByName))
 	for name := range groupsByName {
-		repogroups = append(repogroups, name)
+		repoGroups = append(repoGroups, name)
 	}
 
-	repoRevs, _, _, err := resolveRepositories(ctx, resolveRepoOp{})
+	// List at most 10 repositories as default suggestions.
+	repos, err := backend.Repos.List(ctx, db.ReposListOptions{
+		Enabled: true,
+		LimitOffset: &db.LimitOffset{
+			Limit: 10,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
-	const maxRepoSuggestions = 10
-	repos := make([]string, 0, maxRepoSuggestions)
-	for _, rev := range repoRevs {
-		repos = append(repos, string(rev.Repo.Name))
-		if len(repos) >= maxRepoSuggestions {
-			break
-		}
+	repoNames := make([]string, len(repos))
+	for i := range repos {
+		repoNames[i] = string(repos[i].Name)
 	}
 
 	return &searchFilterSuggestions{
-		repogroups: repogroups,
-		repos:      repos,
+		repogroups: repoGroups,
+		repos:      repoNames,
 	}, nil
 }
 
