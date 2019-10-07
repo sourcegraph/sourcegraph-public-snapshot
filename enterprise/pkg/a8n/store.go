@@ -427,9 +427,9 @@ func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
 }
 
-// CreateChangesetEvents creates the given ChangesetEvents.
-func (s *Store) CreateChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) error {
-	q, err := s.createChangesetEventsQuery(cs)
+// UpsertChangesetEvents creates or updates the given ChangesetEvents.
+func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) error {
+	q, err := s.upsertChangesetEventsQuery(cs)
 	if err != nil {
 		return err
 	}
@@ -474,8 +474,8 @@ LEFT JOIN batch ON batch.key = changed.key
 ORDER BY batch.ordinality
 `
 
-var createChangesetEventsQueryFmtstr = changesetEventsBatchQueryPrefix + `,
--- source: pkg/a8n/store.go:CreateChangesetEvents
+var upsertChangesetEventsQueryFmtstr = changesetEventsBatchQueryPrefix + `,
+-- source: pkg/a8n/store.go:UpsertChangesetEvents
 changed AS (
   INSERT INTO changeset_events (
     changeset_id,
@@ -493,19 +493,25 @@ changed AS (
     created_at,
     metadata
   FROM batch
-  ON CONFLICT (key) DO NOTHING
+  ON CONFLICT ON CONSTRAINT
+	changeset_events_changeset_id_kind_key_unique
+  DO UPDATE
+  SET
+    source   = excluded.source,
+    metadata = excluded.metadata
+	-- TODO: Set updated_at column
   RETURNING changeset_events.*
 )
 ` + batchChangesetEventsQuerySuffix
 
-func (s *Store) createChangesetEventsQuery(es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
+func (s *Store) upsertChangesetEventsQuery(es []*a8n.ChangesetEvent) (*sqlf.Query, error) {
 	now := s.now()
 	for _, e := range es {
 		if e.CreatedAt.IsZero() {
 			e.CreatedAt = now
 		}
 	}
-	return batchChangesetEventsQuery(createChangesetEventsQueryFmtstr, es)
+	return batchChangesetEventsQuery(upsertChangesetEventsQueryFmtstr, es)
 }
 
 func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Query, error) {

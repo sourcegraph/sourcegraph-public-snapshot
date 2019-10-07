@@ -568,7 +568,7 @@ func TestStore(t *testing.T) {
 
 			// Verify that no duplicates are introduced and no error is returned.
 			for i := 0; i < 2; i++ {
-				err := s.CreateChangesetEvents(ctx, events...)
+				err := s.UpsertChangesetEvents(ctx, events...)
 				if err != nil {
 					t.Fatal(err)
 				}
