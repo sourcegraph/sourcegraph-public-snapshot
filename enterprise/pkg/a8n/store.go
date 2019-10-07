@@ -470,7 +470,10 @@ SELECT
   changed.created_at,
   changed.metadata
 FROM changed
-LEFT JOIN batch ON batch.key = changed.key
+LEFT JOIN batch
+ON batch.changeset_id = changed.changeset_id
+AND batch.kind = changed.kind
+AND batch.key = changed.key
 ORDER BY batch.ordinality
 `
 
