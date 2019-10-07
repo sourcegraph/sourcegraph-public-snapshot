@@ -315,17 +315,8 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	type ChangesetEvent struct {
-		ID        string
-		Changeset struct{ ID string }
-	}
-
 	type ChangesetEventConnection struct {
-		Nodes      []ChangesetEvent
 		TotalCount int
-		PageInfo   struct {
-			HasNextPage bool
-		}
 	}
 
 	type Changeset struct {
