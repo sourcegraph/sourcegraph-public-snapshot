@@ -1,7 +1,7 @@
 import got from 'got'
 import { XrepoDatabase } from './xrepo'
 import * as crypto from 'crypto'
-import { MonitoringContext, monitor } from './monitoring'
+import { TracingContext, logAndTraceCall } from './tracing'
 
 /**
  * THe number of commits to ask gitserver for when updating commit data for
@@ -15,26 +15,35 @@ const MAX_COMMITS_PER_UPDATE = 5000
  * already have commit parentage information for this commit, this function
  * will do nothing.
  *
- * @param xrepoDatabase The cross-repo database.
- * @param repository The repository name.
- * @param commit The commit from which the gitserver queries should start.
- * @param gitserverUrls The set of ordered gitserver urls.
- * @param ctx The monitoring context.
+ * @param args Parameter bag.
+ * @param args.xrepoDatabase The cross-repo database.
+ * @param args.repository The repository name.
+ * @param args.commit The commit from which the gitserver queries should start.
+ * @param args.gitserverUrls The set of ordered gitserver urls.
+ * @param args.ctx The tracing context.
  */
-export async function discoverAndUpdateCommit(
-    xrepoDatabase: XrepoDatabase,
-    repository: string,
-    commit: string,
-    gitserverUrls: string[],
-    ctx: MonitoringContext
-): Promise<void> {
+export async function discoverAndUpdateCommit({
+    xrepoDatabase,
+    repository,
+    commit,
+    gitserverUrls,
+    ctx,
+}: {
+    xrepoDatabase: XrepoDatabase
+    repository: string
+    commit: string
+    gitserverUrls: string[]
+    ctx: TracingContext
+}): Promise<void> {
     if (await xrepoDatabase.isCommitTracked(repository, commit)) {
         return
     }
 
     const gitserverUrl = addrFor(repository, gitserverUrls)
-    const commits = await monitor(ctx, 'querying commits', () => getCommitsNear(gitserverUrl, repository, commit))
-    await monitor(ctx, 'updating commits', () => xrepoDatabase.updateCommits(repository, commits))
+    const commits = await logAndTraceCall(ctx, 'querying commits', () =>
+        getCommitsNear(gitserverUrl, repository, commit)
+    )
+    await logAndTraceCall(ctx, 'updating commits', () => xrepoDatabase.updateCommits(repository, commits))
 }
 
 /**

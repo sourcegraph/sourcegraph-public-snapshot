@@ -24,7 +24,7 @@ import {
     RangeId,
     entities,
 } from './models.database'
-import { MonitoringContext, logSpan } from './monitoring'
+import { TracingContext, logSpan } from './tracing'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -74,9 +74,9 @@ export class Database {
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
-    public async definitions(path: string, position: lsp.Position, ctx: MonitoringContext): Promise<lsp.Location[]> {
+    public async definitions(path: string, position: lsp.Position, ctx: TracingContext): Promise<lsp.Location[]> {
         const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
         if (!document || ranges.length === 0) {
             return []
@@ -140,9 +140,9 @@ export class Database {
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
-    public async references(path: string, position: lsp.Position, ctx: MonitoringContext): Promise<lsp.Location[]> {
+    public async references(path: string, position: lsp.Position, ctx: TracingContext): Promise<lsp.Location[]> {
         const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
         if (!document || ranges.length === 0) {
             return []
@@ -207,9 +207,9 @@ export class Database {
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
-    public async hover(path: string, position: lsp.Position, ctx: MonitoringContext): Promise<lsp.Hover | null> {
+    public async hover(path: string, position: lsp.Position, ctx: TracingContext): Promise<lsp.Hover | null> {
         const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
         if (!document || ranges.length === 0) {
             return null
@@ -285,13 +285,13 @@ export class Database {
      * @param model The constructor for the model type.
      * @param moniker The target moniker.
      * @param pathTransformer The function used to alter location paths.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
     private async monikerResults(
         model: typeof DefinitionModel | typeof ReferenceModel,
         moniker: MonikerData,
         pathTransformer: (path: string) => string,
-        ctx: MonitoringContext
+        ctx: TracingContext
     ): Promise<lsp.Location[]> {
         const results = await this.withConnection(connection =>
             connection.getRepository<DefinitionModel | ReferenceModel>(model).find({
@@ -311,12 +311,12 @@ export class Database {
      *
      * @param document The document containing the reference.
      * @param moniker The target moniker.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
     private remoteDefinitions(
         document: DocumentData,
         moniker: MonikerData,
-        ctx: MonitoringContext
+        ctx: TracingContext
     ): Promise<lsp.Location[] | null> {
         return this.lookupMoniker(document, moniker, DefinitionModel, ctx)
     }
@@ -326,13 +326,9 @@ export class Database {
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
-    private remoteMoniker(
-        document: DocumentData,
-        moniker: MonikerData,
-        ctx: MonitoringContext
-    ): Promise<lsp.Location[]> {
+    private remoteMoniker(document: DocumentData, moniker: MonikerData, ctx: TracingContext): Promise<lsp.Location[]> {
         return this.lookupMoniker(document, moniker, ReferenceModel, ctx)
     }
 
@@ -345,13 +341,13 @@ export class Database {
      * @param document The document containing the definition.
      * @param moniker The target moniker.
      * @param model The target model.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
     private async lookupMoniker(
         document: DocumentData,
         moniker: MonikerData,
         model: typeof DefinitionModel | typeof ReferenceModel,
-        ctx: MonitoringContext
+        ctx: TracingContext
     ): Promise<lsp.Location[]> {
         if (!moniker.packageInformationId) {
             return []
@@ -401,12 +397,12 @@ export class Database {
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
     private async remoteReferences(
         document: DocumentData,
         moniker: MonikerData,
-        ctx: MonitoringContext
+        ctx: TracingContext
     ): Promise<lsp.Location[]> {
         if (!moniker.packageInformationId) {
             return []
@@ -487,12 +483,12 @@ export class Database {
      *
      * @param path The path of the document.
      * @param position The user's hover position.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      */
     private async getRangeByPosition(
         path: string,
         position: lsp.Position,
-        ctx: MonitoringContext
+        ctx: TracingContext
     ): Promise<{ document: DocumentData | undefined; ranges: RangeData[] }> {
         const document = await this.getDocumentByPath(path)
         if (!document) {
@@ -595,13 +591,13 @@ export class Database {
     }
 
     /**
-     * Logs an event to the span of the monitoring context, if its defined.
+     * Logs an event to the span of The tracing context, if its defined.
      *
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      * @param event The name of the event.
      * @param pairs The values to log.
      */
-    private logSpan(ctx: MonitoringContext, event: string, pairs: { [K: string]: any }): void {
+    private logSpan(ctx: TracingContext, event: string, pairs: { [K: string]: any }): void {
         logSpan(ctx, event, { ...pairs, dbRepository: this.repository, dbCommit: this.commit })
     }
 }

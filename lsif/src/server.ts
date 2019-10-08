@@ -21,12 +21,11 @@ import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
-import { monitor, MonitoringContext } from './monitoring'
-import { Span } from 'opentracing'
+import { createTracer, logAndTraceCall, TracingContext, addTags } from './tracing'
+import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
-import { createTracer } from './tracing'
-import { createLogger } from './logging'
+import { createLogger, createSilentLogger } from './logging'
 import { enqueue } from './queue'
 
 const pipeline = promisify(_pipeline)
@@ -150,7 +149,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, fetchConfiguration, logger))
+    app.use(await lsifEndpoints(queue, fetchConfiguration, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -215,11 +214,13 @@ function metaEndpoints(): express.Router {
  * @param queue The queue containing LSIF jobs.
  * @param fetchConfiguration A function that returns the current configuration.
  * @param logger The logger instance.
+ * @param tracer The tracer instance.
  */
 async function lsifEndpoints(
     queue: Queue,
     fetchConfiguration: ConfigurationFetcher,
-    logger: Logger
+    logger: Logger,
+    tracer: Tracer | undefined
 ): Promise<express.Router> {
     const router = express.Router()
 
@@ -235,19 +236,22 @@ async function lsifEndpoints(
     /**
      * Create a database instance for the given repository at the commit
      * closest to the target commit for which we have LSIF data. Returns
-     * undefined if no such database can be created.
+     * undefined if no such database can be created. Will also return a
+     * tracing context tagged with the closest commit found. This new
+     * tracing context should be used in all downstream requests so that
+     * the original commit and the effective commit are both known.
      *
      * @param repository The repository name.
      * @param commit The target commit.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      * @param gitserverUrls The set of ordered gitserver urls.
      */
     const loadDatabase = async (
         repository: string,
         commit: string,
-        ctx: MonitoringContext,
+        { logger = createSilentLogger(), span = new Span() }: TracingContext,
         gitserverUrls: string[]
-    ): Promise<Database | undefined> => {
+    ): Promise<{ database: Database | undefined; ctx: TracingContext }> => {
         // Try to construct database for the exact commit
         const database = await tryCreateDatabase(
             STORAGE_ROOT,
@@ -260,29 +264,23 @@ async function lsifEndpoints(
             createDatabaseFilename(STORAGE_ROOT, repository, commit)
         )
         if (database) {
-            return database
+            return { database, ctx: { logger, span } }
         }
 
         // Determine the closest commit that we actually have LSIF data for. If the commit is
         // not tracked, then commit data is requested from gitserver and insert the ancestors
         // data for this commit.
-        const commitWithData = await monitor(ctx, 'determining closest commit', (ctx: MonitoringContext) =>
-            xrepoDatabase.findClosestCommitWithData(repository, commit, ctx, gitserverUrls)
+        const commitWithData = await logAndTraceCall(
+            { logger, span },
+            'determining closest commit',
+            (ctx: TracingContext) => xrepoDatabase.findClosestCommitWithData(repository, commit, ctx, gitserverUrls)
         )
         if (!commitWithData) {
-            return undefined
-        }
-
-        if (ctx.logger) {
-            ctx.logger.debug('using approximate commit', { closestCommit: commitWithData })
-        }
-
-        if (ctx.span) {
-            ctx.span.addTags({ closestCommit: commitWithData })
+            return { database: undefined, ctx: { logger, span } }
         }
 
         // Try to construct a database for the approximate commit
-        return tryCreateDatabase(
+        const approximateDatabase = await tryCreateDatabase(
             STORAGE_ROOT,
             xrepoDatabase,
             connectionCache,
@@ -292,19 +290,19 @@ async function lsifEndpoints(
             commitWithData,
             createDatabaseFilename(STORAGE_ROOT, repository, commitWithData)
         )
+
+        return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: commitWithData }) }
     }
 
     /**
-     * Create a monitoring context from the request logger and tracing span
+     * Create a tracing context from the request logger and tracing span
      * tagged with the given values.
      *
      * @param req The express request.
      * @param tags The tags to apply to the logger.
      */
-    const createMonitoringContext = (
-        req: express.Request & { span?: Span },
-        tags: { [K: string]: any }
-    ): MonitoringContext => ({ logger: logger.child(tags), span: req.span })
+    const createTracingContext = (req: express.Request & { span?: Span }, tags: { [K: string]: any }): TracingContext =>
+        addTags({ logger, span: req.span }, tags)
 
     router.post(
         '/upload',
@@ -318,12 +316,12 @@ async function lsifEndpoints(
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const ctx = createMonitoringContext(req, { repository, commit })
+                const ctx = createTracingContext(req, { repository, commit })
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const output = fs.createWriteStream(filename)
 
                 try {
-                    await monitor(ctx, 'uploading dump', async () => {
+                    await logAndTraceCall(ctx, 'uploading dump', async () => {
                         const elements = readGzippedJsonElements(req)
                         const lsifElements = validateIfEnabled(elements)
                         const stringifiedLines = stringifyJsonLines(lsifElements)
@@ -335,7 +333,7 @@ async function lsifEndpoints(
 
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit })
-                await enqueue(queue, 'convert', { repository, commit, filename })
+                await enqueue(queue, 'convert', { repository, commit, filename }, tracer, ctx.span)
                 res.json(null)
             }
         )
@@ -349,17 +347,17 @@ async function lsifEndpoints(
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const ctx = createMonitoringContext(req, { repository, commit })
-                const db = await monitor(ctx, 'creating database', ctx =>
+                const ctx = createTracingContext(req, { repository, commit })
+                const { database } = await logAndTraceCall(ctx, 'creating database', ctx =>
                     loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
                 )
-                if (!db) {
+                if (!database) {
                     res.json(false)
                     return
                 }
 
                 // If filename supplied, ensure we have data for it
-                const result = file ? await db.exists(file) : true
+                const result = file ? await database.exists(file) : true
                 res.json(result)
             }
         )
@@ -377,17 +375,17 @@ async function lsifEndpoints(
                 checkMethod(method, ['definitions', 'references', 'hover'])
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-                const ctx = createMonitoringContext(req, { repository, commit })
-                const db = await monitor(ctx, 'creating database', ctx =>
+                const ctx = createTracingContext(req, { repository, commit })
+                const { database, ctx: newCtx } = await logAndTraceCall(ctx, 'creating database', ctx =>
                     loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
                 )
-                if (!db) {
+                if (!database) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
                         status: 404,
                     })
                 }
 
-                res.json(await db[cleanMethod](path, position, ctx))
+                res.json(await database[cleanMethod](path, position, newCtx))
             }
         )
     )

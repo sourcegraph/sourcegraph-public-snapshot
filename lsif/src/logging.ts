@@ -6,7 +6,11 @@ import { inspect } from 'util'
 /**
  * The maximum level log message to output.
  */
-const LOG_LEVEL = (process.env.LOG_LEVEL || 'info').toLowerCase()
+const LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error' = (process.env.LOG_LEVEL || 'info').toLowerCase() as any
+
+if (!['debug', 'info', 'warn', 'error'].includes(LOG_LEVEL)) {
+    throw new Error(`Invalid log level ${LOG_LEVEL}.`)
+}
 
 /**
  * Create a structured logger.
@@ -48,13 +52,20 @@ export function createLogger(service: string): Logger {
 }
 
 /**
+ * Creates a silent logger.
+ */
+export function createSilentLogger(): Logger {
+    return _createLogger({ silent: true })
+}
+
+/**
  * Log the beginning, end, and exception of an operation.
  *
  * @param name The log message to output.
  * @param logger The logger instance.
  * @param f The operation to perform.
  */
-export async function log<T>(name: string, logger: Logger, f: () => Promise<T> | T): Promise<T> {
+export async function logCall<T>(name: string, logger: Logger, f: () => Promise<T> | T): Promise<T> {
     const timer = logger.startTimer()
     logger.debug(name)
 

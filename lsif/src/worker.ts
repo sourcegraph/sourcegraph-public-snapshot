@@ -3,7 +3,6 @@ import * as path from 'path'
 import exitHook from 'async-exit-hook'
 import express from 'express'
 import promBundle from 'express-prom-bundle'
-import { omit } from 'lodash'
 import uuid from 'uuid'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
@@ -12,9 +11,8 @@ import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
 import { Logger } from 'winston'
 import { XrepoDatabase } from './xrepo'
-import { Tracer, FORMAT_TEXT_MAP, Span } from 'opentracing'
-import { MonitoringContext, monitor } from './monitoring'
-import { createTracer } from './tracing'
+import { Tracer, FORMAT_TEXT_MAP, Span, followsFrom } from 'opentracing'
+import { createTracer, TracingContext, logAndTraceCall, addTags } from './tracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { discoverAndUpdateCommit } from './commits'
 
@@ -42,54 +40,64 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
  * A generic job. Takes a hash of arguments specific to the job type and
- * a monitoring context that is pulled from the job payload. This connects
+ * a tracing context that is pulled from the job payload. This connects
  * the trace of this job with the trace of the publisher.
  */
-type Job = (args: { [K: string]: any }, ctx: MonitoringContext) => Promise<void>
+type Job = (args: object, ctx: TracingContext) => Promise<void>
 
 /**
- * Create a monitoring context from the logger and tracing span
+ * Create a tracing context from the logger and tracing span
  * tagged with the given values. Will attempt to pull the parent
  * span from the `tracing` value, if it was supplied with the
  * work request.
  *
  * @param logger The logger instance.
  * @param tracer The tracer instance.
+ * @param name The job name.
  * @param tracing The value of the injected parent span.
  * @param tags The tags to apply to the logger.
  */
-const createMonitoringContext = (
+const createTracingContext = (
     logger: Logger,
     tracer: Tracer | undefined,
-    tracing: string,
+    name: string,
+    tracing: object,
     tags: { [K: string]: any }
-): MonitoringContext => {
+): TracingContext => {
     let span: Span | undefined
-    if (tracer && tracing !== '') {
-        span = tracer.startSpan('job', { childOf: tracer.extract(FORMAT_TEXT_MAP, tracing)! })
+    if (tracer) {
+        const publisher = tracer.extract(FORMAT_TEXT_MAP, tracing)
+        span = tracer.startSpan(name, publisher ? { references: [followsFrom(publisher)] } : {})
     }
 
-    return {
-        logger: logger.child({ jobId: uuid.v4(), ...tags }),
-        span,
-    }
+    return addTags({ logger, span }, { jobId: uuid.v4(), ...tags })
 }
 
 /**
- * Invoke the given job with a monitoring context pulled from the job
+ * Invoke the given job with a tracing context pulled from the job
  * payload.
  *
+ * @param name The job name.
  * @param job The job to wrap.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 const wrap = (
+    name: string,
     job: Job,
     logger: Logger,
     tracer: Tracer | undefined
-): ((args: { [K: string]: any }) => Promise<void>) => (args: { [K: string]: any }): Promise<void> => {
-    const jobArgs = omit(args, 'tracing')
-    return job(jobArgs, createMonitoringContext(logger, tracer, args.tracing, jobArgs))
+): (({ tracing, ...args }: object & { tracing: object }) => Promise<void>) => async ({
+    tracing,
+    ...args
+}: object & { tracing: object }): Promise<void> => {
+    const { logger: jobLogger, span = new Span() } = createTracingContext(logger, tracer, name, tracing, args)
+
+    try {
+        return await job(args, { logger: jobLogger, span })
+    } finally {
+        span.finish()
+    }
 }
 
 /**
@@ -102,12 +110,12 @@ const wrap = (
  */
 const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: ConfigurationFetcher) => async (
     args: { [K: string]: any },
-    ctx: MonitoringContext
+    ctx: TracingContext
 ): Promise<void> => {
     // Destructure job arguments
     const { repository, commit, filename } = args
 
-    await monitor(ctx, 'converting LSIF data', async (ctx: MonitoringContext) => {
+    await logAndTraceCall(ctx, 'converting LSIF data', async (ctx: TracingContext) => {
         const input = fs.createReadStream(filename)
         const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
 
@@ -119,7 +127,7 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: Conf
             await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
 
             // Add the new database to the xrepo db
-            await monitor(ctx, 'populating cross-repo database', () =>
+            await logAndTraceCall(ctx, 'populating cross-repo database', () =>
                 xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
             )
         } catch (e) {
@@ -130,7 +138,13 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: Conf
     })
 
     // Update commit parentage information for this commit
-    await discoverAndUpdateCommit(xrepoDatabase, repository, commit, fetchConfiguration().gitServers, ctx)
+    await discoverAndUpdateCommit({
+        xrepoDatabase,
+        repository,
+        commit,
+        gitserverUrls: fetchConfiguration().gitServers,
+        ctx,
+    })
 
     // Remove input
     await fs.unlink(filename)
@@ -162,7 +176,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Create worker and start processing jobs
     await startWorker(logger, {
-        convert: wrap(createConvertJob(xrepoDatabase, fetchConfiguration), logger, tracer),
+        convert: wrap('convert job', createConvertJob(xrepoDatabase, fetchConfiguration), logger, tracer),
     })
 }
 

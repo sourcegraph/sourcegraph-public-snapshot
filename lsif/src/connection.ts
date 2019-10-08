@@ -4,6 +4,7 @@ import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/Po
 import { readEnvInt } from './util'
 import { Logger } from 'winston'
 import { Configuration } from './config'
+import pRetry from 'p-retry'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -107,7 +108,7 @@ export async function createPostgresConnection(configuration: Configuration, log
  * @param logger The logger instance.
  */
 function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
-    return retry(MAX_CONNECTION_RETRIES, CONNECTION_RETRY_INTERVAL, () => {
+    const connect = (): Promise<Connection> => {
         logger.debug('connecting to cross-repository database')
 
         return _createConnection({
@@ -118,6 +119,13 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
             maxQueryExecutionTime: 1000,
             ...connectionOptions,
         })
+    }
+
+    return pRetry(connect, {
+        factor: 1,
+        retries: MAX_CONNECTION_RETRIES,
+        minTimeout: CONNECTION_RETRY_INTERVAL,
+        maxTimeout: CONNECTION_RETRY_INTERVAL,
     })
 }
 
@@ -130,12 +138,19 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
  * @param logger The logger instance.
  */
 function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
-    return retry(MAX_SCHEMA_POLL_RETRIES, SCHEMA_POLL_INTERVAL, async () => {
+    const check = async (): Promise<void> => {
         logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
         if (parseInt(await getMigrationVersion(connection, database), 10) < MINIMUM_MIGRATION_VERSION) {
             throw new Error('cross-repository database not up to date')
         }
+    }
+
+    return pRetry(check, {
+        factor: 1,
+        retries: MAX_SCHEMA_POLL_RETRIES,
+        minTimeout: SCHEMA_POLL_INTERVAL,
+        maxTimeout: SCHEMA_POLL_INTERVAL,
     })
 }
 
@@ -168,41 +183,4 @@ async function getMigrationVersion(connection: Connection, database: string): Pr
     }
 
     throw new Error('Unusable migration state.')
-}
-
-/**
- * Invoke a function until success or the maximum number of retries have been
- * attempted. Will return the firsts non-error value, or will throw the last
- * thrown error. "Sleeps" between retries.
- *
- * @param retries The maximum number of retries.
- * @param durationMs How long to sleep between retries.
- * @param f The function to execute until success.
- */
-async function retry<T>(retries: number, durationMs: number, f: () => Promise<T>): Promise<T> {
-    for (let attempt = 0; ; attempt++) {
-        if (attempt > 0) {
-            await sleep(durationMs)
-        }
-
-        try {
-            return await f()
-        } catch (error) {
-            if (attempt + 1 < retries) {
-                continue
-            }
-
-            throw error
-        }
-    }
-}
-
-/**
- * Simulate sleep.
- *
- * @param durationMs How long to sleep.
- */
-function sleep(durationMs: number): Promise<void> {
-    // TODO - is there a package for this?
-    return new Promise(resolve => setTimeout(resolve, durationMs))
 }

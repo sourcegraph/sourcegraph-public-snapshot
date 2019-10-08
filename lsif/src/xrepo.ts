@@ -10,7 +10,7 @@ import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
-import { MonitoringContext } from './monitoring'
+import { TracingContext } from './tracing'
 
 /**
  * The maximum traversal distance when finding the closest commit.
@@ -95,13 +95,13 @@ export class XrepoDatabase {
      *
      * @param repository The name of the repository.
      * @param commit The target commit.
-     * @param ctx The monitoring context.
+     * @param ctx The tracing context.
      * @param gitserverUrls The set of ordered gitserver urls.
      */
     public async findClosestCommitWithData(
         repository: string,
         commit: string,
-        ctx: MonitoringContext,
+        ctx: TracingContext,
         gitserverUrls?: string[]
     ): Promise<string | undefined> {
         // Request updated commit data from gitserver if this commit isn't
@@ -110,7 +110,7 @@ export class XrepoDatabase {
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (gitserverUrls) {
-            await discoverAndUpdateCommit(this, repository, commit, gitserverUrls, ctx)
+            await discoverAndUpdateCommit({ xrepoDatabase: this, repository, commit, gitserverUrls, ctx })
         }
 
         return this.withConnection(async connection => {
@@ -282,10 +282,11 @@ export class XrepoDatabase {
      * pair that does not reference `value`. See cache.ts for configuration values that tune
      * the bloom filter false positive rates.
      *
-     * @param scheme The package manager scheme (e.g. npm, pip).
-     * @param name The package name.
-     * @param version The package version.
-     * @param value The value to test.
+     * @param args Parameter bag.
+     * @param args.scheme The package manager scheme (e.g. npm, pip).
+     * @param args.name The package name.
+     * @param args.version The package version.
+     * @param args.value The value to test.
      */
     public async getReferences({
         scheme,

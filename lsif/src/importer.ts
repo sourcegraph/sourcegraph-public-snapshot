@@ -31,7 +31,7 @@ import {
     HoverResultId,
     entities,
 } from './models.database'
-import { MonitoringContext, monitor } from './monitoring'
+import { TracingContext, logAndTraceCall } from './tracing'
 
 /**
  * The insertion metrics for the database.
@@ -67,12 +67,12 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  *
  * @param input The input stream containing JSON-encoded LSIF data.
  * @param database The filepath of the database to populate.
- * @param ctx The monitoring context.
+ * @param ctx The tracing context.
  */
 export async function convertLsif(
     input: Readable,
     database: string,
-    ctx: MonitoringContext
+    ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, entities)
 
@@ -93,16 +93,16 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
- * @param ctx The monitoring context.
+ * @param ctx The tracing context.
  */
 export async function importLsif(
     entityManager: EntityManager,
     input: Readable,
-    ctx: MonitoringContext
+    ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
     const correlator = new Correlator()
-    await monitor(ctx, 'correlating LSIF data', async () => {
+    await logAndTraceCall(ctx, 'correlating LSIF data', async () => {
         for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
             correlator.insert(element)
         }
@@ -116,7 +116,7 @@ export async function importLsif(
     // reference result for each set so that we can remap all identifiers to the
     // chosen one.
 
-    const canonicalReferenceResultIds = await monitor(ctx, 'canonicalizing reference results', () =>
+    const canonicalReferenceResultIds = await logAndTraceCall(ctx, 'canonicalizing reference results', () =>
         canonicalizeReferenceResults(correlator)
     )
 
@@ -130,7 +130,7 @@ export async function importLsif(
     await metaInserter.flush()
 
     // Insert documents
-    await monitor(ctx, 'populating documents', async () => {
+    await logAndTraceCall(ctx, 'populating documents', async () => {
         const documentInserter = new TableInserter(
             entityManager,
             DocumentModel,
@@ -142,7 +142,7 @@ export async function importLsif(
     })
 
     // Insert result chunks
-    await monitor(ctx, 'populating result chunks', async () => {
+    await logAndTraceCall(ctx, 'populating result chunks', async () => {
         const resultChunkInserter = new TableInserter(
             entityManager,
             ResultChunkModel,
@@ -154,7 +154,7 @@ export async function importLsif(
     })
 
     // Insert definitions and references
-    await monitor(ctx, 'populating definitions and references', async () => {
+    await logAndTraceCall(ctx, 'populating definitions and references', async () => {
         const definitionInserter = new TableInserter(
             entityManager,
             DefinitionModel,
