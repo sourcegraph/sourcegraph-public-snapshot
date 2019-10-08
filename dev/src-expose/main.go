@@ -51,6 +51,7 @@ func main() {
 	var (
 		globalFlags          = flag.NewFlagSet("src-expose", flag.ExitOnError)
 		globalVerbose        = globalFlags.Bool("verbose", false, "")
+		globalBefore         = globalFlags.String("before", "", "A command to run before snapshotting directories. It is run from the current working directory.")
 		globalSnapshotDir    = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
 		globalSnapshotConfig = globalFlags.String("snapshot-config", "", "If set will be used instead of command line arguments to specify snapshot configuration.")
 
@@ -89,6 +90,9 @@ func main() {
 		}
 		if s.Destination == "" {
 			s.Destination = *globalSnapshotDir
+		}
+		if *globalBefore != "" {
+			s.PreCommand = *globalBefore
 		}
 
 		if err := s.SetDefaults(); err != nil {
@@ -143,7 +147,7 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 
 	root := &ffcli.Command{
 		Name:  "src-expose",
-		Usage: "src-expose [flags] <precommand> <src1> [<src2> ...]",
+		Usage: "src-expose [flags] <src1> [<src2> ...]",
 		LongHelp: `Periodically create snapshots of directories src1, src2, ... and serve them.
 
 For more advanced uses specify -snapshot-config pointing to a yaml file.
@@ -154,25 +158,9 @@ EXAMPLE CONFIGURATION
 		Subcommands: []*ffcli.Command{serve, snapshot},
 		FlagSet:     globalFlags,
 		Exec: func(args []string) error {
-			var err error
-			var s *Snapshotter
-			if len(args) == 0 {
-				s, err = parseSnapshotter(globalFlags, args)
-				if err != nil {
-					return err
-				}
-			} else if len(args) < 2 {
-				return &usageError{
-					Message: "requires atleast 2 argument",
-					FlagSet: globalFlags,
-				}
-			} else {
-				preCommand := args[0]
-				s, err = parseSnapshotter(globalFlags, args[1:])
-				if err != nil {
-					return err
-				}
-				s.PreCommand = preCommand
+			s, err := parseSnapshotter(globalFlags, args)
+			if err != nil {
+				return err
 			}
 
 			if *globalVerbose {
