@@ -1,11 +1,11 @@
-import * as sourcegraph from 'sourcegraph'
 import { flatten } from 'lodash'
-import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
-import { map, switchMap, startWith, filter } from 'rxjs/operators'
+import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import { filter, map, startWith, switchMap } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { npmPackageManager } from './npm/npm'
-import { yarnPackageManager } from './yarn/yarn'
 import { PackageJsonDependency } from './packageManager'
+import { yarnPackageManager } from './yarn/yarn'
 
 const UPGRADE_DEPENDENCY_COMMAND = 'packageJsonDependency.upgrade'
 
@@ -79,14 +79,16 @@ function provideDiagnostics({
                   return flatten(
                       hits
                           .map(({ type, ...hit }) => {
-                              const packageNameMatchString = type === 'npm' ? `"${packageName}"` : `${packageName}@`
-                              let matchRange = findMatchRange(hit.packageJson.text!, packageNameMatchString)
+                              let matchRange = findMatchRange(hit.packageJson.text!, `"${packageName}"`)
                               let matchDoc: sourcegraph.TextDocument | undefined
                               if (matchRange) {
                                   matchDoc = hit.packageJson
                               }
                               if (!matchRange) {
-                                  matchRange = findMatchRange(hit.lockfile.text!, packageNameMatchString)
+                                  matchRange = findMatchRange(
+                                      hit.lockfile.text!,
+                                      type === 'npm' ? `"${packageName}"` : `${packageName}@`
+                                  )
                                   if (matchRange) {
                                       matchDoc = hit.lockfile
                                   }
@@ -98,7 +100,9 @@ function provideDiagnostics({
 
                               const diagnostic: sourcegraph.Diagnostic = {
                                   resource: new URL(matchDoc.uri),
-                                  message: `npm dependency '${packageName}' must be upgraded to ${upgradeToVersion}`,
+                                  message: `${
+                                      matchDoc === hit.lockfile ? 'Indirect ' : ''
+                                  }npm dependency '${packageName}' must be upgraded to ${upgradeToVersion}`,
                                   range: matchRange,
                                   severity: sourcegraph.DiagnosticSeverity.Warning,
                                   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion

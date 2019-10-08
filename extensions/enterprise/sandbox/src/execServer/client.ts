@@ -1,5 +1,5 @@
-import { memoizeAsync } from '../util'
 import * as sourcegraph from 'sourcegraph'
+import { memoizeAsync } from '../util'
 
 export type ExecServerClient = ({
     commands,
@@ -33,7 +33,8 @@ export interface Result {
         ok: boolean
         error?: string
     }[]
-    files: { [path: string]: string }
+    files?: { [path: string]: string }
+    fileDiffs?: { [path: string]: string }
 }
 
 export const createExecServerClient = (
@@ -60,6 +61,9 @@ export const createExecServerClient = (
         const url = new URL('', baseUrl)
         url.searchParams.set('params', JSON.stringify(request.params))
 
+        console.debug('%cexec%c', 'background-color:blue;color:white', 'background-color:transparent;color:unset', {
+            a: 1,
+        })
         const resp = await fetch(url.toString(), {
             headers: {
                 'Content-Type': 'application/json; charset=utf-8',

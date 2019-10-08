@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +10,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"time"
+
+	"golang.org/x/net/context/ctxhttp"
 )
 
 type Params struct {
@@ -17,16 +21,17 @@ type Params struct {
 	Dir        string     `json:"dir,omitempty"`
 	Commands   [][]string `json:"commands"` // TODO!(sqs): this allows arbitrary execution
 
-	IncludeFiles []string `json:"includeFiles,omitempty"` // paths of files (relative to Dir) whose contents to return in Response
+	IncludeFiles []string `json:"includeFiles,omitempty"` // paths of files (relative to Dir) whose contents to return in Result
 }
 
 type Payload struct {
-	Files map[string]string `json:"files"`
+	Files map[string]string `json:"files"` // diffs are computed and returned in (Result).FileDiffs
 }
 
 type Result struct {
-	Commands []CommandResult   `json:"commands"`
-	Files    map[string]string `json:"files"`
+	Commands  []CommandResult   `json:"commands"`
+	Files     map[string]string `json:"files"`
+	FileDiffs map[string]string `json:"fileDiffs,omitempty"`
 }
 
 type CommandResult struct {
@@ -84,7 +89,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		req.Header.Set("Accept", "application/x-tar")
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := ctxhttp.Do(r.Context(), nil, req)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -107,7 +112,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.Remove(tempFile.Name())
 
-		cmd := exec.Command("tar", "x", "-C", tempDir, "-f", tempFile.Name())
+		cmd := exec.CommandContext(r.Context(), "tar", "x", "-C", tempDir, "-f", tempFile.Name())
 		if out, err := cmd.CombinedOutput(); err != nil {
 			http.Error(w, fmt.Sprintf("%s\n\n%s", err, out), http.StatusInternalServerError)
 			return
@@ -173,7 +178,7 @@ find # mimic 'git ls-files'
 		Files:    make(map[string]string, len(params.IncludeFiles)),
 	}
 	for i, args := range params.Commands {
-		cmd := exec.Command(args[0], args[1:]...)
+		cmd := exec.CommandContext(r.Context(), args[0], args[1:]...)
 		cmd.Dir = workDir
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -198,6 +203,20 @@ find # mimic 'git ls-files'
 		result.Files[includeFile] = string(data)
 	}
 
+	// Diff files from payload.
+	for path, data := range payload.Files {
+		path = filepath.Clean(path) // TODO!(sqs): prevent files outside of root
+		diff, err := runDiff(r.Context(), filepath.Join(tempDir, params.Dir), data, path)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if result.FileDiffs == nil {
+			result.FileDiffs = make(map[string]string, len(payload.Files))
+		}
+		result.FileDiffs[path] = diff
+	}
+
 	respBody, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -220,4 +239,23 @@ func main() {
 	}
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+}
+
+func runDiff(ctx context.Context, dir, oldData, newPath string) (string, error) {
+	oldFile, err := ioutil.TempFile("", "diff")
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(oldFile.Name())
+	defer oldFile.Close()
+	if _, err := oldFile.WriteString(oldData); err != nil {
+		return "", err
+	}
+
+	cmd := exec.CommandContext(ctx, "diff", "-u", "--label="+newPath, oldFile.Name(), "--label="+newPath, filepath.Join(oldData, newPath))
+	out, err := cmd.Output()
+	if err != nil && cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == 1 /* 1 just means files differ */ {
+		err = nil
+	}
+	return string(out), err
 }

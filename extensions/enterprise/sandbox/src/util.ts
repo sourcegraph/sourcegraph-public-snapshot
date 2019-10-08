@@ -1,12 +1,14 @@
-import * as sourcegraph from 'sourcegraph'
-import { Observable, from } from 'rxjs'
 import localforage from 'localforage'
+import { from, Observable } from 'rxjs'
 import { first } from 'rxjs/operators'
-
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-// localforage.clear()
+import * as sourcegraph from 'sourcegraph'
 
 const USE_PERSISTENT_MEMOIZATION_CACHE = true
+
+if (!USE_PERSISTENT_MEMOIZATION_CACHE) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    localforage.clear()
+}
 
 interface Cache<T> {
     get(key: string): Promise<T | undefined>

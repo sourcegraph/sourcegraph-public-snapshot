@@ -1,7 +1,7 @@
 import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { applyEdits } from '@sqs/jsonc-parser'
 import { createTwoFilesPatch, Hunk, structuredPatch } from 'diff'
-import { TextEdit, Command } from 'sourcegraph'
+import { Command, TextEdit } from 'sourcegraph'
 import { positionToOffset } from '../../../../../shared/src/api/client/types/textDocument'
 import { WorkspaceEdit } from '../../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -40,6 +40,7 @@ export const computeDiffFromEdits = async (
     const fileDiffs: FileDiff[] = []
     for (const [uri, edits] of editsByUri) {
         const oldText = await extensionsController.services.fileSystem.readFile(new URL(uri))
+        const t0 = Date.now()
         const newText = applyEdits(
             oldText,
             edits.map(edit => {
@@ -50,7 +51,7 @@ export const computeDiffFromEdits = async (
             })
         )
 
-        if (oldText.length > 1500000 || newText.length > 1500000) {
+        if (oldText.length > 700000 || newText.length > 700000) {
             console.log('SKIPPING', uri.toString(), newText.length)
             continue
         }
@@ -66,6 +67,13 @@ export const computeDiffFromEdits = async (
             // TODO!(sqs): hack that we have 2 different patches w/different URIs
             patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined, { context: 2 }),
         })
+        const dt = Date.now() - t0
+        if (dt > 1000) {
+            console.warn(
+                `Computing diff took ${dt}msec for ${uri.toString()} (old ${oldText.length /
+                    1024}kb, new ${newText.length / 1024}kb)`
+            )
+        }
     }
     return fileDiffs
 }

@@ -1,14 +1,14 @@
 import { combineLatest, Observable, of } from 'rxjs'
-import { debounceTime, map, switchMap, distinctUntilChanged } from 'rxjs/operators'
+import { debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { fromDiagnostic } from '../../../../shared/src/api/types/diagnostic'
+import { WorkspaceEdit } from '../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
-import { RuleDefinition } from '../rules/types'
 import { diagnosticQueryMatcher, getCodeActions } from '../diagnostics/backend'
-import { computeDiff, FileDiff, computeDiffFromEdits } from './backend/computeDiff'
-import { WorkspaceEdit } from '../../../../shared/src/api/types/workspaceEdit'
+import { RuleDefinition } from '../rules/types'
+import { computeDiff, computeDiffFromEdits, FileDiff } from './backend/computeDiff'
 
 const getDiagnosticsAndFileDiffs = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
@@ -60,7 +60,7 @@ const getDiagnosticsAndFileDiffs = (
                         const fileDiffs = await computeDiff({ extensionsController, actionInvocations })
                         return {
                             diagnostics: diagnosticsAndActions
-                                .filter(({ action }) => !action)
+                                .filter(({ action }) => action)
                                 .map(({ diagnostic }) => diagnostic),
                             fileDiffs,
                         }

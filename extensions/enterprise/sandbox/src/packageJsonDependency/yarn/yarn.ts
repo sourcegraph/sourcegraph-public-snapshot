@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { PackageJsonPackageManager, PackageJsonPackage } from '../packageManager'
-import semver from 'semver'
 import { flatten } from 'lodash'
-import { memoizedFindTextInFiles } from '../../util'
 import { from } from 'rxjs'
 import { toArray } from 'rxjs/operators'
+import semver from 'semver'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
-import { yarnLogicalTree } from './logicalTree'
+import { memoizedFindTextInFiles } from '../../util'
+import { PackageJsonPackage, PackageJsonPackageManager } from '../packageManager'
 import { editForDependencyUpgrade } from '../packageManagerCommon'
+import { yarnLogicalTree } from './logicalTree'
 
 const yarnExecClient = createExecServerClient('a8n-yarn-exec', ['package.json', 'yarn.lock'])
 
@@ -43,21 +43,26 @@ export const yarnPackageManager: PackageJsonPackageManager = {
         )
 
         const check = async (result: sourcegraph.TextSearchResult): Promise<PackageJsonPackage | null> => {
-            const packageJson = await sourcegraph.workspace.openTextDocument(
-                new URL(result.uri.replace(/yarn\.lock$/, 'package.json'))
-            )
-            const lockfile = await sourcegraph.workspace.openTextDocument(new URL(result.uri))
             try {
-                const dep = getYarnLockDependency(packageJson.text!, lockfile.text!, name)
-                if (!dep) {
+                const packageJson = await sourcegraph.workspace.openTextDocument(
+                    new URL(result.uri.replace(/yarn\.lock$/, 'package.json'))
+                )
+                const lockfile = await sourcegraph.workspace.openTextDocument(new URL(result.uri))
+                try {
+                    const dep = getYarnLockDependency(packageJson.text!, lockfile.text!, name)
+                    if (!dep) {
+                        return null
+                    }
+                    return semver.satisfies(dep.version, parsedVersionRange) ? null : { packageJson, lockfile }
+                } catch (err) {
+                    console.error(`Error checking yarn.lock and package.json for ${result.uri}.`, err, {
+                        lockfile: lockfile.text,
+                        packagejson: packageJson.text,
+                    })
                     return null
                 }
-                return semver.satisfies(dep.version, parsedVersionRange) ? null : { packageJson, lockfile }
             } catch (err) {
-                console.error(`Error checking yarn.lock and package.json for ${result.uri}.`, err, {
-                    lockfile: lockfile.text,
-                    packagejson: packageJson.text,
-                })
+                console.error(`Error getting yarn.lock and package.json for ${result.uri}`, err)
                 return null
             }
         }
@@ -79,6 +84,7 @@ export const yarnPackageManager: PackageJsonPackageManager = {
                     '--no-node-version-check',
                     '--no-progress',
                     '--silent',
+                    '--mutex network',
                     '--skip-integrity-check',
                     '--no-default-rc',
                     '--',
