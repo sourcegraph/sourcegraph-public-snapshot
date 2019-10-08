@@ -106,6 +106,7 @@ function getModeFromExtension(ext: string): string | undefined {
 
         // CUDA
         case 'cu':
+        case 'cuh':
             return 'cuda'
 
         // Dart
