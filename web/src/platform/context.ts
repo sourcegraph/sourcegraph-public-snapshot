@@ -49,6 +49,8 @@ export function createPlatformContext(): PlatformContext {
                     // try once more.
                     updatedSettings.next(await fetchViewerSettings().toPromise())
                     await updateSettings(context, subject, edit, mutateSettings)
+                } else {
+                    throw error
                 }
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
