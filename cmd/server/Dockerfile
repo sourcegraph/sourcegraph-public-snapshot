@@ -69,7 +69,7 @@ RUN set -ex && \
     apk add --no-cache libc6-compat=1.1.23-r3 ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.1@sha256:16901ec40e89ed98200c92180655009acd9af002f24189ab6da53eeb48f8f20a /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:10.0.1@sha256:a0c9b339d4bedf86e09f2ee2b612976c997ae867aba5607f9adbf1a0d38544a4 /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
@@ -77,7 +77,7 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.1@sha256:16901ec40e89ed98200c92180655009acd9af002f24189ab6da53eeb48f8f20a /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+COPY --from=sourcegraph/grafana:10.0.1@sha256:a0c9b339d4bedf86e09f2ee2b612976c997ae867aba5607f9adbf1a0d38544a4 /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 
