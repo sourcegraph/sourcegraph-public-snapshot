@@ -27,7 +27,6 @@ docker run --rm \
     --memory=1g \
     --user=$UID \
     -p 0.0.0.0:3370:3370 \
-    -e GF_SERVER_SERVE_FROM_SUB_PATH=true \
     -v ${GRAFANA_DISK}:/var/lib/grafana \
     -v ${DIR}/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
     -v ${DIR}/../docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
