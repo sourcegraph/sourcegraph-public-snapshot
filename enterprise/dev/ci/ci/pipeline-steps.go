@@ -80,6 +80,12 @@ func addLSIFServer(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
 }
 
+// Ensures lsif/upload.sh can be run without bash
+func addShellcheck(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":shell:",
+		bk.Cmd("shellcheck lsif/upload.sh"))
+}
+
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
