@@ -188,8 +188,7 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 
   {
     "url": "http://%s", // Use http://%s if Sourcegraph is running in Docker
-    "repos": ["hack-ignore-me"],
-    "experimental.srcExpose": true
+    "repos": ["src-expose"], // This may change in versions later than 3.9
   }
 
 `, *globalSnapshotDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr, dockerAddr(*serveAddr))

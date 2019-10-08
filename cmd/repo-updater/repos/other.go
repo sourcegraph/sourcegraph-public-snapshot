@@ -46,7 +46,7 @@ func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, er
 // ListRepos returns all Other repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s OtherSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	if s.conn.ExperimentalSrcExpose {
+	if len(s.conn.Repos) == 1 && s.conn.Repos[0] == "src-expose" {
 		repos, err := s.srcExpose(ctx)
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
