@@ -67,7 +67,7 @@ export async function waitForConfiguration(logger: Logger): Promise<Configuratio
     await new Promise<void>(resolve => {
         updateConfiguration(logger, configuration => {
             if (oldConfiguration !== undefined && requireRestart(oldConfiguration, configuration)) {
-                console.error('Detected configuration change, restarting to take effect')
+                logger.error('Detected configuration change, restarting to take effect')
                 process.exit(1)
             }
 
