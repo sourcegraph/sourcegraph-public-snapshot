@@ -3,7 +3,7 @@ package a8n
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/a8n"
 )
 
 type ChangesetCounts struct {
