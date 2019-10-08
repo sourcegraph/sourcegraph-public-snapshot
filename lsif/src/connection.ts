@@ -3,7 +3,6 @@ import { entities } from './models.xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
 import { Configuration } from './config'
-import * as uuid from 'uuid'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
