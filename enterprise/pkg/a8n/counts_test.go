@@ -25,30 +25,72 @@ import (
 var update = flag.Bool("update", false, "update testdata")
 
 func TestCalcCounts(t *testing.T) {
-	ghChangeset := loadGithubChangeset(t, "sourcegraph/sourcegraph", "5834")
-
 	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
-	// We start exactly one day earlier
-	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
 	// Date when PR #5834 was merged:  "2019-10-07T13:13:45Z"
-	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
+	ghChangeset := loadGithubChangeset(t, "sourcegraph/sourcegraph", "5834")
+	ghChangesetCreated := parseJSONTime(t, "2019-10-02T14:49:31Z")
+	ghChangesetMerged := parseJSONTime(t, "2019-10-07T13:13:45Z")
 
-	have, err := CalcCounts(start, end, ghChangeset)
-	if err != nil {
-		return
+	tests := []struct {
+		name       string
+		start      time.Time
+		end        time.Time
+		changesets []*a8n.Changeset
+		want       []*ChangesetCounts
+	}{
+		{
+			name: "single github changeset",
+			// We start exactly one day earlier
+			start:      ghChangesetCreated.Add(-24 * time.Hour),
+			end:        ghChangesetMerged,
+			changesets: []*a8n.Changeset{ghChangeset},
+			want: []*ChangesetCounts{
+				{
+					Time:  ghChangesetMerged.Add(5 * -24 * time.Hour),
+					Total: 0,
+					Open:  0,
+				},
+				{
+					Time:  ghChangesetMerged.Add(4 * -24 * time.Hour),
+					Total: 1,
+					Open:  1,
+				},
+				{
+					Time:  ghChangesetMerged.Add(3 * -24 * time.Hour),
+					Total: 1,
+					Open:  1,
+				},
+				{
+					Time:  ghChangesetMerged.Add(2 * -24 * time.Hour),
+					Total: 1,
+					Open:  1,
+				},
+				{
+					Time:  ghChangesetMerged.Add(1 * -24 * time.Hour),
+					Total: 1,
+					Open:  1,
+				},
+				{
+					Time:   ghChangesetMerged,
+					Total:  1,
+					Closed: 1,
+					Merged: 1,
+				},
+			},
+		},
 	}
 
-	want := []*ChangesetCounts{
-		{Time: end.Add(5 * -24 * time.Hour), Total: 0, Open: 0},
-		{Time: end.Add(4 * -24 * time.Hour), Total: 1, Open: 1},
-		{Time: end.Add(3 * -24 * time.Hour), Total: 1, Open: 1},
-		{Time: end.Add(2 * -24 * time.Hour), Total: 1, Open: 1},
-		{Time: end.Add(1 * -24 * time.Hour), Total: 1, Open: 1},
-		{Time: end, Total: 1, Closed: 1, Merged: 1},
-	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			have, err := CalcCounts(tc.start, tc.end, tc.changesets...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if !reflect.DeepEqual(have, want) {
-		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(have, want))
+			if !reflect.DeepEqual(have, tc.want) {
+				t.Errorf("wrong counts calculated. diff=%s", cmp.Diff(have, tc.want))
+			}
+		})
 	}
 }
 
