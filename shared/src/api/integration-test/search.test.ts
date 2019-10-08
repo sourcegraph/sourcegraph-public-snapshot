@@ -1,7 +1,6 @@
-import { from, Observable, of } from 'rxjs'
+import { from, of } from 'rxjs'
 import { first, take } from 'rxjs/operators'
 import { integrationTestContext } from './testHelpers'
-import { TextSearchResult } from 'sourcegraph'
 
 describe('search (integration)', () => {
     test('registers a query transformer', async () => {

@@ -13,11 +13,15 @@ import (
 )
 
 type Params struct {
-	ArchiveURL string     `json:"archiveURL"`
+	ArchiveURL string     `json:"archiveURL,omitempty"`
 	Dir        string     `json:"dir,omitempty"`
 	Commands   [][]string `json:"commands"` // TODO!(sqs): this allows arbitrary execution
 
 	IncludeFiles []string `json:"includeFiles,omitempty"` // paths of files (relative to Dir) whose contents to return in Response
+}
+
+type Payload struct {
+	Files map[string]string `json:"files"`
 }
 
 type Result struct {
@@ -32,7 +36,7 @@ type CommandResult struct {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+	if r.Method != "GET" && r.Method != "POST" {
 		http.Error(w, "", http.StatusMethodNotAllowed)
 		return
 	}
@@ -44,6 +48,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var payload Payload
+	if r.Method == "POST" {
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
 	// TODO!(sqs): ensure dir is not ".." to avoid executing in arbitrary directories
 	params.Dir = filepath.Clean(params.Dir)
 
@@ -51,21 +63,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	defer func() { log.Printf("Finish request: %+v (%s)", params, time.Since(start)) }()
 
-	if params.ArchiveURL == "" || len(params.Commands) == 0 {
+	if len(params.Commands) == 0 {
 		http.Error(w, "invalid params", http.StatusBadRequest)
 		return
 	}
 
+	// Prepare temp dir.
+	tempDir, err := ioutil.TempDir("", "workdir")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(tempDir)
+
 	// Fetch and unzip archive.
-	var tempDir string
-	{
-		var err error
-		tempDir, err = ioutil.TempDir("", "workdir")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer os.RemoveAll(tempDir)
+	if params.ArchiveURL != "" {
 		req, err := http.NewRequest("GET", params.ArchiveURL, nil)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -98,6 +110,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		cmd := exec.Command("tar", "x", "-C", tempDir, "-f", tempFile.Name())
 		if out, err := cmd.CombinedOutput(); err != nil {
 			http.Error(w, fmt.Sprintf("%s\n\n%s", err, out), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Write files from payload.
+	for path, data := range payload.Files {
+		path = filepath.Clean(path) // TODO!(sqs): prevent files outside of root
+		absPath := filepath.Join(tempDir, params.Dir, path)
+		if err := os.MkdirAll(filepath.Dir(absPath), 0700); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := ioutil.WriteFile(absPath, []byte(data), 0600); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}

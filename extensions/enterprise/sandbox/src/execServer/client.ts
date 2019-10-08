@@ -4,19 +4,27 @@ import * as sourcegraph from 'sourcegraph'
 export type ExecServerClient = ({
     commands,
     context,
-}: Pick<Params, 'commands'> & { context: RepositoryContext }) => Promise<Result>
+}: Pick<Params, 'commands' | 'dir'> & Pick<Payload, 'files'> & { context?: RepositoryContext }) => Promise<Result>
 
 export interface RepositoryContext {
     repository: string
     commit: string
-    path?: string
+}
+
+interface Request {
+    params: Params
+    payload?: Payload
 }
 
 interface Params {
-    archiveURL: string
+    archiveURL?: string
     dir?: string
     commands: string[][]
     includeFiles: string[]
+}
+
+interface Payload {
+    files?: { [path: string]: string }
 }
 
 export interface Result {
@@ -35,24 +43,36 @@ export const createExecServerClient = (
 ): ExecServerClient => {
     const baseUrl = new URL(`/.api/extension-containers/${containerName}`, sourcegraph.internal.sourcegraphURL)
 
-    const do2: ExecServerClient = async ({ commands, context }) => {
-        const params: Params = {
-            archiveURL: getPublicRepoArchiveUrl(context.repository, context.commit),
-            commands,
-            dir: context.path,
-            includeFiles,
+    const do2: ExecServerClient = async ({ commands, dir, files, context }) => {
+        const request: Request = {
+            params: {
+                archiveURL: context ? getPublicRepoArchiveUrl(context.repository, context.commit) : undefined,
+                commands,
+                dir,
+                includeFiles,
+            },
+            payload: { files },
         }
+        const hasPayload = Boolean(
+            request.payload && request.payload.files && Object.keys(request.payload.files).length > 0
+        )
 
         const url = new URL('', baseUrl)
-        url.searchParams.set('params', JSON.stringify(params))
+        url.searchParams.set('params', JSON.stringify(request.params))
 
         const resp = await fetch(url.toString(), {
             headers: {
                 'Content-Type': 'application/json; charset=utf-8',
             },
+            ...(hasPayload
+                ? {
+                      method: 'POST',
+                      body: JSON.stringify(request.payload),
+                  }
+                : {}),
         })
         if (!resp.ok) {
-            throw new Error(`error executing bundler command in ${context.repository}: HTTP ${resp.status}`)
+            throw new Error(`error executing bundler command: HTTP ${resp.status}`)
         }
         const result: Result = await resp.json()
         return result

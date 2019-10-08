@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { PackageJsonPackageManager, PackageJsonPackage } from '../packageManager'
-import path from 'path'
 import semver from 'semver'
 import { flatten } from 'lodash'
 import { memoizedFindTextInFiles } from '../../util'
@@ -8,9 +7,9 @@ import { from } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../../shared/src/util/types'
-import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { createExecServerClient } from '../../execServer/client'
 import { yarnLogicalTree } from './logicalTree'
+import { editForDependencyUpgrade } from '../packageManagerCommon'
 
 const yarnExecClient = createExecServerClient('a8n-yarn-exec', ['package.json', 'yarn.lock'])
 
@@ -65,37 +64,29 @@ export const yarnPackageManager: PackageJsonPackageManager = {
         return (await Promise.all(results.map(check))).filter(isDefined)
     },
 
-    editForDependencyUpgrade: async (pkg, dep) => {
-        const p = parseRepoURI(pkg.packageJson.uri)
-        const result = await yarnExecClient({
-            commands: [['yarn', 'upgrade', '--', `${dep.name}@${dep.version}`]],
-            context: {
-                repository: p.repoName,
-                commit: p.commitID!,
-                path: path.dirname(p.filePath!),
-            },
-            // TODO!(sqs): dir
-        })
-        return computeDiffs([
-            { old: pkg.packageJson, newText: result.files['package.json'] },
-            { old: pkg.lockfile, newText: result.files['yarn.lock'] },
-        ])
-    },
-}
-
-function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }[]): sourcegraph.WorkspaceEdit {
-    const edit = new sourcegraph.WorkspaceEdit()
-    for (const { old, newText } of files) {
-        // TODO!(sqs): handle creation/removal
-        if (old.text !== undefined && newText !== undefined && old.text !== newText) {
-            edit.replace(
-                new URL(old.uri),
-                new sourcegraph.Range(new sourcegraph.Position(0, 0), old.positionAt(old.text!.length)),
-                newText
-            )
-        }
-    }
-    return edit
+    editForDependencyUpgrade: (pkg, dep) =>
+        editForDependencyUpgrade(
+            pkg,
+            dep,
+            [
+                [
+                    'yarn',
+                    'upgrade',
+                    '--ignore-engines',
+                    '--ignore-platform',
+                    '--ignore-scripts',
+                    '--non-interactive',
+                    '--no-node-version-check',
+                    '--no-progress',
+                    '--silent',
+                    '--skip-integrity-check',
+                    '--no-default-rc',
+                    '--',
+                    `${dep.name}@${dep.version}`,
+                ],
+            ],
+            yarnExecClient
+        ),
 }
 
 function getYarnLockDependency(packageJson: string, yarnLock: string, packageName: string): { version: string } | null {

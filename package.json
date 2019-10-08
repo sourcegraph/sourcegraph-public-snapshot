@@ -1,4 +1,6 @@
 {
+  "name": "@sourcegraph/root",
+  "version": "0.0.0-DEVELOPMENT",
   "private": true,
   "description": "The Sourcegraph web app",
   "license": "MIT",

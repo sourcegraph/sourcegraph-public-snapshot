@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { PackageJsonPackageManager, PackageJsonPackage } from '../packageManager'
-import path from 'path'
 import semver from 'semver'
 import { flatten } from 'lodash'
 import { memoizedFindTextInFiles } from '../../util'
@@ -8,9 +7,9 @@ import { from } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../../shared/src/util/types'
-import { parseRepoURI } from '../../../../../../shared/src/util/url'
 import { createExecServerClient } from '../../execServer/client'
 import { lockTree } from './logicalTree'
+import { editForDependencyUpgrade } from '../packageManagerCommon'
 
 const npmExecClient = createExecServerClient('a8n-npm-exec', ['package.json', 'package-lock.json'])
 
@@ -65,37 +64,23 @@ export const npmPackageManager: PackageJsonPackageManager = {
         return (await Promise.all(results.map(check))).filter(isDefined)
     },
 
-    editForDependencyUpgrade: async (pkg, dep) => {
-        const p = parseRepoURI(pkg.packageJson.uri)
-        const result = await npmExecClient({
-            commands: [['npm', 'install', '--', `${dep.name}@${dep.version}`]],
-            context: {
-                repository: p.repoName,
-                commit: p.commitID!,
-                path: path.dirname(p.filePath!),
-            },
-            // TODO!(sqs): dir
-        })
-        return computeDiffs([
-            { old: pkg.packageJson, newText: result.files['package.json'] },
-            { old: pkg.lockfile, newText: result.files['package-lock.json'] },
-        ])
-    },
-}
-
-function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }[]): sourcegraph.WorkspaceEdit {
-    const edit = new sourcegraph.WorkspaceEdit()
-    for (const { old, newText } of files) {
-        // TODO!(sqs): handle creation/removal
-        if (old.text !== undefined && newText !== undefined && old.text !== newText) {
-            edit.replace(
-                new URL(old.uri),
-                new sourcegraph.Range(new sourcegraph.Position(0, 0), old.positionAt(old.text!.length)),
-                newText
-            )
-        }
-    }
-    return edit
+    editForDependencyUpgrade: (pkg, dep) =>
+        editForDependencyUpgrade(
+            pkg,
+            dep,
+            [
+                [
+                    'npm',
+                    'install',
+                    '--no-audit',
+                    '--package-lock-only',
+                    '--ignore-scripts',
+                    '--',
+                    `${dep.name}@${dep.version}`,
+                ],
+            ],
+            npmExecClient
+        ),
 }
 
 function getPackageLockDependency(
