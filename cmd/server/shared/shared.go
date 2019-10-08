@@ -35,7 +35,7 @@ var defaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
-	"GRAFANA_SERVER_URL": "http://127.0.0.1:3000",
+	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for

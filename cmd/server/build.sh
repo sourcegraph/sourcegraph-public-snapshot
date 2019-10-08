@@ -60,8 +60,10 @@ mkdir "$OUTPUT/sg_prometheus_add_ons"
 cp dev/prometheus/linux/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
 
 echo "--- grafana config"
+docker-images/grafana/jsonnet/build.sh
 cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
 cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
+cp docker-images/grafana/jsonnet/*.json "$OUTPUT/sg_config_grafana/provisioning/dashboards/sourcegraph"
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
