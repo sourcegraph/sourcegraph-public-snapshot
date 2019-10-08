@@ -22,7 +22,7 @@ import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } fro
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { monitor, MonitoringContext } from './monitoring'
-import { Span, Tracer } from 'opentracing'
+import { Span } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createTracer } from './tracing'
@@ -150,7 +150,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, fetchConfiguration, logger, tracer))
+    app.use(await lsifEndpoints(queue, fetchConfiguration, logger))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -215,13 +215,11 @@ function metaEndpoints(): express.Router {
  * @param queue The queue containing LSIF jobs.
  * @param fetchConfiguration A function that returns the current configuration.
  * @param logger The logger instance.
- * @param tracer The tracer instance.
  */
 async function lsifEndpoints(
     queue: Queue,
     fetchConfiguration: ConfigurationFetcher,
-    logger: Logger,
-    tracer: Tracer | undefined
+    logger: Logger
 ): Promise<express.Router> {
     const router = express.Router()
 
