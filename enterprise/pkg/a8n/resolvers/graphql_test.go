@@ -712,39 +712,51 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
 	// We start exactly one day earlier
 	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
-	// Date when PR #5834 was merged
+	// Date when PR #5834 was merged:  "2019-10-07T13:13:45Z"
 	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
 
 	r := &campaignResolver{store: store, Campaign: campaign}
-	have, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
+	rs, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
 		From: &graphqlbackend.DateTime{start},
 		To:   &graphqlbackend.DateTime{end},
 	})
 
-	want := []graphqlbackend.ChangesetCountsResolver{
+	have := make([]*changesetCountsResolver, 0, len(rs))
+	for _, cr := range rs {
+		have = append(have, cr.(*changesetCountsResolver))
+	}
+
+	want := []*changesetCountsResolver{
 		&changesetCountsResolver{
-			date:  end.Add(5 * -24 * time.Hour),
-			total: 0,
+			CountsDate: end.Add(5 * -24 * time.Hour),
+			TotalCount: 0,
+			OpenCount:  0,
 		},
 		&changesetCountsResolver{
-			date:  end.Add(4 * -24 * time.Hour),
-			total: 1,
+			CountsDate: end.Add(4 * -24 * time.Hour),
+			TotalCount: 1,
+			OpenCount:  1,
 		},
 		&changesetCountsResolver{
-			date:  end.Add(3 * -24 * time.Hour),
-			total: 1,
+			CountsDate: end.Add(3 * -24 * time.Hour),
+			TotalCount: 1,
+			OpenCount:  1,
 		},
 		&changesetCountsResolver{
-			date:  end.Add(2 * -24 * time.Hour),
-			total: 1,
+			CountsDate: end.Add(2 * -24 * time.Hour),
+			TotalCount: 1,
+			OpenCount:  1,
 		},
 		&changesetCountsResolver{
-			date:  end.Add(1 * -24 * time.Hour),
-			total: 1,
+			CountsDate: end.Add(1 * -24 * time.Hour),
+			TotalCount: 1,
+			OpenCount:  1,
 		},
 		&changesetCountsResolver{
-			date:  end,
-			total: 1,
+			CountsDate:  end,
+			TotalCount:  1,
+			ClosedCount: 1,
+			MergedCount: 1,
 		},
 	}
 

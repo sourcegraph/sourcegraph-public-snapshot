@@ -81,6 +81,43 @@ type PullRequest struct {
 	UpdatedAt     time.Time
 }
 
+// WasMergedAt returns whether the PullRequest was merged at the given point
+// in time
+func (p *PullRequest) WasMergedAt(t time.Time) bool {
+	for _, ti := range p.TimelineItems {
+		if e, ok := ti.Item.(*MergedEvent); ok {
+			if e.CreatedAt.Before(t) || e.CreatedAt.Equal(t) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// WasClosedAt returns whether the PullRequest was closed at the given point
+// in time
+func (p *PullRequest) WasClosedAt(t time.Time) bool {
+	closed := false
+
+	// TODO: these need to be sorted
+	for _, ti := range p.TimelineItems {
+		if e, ok := ti.Item.(*ClosedEvent); ok {
+			if e.CreatedAt.Before(t) || e.CreatedAt.Equal(t) {
+				closed = true
+			}
+		}
+
+		if e, ok := ti.Item.(*ReopenedEvent); ok {
+			if e.CreatedAt.Before(t) || e.CreatedAt.Equal(t) {
+				closed = false
+			}
+		}
+	}
+
+	return closed
+}
+
 // AssignedEvent represents an 'assigned' event on a PullRequest.
 type AssignedEvent struct {
 	Actor     Actor

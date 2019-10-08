@@ -385,12 +385,12 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 
 	rs := []*changesetCountsResolver{}
 	for d := end; d.After(start); d = d.Add(-24 * time.Hour) {
-		rs = append(rs, &changesetCountsResolver{date: d})
+		rs = append(rs, &changesetCountsResolver{CountsDate: d})
 	}
 
 	for _, c := range cs {
 		for _, r := range rs {
-			d := r.date
+			d := r.CountsDate
 
 			created, err := c.ExternalCreatedAt()
 			if err != nil {
@@ -398,7 +398,27 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 			}
 
 			if created.Before(d) {
-				r.total++
+				r.TotalCount++
+			} else {
+				continue
+			}
+
+			closed, err := c.WasClosedAt(d)
+			if err != nil {
+				return nil, err
+			}
+			if closed {
+				r.ClosedCount++
+			} else {
+				r.OpenCount++
+			}
+
+			merged, err := c.WasMergedAt(d)
+			if err != nil {
+				return nil, err
+			}
+			if merged {
+				r.MergedCount++
 			}
 		}
 	}
@@ -726,44 +746,44 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 }
 
 type changesetCountsResolver struct {
-	date                 time.Time
-	total                int32
-	merged               int32
-	closed               int32
-	open                 int32
-	openApproved         int32
-	openChangesRequested int32
-	openPending          int32
+	CountsDate                time.Time
+	TotalCount                int32
+	MergedCount               int32
+	ClosedCount               int32
+	OpenCount                 int32
+	OpenApprovedCount         int32
+	OpenChangesRequestedCount int32
+	OpenPendingCount          int32
 }
 
 func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{r.date}
+	return graphqlbackend.DateTime{r.CountsDate}
 }
 
 func (r *changesetCountsResolver) Total() int32 {
-	return r.total
+	return r.TotalCount
 }
 
 func (r *changesetCountsResolver) Merged() int32 {
-	return r.merged
+	return r.MergedCount
 }
 
 func (r *changesetCountsResolver) Closed() int32 {
-	return r.closed
+	return r.ClosedCount
 }
 
 func (r *changesetCountsResolver) Open() int32 {
-	return r.open
+	return r.OpenCount
 }
 
 func (r *changesetCountsResolver) OpenApproved() int32 {
-	return r.openApproved
+	return r.OpenApprovedCount
 }
 
 func (r *changesetCountsResolver) OpenChangesRequested() int32 {
-	return r.openChangesRequested
+	return r.OpenChangesRequestedCount
 }
 
 func (r *changesetCountsResolver) OpenPending() int32 {
-	return r.openPending
+	return r.OpenPendingCount
 }

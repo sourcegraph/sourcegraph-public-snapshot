@@ -146,6 +146,36 @@ func (t *Changeset) State() (s ChangesetState, err error) {
 	return s, nil
 }
 
+// WasMergedAt returns whether the Changeset was merged at the given point in
+// time
+func (c *Changeset) WasMergedAt(t time.Time) (bool, error) {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		return m.WasMergedAt(t), nil
+	case *bitbucketserver.PullRequest:
+		return false, errors.New("implement this once we have activities")
+	default:
+		return false, errors.New("unknown changeset type")
+	}
+
+	return false, nil
+}
+
+// WasClosedAt returns whether the Changeset was closed at the given point in
+// time
+func (c *Changeset) WasClosedAt(t time.Time) (bool, error) {
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		return m.WasClosedAt(t), nil
+	case *bitbucketserver.PullRequest:
+		return false, errors.New("implement this once we have activities")
+	default:
+		return false, errors.New("unknown changeset type")
+	}
+
+	return false, nil
+}
+
 // URL of a Changeset.
 func (t *Changeset) URL() (s string, err error) {
 	switch m := t.Metadata.(type) {
