@@ -383,48 +383,48 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time
 	}
 
-	rs := []*changesetCountsResolver{}
-	for d := end; d.After(start); d = d.Add(-24 * time.Hour) {
-		rs = append(rs, &changesetCountsResolver{CountsDate: d})
+	counts := []*a8n.ChangesetCounts{}
+	for t := end; t.After(start); t = t.Add(-24 * time.Hour) {
+		counts = append(counts, &a8n.ChangesetCounts{Time: t})
 	}
 
 	for _, c := range cs {
-		for _, r := range rs {
-			d := r.CountsDate
+		for _, count := range counts {
+			t := count.Time
 
 			created, err := c.ExternalCreatedAt()
 			if err != nil {
 				return resolvers, err
 			}
 
-			if created.Before(d) {
-				r.TotalCount++
+			if created.Before(t) {
+				count.Total++
 			} else {
 				continue
 			}
 
-			closed, err := c.WasClosedAt(d)
+			closed, err := c.WasClosedAt(t)
 			if err != nil {
 				return nil, err
 			}
 			if closed {
-				r.ClosedCount++
+				count.Closed++
 			} else {
-				r.OpenCount++
+				count.Open++
 			}
 
-			merged, err := c.WasMergedAt(d)
+			merged, err := c.WasMergedAt(t)
 			if err != nil {
 				return nil, err
 			}
 			if merged {
-				r.MergedCount++
+				count.Merged++
 			}
 		}
 	}
 
-	for i := len(rs) - 1; i >= 0; i-- {
-		resolvers = append(resolvers, rs[i])
+	for i := len(counts) - 1; i >= 0; i-- {
+		resolvers = append(resolvers, &changesetCountsResolver{counts: counts[i]})
 	}
 
 	return resolvers, nil
@@ -746,44 +746,16 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 }
 
 type changesetCountsResolver struct {
-	CountsDate                time.Time
-	TotalCount                int32
-	MergedCount               int32
-	ClosedCount               int32
-	OpenCount                 int32
-	OpenApprovedCount         int32
-	OpenChangesRequestedCount int32
-	OpenPendingCount          int32
+	counts *a8n.ChangesetCounts
 }
 
 func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{r.CountsDate}
+	return graphqlbackend.DateTime{r.counts.Time}
 }
-
-func (r *changesetCountsResolver) Total() int32 {
-	return r.TotalCount
-}
-
-func (r *changesetCountsResolver) Merged() int32 {
-	return r.MergedCount
-}
-
-func (r *changesetCountsResolver) Closed() int32 {
-	return r.ClosedCount
-}
-
-func (r *changesetCountsResolver) Open() int32 {
-	return r.OpenCount
-}
-
-func (r *changesetCountsResolver) OpenApproved() int32 {
-	return r.OpenApprovedCount
-}
-
-func (r *changesetCountsResolver) OpenChangesRequested() int32 {
-	return r.OpenChangesRequestedCount
-}
-
-func (r *changesetCountsResolver) OpenPending() int32 {
-	return r.OpenPendingCount
-}
+func (r *changesetCountsResolver) Total() int32                { return r.counts.Total }
+func (r *changesetCountsResolver) Merged() int32               { return r.counts.Merged }
+func (r *changesetCountsResolver) Closed() int32               { return r.counts.Closed }
+func (r *changesetCountsResolver) Open() int32                 { return r.counts.Open }
+func (r *changesetCountsResolver) OpenApproved() int32         { return r.counts.OpenApproved }
+func (r *changesetCountsResolver) OpenChangesRequested() int32 { return r.counts.OpenChangesRequested }
+func (r *changesetCountsResolver) OpenPending() int32          { return r.counts.OpenPending }

@@ -721,42 +721,43 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		To:   &graphqlbackend.DateTime{end},
 	})
 
-	have := make([]*changesetCountsResolver, 0, len(rs))
+	have := make([]*a8n.ChangesetCounts, 0, len(rs))
 	for _, cr := range rs {
-		have = append(have, cr.(*changesetCountsResolver))
+		r := cr.(*changesetCountsResolver)
+		have = append(have, r.counts)
 	}
 
-	want := []*changesetCountsResolver{
-		&changesetCountsResolver{
-			CountsDate: end.Add(5 * -24 * time.Hour),
-			TotalCount: 0,
-			OpenCount:  0,
+	want := []*a8n.ChangesetCounts{
+		&a8n.ChangesetCounts{
+			Time:  end.Add(5 * -24 * time.Hour),
+			Total: 0,
+			Open:  0,
 		},
-		&changesetCountsResolver{
-			CountsDate: end.Add(4 * -24 * time.Hour),
-			TotalCount: 1,
-			OpenCount:  1,
+		&a8n.ChangesetCounts{
+			Time:  end.Add(4 * -24 * time.Hour),
+			Total: 1,
+			Open:  1,
 		},
-		&changesetCountsResolver{
-			CountsDate: end.Add(3 * -24 * time.Hour),
-			TotalCount: 1,
-			OpenCount:  1,
+		&a8n.ChangesetCounts{
+			Time:  end.Add(3 * -24 * time.Hour),
+			Total: 1,
+			Open:  1,
 		},
-		&changesetCountsResolver{
-			CountsDate: end.Add(2 * -24 * time.Hour),
-			TotalCount: 1,
-			OpenCount:  1,
+		&a8n.ChangesetCounts{
+			Time:  end.Add(2 * -24 * time.Hour),
+			Total: 1,
+			Open:  1,
 		},
-		&changesetCountsResolver{
-			CountsDate: end.Add(1 * -24 * time.Hour),
-			TotalCount: 1,
-			OpenCount:  1,
+		&a8n.ChangesetCounts{
+			Time:  end.Add(1 * -24 * time.Hour),
+			Total: 1,
+			Open:  1,
 		},
-		&changesetCountsResolver{
-			CountsDate:  end,
-			TotalCount:  1,
-			ClosedCount: 1,
-			MergedCount: 1,
+		&a8n.ChangesetCounts{
+			Time:   end,
+			Total:  1,
+			Closed: 1,
+			Merged: 1,
 		},
 	}
 

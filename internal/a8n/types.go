@@ -667,3 +667,14 @@ const (
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
 }
+
+type ChangesetCounts struct {
+	Time                 time.Time
+	Total                int32
+	Merged               int32
+	Closed               int32
+	Open                 int32
+	OpenApproved         int32
+	OpenChangesRequested int32
+	OpenPending          int32
+}
