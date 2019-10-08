@@ -383,48 +383,13 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time
 	}
 
-	counts := []*a8n.ChangesetCounts{}
-	for t := end; t.After(start); t = t.Add(-24 * time.Hour) {
-		counts = append(counts, &a8n.ChangesetCounts{Time: t})
+	counts, err := ee.CalcCounts(start, end, cs...)
+	if err != nil {
+		return resolvers, err
 	}
 
-	for _, c := range cs {
-		for _, count := range counts {
-			t := count.Time
-
-			created, err := c.ExternalCreatedAt()
-			if err != nil {
-				return resolvers, err
-			}
-
-			if created.Before(t) {
-				count.Total++
-			} else {
-				continue
-			}
-
-			closed, err := c.WasClosedAt(t)
-			if err != nil {
-				return nil, err
-			}
-			if closed {
-				count.Closed++
-			} else {
-				count.Open++
-			}
-
-			merged, err := c.WasMergedAt(t)
-			if err != nil {
-				return nil, err
-			}
-			if merged {
-				count.Merged++
-			}
-		}
-	}
-
-	for i := len(counts) - 1; i >= 0; i-- {
-		resolvers = append(resolvers, &changesetCountsResolver{counts: counts[i]})
+	for _, c := range counts {
+		resolvers = append(resolvers, &changesetCountsResolver{counts: c})
 	}
 
 	return resolvers, nil
@@ -746,7 +711,7 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 }
 
 type changesetCountsResolver struct {
-	counts *a8n.ChangesetCounts
+	counts *ee.ChangesetCounts
 }
 
 func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {

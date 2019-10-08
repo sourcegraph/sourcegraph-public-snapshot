@@ -721,39 +721,39 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		To:   &graphqlbackend.DateTime{end},
 	})
 
-	have := make([]*a8n.ChangesetCounts, 0, len(rs))
+	have := make([]*ee.ChangesetCounts, 0, len(rs))
 	for _, cr := range rs {
 		r := cr.(*changesetCountsResolver)
 		have = append(have, r.counts)
 	}
 
-	want := []*a8n.ChangesetCounts{
-		&a8n.ChangesetCounts{
+	want := []*ee.ChangesetCounts{
+		&ee.ChangesetCounts{
 			Time:  end.Add(5 * -24 * time.Hour),
 			Total: 0,
 			Open:  0,
 		},
-		&a8n.ChangesetCounts{
+		&ee.ChangesetCounts{
 			Time:  end.Add(4 * -24 * time.Hour),
 			Total: 1,
 			Open:  1,
 		},
-		&a8n.ChangesetCounts{
+		&ee.ChangesetCounts{
 			Time:  end.Add(3 * -24 * time.Hour),
 			Total: 1,
 			Open:  1,
 		},
-		&a8n.ChangesetCounts{
+		&ee.ChangesetCounts{
 			Time:  end.Add(2 * -24 * time.Hour),
 			Total: 1,
 			Open:  1,
 		},
-		&a8n.ChangesetCounts{
+		&ee.ChangesetCounts{
 			Time:  end.Add(1 * -24 * time.Hour),
 			Total: 1,
 			Open:  1,
 		},
-		&a8n.ChangesetCounts{
+		&ee.ChangesetCounts{
 			Time:   end,
 			Total:  1,
 			Closed: 1,
