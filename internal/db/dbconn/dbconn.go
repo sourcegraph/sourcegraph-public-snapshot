@@ -5,11 +5,13 @@
 package dbconn
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -65,7 +67,7 @@ func ConnectToDB(dataSource string) error {
 	registerPrometheusCollector(Global, "_app")
 	configureConnectionPool(Global)
 
-	if err := DoMigrate(NewMigrate(Global)); err != nil {
+	if err := DoMigrate(NewMigrate(Global, dataSource)); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
 
@@ -209,13 +211,40 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetConnMaxLifetime(time.Minute)
 }
 
-func NewMigrate(db *sql.DB) *migrate.Migrate {
+func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s := bindata.Resource(migrations.AssetNames(), migrations.Asset)
+	// The following constructs a map of text placeholder/replacements
+	// that are run over the content of the migration files before being
+	// ran. This is necessary as the lsif-server migrations need to reference
+	// the PGPASSWORD envvar to make a ssuccessful dblink connection in an
+	// environment where there iss no superusesr account (such as Amazon RDS).
+
+	pgPassword, err := pgPassword(dataSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	replacements := map[string]string{
+		"$$$PGPASSWORD$$$": pgPassword,
+	}
+
+	s := bindata.Resource(migrations.AssetNames(), func(name string) ([]byte, error) {
+		asset, err := migrations.Asset(name)
+		if err != nil {
+			return nil, err
+		}
+
+		for placeholder, replacement := range replacements {
+			asset = bytes.Replace(asset, []byte(placeholder), []byte(replacement), -1)
+		}
+
+		return asset, nil
+	})
+
 	d, err := bindata.WithInstance(s)
 	if err != nil {
 		log.Fatal(err)
@@ -230,6 +259,20 @@ func NewMigrate(db *sql.DB) *migrate.Migrate {
 	m.LockTimeout = 5 * time.Minute
 
 	return m
+}
+
+func pgPassword(dataSource string) (string, error) {
+	if dataSource == "" {
+		return os.Getenv("PGPASSWORD"), nil
+	}
+
+	url, err := url.Parse(dataSource)
+	if err != nil {
+		return "", errors.Wrap(err, "dataSource is not a valid URL")
+	}
+
+	password, _ := url.User.Password()
+	return password, nil
 }
 
 func DoMigrate(m *migrate.Migrate) (err error) {

@@ -1,6 +1,8 @@
 -- Enable extension that allow us to perform SQL queries within another
 -- connection context. This is necessary so that we can run migrations
 -- on the <sg>_lsif database.
+-- Note: `$$$PGPASSWORD$$$` is replaced by the frontend witht the real
+--        password for the currently authed user before migraitons run.
 
 CREATE EXTENSION IF NOT EXISTS dblink;
 
@@ -10,9 +12,7 @@ CREATE EXTENSION IF NOT EXISTS dblink;
 
 CREATE OR REPLACE FUNCTION remote_exec(suffix text, query text) RETURNS void AS $$
 BEGIN
-    PERFORM dblink_connect_u('migration' || suffix, 'dbname=' || current_database() || suffix || ' user=' || current_user);
-    PERFORM dblink('migration' || suffix, query);
-    PERFORM dblink_disconnect('migration' || suffix);
+    PERFORM dblink_exec('dbname=' || current_database() || suffix || ' user=' || current_user || ' password=$$$PGPASSWORD$$$', query);
 END;
 $$
 LANGUAGE plpgsql;
