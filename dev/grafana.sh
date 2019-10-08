@@ -9,7 +9,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 
-IMAGE=sourcegraph/grafana:10.0.0
+IMAGE=sourcegraph/grafana:10.0.1
 CONTAINER=grafana
 
 mkdir -p ${GRAFANA_DISK}/logs
@@ -26,7 +26,7 @@ docker run --rm \
     --cpus=1 \
     --memory=1g \
     --user=$UID \
-    -p 0.0.0.0:3000:3000 \
+    -p 0.0.0.0:3370:3370 \
     -v ${GRAFANA_DISK}:/var/lib/grafana \
     -v ${DIR}/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
     -v ${DIR}/../docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
