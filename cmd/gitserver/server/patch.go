@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

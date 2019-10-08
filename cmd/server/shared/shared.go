@@ -35,7 +35,7 @@ var defaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
-	"GRAFANA_SERVER_URL": "http://127.0.0.1:3000",
+	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -58,7 +58,7 @@ var defaultEnv = map[string]string{
 }
 
 // Set verbosity based on simple interpretation of env var to avoid external dependencies (such as
-// on github.com/sourcegraph/sourcegraph/pkg/env).
+// on github.com/sourcegraph/sourcegraph/internal/env).
 var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
 
 // Main is the main server command function which is shared between Sourcegraph

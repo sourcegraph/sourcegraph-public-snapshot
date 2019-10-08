@@ -2,8 +2,8 @@ package bg
 
 import (
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

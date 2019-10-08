@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 )

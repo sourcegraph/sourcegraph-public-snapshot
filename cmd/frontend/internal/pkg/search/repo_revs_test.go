@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestParseRepositoryRevisions(t *testing.T) {

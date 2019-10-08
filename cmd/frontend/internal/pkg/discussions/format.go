@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 )
 
 func formatTargetRepoLinesText(tr *types.DiscussionThreadTargetRepo) string {

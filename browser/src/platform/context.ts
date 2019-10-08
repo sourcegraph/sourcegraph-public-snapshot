@@ -123,6 +123,8 @@ export function createPlatformContext(
                     // try once more.
                     updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
                     await updateSettings(context, subject, edit, mutateSettings)
+                } else {
+                    throw error
                 }
             }
             updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())

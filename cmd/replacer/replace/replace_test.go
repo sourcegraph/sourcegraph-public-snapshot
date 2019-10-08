@@ -17,9 +17,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/replace"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
 func TestReplace(t *testing.T) {
