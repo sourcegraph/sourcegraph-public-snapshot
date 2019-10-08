@@ -4,7 +4,9 @@ import { memoizeAsync } from '../util'
 export type ExecServerClient = ({
     commands,
     context,
-}: Pick<Params, 'commands' | 'dir'> & Pick<Payload, 'files'> & { context?: RepositoryContext }) => Promise<Result>
+    label,
+}: Pick<Params, 'commands' | 'dir'> &
+    Pick<Payload, 'files'> & { context?: RepositoryContext; label: string }) => Promise<Result>
 
 export interface RepositoryContext {
     repository: string
@@ -44,7 +46,7 @@ export const createExecServerClient = (
 ): ExecServerClient => {
     const baseUrl = new URL(`/.api/extension-containers/${containerName}`, sourcegraph.internal.sourcegraphURL)
 
-    const do2: ExecServerClient = async ({ commands, dir, files, context }) => {
+    const do2: ExecServerClient = async ({ commands, dir, files, context, label }) => {
         const request: Request = {
             params: {
                 archiveURL: context ? getPublicRepoArchiveUrl(context.repository, context.commit) : undefined,
@@ -60,6 +62,7 @@ export const createExecServerClient = (
 
         const url = new URL('', baseUrl)
         url.searchParams.set('params', JSON.stringify(request.params))
+        url.hash = `#${label}`
 
         // console.debug('%cexec%c', 'background-color:blue;color:white', 'background-color:transparent;color:unset')
         const resp = await fetch(url.toString(), {
@@ -74,15 +77,15 @@ export const createExecServerClient = (
                 : {}),
         })
         if (!resp.ok) {
-            throw new Error(`error executing commands on ${containerName}: HTTP ${resp.status}`)
+            throw new Error(`${label}: error executing commands on ${containerName}: HTTP ${resp.status}`)
         }
         const result: Result = await resp.json()
         for (const [i, command] of result.commands.entries()) {
             if (!command.ok) {
                 throw new Error(
-                    `error executing command ${JSON.stringify(commands[i])} on ${containerName}: ${command.error}\n${
-                        command.combinedOutput
-                    }`
+                    `${label}: error executing command ${JSON.stringify(commands[i])} on ${containerName}: ${
+                        command.error
+                    }\n${command.combinedOutput}`
                 )
             }
         }

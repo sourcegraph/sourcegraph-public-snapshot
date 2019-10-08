@@ -17,6 +17,9 @@ export interface ResolvedDependency extends PackageJsonDependency {
 }
 
 export interface PackageJsonPackageManager {
-    packagesWithUnsatisfiedDependencyVersionRange(dep: PackageJsonDependency): Promise<ResolvedDependencyInPackage[]>
+    packagesWithUnsatisfiedDependencyVersionRange(
+        dep: PackageJsonDependency,
+        queryFilters?: string
+    ): Promise<ResolvedDependencyInPackage[]>
     editForDependencyUpgrade(dep: ResolvedDependencyInPackage): Promise<WorkspaceEdit>
 }

@@ -65,6 +65,10 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             if (upgradeToVersion !== null) {
                 update.upgradeToVersion = upgradeToVersion
             }
+            const filters = params.get('filters')
+            if (filters !== null) {
+                update.filters = filters
+            }
 
             updateContext({
                 createChangesets: true,

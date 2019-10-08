@@ -27,14 +27,14 @@ const YARN_OPTS = [
 ]
 
 export const yarnPackageManager: PackageJsonPackageManager = {
-    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }) => {
+    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters='') => {
         const parsedVersionRange = new semver.Range(version)
 
         const results = flatten(
             await from(
                 memoizedFindTextInFiles(
                     {
-                        pattern: `\\b${name}\\b`,
+                        pattern: `\\b${name}\\b ${filters}`,
                         type: 'regexp',
                     },
                     {
@@ -121,7 +121,7 @@ export const yarnPackageManager: PackageJsonPackageManager = {
 
 function getYarnLockDependency(packageJson: string, yarnLock: string, packageName: string): ResolvedDependency | null {
     const tree = yarnLogicalTree(JSON.parse(packageJson), yarnLock)
-    let found: any
+    let found: any 
     // eslint-disable-next-line ban/ban
     tree.forEach((dep: { name: string }, next: () => void) => {
         if (dep.name === packageName) {

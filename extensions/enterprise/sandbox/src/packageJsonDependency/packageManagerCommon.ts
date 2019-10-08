@@ -40,6 +40,7 @@ export const editForDependencyUpgrade = async (
                       commit: p.commitID!,
                   },
               }),
+        label: `editForDependencyUpgrade(${packageJson.uri} dep=${dependency.name}@${dependency.version})`,
     })
 
     if (MINIMAL_WORKTREE) {

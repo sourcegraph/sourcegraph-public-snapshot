@@ -52,6 +52,7 @@ interface DiagnosticData {
 function provideDiagnostics({
     packageName,
     upgradeToVersion,
+    filters,
 }: PackageJsonDependencyCampaignContext): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
     return packageName && upgradeToVersion
         ? from(sourcegraph.workspace.rootChanges).pipe(
@@ -67,11 +68,11 @@ function provideDiagnostics({
                       version: upgradeToVersion,
                   }
                   const hits = [
-                      ...(await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep)).map(d => ({
+                      ...(await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep,filters)).map(d => ({
                           ...d,
                           type: 'npm' as const,
                       })),
-                      ...(await yarnPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep)).map(d => ({
+                      ...(await yarnPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep,filters)).map(d => ({
                           ...d,
                           type: 'yarn' as const,
                       })),

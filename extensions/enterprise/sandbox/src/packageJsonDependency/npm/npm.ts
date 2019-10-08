@@ -14,14 +14,14 @@ import { lockTree } from './logicalTree'
 const npmExecClient = createExecServerClient('a8n-npm-exec')
 
 export const npmPackageManager: PackageJsonPackageManager = {
-    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }) => {
+    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters='' ) => {
         const parsedVersionRange = new semver.Range(version)
 
         const results = flatten(
             await from(
                 memoizedFindTextInFiles(
                     {
-                        pattern: `"${name}"`,
+                        pattern: `'"${name}"' ${filters}`,
                         type: 'regexp',
                     },
                     {
