@@ -1,8 +1,8 @@
 -- Enable extension that allow us to perform SQL queries within another
 -- connection context. This is necessary so that we can run migrations
 -- on the <sg>_lsif database.
--- Note: `$$$PGPASSWORD$$$` is replaced by the frontend witht the real
---        password for the currently authed user before migraitons run.
+-- Note: `$$$PGPASSWORD$$$` is replaced by the frontend with the real
+--        password for the currently authed user before migrations run.
 
 CREATE EXTENSION IF NOT EXISTS dblink;
 
