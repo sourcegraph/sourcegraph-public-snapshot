@@ -19,9 +19,11 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -57,7 +59,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	sr := &Resolver{
-		store:       a8n.NewStoreWithClock(dbconn.Global, clock),
+		store:       ee.NewStoreWithClock(dbconn.Global, clock),
 		httpFactory: cf,
 	}
 
@@ -597,6 +599,143 @@ func TestCampaigns(t *testing.T) {
 	wantCount := listed.All.TotalCount - 1
 	if haveCount != wantCount {
 		t.Errorf("wrong campaigns totalcount after delete. want=%d, have=%d", wantCount, haveCount)
+	}
+}
+
+func TestChangesetCountsOverTime(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	rcache.SetupForTest(t)
+
+	cf, save := newGithubClientFactory(t, "test-changeset-counts-over-time")
+	defer save()
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	// TODO: All of this setup is only necessary to
+	// (1) Fetch & cache data from remote hosts (repo, changesets)
+	// (2) Make sure that the data can easily be updated
+	// (3) Store campaign & changesets in DB with proper data
+	// We could probably get rid of the 1 & 2 by providing a mock store to
+	// CampaignResolver, but then we would need to still fetch remote data
+
+	u, err := db.Users.Create(ctx, db.NewUser{
+		Email:                 "thorsten@sourcegraph.com",
+		Username:              "thorsten",
+		DisplayName:           "thorsten",
+		Password:              "1234",
+		EmailVerificationCode: "foobar",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	githubExtSvc := &repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repos: []string{"sourcegraph/sourcegraph"},
+		}),
+	}
+
+	// TODO: add Bitbucket Server
+	err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = repoStore.UpsertRepos(ctx, githubRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
+
+	campaign := &a8n.Campaign{
+		Name:            "Test campaign",
+		Description:     "Testing changeset counts",
+		AuthorID:        u.ID,
+		NamespaceUserID: u.ID,
+	}
+
+	err = store.CreateCampaign(ctx, campaign)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	changeset := &a8n.Changeset{
+		RepoID:              int32(githubRepo.ID),
+		ExternalID:          "5834",
+		ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+		CampaignIDs:         []int64{campaign.ID},
+	}
+
+	err = store.CreateChangesets(ctx, changeset)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	syncer := ee.ChangesetSyncer{
+		ReposStore:  repoStore,
+		Store:       store,
+		HTTPFactory: cf,
+	}
+	err = syncer.SyncChangesets(ctx, changeset)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
+	err = store.UpdateCampaign(ctx, campaign)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := &campaignResolver{
+		store:    store,
+		Campaign: campaign,
+	}
+
+	// Date when PR #5834 was created
+	timestamp, _ := time.Parse(time.RFC3339, "2019-10-02T14:49:31Z")
+	countsFrom := timestamp
+	// Date when PR #5834 was merged
+	timestamp, _ = time.Parse(time.RFC3339, "2019-10-07T13:13:45Z")
+	countsTo := timestamp
+
+	counts, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
+		From: &graphqlbackend.DateTime{countsFrom},
+		To:   &graphqlbackend.DateTime{countsTo},
+	})
+
+	if have, want := len(counts), 5; have != want {
+		t.Fatalf("wrong number of counts. have=%d, want=%d", have, want)
+	}
+
+	for _, c := range counts {
+		if have, want := c.Total(), int32(1); have != want {
+			t.Errorf("wrong total count. want=%d, have=%d", want, have)
+		}
 	}
 }
 

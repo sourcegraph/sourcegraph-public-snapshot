@@ -358,6 +358,11 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
+	// 🚨 SECURITY: Only site admins may access the counts for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	resolvers := []graphqlbackend.ChangesetCountsResolver{}
 
 	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID}
