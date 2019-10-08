@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -41,18 +40,11 @@ func dockerAddr(addr string) string {
 func main() {
 	log.SetPrefix("")
 
-	var defaultReposDir string
-	if h, err := os.UserHomeDir(); err != nil {
-		log.Fatal(err)
-	} else {
-		defaultReposDir = filepath.Join(h, ".sourcegraph", "src-expose-repos")
-	}
-
 	var (
 		globalFlags    = flag.NewFlagSet("src-expose", flag.ExitOnError)
 		globalVerbose  = globalFlags.Bool("verbose", false, "")
 		globalBefore   = globalFlags.String("before", "", "A command to run before sync. It is run from the current working directory.")
-		globalReposDir = globalFlags.String("repos-dir", defaultReposDir, "src-expose's git directories. When syncing a directory src-expose creates a git repo for it to serve to Sourcegraph. The repositories are stored and served relative to this directory.")
+		globalReposDir = globalFlags.String("repos-dir", "", "src-expose's git directories. src-expose creates a git repo per directory synced. The git repo is then served to Sourcegraph. The repositories are stored and served relative to this directory. Default: ~/.sourcegraph/src-expose-repos")
 		globalConfig   = globalFlags.String("config", "", "If set will be used instead of command line arguments to specify configuration.")
 
 		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
