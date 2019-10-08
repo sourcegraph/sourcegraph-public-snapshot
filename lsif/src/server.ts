@@ -273,6 +273,14 @@ async function lsifEndpoints(
             return undefined
         }
 
+        if (ctx.logger) {
+            ctx.logger.debug('using approximate commit', { closestCommit: commitWithData })
+        }
+
+        if (ctx.span) {
+            ctx.span.addTags({ closestCommit: commitWithData })
+        }
+
         // Try to construct a database for the approximate commit
         return tryCreateDatabase(
             STORAGE_ROOT,
@@ -379,7 +387,7 @@ async function lsifEndpoints(
                     })
                 }
 
-                res.json(await db[cleanMethod](path, position))
+                res.json(await db[cleanMethod](path, position, ctx))
             }
         )
     )

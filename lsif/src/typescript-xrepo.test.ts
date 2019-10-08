@@ -43,21 +43,21 @@ describe('Database', () => {
 
     it('should find all defs of `add` from repo a', async () => {
         const db = loadDatabase('a', createCommit('a'))
-        const definitions = await db.definitions('src/index.ts', { line: 11, character: 18 })
+        const definitions = await db.definitions('src/index.ts', { line: 11, character: 18 }, {})
         expect(definitions).toContainEqual(createLocation('src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `add` from repo b1', async () => {
         const db = loadDatabase('b1', createCommit('b1'))
-        const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 })
+        const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 }, {})
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `mul` from repo b1', async () => {
         const db = loadDatabase('b1', createCommit('b1'))
-        const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 })
+        const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 }, {})
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
@@ -65,7 +65,7 @@ describe('Database', () => {
     it('should find all refs of `mul` from repo a', async () => {
         const db = loadDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
-        const references = (await db.references('src/index.ts', { line: 4, character: 19 }))!.filter(
+        const references = (await db.references('src/index.ts', { line: 4, character: 19 }, {}))!.filter(
             l => !l.uri.includes('node_modules')
         )
 
@@ -88,7 +88,7 @@ describe('Database', () => {
     it('should find all refs of `mul` from repo b1', async () => {
         const db = loadDatabase('b1', createCommit('b1'))
         // TODO - (FIXME) why are these garbage results in the index
-        const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
+        const references = (await db.references('src/index.ts', { line: 3, character: 16 }, {}))!.filter(
             l => !l.uri.includes('node_modules')
         )
 
@@ -111,7 +111,7 @@ describe('Database', () => {
     it('should find all refs of `add` from repo a', async () => {
         const db = loadDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
-        const references = (await db.references('src/index.ts', { line: 0, character: 17 }))!.filter(
+        const references = (await db.references('src/index.ts', { line: 0, character: 17 }, {}))!.filter(
             l => !l.uri.includes('node_modules')
         )
 
@@ -144,7 +144,7 @@ describe('Database', () => {
     it('should find all refs of `add` from repo c1', async () => {
         const db = loadDatabase('c1', createCommit('c1'))
         // TODO - (FIXME) why are these garbage results in the index
-        const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
+        const references = (await db.references('src/index.ts', { line: 3, character: 16 }, {}))!.filter(
             l => !l.uri.includes('node_modules')
         )
 

@@ -20,6 +20,19 @@ export interface MonitoringContext {
 }
 
 /**
+ * Logs an event to the span of the monitoring context, if its defined.
+ *
+ * @param ctx The monitoring context.
+ * @param event The name of the event.
+ * @param pairs The values to log.
+ */
+export function logSpan(ctx: MonitoringContext, event: string, pairs: { [K: string]: any }): void {
+    if (ctx.span) {
+        ctx.span.log({ event, ...pairs })
+    }
+}
+
+/**
  * Log and trace the execution of a function.
  *
  * @param ctx The monitoring context.
