@@ -151,10 +151,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 		LongHelp: `Periodically sync directories src1, src2, ... and serve them.
 
 For more advanced uses specify -config pointing to a yaml file.
-
-EXAMPLE CONFIGURATION
-
-` + MustAssetString("example.yaml"),
+See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/examples`,
 		Subcommands: []*ffcli.Command{serve, sync},
 		FlagSet:     globalFlags,
 		Exec: func(args []string) error {
