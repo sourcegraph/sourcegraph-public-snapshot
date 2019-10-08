@@ -21,7 +21,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/migrations"
+	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -112,14 +112,18 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 
 // MigrateDB runs all migrations from github.com/sourcegraph/sourcegraph/migrations
 // against the given sql.DB
-func MigrateDB(db *sql.DB) error {
+func MigrateDB(db *sql.DB, dataSource string) error {
 	var cfg postgres.Config
 	driver, err := postgres.WithInstance(db, &cfg)
 	if err != nil {
 		return err
 	}
 
-	s := bindata.Resource(migrations.AssetNames(), migrations.Asset)
+	s, err := dbconn.NewMigrationSourceLoader(dataSource)
+	if err != nil {
+		return err
+	}
+
 	d, err := bindata.WithInstance(s)
 	if err != nil {
 		return err

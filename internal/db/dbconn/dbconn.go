@@ -217,33 +217,10 @@ func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 		log.Fatal(err)
 	}
 
-	// The following constructs a map of text placeholder/replacements
-	// that are run over the content of the migration files before being
-	// ran. This is necessary as the lsif-server migrations need to reference
-	// the PGPASSWORD envvar to make a ssuccessful dblink connection in an
-	// environment where there iss no superusesr account (such as Amazon RDS).
-
-	pgPassword, err := pgPassword(dataSource)
+	s, err := NewMigrationSourceLoader(dataSource)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	replacements := map[string]string{
-		"$$$PGPASSWORD$$$": pgPassword,
-	}
-
-	s := bindata.Resource(migrations.AssetNames(), func(name string) ([]byte, error) {
-		asset, err := migrations.Asset(name)
-		if err != nil {
-			return nil, err
-		}
-
-		for placeholder, replacement := range replacements {
-			asset = bytes.Replace(asset, []byte(placeholder), []byte(replacement), -1)
-		}
-
-		return asset, nil
-	})
 
 	d, err := bindata.WithInstance(s)
 	if err != nil {
@@ -259,6 +236,36 @@ func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	m.LockTimeout = 5 * time.Minute
 
 	return m
+}
+
+func NewMigrationSourceLoader(dataSource string) (*bindata.AssetSource, error) {
+	// The following constructs a map of text placeholder/replacements
+	// that are run over the content of the migration files before being
+	// ran. This is necessary as the lsif-server migrations need to reference
+	// the PGPASSWORD envvar to make a ssuccessful dblink connection in an
+	// environment where there iss no superusesr account (such as Amazon RDS).
+
+	pgPassword, err := pgPassword(dataSource)
+	if err != nil {
+		return nil, err
+	}
+
+	replacements := map[string]string{
+		"$$$PGPASSWORD$$$": pgPassword,
+	}
+
+	return bindata.Resource(migrations.AssetNames(), func(name string) ([]byte, error) {
+		asset, err := migrations.Asset(name)
+		if err != nil {
+			return nil, err
+		}
+
+		for placeholder, replacement := range replacements {
+			asset = bytes.Replace(asset, []byte(placeholder), []byte(replacement), -1)
+		}
+
+		return asset, nil
+	}), nil
 }
 
 func pgPassword(dataSource string) (string, error) {
