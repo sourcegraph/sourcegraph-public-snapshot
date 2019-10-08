@@ -57,7 +57,7 @@ describe('getCodeActions', () => {
             ))
     })
 
-    test('errors do not propagate', () =>
+    test.skip('errors do not propagate', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
                 getCodeActions(

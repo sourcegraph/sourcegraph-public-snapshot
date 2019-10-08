@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"golang.org/x/net/context/ctxhttp"
@@ -255,7 +254,7 @@ func runDiff(ctx context.Context, dir, oldData, newPath string) (string, error) 
 	cmd := exec.CommandContext(ctx, "diff", "-u", "--label="+newPath, oldFile.Name(), "--label="+newPath, filepath.Join(dir, newPath))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		if cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == 1 /* 1 just means files differ */ {
+		if cmd.ProcessState != nil && cmd.ProcessState.ExitCode() == 1 /* 1 just means files differ */ {
 			err = nil
 		} else {
 			err = fmt.Errorf("diff command %v failed (%s): %s", cmd.Args, err, out)
