@@ -26,16 +26,25 @@ export class TextEdit implements sourcegraph.TextEdit {
         return TextEdit.replace(range, '')
     }
 
-    constructor(public readonly range: Range, public readonly newText: string) {}
+    public static patch(patch: string): TextEdit {
+        return new TextEdit(
+            new Range(new Position(0, 0), new Position(Number.MAX_SAFE_INTEGER, 0)),
+            'WARNING: TextEdit#newText is invalid when a patch is used',
+            patch
+        )
+    }
 
-    public toJSON(): Pick<sourcegraph.TextEdit, 'newText'> & { range: clientTypes.Range } {
+    constructor(public readonly range: Range, public readonly newText: string, public readonly rawPatch?: string) {}
+
+    public toJSON(): Pick<sourcegraph.TextEdit, 'newText' | 'rawPatch'> & { range: clientTypes.Range } {
         return {
             range: this.range.toJSON(),
             newText: this.newText,
+            rawPatch: this.rawPatch,
         }
     }
 
     public static fromJSON(arg: ReturnType<(typeof TextEdit)['prototype']['toJSON']>): TextEdit {
-        return new TextEdit(Range.fromPlain(arg.range), arg.newText)
+        return new TextEdit(Range.fromPlain(arg.range), arg.newText, arg.rawPatch)
     }
 }

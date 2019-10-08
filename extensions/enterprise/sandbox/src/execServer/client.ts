@@ -39,7 +39,7 @@ export interface Result {
 
 export const createExecServerClient = (
     containerName: string,
-    includeFiles: Params['includeFiles'],
+    includeFiles: Params['includeFiles'] = [],
     cache = true
 ): ExecServerClient => {
     const baseUrl = new URL(`/.api/extension-containers/${containerName}`, sourcegraph.internal.sourcegraphURL)
@@ -61,9 +61,7 @@ export const createExecServerClient = (
         const url = new URL('', baseUrl)
         url.searchParams.set('params', JSON.stringify(request.params))
 
-        console.debug('%cexec%c', 'background-color:blue;color:white', 'background-color:transparent;color:unset', {
-            a: 1,
-        })
+        // console.debug('%cexec%c', 'background-color:blue;color:white', 'background-color:transparent;color:unset')
         const resp = await fetch(url.toString(), {
             headers: {
                 'Content-Type': 'application/json; charset=utf-8',

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { PackageJsonPackage, PackageJsonDependency } from './packageManager'
 import path from 'path'
 import * as sourcegraph from 'sourcegraph'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { ExecServerClient } from '../execServer/client'
+import { PackageJsonDependency, PackageJsonPackage } from './packageManager'
 
 const MINIMAL_WORKTREE = true
 
@@ -33,9 +33,23 @@ export const editForDependencyUpgrade = async (
                   },
               }),
     })
+
+    for (const command of result.commands) {
+        if (!command.ok) {
+            throw new Error(`error upgrading dependency '${dep.name}' in ${pkg.packageJson.uri}: ${command.error}`)
+        }
+    }
+
+    if (MINIMAL_WORKTREE) {
+        const edit = new sourcegraph.WorkspaceEdit()
+        edit.set(new URL(pkg.packageJson.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![packageJsonName])])
+        edit.set(new URL(pkg.lockfile.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![lockfileName])])
+        return edit
+    }
+
     return computeDiffs([
-        { old: pkg.packageJson, newText: result.files[packageJsonName] },
-        { old: pkg.lockfile, newText: result.files[lockfileName] },
+        { old: pkg.packageJson, newText: result.files![packageJsonName] },
+        { old: pkg.lockfile, newText: result.files![lockfileName] },
     ])
 }
 

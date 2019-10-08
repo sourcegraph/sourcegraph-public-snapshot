@@ -11,7 +11,7 @@ import { PackageJsonPackage, PackageJsonPackageManager } from '../packageManager
 import { editForDependencyUpgrade } from '../packageManagerCommon'
 import { yarnLogicalTree } from './logicalTree'
 
-const yarnExecClient = createExecServerClient('a8n-yarn-exec', ['package.json', 'yarn.lock'])
+const yarnExecClient = createExecServerClient('a8n-yarn-exec', [])
 
 export const yarnPackageManager: PackageJsonPackageManager = {
     packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }) => {

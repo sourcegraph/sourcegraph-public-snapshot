@@ -408,14 +408,30 @@ declare module 'sourcegraph' {
         static delete(range: Range): TextEdit
 
         /**
+         * Utility to apply a patch (in unified diff format) to the whole document.
+         *
+         * @param patch A patch (in unified diff format).
+         * @returns A new text edit object.
+         */
+        static patch(patch: string): TextEdit
+
+        /**
          * The range this edit applies to.
          */
         readonly range: Range
 
         /**
          * The string this edit will insert.
+         *
+         * TODO!(sqs): In the special case of TextEdit.patch, this is a string containing a warning.
          */
         readonly newText: string
+
+        /**
+         * The equivalent unified diff for applying this edit, if available. Callers that require
+         * unified diffs can use this value instead of independently computing the diff.
+         */
+        readonly rawPatch?: string
 
         /**
          * Create a new TextEdit.

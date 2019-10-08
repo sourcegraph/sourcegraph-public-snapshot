@@ -1,6 +1,6 @@
 import { Diagnostic } from '@sourcegraph/extension-api-types'
 import { applyEdits } from '@sqs/jsonc-parser'
-import { createTwoFilesPatch, Hunk, structuredPatch } from 'diff'
+import { createTwoFilesPatch, Hunk, parsePatch, structuredPatch } from 'diff'
 import { Command, TextEdit } from 'sourcegraph'
 import { positionToOffset } from '../../../../../shared/src/api/client/types/textDocument'
 import { WorkspaceEdit } from '../../../../../shared/src/api/types/workspaceEdit'
@@ -39,40 +39,73 @@ export const computeDiffFromEdits = async (
 
     const fileDiffs: FileDiff[] = []
     for (const [uri, edits] of editsByUri) {
-        const oldText = await extensionsController.services.fileSystem.readFile(new URL(uri))
-        const t0 = Date.now()
-        const newText = applyEdits(
-            oldText,
-            edits.map(edit => {
-                // TODO!(sqs): doesnt account for multiple edits
-                const startOffset = positionToOffset(oldText, edit.range.start)
-                const endOffset = positionToOffset(oldText, edit.range.end)
-                return { offset: startOffset, length: endOffset - startOffset, content: edit.newText }
-            })
-        )
-
-        if (oldText.length > 700000 || newText.length > 700000) {
-            console.log('SKIPPING', uri.toString(), newText.length)
+        if (edits.length === 0) {
             continue
-        }
-        const { hunks } = structuredPatch(uri.toString(), uri.toString(), oldText, newText, undefined, undefined, {
-            context: 2,
-        })
-        const p = parseRepoURI(uri)
-        fileDiffs.push({
-            oldPath: uri.toString(),
-            newPath: uri.toString(),
-            hunks: hunks.map(npmDiffToFileDiffHunk),
-            patch: createTwoFilesPatch('a/' + p.filePath!, 'b/' + p.filePath!, oldText, newText, undefined, undefined),
-            // TODO!(sqs): hack that we have 2 different patches w/different URIs
-            patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined, { context: 2 }),
-        })
-        const dt = Date.now() - t0
-        if (dt > 1000) {
-            console.warn(
-                `Computing diff took ${dt}msec for ${uri.toString()} (old ${oldText.length /
-                    1024}kb, new ${newText.length / 1024}kb)`
+        } else if (edits.length === 1 && edits[0].rawPatch !== undefined) {
+            // Fast path: use the precomputed diff.
+            const fullPatch = edits[0].rawPatch
+            const patchWithoutHeader = fullPatch.slice(fullPatch.indexOf('@@'))
+            const p = parseRepoURI(uri)
+            fileDiffs.push({
+                oldPath: uri.toString(),
+                newPath: uri.toString(),
+                hunks: parsePatch(fullPatch)
+                    .flatMap(d => d.hunks)
+                    .map(npmDiffToFileDiffHunk),
+                patch: `--- a/${p.filePath!}\n+++ b/${p.filePath!}\n${patchWithoutHeader}`,
+                patchWithFullURIs: `--- ${uri}\n+++ ${uri}\n${patchWithoutHeader}`,
+            })
+            console.log('FAST PATH USED')
+        } else {
+            const oldText = await extensionsController.services.fileSystem.readFile(new URL(uri))
+            const t0 = Date.now()
+            const newText = applyEdits(
+                oldText,
+                edits.map(edit => {
+                    // TODO!(sqs): doesnt account for multiple edits
+                    const startOffset = positionToOffset(oldText, edit.range.start)
+                    const endOffset = positionToOffset(oldText, edit.range.end)
+                    return { offset: startOffset, length: endOffset - startOffset, content: edit.newText }
+                })
             )
+
+            if (Math.max(oldText.length, newText.length) > 70000) {
+                console.warn(
+                    `Skipping computation of large diff for ${uri.toString()} (${Math.max(
+                        oldText.length,
+                        newText.length
+                    ) / 1024}kb)`
+                )
+                continue
+            }
+            const { hunks } = structuredPatch(uri.toString(), uri.toString(), oldText, newText, undefined, undefined, {
+                context: 2,
+            })
+            const p = parseRepoURI(uri)
+            fileDiffs.push({
+                oldPath: uri.toString(),
+                newPath: uri.toString(),
+                hunks: hunks.map(npmDiffToFileDiffHunk),
+                patch: createTwoFilesPatch(
+                    'a/' + p.filePath!,
+                    'b/' + p.filePath!,
+                    oldText,
+                    newText,
+                    undefined,
+                    undefined
+                ),
+                // TODO!(sqs): hack that we have 2 different patches w/different URIs
+                patchWithFullURIs: createTwoFilesPatch(uri, uri, oldText, newText, undefined, undefined, {
+                    context: 2,
+                }),
+            })
+            const dt = Date.now() - t0
+            if (dt > 1000) {
+                console.warn(
+                    `Computing diff took ${dt}msec for ${uri.toString()} (old ${oldText.length /
+                        1024}kb, new ${newText.length / 1024}kb)`
+                )
+            }
         }
     }
     return fileDiffs

@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { PackageJsonPackageManager, PackageJsonPackage } from '../packageManager'
-import semver from 'semver'
 import { flatten } from 'lodash'
-import { memoizedFindTextInFiles } from '../../util'
 import { from } from 'rxjs'
 import { toArray } from 'rxjs/operators'
+import semver from 'semver'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
-import { lockTree } from './logicalTree'
+import { memoizedFindTextInFiles } from '../../util'
+import { PackageJsonPackage, PackageJsonPackageManager } from '../packageManager'
 import { editForDependencyUpgrade } from '../packageManagerCommon'
+import { lockTree } from './logicalTree'
 
-const npmExecClient = createExecServerClient('a8n-npm-exec', ['package.json', 'package-lock.json'])
+const npmExecClient = createExecServerClient('a8n-npm-exec')
 
 export const npmPackageManager: PackageJsonPackageManager = {
     packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }) => {

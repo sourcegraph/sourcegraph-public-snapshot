@@ -252,10 +252,15 @@ func runDiff(ctx context.Context, dir, oldData, newPath string) (string, error) 
 		return "", err
 	}
 
-	cmd := exec.CommandContext(ctx, "diff", "-u", "--label="+newPath, oldFile.Name(), "--label="+newPath, filepath.Join(oldData, newPath))
-	out, err := cmd.Output()
-	if err != nil && cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == 1 /* 1 just means files differ */ {
-		err = nil
+	cmd := exec.CommandContext(ctx, "diff", "-u", "--label="+newPath, oldFile.Name(), "--label="+newPath, filepath.Join(dir, newPath))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		if cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == 1 /* 1 just means files differ */ {
+			err = nil
+		} else {
+			err = fmt.Errorf("diff command %v failed (%s): %s", cmd.Args, err, out)
+			out = nil
+		}
 	}
 	return string(out), err
 }
