@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -12,22 +13,8 @@ import (
 	"time"
 
 	"github.com/peterbourgon/ff/ffcli"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
-
-type usageError struct {
-	Message string
-	FlagSet *flag.FlagSet
-}
-
-func (e *usageError) Usage() {
-	e.FlagSet.Usage()
-}
-
-func (e *usageError) Error() string {
-	return e.Message
-}
 
 func dockerAddr(addr string) string {
 	_, port, err := net.SplitHostPort(addr)
@@ -57,24 +44,20 @@ func main() {
 		var s Snapshotter
 		if *globalConfig != "" {
 			if len(args) != 0 {
-				return nil, &usageError{
-					Message: "does not take arguments if -config is specified",
-					FlagSet: flagSet,
-				}
+				_, _ = fmt.Fprintf(flagSet.Output(), "error: does not take arguments if -config is specified\n\n")
+				return nil, flag.ErrHelp
 			}
 			b, err := ioutil.ReadFile(*globalConfig)
 			if err != nil {
-				return nil, errors.Wrapf(err, "could read configuration at %s", *globalConfig)
+				return nil, fmt.Errorf("could read configuration at %s: %w", *globalConfig, err)
 			}
 			if err := yaml.Unmarshal(b, &s); err != nil {
-				return nil, errors.Wrapf(err, "could not parse configuration at %s", *globalConfig)
+				return nil, fmt.Errorf("could not parse configuration at %s: %w", *globalConfig, err)
 			}
 		} else {
 			if len(args) == 0 {
-				return nil, &usageError{
-					Message: "requires atleast 1 argument, or -config to be specified.",
-					FlagSet: flagSet,
-				}
+				_, _ = fmt.Fprintf(flagSet.Output(), "error: requires atleast 1 argument, or -config to be specified.\n\n")
+				return nil, flag.ErrHelp
 			}
 			for _, dir := range args {
 				s.Dirs = append(s.Dirs, &SyncDir{Dir: dir})
@@ -113,10 +96,8 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				repoDir = args[0]
 
 			default:
-				return &usageError{
-					Message: "too many arguments",
-					FlagSet: serveFlags,
-				}
+				_, _ = fmt.Fprintf(serveFlags.Output(), "error: too many arguments\n\n")
+				return flag.ErrHelp
 			}
 
 			return serveRepos(*serveAddr, repoDir)
@@ -186,10 +167,7 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 		},
 	}
 
-	if err := root.Run(os.Args[1:]); err != nil {
-		if u, ok := err.(interface{ Usage() }); ok {
-			u.Usage()
-		}
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	if err := root.Run(os.Args[1:]); err != nil && !errors.Is(err, flag.ErrHelp) {
+		_, _ = fmt.Fprintf(root.FlagSet.Output(), "\nerror: %v\n", err)
 	}
 }
