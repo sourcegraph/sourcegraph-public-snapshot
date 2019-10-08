@@ -37,7 +37,7 @@ func dockerAddr(addr string) string {
 
 func usageErrorOutput(cmd *ffcli.Command, cmdPath string, err error) string {
 	var w strings.Builder
-	_, _ = fmt.Fprintf(&w, "%q %s\nSee '%s -help'.\n", cmdPath, err.Error(), cmdPath)
+	_, _ = fmt.Fprintf(&w, "%q %s\nSee '%s --help'.\n", cmdPath, err.Error(), cmdPath)
 	if cmd.Usage != "" {
 		_, _ = fmt.Fprintf(&w, "\nUsage:  %s\n", cmd.Usage)
 	}
@@ -96,7 +96,7 @@ func main() {
 		var s Snapshotter
 		if *globalConfig != "" {
 			if len(args) != 0 {
-				return nil, &usageError{"does not take arguments if -config is specified"}
+				return nil, &usageError{"does not take arguments if --config is specified"}
 			}
 			b, err := ioutil.ReadFile(*globalConfig)
 			if err != nil {
@@ -107,7 +107,7 @@ func main() {
 			}
 		} else {
 			if len(args) == 0 {
-				return nil, &usageError{"requires atleast 1 argument or -config to be specified."}
+				return nil, &usageError{"requires atleast 1 argument or --config to be specified."}
 			}
 			for _, dir := range args {
 				s.Dirs = append(s.Dirs, &SyncDir{Dir: dir})
@@ -173,7 +173,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 		ShortHelp: "Periodically sync directories src1, src2, ... and serve them.",
 		LongHelp: `Periodically sync directories src1, src2, ... and serve them.
 
-For more advanced uses specify -config pointing to a yaml file.
+For more advanced uses specify --config pointing to a yaml file.
 See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/examples`,
 		Subcommands: []*ffcli.Command{serve, sync},
 		FlagSet:     globalFlags,
