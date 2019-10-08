@@ -101,9 +101,7 @@ func loadGithubChangeset(t testing.TB, repoWithOwner, number string) *a8n.Change
 	cs := &a8n.Changeset{ExternalID: number}
 
 	if *update {
-		cf := httpcli.NewFactory(githubProxyRedirectMiddleware)
-
-		githubExtSvc := &repos.ExternalService{
+		extSvc := &repos.ExternalService{
 			Kind: "GITHUB",
 			Config: marshalJSON(t, &schema.GitHubConnection{
 				Url:   "https://github.com",
@@ -111,7 +109,8 @@ func loadGithubChangeset(t testing.TB, repoWithOwner, number string) *a8n.Change
 			}),
 		}
 
-		githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
+		cf := httpcli.NewFactory(githubProxyRedirectMiddleware)
+		src, err := repos.NewGithubSource(extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -122,7 +121,7 @@ func loadGithubChangeset(t testing.TB, repoWithOwner, number string) *a8n.Change
 		}
 		ctx := context.Background()
 
-		err = githubSrc.LoadChangesets(ctx, repoChangeset)
+		err = src.LoadChangesets(ctx, repoChangeset)
 		if err != nil {
 			t.Fatalf("failed to load changeset: %s", err)
 		}
