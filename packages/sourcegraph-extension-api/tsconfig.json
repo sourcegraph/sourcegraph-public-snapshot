@@ -4,5 +4,6 @@
   "compilerOptions": {
     "skipLibCheck": false,
     "strictNullChecks": true,
+    "typeRoots": [],
   },
 }
