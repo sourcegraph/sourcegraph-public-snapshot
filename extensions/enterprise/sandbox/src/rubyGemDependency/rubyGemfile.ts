@@ -154,7 +154,7 @@ export const rubyGemfileDependencies = async (
         commands: [['bundler', 'lock']],
         context,
     })
-    return parseRubyGemfileLock(result.files['Gemfile.lock'])
+    return parseRubyGemfileLock(result.files!['Gemfile.lock'])
     /* const guardEntry: RubyGemfileDependency = {
         name: 'guard',
         version: '>=1.2.0',

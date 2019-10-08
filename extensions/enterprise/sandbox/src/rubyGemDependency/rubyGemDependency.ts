@@ -1,11 +1,11 @@
+import { flatten } from 'lodash'
+import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import { filter, map, startWith, switchMap, toArray } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
-import { flatten } from 'lodash'
-import { Subscription, Observable, of, Unsubscribable, from } from 'rxjs'
-import { map, switchMap, startWith, toArray, filter } from 'rxjs/operators'
-import { settingsObservable, memoizedFindTextInFiles } from '../util'
-import { rubyGemfileDependencies, RubyGemfileDependency } from './rubyGemfile'
+import { memoizedFindTextInFiles, settingsObservable } from '../util'
 import { bundlerRemove } from './rubyBundler'
+import { rubyGemfileDependencies, RubyGemfileDependency } from './rubyGemfile'
 
 const REMOVE_COMMAND = 'rubyGemDependency.remove'
 
@@ -214,14 +214,14 @@ async function computeRemoveDependencyEdit(
     ): Promise<void> => {
         const p = parseRepoURI(gemfile.uri)
         const result = await bundlerRemove(dep.name, { repository: p.repoName, commit: p.commitID! })
-        for (const path of Object.keys(result.files)) {
+        for (const path of Object.keys(result.files!)) {
             const uri = new URL(gemfile.uri.replace('Gemfile', '') + path)
             const doc = await sourcegraph.workspace.openTextDocument(uri)
-            if (doc.text !== result.files[path]) {
+            if (doc.text !== result.files![path]) {
                 edit.replace(
                     uri,
                     new sourcegraph.Range(new sourcegraph.Position(0, 0), doc.positionAt(doc.text!.length)),
-                    result.files[path]
+                    result.files![path]
                 )
             }
         }

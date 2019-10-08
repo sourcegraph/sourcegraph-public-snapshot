@@ -64,20 +64,20 @@ export const editForDependencyUpgrade = async (
     // ])
 }
 
-function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }[]): sourcegraph.WorkspaceEdit {
-    const edit = new sourcegraph.WorkspaceEdit()
-    for (const { old, newText } of files) {
-        // TODO!(sqs): handle creation/removal
-        if (old.text !== undefined && newText !== undefined && old.text !== newText) {
-            edit.replace(
-                new URL(old.uri),
-                new sourcegraph.Range(new sourcegraph.Position(0, 0), old.positionAt(old.text.length)),
-                newText
-            )
-        }
-    }
-    return edit
-}
+// function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }[]): sourcegraph.WorkspaceEdit {
+//     const edit = new sourcegraph.WorkspaceEdit()
+//     for (const { old, newText } of files) {
+//         // TODO!(sqs): handle creation/removal
+//         if (old.text !== undefined && newText !== undefined && old.text !== newText) {
+//             edit.replace(
+//                 new URL(old.uri),
+//                 new sourcegraph.Range(new sourcegraph.Position(0, 0), old.positionAt(old.text.length)),
+//                 newText
+//             )
+//         }
+//     }
+//     return edit
+// }
 
 const PACKAGE_JSON_FORMATTING_OPTIONS: FormattingOptions = {
     eol: '\n',
