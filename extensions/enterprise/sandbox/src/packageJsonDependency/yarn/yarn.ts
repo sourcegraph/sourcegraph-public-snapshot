@@ -21,13 +21,17 @@ const YARN_OPTS = [
     '--no-node-version-check',
     '--no-progress',
     '--silent',
-    '--mutex network',
+    // '--mutex network',
+    '--mutex',
+    'file:/tmp/.yarn-mutex',
+    // '--cache-folder',
+    // '.sourcegraph-yarn-cache',
     '--skip-integrity-check',
     '--no-default-rc',
 ]
 
 export const yarnPackageManager: PackageJsonPackageManager = {
-    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters='') => {
+    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters = '') => {
         const parsedVersionRange = new semver.Range(version)
 
         const results = flatten(
@@ -121,7 +125,7 @@ export const yarnPackageManager: PackageJsonPackageManager = {
 
 function getYarnLockDependency(packageJson: string, yarnLock: string, packageName: string): ResolvedDependency | null {
     const tree = yarnLogicalTree(JSON.parse(packageJson), yarnLock)
-    let found: any 
+    let found: any
     // eslint-disable-next-line ban/ban
     tree.forEach((dep: { name: string }, next: () => void) => {
         if (dep.name === packageName) {

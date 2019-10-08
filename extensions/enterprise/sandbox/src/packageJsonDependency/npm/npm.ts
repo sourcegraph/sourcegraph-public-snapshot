@@ -14,7 +14,7 @@ import { lockTree } from './logicalTree'
 const npmExecClient = createExecServerClient('a8n-npm-exec')
 
 export const npmPackageManager: PackageJsonPackageManager = {
-    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters='' ) => {
+    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters = '') => {
         const parsedVersionRange = new semver.Range(version)
 
         const results = flatten(

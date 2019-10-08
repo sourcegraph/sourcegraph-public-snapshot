@@ -29,7 +29,7 @@ export class CodeActionProviderRegistry extends DocumentFeatureProviderRegistry<
     }
 }
 
-const SUPPRESS_ERRORS = false
+const SUPPRESS_ERRORS = true
 
 /**
  * Returns an observable that emits all providers' completion items whenever any of the last-emitted
