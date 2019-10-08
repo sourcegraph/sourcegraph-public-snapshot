@@ -15,6 +15,11 @@ import { Configuration } from './config'
 const MINIMUM_MIGRATION_VERSION = 1528395597
 
 /**
+ * How many times to try to check the current database migration version on startup.
+ */
+const MAX_SCHEMA_POLL_RETRIES = readEnvInt('MAX_SCHEMA_POLL_RETRIES', 60)
+
+/**
  * How long to wait between queries to check the current database migration version on startup.
  */
 const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
@@ -101,36 +106,19 @@ export async function createPostgresConnection(configuration: Configuration, log
  * @param connectionOptions The connection options.
  * @param logger The logger instance.
  */
-async function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
-    for (let attempt = 0; attempt < MAX_CONNECTION_RETRIES; attempt++) {
+function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
+    return retry(MAX_CONNECTION_RETRIES, CONNECTION_RETRY_INTERVAL, () => {
         logger.debug('connecting to cross-repository database')
 
-        try {
-            return await _createConnection({
-                type: 'postgres',
-                name: 'xrepo',
-                entities,
-                logging: ['error', 'warn'],
-                maxQueryExecutionTime: 1000,
-                ...connectionOptions,
-            })
-        } catch (error) {
-            // This error occurs when no such database exists. Search for
-            // invalid_catalog_name in:
-            // https://www.postgresql.org/docs/9.4/errcodes-appendix.html.
-
-            if (error && error.code === '3D000' && attempt + 1 < MAX_CONNECTION_RETRIES) {
-                // wait for migration
-                await sleep(CONNECTION_RETRY_INTERVAL)
-                continue
-            }
-
-            throw error
-        }
-    }
-
-    // just bail
-    throw new Error('cross-repository database does not exist')
+        return _createConnection({
+            type: 'postgres',
+            name: 'xrepo',
+            entities,
+            logging: ['error', 'warn'],
+            maxQueryExecutionTime: 1000,
+            ...connectionOptions,
+        })
+    })
 }
 
 /**
@@ -141,27 +129,14 @@ async function connect(connectionOptions: PostgresConnectionCredentialsOptions, 
  * @param database The target database in which to perform the query.
  * @param logger The logger instance.
  */
-async function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
-    while (true) {
+function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
+    return retry(MAX_SCHEMA_POLL_RETRIES, SCHEMA_POLL_INTERVAL, async () => {
         logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
-        try {
-            // Get migration version from frontend database
-            const currentVersion = await getMigrationVersion(connection, database)
-
-            // Check to see if the current version is at least the minimum version
-            if (parseInt(currentVersion, 10) >= MINIMUM_MIGRATION_VERSION) {
-                return
-            }
-
-            console.log(`waiting for migrations to be applied (${currentVersion} < ${MINIMUM_MIGRATION_VERSION})`)
-        } catch (error) {
-            console.log('failed to determine current database migration state', error)
+        if (parseInt(await getMigrationVersion(connection, database), 10) < MINIMUM_MIGRATION_VERSION) {
+            throw new Error('cross-repository database not up to date')
         }
-
-        // snooze for a bit then retry
-        await new Promise(resolve => setTimeout(resolve, SCHEMA_POLL_INTERVAL * 1000))
-    }
+    })
 }
 
 /**
@@ -193,6 +168,33 @@ async function getMigrationVersion(connection: Connection, database: string): Pr
     }
 
     throw new Error('Unusable migration state.')
+}
+
+/**
+ * Invoke a function until success or the maximum number of retries have been
+ * attempted. Will return the firsts non-error value, or will throw the last
+ * thrown error. "Sleeps" between retries.
+ *
+ * @param retries The maximum number of retries.
+ * @param durationMs How long to sleep between retries.
+ * @param f The function to execute until success.
+ */
+async function retry<T>(retries: number, durationMs: number, f: () => Promise<T>): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+        if (attempt > 0) {
+            await sleep(durationMs)
+        }
+
+        try {
+            return await f()
+        } catch (error) {
+            if (attempt + 1 < retries) {
+                continue
+            }
+
+            throw error
+        }
+    }
 }
 
 /**
