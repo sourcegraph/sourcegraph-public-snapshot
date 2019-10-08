@@ -74,9 +74,18 @@ export const createExecServerClient = (
                 : {}),
         })
         if (!resp.ok) {
-            throw new Error(`error executing bundler command: HTTP ${resp.status}`)
+            throw new Error(`error executing commands on ${containerName}: HTTP ${resp.status}`)
         }
         const result: Result = await resp.json()
+        for (const [i, command] of result.commands.entries()) {
+            if (!command.ok) {
+                throw new Error(
+                    `error executing command ${JSON.stringify(commands[i])} on ${containerName}: ${command.error}\n${
+                        command.combinedOutput
+                    }`
+                )
+            }
+        }
         return result
     }
     return cache ? memoizeAsync<Parameters<typeof do2>[0], Result>(do2, arg => JSON.stringify(arg)) : do2

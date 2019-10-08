@@ -1,14 +1,14 @@
 import H from 'history'
 import React from 'react'
+import { SUPPORT_CAMPAIGN_UPDATES, USE_CAMPAIGN_RULES } from '..'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { Timeline } from '../../../components/timeline/Timeline'
 import { Comment } from '../../comments/Comment'
+import { IsDraftTimelineBox } from '../common/IsDraftTimelineBox'
+import { PublishDraftCampaignButton } from '../common/PublishDraftCampaign'
+import { RulesTimelineBox } from '../common/RulesTimelineBox'
 import { CampaignAreaContext } from './CampaignArea'
 import { CampaignHeaderEditableName } from './header/CampaignHeaderEditableName'
-import { Timeline } from '../../../components/timeline/Timeline'
-import { PublishDraftCampaignButton } from '../common/PublishDraftCampaign'
-import { IsDraftTimelineBox } from '../common/IsDraftTimelineBox'
-import { RulesTimelineBox } from '../common/RulesTimelineBox'
-import { USE_CAMPAIGN_RULES } from '..'
 
 interface Props extends Pick<CampaignAreaContext, 'campaign' | 'onCampaignUpdate'>, ExtensionsControllerProps {
     className?: string
@@ -40,7 +40,7 @@ export const CampaignOverview: React.FunctionComponent<Props> = ({
                 createdVerb="started campaign"
                 emptyBody="No description provided."
             />
-            {USE_CAMPAIGN_RULES && <RulesTimelineBox ruleContainer={campaign} />}
+            {USE_CAMPAIGN_RULES && SUPPORT_CAMPAIGN_UPDATES && <RulesTimelineBox ruleContainer={campaign} />}
             {USE_CAMPAIGN_RULES && campaign.isDraft && (
                 <IsDraftTimelineBox
                     noun="campaign"

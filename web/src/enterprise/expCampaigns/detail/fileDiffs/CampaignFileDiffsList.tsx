@@ -5,9 +5,9 @@ import { ExtensionsControllerProps } from '../../../../../../shared/src/extensio
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
+import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../../theme'
 import { useCampaignFileDiffs } from './useCampaignFileDiffs'
-import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     campaign: Pick<GQL.IExpCampaign, 'id'>
@@ -42,8 +42,8 @@ export const CampaignFileDiffsList: React.FunctionComponent<Props> = ({ campaign
                                 // TODO!(sqs): slice off 'a/' or 'b/' prefixes
                                 node={{
                                     ...d,
-                                    oldPath: (d.oldPath || '').slice(2),
-                                    newPath: (d.newPath || '').slice(2),
+                                    oldPath: (d.oldPath || '').replace(/^[ab]\//, ''),
+                                    newPath: (d.newPath || '').replace(/^[ab]\//, ''),
                                 }}
                                 base={
                                     {

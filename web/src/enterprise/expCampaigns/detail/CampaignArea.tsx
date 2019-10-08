@@ -1,20 +1,24 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
-import BookmarkIcon from 'mdi-react/BookmarkIcon'
 import H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import BookmarkIcon from 'mdi-react/BookmarkIcon'
+import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
 import ForumIcon from 'mdi-react/ForumIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserGroupIcon from 'mdi-react/UserGroupIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { SHOW_DIAGNOSTICS_AFTER_CREATION, SUPPORT_CAMPAIGN_UPDATES, USE_CAMPAIGN_RULES } from '..'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
+import { isDefined } from '../../../../../shared/src/util/types'
 import { HeroPage } from '../../../components/HeroPage'
 import { InfoSidebar, InfoSidebarSection } from '../../../components/infoSidebar/InfoSidebar'
 import { OverviewPagesArea } from '../../../components/overviewPagesArea/OverviewPagesArea'
 import { PageTitle } from '../../../components/PageTitle'
 import { WithSidebar } from '../../../components/withSidebar/WithSidebar'
+import { DiagnosticsIcon } from '../../../diagnostics/icons'
 import { DiffIcon } from '../../../util/octicons'
 import { ThreadsIcon } from '../../threads/icons'
 import { CampaignDeleteButton } from '../common/CampaignDeleteButton'
@@ -24,15 +28,11 @@ import { CampaignActivity } from './activity/CampaignActivity'
 import { CampaignOverview } from './CampaignOverview'
 import { CampaignDiagnostics } from './diagnostics/CampaignDiagnostics'
 import { CampaignFileDiffsList } from './fileDiffs/CampaignFileDiffsList'
+import { CampaignManagePage } from './manage/CampaignManagePage'
 import { CampaignParticipantListPage } from './participants/CampaignParticipantListPage'
 import { CampaignRepositoriesList } from './repositories/CampaignRepositoriesList'
 import { CampaignThreadListPage } from './threads/CampaignThreadListPage'
 import { useCampaignByID } from './useCampaignByID'
-import { DiagnosticsIcon } from '../../../diagnostics/icons'
-import { isDefined } from '../../../../../shared/src/util/types'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import { CampaignManagePage } from './manage/CampaignManagePage'
-import { USE_CAMPAIGN_RULES } from '..'
 
 export interface CampaignAreaContext
     extends Pick<NamespaceCampaignsAreaContext, Exclude<keyof NamespaceCampaignsAreaContext, 'namespace'>> {
@@ -204,7 +204,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                                     <CampaignDiagnostics {...context} className={PAGE_CLASS_NAME} />
                                 </>
                             ),
-                            condition: () => campaign.diagnostics.totalCount > 0,
+                            condition: () => campaign.diagnostics.totalCount > 0 && SHOW_DIAGNOSTICS_AFTER_CREATION,
                         },
 
                         {
@@ -261,7 +261,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                                     <CampaignManagePage {...context} match={match} className={PAGE_CLASS_NAME} />
                                 </>
                             ),
-                            condition: () => USE_CAMPAIGN_RULES,
+                            condition: () => USE_CAMPAIGN_RULES && SUPPORT_CAMPAIGN_UPDATES,
                         },
                     ]}
                     location={props.location}

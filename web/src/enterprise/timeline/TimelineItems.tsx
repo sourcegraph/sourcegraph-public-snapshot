@@ -1,6 +1,7 @@
 import React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Timeline } from '../../components/timeline/Timeline'
+import { SHOW_DIAGNOSTICS_AFTER_CREATION } from '../expCampaigns'
 import { AddThreadToCampaignEventTimelineItem } from './events/AddThreadToCampaignEventTimelineItem'
 import { CloseThreadEventTimelineItem } from './events/CloseThreadEventTimelineItem'
 import { CommentEventTimelineItem } from './events/CommentEventTimelineItem'
@@ -24,6 +25,9 @@ interface Props {
 export const TimelineItems: React.FunctionComponent<Props> = ({ events, className }) => (
     <Timeline tag="ol" className={className}>
         {events.nodes.map((event, i) => {
+            if (!SHOW_DIAGNOSTICS_AFTER_CREATION && event.__typename.includes('Diagnostic')) {
+                return null
+            }
             if (!event.__typename) {
                 return null // occurs for event types with no `... on XyzEvent` in GraphQL query
             }

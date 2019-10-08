@@ -42,14 +42,6 @@ export const editForDependencyUpgrade = async (
               }),
     })
 
-    for (const command of result.commands) {
-        if (!command.ok) {
-            throw new Error(
-                `error upgrading dependency '${dependency.name}' in ${packageJson.uri}: ${command.error}\n${command.combinedOutput}`
-            )
-        }
-    }
-
     if (MINIMAL_WORKTREE) {
         const edit = new sourcegraph.WorkspaceEdit()
         edit.set(new URL(packageJson.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![packageJsonName])])

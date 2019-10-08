@@ -89,7 +89,6 @@ export const CommentForm: React.FunctionComponent<Props> = ({
     useEffect(
         () => () => {
             extensionsController.services.editor.removeEditor({ editorId })
-            extensionsController.services.model.removeModel(modelUri)
         },
         [editorId, extensionsController.services.editor, extensionsController.services.model, modelUri]
     )
