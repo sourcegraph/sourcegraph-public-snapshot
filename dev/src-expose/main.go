@@ -41,21 +41,21 @@ func dockerAddr(addr string) string {
 func main() {
 	log.SetPrefix("")
 
-	var defaultSnapshotDir string
+	var defaultReposDir string
 	if h, err := os.UserHomeDir(); err != nil {
 		log.Fatal(err)
 	} else {
-		defaultSnapshotDir = filepath.Join(h, ".sourcegraph", "snapshots")
+		defaultReposDir = filepath.Join(h, ".sourcegraph", "src-expose-repos")
 	}
 
 	var (
-		globalFlags          = flag.NewFlagSet("src-expose", flag.ExitOnError)
-		globalVerbose        = globalFlags.Bool("verbose", false, "")
-		globalBefore         = globalFlags.String("before", "", "A command to run before snapshotting directories. It is run from the current working directory.")
-		globalSnapshotDir    = globalFlags.String("snapshot-dir", defaultSnapshotDir, "Git snapshot directory. Snapshots are stored relative to this directory. The snapshots are served from this directory.")
-		globalSnapshotConfig = globalFlags.String("snapshot-config", "", "If set will be used instead of command line arguments to specify snapshot configuration.")
+		globalFlags    = flag.NewFlagSet("src-expose", flag.ExitOnError)
+		globalVerbose  = globalFlags.Bool("verbose", false, "")
+		globalBefore   = globalFlags.String("before", "", "A command to run before sync. It is run from the current working directory.")
+		globalReposDir = globalFlags.String("repos-dir", defaultReposDir, "src-expose's git directories. When syncing a directory src-expose creates a git repo for it to serve to Sourcegraph. The repositories are stored and served relative to this directory.")
+		globalConfig   = globalFlags.String("config", "", "If set will be used instead of command line arguments to specify configuration.")
 
-		snapshotFlags = flag.NewFlagSet("snapshot", flag.ExitOnError)
+		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
 		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
@@ -63,33 +63,33 @@ func main() {
 
 	parseSnapshotter := func(flagSet *flag.FlagSet, args []string) (*Snapshotter, error) {
 		var s Snapshotter
-		if *globalSnapshotConfig != "" {
+		if *globalConfig != "" {
 			if len(args) != 0 {
 				return nil, &usageError{
-					Message: "does not take arguments if -snapshot-config is specified",
+					Message: "does not take arguments if -config is specified",
 					FlagSet: flagSet,
 				}
 			}
-			b, err := ioutil.ReadFile(*globalSnapshotConfig)
+			b, err := ioutil.ReadFile(*globalConfig)
 			if err != nil {
-				return nil, errors.Wrapf(err, "could read configuration at %s", *globalSnapshotConfig)
+				return nil, errors.Wrapf(err, "could read configuration at %s", *globalConfig)
 			}
 			if err := yaml.Unmarshal(b, &s); err != nil {
-				return nil, errors.Wrapf(err, "could not parse configuration at %s", *globalSnapshotConfig)
+				return nil, errors.Wrapf(err, "could not parse configuration at %s", *globalConfig)
 			}
 		} else {
 			if len(args) == 0 {
 				return nil, &usageError{
-					Message: "requires atleast 1 argument, or -snapshot-config to be specified.",
+					Message: "requires atleast 1 argument, or -config to be specified.",
 					FlagSet: flagSet,
 				}
 			}
 			for _, dir := range args {
-				s.Snapshots = append(s.Snapshots, &Snapshot{Dir: dir})
+				s.Dirs = append(s.Dirs, &SyncDir{Dir: dir})
 			}
 		}
 		if s.Destination == "" {
-			s.Destination = *globalSnapshotDir
+			s.Destination = *globalReposDir
 		}
 		if *globalBefore != "" {
 			s.Before = *globalBefore
@@ -109,13 +109,13 @@ func main() {
 		LongHelp: `src-expose serve will serve the git repositories over HTTP. These can be git
 cloned, and they can be discovered by Sourcegraph.
 
-src-expose will default to serving ~/.sourcegraph/snapshots`,
+src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 		FlagSet: serveFlags,
 		Exec: func(args []string) error {
 			var repoDir string
 			switch len(args) {
 			case 0:
-				repoDir = *globalSnapshotDir
+				repoDir = *globalReposDir
 
 			case 1:
 				repoDir = args[0]
@@ -131,13 +131,13 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 		},
 	}
 
-	snapshot := &ffcli.Command{
-		Name:      "snapshot",
-		Usage:     "src-expose [flags] snapshot [flags] <src1> [<src2> ...]",
-		ShortHelp: "Create a Git snapshot of directories",
-		FlagSet:   snapshotFlags,
+	sync := &ffcli.Command{
+		Name:      "sync",
+		Usage:     "src-expose [flags] sync [flags] <src1> [<src2> ...]",
+		ShortHelp: "Do a one-shot sync of directories",
+		FlagSet:   syncFlags,
 		Exec: func(args []string) error {
-			s, err := parseSnapshotter(snapshotFlags, args)
+			s, err := parseSnapshotter(syncFlags, args)
 			if err != nil {
 				return err
 			}
@@ -148,14 +148,14 @@ src-expose will default to serving ~/.sourcegraph/snapshots`,
 	root := &ffcli.Command{
 		Name:  "src-expose",
 		Usage: "src-expose [flags] <src1> [<src2> ...]",
-		LongHelp: `Periodically create snapshots of directories src1, src2, ... and serve them.
+		LongHelp: `Periodically sync directories src1, src2, ... and serve them.
 
-For more advanced uses specify -snapshot-config pointing to a yaml file.
+For more advanced uses specify -config pointing to a yaml file.
 
 EXAMPLE CONFIGURATION
 
 ` + MustAssetString("example.yaml"),
-		Subcommands: []*ffcli.Command{serve, snapshot},
+		Subcommands: []*ffcli.Command{serve, sync},
 		FlagSet:     globalFlags,
 		Exec: func(args []string) error {
 			s, err := parseSnapshotter(globalFlags, args)
@@ -169,7 +169,7 @@ EXAMPLE CONFIGURATION
 				fmt.Println()
 			}
 
-			fmt.Printf(`Periodically snapshotting directories as git repositories to %s.
+			fmt.Printf(`Periodically syncing directories as git repositories to %s.
 - %s
 Serving the repositories at http://%s.
 Paste the following configuration as an Other External Service in Sourcegraph:
@@ -180,10 +180,10 @@ Paste the following configuration as an Other External Service in Sourcegraph:
     "experimental.srcExpose": true
   }
 
-`, *globalSnapshotDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr, dockerAddr(*serveAddr))
+`, *globalReposDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr, dockerAddr(*serveAddr))
 
 			go func() {
-				if err := serveRepos(*serveAddr, *globalSnapshotDir); err != nil {
+				if err := serveRepos(*serveAddr, *globalReposDir); err != nil {
 					log.Fatal(err)
 				}
 			}()
