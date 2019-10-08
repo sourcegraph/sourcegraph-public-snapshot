@@ -92,7 +92,7 @@ func main() {
 			s.Destination = *globalSnapshotDir
 		}
 		if *globalBefore != "" {
-			s.PreCommand = *globalBefore
+			s.Before = *globalBefore
 		}
 
 		if err := s.SetDefaults(); err != nil {

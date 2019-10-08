@@ -145,8 +145,8 @@ func (w *lineCountWriter) Close() error {
 
 // Snapshot creates a commit of Dir into the bare git repo Destination.
 type Snapshot struct {
-	// PreCommand if non-empty is run before taking the snapshot.
-	PreCommand string `yaml:",omitempty"`
+	// Before if non-empty is a command run before taking the snapshot.
+	Before string `yaml:",omitempty"`
 
 	// Dir is the directory to treat as the git working directory.
 	Dir string `yaml:",omitempty"`
@@ -164,7 +164,7 @@ type Snapshot struct {
 
 // Snapshotter manages the running over several Snapshots.
 type Snapshotter struct {
-	// Dir is the directory PreCommand is run from. If a Snapshot's Dir is
+	// Dir is the directory Before is run from. If a Snapshot's Dir is
 	// relative, it will be resolved relative to this directory. Defaults to
 	// PWD.
 	Dir string
@@ -173,8 +173,9 @@ type Snapshotter struct {
 	// to Destination. Defaults to ~/.sourcegraph/snapshots
 	Destination string
 
-	// PreCommand before any snapshots are taken, PreCommand is run from Dir.
-	PreCommand string
+	// Before is a command run before any snapshots are taken, Before is run
+	// from Dir.
+	Before string
 
 	// Snapshots is a list of Snapshosts to take.
 	Snapshots []*Snapshot
@@ -252,8 +253,8 @@ func (o *Snapshotter) Run() error {
 		return err
 	}
 
-	if o.PreCommand != "" {
-		cmd := exec.Command("sh", "-c", o.PreCommand)
+	if o.Before != "" {
+		cmd := exec.Command("sh", "-c", o.Before)
 		cmd.Dir = o.Dir
 		if _, err := run(logger, "root", cmd); err != nil {
 			return err
@@ -266,8 +267,8 @@ func (o *Snapshotter) Run() error {
 		}
 		s.last = time.Now()
 
-		if s.PreCommand != "" {
-			cmd := exec.Command("sh", "-c", s.PreCommand)
+		if s.Before != "" {
+			cmd := exec.Command("sh", "-c", s.Before)
 			cmd.Dir = s.Dir
 			if _, err := run(logger, filepath.Base(s.Dir), cmd); err != nil {
 				return err
