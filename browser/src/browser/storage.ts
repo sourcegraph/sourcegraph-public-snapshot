@@ -1,4 +1,4 @@
-import { concat, from, Observable } from 'rxjs'
+import { concat, from, Observable, of } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 import { fromBrowserEvent } from '../shared/util/browser'
 import { getPlatformName } from '../shared/util/context'

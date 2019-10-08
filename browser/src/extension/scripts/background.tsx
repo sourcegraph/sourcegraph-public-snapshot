@@ -17,9 +17,8 @@ import { getHeaders } from '../../shared/backend/headers'
 import { fromBrowserEvent } from '../../shared/util/browser'
 import { observeSourcegraphURL } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
-import { observeStorageKey } from '../../browser/storage'
+import { observeStorageKey, storage } from '../../browser/storage'
 import { isDefined } from '../../../../shared/src/util/types'
-import { storage } from 'webextension-polyfill'
 
 const IS_EXTENSION = true
 
@@ -59,11 +58,11 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
 }): Observable<GraphQLResult<T>> =>
     observeSourcegraphURL(IS_EXTENSION).pipe(
         take(1),
-        switchMap(baseUrl =>
+        switchMap(sourcegraphURL =>
             requestGraphQLCommon<T>({
                 request,
                 variables,
-                baseUrl,
+                baseUrl: sourcegraphURL,
                 headers: getHeaders(),
                 credentials: 'include',
             })
@@ -76,10 +75,10 @@ async function main(): Promise<void> {
     // Mirror the managed sourcegraphURL to sync storage
     observeStorageKey('managed', 'sourcegraphURL')
         .pipe(filter(isDefined))
-        .subscribe(sourcegraphURL => {
-            storage.sync.set({ sourcegraphURL })
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        .subscribe(async sourcegraphURL => {
+            await storage.sync.set({ sourcegraphURL })
         })
-
     // Configure the omnibox when the sourcegraphURL changes.
     observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
         configureOmnibox(sourcegraphURL)
