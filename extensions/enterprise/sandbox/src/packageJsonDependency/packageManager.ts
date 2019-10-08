@@ -1,8 +1,10 @@
 import { TextDocument, WorkspaceEdit } from 'sourcegraph'
 
-export interface PackageJsonPackage {
+export interface ResolvedDependencyInPackage {
     packageJson: TextDocument
     lockfile: TextDocument
+
+    dependency: ResolvedDependency
 }
 
 export interface PackageJsonDependency {
@@ -10,7 +12,11 @@ export interface PackageJsonDependency {
     version: string
 }
 
+export interface ResolvedDependency extends PackageJsonDependency {
+    direct: boolean
+}
+
 export interface PackageJsonPackageManager {
-    packagesWithUnsatisfiedDependencyVersionRange(dep: PackageJsonDependency): Promise<PackageJsonPackage[]>
-    editForDependencyUpgrade(pkg: PackageJsonPackage, dep: PackageJsonDependency): Promise<WorkspaceEdit>
+    packagesWithUnsatisfiedDependencyVersionRange(dep: PackageJsonDependency): Promise<ResolvedDependencyInPackage[]>
+    editForDependencyUpgrade(dep: ResolvedDependencyInPackage): Promise<WorkspaceEdit>
 }

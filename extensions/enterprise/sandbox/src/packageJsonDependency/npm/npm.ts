@@ -7,7 +7,7 @@ import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import { PackageJsonPackage, PackageJsonPackageManager } from '../packageManager'
+import { PackageJsonPackageManager, ResolvedDependency, ResolvedDependencyInPackage } from '../packageManager'
 import { editForDependencyUpgrade } from '../packageManagerCommon'
 import { lockTree } from './logicalTree'
 
@@ -42,7 +42,7 @@ export const npmPackageManager: PackageJsonPackageManager = {
                 .toPromise()
         )
 
-        const check = async (result: sourcegraph.TextSearchResult): Promise<PackageJsonPackage | null> => {
+        const check = async (result: sourcegraph.TextSearchResult): Promise<ResolvedDependencyInPackage | null> => {
             const packageJson = await sourcegraph.workspace.openTextDocument(
                 new URL(result.uri.replace(/package-lock\.json$/, 'package.json'))
             )
@@ -52,7 +52,9 @@ export const npmPackageManager: PackageJsonPackageManager = {
                 if (!dep) {
                     return null
                 }
-                return semver.satisfies(dep.version, parsedVersionRange) ? null : { packageJson, lockfile }
+                return semver.satisfies(dep.version, parsedVersionRange)
+                    ? null
+                    : { packageJson, lockfile, dependency: dep }
             } catch (err) {
                 console.error(`Error checking package-lock.json and package.json for ${result.uri}.`, err, {
                     lockfile: lockfile.text,
@@ -64,9 +66,8 @@ export const npmPackageManager: PackageJsonPackageManager = {
         return (await Promise.all(results.map(check))).filter(isDefined)
     },
 
-    editForDependencyUpgrade: (pkg, dep) =>
+    editForDependencyUpgrade: dep =>
         editForDependencyUpgrade(
-            pkg,
             dep,
             [
                 [
@@ -76,7 +77,7 @@ export const npmPackageManager: PackageJsonPackageManager = {
                     '--package-lock-only',
                     '--ignore-scripts',
                     '--',
-                    `${dep.name}@${dep.version}`,
+                    `${dep.dependency.name}@${dep.dependency.version}`,
                 ],
             ],
             npmExecClient
@@ -87,8 +88,7 @@ function getPackageLockDependency(
     packageJson: string,
     packageLock: string,
     packageName: string
-): { version: string } | null {
-    // TODO!(sqs): this has a bug where if a package-lock.json delegates to a parent file, it throws an exception
+): ResolvedDependency | null {
     const tree = lockTree(JSON.parse(packageJson), JSON.parse(packageLock))
     let found: any
     // eslint-disable-next-line ban/ban
@@ -100,5 +100,5 @@ function getPackageLockDependency(
             next()
         }
     })
-    return found ? { version: found.version } : null
+    return found ? { name: packageName, version: found.version, direct: !!tree.getDep(packageName) } : null
 }

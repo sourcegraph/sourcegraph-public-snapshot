@@ -55,7 +55,6 @@ export const computeDiffFromEdits = async (
                 patch: `--- a/${p.filePath!}\n+++ b/${p.filePath!}\n${patchWithoutHeader}`,
                 patchWithFullURIs: `--- ${uri}\n+++ ${uri}\n${patchWithoutHeader}`,
             })
-            console.log('FAST PATH USED')
         } else {
             const oldText = await extensionsController.services.fileSystem.readFile(new URL(uri))
             const t0 = Date.now()

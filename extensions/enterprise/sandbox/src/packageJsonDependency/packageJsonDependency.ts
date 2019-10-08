@@ -4,7 +4,7 @@ import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { npmPackageManager } from './npm/npm'
-import { PackageJsonDependency } from './packageManager'
+import { PackageJsonDependency, ResolvedDependency } from './packageManager'
 import { yarnPackageManager } from './yarn/yarn'
 
 const UPGRADE_DEPENDENCY_COMMAND = 'packageJsonDependency.upgrade'
@@ -43,7 +43,7 @@ export function register(): Unsubscribable {
 const DEPENDENCY_TAG = 'type:packageJsonDependency'
 
 interface DiagnosticData {
-    dependency: Pick<PackageJsonDependencyCampaignContext, 'packageName' | 'upgradeToVersion'>
+    dependency: ResolvedDependency
     packageJson: { uri: string; text: string }
     lockfile: { uri: string; text: string }
     type: 'npm' | 'yarn'
@@ -107,7 +107,7 @@ function provideDiagnostics({
                                   severity: sourcegraph.DiagnosticSeverity.Warning,
                                   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                   data: JSON.stringify({
-                                      dependency: { packageName, upgradeToVersion },
+                                      dependency: hit.dependency,
                                       packageJson: { uri: hit.packageJson.uri },
                                       lockfile: { uri: hit.lockfile.uri },
                                       type,
@@ -163,11 +163,9 @@ function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
 
 async function computeUpgradeDependencyEdit(diag: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
     const data = getDiagnosticData(diag)
-    return await (data.type === 'npm' ? npmPackageManager : yarnPackageManager).editForDependencyUpgrade(
-        {
-            packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
-            lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
-        },
-        { name: data.dependency.packageName!, version: data.dependency.upgradeToVersion! }
-    )
+    return await (data.type === 'npm' ? npmPackageManager : yarnPackageManager).editForDependencyUpgrade({
+        packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
+        lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
+        dependency: data.dependency,
+    })
 }

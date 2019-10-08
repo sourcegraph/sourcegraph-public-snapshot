@@ -1,29 +1,37 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { FormattingOptions, Segment } from '@sqs/jsonc-parser'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import path from 'path'
 import * as sourcegraph from 'sourcegraph'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { ExecServerClient } from '../execServer/client'
-import { PackageJsonDependency, PackageJsonPackage } from './packageManager'
+import { ResolvedDependencyInPackage } from './packageManager'
 
 const MINIMAL_WORKTREE = true
 
 export const editForDependencyUpgrade = async (
-    pkg: PackageJsonPackage,
-    dep: PackageJsonDependency,
+    {
+        packageJson,
+        lockfile,
+        dependency,
+    }: Pick<ResolvedDependencyInPackage, 'dependency'> & {
+        packageJson: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
+        lockfile: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
+    },
     commands: string[][],
     execServerClient: ExecServerClient
 ): Promise<sourcegraph.WorkspaceEdit> => {
-    const p = parseRepoURI(pkg.packageJson.uri)
-    const packageJsonName = path.basename(parseRepoURI(pkg.packageJson.uri).filePath!)
-    const lockfileName = path.basename(parseRepoURI(pkg.lockfile.uri).filePath!)
+    const p = parseRepoURI(packageJson.uri)
+    const packageJsonName = path.basename(parseRepoURI(packageJson.uri).filePath!)
+    const lockfileName = path.basename(parseRepoURI(lockfile.uri).filePath!)
     const result = await execServerClient({
         commands,
         dir: path.dirname(p.filePath!),
         ...(MINIMAL_WORKTREE
             ? {
                   files: {
-                      [packageJsonName]: pkg.packageJson.text!,
-                      [lockfileName]: pkg.lockfile.text!,
+                      [packageJsonName]: packageJson.text!,
+                      [lockfileName]: lockfile.text!,
                   },
               }
             : {
@@ -36,21 +44,22 @@ export const editForDependencyUpgrade = async (
 
     for (const command of result.commands) {
         if (!command.ok) {
-            throw new Error(`error upgrading dependency '${dep.name}' in ${pkg.packageJson.uri}: ${command.error}`)
+            throw new Error(`error upgrading dependency '${dependency.name}' in ${packageJson.uri}: ${command.error}`)
         }
     }
 
     if (MINIMAL_WORKTREE) {
         const edit = new sourcegraph.WorkspaceEdit()
-        edit.set(new URL(pkg.packageJson.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![packageJsonName])])
-        edit.set(new URL(pkg.lockfile.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![lockfileName])])
+        edit.set(new URL(packageJson.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![packageJsonName])])
+        edit.set(new URL(lockfile.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![lockfileName])])
         return edit
     }
 
-    return computeDiffs([
-        { old: pkg.packageJson, newText: result.files![packageJsonName] },
-        { old: pkg.lockfile, newText: result.files![lockfileName] },
-    ])
+    throw new Error('only MINIMAL_WORKTREE is supported')
+    // return computeDiffs([
+    //     { old: packageJson, newText: result.files![packageJsonName] },
+    //     { old: lockfile, newText: result.files![lockfileName] },
+    // ])
 }
 
 function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }[]): sourcegraph.WorkspaceEdit {
@@ -66,4 +75,28 @@ function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }
         }
     }
     return edit
+}
+
+const PACKAGE_JSON_FORMATTING_OPTIONS: FormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
+
+export const editPackageJson = (
+    doc: sourcegraph.TextDocument,
+    operations: { path: Segment[]; value: any }[],
+    workspaceEdit = new sourcegraph.WorkspaceEdit()
+): sourcegraph.WorkspaceEdit => {
+    for (const op of operations) {
+        const edits = setProperty(doc.text!, op.path, op.value, PACKAGE_JSON_FORMATTING_OPTIONS)
+        for (const edit of edits) {
+            workspaceEdit.replace(
+                new URL(doc.uri),
+                new sourcegraph.Range(doc.positionAt(edit.offset), doc.positionAt(edit.offset + edit.length)),
+                edit.content
+            )
+        }
+    }
+    return workspaceEdit
 }
