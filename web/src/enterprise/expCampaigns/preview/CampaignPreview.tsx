@@ -7,11 +7,12 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
+import { actorName } from '../../../actor'
 import { ConnectionListFilterContext } from '../../../components/connectionList/ConnectionListFilterDropdownButton'
-import { useQueryParameter } from '../../../util/useQueryParameter'
 import { DiagnosticListByResource } from '../../../diagnostics/list/byResource/DiagnosticListByResource'
 import { FileDiffNode } from '../../../repo/compare/FileDiffNode'
 import { ThemeProps } from '../../../theme'
+import { useQueryParameter } from '../../../util/useQueryParameter'
 import { ParticipantList } from '../../participants/ParticipantList'
 import { ThreadList, ThreadListHeaderCommonFilters } from '../../threads/list/ThreadList'
 import { ShowThreadPreviewModalButton } from '../../threads/preview/ShowThreadPreviewModalButton'
@@ -19,7 +20,6 @@ import { CampaignImpactSummaryBar } from '../common/CampaignImpactSummaryBar'
 import { sumDiffStats } from '../common/useCampaignImpactSummary'
 import { CampaignFormData } from '../form/CampaignForm'
 import { useCampaignPreview } from './useCampaignPreview'
-import { actorName } from '../../../actor'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     data: CampaignFormData
@@ -103,9 +103,9 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                             headerItems={{
                                                 left: <h4 className="mb-0">Changesets &amp; issues</h4>,
                                                 right: (
-                                                    <>
+                                                    <div className="d-none">
                                                         <ThreadListHeaderCommonFilters {...threadFilterProps} />
-                                                    </>
+                                                    </div>
                                                 ),
                                             }}
                                             right={ShowThreadPreviewModalButton}

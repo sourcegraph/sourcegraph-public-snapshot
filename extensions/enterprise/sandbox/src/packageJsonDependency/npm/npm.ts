@@ -43,23 +43,28 @@ export const npmPackageManager: PackageJsonPackageManager = {
         )
 
         const check = async (result: sourcegraph.TextSearchResult): Promise<ResolvedDependencyInPackage | null> => {
-            const packageJson = await sourcegraph.workspace.openTextDocument(
-                new URL(result.uri.replace(/package-lock\.json$/, 'package.json'))
-            )
-            const lockfile = await sourcegraph.workspace.openTextDocument(new URL(result.uri))
             try {
-                const dep = getPackageLockDependency(packageJson.text!, lockfile.text!, name)
-                if (!dep) {
+                const packageJson = await sourcegraph.workspace.openTextDocument(
+                    new URL(result.uri.replace(/package-lock\.json$/, 'package.json'))
+                )
+                const lockfile = await sourcegraph.workspace.openTextDocument(new URL(result.uri))
+                try {
+                    const dep = getPackageLockDependency(packageJson.text!, lockfile.text!, name)
+                    if (!dep) {
+                        return null
+                    }
+                    return semver.satisfies(dep.version, parsedVersionRange)
+                        ? null
+                        : { packageJson, lockfile, dependency: dep }
+                } catch (err) {
+                    console.error(`Error checking package-lock.json and package.json for ${result.uri}.`, err, {
+                        lockfile: lockfile.text,
+                        packagejson: packageJson.text,
+                    })
                     return null
                 }
-                return semver.satisfies(dep.version, parsedVersionRange)
-                    ? null
-                    : { packageJson, lockfile, dependency: dep }
             } catch (err) {
-                console.error(`Error checking package-lock.json and package.json for ${result.uri}.`, err, {
-                    lockfile: lockfile.text,
-                    packagejson: packageJson.text,
-                })
+                console.error(`Error getting package-lock.json and package.json for ${result.uri}`, err)
                 return null
             }
         }

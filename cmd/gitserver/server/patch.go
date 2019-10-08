@@ -43,7 +43,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 		commit string
 		err    error
 	)
-	if useInPlaceCommitCreationFromPatch {
+	if useInPlaceCommitCreationFromPatch && false /* TODO!(sqs): disable */ {
 		commit, err = createCommitFromPatch(ctx, repoGitDir, req)
 	} else {
 		commit, err = s.createCommitFromPatchTmpDir(ctx, repo, repoGitDir, req)

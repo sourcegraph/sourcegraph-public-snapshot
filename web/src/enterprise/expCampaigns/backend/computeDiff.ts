@@ -52,8 +52,8 @@ export const computeDiffFromEdits = async (
                 hunks: parsePatch(fullPatch)
                     .flatMap(d => d.hunks)
                     .map(npmDiffToFileDiffHunk),
-                patch: `--- a/${p.filePath!}\n+++ b/${p.filePath!}\n${patchWithoutHeader}`,
-                patchWithFullURIs: `--- ${uri}\n+++ ${uri}\n${patchWithoutHeader}`,
+                patch: `Index: ${p.filePath!}\n--- a/${p.filePath!}\n+++ b/${p.filePath!}\n${patchWithoutHeader}`,
+                patchWithFullURIs: `Index: ${uri}\n--- ${uri}\n+++ ${uri}\n${patchWithoutHeader}`,
             })
         } else {
             const oldText = await extensionsController.services.fileSystem.readFile(new URL(uri))
