@@ -107,7 +107,7 @@ function provideDiagnostics({
                                   severity: sourcegraph.DiagnosticSeverity.Warning,
                                   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                   data: JSON.stringify({
-                                      dependency: hit.dependency,
+                                      dependency: { ...hit.dependency, version: upgradeToVersion },
                                       packageJson: { uri: hit.packageJson.uri },
                                       lockfile: { uri: hit.lockfile.uri },
                                       type,
@@ -117,6 +117,7 @@ function provideDiagnostics({
                               return [diagnostic]
                           })
                           .filter(isDefined)
+                          .slice(0, 2) // TODO!(sqs)
                   )
               }),
               startWith(LOADING)

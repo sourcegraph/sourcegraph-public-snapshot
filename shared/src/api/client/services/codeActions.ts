@@ -1,7 +1,7 @@
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import { isEqual } from 'lodash'
 import { from, Observable } from 'rxjs'
-import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { Action, CodeActionContext } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentIdentifier } from '../types/textDocument'
@@ -29,6 +29,8 @@ export class CodeActionProviderRegistry extends DocumentFeatureProviderRegistry<
     }
 }
 
+const SUPPRESS_ERRORS = false
+
 /**
  * Returns an observable that emits all providers' completion items whenever any of the last-emitted
  * set of providers emits completion items. If any provider emits an error, the error is logged and
@@ -49,12 +51,14 @@ export function getCodeActions(
                 providers.map(provider =>
                     from(
                         provider(params).pipe(
-                            catchError(err => {
-                                if (logErrors) {
-                                    console.error(err)
-                                }
-                                return [null]
-                            })
+                            SUPPRESS_ERRORS
+                                ? catchError(err => {
+                                      if (logErrors) {
+                                          console.error(err)
+                                      }
+                                      return [null]
+                                  })
+                                : tap(() => undefined)
                         )
                     )
                 )

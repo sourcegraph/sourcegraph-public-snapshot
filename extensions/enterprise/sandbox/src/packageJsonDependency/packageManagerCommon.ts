@@ -44,7 +44,9 @@ export const editForDependencyUpgrade = async (
 
     for (const command of result.commands) {
         if (!command.ok) {
-            throw new Error(`error upgrading dependency '${dependency.name}' in ${packageJson.uri}: ${command.error}`)
+            throw new Error(
+                `error upgrading dependency '${dependency.name}' in ${packageJson.uri}: ${command.error}\n${command.combinedOutput}`
+            )
         }
     }
 

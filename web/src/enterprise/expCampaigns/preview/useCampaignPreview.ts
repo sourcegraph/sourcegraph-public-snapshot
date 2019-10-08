@@ -1,7 +1,16 @@
 import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
-import { merge, Subject, Observable } from 'rxjs'
-import { debounceTime, distinctUntilChanged, map, mapTo, switchMap, tap, throttleTime } from 'rxjs/operators'
+import { merge, Observable, of, Subject } from 'rxjs'
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    mapTo,
+    switchMap,
+    tap,
+    throttleTime,
+} from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -12,9 +21,9 @@ import {
     diffStatFieldsFragment,
     fileDiffHunkRangeFieldsFragment,
 } from '../../../repo/compare/RepositoryCompareDiffPage'
+import { RuleDefinition } from '../../rules/types'
 import { ThreadConnectionFiltersFragment } from '../../threads/list/useThreads'
 import { getCampaignExtensionData } from '../extensionData'
-import { RuleDefinition } from '../../rules/types'
 
 export const RepositoryComparisonQuery = gql`
 baseRepository {
@@ -241,23 +250,23 @@ export const useCampaignPreview = (
             inputSubjectChanges.pipe(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
                 distinctUntilChanged((a, b) => isEqual(a, b)),
-                switchMap(input => queryCampaignPreview({ extensionsController, input, query }))
+                switchMap(input =>
+                    queryCampaignPreview({ extensionsController, input, query }).pipe(
+                        catchError(err => of(asError(err)))
+                    )
+                )
             )
-        ).subscribe(
-            result => {
-                setResult(prevResult => {
-                    setIsLoading(result === LOADING)
-                    // Reuse last non-error result while loading, to reduce UI jitter.
-                    return result === LOADING && prevResult !== LOADING && !isErrorLike(prevResult)
-                        ? prevResult
-                        : result
-                })
-            },
-            err => {
-                setIsLoading(false)
-                setResult(asError(err))
-            }
-        )
+        ).subscribe(result => {
+            setResult(prevResult => {
+                setIsLoading(result === LOADING)
+                // Reuse last result while loading, to reduce UI jitter.
+                return result === LOADING && prevResult !== LOADING
+                    ? isErrorLike(prevResult)
+                        ? LOADING
+                        : prevResult
+                    : result
+            })
+        })
         return () => subscription.unsubscribe()
     }, [extensionsController, inputSubject, query])
     useEffect(() => inputSubject.next(input), [input, inputSubject])
