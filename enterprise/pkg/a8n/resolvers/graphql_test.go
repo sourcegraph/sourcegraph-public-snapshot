@@ -466,11 +466,9 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	// Date when PR #999 from above was created
-	timestamp, _ := time.Parse(time.RFC3339, "2018-11-14T22:07:45Z")
-	countsFrom := timestamp
+	countsFrom := parseJSONTime(t, "2018-11-14T22:07:45Z")
 	// Date when PR #999 from above was merged
-	timestamp, _ = time.Parse(time.RFC3339, "2018-12-04T08:10:07Z")
-	countsTo := timestamp
+	countsTo := parseJSONTime(t, "2018-12-04T08:10:07Z")
 
 	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
@@ -711,31 +709,47 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	r := &campaignResolver{
-		store:    store,
-		Campaign: campaign,
-	}
-
-	// Date when PR #5834 was created
-	timestamp, _ := time.Parse(time.RFC3339, "2019-10-02T14:49:31Z")
-	countsFrom := timestamp
+	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
+	// We start exactly one day earlier
+	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
 	// Date when PR #5834 was merged
-	timestamp, _ = time.Parse(time.RFC3339, "2019-10-07T13:13:45Z")
-	countsTo := timestamp
+	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
 
-	counts, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
-		From: &graphqlbackend.DateTime{countsFrom},
-		To:   &graphqlbackend.DateTime{countsTo},
+	r := &campaignResolver{store: store, Campaign: campaign}
+	have, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
+		From: &graphqlbackend.DateTime{start},
+		To:   &graphqlbackend.DateTime{end},
 	})
 
-	if have, want := len(counts), 5; have != want {
-		t.Fatalf("wrong number of counts. have=%d, want=%d", have, want)
+	want := []graphqlbackend.ChangesetCountsResolver{
+		&changesetCountsResolver{
+			date:  end.Add(5 * -24 * time.Hour),
+			total: 0,
+		},
+		&changesetCountsResolver{
+			date:  end.Add(4 * -24 * time.Hour),
+			total: 1,
+		},
+		&changesetCountsResolver{
+			date:  end.Add(3 * -24 * time.Hour),
+			total: 1,
+		},
+		&changesetCountsResolver{
+			date:  end.Add(2 * -24 * time.Hour),
+			total: 1,
+		},
+		&changesetCountsResolver{
+			date:  end.Add(1 * -24 * time.Hour),
+			total: 1,
+		},
+		&changesetCountsResolver{
+			date:  end,
+			total: 1,
+		},
 	}
 
-	for _, c := range counts {
-		if have, want := c.Total(), int32(1); have != want {
-			t.Errorf("wrong total count. want=%d, have=%d", want, have)
-		}
+	if !reflect.DeepEqual(have, want) {
+		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(have, want))
 	}
 }
 
@@ -850,6 +864,17 @@ func marshalDateTime(t testing.TB, ts time.Time) string {
 	}
 
 	return string(bs)
+}
+
+func parseJSONTime(t testing.TB, ts string) time.Time {
+	t.Helper()
+
+	timestamp, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return timestamp
 }
 
 func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.BitbucketServerSource) []*repos.Repo {

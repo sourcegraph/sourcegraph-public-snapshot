@@ -371,20 +371,20 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		return resolvers, err
 	}
 
-	from := r.Campaign.CreatedAt
+	start := r.Campaign.CreatedAt
 	if args.From != nil {
-		// TODO: using min(from, args.From) here makes testing really hard,
+		// TODO: using min(start, args.From) here makes testing really hard,
 		// because `CreatedAt` is always "fresh"
-		from = args.From.Time
+		start = args.From.Time
 	}
 
-	to := time.Now()
-	if args.To != nil && args.To.Time.Before(to) {
-		to = args.To.Time
+	end := time.Now()
+	if args.To != nil && args.To.Time.Before(end) {
+		end = args.To.Time
 	}
 
 	rs := []*changesetCountsResolver{}
-	for d := to; d.After(from); d = d.Add(-24 * time.Hour) {
+	for d := end; d.After(start); d = d.Add(-24 * time.Hour) {
 		rs = append(rs, &changesetCountsResolver{date: d})
 	}
 
@@ -403,8 +403,8 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		}
 	}
 
-	for _, r := range rs {
-		resolvers = append(resolvers, r)
+	for i := len(rs) - 1; i >= 0; i-- {
+		resolvers = append(resolvers, rs[i])
 	}
 
 	return resolvers, nil
@@ -737,7 +737,7 @@ type changesetCountsResolver struct {
 }
 
 func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{time.Now()}
+	return graphqlbackend.DateTime{r.date}
 }
 
 func (r *changesetCountsResolver) Total() int32 {
