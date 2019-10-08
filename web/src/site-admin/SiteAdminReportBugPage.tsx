@@ -95,12 +95,13 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                 <a target="_blank" rel="noopener noreferrer" href="https://github.com/sourcegraph/sourcegraph/issues">
                     public issue tracker
                 </a>
-                , and include a description of the bug along with the info below (with secrets redacted). If the report
-                contains sensitive information that should not be public, email the report to{' '}
+                , and include a description of the bug along with the info below (with secrets redacted). If you are a
+                Sourcegraph customer, or if the report contains sensitive information that should not be public, email
+                the report to{' '}
                 <a target="_blank" rel="noopener noreferrer" href="mailto:support@sourcegraph.com">
                     support@sourcegraph.com
                 </a>
-                , instead.
+                .
             </p>
             <div className="card-header alert alert-warning">
                 <div>
