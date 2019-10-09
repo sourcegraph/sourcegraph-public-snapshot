@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
-import { merge, Observable, of, Subject } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subject } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -23,7 +23,7 @@ import {
 } from '../../../repo/compare/RepositoryCompareDiffPage'
 import { RuleDefinition } from '../../rules/types'
 import { ThreadConnectionFiltersFragment } from '../../threads/list/useThreads'
-import { getCampaignExtensionData } from '../extensionData'
+import { ExtensionDataStatus, getCampaignExtensionData } from '../extensionData'
 
 export const RepositoryComparisonQuery = gql`
 baseRepository {
@@ -162,11 +162,13 @@ const queryCampaignPreview = ({
 }: ExtensionsControllerProps & {
     input: Pick<GQL.IExpCreateCampaignInput, Exclude<keyof GQL.IExpCreateCampaignInput, 'extensionData'>>
     query: string
-}): Observable<GQL.IExpCampaignPreview> =>
-    getCampaignExtensionData(
+}): Observable<[GQL.IExpCampaignPreview | ErrorLike, ExtensionDataStatus]> => {
+    const extensionDataAndStatus = getCampaignExtensionData(
         extensionsController,
         input.rules ? input.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
-    ).pipe(
+    )
+    const campaignPreview = extensionDataAndStatus.pipe(
+        map(([extensionData]) => extensionData),
         switchMap(extensionData =>
             queryGraphQL(
                 gql`
@@ -210,10 +212,13 @@ const queryCampaignPreview = ({
                             fixup(t.repositoryComparison)
                         }
                     }
-                })
+                }),
+                catchError(err => of(asError(err)))
             )
         )
     )
+    return combineLatest([campaignPreview, extensionDataAndStatus.pipe(map(([, status]) => status))])
+}
 
 /**
  * A React hook that observes a campaign preview queried from the GraphQL API.
@@ -222,10 +227,11 @@ export const useCampaignPreview = (
     { extensionsController }: ExtensionsControllerProps,
     input: CreateCampaignInputWithoutExtensionData,
     query: string // TODO!(sqs): the query param is currently ignored
-): [Result, boolean] => {
+): [Result, ExtensionDataStatus, boolean] => {
     const inputSubject = useMemo(() => new Subject<CreateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
+    const [status, setStatus] = useState<ExtensionDataStatus>({ message: '' })
     useEffect(() => {
         // Refresh more slowly on changes to the name or description.
         const inputSubjectChanges = merge(
@@ -245,18 +251,15 @@ export const useCampaignPreview = (
         const subscription = merge(
             inputSubjectChanges.pipe(
                 distinctUntilChanged((a, b) => isEqual(a, b)),
-                mapTo(LOADING)
+                mapTo([LOADING, { message: 'LOADING123' }] as [typeof LOADING, ExtensionDataStatus])
             ),
             inputSubjectChanges.pipe(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
                 distinctUntilChanged((a, b) => isEqual(a, b)),
-                switchMap(input =>
-                    queryCampaignPreview({ extensionsController, input, query }).pipe(
-                        catchError(err => of(asError(err)))
-                    )
-                )
+                switchMap(input => queryCampaignPreview({ extensionsController, input, query }))
             )
-        ).subscribe(result => {
+        ).subscribe(([result, status]) => {
+            setStatus(status)
             setResult(prevResult => {
                 setIsLoading(result === LOADING)
                 // Reuse last result while loading, to reduce UI jitter.
@@ -270,5 +273,5 @@ export const useCampaignPreview = (
         return () => subscription.unsubscribe()
     }, [extensionsController, inputSubject, query])
     useEffect(() => inputSubject.next(input), [input, inputSubject])
-    return [result, isLoading]
+    return [result, status, isLoading]
 }

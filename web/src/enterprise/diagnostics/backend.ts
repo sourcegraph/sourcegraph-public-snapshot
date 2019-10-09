@@ -2,6 +2,7 @@ import { Range } from '@sourcegraph/extension-api-classes'
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { Action, fromAction } from '../../../../shared/src/api/types/action'
@@ -41,7 +42,7 @@ export const getCodeActions = memoizeObservable(
     ({
         diagnostic,
         extensionsController,
-    }: { diagnostic: DiagnosticWithType } & ExtensionsControllerProps): Observable<Action[]> =>
+    }: { diagnostic: DiagnosticWithType } & ExtensionsControllerProps): Observable<(Action | CodeActionError)[]> =>
         from(
             extensionsController.services.codeActions.getCodeActions({
                 textDocument: {
@@ -51,8 +52,8 @@ export const getCodeActions = memoizeObservable(
                 context: { diagnostics: [diagnostic] },
             })
         ).pipe(
-            map(codeActions => codeActions || []),
-            map(actions => actions.map(fromAction))
+            map(actions => actions || []),
+            map(actions => actions.map(a => (isCodeActionError(a) ? a : fromAction(a))))
         ),
     ({ diagnostic }) => diagnosticID(diagnostic)
 )

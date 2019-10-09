@@ -1,8 +1,9 @@
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import { isEqual } from 'lodash'
-import { from, Observable } from 'rxjs'
-import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { from, Observable, of } from 'rxjs'
+import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { Action, CodeActionContext } from 'sourcegraph'
+import { asError, ErrorLike } from '../../../util/errors'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
@@ -12,6 +13,18 @@ export interface CodeActionsParams {
     textDocument: TextDocumentIdentifier
     range: Range | Selection
     context: CodeActionContext
+}
+
+const codeActionError = Symbol('isCodeActionError')
+
+export interface CodeActionError extends ErrorLike {
+    [codeActionError]: true
+    params: CodeActionsParams
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isCodeActionError(val: any): val is CodeActionError {
+    return val[codeActionError] === true
 }
 
 export type ProvideCodeActionsSignature = (params: CodeActionsParams) => Observable<Action[] | null | undefined>
@@ -24,12 +37,10 @@ export class CodeActionProviderRegistry extends DocumentFeatureProviderRegistry<
      * provider result is omitted from the emission of the observable (the observable does not emit
      * the error).
      */
-    public getCodeActions(params: CodeActionsParams): Observable<Action[] | null> {
+    public getCodeActions(params: CodeActionsParams): Observable<(Action | CodeActionError)[] | null> {
         return getCodeActions(this.providersForDocument(params.textDocument), params)
     }
 }
-
-const SUPPRESS_ERRORS = true
 
 /**
  * Returns an observable that emits all providers' completion items whenever any of the last-emitted
@@ -44,27 +55,25 @@ export function getCodeActions(
     providers: Observable<ProvideCodeActionsSignature[]>,
     params: CodeActionsParams,
     logErrors = true
-): Observable<Action[] | null> {
+): Observable<(Action | CodeActionError)[] | null> {
     return providers.pipe(
         switchMap(providers =>
             combineLatestOrDefault(
                 providers.map(provider =>
                     from(
                         provider(params).pipe(
-                            SUPPRESS_ERRORS
-                                ? catchError(err => {
-                                      if (logErrors) {
-                                          console.error(err)
-                                      }
-                                      return [null]
-                                  })
-                                : tap(() => undefined)
+                            catchError(err => {
+                                if (logErrors) {
+                                    console.error(err)
+                                }
+                                return of<CodeActionError[]>([{ [codeActionError]: true, ...asError(err), params }])
+                            })
                         )
                     )
                 )
             ).pipe(
-                map(flattenAndCompact),
-                defaultIfEmpty<Action[] | null>(null),
+                map(a => flattenAndCompact<Action | CodeActionError>(a)),
+                defaultIfEmpty<(Action | CodeActionError)[] | null>(null),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
         )

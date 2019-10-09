@@ -46,7 +46,7 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
         <>
             <button
                 type="button"
-                className={`btn ${tryBuildStatus ? 'btn-link' : 'btn-secondary'} mr-2 mt-2`}
+                className={`d-none btn ${tryBuildStatus ? 'btn-link' : 'btn-secondary'} mr-2 mt-2`}
                 disabled={tryBuildStatus}
                 onClick={onTryBuildClick}
             >
@@ -62,7 +62,7 @@ export const ShowThreadPreviewModalButton: React.FunctionComponent<Props> = ({
                 className="btn btn-secondary mt-2"
                 to={{ ...location, hash: new URLSearchParams({ thread: threadID }).toString() }}
             >
-                Show preview
+                Preview
             </Link>
             <Modal
                 isOpen={isOpen}

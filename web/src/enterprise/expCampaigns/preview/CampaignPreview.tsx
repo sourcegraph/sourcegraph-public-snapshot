@@ -36,7 +36,7 @@ const LOADING = 'loading' as const
  */
 export const CampaignPreview: React.FunctionComponent<Props> = ({ data, className = '', ...props }) => {
     const [query, onQueryChange, locationWithQuery] = useQueryParameter(props)
-    const [campaignPreview, isLoading] = useCampaignPreview(props, data, query)
+    const [campaignPreview, status, isLoading] = useCampaignPreview(props, data, query)
     const threadFilterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
         connection:
             campaignPreview !== LOADING && !isErrorLike(campaignPreview) ? campaignPreview.threads : campaignPreview,
@@ -53,6 +53,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                 Preview
                 {isLoading && <LoadingSpinner className="icon-inline ml-3" />}
             </h2>
+            <p>{JSON.stringify(status)}</p>
             {campaignPreview !== LOADING &&
                 (isErrorLike(campaignPreview) ? (
                     <div className="alert alert-danger">Error: {campaignPreview.message}</div>

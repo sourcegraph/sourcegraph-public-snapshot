@@ -1,6 +1,8 @@
 import { combineLatest, Observable, of } from 'rxjs'
-import { debounceTime, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
+import { Action } from '../../../../shared/src/api/types/action'
 import { fromDiagnostic } from '../../../../shared/src/api/types/diagnostic'
 import { WorkspaceEdit } from '../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -10,10 +12,27 @@ import { diagnosticQueryMatcher, getCodeActions } from '../diagnostics/backend'
 import { RuleDefinition } from '../rules/types'
 import { computeDiff, computeDiffFromEdits, FileDiff } from './backend/computeDiff'
 
+interface DiagnosticsAndFileDiffs {
+    diagnostics: DiagnosticWithType[]
+    fileDiffs: Pick<FileDiff, 'patchWithFullURIs'>[]
+    status: ExtensionDataStatus
+}
+
+export interface ExtensionDataStatus {
+    message: string
+}
+
+const LOADING = 'loading' as const
+
 const getDiagnosticsAndFileDiffs = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     rule: RuleDefinition
 ): Observable<DiagnosticsAndFileDiffs> => {
+    interface DiagnosticWithAction {
+        diagnostic: DiagnosticWithType
+        errors: CodeActionError[]
+        action: Action | typeof LOADING | undefined
+    }
     switch (rule.type) {
         case 'DiagnosticRule': {
             // TODO!(sqs): handle case when there are no extensions registered that emit matching diagnostics
@@ -32,9 +51,11 @@ const getDiagnosticsAndFileDiffs = (
                                       }).pipe(
                                           map(actions => ({
                                               diagnostic: d,
+                                              errors: actions.filter(isCodeActionError),
                                               action:
                                                   rule.action !== undefined
                                                       ? actions
+                                                            .filter((a): a is Action => !isCodeActionError(a))
                                                             .filter(propertyIsDefined('computeEdit'))
                                                             .find(
                                                                 a =>
@@ -42,7 +63,12 @@ const getDiagnosticsAndFileDiffs = (
                                                                     a.computeEdit.command === rule.action
                                                             )
                                                       : undefined,
-                                          }))
+                                          })),
+                                          startWith<DiagnosticWithAction>({
+                                              diagnostic: d,
+                                              errors: [],
+                                              action: LOADING,
+                                          })
                                       )
                                   )
                               )
@@ -53,16 +79,31 @@ const getDiagnosticsAndFileDiffs = (
                         const actionInvocations = diagnosticsAndActions
                             .filter(propertyIsDefined('action'))
                             .map(d => ({
-                                actionEditCommand: d.action.computeEdit,
+                                actionEditCommand: d.action !== LOADING ? d.action.computeEdit : undefined,
                                 diagnostic: fromDiagnostic(d.diagnostic),
                             }))
                             .filter(propertyIsDefined('actionEditCommand'))
                         const fileDiffs = await computeDiff({ extensionsController, actionInvocations })
+
+                        const withExtraDetail = (
+                            diagnostic: DiagnosticWithType,
+                            detail: string
+                        ): DiagnosticWithType => ({
+                            ...diagnostic,
+                            detail: `${diagnostic.detail ? `${diagnostic.detail} - ` : ''}${detail}`,
+                        })
                         return {
                             diagnostics: diagnosticsAndActions
-                                .filter(({ action }) => action)
-                                .map(({ diagnostic }) => diagnostic),
+                                // .filter(({ action }) => action)
+                                .map(({ diagnostic, action, errors }) =>
+                                    errors.length === 0
+                                        ? action === LOADING
+                                            ? withExtraDetail(diagnostic, 'Loading fix...')
+                                            : diagnostic
+                                        : withExtraDetail(diagnostic, errors.map(e => e.message).join(', '))
+                                ),
                             fileDiffs,
+                            status: { message: diagnosticsAndActions.flatMap(da => da.errors).join(', ') },
                         }
                     })
                 )
@@ -81,45 +122,47 @@ const getDiagnosticsAndFileDiffs = (
                 ),
                 switchMap(async (edit: WorkspaceEdit) => {
                     const fileDiffs = await computeDiffFromEdits(extensionsController, [WorkspaceEdit.fromJSON(edit)])
-                    return { fileDiffs, diagnostics: [] }
-                })
+                    return { fileDiffs, diagnostics: [], status: { message: 'OK' } }
+                }),
+                catchError(err => [{ fileDiffs: [], diagnostics: [], status: { message: err.message } }])
             )
         }
 
         default:
-            return of({ diagnostics: [], fileDiffs: [] })
+            return of({ diagnostics: [], fileDiffs: [], status: { message: 'Waiting...' } })
     }
-}
-
-interface DiagnosticsAndFileDiffs {
-    diagnostics: DiagnosticWithType[]
-    fileDiffs: Pick<FileDiff, 'patchWithFullURIs'>[]
 }
 
 export const getCampaignExtensionData = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
     rules: RuleDefinition[]
-): Observable<GQL.IExpCreateCampaignInput['extensionData']> =>
-    (rules.length > 0
-        ? combineLatest(rules.map(rule => getDiagnosticsAndFileDiffs(extensionsController, rule)))
-        : of<DiagnosticsAndFileDiffs[]>([{ diagnostics: [], fileDiffs: [] }])
-    ).pipe(
-        map(results => {
-            const combined: DiagnosticsAndFileDiffs = {
-                diagnostics: results.flatMap(r => r.diagnostics),
-                fileDiffs: results.flatMap(r => r.fileDiffs),
-            }
-            return combined
-        }),
-        map(({ diagnostics, fileDiffs }) => ({
-            rawDiagnostics: diagnostics.map(d =>
-                // tslint:disable-next-line: no-object-literal-type-assertion
-                JSON.stringify({
-                    __typename: 'Diagnostic',
-                    type: d.type,
-                    data: d,
-                } as GQL.IDiagnostic)
-            ),
-            rawFileDiffs: fileDiffs.map(({ patchWithFullURIs }) => patchWithFullURIs),
-        }))
-    )
+): Observable<[GQL.IExpCreateCampaignInput['extensionData'], ExtensionDataStatus]> =>
+    rules.length > 0
+        ? combineLatest(rules.map(rule => getDiagnosticsAndFileDiffs(extensionsController, rule))).pipe(
+              map(results => {
+                  const combined: DiagnosticsAndFileDiffs = {
+                      diagnostics: results.flatMap(r => r.diagnostics),
+                      fileDiffs: results.flatMap(r => r.fileDiffs),
+                      status: { message: results.map(r => r.status.message).join(', ') },
+                  }
+                  return combined
+              }),
+              map(({ diagnostics, fileDiffs, status }) => [
+                  {
+                      rawDiagnostics: diagnostics.map(d =>
+                          // tslint:disable-next-line: no-object-literal-type-assertion
+                          JSON.stringify({
+                              __typename: 'Diagnostic',
+                              type: d.type,
+                              data: d,
+                          } as GQL.IDiagnostic)
+                      ),
+                      rawFileDiffs: fileDiffs.map(({ patchWithFullURIs }) => patchWithFullURIs),
+                  },
+                  status,
+              ])
+          )
+        : of([
+              { rawDiagnostics: [], rawFileDiffs: [] },
+              { message: 'No campaign extensions are active. Enable extensions to create a campaign.' },
+          ])

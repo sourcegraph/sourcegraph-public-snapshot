@@ -122,7 +122,6 @@ function provideDiagnostics({
                               return [diagnostic]
                           })
                           .filter(isDefined)
-                          .slice(0, 3)
                   )
               }),
               startWith(LOADING)
