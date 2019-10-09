@@ -117,7 +117,7 @@ require (
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pelletier/go-toml v1.4.0 // indirect
-	github.com/peterbourgon/ff v1.6.0
+	github.com/peterbourgon/ff v1.6.1-0.20190916204019-6cd704ec2eeb
 	github.com/peterh/liner v1.1.0 // indirect
 	github.com/peterhellberg/link v1.0.0
 	github.com/pkg/errors v0.8.1
