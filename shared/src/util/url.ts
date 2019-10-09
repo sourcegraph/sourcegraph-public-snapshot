@@ -542,7 +542,7 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
         const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
         const newQuery = query.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery)
+        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
     } else {
         searchParams.set('q', query)
         searchParams.set('patternType', patternType)
