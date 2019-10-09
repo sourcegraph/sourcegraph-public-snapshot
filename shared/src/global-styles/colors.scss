@@ -112,8 +112,9 @@ $body-color-dark: $white;
     --body-color: #{$body-color-light};
     --body-bg: #fbfdff;
     --text-muted: #{$color-light-text-2};
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535;
+    --link-color: #{$gray-13};
+    --link-active-color: #{$gray-18};
+    --link-hover-color: #{$gray-21};
 }
 .theme-light {
     --secondary: #{$secondary-light};
@@ -122,6 +123,7 @@ $body-color-dark: $white;
     --body-color: #{$body-color-dark};
     --body-bg: #04070e;
     --text-muted: #{$color-text-1};
-    --link-color: #a2b0cd;
-    --link-hover-color: #ffffff;
+    --link-color: #{$gray-07};
+    --link-active-color: #{$gray-02};
+    --link-hover-color: #{$white};
 }

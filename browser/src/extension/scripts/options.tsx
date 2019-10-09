@@ -8,17 +8,20 @@ import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
-import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
+import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { OptionsMenuProps } from '../../libs/options/OptionsMenu'
 import { initSentry } from '../../libs/sentry'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
+import { observeSourcegraphURL } from '../../shared/util/context'
 
 assertEnv('OPTIONS')
 
 initSentry('options')
+
+const IS_EXTENSION = true
 
 type State = Pick<
     FeatureFlags,
@@ -90,11 +93,9 @@ class Options extends React.Component<{}, State> {
         )
 
         this.subscriptions.add(
-            observeStorageKey('sync', 'sourcegraphURL').subscribe(
-                (sourcegraphURL = defaultStorageItems.sourcegraphURL) => {
-                    this.setState({ sourcegraphURL })
-                }
-            )
+            observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+                this.setState({ sourcegraphURL })
+            })
         )
 
         this.subscriptions.add(

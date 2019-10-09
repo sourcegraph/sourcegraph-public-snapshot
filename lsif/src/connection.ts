@@ -92,7 +92,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     )
 
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection, connectionOptions.database || '', logger)
+    await waitForMigrations(connection, connectionOptions.database || '', connectionOptions.password || '')
 
     return connection
 }
@@ -135,11 +135,23 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
  *
  * @param connection The connection to use.
  * @param database The target database in which to perform the query.
- * @param logger The logger instance.
+ * @param password The currently authed user's password.
  */
-function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
-    const check = async (): Promise<void> => {
-        logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
+async function waitForMigrations(connection: Connection, database: string, password: string): Promise<void> {
+    while (true) {
+        try {
+            // Get migration version from frontend database
+            const currentVersion = await getMigrationVersion(connection, database, password)
+
+            // Check to see if the current version is at least the minimum version
+            if (parseInt(currentVersion, 10) >= MINIMUM_MIGRATION_VERSION) {
+                return
+            }
+
+            console.log(`waiting for migrations to be applied (${currentVersion} < ${MINIMUM_MIGRATION_VERSION})`)
+        } catch (error) {
+            console.log('failed to determine current database migration state', error)
+        }
 
         const version = parseInt(await getMigrationVersion(connection, database), 10)
         if (isNaN(version) || version < MINIMUM_MIGRATION_VERSION) {
@@ -166,15 +178,16 @@ function waitForMigrations(connection: Connection, database: string, logger: Log
  *
  * @param connection The database connection.
  * @param database The target database in which to perform the query.
+ * @param password The currently authed user's password.
  */
-async function getMigrationVersion(connection: Connection, database: string): Promise<string> {
+async function getMigrationVersion(connection: Connection, database: string, password: string): Promise<string> {
     const query = `
         select * from
-        dblink('dbname=' || $1 || ' user=' || current_user, 'select * from schema_migrations')
+        dblink('dbname=' || $1 || ' user=' || current_user || ' password=' || $2, 'select * from schema_migrations')
         as temp(version text, dirty bool);
     `
 
-    const rows = (await connection.query(query, [database])) as {
+    const rows = (await connection.query(query, [database, password])) as {
         version: string
         dirty: boolean
     }[]

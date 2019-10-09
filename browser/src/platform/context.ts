@@ -10,7 +10,6 @@ import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubjec
 import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
 import { background } from '../browser/runtime'
-import { observeStorageKey } from '../browser/storage'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
@@ -85,14 +84,7 @@ export function createPlatformContext(
          *   the UX).
          */
         settings: combineLatest([
-            merge(
-                isInPage
-                    ? fetchViewerSettings(requestGraphQL)
-                    : observeStorageKey('sync', 'sourcegraphURL').pipe(
-                          switchMap(() => fetchViewerSettings(requestGraphQL))
-                      ),
-                updatedViewerSettings
-            ).pipe(
+            merge(fetchViewerSettings(requestGraphQL), updatedViewerSettings).pipe(
                 publishReplay(1),
                 refCount()
             ),
