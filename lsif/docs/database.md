@@ -1,6 +1,6 @@
 # LSIF data model
 
-This document outlines the data model for a single LSIF dump. The definition of the database tables and the entities encoded within it can be found in `models.database.ts`.
+This document outlines the data model for a single LSIF dump. The definition of the database tables and the entities encoded within it can be found in [../src/models.database.ts](../src/models.database.ts).
 
 In the following document, we collapse ranges to keep the document readable, where `a:b-c:d` is shorthand for the following:
 
@@ -15,7 +15,7 @@ In the following document, we collapse ranges to keep the document readable, whe
 
 This applies to JSON payloads, and a similar shorthand is used for the columns of the `definitions` and `references` tables.
 
-## Source
+## Running example
 
 The following source files compose the package `sample`, which is used as the running example for this document.
 
@@ -37,7 +37,7 @@ export function bar(input: string): string {
 }
 ```
 
-## Database values
+## Database tables
 
 **`meta` table**
 
