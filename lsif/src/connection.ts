@@ -167,7 +167,7 @@ async function waitForMigrations(connection: Connection, database: string, passw
 async function getMigrationVersion(connection: Connection, database: string, password: string): Promise<string> {
     const query = `
         select * from
-        dblink('dbname=' || $1 || ' user=' || current_user || ' pass=' || $2, 'select * from schema_migrations')
+        dblink('dbname=' || $1 || ' user=' || current_user || ' password=' || $2, 'select * from schema_migrations')
         as temp(version text, dirty bool);
     `
 
