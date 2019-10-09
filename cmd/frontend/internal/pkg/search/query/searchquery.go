@@ -3,6 +3,8 @@
 package query
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
@@ -111,6 +113,7 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 // "foo:yes foo:no foo:yes", then the last boolean value for the "foo" field is true ("yes"). The
 // default boolean value is false.
 func (q *Query) BoolValue(field string) bool {
+	field = strings.ToLower(field)
 	for _, v := range q.Fields[field] {
 		if v.Bool != nil {
 			return *v.Bool
@@ -127,6 +130,7 @@ func (q *Query) IsCaseSensitive() bool {
 
 // Values returns the values for the given field.
 func (q *Query) Values(field string) []*types.Value {
+	field = strings.ToLower(field)
 	if _, ok := q.conf.FieldTypes[field]; !ok {
 		panic("no such field: " + field)
 	}
@@ -136,6 +140,7 @@ func (q *Query) Values(field string) []*types.Value {
 // RegexpPatterns returns the regexp pattern source strings for the given field.
 // If the field is not recognized or it is not always regexp-typed, it panics.
 func (q *Query) RegexpPatterns(field string) (values, negatedValues []string) {
+	field = strings.ToLower(field)
 	fieldType, ok := q.conf.FieldTypes[field]
 	if !ok {
 		panic("no such field: " + field)
@@ -158,6 +163,7 @@ func (q *Query) RegexpPatterns(field string) (values, negatedValues []string) {
 // StringValues returns the string values for the given field. If the field is
 // not recognized or it is not always string-typed, it panics.
 func (q *Query) StringValues(field string) (values, negatedValues []string) {
+	field = strings.ToLower(field)
 	fieldType, ok := q.conf.FieldTypes[field]
 	if !ok {
 		panic("no such field: " + field)
@@ -179,6 +185,7 @@ func (q *Query) StringValues(field string) (values, negatedValues []string) {
 // StringValue returns the string value for the given field.
 // It panics if the field is not recognized, it is not always string-typed, or it is not singular.
 func (q *Query) StringValue(field string) (value, negatedValue string) {
+	field = strings.ToLower(field)
 	fieldType, ok := q.conf.FieldTypes[field]
 	if !ok {
 		panic("no such field: " + field)
