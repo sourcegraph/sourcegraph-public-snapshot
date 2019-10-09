@@ -19,7 +19,7 @@ type ChangesetCounts struct {
 
 func CalcCounts(start, end time.Time, cs ...*a8n.Changeset) ([]*ChangesetCounts, error) {
 	counts := []*ChangesetCounts{}
-	for t := end; t.After(start); t = t.Add(-24 * time.Hour) {
+	for t := end; t.After(start) || t.Equal(start); t = t.Add(-24 * time.Hour) {
 		counts = append(counts, &ChangesetCounts{Time: t})
 	}
 
