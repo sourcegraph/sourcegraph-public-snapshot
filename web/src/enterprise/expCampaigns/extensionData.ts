@@ -1,5 +1,5 @@
 import { combineLatest, Observable, of } from 'rxjs'
-import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, startWith, switchMap, throttleTime } from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../shared/src/api/types/action'
@@ -74,7 +74,7 @@ const getDiagnosticsAndFileDiffs = (
                               )
                             : of([])
                     ),
-                    debounceTime(0),
+                    throttleTime(2500, undefined, { leading: true, trailing: true }),
                     switchMap(async diagnosticsAndActions => {
                         const actionInvocations = diagnosticsAndActions
                             .filter(propertyIsDefined('action'))
@@ -124,7 +124,8 @@ const getDiagnosticsAndFileDiffs = (
                     const fileDiffs = await computeDiffFromEdits(extensionsController, [WorkspaceEdit.fromJSON(edit)])
                     return { fileDiffs, diagnostics: [], status: { message: 'OK' } }
                 }),
-                catchError(err => [{ fileDiffs: [], diagnostics: [], status: { message: err.message } }])
+                catchError(err => [{ fileDiffs: [], diagnostics: [], status: { message: err.message } }]),
+                startWith({ fileDiffs: [], diagnostics: [], status: { message: `Running ${rule.action}...` } })
             )
         }
 

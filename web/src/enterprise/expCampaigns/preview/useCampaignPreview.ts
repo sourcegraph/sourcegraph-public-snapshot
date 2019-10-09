@@ -7,6 +7,7 @@ import {
     distinctUntilChanged,
     map,
     mapTo,
+    share,
     switchMap,
     tap,
     throttleTime,
@@ -166,7 +167,7 @@ const queryCampaignPreview = ({
     const extensionDataAndStatus = getCampaignExtensionData(
         extensionsController,
         input.rules ? input.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
-    )
+    ).pipe(share())
     const campaignPreview = extensionDataAndStatus.pipe(
         map(([extensionData]) => extensionData),
         switchMap(extensionData =>
