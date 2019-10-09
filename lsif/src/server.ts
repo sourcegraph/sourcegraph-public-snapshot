@@ -158,6 +158,15 @@ async function main(logger: Logger): Promise<void> {
 }
 
 /**
+ * Used to filter out this noisy and quite alarm message. This is really just
+ * a warning from node resque that comes on a somehwat misnamed event. See
+ * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
+ */
+function isSpuriousSchedulerError(error: Error): boolean {
+    return /force-cleaning worker .* but cannot find queues/.test(error.message)
+}
+
+/**
  * Connect and start an active connection to the worker queue. We also run a
  * node-resque scheduler on each server instance, as these are guaranteed to
  * always be up with a responsive system. The schedulers will do their own
@@ -189,7 +198,13 @@ async function setupQueue(logger: Logger): Promise<Queue> {
     scheduler.on('master', () => logger.debug('scheduler became master'))
     scheduler.on('cleanStuckWorker', worker => logger.debug('scheduler cleaning stuck worker', { worker }))
     scheduler.on('transferredJob', (_, job) => logger.debug('scheduler transferring job', { job }))
-    scheduler.on('error', error => logger.error('scheduler error', { error }))
+    scheduler.on('error', error => {
+        if (isSpuriousSchedulerError(error)) {
+            logger.debug('scheduler warning', { error })
+        } else {
+            logger.error('scheduler error', { error })
+        }
+    })
 
     await scheduler.connect()
     exitHook(() => scheduler.end())
