@@ -163,7 +163,7 @@ async function main(logger: Logger): Promise<void> {
  * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
  */
 function isSpuriousSchedulerError(error: Error): boolean {
-    return error.message.includes('force-cleaning worker') && error.message.includes('but cannot find queues')
+    return /force-cleaning worker .* but cannot find queues/.test(error.message)
 }
 
 /**
