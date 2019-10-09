@@ -379,9 +379,9 @@ const QUERY_KEY = 'query'
  * "connection" because it is intended for use with GraphQL, which calls it that
  * (see http://graphql.org/learn/pagination/).
  *
- * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
- * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template N The node type of the GraphQL connection, such as `GQL.IRepository` (if `C` is `GQL.IRepositoryConnection`)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ * @template C The GraphQL connection type, such as `GQL.IRepositoryConnection`.
  */
 export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection<N>> extends React.PureComponent<
     FilteredConnectionProps<C, N, NP>,
