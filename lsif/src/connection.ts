@@ -124,8 +124,8 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
     return pRetry(connect, {
         factor: 1,
         retries: MAX_CONNECTION_RETRIES,
-        minTimeout: CONNECTION_RETRY_INTERVAL,
-        maxTimeout: CONNECTION_RETRY_INTERVAL,
+        minTimeout: CONNECTION_RETRY_INTERVAL * 1000,
+        maxTimeout: CONNECTION_RETRY_INTERVAL * 1000,
     })
 }
 
@@ -150,8 +150,8 @@ function waitForMigrations(connection: Connection, database: string, logger: Log
     return pRetry(check, {
         factor: 1,
         retries: MAX_SCHEMA_POLL_RETRIES,
-        minTimeout: SCHEMA_POLL_INTERVAL,
-        maxTimeout: SCHEMA_POLL_INTERVAL,
+        minTimeout: SCHEMA_POLL_INTERVAL * 1000,
+        maxTimeout: SCHEMA_POLL_INTERVAL * 1000,
     })
 }
 
