@@ -92,7 +92,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     )
 
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection, connectionOptions.database || '', connectionOptions.password || '')
+    await waitForMigrations(connection, connectionOptions.database || '', logger)
 
     return connection
 }
@@ -135,23 +135,11 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
  *
  * @param connection The connection to use.
  * @param database The target database in which to perform the query.
- * @param password The currently authed user's password.
+ * @param logger The logger instance.
  */
-async function waitForMigrations(connection: Connection, database: string, password: string): Promise<void> {
-    while (true) {
-        try {
-            // Get migration version from frontend database
-            const currentVersion = await getMigrationVersion(connection, database, password)
-
-            // Check to see if the current version is at least the minimum version
-            if (parseInt(currentVersion, 10) >= MINIMUM_MIGRATION_VERSION) {
-                return
-            }
-
-            console.log(`waiting for migrations to be applied (${currentVersion} < ${MINIMUM_MIGRATION_VERSION})`)
-        } catch (error) {
-            console.log('failed to determine current database migration state', error)
-        }
+function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
+    const check = async (): Promise<void> => {
+        logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
         const version = parseInt(await getMigrationVersion(connection, database), 10)
         if (isNaN(version) || version < MINIMUM_MIGRATION_VERSION) {
