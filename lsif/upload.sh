@@ -1,7 +1,7 @@
 #!/bin/sh -l
 
 urlencode() {
-    echo "$1" | curl -Gso /dev/null -w '%{url_effective}' --data-urlencode @- "" | cut -c 3- | sed -e 's/%0A//'
+    echo "$1" | curl -Gso /dev/null -w %{url_effective} --data-urlencode @- "" | cut -c 3- | sed -e 's/%0A//'
 }
 
 usage() {
