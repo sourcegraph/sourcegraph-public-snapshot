@@ -1,4 +1,4 @@
-#!/bin/sh -l
+#!/bin/sh
 
 urlencode() {
     echo "$1" | curl -Gso /dev/null -w '%{url_effective}' --data-urlencode @- "" | cut -c 3- | sed -e 's/%0A//'
