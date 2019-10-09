@@ -166,16 +166,15 @@ function waitForMigrations(connection: Connection, database: string, logger: Log
  *
  * @param connection The database connection.
  * @param database The target database in which to perform the query.
- * @param password The currently authed user's password.
  */
-async function getMigrationVersion(connection: Connection, database: string, password: string): Promise<string> {
+async function getMigrationVersion(connection: Connection, database: string): Promise<string> {
     const query = `
         select * from
-        dblink('dbname=' || $1 || ' user=' || current_user || ' password=' || $2, 'select * from schema_migrations')
+        dblink('dbname=' || $1 || ' user=' || current_user, 'select * from schema_migrations')
         as temp(version text, dirty bool);
     `
 
-    const rows = (await connection.query(query, [database, password])) as {
+    const rows = (await connection.query(query, [database])) as {
         version: string
         dirty: boolean
     }[]
