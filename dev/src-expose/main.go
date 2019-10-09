@@ -195,12 +195,14 @@ Serving the repositories at http://%s.
 Paste the following configuration as an Other External Service in Sourcegraph:
 
   {
-    "url": "http://%s", // Use http://%s if Sourcegraph is running in Docker
+    // url should be reachable by Sourcegraph. host.docker.internal works for Sourcegraph
+    // in Docker on the same machine.
+    "url": "http://%s",
     "repos": ["hack-ignore-me"],
     "experimental.srcExpose": true
   }
 
-`, *globalReposDir, strings.Join(args[1:], "\n- "), *serveAddr, *serveAddr, dockerAddr(*serveAddr))
+`, *globalReposDir, strings.Join(args[1:], "\n- "), *serveAddr, dockerAddr(*serveAddr))
 
 			go func() {
 				if err := serveRepos(*serveAddr, *globalReposDir); err != nil {
