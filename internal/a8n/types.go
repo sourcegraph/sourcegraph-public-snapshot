@@ -283,6 +283,49 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 	return &ee
 }
 
+// Type returns the ChangesetEventKind of the ChangesetEvent.
+func (e *ChangesetEvent) Type() ChangesetEventKind {
+	return e.Kind
+}
+
+// Changeset returns the changeset ID of the ChangesetEvent.
+func (e *ChangesetEvent) Changeset() int64 {
+	return e.ChangesetID
+}
+
+// Timestamp returns the time when the ChangesetEvent happened (or was updated)
+// on the codehost, not when it was created in Sourcegraph's database.
+func (e *ChangesetEvent) Timestamp() time.Time {
+	switch e := e.Metadata.(type) {
+	case *github.AssignedEvent:
+		return e.CreatedAt
+	case *github.ClosedEvent:
+		return e.CreatedAt
+	case *github.IssueComment:
+		return e.UpdatedAt
+	case *github.RenamedTitleEvent:
+		return e.CreatedAt
+	case *github.MergedEvent:
+		return e.CreatedAt
+	case *github.PullRequestReview:
+		return e.UpdatedAt
+	case *github.PullRequestReviewComment:
+		return e.UpdatedAt
+	case *github.ReopenedEvent:
+		return e.CreatedAt
+	case *github.ReviewDismissedEvent:
+		return e.CreatedAt
+	case *github.ReviewRequestRemovedEvent:
+		return e.CreatedAt
+	case *github.ReviewRequestedEvent:
+		return e.CreatedAt
+	case *github.UnassignedEvent:
+		return e.CreatedAt
+	default:
+		panic(errors.Errorf("unknown changeset event metadata %T", e))
+	}
+}
+
 // Update updates the metadata of e with new metadata in o.
 func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 	if e.ChangesetID != o.ChangesetID || e.Kind != o.Kind || e.Key != o.Key {

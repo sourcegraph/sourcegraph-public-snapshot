@@ -383,7 +383,18 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time
 	}
 
-	counts, err := ee.CalcCounts(start, end, cs...)
+	eventsOpts := ee.ListChangesetEventsOpts{CampaignID: r.Campaign.ID}
+	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
+	if err != nil {
+		return resolvers, err
+	}
+
+	events := make([]ee.Event, len(es))
+	for i, e := range es {
+		events[i] = e
+	}
+
+	counts, err := ee.CalcCounts(start, end, cs, events...)
 	if err != nil {
 		return resolvers, err
 	}
