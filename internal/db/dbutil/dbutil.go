@@ -114,7 +114,7 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 func NewMigrationSourceLoader(dataSource string) (*bindata.AssetSource, error) {
 	// The following constructs a map of text placeholder/replacements
 	// that are run over the content of the migration files before being
-	// ran. This is necessary as the lsif-server migrations need to reference
+	// run. This is necessary as the lsif-server migrations need to reference
 	// the PGPASSWORD envvar to make a ssuccessful dblink connection in an
 	// environment where there is no superuser account (such as Amazon RDS).
 
