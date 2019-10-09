@@ -9,15 +9,18 @@ import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { observeStorageKey, storage } from '../../browser/storage'
-import { BackgroundMessageHandlers, defaultStorageItems } from '../../browser/types'
+import { BackgroundMessageHandlers } from '../../browser/types'
 import { initializeOmniboxInterface } from '../../libs/cli'
 import { initSentry } from '../../libs/sentry'
 import { createBlobURLForBundle } from '../../platform/worker'
 import { getHeaders } from '../../shared/backend/headers'
 import { fromBrowserEvent } from '../../shared/util/browser'
-import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../shared/util/context'
+import { observeSourcegraphURL } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
+import { observeStorageKey, storage } from '../../browser/storage'
+import { isDefined } from '../../../../shared/src/util/types'
+
+const IS_EXTENSION = true
 
 assertEnv('BACKGROUND')
 
@@ -53,13 +56,13 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
     request: string
     variables: {}
 }): Observable<GraphQLResult<T>> =>
-    observeStorageKey('sync', 'sourcegraphURL').pipe(
+    observeSourcegraphURL(IS_EXTENSION).pipe(
         take(1),
-        switchMap(baseUrl =>
+        switchMap(sourcegraphURL =>
             requestGraphQLCommon<T>({
                 request,
                 variables,
-                baseUrl,
+                baseUrl: sourcegraphURL,
                 headers: getHeaders(),
                 credentials: 'include',
             })
@@ -69,39 +72,16 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
 initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
-    let { sourcegraphURL } = await storage.sync.get()
-    // If no sourcegraphURL is set ensure we default back to https://sourcegraph.com.
-    if (!sourcegraphURL) {
-        await storage.sync.set({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
-        sourcegraphURL = DEFAULT_SOURCEGRAPH_URL
-    }
-
-    configureOmnibox(sourcegraphURL)
-
-    // Sync managed enterprise URLs
-    // TODO why sync vs merging values?
-    // Managed storage is currently only supported for Google Chrome (GSuite Admin)
-    // We don't have a managed storage manifest for Firefox, so storage.managed.get() throws on Firefox.
-    if (getPlatformName() === 'chrome-extension') {
-        const items = await storage.managed.get()
-        if (items.enterpriseUrls && items.enterpriseUrls.length > 1) {
-            setDefaultBrowserAction()
-            const urls = items.enterpriseUrls.map(item => item.replace(/\/$/, ''))
-            await handleManagedPermissionRequest(urls)
-        }
-    }
-
-    storage.onChanged.addListener(async (changes, areaName) => {
-        if (areaName === 'managed') {
-            if (changes.enterpriseUrls && changes.enterpriseUrls.newValue) {
-                await handleManagedPermissionRequest(changes.enterpriseUrls.newValue)
-            }
-            return
-        }
-
-        if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
-            configureOmnibox(changes.sourcegraphURL.newValue)
-        }
+    // Mirror the managed sourcegraphURL to sync storage
+    observeStorageKey('managed', 'sourcegraphURL')
+        .pipe(filter(isDefined))
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        .subscribe(async sourcegraphURL => {
+            await storage.sync.set({ sourcegraphURL })
+        })
+    // Configure the omnibox when the sourcegraphURL changes.
+    observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+        configureOmnibox(sourcegraphURL)
     })
 
     const permissions = await browser.permissions.getAll()
@@ -114,36 +94,24 @@ async function main(): Promise<void> {
     // Not supported in Firefox
     // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
     if (browser.permissions.onAdded) {
-        browser.permissions.onAdded.addListener(async permissions => {
+        browser.permissions.onAdded.addListener(permissions => {
             if (!permissions.origins) {
                 return
             }
-            const items = await storage.sync.get()
-            const enterpriseUrls = items.enterpriseUrls || []
-            for (const url of permissions.origins) {
-                enterpriseUrls.push(url.replace('/*', ''))
-            }
-            await storage.sync.set({ enterpriseUrls })
-
             const origins = without(permissions.origins, ...jsContentScriptOrigins)
             customServerOrigins.push(...origins)
         })
     }
     if (browser.permissions.onRemoved) {
-        browser.permissions.onRemoved.addListener(async permissions => {
+        browser.permissions.onRemoved.addListener(permissions => {
             if (!permissions.origins) {
                 return
             }
             customServerOrigins = without(customServerOrigins, ...permissions.origins)
-            const items = await storage.sync.get()
-            const enterpriseUrls = items.enterpriseUrls || []
             const urlsToRemove: string[] = []
             for (const url of permissions.origins) {
                 urlsToRemove.push(url.replace('/*', ''))
             }
-            await storage.sync.set({
-                enterpriseUrls: without(enterpriseUrls, ...urlsToRemove),
-            })
         })
     }
 
@@ -190,46 +158,9 @@ async function main(): Promise<void> {
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
 
-    browser.runtime.onInstalled.addListener(async () => {
-        setDefaultBrowserAction()
-        const items = await storage.sync.get()
-        // Enterprise deployments of Sourcegraph are passed a configuration file.
-        const managedItems = await storage.managed.get()
-        await storage.sync.set({
-            ...defaultStorageItems,
-            ...items,
-            ...managedItems,
-        })
-        if (managedItems && managedItems.enterpriseUrls && managedItems.enterpriseUrls.length) {
-            await handleManagedPermissionRequest(managedItems.enterpriseUrls)
-        } else {
-            setDefaultBrowserAction()
-        }
-    })
-
-    async function handleManagedPermissionRequest(managedUrls: string[]): Promise<void> {
-        setDefaultBrowserAction()
-        if (managedUrls.length === 0) {
-            return
-        }
-        const perms = await browser.permissions.getAll()
-        const origins = perms.origins || []
-        if (managedUrls.every(val => origins.includes(`${val}/*`))) {
-            setDefaultBrowserAction()
-            return
-        }
-        browser.browserAction.onClicked.addListener(async () => {
-            await browser.runtime.openOptionsPage()
-        })
-    }
-
-    function setDefaultBrowserAction(): void {
-        browser.browserAction.setBadgeText({ text: '' })
-        browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
-    }
-
     browser.browserAction.onClicked.addListener(noop)
-    setDefaultBrowserAction()
+    browser.browserAction.setBadgeText({ text: '' })
+    browser.browserAction.setPopup({ popup: 'options.html?popup=true' })
 
     // Add "Enable Sourcegraph on this domain" context menu item
     addDomainPermissionToggle()

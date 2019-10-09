@@ -13,7 +13,7 @@ export const GlobalCampaignsArea: React.FunctionComponent<Props> = ({ match }) =
     <div className="container mt-4">
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
-            <Route render={() => <GlobalCampaignListPage />} path={match.url} exact={true} />
+            <Route render={props => <GlobalCampaignListPage {...props} />} path={match.url} exact={true} />
             <Route path={`${match.url}/new`} render={() => <NewCampaignPage />} exact={true} />
             <Route
                 path={`${match.url}/:campaignID`}

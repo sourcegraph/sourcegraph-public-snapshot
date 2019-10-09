@@ -100,6 +100,7 @@ export function getSearchTypeFromQuery(query: string): SearchType {
  * Adds the given search type (as a `type:` filter) into a query. This function replaces an existing `type:` filter,
  * appends a `type:` filter, or returns the initial query, in order to apply the correct type
  * to the query.
+ *
  * @param query The search query to be mutated.
  * @param searchType The search type to be applied.
  */

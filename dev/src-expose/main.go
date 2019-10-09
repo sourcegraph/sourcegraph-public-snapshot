@@ -198,8 +198,7 @@ Paste the following configuration as an Other External Service in Sourcegraph:
     // url should be reachable by Sourcegraph. host.docker.internal works for Sourcegraph
     // in Docker on the same machine.
     "url": "http://%s",
-    "repos": ["hack-ignore-me"],
-    "experimental.srcExpose": true
+    "repos": ["src-expose"] // This may change in versions later than 3.9
   }
 
 `, *globalReposDir, strings.Join(args[1:], "\n- "), *serveAddr, dockerAddr(*serveAddr))
