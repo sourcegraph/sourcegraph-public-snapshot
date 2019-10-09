@@ -2,8 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"log"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -12,12 +10,7 @@ import (
 
 func campaignParticipants(ctx context.Context, campaign interface {
 	threadsGetter
-}) (_ graphqlbackend.ParticipantConnection, err error) {
-	t0 := time.Now()
-	log.Println("Starting campaign participants...")
-	defer func() {
-		log.Printf("Campaign participants took %s, result err=%v", time.Since(t0), err)
-	}()
+}) (graphqlbackend.ParticipantConnection, error) {
 	// TODO!(sqs): dont ignore args
 
 	threads, err := campaign.getThreads(ctx)

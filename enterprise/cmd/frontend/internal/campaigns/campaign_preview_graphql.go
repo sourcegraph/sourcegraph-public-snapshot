@@ -2,7 +2,6 @@ package campaigns
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/pkg/errors"
@@ -59,11 +58,7 @@ func (v *gqlCampaignPreview) getThreads(ctx context.Context) ([]graphqlbackend.T
 	return connection.Nodes(ctx)
 }
 
-func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.ThreadConnectionArgs) (_ graphqlbackend.ThreadOrThreadPreviewConnection, err error) {
-	t0 := time.Now()
-	defer func() {
-		log.Printf("Campaign preview threads took %s, result err=%v", time.Since(t0), err)
-	}()
+func (v *gqlCampaignPreview) Threads(ctx context.Context, args *graphqlbackend.ThreadConnectionArgs) (graphqlbackend.ThreadOrThreadPreviewConnection, error) {
 	// TODO!(sqs): dont ignore args
 	allThreads, err := (&rulesExecutor{
 		campaign: ruleExecutorCampaignInfo{

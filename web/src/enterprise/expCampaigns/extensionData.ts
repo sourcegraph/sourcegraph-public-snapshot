@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash'
 import { combineLatest, Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, throttleTime } from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
@@ -7,6 +8,7 @@ import { fromDiagnostic } from '../../../../shared/src/api/types/diagnostic'
 import { WorkspaceEdit } from '../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { pluralize } from '../../../../shared/src/util/strings'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
 import { diagnosticQueryMatcher, getCodeActions } from '../diagnostics/backend'
 import { RuleDefinition } from '../rules/types'
@@ -19,7 +21,10 @@ interface DiagnosticsAndFileDiffs {
 }
 
 export interface ExtensionDataStatus {
-    message: string
+    isLoading: boolean
+    progress?: readonly [number, number]
+    errors?: string[]
+    messages?: string[]
 }
 
 const LOADING = 'loading' as const
@@ -75,6 +80,7 @@ const getDiagnosticsAndFileDiffs = (
                             : of([])
                     ),
                     throttleTime(2500, undefined, { leading: true, trailing: true }),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(async diagnosticsAndActions => {
                         const actionInvocations = diagnosticsAndActions
                             .filter(propertyIsDefined('action'))
@@ -92,6 +98,15 @@ const getDiagnosticsAndFileDiffs = (
                             ...diagnostic,
                             detail: `${diagnostic.detail ? `${diagnostic.detail} - ` : ''}${detail}`,
                         })
+
+                        const loadingCount = diagnosticsAndActions.filter(d => d.action === LOADING).length
+                        const totalCount = diagnosticsAndActions.filter(d => d.action !== undefined).length
+                        const allErrors = diagnosticsAndActions.flatMap(da => da.errors)
+                        const errorsFoundStr =
+                            allErrors.length > 0
+                                ? `${allErrors.length} ${pluralize('error', allErrors.length)} occurred`
+                                : ''
+
                         return {
                             diagnostics: diagnosticsAndActions
                                 // .filter(({ action }) => action)
@@ -103,7 +118,16 @@ const getDiagnosticsAndFileDiffs = (
                                         : withExtraDetail(diagnostic, errors.map(e => e.message).join(', '))
                                 ),
                             fileDiffs,
-                            status: { message: diagnosticsAndActions.flatMap(da => da.errors).join(', ') },
+                            status: {
+                                isLoading: loadingCount > 0,
+                                progress: [totalCount - loadingCount, totalCount] as const,
+                                messages: [
+                                    loadingCount > 0
+                                        ? `Generating fixes... ${errorsFoundStr ? `(${errorsFoundStr})` : ``}`
+                                        : errorsFoundStr,
+                                ],
+                                errors: allErrors.map(e => e.message),
+                            },
                         }
                     })
                 )
@@ -122,17 +146,34 @@ const getDiagnosticsAndFileDiffs = (
                 ),
                 switchMap(async (edit: WorkspaceEdit) => {
                     const fileDiffs = await computeDiffFromEdits(extensionsController, [WorkspaceEdit.fromJSON(edit)])
-                    return { fileDiffs, diagnostics: [], status: { message: 'OK' } }
+                    const v: DiagnosticsAndFileDiffs = {
+                        fileDiffs,
+                        diagnostics: [],
+                        status: { isLoading: false },
+                    }
+                    return v
                 }),
-                catchError(err => [{ fileDiffs: [], diagnostics: [], status: { message: err.message } }]),
-                startWith({ fileDiffs: [], diagnostics: [], status: { message: `Running ${rule.action}...` } })
+                catchError(err => [
+                    { fileDiffs: [], diagnostics: [], status: { isLoading: false, errors: [err.message] } },
+                ]),
+                startWith<DiagnosticsAndFileDiffs>({
+                    fileDiffs: [],
+                    diagnostics: [],
+                    status: { isLoading: true, messages: [`Running ${rule.action} to generate fixes...`] },
+                })
             )
         }
 
         default:
-            return of({ diagnostics: [], fileDiffs: [], status: { message: 'Waiting...' } })
+            return of<DiagnosticsAndFileDiffs>({
+                diagnostics: [],
+                fileDiffs: [],
+                status: { isLoading: true, messages: ['Waiting...'] },
+            })
     }
 }
+
+const sum = (nums: number[]): number => nums.reduce((sum, n) => sum + n, 0)
 
 export const getCampaignExtensionData = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
@@ -144,7 +185,15 @@ export const getCampaignExtensionData = (
                   const combined: DiagnosticsAndFileDiffs = {
                       diagnostics: results.flatMap(r => r.diagnostics),
                       fileDiffs: results.flatMap(r => r.fileDiffs),
-                      status: { message: results.map(r => r.status.message).join(', ') },
+                      status: {
+                          isLoading: results.some(r => r.status.isLoading),
+                          progress: [
+                              sum(results.map(r => (r.status.progress ? r.status.progress[0] : 0))),
+                              sum(results.map(r => (r.status.progress ? r.status.progress[1] : 0))),
+                          ],
+                          errors: results.flatMap(r => r.status.errors || []),
+                          messages: results.flatMap(r => r.status.messages || []),
+                      },
                   }
                   return combined
               }),
@@ -165,5 +214,8 @@ export const getCampaignExtensionData = (
           )
         : of([
               { rawDiagnostics: [], rawFileDiffs: [] },
-              { message: 'No campaign extensions are active. Enable extensions to create a campaign.' },
+              {
+                  isLoading: false,
+                  errors: ['No campaign extensions are active. Enable extensions to create a campaign.'],
+              },
           ])

@@ -2,9 +2,7 @@ package campaigns
 
 import (
 	"context"
-	"log"
 	"sort"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -69,11 +67,6 @@ func campaignCommits(ctx context.Context, campaign threadsGetter) ([]*graphqlbac
 }
 
 func campaignRepositoryComparisons(ctx context.Context, campaign threadsGetter) ([]graphqlbackend.RepositoryComparison, error) {
-	t0 := time.Now()
-	defer func() {
-		log.Printf("Campaign repo comparisons took %s", time.Since(t0))
-	}()
-
 	threads, err := campaign.getThreads(ctx)
 	if err != nil {
 		return nil, err

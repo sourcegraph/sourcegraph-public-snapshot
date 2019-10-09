@@ -1,3 +1,4 @@
+import { Sema } from 'async-sema'
 import * as sourcegraph from 'sourcegraph'
 import { memoizeAsync } from '../util'
 
@@ -39,6 +40,10 @@ export interface Result {
     fileDiffs?: { [path: string]: string }
 }
 
+const CONCURRENT_EXEC_CALLS = 4
+
+const limiter = new Sema(CONCURRENT_EXEC_CALLS)
+
 export const createExecServerClient = (
     containerName: string,
     includeFiles: Params['includeFiles'] = [],
@@ -47,49 +52,54 @@ export const createExecServerClient = (
     const baseUrl = new URL(`/.api/extension-containers/${containerName}`, sourcegraph.internal.sourcegraphURL)
 
     const do2: ExecServerClient = async ({ commands, dir, files, context, label }) => {
-        const request: Request = {
-            params: {
-                archiveURL: context ? getPublicRepoArchiveUrl(context.repository, context.commit) : undefined,
-                commands,
-                dir,
-                includeFiles,
-            },
-            payload: { files },
-        }
-        const hasPayload = Boolean(
-            request.payload && request.payload.files && Object.keys(request.payload.files).length > 0
-        )
-
-        const url = new URL('', baseUrl)
-        url.searchParams.set('params', JSON.stringify(request.params))
-        url.hash = `#${label}`
-
-        // console.debug('%cexec%c', 'background-color:blue;color:white', 'background-color:transparent;color:unset')
-        const resp = await fetch(url.toString(), {
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-            },
-            ...(hasPayload
-                ? {
-                      method: 'POST',
-                      body: JSON.stringify(request.payload),
-                  }
-                : {}),
-        })
-        if (!resp.ok) {
-            throw new Error(`${label}: error executing commands on ${containerName}: HTTP ${resp.status}`)
-        }
-        const result: Result = await resp.json()
-        for (const [i, command] of result.commands.entries()) {
-            if (!command.ok) {
-                throw new Error(
-                    `${label}: error executing command ${JSON.stringify(commands[i])} on ${containerName}: ${
-                        command.error
-                    }\n${command.combinedOutput}`
-                )
+        await limiter.acquire()
+        try {
+            const request: Request = {
+                params: {
+                    archiveURL: context ? getPublicRepoArchiveUrl(context.repository, context.commit) : undefined,
+                    commands,
+                    dir,
+                    includeFiles,
+                },
+                payload: { files },
             }
+            const hasPayload = Boolean(
+                request.payload && request.payload.files && Object.keys(request.payload.files).length > 0
+            )
+
+            const url = new URL('', baseUrl)
+            url.searchParams.set('params', JSON.stringify(request.params))
+            url.hash = `#${label}`
+
+            // console.debug('%cexec%c', 'background-color:blue;color:white', 'background-color:transparent;color:unset')
+            const resp = await fetch(url.toString(), {
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                },
+                ...(hasPayload
+                    ? {
+                          method: 'POST',
+                          body: JSON.stringify(request.payload),
+                      }
+                    : {}),
+            })
+            if (!resp.ok) {
+                throw new Error(`${label}: error executing commands on ${containerName}: HTTP ${resp.status}`)
+            }
+            const result: Result = await resp.json()
+            for (const [i, command] of result.commands.entries()) {
+                if (!command.ok) {
+                    throw new Error(
+                        `${label}: error executing command ${JSON.stringify(commands[i])} on ${containerName}: ${
+                            command.error
+                        }\n${command.combinedOutput}`
+                    )
+                }
+            }
+            return result
+        } finally {
+            limiter.release()
         }
-        return result
     }
     return cache ? memoizeAsync<Parameters<typeof do2>[0], Result>(do2, arg => JSON.stringify(arg)) : do2
 }
