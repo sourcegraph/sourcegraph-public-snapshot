@@ -257,6 +257,8 @@
 // 1528395596_lsif_xrepo_init.up.sql (1.06kB)
 // 1528395597_lsif_commits.down.sql (334B)
 // 1528395597_lsif_commits.up.sql (1.136kB)
+// 1528395598_add_patterntype_to_saved_searches.down.sql (115B)
+// 1528395598_add_patterntype_to_saved_searches.up.sql (104B)
 
 package migrations
 
@@ -5465,6 +5467,46 @@ func _1528395597_lsif_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395598_add_patterntype_to_saved_searchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x0a\x0d\x70\x71\x0c\x71\x55\x08\x71\x74\xf2\x71\x55\x28\x4e\x2c\x4b\x4d\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\xe6\x0a\x76\x0d\x51\x48\x49\x2d\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\xb0\x55\x08\x09\xf2\xf4\xd5\x08\x09\x72\xf4\xf4\xf1\xf4\x73\x57\x50\x57\x28\x48\x2c\x29\x49\x2d\xca\x0b\xa9\x2c\x48\xb5\x2a\x4a\x4d\x4f\xad\x28\x50\x57\x70\x0b\xf2\xf7\x45\xd6\xa6\xc9\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x56\xf9\xea\x61\x73\x00\x00\x00")
+
+func _1528395598_add_patterntype_to_saved_searchesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395598_add_patterntype_to_saved_searchesDownSql,
+		"1528395598_add_patterntype_to_saved_searches.down.sql",
+	)
+}
+
+func _1528395598_add_patterntype_to_saved_searchesDownSql() (*asset, error) {
+	bytes, err := _1528395598_add_patterntype_to_saved_searchesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395598_add_patterntype_to_saved_searches.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xae, 0x42, 0x3f, 0xa1, 0xeb, 0x4c, 0x5b, 0x5c, 0xe0, 0x5, 0xae, 0x18, 0x64, 0xe1, 0xf4, 0x84, 0x42, 0x85, 0xa6, 0xb0, 0x2, 0x67, 0xe7, 0xa2, 0x56, 0x94, 0x4a, 0x4e, 0x83, 0xd4, 0xe1, 0xa8}}
+	return a, nil
+}
+
+var __1528395598_add_patterntype_to_saved_searchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x0a\x0d\x70\x71\x0c\x71\x55\x08\x71\x74\xf2\x71\x55\x28\x4e\x2c\x4b\x4d\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\xe6\x0a\x76\x0d\x51\x48\x49\x2d\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\xb0\x55\x70\xf6\xf7\x73\x76\x0c\xd1\x40\x12\xd4\x51\x50\x57\x28\x48\x2c\x29\x49\x2d\xca\x0b\xa9\x2c\x48\xb5\x2a\x4a\x4d\x4f\xad\x28\x50\xd7\xe4\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x53\x34\xe3\xa5\x68\x00\x00\x00")
+
+func _1528395598_add_patterntype_to_saved_searchesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395598_add_patterntype_to_saved_searchesUpSql,
+		"1528395598_add_patterntype_to_saved_searches.up.sql",
+	)
+}
+
+func _1528395598_add_patterntype_to_saved_searchesUpSql() (*asset, error) {
+	bytes, err := _1528395598_add_patterntype_to_saved_searchesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395598_add_patterntype_to_saved_searches.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8b, 0xd9, 0xe, 0x65, 0x5b, 0xc2, 0xc0, 0xad, 0xd0, 0x26, 0xa, 0xb1, 0xce, 0xa7, 0x10, 0x1a, 0xe0, 0x93, 0x14, 0xaa, 0xd, 0x14, 0x5b, 0x53, 0xcf, 0x2b, 0x4c, 0x91, 0x9c, 0xaa, 0x35, 0xfa}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -6069,6 +6111,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395597_lsif_commits.down.sql": _1528395597_lsif_commitsDownSql,
 
 	"1528395597_lsif_commits.up.sql": _1528395597_lsif_commitsUpSql,
+
+	"1528395598_add_patterntype_to_saved_searches.down.sql": _1528395598_add_patterntype_to_saved_searchesDownSql,
+
+	"1528395598_add_patterntype_to_saved_searches.up.sql": _1528395598_add_patterntype_to_saved_searchesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -6369,6 +6415,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395596_lsif_xrepo_init.up.sql":                                     {_1528395596_lsif_xrepo_initUpSql, map[string]*bintree{}},
 	"1528395597_lsif_commits.down.sql":                                      {_1528395597_lsif_commitsDownSql, map[string]*bintree{}},
 	"1528395597_lsif_commits.up.sql":                                        {_1528395597_lsif_commitsUpSql, map[string]*bintree{}},
+	"1528395598_add_patterntype_to_saved_searches.down.sql":                 {_1528395598_add_patterntype_to_saved_searchesDownSql, map[string]*bintree{}},
+	"1528395598_add_patterntype_to_saved_searches.up.sql":                   {_1528395598_add_patterntype_to_saved_searchesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
