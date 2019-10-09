@@ -116,7 +116,7 @@ func NewMigrationSourceLoader(dataSource string) (*bindata.AssetSource, error) {
 	// that are run over the content of the migration files before being
 	// ran. This is necessary as the lsif-server migrations need to reference
 	// the PGPASSWORD envvar to make a ssuccessful dblink connection in an
-	// environment where there iss no superusesr account (such as Amazon RDS).
+	// environment where there is no superuser account (such as Amazon RDS).
 
 	pgPassword, err := pgPassword(dataSource)
 	if err != nil {
