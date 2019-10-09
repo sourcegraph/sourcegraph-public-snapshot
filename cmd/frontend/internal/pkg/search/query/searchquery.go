@@ -3,6 +3,8 @@
 package query
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
@@ -100,6 +102,12 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// We want to make query fields case insensitive
+	for _, expr := range syntaxQuery.Expr {
+		expr.Field = strings.ToLower(expr.Field)
+	}
+
 	checkedQuery, err := conf.Check(syntaxQuery)
 	if err != nil {
 		return nil, err

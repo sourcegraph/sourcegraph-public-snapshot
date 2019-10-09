@@ -131,6 +131,22 @@ func TestQuery_StringValues(t *testing.T) {
 	})
 }
 
+func TestQuery_CaseInsensitiveFields(t *testing.T) {
+	query, err := ParseAndCheck("repoHasFile:foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	values, _ := query.RegexpPatterns(FieldRepoHasFile)
+	if len(values) != 1 || values[0] != "foo" {
+		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
+	}
+
+	if got, want := query.Query.String(), `repohasfile~"foo"`; got != want {
+		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
+	}
+}
+
 func checkPanic(t *testing.T, msg string, f func()) {
 	t.Helper()
 	defer func() {
