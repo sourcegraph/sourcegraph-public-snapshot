@@ -76,7 +76,7 @@ export class Database {
      * @param position The current hover position.
      * @param ctx The tracing context.
      */
-    public async definitions(path: string, position: lsp.Position, ctx: TracingContext): Promise<lsp.Location[]> {
+    public async definitions(path: string, position: lsp.Position, ctx: TracingContext = {}): Promise<lsp.Location[]> {
         const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
         if (!document || ranges.length === 0) {
             return []
@@ -142,7 +142,7 @@ export class Database {
      * @param position The current hover position.
      * @param ctx The tracing context.
      */
-    public async references(path: string, position: lsp.Position, ctx: TracingContext): Promise<lsp.Location[]> {
+    public async references(path: string, position: lsp.Position, ctx: TracingContext = {}): Promise<lsp.Location[]> {
         const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
         if (!document || ranges.length === 0) {
             return []
@@ -209,7 +209,7 @@ export class Database {
      * @param position The current hover position.
      * @param ctx The tracing context.
      */
-    public async hover(path: string, position: lsp.Position, ctx: TracingContext): Promise<lsp.Hover | null> {
+    public async hover(path: string, position: lsp.Position, ctx: TracingContext = {}): Promise<lsp.Hover | null> {
         const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
         if (!document || ranges.length === 0) {
             return null

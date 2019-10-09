@@ -4,13 +4,18 @@ import { TransformableInfo, format } from 'logform'
 import { inspect } from 'util'
 
 /**
+ * Return a sanitized log level.
+ *
+ * @param value The raw log level.
+ */
+function toLogLevel(value: string): 'debug' | 'info' | 'warn' | 'error' {
+    return ['debug', 'info', 'warn', 'error'].includes(value) ? (value as any) : 'info'
+}
+
+/**
  * The maximum level log message to output.
  */
-const LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error' = (process.env.LOG_LEVEL || 'info').toLowerCase() as any
-
-if (!['debug', 'info', 'warn', 'error'].includes(LOG_LEVEL)) {
-    throw new Error(`Invalid log level ${LOG_LEVEL}.`)
-}
+const LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error' = toLogLevel((process.env.LOG_LEVEL || 'info').toLowerCase())
 
 /**
  * Create a structured logger.

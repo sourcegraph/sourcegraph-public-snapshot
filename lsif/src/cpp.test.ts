@@ -24,7 +24,7 @@ describe('Database', () => {
 
         const input = await getTestData('cpp/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
-        const { packages, references } = await convertLsif(input, database, {})
+        const { packages, references } = await convertLsif(input, database)
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
     })
 
@@ -44,21 +44,21 @@ describe('Database', () => {
 
     it('should find all defs of `four` from main.cpp', async () => {
         const db = loadDatabase(repository, commit)
-        const definitions = await db.definitions('main.cpp', { line: 12, character: 3 }, {})
+        const definitions = await db.definitions('main.cpp', { line: 12, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('main.cpp', 6, 4, 6, 4)])
     })
 
     it('should find all defs of `five` from main.cpp', async () => {
         const db = loadDatabase(repository, commit)
-        const definitions = await db.definitions('main.cpp', { line: 11, character: 3 }, {})
+        const definitions = await db.definitions('main.cpp', { line: 11, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('five.cpp', 2, 4, 2, 4)])
     })
 
     it('should find all refs of `five` from main.cpp', async () => {
         const db = loadDatabase(repository, commit)
-        const references = await db.references('main.cpp', { line: 11, character: 3 }, {})
+        const references = await db.references('main.cpp', { line: 11, character: 3 })
 
         // TODO - should the definition be in this result set?
         expect(references).toContainEqual(createLocation('five.h', 1, 4, 1, 8))

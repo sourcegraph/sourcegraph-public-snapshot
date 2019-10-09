@@ -72,7 +72,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 export async function convertLsif(
     input: Readable,
     database: string,
-    ctx: TracingContext
+    ctx: TracingContext = {}
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, entities)
 

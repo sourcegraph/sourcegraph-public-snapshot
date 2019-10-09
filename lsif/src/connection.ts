@@ -141,7 +141,8 @@ function waitForMigrations(connection: Connection, database: string, logger: Log
     const check = async (): Promise<void> => {
         logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
-        if (parseInt(await getMigrationVersion(connection, database), 10) < MINIMUM_MIGRATION_VERSION) {
+        const version = parseInt(await getMigrationVersion(connection, database), 10)
+        if (isNaN(version) || version < MINIMUM_MIGRATION_VERSION) {
             throw new Error('cross-repository database not up to date')
         }
     }

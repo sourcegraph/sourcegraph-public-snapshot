@@ -101,7 +101,7 @@ export class XrepoDatabase {
     public async findClosestCommitWithData(
         repository: string,
         commit: string,
-        ctx: TracingContext,
+        ctx: TracingContext = {},
         gitserverUrls?: string[]
     ): Promise<string | undefined> {
         // Request updated commit data from gitserver if this commit isn't
