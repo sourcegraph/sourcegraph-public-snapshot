@@ -68,14 +68,18 @@ function provideDiagnostics({
                       version: upgradeToVersion,
                   }
                   const hits = [
-                      ...(await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep,filters)).map(d => ({
-                          ...d,
-                          type: 'npm' as const,
-                      })),
-                      ...(await yarnPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep,filters)).map(d => ({
-                          ...d,
-                          type: 'yarn' as const,
-                      })),
+                      ...(await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep, filters)).map(
+                          d => ({
+                              ...d,
+                              type: 'npm' as const,
+                          })
+                      ),
+                      ...(await yarnPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep, filters)).map(
+                          d => ({
+                              ...d,
+                              type: 'yarn' as const,
+                          })
+                      ),
                   ]
                   return flatten(
                       hits
@@ -118,6 +122,7 @@ function provideDiagnostics({
                               return [diagnostic]
                           })
                           .filter(isDefined)
+                          .slice(0, 3)
                   )
               }),
               startWith(LOADING)

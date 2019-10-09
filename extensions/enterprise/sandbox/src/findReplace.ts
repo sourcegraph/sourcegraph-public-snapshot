@@ -1,5 +1,5 @@
-import * as sourcegraph from 'sourcegraph'
 import { Subscription, Unsubscribable } from 'rxjs'
+import * as sourcegraph from 'sourcegraph'
 import { queryGraphQL } from './util'
 
 export const FIND_REPLACE_REWRITE_COMMAND = 'findReplace.rewrite'
