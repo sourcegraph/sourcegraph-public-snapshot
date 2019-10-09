@@ -1255,7 +1255,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-saved-search-modal')
             await driver.page.waitForSelector('.e2e-saved-search-modal-save-button')
             await driver.page.click('.e2e-saved-search-modal-save-button')
-            await driver.assertWindowLocation('/users/test/searches/add?query=test')
+            await driver.assertWindowLocation('/users/test/searches/add?query=test&patternType=literal')
 
             await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
             await driver.page.click('.e2e-saved-search-form-input-description')
@@ -1300,7 +1300,7 @@ describe('e2e test suite', () => {
 
             await driver.page.waitForSelector('.e2e-saved-search-form-input-query', { visible: true })
             await driver.page.click('.e2e-saved-search-form-input-query')
-            await driver.page.keyboard.type('test')
+            await driver.page.keyboard.type('test patternType:literal')
 
             await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
             await driver.page.click('.e2e-saved-search-form-submit-button')
