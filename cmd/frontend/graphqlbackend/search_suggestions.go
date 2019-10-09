@@ -153,10 +153,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				Limit: 1,
 			},
 		})
-		if err != nil {
+		if err != nil || len(repos) == 0 {
 			return nil, err
-		} else if len(repos) == 0 {
-			return nil, nil
 		}
 		repo := repos[0]
 
