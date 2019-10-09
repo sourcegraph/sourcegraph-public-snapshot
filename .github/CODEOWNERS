@@ -80,6 +80,7 @@
 /dev/grafana  @sourcegraph/distribution
 /dev/prometheus.sh  @sourcegraph/distribution
 /dev/prometheus  @sourcegraph/distribution
+/dev/src-expose @keegancsmith
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
