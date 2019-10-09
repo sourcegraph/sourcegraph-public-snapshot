@@ -25,8 +25,8 @@ export const DiagnosticListItem: React.FunctionComponent<Props> = ({ diagnostic,
     const ToggleIcon: React.ComponentType<{ className?: string }> = isExcerptVisible ? MenuDownIcon : MenuRightIcon
     return (
         <div className={className}>
-            <div onClick={toggleIsExcerptVisible} className="d-flex align-items-center user-select-none">
-                <ToggleIcon className="icon-inline h4 mb-0" />
+            <div onClick={toggleIsExcerptVisible} className="d-flex align-items-start user-select-none">
+                <div style={{marginTop:'-5px'}}><ToggleIcon className="icon-inline h4 mb-0" /></div>
                 <DiagnosticMessageWithIcon diagnostic={diagnostic} />
             </div>
             {isExcerptVisible && (

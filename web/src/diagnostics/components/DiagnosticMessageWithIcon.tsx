@@ -14,10 +14,14 @@ interface Props {
 export const DiagnosticMessageWithIcon: React.FunctionComponent<Props> = ({ diagnostic, className = '' }) => (
     <div className={`diagnostic-message-with-icon d-flex align-items-start ${className}`}>
         <DiagnosticSeverityIcon severity={diagnostic.severity} className="icon-inline mr-2" />
-        <Markdown
-            dangerousInnerHTML={renderMarkdown(
-                `${diagnostic.message}${diagnostic.detail ? `; ${diagnostic.detail}` : ''}`
+        <div>
+            <Markdown dangerousInnerHTML={renderMarkdown(diagnostic.message)} />
+            {diagnostic.detail && (
+                <Markdown
+                    dangerousInnerHTML={renderMarkdown(diagnostic.detail)}
+                    className="text-muted small mt-1 mb-2"
+                />
             )}
-        />
+        </div>
     </div>
 )

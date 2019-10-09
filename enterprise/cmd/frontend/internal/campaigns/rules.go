@@ -130,11 +130,29 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 				return nil, err
 			}
 
-			rawDiagnostics := toRawDiagnostics(diagnosticsByRepo[repoID])
+			diagnostics := diagnosticsByRepo[repoID]
+			rawDiagnostics := toRawDiagnostics(diagnostics)
+
+			diagnosticsBodyItems := make([]string, len(diagnostics))
+			for i, diag := range diagnostics {
+				var checkbox string
+				if diag.HasCheckbox() {
+					checkbox = "TODO: " // TODO!(sqs): use "[ ] " for bitbucket server
+				}
+
+				var detail string
+				if diag.Detail != "" {
+					detail = fmt.Sprintf(" (%s)", diag.Detail)
+				}
+
+				diagnosticsBodyItems[i] = fmt.Sprintf("- %s%s%s", checkbox, diag.Message, detail)
+			}
+			body := x.campaign.body + "\n\n" + strings.Join(diagnosticsBodyItems, "\n")
+
 			changesets = append(changesets, threads.NewGQLThreadPreview(graphqlbackend.CreateThreadInput{
 				Repository:                       graphqlbackend.NewRepositoryResolver(repo).ID(),
 				Title:                            x.campaign.name,
-				Body:                             &x.campaign.body,
+				Body:                             &body,
 				Draft:                            &x.campaign.isDraft,
 				Internal_PendingExternalCreation: x.campaign.isDraft,
 				RawDiagnostics:                   &rawDiagnostics,

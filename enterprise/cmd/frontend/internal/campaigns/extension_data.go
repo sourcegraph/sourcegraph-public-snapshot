@@ -27,7 +27,18 @@ type diagnosticInfo struct {
 	Resource      string
 	ResourceURI   gituri.URI
 	Message       string
+	Detail        string
+	Tags          []string
 	RawDiagnostic diagnostics.GQLDiagnostic
+}
+
+func (di diagnosticInfo) HasCheckbox() bool {
+	for _, tag := range di.Tags {
+		if tag == "checkbox" {
+			return true
+		}
+	}
+	return false
 }
 
 func (extdata) parseDiagnosticInfos(d *graphqlbackend.CampaignExtensionData) ([]diagnosticInfo, error) {

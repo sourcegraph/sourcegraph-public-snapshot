@@ -3,6 +3,7 @@ import H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { first, map } from 'rxjs/operators'
+import { USE_CAMPAIGN_RULES } from '../..'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
@@ -10,15 +11,14 @@ import { PlatformContextProps } from '../../../../../../shared/src/platform/cont
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { PageTitle } from '../../../../components/PageTitle'
 import { ThemeProps } from '../../../../theme'
-import { getCampaignExtensionData } from '../../extensionData'
-import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
-import { CampaignFormData } from '../../form/CampaignForm'
-import { CampaignPreview } from '../../preview/CampaignPreview'
-import { EMPTY_RULE_TEMPLATE_ID } from '../../form/templates'
-import { RuleDefinition } from '../../../rules/types'
 import { useLocalStorage } from '../../../../util/useLocalStorage'
+import { RuleDefinition } from '../../../rules/types'
+import { getCampaignExtensionData } from '../../extensionData'
+import { CampaignFormData } from '../../form/CampaignForm'
+import { EMPTY_RULE_TEMPLATE_ID } from '../../form/templates'
+import { CampaignPreview } from '../../preview/CampaignPreview'
+import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { NewCampaignForm } from './NewCampaignForm'
-import { USE_CAMPAIGN_RULES } from '../..'
 
 export const createCampaign = (input: GQL.IExpCreateCampaignInput): Promise<GQL.IExpCampaign> =>
     mutateGraphQL(
@@ -104,7 +104,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback(async () => {
         setCreationOrError(LOADING)
         try {
-            const extensionData = await getCampaignExtensionData(
+            const [extensionData] = await getCampaignExtensionData(
                 props.extensionsController,
                 value.rules ? value.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
             )

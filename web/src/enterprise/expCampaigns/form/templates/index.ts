@@ -1,13 +1,14 @@
 import H from 'history'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
+import { USE_CAMPAIGN_RULES } from '../..'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { CampaignFormData } from '../CampaignForm'
 import { ExistingExternalChangesetsAndIssuesRuleTemplate } from './ExistingExternalChangesetsAndIssuesRuleTemplate'
 import { FindReplaceRuleTemplate } from './FindReplaceRuleTemplate'
+import { NPMCredentialsRuleTemplate } from './NPMCredentialsRuleTemplate'
 import { PackageJsonDependencyRuleTemplate } from './PackageJsonDependencyRuleTemplate'
-import { TriageSearchResultsRuleTemplate } from './TriageSearchResultsRuleTemplate'
-import { CampaignFormData } from '../CampaignForm'
-import { USE_CAMPAIGN_RULES } from '../..'
 import { RubyGemDependencyRuleTemplate } from './RubyGemDependencyRuleTemplate'
+import { TriageSearchResultsRuleTemplate } from './TriageSearchResultsRuleTemplate'
 
 export interface RuleTemplateComponentContext {
     value: GQL.INewRuleInput
@@ -35,6 +36,7 @@ export const RULE_TEMPLATES: RuleTemplate[] = [
     ...(USE_CAMPAIGN_RULES
         ? [
               PackageJsonDependencyRuleTemplate,
+              NPMCredentialsRuleTemplate,
               RubyGemDependencyRuleTemplate,
               FindReplaceRuleTemplate,
               TriageSearchResultsRuleTemplate,
