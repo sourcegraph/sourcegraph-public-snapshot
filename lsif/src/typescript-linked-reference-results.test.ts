@@ -5,8 +5,8 @@ import { convertLsif } from './importer'
 import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
-import { XrepoDatabase } from './xrepo'
 import { entities } from './models.xrepo'
+import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -24,7 +24,7 @@ describe('Database', () => {
 
         const input = await getTestData('typescript/linked-reference-results/data/data.lsif.gz')
         const database = createDatabaseFilename(storageRoot, repository, commit)
-        const { packages, references } = await convertLsif(input, database)
+        const { packages, references } = await convertLsif(input, database, {})
         await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
     })
 
@@ -54,7 +54,7 @@ describe('Database', () => {
         ]
 
         for (const position of positions) {
-            const references = await db.references('src/index.ts', position)
+            const references = await db.references('src/index.ts', position, {})
             expect(references).toContainEqual(createLocation('src/index.ts', 1, 4, 1, 7)) // abstract def in I
             expect(references).toContainEqual(createLocation('src/index.ts', 5, 4, 5, 7)) // concrete def in A
             expect(references).toContainEqual(createLocation('src/index.ts', 9, 4, 9, 7)) // concrete def in B

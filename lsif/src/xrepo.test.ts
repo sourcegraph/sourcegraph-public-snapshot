@@ -110,25 +110,24 @@ describe('XrepoDatabase', () => {
         await xrepoDatabase.addPackagesAndReferences('foo', '0', [], [])
 
         // Test closest commit
+        const limit = MAX_TRAVERSAL_LIMIT
         expect(await xrepoDatabase.findClosestCommitWithData('foo', '0')).toEqual('0')
         expect(await xrepoDatabase.findClosestCommitWithData('foo', '1')).toEqual('0')
         expect(await xrepoDatabase.findClosestCommitWithData('foo', '-1')).toEqual('0')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(MAX_TRAVERSAL_LIMIT - 0)}`)).toEqual('0')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(MAX_TRAVERSAL_LIMIT - 1)}`)).toEqual('0')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(MAX_TRAVERSAL_LIMIT - 2)}`)).toEqual('0')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(MAX_TRAVERSAL_LIMIT - 0)}`)).toEqual('0')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(MAX_TRAVERSAL_LIMIT - 1)}`)).toEqual('0')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(MAX_TRAVERSAL_LIMIT - 2)}`)).toEqual('0')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(MAX_TRAVERSAL_LIMIT + 1)}`)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(MAX_TRAVERSAL_LIMIT + 2)}`)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(MAX_TRAVERSAL_LIMIT + 3)}`)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(MAX_TRAVERSAL_LIMIT + 1)}`)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(MAX_TRAVERSAL_LIMIT + 2)}`)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(MAX_TRAVERSAL_LIMIT + 3)}`)).toBeUndefined()
+
+        for (let i = 0; i <= 2; i++) {
+            expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(limit - i)}`)).toEqual('0')
+            expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(limit - i)}`)).toEqual('0')
+        }
+
+        for (let i = 1; i <= 3; i++) {
+            expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(limit + i)}`)).toBeUndefined()
+            expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(limit + i)}`)).toBeUndefined()
+        }
 
         // Modify markers, retest extreme bounds
         await xrepoDatabase.addPackagesAndReferences('foo', '1', [], [])
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(MAX_TRAVERSAL_LIMIT + 1)}`)).toEqual('1')
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(MAX_TRAVERSAL_LIMIT + 1)}`)).toBeUndefined()
+        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${+(limit + 1)}`)).toEqual('1')
+        expect(await xrepoDatabase.findClosestCommitWithData('foo', `${-(limit + 1)}`)).toBeUndefined()
     })
 })
