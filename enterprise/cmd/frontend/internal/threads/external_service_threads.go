@@ -3,6 +3,7 @@ package threads
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -28,7 +29,7 @@ func CreateOnExternalService(ctx context.Context, existingThreadID int64, thread
 
 	// TODO!(sqs): For the prototype, prevent changes to any "live" repositories. The sd9 and sd9org
 	// namespaces are sandbox/fake accounts used for the prototype.
-	if !strings.HasPrefix(repo.Name(), "github.com/sd9/") && !strings.HasPrefix(repo.Name(), "github.com/sd9org/") && !strings.HasPrefix(repo.Name(), "AC/") && !strings.HasPrefix(repo.Name(), "OP/") && !strings.Contains(threadBody, "non-test-repo-ok") {
+	if os.Getenv("ALLOW_CREATE_EXTERNAL_THREADS") == "" && (!strings.HasPrefix(repo.Name(), "github.com/sd9/") && !strings.HasPrefix(repo.Name(), "github.com/sd9org/") && !strings.HasPrefix(repo.Name(), "AC/") && !strings.HasPrefix(repo.Name(), "OP/") && !strings.Contains(threadBody, "non-test-repo-ok")) {
 		return 0, errors.New("refusing to modify non-a8n-test repo")
 	}
 
