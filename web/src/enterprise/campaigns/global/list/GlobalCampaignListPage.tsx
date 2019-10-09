@@ -13,23 +13,23 @@ interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {}
  * A list of all campaigns on the Sourcegraph instance.
  */
 export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
-        <>
-            <h1>Campaigns</h1>
-            <p>Track large-scale code changes</p>
+    <>
+        <h1>Campaigns</h1>
+        <p>Track large-scale code changes</p>
 
-            <div className="text-right mb-1">
-                <Link to="/campaigns/new" className="btn btn-primary">
-                    <AddIcon className="icon-inline" /> New Campaign
-                </Link>
-            </div>
+        <div className="text-right mb-1">
+            <Link to="/campaigns/new" className="btn btn-primary">
+                <AddIcon className="icon-inline" /> New Campaign
+            </Link>
+        </div>
 
-            <FilteredConnection<ICampaign>
-                {...props}
-                nodeComponent={CampaignNode}
-                queryConnection={queryCampaigns}
-                hideSearch={true}
-                noun="Campaign"
-                pluralNoun="Campaigns"
-            />
-        </>
-    )
+        <FilteredConnection<ICampaign>
+            {...props}
+            nodeComponent={CampaignNode}
+            queryConnection={queryCampaigns}
+            hideSearch={true}
+            noun="Campaign"
+            pluralNoun="Campaigns"
+        />
+    </>
+)
