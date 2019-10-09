@@ -12,8 +12,7 @@ interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {}
 /**
  * A list of all campaigns on the Sourcegraph instance.
  */
-export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => {
-    return (
+export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
         <>
             <h1>Campaigns</h1>
             <p>Track large-scale code changes</p>
@@ -34,4 +33,3 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => {
             />
         </>
     )
-}
