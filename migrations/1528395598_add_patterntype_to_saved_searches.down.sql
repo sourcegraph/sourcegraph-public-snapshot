@@ -1,4 +1,5 @@
 BEGIN;
-UPDATE TABLE saved_searches
-SET description = TRIM(TRAILING ' patternType:regexp' FROM description)
+
+UPDATE saved_searches SET query= TRIM(TRAILING ' patternType:regexp' FROM query);
+
 COMMIT;

@@ -1,4 +1,5 @@
 BEGIN;
-UPDATE TABLE saved_searches
-SET description = CONCAT(description, ' patternType:regexp')
+
+UPDATE saved_searches SET query=CONCAT(query, ' patternType:regexp');
+
 COMMIT;
