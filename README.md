@@ -36,7 +36,7 @@
 - Nginx
 
 For a detailed guide to installing prerequisites, see [these
-instructions](doc/dev/local_development.md#step-2-install-dependencies).
+instructions](doc/dev/local_development.md#step-1-install-dependencies).
 
 ### Installation
 
@@ -44,8 +44,8 @@ instructions](doc/dev/local_development.md#step-2-install-dependencies).
 
 To use Sourcegraph OSS:
 
-1.  [Ensure Docker is running](doc/dev/local_development.md#step-5-start-docker)
-1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-4-initialize-your-database)
+1.  [Ensure Docker is running](doc/dev/local_development.md#step-3-macos-start-docker)
+1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-2-initialize-your-database)
 1.  Start the development server
 
     ```
