@@ -257,7 +257,7 @@
 // 1528395596_lsif_xrepo_init.up.sql (1.059kB)
 // 1528395597_lsif_commits.down.sql (535B)
 // 1528395597_lsif_commits.up.sql (535B)
-// 1528395598_destroy_separate_lsif_db.down.sql (0)
+// 1528395598_destroy_separate_lsif_db.down.sql (39B)
 // 1528395598_destroy_separate_lsif_db.up.sql (801B)
 // 1528395599_create_lsif_tables.down.sql (544B)
 // 1528395599_create_lsif_tables.up.sql (1.83kB)
@@ -5469,7 +5469,7 @@ func _1528395597_lsif_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395598_destroy_separate_lsif_dbDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x01\x00\x00\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00")
+var __1528395598_destroy_separate_lsif_dbDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd2\xd5\x55\xf0\x54\x48\xcc\xcc\x53\x2f\x51\x48\xcf\xcf\xcc\x4b\x57\x48\x4a\x4c\xce\x56\x28\xc9\x48\x2d\x4a\xd5\xe3\x0a\x76\xf5\x71\x75\x0e\x51\x30\xb4\xe6\x02\x04\x00\x00\xff\xff\xa7\xc9\xcf\x64\x27\x00\x00\x00")
 
 func _1528395598_destroy_separate_lsif_dbDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -5485,7 +5485,7 @@ func _1528395598_destroy_separate_lsif_dbDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395598_destroy_separate_lsif_db.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xea, 0x57, 0x6b, 0xf1, 0x71, 0xe9, 0xe9, 0xc7, 0x4b, 0xd2, 0xdd, 0x4d, 0x48, 0xdf, 0x8, 0x62, 0xdf, 0xf0, 0xc3, 0x63, 0x86, 0xe0, 0x22, 0xcf, 0x78, 0xfd, 0x5e, 0x5f, 0x7f, 0x1b, 0x36, 0xc4}}
 	return a, nil
 }
 
