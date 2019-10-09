@@ -90,7 +90,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure create saved search errors when patternType is not provided in the query.
-	savedSearches, err = (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
+	_, err = (&schemaResolver{}).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -150,7 +150,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure update saved search errors when patternType is not provided in the query.
-	savedSearches, err = (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
+	_, err = (&schemaResolver{}).UpdateSavedSearch(ctx, &struct {
 		ID          graphql.ID
 		Description string
 		Query       string
