@@ -1067,50 +1067,12 @@ type Search {
     stats: SearchResultsStats!
 }
 
-# A value with its description.
-type DescriptiveValue {
-    # The value itself, e.g. "repo".
-    value: String!
-    # Description of the value, e.g. "regex-pattern (include results whose repository path matches)".
-    description: String!
-}
-
-# Discrete values with its default for a search filter.
-type SearchFilterDiscreteValues {
-    # The default choice among discrete values.
-    default: String!
-    # The list of discrete values.
-    values: [String!]!
-}
-
-# Predefined suggestions for search filters.
+# Predefined suggestions for search filters when backfill.
 type SearchFilterSuggestions {
-    # The suggestions for search filters.
-    filters: [DescriptiveValue!]!
-    # The suggestions for search filter "type:".
-    type: SearchFilterDiscreteValues!
-    # The suggestions for search filter "case:".
-    case: SearchFilterDiscreteValues!
-    # The suggestions for search filter "fork:".
-    fork: SearchFilterDiscreteValues!
-    # The suggestions for search filter "archived:".
-    archived: SearchFilterDiscreteValues!
-    # The suggestions for search filter "file:".
-    file: [DescriptiveValue!]!
-    # The suggestions for search filter "lang:".
-    lang: [String!]!
     # The suggestions for search filter "repogroup:".
     repogroup: [String!]!
     # The suggestions for search filter "repo:".
     repo: [String!]!
-    # The suggestions for search filter "repohasfile:".
-    repohasfile: [String!]!
-    # The suggestions for search filter "repohascommitafter:".
-    repohascommitafter: [String!]!
-    # The suggestions for search filter "count:".
-    count: [Int!]!
-    # The suggestions for search filter "timeout:".
-    timeout: [String!]!
 }
 
 # A search result.
