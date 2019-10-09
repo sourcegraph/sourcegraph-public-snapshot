@@ -238,24 +238,7 @@ func TestSearchSuggestions(t *testing.T) {
 	})
 
 	t.Run("repo: field for language suggestions", func(t *testing.T) {
-		var mu sync.Mutex
-		calledReposList := false
-		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			mu.Lock()
-			defer mu.Unlock()
-			calledReposList = true
-
-			want := db.ReposListOptions{
-				IncludePatterns: []string{"foo"},
-				OnlyRepoIDs:     true,
-				Enabled:         true,
-				LimitOffset: &db.LimitOffset{
-					Limit: 1,
-				},
-			}
-			if !reflect.DeepEqual(op, want) {
-				t.Errorf("got %+v, want %+v", op, want)
-			}
+		db.Mocks.Repos.List = func(_ context.Context, _ db.ReposListOptions) ([]*types.Repo, error) {
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
 		defer func() { db.Mocks.Repos.List = nil }()
@@ -282,9 +265,6 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowSymbolMatches = nil }()
 
 		testSuggestions(t, "repo:foo", []string{"lang:go", "lang:java", "lang:typescript"})
-		if !calledReposList {
-			t.Error("!calledReposList")
-		}
 		if !calledReposGetInventory {
 			t.Error("!calledReposGetInventory")
 		}
