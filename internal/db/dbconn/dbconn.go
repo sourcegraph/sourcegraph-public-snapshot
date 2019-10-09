@@ -26,8 +26,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/migrations"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -65,7 +65,7 @@ func ConnectToDB(dataSource string) error {
 	registerPrometheusCollector(Global, "_app")
 	configureConnectionPool(Global)
 
-	if err := DoMigrate(NewMigrate(Global)); err != nil {
+	if err := DoMigrate(NewMigrate(Global, dataSource)); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
 
@@ -209,13 +209,17 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetConnMaxLifetime(time.Minute)
 }
 
-func NewMigrate(db *sql.DB) *migrate.Migrate {
+func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s := bindata.Resource(migrations.AssetNames(), migrations.Asset)
+	s, err := dbutil.NewMigrationSourceLoader(dataSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	d, err := bindata.WithInstance(s)
 	if err != nil {
 		log.Fatal(err)

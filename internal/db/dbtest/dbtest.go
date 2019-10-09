@@ -68,7 +68,7 @@ func NewDB(t testing.TB, dsn string) (*sql.DB, func()) {
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
 
-	if err = dbutil.MigrateDB(testDB); err != nil {
+	if err = dbutil.MigrateDB(testDB, dsn); err != nil {
 		t.Fatalf("failed to apply migrations: %s", err)
 	}
 

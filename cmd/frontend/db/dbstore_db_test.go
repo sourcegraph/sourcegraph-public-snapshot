@@ -16,7 +16,7 @@ func TestMigrations(t *testing.T) {
 	// Setup a global test database
 	dbtesting.SetupGlobalTestDB(t)
 
-	m := dbconn.NewMigrate(dbconn.Global)
+	m := dbconn.NewMigrate(dbconn.Global, "")
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.
 	if err := m.Down(); err != nil {
 		t.Errorf("error running down migrations: %s", err)
