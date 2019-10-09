@@ -291,3 +291,23 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
         )
         .toPromise()
 }
+
+export function getManagementConsoleState(gqlClient: GraphQLClient): Promise<GQL.IManagementConsoleState> {
+    return gqlClient
+        .queryGraphQL(
+            gql`
+                query ManagementConsoleState {
+                    site {
+                        managementConsoleState {
+                            plaintextPassword
+                        }
+                    }
+                }
+            `
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ site }) => site.managementConsoleState)
+        )
+        .toPromise()
+}

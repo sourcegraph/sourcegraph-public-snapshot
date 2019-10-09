@@ -155,9 +155,10 @@ describe('Search regression test suite', () => {
                 await resourceManager.create({
                     type: 'User',
                     name: testUsername,
-                    create: () =>
-                        ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config }),
-                    destroy: () => deleteUser(gqlClient, testUsername, false),
+                    create: async () => {
+                        await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
+                        return () => deleteUser(gqlClient, testUsername, false)
+                    },
                 })
                 await resourceManager.create({
                     type: 'External service',
@@ -173,9 +174,9 @@ describe('Search regression test suite', () => {
                             },
                         })
                         await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
+                        return () =>
+                            ensureNoTestExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true })
                     },
-                    destroy: () =>
-                        ensureNoTestExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true }),
                 })
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes

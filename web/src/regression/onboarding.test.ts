@@ -86,13 +86,14 @@ describe('Onboarding', () => {
             await resourceManager.create({
                 type: 'User',
                 name: testUsername,
-                create: () =>
-                    ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                create: async () => {
+                    await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
                         ...config,
                         username: testUsername,
                         deleteIfExists: true,
-                    }),
-                destroy: () => deleteUser(gqlClient, testUsername, false),
+                    })
+                    return () => deleteUser(gqlClient, testUsername, false)
+                },
             })
         },
         20 * 1000 // wait 20s for cloning

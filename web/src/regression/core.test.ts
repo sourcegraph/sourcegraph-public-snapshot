@@ -33,13 +33,14 @@ describe('Core functionality regression test suite', () => {
         await resourceManager.create({
             type: 'User',
             name: testUsername,
-            create: () =>
-                ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            create: async () => {
+                await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
                     username: testUsername,
                     deleteIfExists: true,
                     ...config,
-                }),
-            destroy: () => deleteUser(gqlClient, testUsername, false),
+                })
+                return () => deleteUser(gqlClient, testUsername, false)
+            },
         })
     })
 
