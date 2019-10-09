@@ -65,13 +65,17 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             if (upgradeToVersion !== null) {
                 update.upgradeToVersion = upgradeToVersion
             }
+            const createChangesets = params.get('createChangesets')
+            if (createChangesets !== null) {
+                update.createChangesets =
+                    createChangesets === 'true' || createChangesets === '1' || createChangesets === 'yes'
+            }
             const filters = params.get('filters')
             if (filters !== null) {
                 update.filters = filters
             }
 
             updateContext({
-                createChangesets: true,
                 ...update,
             })
         }
@@ -142,12 +146,12 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                             type="checkbox"
                             id="campaign-template-form__createChangesets"
                             className="form-check-input"
-                            checked={context.createChangesets}
+                            checked={!!context.createChangesets}
                             onChange={onCreateChangesetsChange}
                             disabled={disabled}
                         />
                         <label className="form-check-label" htmlFor="campaign-template-form__createChangesets">
-                            Create changesets with dependency removed from package.json
+                            Create changesets
                         </label>
                     </li>
                 </ul>

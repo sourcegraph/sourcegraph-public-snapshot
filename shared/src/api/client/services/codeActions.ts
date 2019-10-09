@@ -1,10 +1,9 @@
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import { isEqual } from 'lodash'
-import { from, Observable, of } from 'rxjs'
-import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { combineLatest, from, Observable, of } from 'rxjs'
+import { catchError, defaultIfEmpty, distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators'
 import { Action, CodeActionContext } from 'sourcegraph'
-import { asError, ErrorLike } from '../../../util/errors'
-import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
+import { ErrorLike } from '../../../util/errors'
 import { TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
@@ -57,8 +56,9 @@ export function getCodeActions(
     logErrors = true
 ): Observable<(Action | CodeActionError)[] | null> {
     return providers.pipe(
+        filter(providers => providers.length > 0),
         switchMap(providers =>
-            combineLatestOrDefault(
+            combineLatest(
                 providers.map(provider =>
                     from(
                         provider(params).pipe(
@@ -66,7 +66,9 @@ export function getCodeActions(
                                 if (logErrors) {
                                     console.error(err)
                                 }
-                                return of<CodeActionError[]>([{ [codeActionError]: true, ...asError(err), params }])
+                                return of<CodeActionError[]>([
+                                    { [codeActionError]: true, message: err.message, params },
+                                ])
                             })
                         )
                     )

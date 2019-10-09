@@ -29,7 +29,7 @@ export function diagnosticQueryMatcher(
 export const diagnosticID = (diagnostic: DiagnosticWithType): string =>
     `${diagnostic.type}:${diagnostic.resource.toString()}:${diagnostic.range ? diagnostic.range.start.line : '-'}:${
         diagnostic.range ? diagnostic.range.start.character : '-'
-    }`
+    }:${diagnostic.tags ? diagnostic.tags.join(',') : ''}:${diagnostic.message}`
 
 export const diagnosticQueryForSingleDiagnostic = (diagnostic: DiagnosticWithType): sourcegraph.DiagnosticQuery => ({
     type: diagnostic.type,

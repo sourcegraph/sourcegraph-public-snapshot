@@ -154,7 +154,11 @@ const getDiagnosticsAndFileDiffs = (
                     return v
                 }),
                 catchError(err => [
-                    { fileDiffs: [], diagnostics: [], status: { isLoading: false, errors: [err.message] } },
+                    {
+                        fileDiffs: [],
+                        diagnostics: [],
+                        status: { isLoading: false, errors: [err.message || 'Unknown error'] },
+                    },
                 ]),
                 startWith<DiagnosticsAndFileDiffs>({
                     fileDiffs: [],
@@ -191,7 +195,7 @@ export const getCampaignExtensionData = (
                               sum(results.map(r => (r.status.progress ? r.status.progress[0] : 0))),
                               sum(results.map(r => (r.status.progress ? r.status.progress[1] : 0))),
                           ],
-                          errors: results.flatMap(r => r.status.errors || []),
+                          errors: results.flatMap(r => r.status.errors || []).filter(e => !!e),
                           messages: results.flatMap(r => r.status.messages || []),
                       },
                   }

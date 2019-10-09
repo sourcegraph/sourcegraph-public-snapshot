@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/neelance/parallel"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -202,6 +203,9 @@ func (x *rulesExecutor) syncThreads(ctx context.Context) error {
 					run.Error(err)
 					return
 				}
+			case graphqlbackend.ThreadKindIssue:
+				run.Error(errors.New("bitbucket server does not support issues (create changesets instead)"))
+				return
 				// TODO!(sqs): support issues, discussions (other thread kinds)
 			}
 		}(thread)

@@ -12,19 +12,19 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
+import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
+import { CampaignsNavItem as ExpCampaignsNavItem } from '../enterprise/expCampaigns/global/nav/CampaignsNavItem'
+import { ThreadsIcon } from '../enterprise/threads/icons'
+import { GlobalDebugModalButton, SHOW_DEBUG } from '../global/GlobalDebugModalButton'
 import {
+    KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
-    KeyboardShortcutsProps,
 } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThreadsIcon } from '../enterprise/threads/icons'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
-import { GlobalDebugModalButton, SHOW_DEBUG } from '../global/GlobalDebugModalButton'
-import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
-import { CampaignsNavItem as ExpCampaignsNavItem } from '../enterprise/expCampaigns/global/nav/CampaignsNavItem'
 
 interface Props
     extends SettingsCascadeProps,
@@ -81,7 +81,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         <li className="nav-item">
                             <ExpCampaignsNavItem className="px-3" />
                         </li>
-                        <li className="nav-item">
+                        <li className="nav-item d-none">
                             <LinkWithIconOnlyTooltip
                                 to="/threads"
                                 text="Threads"

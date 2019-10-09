@@ -31,7 +31,7 @@ export function register(): Unsubscribable {
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     subscriptions.add(
         sourcegraph.commands.registerActionEditCommand(UPGRADE_DEPENDENCY_COMMAND, diagnostic => {
-            if (!diagnostic) {
+            if (!diagnostic || (diagnostic.tags && !diagnostic.tags.includes('fix'))) {
                 return new sourcegraph.WorkspaceEdit()
             }
             return computeUpgradeDependencyEdit(diagnostic)
@@ -52,6 +52,7 @@ interface DiagnosticData {
 function provideDiagnostics({
     packageName,
     upgradeToVersion,
+    createChangesets,
     filters,
 }: PackageJsonDependencyCampaignContext): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
     return packageName && upgradeToVersion
@@ -117,7 +118,9 @@ function provideDiagnostics({
                                       lockfile: { uri: hit.lockfile.uri },
                                       type,
                                   } as DiagnosticData),
-                                  tags: [DEPENDENCY_TAG, packageName],
+                                  tags: [DEPENDENCY_TAG, packageName, createChangesets ? 'fix' : undefined].filter(
+                                      isDefined
+                                  ),
                               }
                               return [diagnostic]
                           })
@@ -132,7 +135,7 @@ function provideDiagnostics({
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
         provideCodeActions: async (_doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
-            const diag = context.diagnostics.find(isProviderDiagnostic)
+            const diag = context.diagnostics.find(d => isProviderDiagnostic(d) && d.tags && d.tags.includes('fix'))
             if (!diag) {
                 return []
             }

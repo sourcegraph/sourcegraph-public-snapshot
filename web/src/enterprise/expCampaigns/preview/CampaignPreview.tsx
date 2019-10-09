@@ -52,9 +52,19 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
             <h2 className="d-flex align-items-center">
                 Preview
                 {isLoading && <LoadingSpinner className="icon-inline mx-3" />}
-                {status.messages && status.messages.map((m,i) => <span key={i} className="text-muted mr-3">{m}</span>)}
+                {status.messages &&
+                    status.messages.map((m, i) => (
+                        <span key={i} className="text-muted mx-2">
+                            {m}
+                        </span>
+                    ))}
             </h2>
-            {status.errors && status.errors.map((e,i) => <div key={i} className="alert alert-danger mb-3">{e}</div>)}
+            {status.errors &&
+                status.errors.map((e, i) => (
+                    <div key={i} className="alert alert-danger mb-3">
+                        {e}
+                    </div>
+                ))}
             {campaignPreview !== LOADING &&
                 (isErrorLike(campaignPreview) ? (
                     <div className="alert alert-danger">Error: {campaignPreview.message}</div>
