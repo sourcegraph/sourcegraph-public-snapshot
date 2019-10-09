@@ -16,11 +16,6 @@ const MAX_COMMITS_PER_UPDATE = 5000
  * will do nothing.
  *
  * @param args Parameter bag.
- * @param args.xrepoDatabase The cross-repo database.
- * @param args.repository The repository name.
- * @param args.commit The commit from which the gitserver queries should start.
- * @param args.gitserverUrls The set of ordered gitserver urls.
- * @param args.ctx The tracing context.
  */
 export async function discoverAndUpdateCommit({
     xrepoDatabase,
@@ -29,10 +24,15 @@ export async function discoverAndUpdateCommit({
     gitserverUrls,
     ctx,
 }: {
+    /** The cross-repo database. */
     xrepoDatabase: XrepoDatabase
+    /** The repository name. */
     repository: string
+    /** The commit from which the gitserver queries should start. */
     commit: string
+    /** The set of ordered gitserver urls. */
     gitserverUrls: string[]
+    /** The tracing context. */
     ctx: TracingContext
 }): Promise<void> {
     if (await xrepoDatabase.isCommitTracked(repository, commit)) {

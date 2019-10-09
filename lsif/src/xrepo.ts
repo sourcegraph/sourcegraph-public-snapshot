@@ -283,10 +283,6 @@ export class XrepoDatabase {
      * the bloom filter false positive rates.
      *
      * @param args Parameter bag.
-     * @param args.scheme The package manager scheme (e.g. npm, pip).
-     * @param args.name The package name.
-     * @param args.version The package version.
-     * @param args.value The value to test.
      */
     public async getReferences({
         scheme,
@@ -294,9 +290,13 @@ export class XrepoDatabase {
         version,
         value,
     }: {
+        /** The package manager scheme (e.g. npm, pip).  */
         scheme: string
+        /** The package name.  */
         name: string
+        /** The package version.  */
         version: string | null
+        /** The value to test.  */
         value: string
     }): Promise<ReferenceModel[]> {
         const results = await this.withConnection(connection =>
