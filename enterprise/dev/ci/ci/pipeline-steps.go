@@ -148,7 +148,7 @@ func addCodeCov(pipeline *bk.Pipeline) {
 
 // Release the browser extension.
 func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome", "firefox"} {
+	for _, browser := range []string{"chrome" /* , "firefox" */} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
