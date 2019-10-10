@@ -14,81 +14,78 @@ import (
 var update = flag.Bool("update", false, "update testdata")
 
 func TestCalcCounts(t *testing.T) {
-	ghChangesetCreated := parse(t, "2019-10-02T14:49:31Z")
-	ghChangesetMerged := parse(t, "2019-10-07T13:13:45Z")
+	now := time.Now().Truncate(time.Microsecond)
+	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
 	tests := []struct {
 		name       string
+		changesets []*a8n.Changeset
 		start      time.Time
 		end        time.Time
-		changesets []*a8n.Changeset
 		events     []Event
 		want       []*ChangesetCounts
 	}{
 		{
-			name: "single github changeset",
-			// We start exactly one day earlier
-			start: ghChangesetCreated.Add(-24 * time.Hour),
-			end:   ghChangesetMerged,
+			name: "single changeset open merged",
 			changesets: []*a8n.Changeset{
 				{
-					Metadata: &github.PullRequest{CreatedAt: ghChangesetCreated},
+					ID: 1,
+					Metadata: &github.PullRequest{
+						CreatedAt: daysAgo(2),
+					},
 				},
 			},
+			start: daysAgo(2),
+			end:   now,
 			events: []Event{
 				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubClosed,
-					t:           parse(t, "2019-10-03T14:02:51Z"),
-					changesetID: 1,
-				},
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubReopened,
-					t:           parse(t, "2019-10-03T14:02:54Z"),
-					changesetID: 1,
-				},
-				fakeEvent{
 					kind:        a8n.ChangesetEventKindGitHubMerged,
-					t:           parse(t, "2019-10-07T13:13:44Z"),
-					changesetID: 1,
-				},
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubClosed,
-					t:           parse(t, "2019-10-07T13:13:44Z"),
+					t:           daysAgo(1),
 					changesetID: 1,
 				},
 			},
 			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
+			name: "single changeset open closed reopened merged",
+			changesets: []*a8n.Changeset{
 				{
-					Time:  ghChangesetMerged.Add(5 * -24 * time.Hour),
-					Total: 0,
-					Open:  0,
+					ID: 1,
+					Metadata: &github.PullRequest{
+						CreatedAt: daysAgo(4),
+					},
 				},
-				{
-					Time:  ghChangesetMerged.Add(4 * -24 * time.Hour),
-					Total: 1,
-					Open:  1,
+			},
+			start: daysAgo(5),
+			end:   now,
+			events: []Event{
+				fakeEvent{
+					kind:        a8n.ChangesetEventKindGitHubClosed,
+					t:           daysAgo(3),
+					changesetID: 1,
 				},
-				{
-					Time:  ghChangesetMerged.Add(3 * -24 * time.Hour),
-					Total: 1,
-					Open:  1,
+				fakeEvent{
+					kind:        a8n.ChangesetEventKindGitHubReopened,
+					t:           daysAgo(2),
+					changesetID: 1,
 				},
-				{
-					Time:  ghChangesetMerged.Add(2 * -24 * time.Hour),
-					Total: 1,
-					Open:  1,
+				fakeEvent{
+					kind:        a8n.ChangesetEventKindGitHubMerged,
+					t:           daysAgo(1),
+					changesetID: 1,
 				},
-				{
-					Time:  ghChangesetMerged.Add(1 * -24 * time.Hour),
-					Total: 1,
-					Open:  1,
-				},
-				{
-					Time:   ghChangesetMerged,
-					Total:  1,
-					Closed: 1,
-					Merged: 1,
-				},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(5), Total: 0, Open: 0},
+				{Time: daysAgo(4), Total: 1, Open: 1},
+				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
 		},
 	}
