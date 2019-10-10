@@ -3,8 +3,6 @@
 // Definitions by: Gordey Doronin <https://github.com/gordey4doronin>
 // Modified by: Eric Fritz <eric@sourcegraph.com>
 
-/// <reference types="node" />
-
 declare module 'node-resque' {
     // We use ioredis in this project, so we can import it
     // here to import the types of the connection. This is
@@ -84,15 +82,15 @@ declare module 'node-resque' {
         constructor(options: QueueOptions, jobs?: JobsHash)
 
         connect(): Promise<void>
-        enqueue(queue: string, jobName: string, args: ReadonlyArray<any>): Promise<void>
-        enqueueAt(timestampMs: number, queue: string, jobName: string, args: ReadonlyArray<any>): Promise<void>
-        enqueueIn(milliseconds: number, queue: string, jobName: string, args: ReadonlyArray<any>): Promise<void>
+        enqueue(queue: string, jobName: string, args: Readonlyany[]): Promise<void>
+        enqueueAt(timestampMs: number, queue: string, jobName: string, args: Readonlyany[]): Promise<void>
+        enqueueIn(milliseconds: number, queue: string, jobName: string, args: Readonlyany[]): Promise<void>
         queues(): Promise<string[]>
         delQueue(queue: string): Promise<void>
         length(queue: string): Promise<number>
-        del(queue: string, jobName: string, args: ReadonlyArray<any>, count: number): Promise<void>
-        delDelayed(queue: string, jobName: string, args: ReadonlyArray<any>): Promise<number[]>
-        scheduledAt(queue: string, jobName: string, args: ReadonlyArray<any>): Promise<number[]>
+        del(queue: string, jobName: string, args: Readonlyany[], count: number): Promise<void>
+        delDelayed(queue: string, jobName: string, args: Readonlyany[]): Promise<number[]>
+        scheduledAt(queue: string, jobName: string, args: Readonlyany[]): Promise<number[]>
         queued(queue: string, start: number, stop: number): Promise<Job[]>
         allDelayed(): Promise<{ [K: number]: Job[] }>
         delLock(key: string): Promise<void>
@@ -109,8 +107,6 @@ declare module 'node-resque' {
         end(): Promise<void>
 
         on(event: 'error', cb: (error: Error, queue: string) => void): this
-        once(event: 'error', cb: (error: Error, queue: string) => void): this
-
         removeAllListeners(event: QueueEvent): this
     }
 
@@ -144,6 +140,8 @@ declare module 'node-resque' {
         init(): Promise<void>
         end(): Promise<void>
 
+        // This rule wants to incorrectly combine events with distinct callback types.
+        /* eslint-disable @typescript-eslint/unified-signatures */
         on(event: 'start' | 'end' | 'pause', cb: () => void): this
         on(event: 'cleaning_worker', cb: (worker: string, pid: string) => void): this
         on(event: 'poll', cb: (queue: string) => void): this
@@ -153,17 +151,6 @@ declare module 'node-resque' {
         on(event: 'success', cb: (queue: string, job: Job, result: any) => void): this
         on(event: 'failure', cb: (queue: string, job: Job, failure: any) => void): this
         on(event: 'error', cb: (error: Error, queue: string, job: Job) => void): this
-
-        once(event: 'start' | 'end' | 'pause', cb: () => void): this
-        once(event: 'cleaning_worker', cb: (worker: string, pid: string) => void): this
-        once(event: 'poll', cb: (queue: string) => void): this
-        once(event: 'ping', cb: (time: number) => void): this
-        once(event: 'job', cb: (queue: string, job: Job) => void): this
-        once(event: 'reEnqueue', cb: (queue: string, job: Job, plugin: string) => void): this
-        once(event: 'success', cb: (queue: string, job: Job, result: any) => void): this
-        once(event: 'failure', cb: (queue: string, job: Job, failure: any) => void): this
-        once(event: 'error', cb: (error: Error, queue: string, job: Job) => void): this
-
         removeAllListeners(event: WorkerEvent): this
     }
 
@@ -193,21 +180,13 @@ declare module 'node-resque' {
         start(): Promise<void>
         end(): Promise<void>
 
+        // This rule wants to incorrectly combine events with distinct callback types.
+        /* eslint-disable @typescript-eslint/unified-signatures */
         on(event: 'start' | 'end' | 'poll' | 'master', cb: () => void): this
         on(event: 'cleanStuckWorker', cb: (workerName: string, errorPayload: ErrorPayload, delta: number) => void): this
         on(event: 'error', cb: (error: Error, queue: string) => void): this
         on(event: 'workingTimestamp', cb: (timestampMs: number) => void): this
         on(event: 'transferredJob', cb: (timestampMs: number, job: Job) => void): this
-
-        once(event: 'start' | 'end' | 'poll' | 'master', cb: () => void): this
-        once(
-            event: 'cleanStuckWorker',
-            cb: (workerName: string, errorPayload: ErrorPayload, delta: number) => void
-        ): this
-        once(event: 'error', cb: (error: Error, queue: string) => void): this
-        once(event: 'workingTimestamp', cb: (timestampMs: number) => void): this
-        once(event: 'transferredJob', cb: (timestampMs: number, job: Job) => void): this
-
         removeAllListeners(event: SchedulerEvent): this
     }
 }
