@@ -11,6 +11,7 @@ jobs:
         with:
           verbose: 'true'
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@0.1.0-dogfood
+        uses: sourcegraph/lsif-upload-action@0.1.1-dogfood
         with:
+          access_token: ${{ secrets.LSIF_ACCESS_TOKEN }}
           upload_token: ${{ secrets.LSIF_UPLOAD_TOKEN }}
