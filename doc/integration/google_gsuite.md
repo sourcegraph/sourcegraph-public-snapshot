@@ -14,7 +14,7 @@ The Sourcegraph browser extension is open source and never sends any logs, pings
 
 ## Automatically install with G Suite
 
-Using the Google Admin Console, you can [force install](https://support.google.com/chrome/a/answer/6306504?hl=en) the Sourcegraph browser extension for all users in your organization. To do so:
+Using the Google Admin Console, you can [automatically install](https://support.google.com/chrome/a/answer/6306504?hl=en) the Sourcegraph browser extension for all users in your organization. To do so:
 
 1. Visit the Google Admin Console [Chrome management](https://admin.google.com/u/2/ac/chrome/apps/user) page, and click "Apps and extensions".
 2. Select the desired organizational unit in the left-hand menu.
