@@ -39,7 +39,7 @@ interface Props
      */
     lowProfile: boolean
     patternType: GQL.SearchPatternType
-    togglePatternType: (patternType: GQL.SearchPatternType) => void
+    togglePatternType: () => void
 }
 
 interface State {

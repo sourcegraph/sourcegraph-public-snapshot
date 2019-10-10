@@ -3,41 +3,62 @@ import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
 import { submitSearch } from '../helpers'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { Subscription, fromEvent } from 'rxjs'
+import { filter } from 'rxjs/operators'
 
 interface RegexpToggleProps {
-    togglePatternType: (patternType: SearchPatternType) => void
+    toggled: boolean
+    togglePatternType: () => void
     patternType: SearchPatternType
     navbarSearchQuery: string
     history: H.History
 }
 
 export default class RegexpToggle extends React.Component<RegexpToggleProps> {
+    private subscriptions = new Subscription()
+    private toggleCheckbox = React.createRef<HTMLDivElement>()
+
     constructor(props: RegexpToggleProps) {
         super(props)
     }
 
-    public render(): JSX.Element | null {
-        return (
-            <button
-                onClick={this.toggle}
-                className="btn btn-icon icon-inline regexp-toggle e2e-regexp-toggle"
-                type="button"
-            >
-                <span
-                    className={
-                        this.props.patternType === 'regexp' ? 'regexp-toggle--active e2e-regexp-toggle--active' : ''
-                    }
-                >
-                    <RegexIcon />
-                </span>
-            </button>
+    public componentDidMount(): void {
+        this.subscriptions.add(
+            fromEvent<KeyboardEvent>(window, 'keydown')
+                .pipe(
+                    filter(
+                        event =>
+                            document.activeElement === this.toggleCheckbox.current &&
+                            (event.keyCode === 13 || event.keyCode === 32)
+                    )
+                )
+                .subscribe(event => {
+                    event.preventDefault()
+                    this.toggle()
+                })
         )
     }
 
-    private toggle = (e: React.MouseEvent): void => {
-        const newPatternType =
-            this.props.patternType === SearchPatternType.literal ? SearchPatternType.regexp : SearchPatternType.literal
-        this.props.togglePatternType(newPatternType)
+    public render(): JSX.Element | null {
+        return (
+            <div
+                ref={this.toggleCheckbox}
+                onClick={this.toggle}
+                className="btn btn-icon icon-inline regexp-toggle e2e-regexp-toggle"
+                role="checkbox"
+                aria-checked={this.props.toggled}
+                tabIndex={0}
+            >
+                <span className={this.props.toggled ? 'regexp-toggle--active e2e-regexp-toggle--active' : ''}>
+                    <RegexIcon />
+                </span>
+            </div>
+        )
+    }
+
+    private toggle = (): void => {
+        const newPatternType = this.props.toggled ? SearchPatternType.literal : SearchPatternType.regexp
+        this.props.togglePatternType()
         submitSearch(this.props.history, this.props.navbarSearchQuery, 'filter', newPatternType)
     }
 }

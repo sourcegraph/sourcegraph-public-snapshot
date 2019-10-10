@@ -63,7 +63,7 @@ export interface SearchResultsListProps
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 
-    togglePatternType: (patternType: GQL.SearchPatternType) => void
+    togglePatternType: () => void
 }
 
 interface State {

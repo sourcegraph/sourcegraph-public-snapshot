@@ -23,7 +23,7 @@ interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, 
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    togglePatternType: (patternType: GQL.SearchPatternType) => void
+    togglePatternType: () => void
 }
 
 interface State {

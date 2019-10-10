@@ -13,7 +13,7 @@ interface Props extends ActivationProps {
     navbarSearchQuery: string
     onChange: (newValue: string) => void
     patternType: SearchPatternType
-    togglePatternType: (patternType: SearchPatternType) => void
+    togglePatternType: () => void
 }
 
 /**

@@ -50,7 +50,7 @@ export interface SearchResultsProps
     isSourcegraphDotCom: boolean
     deployType: DeployType
     patternType: GQL.SearchPatternType
-    togglePatternType: (patternType: GQL.SearchPatternType) => void
+    togglePatternType: () => void
 }
 
 interface SearchResultsState {
@@ -151,7 +151,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             },
                                         })
                                         if (patternType && patternType !== this.props.patternType) {
-                                            this.props.togglePatternType(patternType)
+                                            this.props.togglePatternType()
                                         }
                                     },
                                     error => {

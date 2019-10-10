@@ -139,7 +139,7 @@ interface Props
     rev: string
     location: H.Location
     history: H.History
-    togglePatternType: (patternType: GQL.SearchPatternType) => void
+    togglePatternType: () => void
 }
 
 interface State {

@@ -118,7 +118,7 @@ describe('SearchResultsList', () => {
         platformContext: { forceUpdateTooltip: sinon.spy() },
         telemetryService: NOOP_TELEMETRY_SERVICE,
         patternType: GQL.SearchPatternType.regexp,
-        togglePatternType: (patternType: GQL.SearchPatternType) => {},
+        togglePatternType: sinon.spy(),
     }
 
     it('displays loading text when results is undefined', () => {

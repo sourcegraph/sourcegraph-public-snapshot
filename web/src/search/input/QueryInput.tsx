@@ -60,7 +60,7 @@ interface Props extends PatternTypeProps {
      * At most one query input per page should have this behavior.
      */
     hasGlobalQueryBehavior?: boolean
-    togglePatternType: (patternType: SearchPatternType) => void
+    togglePatternType: () => void
 }
 
 interface State {
@@ -295,7 +295,11 @@ export class QueryInput extends React.Component<Props, State> {
                         })}
                     </ul>
                 )}
-                <RegexpToggle {...this.props} navbarSearchQuery={this.props.value} />
+                <RegexpToggle
+                    {...this.props}
+                    toggled={this.props.patternType === SearchPatternType.regexp}
+                    navbarSearchQuery={this.props.value}
+                />
             </div>
         )
     }
