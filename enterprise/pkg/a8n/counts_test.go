@@ -96,6 +96,26 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
 		},
+		{
+			name: "single changeset open closed reopened merged, unsorted events",
+			changesets: []*a8n.Changeset{
+				ghChangesetCreated(daysAgo(4)),
+			},
+			start: daysAgo(5),
+			events: []Event{
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubReopened, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(5), Total: 0, Open: 0},
+				{Time: daysAgo(4), Total: 1, Open: 1},
+				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {
