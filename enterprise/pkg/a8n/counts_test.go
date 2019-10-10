@@ -41,6 +41,38 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
+			name: "start end time on subset of events",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(4),
+			end:   daysAgo(2),
+			events: []Event{
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 0, Open: 0},
+				{Time: daysAgo(3), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1},
+			},
+		},
+		{
+			name: "start time not even x*24hours before end time",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(3),
+			end:   now.Add(-18 * time.Hour),
+			events: []Event{
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2).Add(-18 * time.Hour), Total: 0, Merged: 0},
+				{Time: daysAgo(1).Add(-18 * time.Hour), Total: 1, Open: 1},
+				{Time: now.Add(-18 * time.Hour), Total: 1, Merged: 1},
+			},
+		},
+		{
 			name: "multiple changesets open merged",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(2)),
@@ -271,6 +303,30 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(2), Total: 3, Open: 1, OpenChangesRequested: 1, Merged: 2},
 				{Time: daysAgo(1), Total: 3, Merged: 3},
 				{Time: daysAgo(0), Total: 3, Merged: 3},
+			},
+		},
+		{
+			name: "time slice of multiple changesets in different stages before merge",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(6)),
+				ghChangeset(2, daysAgo(6)),
+				ghChangeset(3, daysAgo(6)),
+			},
+			// Same test as above, except we only look at 3 days in the middle
+			start: daysAgo(4),
+			end:   daysAgo(2),
+			events: []Event{
+				ghReview(1, daysAgo(5), "PENDING"),
+				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+				ghReview(2, daysAgo(4), "APPROVED"),
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
+				ghReview(3, daysAgo(2), "CHANGES_REQUESTED"),
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 1},
+				{Time: daysAgo(3), Total: 3, Open: 2, OpenApproved: 1, Merged: 1},
+				{Time: daysAgo(2), Total: 3, Open: 1, OpenChangesRequested: 1, Merged: 2},
 			},
 		},
 	}
