@@ -349,7 +349,7 @@ async function lsifEndpoints(
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit })
                 await enqueue(queue, 'convert', { repository, commit, filename }, tracer, ctx.span)
-                res.json(null)
+                res.send('Upload successful, queued for processing.\n')
             }
         )
     )
