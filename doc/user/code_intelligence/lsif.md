@@ -67,6 +67,12 @@ When LSIF data does not exist for a particular file in a repository, Sourcegraph
 
 LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded. You can mitigate this by setting up a periodic job that generates and uploads LSIF for the tip of your default branch (e.g. master) daily. Improvements to this are planned for Sourcegraph 3.9.
 
+## Performance issues
+
+Global find-references is a resource-intensive operation that's sensitive to the number of packages for which you have uploaded LSIF data into your Sourcegraph instance. Improvements to this are planned for Sourcegraph 3.10 (see the [RFC](https://docs.google.com/document/d/1VZB0Y4tWKeOUN1JvdDgo4LHwQn875MPOI9xztzqoSRc/edit#)).
+
+In the meantime, we recommend not uploading more than a few dozen LSIF dumps to your Sourcegraph instance.
+
 ## More about LSIF
 
 To learn more, check out our lightning talk about LSIF from GopherCon 2019 or the [introductory blog post](https://about.sourcegraph.com/blog/code-intelligence-with-lsif):
