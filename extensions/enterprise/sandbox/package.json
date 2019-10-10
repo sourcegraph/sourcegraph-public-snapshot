@@ -1,6 +1,8 @@
 {
-  "name": "sandbox",
-  "description": "This extension is loaded by default for all users in the local dev Sourcegraph instance. You can use it as a sandbox to try out extension features in local dev.",
+  "name": "automation-preview",
+  "publisher": "sourcegraph",
+  "wip": true,
+  "description": "Campaign automation for dependency upgrades, npm credential leaks, etc.",
   "publisher": "sourcegraph",
   "activationEvents": [
     "*"
