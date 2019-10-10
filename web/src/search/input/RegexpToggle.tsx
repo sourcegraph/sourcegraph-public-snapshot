@@ -24,9 +24,9 @@ export default class RegexpToggle extends React.Component<RegexpToggleProps> {
                 type="button"
             >
                 <span
-                    className={`${
+                    className={
                         this.props.patternType === 'regexp' ? 'regexp-toggle--active e2e-regexp-toggle--active' : ''
-                    }`}
+                    }
                 >
                     <RegexIcon />
                 </span>
