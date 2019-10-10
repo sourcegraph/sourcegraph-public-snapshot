@@ -534,12 +534,15 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
+ *
+ * @param query the search query
+ * @param patternType the pattern type this query should be interpreted in.
+ * Having a `patternType:` filter in the query overrides this argument.
  */
 export function buildSearchURLQuery(query: string, patternType: SearchPatternType): string {
     const searchParams = new URLSearchParams()
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
-        // Having a `patternType:` filter in the query overrides the patternType argument.
         const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
         const newQuery = query.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
