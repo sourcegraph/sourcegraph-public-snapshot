@@ -33,7 +33,7 @@ Using the Google Admin Console, you can [automatically install](https://support.
 
 The Sourcegraph browser extension will then be rolled out to all managed browsers in your organization, preconfigured to point to your self-hosted Sourcegraph instance. The roll-out may take some time.
 
-Users will need to be logged in to your self-hosted Sourcegraph instance for the browser extension to provide code intelligence.
+Users will need to have valid accounts and be signed in to your Sourcegraph instance for the browser extension to provide code intelligence.
 
 Users may also need to grant additional permissions to the Sourcegraph browser extension in order for it to provide code intelligence on your code host. To check if Sourcegraph is properly configured, navigate to any page on your code host, and click the Sourcegraph icon in the browser toolbar. The popup will prompt you to grant additional permissions if needed:
 
