@@ -51,7 +51,6 @@ function provideDiagnostics({
             }
 
             const results = await scanForCredentials({ filters })
-            console.log('RESULTS', results)
             return flatten(
                 (await Promise.all(
                     results.map(async result => {
@@ -63,12 +62,14 @@ function provideDiagnostics({
                         }
 
                         const ranges = findTokenRanges(doc.text!, TOKEN_PATTERN)
-                        console.log('DD', doc.uri, ranges)
-                        return ranges.map(range => {
+                        return ranges.map(({ range, token }) => {
                             const diagnostic: sourcegraph.Diagnostic = {
                                 resource: new URL(result.uri),
-                                message: 'npm credential must not be committed to source control',
-                                detail: 'unable to automatically determine validity (must manually ensure revoked)',
+                                message: `npm credential committed to source control (\`${token.slice(
+                                    0,
+                                    4
+                                )}...\`) <!-- ${filters} -->`,
+                                // detail: 'unable to automatically determine validity (must manually ensure revoked)',
                                 range,
                                 severity: sourcegraph.DiagnosticSeverity.Error,
                                 // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
@@ -104,16 +105,19 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     }
 }
 
-function findTokenRanges(text: string, pattern: RegExp): sourcegraph.Range[] {
-    const ranges: sourcegraph.Range[] = []
+function findTokenRanges(text: string, pattern: RegExp): { range: sourcegraph.Range; token: string }[] {
+    const results: { range: sourcegraph.Range; token: string }[] = []
     for (const [i, line] of text.split('\n').entries()) {
         const match = pattern.exec(line)
         if (match && match[2]) {
             const startCharacter = match.index + match[1].length
-            ranges.push(new sourcegraph.Range(i, startCharacter, i, startCharacter + match[2].length))
+            results.push({
+                range: new sourcegraph.Range(i, startCharacter, i, startCharacter + match[2].length),
+                token: match[2],
+            })
         }
     }
-    return ranges
+    return results
 }
 
 // function findStringRange(text: string, str: string): sourcegraph.Range | null {

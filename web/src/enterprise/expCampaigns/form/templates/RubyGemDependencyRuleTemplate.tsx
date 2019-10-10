@@ -1,3 +1,4 @@
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import RubyIcon from 'mdi-react/RubyIcon'
 import React, { useCallback, useEffect } from 'react'
 import { RuleTemplate, RuleTemplateComponentContext } from '.'
@@ -5,7 +6,6 @@ import { RubyGemDependencyCampaignContext } from '../../../../../../extensions/e
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../rules/types'
 import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormControl'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 const TEMPLATE_ID = 'rubyGemDependency'
 
