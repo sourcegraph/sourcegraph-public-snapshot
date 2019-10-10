@@ -36,10 +36,10 @@ declare module 'node-resque' {
         once(event: 'error', cb: (error: Error) => void): this
     }
 
-    export interface JobDefinition<TResult> {
+    export interface JobDefinition<T> {
         plugins?: string[]
         pluginOptions?: { [pluginName: string]: any }
-        perform: (...args: any[]) => Promise<TResult>
+        perform: (...args: any[]) => Promise<T>
     }
 
     export interface JobsHash {
