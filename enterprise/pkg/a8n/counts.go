@@ -157,14 +157,20 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 
 					switch s {
 					case a8n.ChangesetReviewStateApproved:
-						approved = true
-						count.OpenApproved++
+						if !approved {
+							approved = true
+							count.OpenApproved++
+						}
 					case a8n.ChangesetReviewStateChangesRequested:
-						changesRequested = true
-						count.OpenChangesRequested++
+						if !changesRequested {
+							changesRequested = true
+							count.OpenChangesRequested++
+						}
 					case a8n.ChangesetReviewStatePending:
-						pending = true
-						count.OpenPending++
+						if !pending {
+							pending = true
+							count.OpenPending++
+						}
 					case a8n.ChangesetReviewStateCommented:
 						// Ignore
 					}

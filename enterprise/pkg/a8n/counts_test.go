@@ -243,6 +243,51 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
+			name: "single changeset multiple approvals counting once",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "APPROVED"),
+				ghReview(1, daysAgo(0), "APPROVED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			},
+		},
+		{
+			name: "single changeset multiple changes requested reviews counting once",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(0), "CHANGES_REQUESTED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			},
+		},
+		{
+			name: "single changeset multiple pending reviews counting once",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "PENDING"),
+				ghReview(1, daysAgo(0), "PENDING"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
 			name: "single changeset open, pending review, changes requested, merged",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(3)),
