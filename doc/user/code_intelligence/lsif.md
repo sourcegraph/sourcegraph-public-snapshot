@@ -51,7 +51,11 @@ some-project-dir$ env \
 - `REPOSITORY` must match the name of the repository on your Sourcegraph instance
 - `COMMIT` must be the full 40 character hash
 
-If the upload is accepted, the response will be `null`. If an error occurred, you'll see it in the response.
+If successful, you'll see the following message:
+
+> Upload successful, queued for processing.
+
+If an error occurred, you'll see it in the response.
 
 Go to your global settings at https://sourcegraph.example.com/site-admin/global-settings and enable LSIF:
 
