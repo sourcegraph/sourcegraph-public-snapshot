@@ -39,7 +39,7 @@ export const CampaignsNavItemDropdownMenu: React.FunctionComponent<Props> = ({ c
                     <DropdownItem divider={true} />
                 </>
             )}
-            <Link to="/campaigns" className="dropdown-item">
+            <Link to="/exp/campaigns" className="dropdown-item">
                 All campaigns
             </Link>
         </DropdownMenu>
