@@ -1180,6 +1180,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-regexp-toggle')
             await driver.page.click('.e2e-regexp-toggle')
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.e2e-regexp-toggle')
             await driver.page.click('.e2e-regexp-toggle')
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
         })
