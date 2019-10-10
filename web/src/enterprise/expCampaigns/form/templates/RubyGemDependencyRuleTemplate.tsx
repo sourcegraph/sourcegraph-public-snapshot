@@ -23,8 +23,7 @@ const RubyGemDependencyRuleTemplateForm: React.FunctionComponent<Props> = ({
     const updateContext = useCallback(
         (update: Partial<RubyGemDependencyCampaignContext>): void => {
             const newContext = { ...context, ...update }
-            const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
-                parseDiagnosticQuery(`${newContext.filters || ''}${newContext.filters ? ' ' : ''}${query}`)
+            const diagnosticQuery = (query: string): ParsedDiagnosticQuery => parseDiagnosticQuery(query)
             const campaignName = `Ban Ruby gem ${newContext.gemName || '<name>'} (Ruby)`
             onCampaignChange({
                 isValid: !!newContext.gemName,

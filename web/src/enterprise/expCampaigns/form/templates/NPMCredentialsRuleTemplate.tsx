@@ -22,8 +22,7 @@ const NPMCredentialsCampaignTemplateForm: React.FunctionComponent<Props> = ({
     const updateContext = useCallback(
         (update: Partial<NPMCredentialsCampaignContext>): void => {
             const newContext = { ...context, ...update }
-            const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
-                parseDiagnosticQuery(`${newContext.filters || ''}${newContext.filters ? ' ' : ''}${query}`)
+            const diagnosticQuery = (query: string): ParsedDiagnosticQuery => parseDiagnosticQuery(query)
             const campaignName = 'Find npm credentials'
             onCampaignChange({
                 isValid: true,
