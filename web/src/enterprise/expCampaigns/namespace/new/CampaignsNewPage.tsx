@@ -108,7 +108,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
                 props.extensionsController,
                 value.rules ? value.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
             )
-                .pipe(first())
+                .pipe(first(xd => !xd[1].isLoading))
                 .toPromise()
             setCreationOrError(await createCampaign({ ...value, namespace: namespace.id, extensionData }))
         } catch (err) {
