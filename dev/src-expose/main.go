@@ -85,6 +85,7 @@ func main() {
 		globalBefore   = globalFlags.String("before", "", "A command to run before sync. It is run from the current working directory.")
 		globalReposDir = globalFlags.String("repos-dir", "", "src-expose's git directories. src-expose creates a git repo per directory synced. The git repo is then served to Sourcegraph. The repositories are stored and served relative to this directory. Default: ~/.sourcegraph/src-expose-repos")
 		globalConfig   = globalFlags.String("config", "", "If set will be used instead of command line arguments to specify configuration.")
+		globalAddr     = globalFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 
 		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
 
@@ -107,7 +108,7 @@ func main() {
 			}
 		} else {
 			if len(args) == 0 {
-				return nil, &usageError{"requires atleast 1 argument or --config to be specified."}
+				return nil, &usageError{"requires at least 1 argument or --config to be specified."}
 			}
 			for _, dir := range args {
 				s.Dirs = append(s.Dirs, &SyncDir{Dir: dir})
@@ -201,10 +202,10 @@ Paste the following configuration as an Other External Service in Sourcegraph:
     "repos": ["src-expose"] // This may change in versions later than 3.9
   }
 
-`, *globalReposDir, strings.Join(args[1:], "\n- "), *serveAddr, dockerAddr(*serveAddr))
+`, *globalReposDir, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
 
 			go func() {
-				if err := serveRepos(*serveAddr, *globalReposDir); err != nil {
+				if err := serveRepos(*globalAddr, *globalReposDir); err != nil {
 					log.Fatal(err)
 				}
 			}()
