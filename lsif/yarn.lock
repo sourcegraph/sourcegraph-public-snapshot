@@ -527,17 +527,17 @@
   dependencies:
     "@types/node" "*"
 
-"@types/node-resque@5.4.1":
-  version "5.4.1"
-  resolved "https://registry.npmjs.org/@types/node-resque/-/node-resque-5.4.1.tgz#dba714a271802610857d0d7d55d5543f94d43cd3"
-  integrity sha512-Y87MJ6Xp3+uz6ERintSfW/v9JjdgcxJgRjRC6fjDuroZkfHf38ByH/tRNudv+AvSr86ae/LvJ/sgbJeICWuQBg==
-  dependencies:
-    "@types/node" "*"
-
 "@types/node@*":
   version "12.7.11"
   resolved "https://registry.npmjs.org/@types/node/-/node-12.7.11.tgz#be879b52031cfb5d295b047f5462d8ef1a716446"
   integrity sha512-Otxmr2rrZLKRYIybtdG/sgeO+tHY20GxeDjcGmUnmmlCWyEnv2a2x1ZXBo3BTec4OiTXMQCiazB8NMBf0iRlFw==
+
+"@types/on-finished@^2.3.1":
+  version "2.3.1"
+  resolved "https://registry.npmjs.org/@types/on-finished/-/on-finished-2.3.1.tgz#4537f9f2b47b3ba0b92c14a4bcc0f755aeda3484"
+  integrity sha512-mzVYaYcFs5Jd2n/O6uYIRUsFRR1cHyZLRvkLCU0E7+G5WhY0qBDAR5fUCeZbvecYOSh9ikhlesyi2UfI8B9ckQ==
+  dependencies:
+    "@types/node" "*"
 
 "@types/range-parser@*":
   version "1.2.3"
@@ -1725,14 +1725,6 @@ express-opentracing@^0.1.1:
   integrity sha512-urVTRTn/Y9/oSjy/P+IOWOl2Db0MnLqS7qYicHWk7vbL6ld+TNRp0DRx5G7cK2mLQ+/Ovpt8c4WLyG97VmtEdA==
   dependencies:
     opentracing "^0.14.0"
-
-express-prom-bundle@^5.1.5:
-  version "5.1.5"
-  resolved "https://registry.npmjs.org/express-prom-bundle/-/express-prom-bundle-5.1.5.tgz#f298615879299a58cf8ec1350186f4de91d91fa4"
-  integrity sha512-tUaQUBu0r9zGYcVDpKBI2AeWimuuodaC5BSBkzLPQxRTxaKQShQNnONQSYwjLxbHfPwlCKVZlzfbB9Recnj0Vg==
-  dependencies:
-    on-finished "^2.3.0"
-    url-value-parser "^2.0.0"
 
 express-winston@^3.3.0:
   version "3.4.0"
@@ -5020,11 +5012,6 @@ url-parse-lax@^3.0.0:
   integrity sha1-FrXK/Afb42dsGxmZF3gj1lA6yww=
   dependencies:
     prepend-http "^2.0.0"
-
-url-value-parser@^2.0.0:
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/url-value-parser/-/url-value-parser-2.0.1.tgz#c8179a095ab9ec1f5aa17ca36af5af396b4e95ed"
-  integrity sha512-bexECeREBIueboLGM3Y1WaAzQkIn+Tca/Xjmjmfd0S/hFHSCEoFkNh0/D0l9G4K74MkEP/lLFRlYnxX3d68Qgw==
 
 use@^3.1.0:
   version "3.1.1"

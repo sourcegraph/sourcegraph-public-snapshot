@@ -3,14 +3,20 @@ import * as path from 'path'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import promBundle from 'express-prom-bundle'
+import onFinished from 'on-finished'
+import promClient from 'prom-client'
 import uuid from 'uuid'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
+import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
+import {
+    connectionCacheCapacityGauge,
+    documentCacheCapacityGauge,
+    resultChunkCacheCapacityGauge,
+} from './cache.metrics'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
-import { Database, tryCreateDatabase } from './database.js'
+import { Database, tryCreateDatabase } from './database'
 import { Edge, Vertex } from 'lsif-protocol'
 import { identity } from 'lodash'
 import { logger as loggingMiddleware } from 'express-winston'
@@ -111,6 +117,9 @@ const errorHandler = (
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    // Collect process metrics
+    promClient.collectDefaultMetrics({ prefix: 'lsif_' })
+
     // Read configuration from frontend
     const fetchConfiguration = await waitForConfiguration(logger)
 
@@ -145,7 +154,7 @@ async function main(logger: Logger): Promise<void> {
             msg: 'request',
         })
     )
-    app.use(promBundle({}))
+    app.use(metricsMiddleware)
 
     // Register endpoints
     app.use(metaEndpoints())
@@ -190,6 +199,16 @@ async function setupQueue(logger: Logger): Promise<Queue> {
     await queue.connect()
     exitHook(() => queue.end())
 
+    const emitQueueSizeMetric = (): void => {
+        queue
+            .length('lsif')
+            .then(size => queueSizeGauge.set(size))
+            .catch(error => logger.error('failed to get length of queue', { error }))
+    }
+
+    // Update queue size metric on a timer
+    setInterval(emitQueueSizeMetric, 1000)
+
     // Create scheduler log the interesting events
     const scheduler = new Scheduler({ connection: connectionOptions })
     scheduler.on('start', () => logger.debug('scheduler started'))
@@ -214,12 +233,48 @@ async function setupQueue(logger: Logger): Promise<Queue> {
 }
 
 /**
+ * Middleware function used to emit HTTP durations for LSIF functions. Originally
+ * we used an express bundle, but that did not allow us to have different histogram
+ * bucket for different endpoints, which makes half of the metrics useless in the
+ * presence of large uploads.
+ */
+function metricsMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    let histogram: promClient.Histogram | undefined
+    switch (req.path) {
+        case '/upload':
+            histogram = httpUploadDurationHistogram
+            break
+
+        case '/exists':
+        case '/request':
+            histogram = httpQueryDurationHistogram
+    }
+
+    if (histogram !== undefined) {
+        const labels = { code: 0 }
+        const end = histogram.startTimer(labels)
+
+        onFinished(res, () => {
+            labels.code = res.statusCode
+            end()
+        })
+    }
+
+    next()
+}
+
+/**
  * Create a router containing health endpoint.
  */
 function metaEndpoints(): express.Router {
     const router = express.Router()
     router.get('/ping', (_, res) => res.send('ok'))
     router.get('/healthz', (_, res) => res.send('ok'))
+    router.get('/metrics', (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end(promClient.register.metrics())
+    })
+
     return router
 }
 

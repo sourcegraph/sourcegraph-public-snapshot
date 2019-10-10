@@ -2,12 +2,13 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
 import { createDatabaseFilename, hashKey, mustGet, hasErrorCode } from './util'
-import { databaseQueryDurationHistogram, databaseQueryErrorsCounter, instrument } from './metrics'
+import { instrument } from './metrics'
+import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './database.metrics'
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
 import * as fs from 'mz/fs'
 import { isEqual, uniqWith } from 'lodash'
-import { PackageModel } from './models.xrepo'
+import { PackageModel } from './xrepo.models'
 import { XrepoDatabase } from './xrepo'
 import {
     DefinitionModel,
@@ -23,7 +24,7 @@ import {
     DefinitionReferenceResultId,
     RangeId,
     entities,
-} from './models.database'
+} from './database.models'
 import { TracingContext, logSpan } from './tracing'
 
 /**
