@@ -1,9 +1,9 @@
 import { flatten } from 'lodash'
 import { from, Observable, Subscription, Unsubscribable } from 'rxjs'
-import { filter, map, startWith, switchMap, toArray } from 'rxjs/operators'
+import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { memoizedFindTextInFiles } from '../util'
+import { scanForCredentials } from './scanner'
 
 const NPM_CREDENTIALS_FIX_COMMAND = 'npmCredentials.fix'
 
@@ -50,30 +50,7 @@ function provideDiagnostics({
                 return [] as sourcegraph.Diagnostic[] // TODO!(sqs): dont run in comparison mode
             }
 
-            const results = flatten(
-                await from(
-                    memoizedFindTextInFiles(
-                        {
-                            pattern: `token ${filters}`,
-                            type: 'regexp',
-                        },
-                        {
-                            repositories: {
-                                includes: [],
-                                type: 'regexp',
-                            },
-                            files: {
-                                // includes: ['(^|/)package-lock.json$'],
-                                excludes: ['\\b(min|dist|static|out|public)\\b'],
-                                type: 'regexp',
-                            },
-                            maxResults: 25, // TODO!(sqs): increase
-                        }
-                    )
-                )
-                    .pipe(toArray())
-                    .toPromise()
-            )
+            const results = await scanForCredentials({ filters })
             return flatten(
                 (await Promise.all(
                     results.map(async result => {
@@ -84,12 +61,13 @@ function provideDiagnostics({
                             return null
                         }
 
-                        const range = findMatchRange(doc.text!, 'token')
+                        const range = findTokenRange(doc.text!)
                         if (range) {
                             const diagnostic: sourcegraph.Diagnostic = {
                                 resource: new URL(result.uri),
                                 message: 'npm credential must not be committed to source control',
-                                detail: 'revoke at https://example.com/foo/bar',
+                                detail:
+                                    'revoke with `curl -uadmin:password -XPOST "http://example.com/artifactory/api/security/token/revoke" -d "token=TOKEN"`',
                                 range,
                                 severity: sourcegraph.DiagnosticSeverity.Error,
                                 // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
@@ -126,7 +104,7 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     }
 }
 
-function findMatchRange(text: string, str: string): sourcegraph.Range | null {
+function findTokenRange(text: string, str: string): sourcegraph.Range | null {
     for (const [i, line] of text.split('\n').entries()) {
         const j = line.indexOf(str)
         if (j !== -1) {
