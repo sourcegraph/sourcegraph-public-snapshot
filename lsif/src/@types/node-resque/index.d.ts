@@ -1,11 +1,17 @@
 // Type definitions for node-resque 5.5.7
 // Project: http://github.com/taskrabbit/node-resque
 // Definitions by: Gordey Doronin <https://github.com/gordey4doronin>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
+// Modified by: Eric Fritz <eric@sourcegraph.com>
 
 /// <reference types="node" />
 
 declare module 'node-resque' {
+    // We use ioredis in this project, so we can import it
+    // here to import the types of the connection. This is
+    // necessary if we ever use plugins, as they will need
+    // to access the underlying Redis instance to manipulate
+    // the proper data.
+
     import { Redis } from 'ioredis'
 
     export interface ConnectionOptions {
