@@ -76,10 +76,16 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	defer func() { repoRemoteURL = origRepoRemoteURL }()
 
-	atime, err := os.Stat(filepath.Join(repoNew, "HEAD"))
-	if err != nil {
-		t.Fatal(err)
+	modTime := func(path string) time.Time {
+		t.Helper()
+		fi, err := os.Stat(filepath.Join(path, "HEAD"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return fi.ModTime()
 	}
+
+	repoNewTime := modTime(repoNew)
 
 	for path, delta := range map[string]time.Duration{
 		repoOld: 2 * repoTTL,
@@ -96,24 +102,14 @@ func TestCleanupExpired(t *testing.T) {
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos()
 
-	fi, err := os.Stat(filepath.Join(repoNew, "HEAD"))
-	if err != nil {
-		// repoA should still exist.
-		t.Fatal(err)
-	}
-	if atime.ModTime().Before(fi.ModTime()) {
-		// repoA should not have been recloned.
-		t.Error("expected repoA to not be modified")
-	}
-	fi, err = os.Stat(repoOld)
-	if err != nil {
-		// repoB should still exist after being recloned.
-		t.Fatal(err)
+	// repoNew should not have been recloned.
+	if repoNewTime.Before(modTime(repoNew)) {
+		t.Error("expected repoNew to not be modified")
 	}
 	// Expect the repo to be recloned hand have a recent mod time.
 	ti := time.Now().Add(-repoTTL)
-	if fi.ModTime().Before(ti) {
-		t.Error("expected repoB to be recloned during clean up")
+	if modTime(repoOld).Before(ti) {
+		t.Error("expected repoOld to be recloned during clean up")
 	}
 }
 
