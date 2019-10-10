@@ -3,7 +3,7 @@ import { from, Observable, Subscription, Unsubscribable } from 'rxjs'
 import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { scanForCredentials } from './scanner'
+import { scanForCredentials, TOKEN_PATTERN } from './scanner'
 
 const NPM_CREDENTIALS_FIX_COMMAND = 'npmCredentials.fix'
 
@@ -51,6 +51,7 @@ function provideDiagnostics({
             }
 
             const results = await scanForCredentials({ filters })
+            console.log('RESULTS', results)
             return flatten(
                 (await Promise.all(
                     results.map(async result => {
@@ -61,22 +62,21 @@ function provideDiagnostics({
                             return null
                         }
 
-                        const range = findTokenRange(doc.text!)
-                        if (range) {
+                        const ranges = findTokenRanges(doc.text!, TOKEN_PATTERN)
+                        console.log('DD', doc.uri, ranges)
+                        return ranges.map(range => {
                             const diagnostic: sourcegraph.Diagnostic = {
                                 resource: new URL(result.uri),
                                 message: 'npm credential must not be committed to source control',
-                                detail:
-                                    'revoke with `curl -uadmin:password -XPOST "http://example.com/artifactory/api/security/token/revoke" -d "token=TOKEN"`',
+                                detail: 'unable to automatically determine validity (must manually ensure revoked)',
                                 range,
                                 severity: sourcegraph.DiagnosticSeverity.Error,
                                 // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                 data: JSON.stringify({} as DiagnosticData),
                                 tags: [TAG, 'checkbox'],
                             }
-                            return [diagnostic]
-                        }
-                        return null
+                            return diagnostic
+                        })
                     })
                 )).filter(isDefined)
             )
@@ -104,15 +104,27 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     }
 }
 
-function findTokenRange(text: string, str: string): sourcegraph.Range | null {
+function findTokenRanges(text: string, pattern: RegExp): sourcegraph.Range[] {
+    const ranges: sourcegraph.Range[] = []
     for (const [i, line] of text.split('\n').entries()) {
-        const j = line.indexOf(str)
-        if (j !== -1) {
-            return new sourcegraph.Range(i, j, i, j + str.length)
+        const match = pattern.exec(line)
+        if (match && match[2]) {
+            const startCharacter = match.index + match[1].length
+            ranges.push(new sourcegraph.Range(i, startCharacter, i, startCharacter + match[2].length))
         }
     }
-    return null
+    return ranges
 }
+
+// function findStringRange(text: string, str: string): sourcegraph.Range | null {
+//     for (const [i, line] of text.split('\n').entries()) {
+//         const j = line.indexOf(str)
+//         if (j !== -1) {
+//             return new sourcegraph.Range(i, j, i, j + str.length)
+//         }
+//     }
+//     return null
+// }
 
 function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
     return !!diag.tags && diag.tags.includes(TAG)

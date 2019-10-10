@@ -5,12 +5,14 @@ import { TextSearchResult } from 'sourcegraph'
 import { memoizedFindTextInFiles } from '../util'
 import { NPMCredentialsCampaignContext } from './providers'
 
+export const TOKEN_PATTERN = /((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$/
+
 export const scanForCredentials = async ({ filters }: NPMCredentialsCampaignContext): Promise<TextSearchResult[]> =>
     flatten(
         await from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `/(^|:)_(auth|authToken|password)\\s*=\\s*[^\\s]+/ ${filters || ''}`,
+                    pattern: `${TOKEN_PATTERN.toString()} ${filters || ''}`,
                     type: 'regexp',
                 },
                 {
