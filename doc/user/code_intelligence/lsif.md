@@ -71,7 +71,7 @@ LSIF code intelligence will be out-of-sync when you're viewing a file that has c
 
 Global find-references is a resource-intensive operation that's sensitive to the number of packages for which you have uploaded LSIF data into your Sourcegraph instance. Improvements to this are planned for Sourcegraph 3.10 (see the [RFC](https://docs.google.com/document/d/1VZB0Y4tWKeOUN1JvdDgo4LHwQn875MPOI9xztzqoSRc/edit#)).
 
-In the meantime, we recommend not uploading more than a few dozen LSIF dumps to your Sourcegraph instance.
+**Do not upload more than 10-40 LSIF dumps to Sourcegraph instance or you risk harming other parts of Sourcegraph. We are working to validate its perform at scale and remove this concern.**
 
 ## More about LSIF
 
