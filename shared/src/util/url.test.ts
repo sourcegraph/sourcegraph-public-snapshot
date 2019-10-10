@@ -289,7 +289,7 @@ describe('buildSearchURLQuery', () => {
         expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp)).toBe('q=repo:foo/bar&patternType=regexp'))
     it('overrides the patternType parameter if a patternType field exists in the query', () =>
         expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp)).toBe(
-            'q=repo:foo/bar&patternType=literal'
+            'q=foo/bar&patternType=literal'
         ))
 })
 
