@@ -12,11 +12,11 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
+import { PatternTypeProps } from '../search'
 
-interface NodeProps extends RouteComponentProps {
+interface NodeProps extends RouteComponentProps, PatternTypeProps {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
-    patternType: GQL.SearchPatternType
 }
 
 interface NodeState {
@@ -96,9 +96,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps {
-    patternType: GQL.SearchPatternType
-}
+interface Props extends RouteComponentProps<{}>, NamespaceProps, PatternTypeProps {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()

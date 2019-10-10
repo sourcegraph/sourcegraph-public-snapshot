@@ -6,11 +6,12 @@ import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
 import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { ComponentDescriptor } from '../util/contributions'
+import { PatternTypeProps } from '../search'
 
 /**
  * Properties passed to all section components in the explore area.
  */
-export interface ExploreAreaSectionContext extends ExtensionsControllerProps, ThemeProps {
+export interface ExploreAreaSectionContext extends ExtensionsControllerProps, ThemeProps, PatternTypeProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -22,7 +23,6 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps, Th
 
     location: H.Location
     history: H.History
-    patternType: GQL.SearchPatternType
 }
 
 /** A section shown in the explore area. */

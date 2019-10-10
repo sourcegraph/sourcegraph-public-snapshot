@@ -40,3 +40,7 @@ export function quoteIfNeeded(s: string): string {
     }
     return s
 }
+
+export interface PatternTypeProps {
+    patternType: SearchPatternType
+}

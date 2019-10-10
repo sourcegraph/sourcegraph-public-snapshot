@@ -29,6 +29,7 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
+import { PatternTypeProps } from '../search'
 
 /** Props passed to sub-routes of {@link RepoRevContainer}. */
 export interface RepoRevContainerContext
@@ -42,14 +43,14 @@ export interface RepoRevContainerContext
         Pick<
             RepoContainerContext,
             Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
-        > {
+        >,
+        PatternTypeProps {
     repo: GQL.IRepository
     rev: string
     resolvedRev: ResolvedRev
 
     /** The URL route match for {@link RepoRevContainer}. */
     routePrefix: string
-    patternType: GQL.SearchPatternType
     togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
@@ -64,7 +65,8 @@ interface RepoRevContainerProps
         EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps {
     routes: readonly RepoRevContainerRoute[]
     repo: GQL.IRepository
     rev: string
@@ -79,7 +81,6 @@ interface RepoRevContainerProps
 
     /** Called when the resolvedRevOrError state in this component's parent should be updated. */
     onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
-    patternType: GQL.SearchPatternType
     togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 

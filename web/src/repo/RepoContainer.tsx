@@ -15,7 +15,7 @@ import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors
 import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { searchQueryForRepoRev } from '../search'
+import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -38,7 +38,8 @@ export interface RepoContainerContext
         PlatformContextProps,
         ThemeProps,
         EventLoggerProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
 
@@ -47,7 +48,6 @@ export interface RepoContainerContext
 
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
-    patternType: GQL.SearchPatternType
     togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 
@@ -65,12 +65,12 @@ interface RepoContainerProps
         EventLoggerProps,
         ExtensionsControllerProps,
         ActivationProps,
-        ThemeProps {
+        ThemeProps,
+        PatternTypeProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     authenticatedUser: GQL.IUser | null
-    patternType: GQL.SearchPatternType
     togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 

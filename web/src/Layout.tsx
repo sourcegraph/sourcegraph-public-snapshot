@@ -32,7 +32,7 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery } from './search'
+import { parseSearchURLQuery, PatternTypeProps } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreferenceProps, ThemeProps } from './theme'
@@ -53,7 +53,8 @@ export interface LayoutProps
         ThemeProps,
         EventLoggerProps,
         ThemePreferenceProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -93,12 +94,9 @@ export interface LayoutProps
         patternType: GQL.SearchPatternType,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
-    // The pattern type determined by the UI toggle, or the defaultPatternType in settings.
-    patternType: GQL.SearchPatternType
-    togglePatternType: (patternType: GQL.SearchPatternType) => void
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
-
+    togglePatternType: (patternType: GQL.SearchPatternType) => void
     children?: never
 }
 
@@ -127,7 +125,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
-            <LiteralSearchToast />
+            <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>

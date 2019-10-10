@@ -10,10 +10,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { pluralize } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-
-interface Props {
-    patternType: GQL.SearchPatternType
-}
+import { PatternTypeProps } from '../../search'
 
 const LOADING: 'loading' = 'loading'
 
@@ -25,7 +22,7 @@ interface State {
 /**
  * An explore section that shows a few repositories and a link to all.
  */
-export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
+export class RepositoriesExploreSection extends React.PureComponent<PatternTypeProps, State> {
     private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode

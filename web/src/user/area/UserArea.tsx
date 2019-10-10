@@ -22,6 +22,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+import { PatternTypeProps } from '../../search'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     queryGraphQL(
@@ -74,7 +75,8 @@ interface UserAreaProps
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -85,7 +87,6 @@ interface UserAreaProps
      * parameter.
      */
     authenticatedUser: GQL.IUser | null
-    patternType: GQL.SearchPatternType
 }
 
 interface UserAreaState {
@@ -105,7 +106,8 @@ export interface UserAreaRouteContext
         SettingsCascadeProps,
         ThemeProps,
         ActivationProps,
-        NamespaceProps {
+        NamespaceProps,
+        PatternTypeProps {
     /** The user area main URL. */
     url: string
 
@@ -126,7 +128,6 @@ export interface UserAreaRouteContext
     authenticatedUser: GQL.IUser | null
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
-    patternType: GQL.SearchPatternType
 }
 
 /**

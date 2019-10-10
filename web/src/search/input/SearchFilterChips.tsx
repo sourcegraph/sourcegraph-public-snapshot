@@ -14,8 +14,9 @@ import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter, toggleSearchFilterAndReplaceSampleRepogroup } from '../helpers'
+import { PatternTypeProps } from '..'
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, PatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -25,7 +26,6 @@ interface Props extends SettingsCascadeProps {
      * The current query.
      */
     query: string
-    patternType: GQL.SearchPatternType
 }
 
 export interface ISearchScope {

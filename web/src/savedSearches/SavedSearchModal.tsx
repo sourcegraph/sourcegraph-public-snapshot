@@ -2,14 +2,14 @@ import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../components/Form'
+import { PatternTypeProps } from '../search'
 
-interface Props {
+interface Props extends PatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
     query?: string
     onDidCancel: () => void
-    patternType: GQL.SearchPatternType
 }
 
 enum UserOrOrg {

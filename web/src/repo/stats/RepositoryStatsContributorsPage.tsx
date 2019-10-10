@@ -14,7 +14,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { quoteIfNeeded, searchQueryForRepoRev } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRev, PatternTypeProps } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -26,10 +26,9 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec {
+interface RepositoryContributorNodeProps extends QuerySpec, PatternTypeProps {
     node: GQL.IRepositoryContributor
     repoName: string
-    patternType: GQL.SearchPatternType
 }
 
 const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
@@ -156,9 +155,7 @@ const queryRepositoryContributors = memoizeObservable(
     args => `${args.repo}:${args.first}:${args.revisionRange}:${args.after}:${args.path}`
 )
 
-interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
-    patternType: GQL.SearchPatternType
-}
+interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}>, PatternTypeProps {}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,

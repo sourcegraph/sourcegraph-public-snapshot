@@ -20,6 +20,7 @@ import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
+import { PatternTypeProps } from '../../search'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(
@@ -70,7 +71,8 @@ interface Props
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        PatternTypeProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
@@ -78,7 +80,6 @@ interface Props
      * The currently authenticated user.
      */
     authenticatedUser: GQL.IUser | null
-    patternType: GQL.SearchPatternType
 }
 
 interface State {
@@ -96,7 +97,8 @@ export interface OrgAreaPageProps
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        NamespaceProps {
+        NamespaceProps,
+        PatternTypeProps {
     /** The org that is the subject of the page. */
     org: GQL.IOrg
 
@@ -105,7 +107,6 @@ export interface OrgAreaPageProps
 
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
-    patternType: GQL.SearchPatternType
 }
 
 /**

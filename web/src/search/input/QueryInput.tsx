@@ -21,6 +21,7 @@ import { fetchSuggestions } from '../backend'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { PatternTypeProps } from '..'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -28,7 +29,7 @@ import { SearchPatternType } from '../../../../shared/src/graphql/schema'
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props {
+interface Props extends PatternTypeProps {
     location: H.Location
     history: H.History
 
@@ -60,7 +61,6 @@ interface Props {
      */
     hasGlobalQueryBehavior?: boolean
     togglePatternType: (patternType: SearchPatternType) => void
-    patternType: SearchPatternType
 }
 
 interface State {

@@ -30,7 +30,7 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { searchQueryForRepoRev } from '../search'
+import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
@@ -128,7 +128,8 @@ interface Props
         PlatformContextProps,
         ThemeProps,
         EventLoggerProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
@@ -138,7 +139,6 @@ interface Props
     rev: string
     location: H.Location
     history: H.History
-    patternType: GQL.SearchPatternType
     togglePatternType: (patternType: GQL.SearchPatternType) => void
 }
 

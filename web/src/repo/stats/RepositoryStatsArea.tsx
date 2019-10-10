@@ -9,6 +9,7 @@ import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
+import { PatternTypeProps } from '../../search'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -18,9 +19,8 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
+interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps, PatternTypeProps {
     repo: GQL.IRepository
-    patternType: GQL.SearchPatternType
 }
 
 /**
