@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF Data
-        uses: sourcegraph/lsif-go-action@0.1.0-alpha
+        uses: sourcegraph/lsif-go-action@0.1.1-alpha
         with:
           file: data.lsif
           verbose: 'true'
