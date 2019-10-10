@@ -29,7 +29,13 @@ func init() {
 	prometheus.MustRegister(reposRecloned)
 }
 
-const repoTTL = time.Hour * 24 * 45
+const (
+	// repoTTL is how often we should reclone a repository
+	repoTTL = time.Hour * 24 * 45
+	// repoTTLGC is how often we should reclone a repository once it is
+	// reporting git gc issues.
+	repoTTLGC = time.Hour * 24
+)
 
 var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",

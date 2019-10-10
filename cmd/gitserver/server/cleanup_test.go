@@ -62,8 +62,10 @@ func TestCleanupExpired(t *testing.T) {
 
 	repoNew := path.Join(root, "repo-new", ".git")
 	repoOld := path.Join(root, "repo-old", ".git")
+	repoGCNew := path.Join(root, "repo-gc-new", ".git")
+	repoGCOld := path.Join(root, "repo-gc-old", ".git")
 	remote := path.Join(root, "remote", ".git")
-	for _, path := range []string{repoNew, repoOld, remote} {
+	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, remote} {
 		cmd := exec.Command("git", "--bare", "init", path)
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
@@ -85,10 +87,12 @@ func TestCleanupExpired(t *testing.T) {
 		return fi.ModTime()
 	}
 
-	repoNewTime := modTime(repoNew)
+	writeFile(t, filepath.Join(repoGCNew, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
+	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 
 	for path, delta := range map[string]time.Duration{
-		repoOld: 2 * repoTTL,
+		repoOld:   2 * repoTTL,
+		repoGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
 		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(ts.Unix(), 10))
@@ -101,18 +105,29 @@ func TestCleanupExpired(t *testing.T) {
 		}
 	}
 
+	repoNewTime := modTime(repoNew)
+	repoOldTime := modTime(repoOld)
+	repoGCNewTime := modTime(repoGCNew)
+	repoGCOldTime := modTime(repoGCOld)
+
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos()
 
-	// repoNew should not have been recloned.
+	// repos that shouldn't be recloned
 	if repoNewTime.Before(modTime(repoNew)) {
 		t.Error("expected repoNew to not be modified")
 	}
-	// Expect the repo to be recloned hand have a recent mod time.
-	ti := time.Now().Add(-repoTTL)
-	if modTime(repoOld).Before(ti) {
+	if repoGCNewTime.Before(modTime(repoGCNew)) {
+		t.Error("expected repoGCNew to not be modified")
+	}
+
+	// repos that should be recloned
+	if !repoOldTime.Before(modTime(repoOld)) {
 		t.Error("expected repoOld to be recloned during clean up")
+	}
+	if !repoGCOldTime.Before(modTime(repoGCOld)) {
+		t.Error("expected repoGCOld to be recloned during clean up")
 	}
 }
 
