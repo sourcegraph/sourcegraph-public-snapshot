@@ -20,6 +20,13 @@ func TestCalcCounts(t *testing.T) {
 	ghChangesetCreated := func(id int64, t time.Time) *a8n.Changeset {
 		return &a8n.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}
 	}
+	ghReview := func(id int64, t time.Time, state string) *a8n.ChangesetEvent {
+		return &a8n.ChangesetEvent{
+			ChangesetID: id,
+			Kind:        a8n.ChangesetEventKindGitHubReviewed,
+			Metadata:    &github.PullRequestReview{UpdatedAt: t, State: state},
+		}
+	}
 
 	tests := []struct {
 		name       string
@@ -184,14 +191,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			events: []Event{
-				&a8n.ChangesetEvent{
-					ChangesetID: 1,
-					Kind:        a8n.ChangesetEventKindGitHubReviewed,
-					Metadata: &github.PullRequestReview{
-						UpdatedAt: daysAgo(2),
-						State:     "APPROVED",
-					},
-				},
+				ghReview(1, daysAgo(2), "APPROVED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
@@ -209,14 +209,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			events: []Event{
-				&a8n.ChangesetEvent{
-					ChangesetID: 1,
-					Kind:        a8n.ChangesetEventKindGitHubReviewed,
-					Metadata: &github.PullRequestReview{
-						UpdatedAt: daysAgo(2),
-						State:     "CHANGES_REQUESTED",
-					},
-				},
+				ghReview(1, daysAgo(2), "CHANGES_REQUESTED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
@@ -234,14 +227,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			events: []Event{
-				&a8n.ChangesetEvent{
-					ChangesetID: 1,
-					Kind:        a8n.ChangesetEventKindGitHubReviewed,
-					Metadata: &github.PullRequestReview{
-						UpdatedAt: daysAgo(2),
-						State:     "PENDING",
-					},
-				},
+				ghReview(1, daysAgo(2), "PENDING"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
@@ -250,6 +236,36 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
+			name: "multiple changesets open different review stages before merge",
+			changesets: []*a8n.Changeset{
+				ghChangesetCreated(1, daysAgo(6)),
+				ghChangesetCreated(2, daysAgo(6)),
+				ghChangesetCreated(3, daysAgo(6)),
+			},
+			start: daysAgo(7),
+			events: []Event{
+				// Changset 1
+				ghReview(1, daysAgo(5), "PENDING"),
+				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+				// Changset 2
+				ghReview(2, daysAgo(4), "APPROVED"),
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
+				// Changset 3
+				ghReview(3, daysAgo(2), "CHANGES_REQUESTED"),
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(7), Total: 0, Open: 0},
+				{Time: daysAgo(6), Total: 3, Open: 3},
+				{Time: daysAgo(5), Total: 3, Open: 3, OpenPending: 1},
+				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 1},
+				{Time: daysAgo(3), Total: 3, Open: 2, OpenApproved: 1, Merged: 1},
+				{Time: daysAgo(2), Total: 3, Open: 1, OpenChangesRequested: 1, Merged: 2},
+				{Time: daysAgo(1), Total: 3, Merged: 3},
+				{Time: daysAgo(0), Total: 3, Merged: 3},
 			},
 		},
 	}
