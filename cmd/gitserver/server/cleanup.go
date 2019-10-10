@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -89,7 +90,16 @@ func (s *Server) cleanupRepos() {
 
 		// Add a jitter to spread out recloning of repos cloned at the same
 		// time.
-		if time.Since(recloneTime) <= repoTTL+randDuration(repoTTL/4) {
+		var reason string
+		if time.Since(recloneTime) > repoTTL+randDuration(repoTTL/4) {
+			reason = "old"
+		}
+		if time.Since(recloneTime) > repoTTLGC+randDuration(repoTTLGC/4) {
+			if gclog, err := ioutil.ReadFile(filepath.Join(gitDir, "gc.log")); err == nil && len(gclog) > 0 {
+				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
+			}
+		}
+		if reason == "" {
 			return false, nil
 		}
 
@@ -98,7 +108,7 @@ func (s *Server) cleanupRepos() {
 
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := protocol.NormalizeRepo(api.RepoName(strings.TrimPrefix(filepath.Dir(gitDir), s.ReposDir+"/")))
-		log15.Info("recloning expired repo", "repo", repo)
+		log15.Info("recloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
 
 		remoteURL, err := repoRemoteURL(ctx, gitDir)
 		if err != nil {
