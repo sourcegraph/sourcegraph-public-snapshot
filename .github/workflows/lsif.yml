@@ -5,13 +5,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - name: Generate LSIF Data
-        uses: sourcegraph/lsif-go-action@0.1.0-dogfood
-        with:
-          verbose: 'true'
-      - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@0.1.1-dogfood
-        with:
-          access_token: ${{ secrets.LSIF_ACCESS_TOKEN }}
-          upload_token: ${{ secrets.LSIF_UPLOAD_TOKEN }}
+      - name: test
+        run: |
+          echo "${GITHUB_REPOSITORY}@${GITHUB_SHA}""
+
+      # - uses: actions/checkout@v1
+      # - name: Generate LSIF Data
+      #   uses: sourcegraph/lsif-go-action@0.1.0-dogfood
+      #   with:
+      #     verbose: 'true'
+      # - name: Upload LSIF data
+      #   uses: sourcegraph/lsif-upload-action@0.1.1-dogfood
+      #   with:
+      #     access_token: ${{ secrets.LSIF_ACCESS_TOKEN }}
+      #     upload_token: ${{ secrets.LSIF_UPLOAD_TOKEN }}
