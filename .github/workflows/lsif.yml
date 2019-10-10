@@ -7,10 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF Data
-        uses: sourcegraph/lsif-go-action@0.1.0-alpha
+        uses: sourcegraph/lsif-go-action@0.1.0-dogfood
         with:
           verbose: 'true'
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@0.1.0-alpha
+        uses: sourcegraph/lsif-upload-action@0.1.0-dogfood
         with:
           upload_token: ${{ secrets.LSIF_UPLOAD_TOKEN }}
