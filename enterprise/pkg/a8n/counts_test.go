@@ -349,10 +349,13 @@ func TestCalcCounts(t *testing.T) {
 			start: daysAgo(7),
 			events: []Event{
 				ghReview(1, daysAgo(5), "PENDING"),
+				ghReview(1, daysAgo(4), "PENDING"),
 				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 				ghReview(2, daysAgo(4), "APPROVED"),
+				ghReview(2, daysAgo(3), "APPROVED"),
 				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
 				ghReview(3, daysAgo(2), "CHANGES_REQUESTED"),
+				ghReview(3, daysAgo(1), "CHANGES_REQUESTED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
 			},
 			want: []*ChangesetCounts{
