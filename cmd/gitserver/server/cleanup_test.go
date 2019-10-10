@@ -60,17 +60,17 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	defer os.RemoveAll(root)
 
-	repoA := path.Join(root, testRepoA, ".git")
-	cmd := exec.Command("git", "--bare", "init", repoA)
+	repoNew := path.Join(root, "repo-new", ".git")
+	cmd := exec.Command("git", "--bare", "init", repoNew)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	repoB := path.Join(root, testRepoB, ".git")
-	cmd = exec.Command("git", "--bare", "init", repoB)
+	repoOld := path.Join(root, "repo-old", ".git")
+	cmd = exec.Command("git", "--bare", "init", repoOld)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	remote := path.Join(root, testRepoC, ".git")
+	remote := path.Join(root, "remote", ".git")
 	cmd = exec.Command("git", "--bare", "init", remote)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
@@ -82,12 +82,13 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	defer func() { repoRemoteURL = origRepoRemoteURL }()
 
-	atime, err := os.Stat(filepath.Join(repoA, "HEAD"))
+	atime, err := os.Stat(filepath.Join(repoNew, "HEAD"))
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	cmd = exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Add(-(2*repoTTL)).Unix(), 10))
-	cmd.Dir = repoB
+	cmd.Dir = repoOld
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +97,7 @@ func TestCleanupExpired(t *testing.T) {
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos()
 
-	fi, err := os.Stat(filepath.Join(repoA, "HEAD"))
+	fi, err := os.Stat(filepath.Join(repoNew, "HEAD"))
 	if err != nil {
 		// repoA should still exist.
 		t.Fatal(err)
@@ -105,7 +106,7 @@ func TestCleanupExpired(t *testing.T) {
 		// repoA should not have been recloned.
 		t.Error("expected repoA to not be modified")
 	}
-	fi, err = os.Stat(repoB)
+	fi, err = os.Stat(repoOld)
 	if err != nil {
 		// repoB should still exist after being recloned.
 		t.Fatal(err)
