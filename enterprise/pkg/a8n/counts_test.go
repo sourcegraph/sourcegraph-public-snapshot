@@ -57,6 +57,22 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
+			name: "single changeset created and closed before start time",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(8)),
+			},
+			start: daysAgo(4),
+			end:   daysAgo(2),
+			events: []Event{
+				fakeEvent{t: daysAgo(7), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 1, Merged: 1},
+				{Time: daysAgo(3), Total: 1, Merged: 1},
+				{Time: daysAgo(2), Total: 1, Merged: 1},
+			},
+		},
+		{
 			name: "start time not even x*24hours before end time",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(2)),
