@@ -17,7 +17,7 @@ func TestCalcCounts(t *testing.T) {
 	now := time.Now().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
-	ghChangesetCreated := func(id int64, t time.Time) *a8n.Changeset {
+	ghChangeset := func(id int64, t time.Time) *a8n.Changeset {
 		return &a8n.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}
 	}
 	ghReview := func(id int64, t time.Time, state string) *a8n.ChangesetEvent {
@@ -39,7 +39,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open merged",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(2)),
+				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
 			events: []Event{
@@ -54,8 +54,8 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "multiple changesets open merged",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(2)),
-				ghChangesetCreated(2, daysAgo(2)),
+				ghChangeset(1, daysAgo(2)),
+				ghChangeset(2, daysAgo(2)),
 			},
 			start: daysAgo(2),
 			events: []Event{
@@ -71,8 +71,8 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "multiple changesets open merged different times",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(3)),
-				ghChangesetCreated(2, daysAgo(2)),
+				ghChangeset(1, daysAgo(3)),
+				ghChangeset(2, daysAgo(2)),
 			},
 			start: daysAgo(4),
 			events: []Event{
@@ -90,7 +90,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "changeset merged and closed at same time",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(2)),
+				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
 			events: []Event{
@@ -106,7 +106,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "changeset merged and closed at same time, reversed order in slice",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(2)),
+				ghChangeset(1, daysAgo(2)),
 			},
 			start: daysAgo(2),
 			events: []Event{
@@ -122,7 +122,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open closed reopened merged",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(4)),
+				ghChangeset(1, daysAgo(4)),
 			},
 			start: daysAgo(5),
 			events: []Event{
@@ -142,8 +142,8 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "multiple changesets open closed reopened merged different times",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(5)),
-				ghChangesetCreated(2, daysAgo(4)),
+				ghChangeset(1, daysAgo(5)),
+				ghChangeset(2, daysAgo(4)),
 			},
 			start: daysAgo(6),
 			events: []Event{
@@ -167,7 +167,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open closed reopened merged, unsorted events",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(4)),
+				ghChangeset(1, daysAgo(4)),
 			},
 			start: daysAgo(5),
 			events: []Event{
@@ -187,7 +187,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open, pending review, approved, merged",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(3)),
+				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
 			events: []Event{
@@ -205,7 +205,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open, pending review, changes requested, merged",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(3)),
+				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
 			events: []Event{
@@ -223,7 +223,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open, pending review, pending, merged",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(3)),
+				ghChangeset(1, daysAgo(3)),
 			},
 			start: daysAgo(4),
 			events: []Event{
@@ -241,9 +241,9 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "multiple changesets open different review stages before merge",
 			changesets: []*a8n.Changeset{
-				ghChangesetCreated(1, daysAgo(6)),
-				ghChangesetCreated(2, daysAgo(6)),
-				ghChangesetCreated(3, daysAgo(6)),
+				ghChangeset(1, daysAgo(6)),
+				ghChangeset(2, daysAgo(6)),
+				ghChangeset(3, daysAgo(6)),
 			},
 			start: daysAgo(7),
 			events: []Event{
