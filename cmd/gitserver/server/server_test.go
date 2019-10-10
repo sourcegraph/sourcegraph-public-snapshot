@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type Test struct {
@@ -448,4 +450,12 @@ func TestRemoveBadRefs(t *testing.T) {
 			t.Fatalf("git ref %s failed to be removed: %s", name, got)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+	}
+	os.Exit(m.Run())
 }
