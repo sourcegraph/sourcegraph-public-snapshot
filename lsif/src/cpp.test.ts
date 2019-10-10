@@ -5,8 +5,8 @@ import { convertLsif } from './importer'
 import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
-import { XrepoDatabase } from './xrepo'
 import { entities } from './models.xrepo'
+import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {
     let storageRoot!: string

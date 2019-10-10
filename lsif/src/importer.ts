@@ -31,6 +31,7 @@ import {
     HoverResultId,
     entities,
 } from './models.database'
+import { TracingContext, logAndTraceCall } from './tracing'
 
 /**
  * The insertion metrics for the database.
@@ -66,10 +67,12 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  *
  * @param input The input stream containing JSON-encoded LSIF data.
  * @param database The filepath of the database to populate.
+ * @param ctx The tracing context.
  */
 export async function convertLsif(
     input: Readable,
-    database: string
+    database: string,
+    ctx: TracingContext = {}
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     const connection = await createSqliteConnection(database, entities)
 
@@ -77,7 +80,7 @@ export async function convertLsif(
         await connection.query('PRAGMA synchronous = OFF')
         await connection.query('PRAGMA journal_mode = OFF')
 
-        return await connection.transaction(entityManager => importLsif(entityManager, input))
+        return await connection.transaction(entityManager => importLsif(entityManager, input, ctx))
     } finally {
         await connection.close()
     }
@@ -90,15 +93,20 @@ export async function convertLsif(
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
+ * @param ctx The tracing context.
  */
 export async function importLsif(
     entityManager: EntityManager,
-    input: Readable
+    input: Readable,
+    ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
+    // Correlate input data into in-memory maps
     const correlator = new Correlator()
-    for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
-        correlator.insert(element)
-    }
+    await logAndTraceCall(ctx, 'correlating LSIF data', async () => {
+        for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
+            correlator.insert(element)
+        }
+    })
 
     if (correlator.lsifVersion === undefined) {
         throw new Error('No metadata defined.')
@@ -108,7 +116,9 @@ export async function importLsif(
     // reference result for each set so that we can remap all identifiers to the
     // chosen one.
 
-    const canonicalReferenceResultIds = canonicalizeReferenceResults(correlator)
+    const canonicalReferenceResultIds = await logAndTraceCall(ctx, 'canonicalizing reference results', () =>
+        canonicalizeReferenceResults(correlator)
+    )
 
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
@@ -120,36 +130,47 @@ export async function importLsif(
     await metaInserter.flush()
 
     // Insert documents
-    const documentInserter = new TableInserter(entityManager, DocumentModel, DocumentModel.BatchSize, inserterMetrics)
-    await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
-    await documentInserter.flush()
+    await logAndTraceCall(ctx, 'populating documents', async () => {
+        const documentInserter = new TableInserter(
+            entityManager,
+            DocumentModel,
+            DocumentModel.BatchSize,
+            inserterMetrics
+        )
+        await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
+        await documentInserter.flush()
+    })
 
     // Insert result chunks
-    const resultChunkInserter = new TableInserter(
-        entityManager,
-        ResultChunkModel,
-        ResultChunkModel.BatchSize,
-        inserterMetrics
-    )
-    await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
-    await resultChunkInserter.flush()
+    await logAndTraceCall(ctx, 'populating result chunks', async () => {
+        const resultChunkInserter = new TableInserter(
+            entityManager,
+            ResultChunkModel,
+            ResultChunkModel.BatchSize,
+            inserterMetrics
+        )
+        await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
+        await resultChunkInserter.flush()
+    })
 
     // Insert definitions and references
-    const definitionInserter = new TableInserter(
-        entityManager,
-        DefinitionModel,
-        DefinitionModel.BatchSize,
-        inserterMetrics
-    )
-    const referenceInserter = new TableInserter(
-        entityManager,
-        ReferenceModel,
-        ReferenceModel.BatchSize,
-        inserterMetrics
-    )
-    await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
-    await definitionInserter.flush()
-    await referenceInserter.flush()
+    await logAndTraceCall(ctx, 'populating definitions and references', async () => {
+        const definitionInserter = new TableInserter(
+            entityManager,
+            DefinitionModel,
+            DefinitionModel.BatchSize,
+            inserterMetrics
+        )
+        const referenceInserter = new TableInserter(
+            entityManager,
+            ReferenceModel,
+            ReferenceModel.BatchSize,
+            inserterMetrics
+        )
+        await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
+        await definitionInserter.flush()
+        await referenceInserter.flush()
+    })
 
     // Return data to populate cross-repo database
     return { packages: getPackages(correlator), references: getReferences(correlator) }

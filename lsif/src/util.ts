@@ -127,17 +127,6 @@ export async function ensureDirectory(path: string): Promise<void> {
 }
 
 /**
- * Log an error value to standard error and exit the process after a short
- * timeout to allow outstanding logs to flush.
- *
- * @param e The error value.
- */
-export function logErrorAndExit(e: any): void {
-    console.error(e)
-    setTimeout(() => process.exit(1), 100)
-}
-
-/**
  * Determine the table inserter batch size for an entity given the number of
  * fields inserted for that entity. We cannot perform an insert operation with
  * more than 999 placeholder variables, so we need to flush our batch before

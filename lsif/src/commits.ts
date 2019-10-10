@@ -1,6 +1,7 @@
 import got from 'got'
 import { XrepoDatabase } from './xrepo'
 import * as crypto from 'crypto'
+import { TracingContext, logAndTraceCall } from './tracing'
 
 /**
  * THe number of commits to ask gitserver for when updating commit data for
@@ -14,23 +15,35 @@ const MAX_COMMITS_PER_UPDATE = 5000
  * already have commit parentage information for this commit, this function
  * will do nothing.
  *
- * @param xrepoDatabase The cross-repo database.
- * @param repository The repository name.
- * @param commit The commit from which the gitserver queries should start.
- * @param gitserverUrls The set of ordered gitserver urls.
+ * @param args Parameter bag.
  */
-export async function discoverAndUpdateCommit(
-    xrepoDatabase: XrepoDatabase,
-    repository: string,
-    commit: string,
+export async function discoverAndUpdateCommit({
+    xrepoDatabase,
+    repository,
+    commit,
+    gitserverUrls,
+    ctx,
+}: {
+    /** The cross-repo database. */
+    xrepoDatabase: XrepoDatabase
+    /** The repository name. */
+    repository: string
+    /** The commit from which the gitserver queries should start. */
+    commit: string
+    /** The set of ordered gitserver urls. */
     gitserverUrls: string[]
-): Promise<void> {
+    /** The tracing context. */
+    ctx: TracingContext
+}): Promise<void> {
     if (await xrepoDatabase.isCommitTracked(repository, commit)) {
         return
     }
 
     const gitserverUrl = addrFor(repository, gitserverUrls)
-    await xrepoDatabase.updateCommits(repository, await getCommitsNear(gitserverUrl, repository, commit))
+    const commits = await logAndTraceCall(ctx, 'querying commits', () =>
+        getCommitsNear(gitserverUrl, repository, commit)
+    )
+    await logAndTraceCall(ctx, 'updating commits', () => xrepoDatabase.updateCommits(repository, commits))
 }
 
 /**
