@@ -88,7 +88,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     )
 
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection)
+    await waitForMigrations(connection, logger)
 
     return connection
 }
@@ -130,10 +130,9 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
  * least as large as our minimum migration version.
  *
  * @param connection The connection to use.
- * @param database The target database in which to perform the query.
  * @param logger The logger instance.
  */
-function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
+function waitForMigrations(connection: Connection, logger: Logger): Promise<void> {
     const check = async (): Promise<void> => {
         logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
