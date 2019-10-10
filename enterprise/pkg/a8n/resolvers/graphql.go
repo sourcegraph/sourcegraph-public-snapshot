@@ -372,9 +372,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	}
 
 	start := r.Campaign.CreatedAt
-	if args.From != nil {
-		// TODO: using min(start, args.From) here makes testing really hard,
-		// because `CreatedAt` is always "fresh"
+	if args.From != nil && args.From.Time.After(start) {
 		start = args.From.Time
 	}
 
