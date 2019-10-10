@@ -90,10 +90,13 @@ func TestCleanupExpired(t *testing.T) {
 	for path, delta := range map[string]time.Duration{
 		repoOld: 2 * repoTTL,
 	} {
-		ts := strconv.FormatInt(time.Now().Add(-delta).Unix(), 10)
-		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", ts)
+		ts := time.Now().Add(-delta)
+		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(ts.Unix(), 10))
 		cmd.Dir = path
 		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(filepath.Join(path, "HEAD"), ts, ts); err != nil {
 			t.Fatal(err)
 		}
 	}
