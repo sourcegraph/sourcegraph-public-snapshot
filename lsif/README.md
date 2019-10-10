@@ -12,7 +12,7 @@ See [the usage documentation on Sourcegraph.com](https://docs.sourcegraph.com/us
 
 ## Database Configuration
 
-The LSIF processes store most of its data in SQLite repositories on a shared disk that are written once by a worker on LSIF dump upload, and read many times by the APIs to answer LSIF/LSP queries. Cross-repository and cross-commit data is stored in Postgres, as this database requires many concurrent writer (which is an unsafe operation for SQLite in a networked application). The LSIF processes retrieves PostgreSQL connection configuration from the frontend process on startup.
+The LSIF processes store most of its data in SQLite repositories on a shared disk that are written once by a worker on LSIF dump upload, and read many times by the APIs to answer LSIF/LSP queries. Cross-repository and commit graph data is stored in Postgres, as this database requires many concurrent writers (which is an unsafe operation for SQLite in a networked application). The LSIF processes retrieve PostgreSQL connection configuration from the frontend process on startup.
 
 We rely on the Sourcegraph frontend to apply our DB migrations. These live in the `/migrations` folder. This means:
 
