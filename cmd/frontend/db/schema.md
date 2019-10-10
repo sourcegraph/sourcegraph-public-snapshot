@@ -104,22 +104,6 @@ Triggers:
 
 ```
 
-# Table "public.commits"
-```
-    Column     |  Type   |                      Modifiers                       
----------------+---------+------------------------------------------------------
- id            | integer | not null default nextval('commits_id_seq'::regclass)
- repository    | text    | not null
- commit        | text    | not null
- parent_commit | text    | not null
-Indexes:
-    "commits_pkey" PRIMARY KEY, btree (id)
-    "commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
-    "commits_repo_commit" btree (repository, commit)
-    "commits_repo_parent_commit" btree (repository, commit)
-
-```
-
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -297,6 +281,22 @@ Check constraints:
  mgmt_password_bcrypt    | text    | not null default ''::text
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
+
+```
+
+# Table "public.lsif_commits"
+```
+    Column     |  Type   |                      Modifiers                       
+---------------+---------+------------------------------------------------------
+ id            | integer | not null default nextval('commits_id_seq'::regclass)
+ repository    | text    | not null
+ commit        | text    | not null
+ parent_commit | text    | not null
+Indexes:
+    "lsif_commits_pkey" PRIMARY KEY, btree (id)
+    "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
+    "lsif_commits_repo_commit" btree (repository, commit)
+    "lsif_commits_repo_parent_commit" btree (repository, commit)
 
 ```
 
