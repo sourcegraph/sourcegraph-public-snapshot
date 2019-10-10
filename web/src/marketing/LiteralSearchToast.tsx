@@ -25,7 +25,7 @@ export default class LiteralSearchToast extends React.Component<{}, State> {
         }
 
         return (
-            <div>
+            <div className="e2e-literal-search-toast">
                 <Toast
                     icon={<RegexIcon />}
                     title="New regular expression toggle!"
