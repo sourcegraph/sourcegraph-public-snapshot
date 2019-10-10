@@ -539,6 +539,7 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
     const searchParams = new URLSearchParams()
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
+        // Having a `patternType:` filter in the query overrides the patternType argument.
         const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
         const newQuery = query.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
