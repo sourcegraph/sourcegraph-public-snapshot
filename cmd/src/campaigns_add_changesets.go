@@ -54,11 +54,11 @@ Notes:
 			return &usageError{errors.New("-repo-name must be specified")}
 		}
 
-		if len(args) <= 4 {
+		if len(args) <= 2 {
 			return &usageError{errors.New("no external changeset IDs specified")}
 		}
 
-		externalIDs := args[4:]
+		externalIDs := args[2:]
 
 		repoID, err := getRepoID(apiFlags, *repoNameFlag)
 		if err != nil {
