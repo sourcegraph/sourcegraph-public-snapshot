@@ -93,6 +93,8 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 				continue
 			}
 
+			merged := false
+			closed := false
 			for _, e := range csEvents {
 				// Event happened after point in time we're looking at, ignore
 				if e.Timestamp().After(t) {
@@ -100,14 +102,28 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 				}
 				switch e.Type() {
 				case a8n.ChangesetEventKindGitHubClosed:
+					// GitHub emits Closed/Merged events at the same time when a PR is
+					// merged. We want to count that as a single Merged, not Closed
+					// See: https://github.com/sourcegraph/sourcegraph/pull/5847#discussion_r332477806
+					if merged {
+						continue
+					}
 					count.Open--
 					count.Closed++
+					closed = true
 				case a8n.ChangesetEventKindGitHubReopened:
 					count.Open++
 					count.Closed--
+					closed = false
 				case a8n.ChangesetEventKindGitHubMerged:
+					// Reverse effects of closed for counting purposes
+					if closed {
+						count.Closed--
+						count.Open++
+					}
 					count.Merged++
 					count.Open--
+					merged = true
 				}
 			}
 		}

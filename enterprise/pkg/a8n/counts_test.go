@@ -28,16 +28,58 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open merged",
 			changesets: []*a8n.Changeset{
-				{
-					ID: 1,
-					Metadata: &github.PullRequest{
-						CreatedAt: daysAgo(2),
-					},
-				},
+				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(2)}},
 			},
 			start: daysAgo(2),
-			end:   now,
 			events: []Event{
+				fakeEvent{
+					kind:        a8n.ChangesetEventKindGitHubMerged,
+					t:           daysAgo(1),
+					changesetID: 1,
+				},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
+			name: "changeset merged and closed at same time",
+			changesets: []*a8n.Changeset{
+				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(2)}},
+			},
+			start: daysAgo(2),
+			events: []Event{
+				fakeEvent{
+					kind:        a8n.ChangesetEventKindGitHubMerged,
+					t:           daysAgo(1),
+					changesetID: 1,
+				},
+				fakeEvent{
+					kind:        a8n.ChangesetEventKindGitHubClosed,
+					t:           daysAgo(1),
+					changesetID: 1,
+				},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
+			name: "changeset merged and closed at same time, reversed order in slice",
+			changesets: []*a8n.Changeset{
+				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(2)}},
+			},
+			start: daysAgo(2),
+			events: []Event{
+				fakeEvent{
+					kind:        a8n.ChangesetEventKindGitHubClosed,
+					t:           daysAgo(1),
+					changesetID: 1,
+				},
 				fakeEvent{
 					kind:        a8n.ChangesetEventKindGitHubMerged,
 					t:           daysAgo(1),
@@ -53,15 +95,9 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open closed reopened merged",
 			changesets: []*a8n.Changeset{
-				{
-					ID: 1,
-					Metadata: &github.PullRequest{
-						CreatedAt: daysAgo(4),
-					},
-				},
+				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(4)}},
 			},
 			start: daysAgo(5),
-			end:   now,
 			events: []Event{
 				fakeEvent{
 					kind:        a8n.ChangesetEventKindGitHubClosed,
@@ -92,6 +128,10 @@ func TestCalcCounts(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.end.IsZero() {
+				tc.end = now
+			}
+
 			have, err := CalcCounts(tc.start, tc.end, tc.changesets, tc.events...)
 			if err != nil {
 				t.Fatal(err)
