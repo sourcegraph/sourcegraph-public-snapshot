@@ -1,14 +1,14 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useCallback, useState } from 'react'
-import { map, mapTo, first } from 'rxjs/operators'
+import { first, map, mapTo } from 'rxjs/operators'
 import { NotificationType } from '../../../../../shared/src/api/client/services/notifications'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
-import { getCampaignExtensionData } from '../extensionData'
 import { RuleDefinition } from '../../rules/types'
+import { getCampaignExtensionData } from '../extensionData'
 
 const queryCampaignRules = (campaign: Pick<GQL.IExpCampaign, 'id'>): Promise<RuleDefinition[]> =>
     queryGraphQL(
@@ -82,8 +82,8 @@ export const CampaignForceRefreshButton: React.FunctionComponent<Props> = ({
             setIsLoading(true)
             try {
                 const rules = await queryCampaignRules(campaign)
-                const extensionData = await getCampaignExtensionData(extensionsController, rules)
-                    .pipe(first())
+                const [extensionData] = await getCampaignExtensionData(extensionsController, rules)
+                    .pipe(first(xd => !xd[1].isLoading))
                     .toPromise()
                 await forceRefreshCampaign({
                     campaign: campaign.id,
