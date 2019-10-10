@@ -3,7 +3,6 @@
   "compilerOptions": {
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["src/@types", "node_modules/@types"],
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
@@ -20,6 +19,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
+    "typeRoots": ["src/@types", "node_modules/@types"],
   },
   "files": [],
   "include": ["src"],
