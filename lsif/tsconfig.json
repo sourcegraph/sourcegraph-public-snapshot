@@ -3,7 +3,7 @@
   "compilerOptions": {
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
+    "typeRoots": ["src/@types", "node_modules/@types"],
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
@@ -16,7 +16,6 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "outDir": "out",
-    "paths": { "*": ["src/@types/*"] },
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
