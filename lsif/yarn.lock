@@ -527,13 +527,6 @@
   dependencies:
     "@types/node" "*"
 
-"@types/node-resque@5.4.1":
-  version "5.4.1"
-  resolved "https://registry.npmjs.org/@types/node-resque/-/node-resque-5.4.1.tgz#dba714a271802610857d0d7d55d5543f94d43cd3"
-  integrity sha512-Y87MJ6Xp3+uz6ERintSfW/v9JjdgcxJgRjRC6fjDuroZkfHf38ByH/tRNudv+AvSr86ae/LvJ/sgbJeICWuQBg==
-  dependencies:
-    "@types/node" "*"
-
 "@types/node@*":
   version "12.7.11"
   resolved "https://registry.npmjs.org/@types/node/-/node-12.7.11.tgz#be879b52031cfb5d295b047f5462d8ef1a716446"
