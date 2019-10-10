@@ -390,13 +390,15 @@ func mkFiles(t *testing.T, root string, paths ...string) {
 		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(p)), os.ModePerm); err != nil {
 			t.Fatal(err)
 		}
-		fd, err := os.OpenFile(filepath.Join(root, p), os.O_RDONLY|os.O_CREATE, 0666)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := fd.Close(); err != nil {
-			t.Fatal(err)
-		}
+		writeFile(t, filepath.Join(root, p), nil)
+	}
+}
+
+func writeFile(t *testing.T, path string, content []byte) {
+	t.Helper()
+	err := ioutil.WriteFile(path, content, 0666)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
