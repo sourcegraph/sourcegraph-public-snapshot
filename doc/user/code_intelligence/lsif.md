@@ -31,25 +31,16 @@ Generate `data.lsif` in your project root (most LSIF indexers require a proper b
 some-project-dir$ lsif-go --noContents --out=data.lsif
 ```
 
-Get the LSIF bash uploader:
+Configure your [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) with the URL and an access token for your Sourcegraph instance. Then, upload `data.lsif` to your Sourcegraph instance via the CLI:
 
 ```
-some-project-dir$ curl -O https://raw.githubusercontent.com/sourcegraph/sourcegraph/master/lsif/upload.sh
+some-project-dir$ src-cli lsif upload \
+  -repo=github.com/<user>/<reponame> \
+  -commit=$(git rev-parse HEAD | tr -d "\n") \
+  -file=data.lsif
 ```
 
-Upload `data.lsif` to your Sourcegraph instance:
-
-```
-some-project-dir$ env \
-  SRC_ENDPOINT=https://sourcegraph.example.com \
-  REPOSITORY=github.com/<user>/<reponame> \
-  COMMIT=$(git rev-parse HEAD | tr -d "\n") \
-  bash upload.sh data.lsif
-```
-
-- `SRC_ENDPOINT` is the URL to your Sourcegraph instance
-- `REPOSITORY` must match the name of the repository on your Sourcegraph instance
-- `COMMIT` must be the full 40 character hash
+If `lsifEnforceAuth` is enabled on your Sourcegraph instance, you will also need to generate and supply an upload token.
 
 If successful, you'll see the following message:
 
