@@ -58,6 +58,7 @@ const (
 	ChangesetReviewStateApproved         ChangesetReviewState = "APPROVED"
 	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
 	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
+	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
 )
 
 // Valid returns true if the given Changeset is valid.
@@ -65,7 +66,8 @@ func (s ChangesetReviewState) Valid() bool {
 	switch s {
 	case ChangesetReviewStateApproved,
 		ChangesetReviewStateChangesRequested,
-		ChangesetReviewStatePending:
+		ChangesetReviewStatePending,
+		ChangesetReviewStateCommented:
 		return true
 	default:
 		return false

@@ -165,6 +165,8 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 					case a8n.ChangesetReviewStatePending:
 						pending = true
 						count.OpenPending++
+					case a8n.ChangesetReviewStateCommented:
+						// Ignore
 					}
 				}
 			}

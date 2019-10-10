@@ -192,6 +192,25 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
+			name: "single changeset open, comment review, approved, merged",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(4),
+			events: []Event{
+				ghReview(1, daysAgo(3), "COMMENTED"),
+				ghReview(1, daysAgo(2), "APPROVED"),
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 0, Open: 0},
+				{Time: daysAgo(3), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
 			name: "single changeset open, pending review, changes requested, merged",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(3)),
