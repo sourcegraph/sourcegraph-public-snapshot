@@ -17,7 +17,6 @@ export function submitSearch(
     activation?: ActivationProps['activation']
 ): void {
     // Go to search results page
-    console.log('@@@pattern type', patternType)
     const path = '/search?' + buildSearchURLQuery(query, patternType)
     eventLogger.log('SearchSubmitted', {
         code_search: {
