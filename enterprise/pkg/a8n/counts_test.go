@@ -17,17 +17,6 @@ func TestCalcCounts(t *testing.T) {
 	now := time.Now().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
-	ghChangeset := func(id int64, t time.Time) *a8n.Changeset {
-		return &a8n.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}
-	}
-	ghReview := func(id int64, t time.Time, state string) *a8n.ChangesetEvent {
-		return &a8n.ChangesetEvent{
-			ChangesetID: id,
-			Kind:        a8n.ChangesetEventKindGitHubReviewed,
-			Metadata:    &github.PullRequestReview{UpdatedAt: t, State: state},
-		}
-	}
-
 	tests := []struct {
 		name       string
 		changesets []*a8n.Changeset
@@ -247,13 +236,10 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(7),
 			events: []Event{
-				// Changset 1
 				ghReview(1, daysAgo(5), "PENDING"),
 				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
-				// Changset 2
 				ghReview(2, daysAgo(4), "APPROVED"),
 				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
-				// Changset 3
 				ghReview(3, daysAgo(2), "CHANGES_REQUESTED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
 			},
@@ -308,3 +294,15 @@ type fakeEvent struct {
 func (e fakeEvent) Timestamp() time.Time         { return e.t }
 func (e fakeEvent) Type() a8n.ChangesetEventKind { return e.kind }
 func (e fakeEvent) Changeset() int64             { return e.id }
+
+func ghChangeset(id int64, t time.Time) *a8n.Changeset {
+	return &a8n.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}
+}
+
+func ghReview(id int64, t time.Time, state string) *a8n.ChangesetEvent {
+	return &a8n.ChangesetEvent{
+		ChangesetID: id,
+		Kind:        a8n.ChangesetEventKindGitHubReviewed,
+		Metadata:    &github.PullRequestReview{UpdatedAt: t, State: state},
+	}
+}
