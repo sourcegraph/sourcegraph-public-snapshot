@@ -42,7 +42,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS lsif_commits_repo_commit_parent_commit_unique 
 CREATE INDEX IF NOT EXISTS lsif_commits_repo_commit ON lsif_commits(repository, "commit");
 CREATE INDEX IF NOT EXISTS lsif_commits_repo_parent_commit ON lsif_commits(repository, "commit");
 
-CREATE OR REPLACE VIEW commits_with_lsif_data_markers AS
+CREATE OR REPLACE VIEW lsif_commits_with_lsif_data_markers AS
     SELECT
         c.repository,
         c."commit",

@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP VIEW IF EXISTS commits_with_lsif_data_markers;
+DROP VIEW IF EXISTS lsif_commits_with_lsif_data_markers;
 
 DROP INDEX IF EXISTS lsif_commits_repo_commit_parent_commit_unique;
 DROP INDEX IF EXISTS lsif_commits_repo_commit;
