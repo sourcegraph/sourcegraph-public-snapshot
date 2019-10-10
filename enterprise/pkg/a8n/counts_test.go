@@ -17,6 +17,10 @@ func TestCalcCounts(t *testing.T) {
 	now := time.Now().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
+	ghChangesetCreated := func(t time.Time) *a8n.Changeset {
+		return &a8n.Changeset{ID: 1, Metadata: &github.PullRequest{CreatedAt: t}}
+	}
+
 	tests := []struct {
 		name       string
 		changesets []*a8n.Changeset
@@ -28,7 +32,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open merged",
 			changesets: []*a8n.Changeset{
-				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(2)}},
+				ghChangesetCreated(daysAgo(2)),
 			},
 			start: daysAgo(2),
 			events: []Event{
@@ -43,7 +47,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "changeset merged and closed at same time",
 			changesets: []*a8n.Changeset{
-				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(2)}},
+				ghChangesetCreated(daysAgo(2)),
 			},
 			start: daysAgo(2),
 			events: []Event{
@@ -59,7 +63,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "changeset merged and closed at same time, reversed order in slice",
 			changesets: []*a8n.Changeset{
-				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(2)}},
+				ghChangesetCreated(daysAgo(2)),
 			},
 			start: daysAgo(2),
 			events: []Event{
@@ -75,7 +79,7 @@ func TestCalcCounts(t *testing.T) {
 		{
 			name: "single changeset open closed reopened merged",
 			changesets: []*a8n.Changeset{
-				{ID: 1, Metadata: &github.PullRequest{CreatedAt: daysAgo(4)}},
+				ghChangesetCreated(daysAgo(4)),
 			},
 			start: daysAgo(5),
 			events: []Event{
