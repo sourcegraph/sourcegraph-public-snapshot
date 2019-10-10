@@ -673,14 +673,22 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changeset := &a8n.Changeset{
-		RepoID:              int32(githubRepo.ID),
-		ExternalID:          "5834",
-		ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-		CampaignIDs:         []int64{campaign.ID},
+	changesets := []*a8n.Changeset{
+		&a8n.Changeset{
+			RepoID:              int32(githubRepo.ID),
+			ExternalID:          "5834",
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			CampaignIDs:         []int64{campaign.ID},
+		},
+		&a8n.Changeset{
+			RepoID:              int32(githubRepo.ID),
+			ExternalID:          "5849",
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			CampaignIDs:         []int64{campaign.ID},
+		},
 	}
 
-	err = store.CreateChangesets(ctx, changeset)
+	err = store.CreateChangesets(ctx, changesets...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -690,12 +698,14 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		Store:       store,
 		HTTPFactory: cf,
 	}
-	err = syncer.SyncChangesets(ctx, changeset)
+	err = syncer.SyncChangesets(ctx, changesets...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	campaign.ChangesetIDs = append(campaign.ChangesetIDs, changeset.ID)
+	for _, c := range changesets {
+		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
+	}
 	err = store.UpdateCampaign(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)
@@ -703,9 +713,14 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
 	// We start exactly one day earlier
+	// Date when PR #5849 was created: "2019-10-03T15:03:21Z"
 	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
 	// Date when PR #5834 was merged:  "2019-10-07T13:13:45Z"
+	// Date when PR #5849 was merged:  "2019-10-04T08:55:21Z"
 	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
+	daysBeforeEnd := func(days int) time.Time {
+		return end.AddDate(0, 0, -days)
+	}
 
 	r := &campaignResolver{store: store, Campaign: campaign}
 	rs, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
@@ -720,36 +735,12 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	}
 
 	want := []*ee.ChangesetCounts{
-		&ee.ChangesetCounts{
-			Time:  end.Add(5 * -24 * time.Hour),
-			Total: 0,
-			Open:  0,
-		},
-		&ee.ChangesetCounts{
-			Time:  end.Add(4 * -24 * time.Hour),
-			Total: 1,
-			Open:  1,
-		},
-		&ee.ChangesetCounts{
-			Time:  end.Add(3 * -24 * time.Hour),
-			Total: 1,
-			Open:  1,
-		},
-		&ee.ChangesetCounts{
-			Time:  end.Add(2 * -24 * time.Hour),
-			Total: 1,
-			Open:  1,
-		},
-		&ee.ChangesetCounts{
-			Time:  end.Add(1 * -24 * time.Hour),
-			Total: 1,
-			Open:  1,
-		},
-		&ee.ChangesetCounts{
-			Time:   end,
-			Total:  1,
-			Merged: 1,
-		},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(5), Total: 0, Open: 0},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(4), Total: 1, Open: 1},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(3), Total: 2, Merged: 1, Open: 1},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(2), Total: 2, Merged: 1, Open: 1},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(1), Total: 2, Merged: 1, Open: 1},
+		&ee.ChangesetCounts{Time: end, Total: 2, Merged: 2},
 	}
 
 	if !reflect.DeepEqual(have, want) {
