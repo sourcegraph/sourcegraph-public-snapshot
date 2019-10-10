@@ -116,6 +116,81 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
 		},
+		{
+			name: "single changeset open, pending review, approved, merged",
+			changesets: []*a8n.Changeset{
+				ghChangesetCreated(daysAgo(3)),
+			},
+			start: daysAgo(4),
+			events: []Event{
+				&a8n.ChangesetEvent{
+					ChangesetID: 1,
+					Kind:        a8n.ChangesetEventKindGitHubReviewed,
+					Metadata: &github.PullRequestReview{
+						UpdatedAt: daysAgo(2),
+						State:     "APPROVED",
+					},
+				},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 0, Open: 0},
+				{Time: daysAgo(3), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
+			name: "single changeset open, pending review, changes requested, merged",
+			changesets: []*a8n.Changeset{
+				ghChangesetCreated(daysAgo(3)),
+			},
+			start: daysAgo(4),
+			events: []Event{
+				&a8n.ChangesetEvent{
+					ChangesetID: 1,
+					Kind:        a8n.ChangesetEventKindGitHubReviewed,
+					Metadata: &github.PullRequestReview{
+						UpdatedAt: daysAgo(2),
+						State:     "CHANGES_REQUESTED",
+					},
+				},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 0, Open: 0},
+				{Time: daysAgo(3), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
+			name: "single changeset open, pending review, pending, merged",
+			changesets: []*a8n.Changeset{
+				ghChangesetCreated(daysAgo(3)),
+			},
+			start: daysAgo(4),
+			events: []Event{
+				&a8n.ChangesetEvent{
+					ChangesetID: 1,
+					Kind:        a8n.ChangesetEventKindGitHubReviewed,
+					Metadata: &github.PullRequestReview{
+						UpdatedAt: daysAgo(2),
+						State:     "PENDING",
+					},
+				},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(4), Total: 0, Open: 0},
+				{Time: daysAgo(3), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(1), Total: 1, Merged: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
 	}
 
 	for _, tc := range tests {
