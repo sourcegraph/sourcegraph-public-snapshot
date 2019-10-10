@@ -661,16 +661,11 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
-	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
-	// We start exactly one day earlier
-	campaignCreatedAt := parseJSONTime(t, "2019-10-01T14:49:31Z")
-
 	campaign := &a8n.Campaign{
 		Name:            "Test campaign",
 		Description:     "Testing changeset counts",
 		AuthorID:        u.ID,
 		NamespaceUserID: u.ID,
-		CreatedAt:       campaignCreatedAt,
 	}
 
 	err = store.CreateCampaign(ctx, campaign)
@@ -716,8 +711,12 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	start := campaign.CreatedAt
+	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
+	// We start exactly one day earlier
+	// Date when PR #5849 was created: "2019-10-03T15:03:21Z"
+	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
 	// Date when PR #5834 was merged:  "2019-10-07T13:13:45Z"
+	// Date when PR #5849 was merged:  "2019-10-04T08:55:21Z"
 	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
 	daysBeforeEnd := func(days int) time.Time {
 		return end.AddDate(0, 0, -days)
