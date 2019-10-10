@@ -42,6 +42,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
+import LiteralSearchToast from './marketing/LiteralSearchToast'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
@@ -126,6 +127,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
+            <LiteralSearchToast />
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
