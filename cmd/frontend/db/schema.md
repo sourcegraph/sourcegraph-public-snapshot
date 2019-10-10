@@ -286,9 +286,9 @@ Indexes:
 
 # Table "public.lsif_commits"
 ```
-    Column     |  Type   |                      Modifiers                       
----------------+---------+------------------------------------------------------
- id            | integer | not null default nextval('commits_id_seq'::regclass)
+    Column     |  Type   |                        Modifiers                         
+---------------+---------+----------------------------------------------------------
+ id            | integer | not null default nextval('lsif_commits_id_seq'::regclass)
  repository    | text    | not null
  commit        | text    | not null
  parent_commit | text    | not null
