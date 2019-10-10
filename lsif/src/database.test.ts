@@ -119,8 +119,11 @@ describe('createRemoteUri', () => {
             scheme: '',
             name: '',
             version: '',
-            repository: 'github.com/sourcegraph/codeintellify',
-            commit: 'deadbeef',
+            dump: {
+                id: 0,
+                repository: 'github.com/sourcegraph/codeintellify',
+                commit: 'deadbeef',
+            },
         }
 
         const uri = createRemoteUri(pkg, 'src/position.ts')

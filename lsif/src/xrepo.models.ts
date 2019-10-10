@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, PrimaryColumn, ViewEntity, ViewColumn } from 'typeorm'
+import { PrimaryGeneratedColumn, Column, Entity, ViewEntity, ViewColumn, OneToOne, JoinColumn } from 'typeorm'
 import { getBatchSize } from './util'
 import { EncodedBloomFilter } from './encoding'
 
@@ -44,18 +44,24 @@ export class Commit {
  * An entity within the cross-repo database. A row with a repository and commit
  * indicates that there exists LSIF data for that pair.
  */
-@Entity({ name: 'lsif_data_markers' })
-export class LsifDataMarker {
+@Entity({ name: 'lsif_dumps' })
+export class LsifDump {
+    /**
+     * A unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
+    public id!: number
+
     /**
      * The name of the source repository.
      */
-    @PrimaryColumn('text')
+    @Column('text')
     public repository!: string
 
     /**
      * The source commit.
      */
-    @PrimaryColumn('text')
+    @Column('text')
     public commit!: string
 
     /**
@@ -93,17 +99,9 @@ class Package {
     @Column('text', { nullable: true })
     public version!: string | null
 
-    /**
-     * The name of the source repository.
-     */
-    @Column('text')
-    public repository!: string
-
-    /**
-     * The source commit.
-     */
-    @Column('text')
-    public commit!: string
+    @OneToOne(type => LsifDump, { eager: true })
+    @JoinColumn({ name: 'dump_id' })
+    public dump!: LsifDump
 }
 
 /**
@@ -115,7 +113,7 @@ export class PackageModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(5)
+    public static BatchSize = getBatchSize(4)
 }
 
 /**
@@ -148,7 +146,7 @@ export class ReferenceModel extends Package {
  * we will also have access to the view.
  */
 @ViewEntity({
-    name: 'lsif_commits_with_lsif_data_markers',
+    name: 'lsif_commits_with_lsif_data',
     expression: `
         select
             c.repository,
@@ -156,8 +154,8 @@ export class ReferenceModel extends Package {
             c.parent_commit,
             exists (
                 select 1
-                from lsif_data_markers m
-                where m.repository = c.repository and m."commit" = c."commit"
+                from lsif_dumps dump
+                where dump.repository = c.repository and dump."commit" = c."commit"
             ) as has_lsif_data
         from lsif_commits c
     `,
@@ -179,4 +177,4 @@ export class CommitWithLsifMarkers {
 /**
  * The entities composing the cross-repository database models.
  */
-export const entities = [Commit, CommitWithLsifMarkers, LsifDataMarker, PackageModel, ReferenceModel]
+export const entities = [Commit, CommitWithLsifMarkers, LsifDump, PackageModel, ReferenceModel]
