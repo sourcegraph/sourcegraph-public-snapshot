@@ -6,7 +6,7 @@ This document outlines the data model used to correlate multiple LSIF dumps. The
 
 ## Database tables
 
-**`commits` table**
+**`lsif_commits` table**
 
 This table contains all commits known for a repository for which LSIF data has been uploaded. Each commit consists of one or more rows indicating their parent. If a commit has no parent, then the parentCommit field is an empty string.
 

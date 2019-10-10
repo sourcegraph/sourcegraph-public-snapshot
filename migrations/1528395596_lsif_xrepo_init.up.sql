@@ -14,7 +14,7 @@
 -- is staying here so that it does not disturb developers and CI/CDd instances
 -- of Sourcegraph.
 
--- The effective behavior of this migraiton has moved to the following pair of
+-- The effective behavior of this migration has moved to the following pair of
 -- migration files:
 --   * 1528395599_create_lsif_tables.up.sql.
 --   * 1528395599_create_lsif_tables.down.sql.
