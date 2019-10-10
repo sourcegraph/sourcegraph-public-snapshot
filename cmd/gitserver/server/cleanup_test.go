@@ -61,19 +61,13 @@ func TestCleanupExpired(t *testing.T) {
 	defer os.RemoveAll(root)
 
 	repoNew := path.Join(root, "repo-new", ".git")
-	cmd := exec.Command("git", "--bare", "init", repoNew)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
 	repoOld := path.Join(root, "repo-old", ".git")
-	cmd = exec.Command("git", "--bare", "init", repoOld)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
 	remote := path.Join(root, "remote", ".git")
-	cmd = exec.Command("git", "--bare", "init", remote)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+	for _, path := range []string{repoNew, repoOld, remote} {
+		cmd := exec.Command("git", "--bare", "init", path)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	origRepoRemoteURL := repoRemoteURL
@@ -87,7 +81,7 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd = exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Add(-(2*repoTTL)).Unix(), 10))
+	cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Add(-(2*repoTTL)).Unix(), 10))
 	cmd.Dir = repoOld
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
