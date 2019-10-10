@@ -7,7 +7,7 @@ jobs:
     steps:
       - name: test
         run: |
-          echo "${GITHUB_REPOSITORY}@${GITHUB_SHA}""
+          echo "${GITHUB_REPOSITORY}@${GITHUB_SHA}"
 
       # - uses: actions/checkout@v1
       # - name: Generate LSIF Data
