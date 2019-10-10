@@ -430,9 +430,9 @@ type fakeEvent struct {
 	id   int64
 }
 
-func (e fakeEvent) Timestamp() time.Time         { return e.t }
-func (e fakeEvent) Type() a8n.ChangesetEventKind { return e.kind }
-func (e fakeEvent) Changeset() int64             { return e.id }
+func (e fakeEvent) Timestamp() (time.Time, error) { return e.t, nil }
+func (e fakeEvent) Type() a8n.ChangesetEventKind  { return e.kind }
+func (e fakeEvent) Changeset() int64              { return e.id }
 
 func ghChangeset(id int64, t time.Time) *a8n.Changeset {
 	return &a8n.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}

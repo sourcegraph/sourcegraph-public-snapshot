@@ -267,34 +267,34 @@ func (e *ChangesetEvent) Changeset() int64 {
 
 // Timestamp returns the time when the ChangesetEvent happened (or was updated)
 // on the codehost, not when it was created in Sourcegraph's database.
-func (e *ChangesetEvent) Timestamp() time.Time {
+func (e *ChangesetEvent) Timestamp() (time.Time, error) {
 	switch e := e.Metadata.(type) {
 	case *github.AssignedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.ClosedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.IssueComment:
-		return e.UpdatedAt
+		return e.UpdatedAt, nil
 	case *github.RenamedTitleEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.MergedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.PullRequestReview:
-		return e.UpdatedAt
+		return e.UpdatedAt, nil
 	case *github.PullRequestReviewComment:
-		return e.UpdatedAt
+		return e.UpdatedAt, nil
 	case *github.ReopenedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.ReviewDismissedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.ReviewRequestRemovedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.ReviewRequestedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	case *github.UnassignedEvent:
-		return e.CreatedAt
+		return e.CreatedAt, nil
 	default:
-		panic(errors.Errorf("unknown changeset event metadata %T", e))
+		return time.Time{}, errors.Errorf("unknown changeset event metadata %T", e)
 	}
 }
 

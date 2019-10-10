@@ -35,7 +35,7 @@ func (cc *ChangesetCounts) String() string {
 }
 
 type Event interface {
-	Timestamp() time.Time
+	Timestamp() (time.Time, error)
 	Type() a8n.ChangesetEventKind
 	Changeset() int64
 }
@@ -47,7 +47,9 @@ func (es Events) Swap(i, j int) { es[i], es[j] = es[j], es[i] }
 
 // Less sorts events by their timestamps
 func (es Events) Less(i, j int) bool {
-	return es[i].Timestamp().Before(es[j].Timestamp())
+	t1, _ := es[i].Timestamp()
+	t2, _ := es[j].Timestamp()
+	return t1.Before(t2)
 }
 
 func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*ChangesetCounts, error) {
@@ -108,8 +110,12 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 			)
 
 			for _, e := range csEvents {
+				et, err := e.Timestamp()
+				if err != nil {
+					return nil, err
+				}
 				// Event happened after point in time we're looking at, ignore
-				if e.Timestamp().After(t) {
+				if et.After(t) {
 					continue
 				}
 
