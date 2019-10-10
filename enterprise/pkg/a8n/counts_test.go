@@ -32,11 +32,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(2),
 			events: []Event{
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubMerged,
-					t:           daysAgo(1),
-					changesetID: 1,
-				},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1},
@@ -51,16 +47,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(2),
 			events: []Event{
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubMerged,
-					t:           daysAgo(1),
-					changesetID: 1,
-				},
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubClosed,
-					t:           daysAgo(1),
-					changesetID: 1,
-				},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1},
@@ -75,16 +63,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(2),
 			events: []Event{
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubClosed,
-					t:           daysAgo(1),
-					changesetID: 1,
-				},
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubMerged,
-					t:           daysAgo(1),
-					changesetID: 1,
-				},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1},
@@ -99,21 +79,9 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(5),
 			events: []Event{
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubClosed,
-					t:           daysAgo(3),
-					changesetID: 1,
-				},
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubReopened,
-					t:           daysAgo(2),
-					changesetID: 1,
-				},
-				fakeEvent{
-					kind:        a8n.ChangesetEventKindGitHubMerged,
-					t:           daysAgo(1),
-					changesetID: 1,
-				},
+				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubReopened, id: 1},
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(5), Total: 0, Open: 0},
@@ -156,11 +124,11 @@ func parse(t testing.TB, ts string) time.Time {
 }
 
 type fakeEvent struct {
-	t           time.Time
-	kind        a8n.ChangesetEventKind
-	changesetID int64
+	t    time.Time
+	kind a8n.ChangesetEventKind
+	id   int64
 }
 
 func (e fakeEvent) Timestamp() time.Time         { return e.t }
 func (e fakeEvent) Type() a8n.ChangesetEventKind { return e.kind }
-func (e fakeEvent) Changeset() int64             { return e.changesetID }
+func (e fakeEvent) Changeset() int64             { return e.id }
