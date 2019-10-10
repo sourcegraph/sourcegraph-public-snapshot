@@ -35,7 +35,7 @@ Examples:
 		repoFlag        = flagSet.String("repo", "", `The name of the repository. (required)`)
 		commitFlag      = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
 		fileFlag        = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
-		uploadTokenFlag = flagSet.String("upload-token", "", `The LSIF upload token for the given repository. (required for Sourcegraph.com only)`)
+		uploadTokenFlag = flagSet.String("upload-token", "", `The LSIF upload token for the given repository. (required if lsifEnforceAuth setting is enabled)`)
 		apiFlags        = newAPIFlags(flagSet)
 	)
 
