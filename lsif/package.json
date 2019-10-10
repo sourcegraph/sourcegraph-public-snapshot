@@ -52,7 +52,6 @@
     "@types/lodash": "4.14.142",
     "@types/logform": "^1.2.0",
     "@types/mz": "0.0.32",
-    "@types/node-resque": "5.4.1",
     "@types/relateurl": "0.2.28",
     "@types/rmfr": "2.0.0",
     "@types/sinon": "7.5.0",
