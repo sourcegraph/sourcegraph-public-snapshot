@@ -446,7 +446,10 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 			}
 		}
 	}
-	for repo, results := range resultsByRepo {
+	for _, r := range common.repos {
+		repo := reposByName[string(r.Name)]
+		results := resultsByRepo[repo]
+
 		// TODO(slimsag): future: approximateResultCount in paginated requests
 		// is certainly wrong because it doesn't account for prior repos in
 		// prior paginated requests with the cursor.
