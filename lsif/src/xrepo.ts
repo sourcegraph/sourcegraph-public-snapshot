@@ -1,13 +1,13 @@
 import {
     bloomFilterEventsCounter,
-    instrument,
     xrepoInsertionDurationHistogram,
     xrepoQueryDurationHistogram,
     xrepoQueryErrorsCounter,
-} from './metrics'
+} from './xrepo.metrics'
+import { instrument } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
+import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
 import { TracingContext } from './tracing'

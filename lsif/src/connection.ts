@@ -1,5 +1,5 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
-import { entities } from './models.xrepo'
+import { entities } from './xrepo.models'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
 import { Logger } from 'winston'

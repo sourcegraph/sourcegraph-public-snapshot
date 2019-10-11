@@ -16,7 +16,7 @@ local percentileColors = ['#7eb26d', '#cca300', '#bf1b00'];
 // The histogram buckets for db queries and insertions
 local buckets = ['0.2', '0.5', '1', '2', '5', '10', '30', '+Inf'];
 
-// The histogram bucket sfor HTTP requests
+// The histogram buckets for HTTP requests
 local httpBuckets = ['0.03', '0.1', '0.3', '1.5', '10', '+Inf'];
 
 // Colors to pair to buckets defined above (green to red)

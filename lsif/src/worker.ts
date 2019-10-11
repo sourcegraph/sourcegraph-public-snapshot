@@ -2,7 +2,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import promBundle from 'express-prom-bundle'
+import promClient from 'prom-client'
 import uuid from 'uuid'
 import { convertLsif } from './importer'
 import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
@@ -15,6 +15,7 @@ import { Tracer, FORMAT_TEXT_MAP, Span, followsFrom } from 'opentracing'
 import { createTracer, TracingContext, logAndTraceCall, addTags } from './tracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { discoverAndUpdateCommit } from './commits'
+import { jobDurationHistogram, jobEventsCounter } from './worker.metrics'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -156,6 +157,9 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: Conf
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    // Collect process metrics
+    promClient.collectDefaultMetrics({ prefix: 'lsif_' })
+
     // Read configuration from frontend
     const fetchConfiguration = await waitForConfiguration(logger)
 
@@ -211,13 +215,36 @@ async function startWorker(
     worker.on('end', () => logger.debug('worker ended'))
     worker.on('poll', () => logger.debug('worker polling queue'))
     worker.on('ping', () => logger.debug('worker pinging queue'))
-    worker.on('job', (_, job) => logger.debug('worker accepted job', { job: formatJob(job) }))
-    worker.on('success', (_, job, result) => logger.debug('worker completed job', { job: formatJob(job), result }))
-    worker.on('failure', (_, job, failure) => logger.debug('worker failed job', { job: formatJob(job), failure }))
     worker.on('cleaning_worker', (worker, pid) =>
         logger.debug('worker cleaning old sibling', { worker: `${worker}:${pid}` })
     )
     worker.on('error', error => logger.error('worker error', { error }))
+
+    // Start a timer when accepting a job and end it when either
+    // succeeding or failing. This is fine as we're not using a
+    // multiWorker and only one job will be processed at a time.
+    let end: (() => void) | undefined
+
+    worker.on('job', (_, job) => {
+        logger.debug('worker accepted job', { job: formatJob(job) })
+        end = jobDurationHistogram.labels(job.class).startTimer()
+    })
+
+    worker.on('success', (_, job, result) => {
+        logger.debug('worker completed job', { job: formatJob(job), result })
+        jobEventsCounter.labels(job.class, 'success').inc()
+        if (end) {
+            end()
+        }
+    })
+
+    worker.on('failure', (_, job, failure) => {
+        logger.debug('worker failed job', { job: formatJob(job), failure })
+        jobEventsCounter.labels(job.class, 'failure').inc()
+        if (end) {
+            end()
+        }
+    })
 
     await worker.connect()
     exitHook(() => worker.end())
@@ -232,7 +259,10 @@ async function startWorker(
 function startMetricsServer(logger: Logger): void {
     const app = express()
     app.get('/healthz', (_, res) => res.send('ok'))
-    app.use(promBundle({}))
+    app.get('/metrics', (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end(promClient.register.metrics())
+    })
 
     app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
 }
