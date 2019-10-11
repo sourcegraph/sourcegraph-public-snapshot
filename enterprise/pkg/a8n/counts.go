@@ -90,10 +90,6 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 				continue
 			}
 
-			c.Total++
-			c.Open++
-			c.OpenPending++
-
 			err := computeCounts(c, csEvents)
 			if err != nil {
 				return counts, err
@@ -116,6 +112,10 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 		approved         = false
 		changesRequested = false
 	)
+
+	c.Total++
+	c.Open++
+	c.OpenPending++
 
 	lastReviewByAuthor := map[string]a8n.ChangesetReviewState{}
 
@@ -182,16 +182,16 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				return err
 			}
 
-			// compute previous overall state
+			// Compute previous overall review state
 			previousOverallState := computeReviewState(lastReviewByAuthor)
 
-			// Insert new review, potentially replacing old review
-			// But only if it's not "PENDING" or "COMMENTED"
+			// Insert new review, potentially replacing old review, but only if
+			// it's not "PENDING" or "COMMENTED"
 			if s == a8n.ChangesetReviewStateApproved || s == a8n.ChangesetReviewStateChangesRequested {
 				lastReviewByAuthor[author] = s
 			}
 
-			// compute new overall state
+			// Compute new overall review state
 			newOverallState := computeReviewState(lastReviewByAuthor)
 
 			switch newOverallState {
