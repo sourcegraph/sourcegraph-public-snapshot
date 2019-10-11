@@ -371,14 +371,14 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		return resolvers, err
 	}
 
-	start := r.Campaign.CreatedAt
+	start := r.Campaign.CreatedAt.UTC()
 	if args.From != nil {
-		start = args.From.Time
+		start = args.From.Time.UTC()
 	}
 
-	end := time.Now()
+	end := time.Now().UTC()
 	if args.To != nil && args.To.Time.Before(end) {
-		end = args.To.Time
+		end = args.To.Time.UTC()
 	}
 
 	var (
