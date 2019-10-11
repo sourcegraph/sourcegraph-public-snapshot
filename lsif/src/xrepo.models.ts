@@ -6,7 +6,7 @@ import { EncodedBloomFilter } from './encoding'
  * An entity within the cross-repo database. This tracks commit parentage and branch
  * heads for all known repositories.
  */
-@Entity({ name: 'commits' })
+@Entity({ name: 'lsif_commits' })
 export class Commit {
     /**
      * The number of model instances that can be inserted at once.
@@ -110,7 +110,7 @@ class Package {
  * An entity within the cross-repo database. This maps a given repository and commit
  * pair to the package that it provides to other projects.
  */
-@Entity({ name: 'packages' })
+@Entity({ name: 'lsif_packages' })
 export class PackageModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
@@ -122,7 +122,7 @@ export class PackageModel extends Package {
  * An entity within the cross-repo database. This lists the dependencies of a given
  * repository and commit pair to support find global reference operations.
  */
-@Entity({ name: 'references' })
+@Entity({ name: 'lsif_references' })
 export class ReferenceModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
@@ -143,12 +143,12 @@ export class ReferenceModel extends Package {
 }
 
 /**
- * A view that adds a `hasLsifData` column to the `commits` table. We define the view
- * in a migration as well as inline so that when we run unit tests (via a SQLite db)
+ * A view that adds a `hasLsifData` column to the `lsif_commits` table. We define the
+ * view in a migration as well as inline so that when we run unit tests (via a SQLite db)
  * we will also have access to the view.
  */
 @ViewEntity({
-    name: 'commits_with_lsif_data_markers',
+    name: 'lsif_commits_with_lsif_data_markers',
     expression: `
         select
             c.repository,
@@ -159,7 +159,7 @@ export class ReferenceModel extends Package {
                 from lsif_data_markers m
                 where m.repository = c.repository and m."commit" = c."commit"
             ) as has_lsif_data
-        from commits c
+        from lsif_commits c
     `,
 })
 export class CommitWithLsifMarkers {
