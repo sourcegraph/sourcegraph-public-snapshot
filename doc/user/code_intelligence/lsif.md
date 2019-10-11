@@ -14,8 +14,9 @@ Several languages are currently supported:
 
 - [TypeScript](https://github.com/Microsoft/lsif-node/tree/master/tsc)
 - [Go](https://github.com/sourcegraph/lsif-go)
-- [Python](https://github.com/sourcegraph/lsif-py), [C/C++](https://github.com/sourcegraph/lsif-cpp), and [OCaml](https://github.com/sourcegraph/merlin-to-coif) are early stage
-- LSIF indexers for more languages coming soon!
+- [C/C++](https://github.com/sourcegraph/lsif-cpp)
+- [Python](https://github.com/sourcegraph/lsif-py), [Java](https://github.com/sourcegraph/lsif-java), and [OCaml](https://github.com/sourcegraph/merlin-to-coif) are early stage
+- LSIF indexers for more languages coming soon! See https://lsif.dev for more information.
 
 ## Setting up LSIF code intelligence
 
