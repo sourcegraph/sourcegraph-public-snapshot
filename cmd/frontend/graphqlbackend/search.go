@@ -93,7 +93,7 @@ func (r *schemaResolver) Search(args *struct {
 
 	return &searchResolver{
 		query:        q,
-		pagination: pagination,
+		pagination:   pagination,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
