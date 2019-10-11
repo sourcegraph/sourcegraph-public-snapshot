@@ -222,7 +222,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			name: "single changeset open, pending review, approved, merged",
+			name: "single changeset open, approved, merged",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
@@ -289,7 +289,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			name: "single changeset open, pending review, changes requested, merged",
+			name: "single changeset open, changes requested, merged",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
