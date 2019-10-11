@@ -111,7 +111,7 @@ export function mod(sum: string, max: number): number {
  * @param commit The commit from which the gitserver queries should start.
  */
 async function getCommitsNear(gitserverUrl: string, repository: string, commit: string): Promise<[string, string][]> {
-    const args = ['git', 'log', '--pretty=%H %P', commit, `-${MAX_COMMITS_PER_UPDATE}`]
+    const args = ['log', '--pretty=%H %P', commit, `-${MAX_COMMITS_PER_UPDATE}`]
 
     try {
         return flattenCommitParents(await gitserverExecLines(gitserverUrl, repository, args))

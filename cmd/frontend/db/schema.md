@@ -284,6 +284,68 @@ Indexes:
 
 ```
 
+# Table "public.lsif_commits"
+```
+    Column     |  Type   |                         Modifiers                         
+---------------+---------+-----------------------------------------------------------
+ id            | integer | not null default nextval('lsif_commits_id_seq'::regclass)
+ repository    | text    | not null
+ commit        | text    | not null
+ parent_commit | text    | not null
+Indexes:
+    "lsif_commits_pkey" PRIMARY KEY, btree (id)
+    "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
+    "lsif_commits_repo_commit" btree (repository, commit)
+    "lsif_commits_repo_parent_commit" btree (repository, parent_commit)
+
+```
+
+# Table "public.lsif_data_markers"
+```
+   Column   | Type | Modifiers 
+------------+------+-----------
+ repository | text | not null
+ commit     | text | not null
+Indexes:
+    "lsif_data_markers_pkey" PRIMARY KEY, btree (repository, commit)
+
+```
+
+# Table "public.lsif_packages"
+```
+   Column   |  Type   |                         Modifiers                          
+------------+---------+------------------------------------------------------------
+ id         | integer | not null default nextval('lsif_packages_id_seq'::regclass)
+ scheme     | text    | not null
+ name       | text    | not null
+ version    | text    | 
+ repository | text    | not null
+ commit     | text    | not null
+Indexes:
+    "lsif_packages_pkey" PRIMARY KEY, btree (id)
+    "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
+    "lsif_packages_repo_commit" btree (repository, commit)
+
+```
+
+# Table "public.lsif_references"
+```
+   Column   |  Type   |                          Modifiers                           
+------------+---------+--------------------------------------------------------------
+ id         | integer | not null default nextval('lsif_references_id_seq'::regclass)
+ scheme     | text    | not null
+ name       | text    | not null
+ version    | text    | 
+ repository | text    | not null
+ commit     | text    | not null
+ filter     | bytea   | not null
+Indexes:
+    "lsif_references_pkey" PRIMARY KEY, btree (id)
+    "lsif_references_package" btree (scheme, name, version)
+    "lsif_references_repo_commit" btree (repository, commit)
+
+```
+
 # Table "public.names"
 ```
  Column  |  Type   | Modifiers 

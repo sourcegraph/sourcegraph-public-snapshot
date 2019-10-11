@@ -59,12 +59,11 @@ export function createSqliteConnection(
 }
 
 /**
- * Create a Postgres connection. This creates a typorm connection pool
- * with the name `xrepo`. The connection configuration is constructed by
- * `createPostgresConnectionOptions`. This method blocks (failing after
- * a configured time) until the connection is established, then blocks
- * indefinitely while the database migration state is behind the
- * expected minimum, or dirty.
+ * Create a Postgres connection. This creates a typorm connection pool with the
+ * name `xrepo`. The connection configuration is constructed by the method
+ * `createPostgresConnectionOptions`. This method blocks (failing after a configured
+ * time) until the connection is established, then blocks indefinitely while the
+ * database migration state is behind the expected minimum, or dirty.
  *
  * @param configuration The current configuration.
  * @param logger The logger instance.
@@ -82,17 +81,14 @@ export async function createPostgresConnection(configuration: Configuration, log
         ssl: url.searchParams.get('sslmode') === 'disable' ? false : undefined,
     }
 
-    // Override the database name we're connecting to
+    // Get a working connection
     const connection = await connect(
-        {
-            ...connectionOptions,
-            database: connectionOptions.database + '_lsif',
-        },
+        connectionOptions,
         logger
     )
 
     // Poll the schema migrations table until we are up to date
-    await waitForMigrations(connection, connectionOptions.database || '', logger)
+    await waitForMigrations(connection, logger)
 
     return connection
 }
@@ -100,7 +96,7 @@ export async function createPostgresConnection(configuration: Configuration, log
 /**
  * Create a connection to the cross-repository database. This will re-attempt to
  * access the database while the database does not exist. This is to give some
- * time to the frontend to run the migrations that create the LSIF database. The
+ * time to the frontend to run the migrations that create the LSIF tables. The
  * retry interval and attempt count can be tuned via `MAX_CONNECTION_RETRIES` and
  * `CONNECTION_RETRY_INTERVAL` environment variables.
  *
@@ -130,18 +126,17 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
 }
 
 /**
- * Block until we can select a migration version from the frontend database that
- * is at leasts as large as our minimum migration version.
+ * Block until we can select a migration version from the database that is at
+ * least as large as our minimum migration version.
  *
  * @param connection The connection to use.
- * @param database The target database in which to perform the query.
  * @param logger The logger instance.
  */
-function waitForMigrations(connection: Connection, database: string, logger: Logger): Promise<void> {
+function waitForMigrations(connection: Connection, logger: Logger): Promise<void> {
     const check = async (): Promise<void> => {
         logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
-        const version = parseInt(await getMigrationVersion(connection, database), 10)
+        const version = parseInt(await getMigrationVersion(connection), 10)
         if (isNaN(version) || version < MINIMUM_MIGRATION_VERSION) {
             throw new Error('cross-repository database not up to date')
         }
@@ -160,21 +155,10 @@ function waitForMigrations(connection: Connection, database: string, logger: Log
  * error, if no migration version can be found, or if the current migration state
  * is dirty.
  *
- * This process was configured to point to the primary Sourcegraph database, but we
- * have connected to the LSIF-specific database. We ue dblink to issue a query in the
- * 'remote' database without creating a second connection.
- *
  * @param connection The database connection.
- * @param database The target database in which to perform the query.
  */
-async function getMigrationVersion(connection: Connection, database: string): Promise<string> {
-    const query = `
-        select * from
-        dblink('dbname=' || $1 || ' user=' || current_user, 'select * from schema_migrations')
-        as temp(version text, dirty bool);
-    `
-
-    const rows = (await connection.query(query, [database])) as {
+async function getMigrationVersion(connection: Connection): Promise<string> {
+    const rows = (await connection.query('select * from schema_migrations')) as {
         version: string
         dirty: boolean
     }[]
