@@ -215,12 +215,7 @@ func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 		log.Fatal(err)
 	}
 
-	s, err := dbutil.NewMigrationSourceLoader(dataSource)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	d, err := bindata.WithInstance(s)
+	d, err := bindata.WithInstance(dbutil.NewMigrationSourceLoader(dataSource))
 	if err != nil {
 		log.Fatal(err)
 	}

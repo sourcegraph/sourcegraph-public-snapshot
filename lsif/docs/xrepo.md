@@ -6,7 +6,7 @@ This document outlines the data model used to correlate multiple LSIF dumps. The
 
 ## Database tables
 
-**`commits` table**
+**`lsif_commits` table**
 
 This table contains all commits known for a repository for which LSIF data has been uploaded. Each commit consists of one or more rows indicating their parent. If a commit has no parent, then the parentCommit field is an empty string.
 
@@ -34,7 +34,7 @@ This table contains an entry for each commit that has had LSIF data uploaded.
 
 This table enables us to determine the closest commit with LSIF data to a given target commit.
 
-**`packages` table**
+**`lsif_packages` table**
 
 This table links a package manager-specific identifier and version to the repository and commit that _provides_ the package. The scheme, name, and version values are correlated with a moniker and its package information from an LSIF dump.
 
@@ -44,9 +44,9 @@ This table links a package manager-specific identifier and version to the reposi
 
 This table enables cross-repository jump-to-definition. When a range has no definition result but does have an _import_ moniker, the scheme, name, and version of the moniker can be queried in this table to get the repository and commit of the package that should contain that moniker's definition.
 
-**`references` table**
+**`lsif_references` table**
 
-This table links a repository and commit to the set of packages on which it depends. This table shares common columns with the `packages` table, which are documented above. In addition, this table also has a `filter` column, which encodes a [bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) populated with the set of identifiers that the commit imports from the dependent package.
+This table links a repository and commit to the set of packages on which it depends. This table shares common columns with the `lsif_packages` table, which are documented above. In addition, this table also has a `filter` column, which encodes a [bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) populated with the set of identifiers that the commit imports from the dependent package.
 
 | id  | scheme | name      | version | repository                    | commit    | filter                       |
 | --- | ------ | --------- | ------- | ----------------------------- | --------- | ---------------------------- |

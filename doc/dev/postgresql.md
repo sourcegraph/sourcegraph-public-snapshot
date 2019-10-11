@@ -73,10 +73,6 @@ on local sockets, which provides reliable identification but must
 be specially configured to authenticate you as a user with a name
 different from your account name.)
 
-Note: Sourcegraph will create a secondary database in the same PostgreSQL
-instance with a name of the form `{PGDATABASE}_lsif`. It is assumed the
-PostgreSQL instance is dedicated solely to Sourcegraph.
-
 # Migrations
 
 Migrations get applied automatically at application startup - you
