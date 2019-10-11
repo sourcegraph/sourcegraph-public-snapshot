@@ -348,46 +348,24 @@ async function lsifEndpoints(
      *
      * @param repository The repository name.
      * @param commit The target commit.
+     * @param file One of the files in the dump.
      * @param ctx The tracing context.
      * @param gitserverUrls The set of ordered gitserver urls.
      */
     const loadDatabase = async (
         repository: string,
         commit: string,
+        file: string,
         { logger = createSilentLogger(), span = new Span() }: TracingContext,
         gitserverUrls: string[]
     ): Promise<{ database: Database | undefined; ctx: TracingContext }> => {
-        // Try to construct database for the exact commit
-        const dump = await xrepoDatabase.getDump(repository, commit)
-        if (dump) {
-            const database = await tryCreateDatabase(
-                STORAGE_ROOT,
-                xrepoDatabase,
-                connectionCache,
-                documentCache,
-                resultChunkCache,
-                dump.id,
-                dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
-            )
-            if (database) {
-                return { database, ctx: { logger, span } }
-            }
-        }
-
         // Determine the closest commit that we actually have LSIF data for. If the commit is
         // not tracked, then commit data is requested from gitserver and insert the ancestors
         // data for this commit.
-        const commitWithData = await logAndTraceCall(
-            { logger, span },
-            'determining closest commit',
-            (ctx: TracingContext) => xrepoDatabase.findClosestCommitWithData(repository, commit, ctx, gitserverUrls)
+        const dump = await logAndTraceCall({ logger, span }, 'determining closest commit', (ctx: TracingContext) =>
+            xrepoDatabase.findClosestDump(repository, commit, file, ctx, gitserverUrls)
         )
-        if (!commitWithData) {
-            return { database: undefined, ctx: { logger, span } }
-        }
-
-        const dumpWithData = await xrepoDatabase.getDump(repository, commitWithData)
-        if (!dumpWithData) {
+        if (!dump) {
             return { database: undefined, ctx: { logger, span } }
         }
 
@@ -398,11 +376,12 @@ async function lsifEndpoints(
             connectionCache,
             documentCache,
             resultChunkCache,
-            dumpWithData.id,
-            dbFilename(STORAGE_ROOT, dumpWithData.id, dumpWithData.repository, dumpWithData.commit)
+            dump.id,
+            dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit),
+            dump.root
         )
 
-        return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: commitWithData }) }
+        return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: dump.commit }) }
     }
 
     /**
@@ -423,11 +402,11 @@ async function lsifEndpoints(
                 res: express.Response,
                 next: express.NextFunction
             ): Promise<void> => {
-                const { repository, commit } = req.query
+                const { repository, commit, root } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const ctx = createTracingContext(req, { repository, commit })
+                const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const output = fs.createWriteStream(filename)
 
@@ -443,8 +422,8 @@ async function lsifEndpoints(
                 }
 
                 // Enqueue convert job
-                logger.debug('enqueueing convert job', { repository, commit })
-                await enqueue(queue, 'convert', { repository, commit, filename }, tracer, ctx.span)
+                logger.debug('enqueueing convert job', { repository, commit, root })
+                await enqueue(queue, 'convert', { repository, commit, root: root || '', filename }, tracer, ctx.span)
                 res.send('Upload successful, queued for processing.\n')
             }
         )
@@ -457,18 +436,18 @@ async function lsifEndpoints(
                 const { repository, commit, file } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
+                checkFile(file)
 
                 const ctx = createTracingContext(req, { repository, commit })
-                const { database } = await logAndTraceCall(ctx, 'creating database', ctx =>
-                    loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
-                )
+                const { database } = await logAndTraceCall(ctx, 'creating database', ctx => {
+                    return loadDatabase(repository, commit, file, ctx, fetchConfiguration().gitServers)
+                })
                 if (!database) {
                     res.json(false)
                     return
                 }
 
-                // If filename supplied, ensure we have data for it
-                const result = file ? await database.exists(file) : true
+                const result = await database.exists(file)
                 res.json(result)
             }
         )
@@ -488,7 +467,7 @@ async function lsifEndpoints(
 
                 const ctx = createTracingContext(req, { repository, commit })
                 const { database, ctx: newCtx } = await logAndTraceCall(ctx, 'creating database', ctx =>
-                    loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
+                    loadDatabase(repository, commit, path, ctx, fetchConfiguration().gitServers)
                 )
                 if (!database) {
                     throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
@@ -521,6 +500,15 @@ export function checkRepository(repository: any): void {
 export function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
+    }
+}
+
+/**
+ * Throws an error with status 400 if the file is not present.
+ */
+export function checkFile(file: any): void {
+    if (typeof file !== 'string') {
+        throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
     }
 }
 

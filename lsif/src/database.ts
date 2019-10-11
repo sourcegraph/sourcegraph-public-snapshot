@@ -48,6 +48,7 @@ export class Database {
      * @param resultChunkCache The cache of loaded result chunks.
      * @param dumpID The ID of the dump for which this database answers queries.
      * @param databasePath The path to the database file.
+     * @param root The path into the repository at which this database is mounted.
      */
     constructor(
         private storageRoot: string,
@@ -56,7 +57,8 @@ export class Database {
         private documentCache: DocumentCache,
         private resultChunkCache: ResultChunkCache,
         private dumpID: DumpID,
-        private databasePath: string
+        private databasePath: string,
+        private root: string
     ) {}
 
     /**
@@ -582,7 +584,8 @@ export class Database {
             this.documentCache,
             this.resultChunkCache,
             dumpID,
-            databasePath
+            databasePath,
+            this.root
         )
     }
 
@@ -751,7 +754,8 @@ export async function tryCreateDatabase(
     documentCache: DocumentCache,
     resultChunkCache: ResultChunkCache,
     dumpID: DumpID,
-    databasePath: string
+    databasePath: string,
+    root: string
 ): Promise<Database | undefined> {
     try {
         await fs.stat(databasePath)
@@ -770,7 +774,8 @@ export async function tryCreateDatabase(
         documentCache,
         resultChunkCache,
         dumpID,
-        databasePath
+        databasePath,
+        root
     )
 }
 

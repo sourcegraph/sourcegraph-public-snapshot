@@ -70,6 +70,15 @@ export class LsifDump {
     public commit!: string
 
     /**
+     * The path at which this LSIF dump is mounted. Roots for two different LSIF
+     * dumps at the same repo@commit must not overlap (they are not allowed be
+     * prefixes of one another). Defaults to the empty string, which indicates
+     * this is the only LSIF dump for the repo@commit.
+     */
+    @Column('text')
+    public root!: string
+
+    /**
      * The number of model instances that can be inserted at once.
      */
     public static BatchSize = getBatchSize(2)

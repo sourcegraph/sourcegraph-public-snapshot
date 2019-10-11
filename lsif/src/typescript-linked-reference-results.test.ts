@@ -31,6 +31,7 @@ describe('Database', () => {
             storageRoot,
             repository,
             commit,
+            '',
             'typescript/linked-reference-results/data/data.lsif.gz'
         )
     })
@@ -48,7 +49,7 @@ describe('Database', () => {
             fail('failed beforeAll')
         }
 
-        const dump = await xrepoDatabase.getDump(repository, commit)
+        const dump = await xrepoDatabase.getDump(repository, commit, '')
         if (!dump) {
             throw new Error(`Unknown repository@commit ${repository}@${commit}`)
         }
@@ -60,7 +61,8 @@ describe('Database', () => {
             documentCache,
             resultChunkCache,
             dump.id,
-            dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
+            dbFilename(storageRoot, dump.id, dump.repository, dump.commit),
+            ''
         )
     }
 

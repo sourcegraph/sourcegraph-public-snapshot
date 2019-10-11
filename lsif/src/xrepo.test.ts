@@ -64,21 +64,21 @@ describe('XrepoDatabase', () => {
         ])
 
         // Add relations
-        await xrepoDatabase.insertDump('foo', ca)
-        await xrepoDatabase.insertDump('foo', cc)
-        await xrepoDatabase.insertDump('foo', cg)
+        await xrepoDatabase.insertDump('foo', ca, '')
+        await xrepoDatabase.insertDump('foo', cc, '')
+        await xrepoDatabase.insertDump('foo', cg, '')
 
         // Test closest commit
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', ca)).toEqual(ca)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cb)).toEqual(ca)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cc)).toEqual(cc)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cd)).toEqual(cc)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cf)).toEqual(cg)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cg)).toEqual(cg)
+        expect((await xrepoDatabase.findClosestDump('foo', ca, 'file'))!.commit).toEqual(ca)
+        expect((await xrepoDatabase.findClosestDump('foo', cb, 'file'))!.commit).toEqual(ca)
+        expect((await xrepoDatabase.findClosestDump('foo', cc, 'file'))!.commit).toEqual(cc)
+        expect((await xrepoDatabase.findClosestDump('foo', cd, 'file'))!.commit).toEqual(cc)
+        expect((await xrepoDatabase.findClosestDump('foo', cf, 'file'))!.commit).toEqual(cg)
+        expect((await xrepoDatabase.findClosestDump('foo', cg, 'file'))!.commit).toEqual(cg)
 
         // Multiple nearest are chosen arbitrarily
-        expect([ca, cc, cg]).toContain(await xrepoDatabase.findClosestCommitWithData('foo', ce))
-        expect([ca, cc]).toContain(await xrepoDatabase.findClosestCommitWithData('foo', ch))
+        expect([ca, cc, cg]).toContain((await xrepoDatabase.findClosestDump('foo', ce, 'file'))!.commit)
+        expect([ca, cc]).toContain((await xrepoDatabase.findClosestDump('foo', ch, 'file'))!.commit)
     })
 
     it('should return empty string as closest commit with no reachable lsif data', async () => {
@@ -115,17 +115,17 @@ describe('XrepoDatabase', () => {
         ])
 
         // Add markers
-        await xrepoDatabase.insertDump('foo', cb)
+        await xrepoDatabase.insertDump('foo', cb, '')
 
         // Test closest commit
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', ca)).toEqual(cb)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cb)).toEqual(cb)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cc)).toEqual(cb)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cd)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', ce)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cf)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cg)).toBeUndefined()
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', ch)).toBeUndefined()
+        expect((await xrepoDatabase.findClosestDump('foo', ca, 'file'))!.commit).toEqual(cb)
+        expect((await xrepoDatabase.findClosestDump('foo', cb, 'file'))!.commit).toEqual(cb)
+        expect((await xrepoDatabase.findClosestDump('foo', cc, 'file'))!.commit).toEqual(cb)
+        expect((await xrepoDatabase.findClosestDump('foo', cd, 'file'))!.commit).toBeUndefined()
+        expect((await xrepoDatabase.findClosestDump('foo', ce, 'file'))!.commit).toBeUndefined()
+        expect((await xrepoDatabase.findClosestDump('foo', cf, 'file'))!.commit).toBeUndefined()
+        expect((await xrepoDatabase.findClosestDump('foo', cg, 'file'))!.commit).toBeUndefined()
+        expect((await xrepoDatabase.findClosestDump('foo', ch, 'file'))!.commit).toBeUndefined()
     })
 
     it('should not return elements farther than MAX_TRAVERSAL_LIMIT', async () => {
@@ -153,12 +153,12 @@ describe('XrepoDatabase', () => {
         await xrepoDatabase.updateCommits('foo', commits)
 
         // Add markers
-        await xrepoDatabase.insertDump('foo', c0)
+        await xrepoDatabase.insertDump('foo', c0, '')
 
         // Test closest commit
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', c0)).toEqual(c0)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', c1)).toEqual(c0)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cpen)).toEqual(c0)
+        expect((await xrepoDatabase.findClosestDump('foo', c0, 'file'))!.commit).toEqual(c0)
+        expect((await xrepoDatabase.findClosestDump('foo', c1, 'file'))!.commit).toEqual(c0)
+        expect((await xrepoDatabase.findClosestDump('foo', cpen, 'file'))!.commit).toEqual(c0)
 
         // (Assuming MAX_TRAVERSAL_LIMIT = 100)
         // At commit `50`, the traversal limit will be reached before visiting commit `0`
@@ -176,12 +176,12 @@ describe('XrepoDatabase', () => {
         // | 99    | 99     |
         // | 100   | 1      | (limit reached)
 
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cmax)).toBeUndefined()
+        expect((await xrepoDatabase.findClosestDump('foo', cmax, 'file'))!.commit).toBeUndefined()
 
         // Mark commit 1
-        await xrepoDatabase.insertDump('foo', c1)
+        await xrepoDatabase.insertDump('foo', c1, '')
 
         // Now commit 1 should be found
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', cmax)).toEqual(c1)
+        expect((await xrepoDatabase.findClosestDump('foo', cmax, 'file'))!.commit).toEqual(c1)
     })
 })
