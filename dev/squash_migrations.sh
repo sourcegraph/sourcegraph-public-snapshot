@@ -79,4 +79,4 @@ echo ""
 echo "squashed migrations written to $1_squashed_migrations.{up,down}.sql"
 
 # Regenerate bindata
-cd migrations && go generate
+go generate
