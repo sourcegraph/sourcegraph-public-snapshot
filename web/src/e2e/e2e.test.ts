@@ -121,7 +121,7 @@ describe('e2e test suite', () => {
                 selectMethod: 'keyboard',
             })
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
-            await driver.page.waitForSelector('.e2e-global-alert .global-alerts__alert', { visible: true })
+            await driver.page.waitForSelector('.e2e-global-alert .notices .global-alerts__alert', { visible: true })
             await driver.page.evaluate(message => {
                 const elem = document.querySelector('.e2e-global-alert .notices .global-alerts__alert')
                 if (!elem) {
