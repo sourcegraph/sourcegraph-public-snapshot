@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 
-	zoektrpc "github.com/google/zoekt/rpc"
 	graphql "github.com/graph-gophers/graphql-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
