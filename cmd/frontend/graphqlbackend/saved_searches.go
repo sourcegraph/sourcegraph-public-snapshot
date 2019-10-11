@@ -281,8 +281,9 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
+var patternTypeRegexp *regexp.Regexp = regexp.MustCompile(`(?i)\bpatternType:(literal|regexp)\b`)
+
 func queryHasPatternType(query string) bool {
-	patternTypeRegexp := regexp.MustCompile(`(?i)\bpatternType:(literal|regexp)\b`)
 	return patternTypeRegexp.Match([]byte(query))
 }
 
