@@ -129,8 +129,15 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 			otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
 			otlog.Int("Cursor.UserID", int(r.pagination.cursor.UserID)),
 		)
+		log15.Info("paginated search continue request",
+			"query", r.rawQuery(),
+			"RepositoryOffset", int(r.pagination.cursor.RepositoryOffset),
+			"ResultOffset", int(r.pagination.cursor.ResultOffset),
+			"UserID", int(r.pagination.cursor.UserID),
+		)
 	} else {
 		tr.LogFields(otlog.String("Cursor", "nil"))
+		log15.Info("paginated search begin request", "query", r.rawQuery())
 	}
 	tr.LogFields(otlog.Int("Limit", int(r.pagination.limit)))
 	defer func() {
