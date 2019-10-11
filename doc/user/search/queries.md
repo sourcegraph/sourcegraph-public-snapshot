@@ -2,7 +2,7 @@
 
 Search queries can consist of just words, and you'll see results where those words appear in order, in all files across all repositories. Many queries will also use keywords. Keywords help to filter searches, define the type of search, and more. This page is a comprehensive list of keywords available for code search.
 
-As of version 3.9.0, by default, searches are interpreted literally instead of as regular expressions. Site admins and users can change their instance and personal defaults by setting the `search.defaultPatternType` setting to "literal" or "regexp". To toggle regular expression search, you can click the dot-star icon in the search input, or use the `patternType:` keyword in your search.
+As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. Site admins and users can change their instance and personal default behavior by changing the `search.defaultPatternType` setting to "literal" or "regexp". To toggle regexp search, you can click the dot-star icon in the search input, or use the `patternType:` keyword in your search.
 
 ## Keywords (all searches)
 
