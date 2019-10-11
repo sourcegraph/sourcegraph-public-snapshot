@@ -406,7 +406,8 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 // the search could be continued.
 func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) ([]searchResultResolver, *searchResultsCommon, *searchCursor) {
 	cursor := &searchCursor{RepositoryOffset: 0, ResultOffset: 0}
-	if len(results[offset:]) < offset+limit {
+	results = results[offset:]
+	if len(results) < limit {
 		return results, common, cursor
 	}
 
@@ -417,7 +418,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		reposByName[string(r.Name)] = r
 	}
 	resultsByRepo := map[*types.Repo][]searchResultResolver{}
-	for _, r := range results[offset : offset+limit] {
+	for _, r := range results[:limit] {
 		repoName, _ := r.searchResultURIs()
 		repo := reposByName[repoName]
 		resultsByRepo[repo] = append(resultsByRepo[repo], r)
@@ -433,11 +434,11 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// Since it is within the boundary of B's results, the next paginated
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
-	lastResultRepo, _ := results[offset].searchResultURIs()
+	lastResultRepo, _ := results[len(results)-1].searchResultURIs()
 	resultsInRepoConsumed := int32(0)
-	for i, r := range results[:offset+limit] {
+	for i, r := range results[:limit] {
 		repo, _ := r.searchResultURIs()
-		if i == offset+limit-1 && repo == lastResultRepo {
+		if i == limit-1 && repo == lastResultRepo {
 			// resultsInRepoConsumed is the last result we consumed, so add one
 			// so the next query starts on a new result.
 			cursor.ResultOffset = resultsInRepoConsumed + 1
