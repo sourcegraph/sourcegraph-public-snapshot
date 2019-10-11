@@ -209,6 +209,20 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetConnMaxLifetime(time.Minute)
 }
 
+type stdoutLogger struct{}
+
+// Printf is like fmt.Printf
+func (l stdoutLogger) Printf(format string, v ...interface{}) {
+	fmt.Printf("LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOG{\n")
+	fmt.Printf(format, v...)
+	fmt.Printf("}LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOG\n")
+}
+
+// Verbose should return true when verbose logging output is wanted
+func (l stdoutLogger) Verbose() bool {
+	return true
+}
+
 func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
@@ -227,6 +241,7 @@ func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	// In case another process was faster and runs migrations, we will wait
 	// this long
 	m.LockTimeout = 5 * time.Minute
+	m.Log = stdoutLogger{}
 
 	return m
 }

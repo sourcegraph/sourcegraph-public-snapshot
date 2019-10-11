@@ -89,7 +89,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addCodeCov,
 			wait,
 			addDockerImages(c),
-			addCleanUpServerDockerImageCandidate(c),
 		}
 	}
 

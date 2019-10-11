@@ -57,6 +57,9 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
+echo "PRINTING LOGS"
+docker logs --timestamps $CONTAINER
+
 echo "--- yarn"
 yarn
 
