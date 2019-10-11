@@ -127,6 +127,7 @@ require (
 	github.com/prometheus/client_golang v1.1.0
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
+	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/securego/gosec v0.0.0-20191008095658-28c1128b7336 // indirect
 	github.com/segmentio/fasthash v1.0.1
 	github.com/sergi/go-diff v1.0.0
@@ -204,6 +205,9 @@ replace (
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 
-replace gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
+replace (
+	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
+	gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
+)
 
 replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
