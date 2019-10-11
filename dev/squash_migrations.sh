@@ -73,7 +73,15 @@ printf "\nCOMMIT;\n" >> "./$1_squashed_migrations.up.sql"
 rm tmp_squashed.sql
 
 # Create down migration
-printf 'DROP SCHEMA IF EXISTS public CASCADE;\nCREATE SCHEMA public;\n' > "./$1_squashed_migrations.down.sql"
+
+cat > "./$1_squashed_migrations.down.sql" << EOL
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version bigint NOT NULL PRIMARY KEY,
+    dirty boolean NOT NULL
+);
+EOL
 
 echo ""
 echo "squashed migrations written to $1_squashed_migrations.{up,down}.sql"
