@@ -72,11 +72,14 @@ cat tmp_squashed.sql >> "./$1_squashed_migrations.up.sql"
 printf "\nCOMMIT;\n" >> "./$1_squashed_migrations.up.sql"
 rm tmp_squashed.sql
 
-# Create down migration
+# Create down migration. This needs to drop everything, so we just drop the
+# schema and recreate it. This happens to also drop the schema_migrations
+# table, which blows up the migrate tool if we don't put it back.
 
 cat > "./$1_squashed_migrations.down.sql" << EOL
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
     version bigint NOT NULL PRIMARY KEY,
     dirty boolean NOT NULL
