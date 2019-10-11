@@ -268,13 +268,16 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 		if err != nil {
 			return nil, nil, err
 		}
+		// fileCommon is sorted, but fileResults is not so we must sort it now.
+		//
+		// TODO(slimsag): future: add tests verifying this does not change.
+		sort.Slice(fileResults, func(i, j int) bool {
+			return fileResults[i].uri < fileResults[j].uri
+		})
 		results := make([]searchResultResolver, 0, len(fileResults))
 		for _, r := range fileResults {
 			results = append(results, r)
 		}
-		// TODO(slimsag): future: searchFilesInRepos _does_ appear to guarantee
-		// stable result ordering in our case (with large count:) but we
-		// definitely need a test ensuring this.
 		return results, fileCommon, nil
 	})
 }
