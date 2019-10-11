@@ -228,7 +228,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			events: []Event{
-				ghReview(1, daysAgo(2), "APPROVED"),
+				ghReview(1, daysAgo(2), "user1", "APPROVED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
@@ -246,8 +246,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			events: []Event{
-				ghReview(1, daysAgo(3), "COMMENTED"),
-				ghReview(1, daysAgo(2), "APPROVED"),
+				ghReview(1, daysAgo(3), "user1", "COMMENTED"),
+				ghReview(1, daysAgo(2), "user2", "APPROVED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
@@ -265,8 +265,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(1),
 			events: []Event{
-				ghReview(1, daysAgo(1), "APPROVED"),
-				ghReview(1, daysAgo(0), "APPROVED"),
+				ghReview(1, daysAgo(1), "user1", "APPROVED"),
+				ghReview(1, daysAgo(0), "user2", "APPROVED"),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
@@ -280,8 +280,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(1),
 			events: []Event{
-				ghReview(1, daysAgo(1), "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(0), "user2", "CHANGES_REQUESTED"),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
@@ -295,7 +295,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(4),
 			events: []Event{
-				ghReview(1, daysAgo(2), "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
@@ -315,13 +315,13 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(7),
 			events: []Event{
-				ghReview(1, daysAgo(5), "APPROVED"),
+				ghReview(1, daysAgo(5), "user1", "APPROVED"),
 				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
-				ghReview(2, daysAgo(4), "APPROVED"),
-				ghReview(2, daysAgo(3), "APPROVED"),
+				ghReview(2, daysAgo(4), "user1", "APPROVED"),
+				ghReview(2, daysAgo(3), "user2", "APPROVED"),
 				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
-				ghReview(3, daysAgo(2), "CHANGES_REQUESTED"),
-				ghReview(3, daysAgo(1), "CHANGES_REQUESTED"),
+				ghReview(3, daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(3, daysAgo(1), "user2", "CHANGES_REQUESTED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
 			},
 			want: []*ChangesetCounts{
@@ -346,11 +346,11 @@ func TestCalcCounts(t *testing.T) {
 			start: daysAgo(4),
 			end:   daysAgo(2),
 			events: []Event{
-				ghReview(1, daysAgo(5), "APPROVED"),
+				ghReview(1, daysAgo(5), "user1", "APPROVED"),
 				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
-				ghReview(2, daysAgo(4), "APPROVED"),
+				ghReview(2, daysAgo(4), "user1", "APPROVED"),
 				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
-				ghReview(3, daysAgo(2), "CHANGES_REQUESTED"),
+				ghReview(3, daysAgo(2), "user1", "CHANGES_REQUESTED"),
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
 			},
 			want: []*ChangesetCounts{
@@ -404,10 +404,16 @@ func ghChangeset(id int64, t time.Time) *a8n.Changeset {
 	return &a8n.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}
 }
 
-func ghReview(id int64, t time.Time, state string) *a8n.ChangesetEvent {
+func ghReview(id int64, t time.Time, login, state string) *a8n.ChangesetEvent {
 	return &a8n.ChangesetEvent{
 		ChangesetID: id,
 		Kind:        a8n.ChangesetEventKindGitHubReviewed,
-		Metadata:    &github.PullRequestReview{UpdatedAt: t, State: state},
+		Metadata: &github.PullRequestReview{
+			UpdatedAt: t,
+			State:     state,
+			Author: github.Actor{
+				Login: login,
+			},
+		},
 	}
 }
