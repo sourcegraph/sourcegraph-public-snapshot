@@ -1,1 +1,0 @@
-ALTER TABLE repo ADD COLUMN private boolean;
