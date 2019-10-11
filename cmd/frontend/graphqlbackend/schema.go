@@ -1001,17 +1001,17 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
 
-        # (experimental) Sourcegraph 3.7 added support for cursor-based paginated
+        # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
-        # https://docs.sourcegraph.com/api/graphql/examples
+        # https://docs.sourcegraph.com/api/graphql/search
         #
         # When specified, indicates that this request should be paginated and
         # fetch results starting at this cursor.
         cursor: ID
 
-        # (experimental) Sourcegraph 3.7 added support for cursor-based paginated
+        # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
-        # https://docs.sourcegraph.com/api/graphql/examples
+        # https://docs.sourcegraph.com/api/graphql/search
         #
         # When specified, indicates that this request should be paginated and
         # results should be limited to this amount.

@@ -6,32 +6,32 @@ For general information about the GraphQL API and how to use it, see [this page 
 
 ## `src` CLI usage (easier than GraphQL)
 
-Putting together a comprehensive GraphQL search query can be difficult. For this reason, we created the [`src` CLI tool](https://github.com/sourcegraph/src-cli) which allows you to simply run a searc query and get the JSON results without constructing the GraphQL query:
+Putting together a comprehensive GraphQL search query can be difficult. For this reason, we created the [`src` CLI tool](https://github.com/sourcegraph/src-cli) which allows you to simply run a search query and get the JSON results without constructing the GraphQL query:
 
 ```
 export SRC_ENDPOINT=https://sourcegraph.com
-export SRC_ACCESS_TOKEN=""
+export SRC_ACCESS_TOKEN=secret
 
-src search -json 'repogroup:sample error count:1'
+src search -json 'repogroup:sample error'
 ```
 
 You can then consume the JSON output directly, add `--get-curl` to get a `curl` execution line, and more. See [the `src` CLI tool](https://github.com/sourcegraph/src-cli) for more details.
 
-## Sourcegraph 3.7+: Paginated search
+## Sourcegraph 3.9+: Experimental paginated search
 
-To enable better programmatic consumption of search results, Sourcegraph 3.7 introduces the ability to consume an entire search result set via multiple paginated search requests. The results will be returned with a stable order (details below).
+To enable better programmatic consumption of search results, Sourcegraph 3.9 introduces the ability to consume an entire search result set via multiple paginated search requests. The results will be returned with a stable order (defined below).
 
-**The paginated search API is experimental. It is not yet ready for production use, but we are eager to hear feedback from early adopters as we work to further improve it.**
+**The paginated search API is experimental and has some limitations. It is not yet ready for production use, but we are eager to hear feedback from early adopters as we work to further improve it.**
 
 #### Cursor-based pagination & request flow
 
 Sourcegraph's paginated search API is cursor-based. Each response contains a new cursor indicating where we left off when searching. It tells Sourcegraph where to continue when a future request with that cursor is made. The typical request flow looks something like:
 
-- Fetch results 0-100: `search(query:"some query", cursor:null, limit:100)`
-- Fetch results 100-200: `search(query:"some query", cursor:SearchResults.cursor, limit:100)`
-- Fetch results 200-300: `search(query:"some query", cursor:SearchResults.cursor, limit:100)`
+- Fetch results 0-100: `search(query:"some query", limit:100, cursor:null)`
+- Fetch results 100-200: `search(query:"some query", limit:100, cursor:"<SearchResults.cursor>")`
+- Fetch results 200-300: `search(query:"some query", limit:100, cursor:"<SearchResults.cursor>")`
 
-Until `SearchResults.finished` is `true` (indicating no more results are available).
+Until `SearchResults.finished` is `true` - indicating no more results are available.
 
 #### Choosing the right `limit`
 
@@ -63,3 +63,10 @@ In the event one of the above three exceptions do occur, Sourcegraph will be ret
 4. Subsequent requests for paginated results, hence, would observe that change which may be surprising.
 
 It should be noted that while we do want to improve this behavior in the future, in most use cases it is fine because continued requests for the entire result set will result in eventual consistency.
+
+#### Known limitations
+
+There are a few known limitations with the implementation we are working to resolve in upcoming Sourcegraph versions:
+
+1. You cannot query multiple result types yet. For example, you cannot ask for both text and symbol results in the same query.
+2. The paginated search API currently only works with text results. If you try to include `type:symbol` in your query, for example, an error will be returned.
