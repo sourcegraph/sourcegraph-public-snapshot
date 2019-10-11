@@ -18,7 +18,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# First, apply migrations up to the commit we want to squash
+# First, apply migrations up to the version we want to squash
 migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}" -path . goto $1
 
 # Dump the database into a temporary file. Exclude the schema_migrations
