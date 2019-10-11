@@ -33,7 +33,7 @@ export default class LiteralSearchToast extends React.Component<Props, State> {
         return (
             <div className="e2e-literal-search-toast">
                 <Toast
-                    icon={<RegexIcon />}
+                    icon={<RegexIcon size={32} />}
                     title="New regular expression toggle!"
                     subtitle="Search queries are no longer interpreted as regexp by default. Click the dot-star icon in the search bar to toggle regexp search. Learn more about this update in the docs."
                     onDismiss={this.onDismiss}
