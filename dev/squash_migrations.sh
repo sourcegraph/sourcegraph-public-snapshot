@@ -55,6 +55,7 @@ sed -i '' -e '/^$/N;/^\n$/D' tmp_squashed.sql
 
 for file in $(ls *.sql); do
     rm $file
+    echo "squashed migration $file"
 
     # There should be two files prefixed with this schema version. The down
     # version comes first, then the up version. Make sure we only break the
@@ -65,6 +66,17 @@ for file in $(ls *.sql); do
     fi
 done
 
-# Move the new migrations into place
-mv tmp.sql "./$1_squash_migrations.up.sql"
-echo 'SELECT 1' > "./$1_squash_migrations.down.sql"
+# Wrap squashed migration in transaction
+printf "BEGIN;\n" > "./$1_squashed_migrations.up.sql"
+cat tmp_squashed.sql >> "./$1_squashed_migrations.up.sql"
+printf "\nCOMMIT;\n" >> "./$1_squashed_migrations.up.sql"
+rm tmp_squashed.sql
+
+# Create down migration
+printf 'DROP SCHEMA IF EXISTS public CASCADE;\nCREATE SCHEMA public;\n' > "./$1_squashed_migrations.down.sql"
+
+echo ""
+echo "squashed migrations written to $1_squashed_migrations.{up,down}.sql"
+
+# Regenerate bindata
+cd migrations && go generate
