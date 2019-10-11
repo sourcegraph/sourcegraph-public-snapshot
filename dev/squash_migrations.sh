@@ -29,10 +29,25 @@ fi
 # First, apply migrations up to the version we want to squash
 migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}" -path . goto $1
 
-# Dump the database into a temporary file. Exclude the schema_migrations
-# table which is created before migrations are run. This causes the squashed
-# migrations to fail due to conflict (and there's no flag to emit IF NOT EXISTS).
-pg_dump -s --no-owner --exclude-table schema_migrations -f tmp.sql
+# Dump the database into a temporary file that we need to post-process
+pg_dump -s --no-owner --no-comments --clean --if-exists -f tmp_squashed.sql
+
+# Remove settings header from pg_dump output
+sed -i '' -e 's/^SET .*$//g' tmp_squashed.sql
+sed -i '' -e 's/^SELECT pg_catalog.set_config.*$//g' tmp_squashed.sql
+
+# Do not drop extensions if they already exists. This causes some
+# weird problems with the back-compat tests as the extensions are
+# not dropped in the correct order to honor dependencies.
+sed -i '' -e 's/^DROP EXTENSION .*$//g' tmp_squashed.sql
+
+# Remove references to public schema
+sed -i '' -e 's/public\.//g' tmp_squashed.sql
+sed -i '' -e 's/ WITH SCHEMA public//g' tmp_squashed.sql
+
+# Remove comments, multiple blank lines
+sed -i '' -e 's/^--.*$//g' tmp_squashed.sql
+sed -i '' -e '/^$/N;/^\n$/D' tmp_squashed.sql
 
 # Now clean up all of the old migration files. `ls` will return files in
 # alphabetical order, so we can delete all files from the migration directory
