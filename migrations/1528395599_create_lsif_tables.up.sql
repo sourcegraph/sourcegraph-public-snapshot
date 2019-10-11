@@ -40,7 +40,7 @@ CREATE INDEX IF NOT EXISTS lsif_references_package ON lsif_references(scheme, na
 CREATE INDEX IF NOT EXISTS lsif_references_repo_commit ON lsif_references(repository, "commit");
 CREATE UNIQUE INDEX IF NOT EXISTS lsif_commits_repo_commit_parent_commit_unique ON lsif_commits(repository, "commit", parent_commit);
 CREATE INDEX IF NOT EXISTS lsif_commits_repo_commit ON lsif_commits(repository, "commit");
-CREATE INDEX IF NOT EXISTS lsif_commits_repo_parent_commit ON lsif_commits(repository, "commit");
+CREATE INDEX IF NOT EXISTS lsif_commits_repo_parent_commit ON lsif_commits(repository, parent_commit);
 
 CREATE OR REPLACE VIEW lsif_commits_with_lsif_data_markers AS
     SELECT
