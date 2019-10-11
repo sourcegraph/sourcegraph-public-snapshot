@@ -37,6 +37,7 @@ func TestHandlePatternType_Literal(t *testing.T) {
 		{"patterntype:literal", true, ""},
 		{"patterntype:regexp patterntype:literal .*", false, `".*"`},
 		{"patterntype:regexp patterntype:literal .*", false, `".*"`},
+		{"patterntype:regexp patterntype:literal .*", true, `".*"`},
 		{`patterntype:regexp "patterntype:literal"`, false, `"patterntype:literal"`},
 		{`patterntype:regexp "patterntype:regexp"`, false, `"patterntype:regexp"`},
 		{`patterntype:literal "patterntype:regexp"`, false, `"\"patterntype:regexp\""`},
@@ -55,7 +56,7 @@ func TestHandlePatternType_Literal(t *testing.T) {
 		{".* patterntype:regexp .*", false, ".*  .*"},
 		{".* patterntype:regexp", false, ".*"},
 		{"patterntype:literal .*", false, `".*"`},
-		{"patterntype:literal .*", true, ".*"},
+		{"patterntype:literal .*", true, `".*"`},
 		{`lang:go func main`, false, `lang:go "func main"`},
 		{`lang:go func  main`, false, `lang:go "func  main"`},
 		{`func main lang:go`, false, `lang:go "func main"`},
@@ -73,7 +74,7 @@ func TestHandlePatternType_Literal(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			out := HandlePatternType(test.input, test.defaultToRegexp)
 			if out != test.want {
-				t.Errorf("handlePatternType (%q) = %q, want %q", test.input, out, test.want)
+				t.Errorf("handlePatternType (%q), with defaultToRegexp %t = %q, want %q", test.input, test.defaultToRegexp, out, test.want)
 			}
 		})
 	}
