@@ -215,6 +215,14 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
+	log15.Info("next cursor for paginated search request",
+		"query", fmt.Sprintf("%q", r.rawQuery()),
+		"RepositoryOffset", int(cursor.RepositoryOffset),
+		"ResultOffset", int(cursor.ResultOffset),
+		"UserID", int(cursor.UserID),
+		"Finished", cursor.Finished,
+	)
+
 	return &searchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
@@ -398,7 +406,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 // the search could be continued.
 func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) ([]searchResultResolver, *searchResultsCommon, *searchCursor) {
 	cursor := &searchCursor{RepositoryOffset: 0, ResultOffset: 0}
-	if offset == 0 && len(results) < offset+limit {
+	if len(results[offset:]) < offset+limit {
 		return results, common, cursor
 	}
 
@@ -426,18 +434,20 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
 	lastResultRepo, _ := results[offset].searchResultURIs()
-	resultsInRepo := int32(0)
-	for i, r := range results[:offset+limit+1] {
+	resultsInRepoConsumed := int32(0)
+	for i, r := range results[:offset+limit] {
 		repo, _ := r.searchResultURIs()
-		if i == offset+limit && repo == lastResultRepo {
-			cursor.ResultOffset = resultsInRepo
+		if i == offset+limit-1 && repo == lastResultRepo {
+			// resultsInRepoConsumed is the last result we consumed, so add one
+			// so the next query starts on a new result.
+			cursor.ResultOffset = resultsInRepoConsumed + 1
 			break
 		}
 		if repo != lastResultRepo {
-			resultsInRepo = 0
+			resultsInRepoConsumed = 1
 			cursor.RepositoryOffset++
 		} else {
-			resultsInRepo++
+			resultsInRepoConsumed++
 		}
 		lastResultRepo = repo
 	}
