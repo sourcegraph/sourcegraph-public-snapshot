@@ -117,6 +117,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 		changesRequested = false
 	)
 
+	lastReviewByAuthor := map[string]a8n.ChangesetReviewState{}
+
 	for _, e := range csEvents {
 		// Event happened after point in time we're looking at, ignore
 		et := e.Timestamp()
@@ -175,20 +177,50 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				return err
 			}
 
-			switch s {
+			author, err := reviewAuthor(e)
+			if err != nil {
+				return err
+			}
+
+			// compute previous overall state
+			previousOverallState := computeReviewState(lastReviewByAuthor)
+
+			// Insert new review, potentially replacing old review
+			// But only if it's not "PENDING" or "COMMENTED"
+			if s == a8n.ChangesetReviewStateApproved || s == a8n.ChangesetReviewStateChangesRequested {
+				lastReviewByAuthor[author] = s
+			}
+
+			// compute new overall state
+			newOverallState := computeReviewState(lastReviewByAuthor)
+
+			switch newOverallState {
 			case a8n.ChangesetReviewStateApproved:
-				if !approved {
+				switch previousOverallState {
+				case a8n.ChangesetReviewStatePending:
 					approved = true
 					c.OpenApproved++
 					reviewed = true
 					c.OpenPending--
+				case a8n.ChangesetReviewStateChangesRequested:
+					changesRequested = false
+					approved = true
+					c.OpenChangesRequested--
+					c.OpenApproved++
 				}
+
 			case a8n.ChangesetReviewStateChangesRequested:
-				if !changesRequested {
+				switch previousOverallState {
+				case a8n.ChangesetReviewStatePending:
 					changesRequested = true
 					c.OpenChangesRequested++
 					reviewed = true
 					c.OpenPending--
+				case a8n.ChangesetReviewStateApproved:
+					approved = false
+					changesRequested = true
+					c.OpenChangesRequested++
+					c.OpenApproved--
 				}
 			case a8n.ChangesetReviewStatePending:
 			case a8n.ChangesetReviewStateCommented:
@@ -234,4 +266,31 @@ func reviewState(e Event) (a8n.ChangesetReviewState, error) {
 		return s, fmt.Errorf("invalid review state: %s", review.State)
 	}
 	return s, nil
+}
+
+func reviewAuthor(e Event) (string, error) {
+	changesetEvent, ok := e.(*a8n.ChangesetEvent)
+	if !ok {
+		return "", errors.New("Reviewed event not ChangesetEvent")
+	}
+
+	review, ok := changesetEvent.Metadata.(*github.PullRequestReview)
+	if !ok {
+		return "", errors.New("ChangesetEvent metadata event not PullRequestReview")
+	}
+
+	login := review.Author.Login
+	if login == "" {
+		return "", errors.New("review author is blank")
+	}
+
+	return login, nil
+}
+
+func computeReviewState(statesByAuthor map[string]a8n.ChangesetReviewState) a8n.ChangesetReviewState {
+	states := make(map[a8n.ChangesetReviewState]bool)
+	for _, s := range statesByAuthor {
+		states[s] = true
+	}
+	return a8n.SelectReviewState(states)
 }

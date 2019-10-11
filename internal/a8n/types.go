@@ -190,7 +190,7 @@ func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 		return "", errors.New("unknown changeset type")
 	}
 
-	return selectReviewState(states), nil
+	return SelectReviewState(states), nil
 }
 
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
@@ -221,7 +221,11 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 	return events
 }
 
-func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
+// SelectReviewState computes the single review state for a given set of
+// ChangesetReviewStates. Since a pull request, for example, can have multiple
+// reviews with different states, we need a function to determine what the
+// state for the pull request is.
+func SelectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
 	// If any review requested changes, that state takes precedence over all
 	// other review states, followed by explicit approval. Everything else is
 	// considered pending.

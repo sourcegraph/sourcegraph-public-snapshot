@@ -274,7 +274,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			name: "single changeset multiple changes requested reviews counting once",
+			name: "single changeset multiple changes-requested reviews counting once",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
@@ -289,7 +289,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
-			name: "single changeset open, changes requested, merged",
+			name: "single changeset open, changes-requested, merged",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(3)),
 			},
@@ -357,6 +357,100 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
 				{Time: daysAgo(3), Total: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
 				{Time: daysAgo(2), Total: 3, Open: 1, OpenPending: 0, OpenChangesRequested: 1, Merged: 2},
+			},
+		},
+		{
+			name: "single changeset with changes-requested then approved by same person",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(0), "user1", "APPROVED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			},
+		},
+		{
+			name: "single changeset with approved then changes-requested by same person",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "user1", "APPROVED"),
+				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			},
+		},
+		{
+			name: "single changeset with approval by one person then changes-requested by another",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "user1", "APPROVED"),
+				ghReview(1, daysAgo(0), "user2", "CHANGES_REQUESTED"), // This has higher precedence
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			},
+		},
+		{
+			name: "single changeset with changes-requested by one person then approval by another",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(0), "user2", "APPROVED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			},
+		},
+		{
+			name: "single changeset with changes-requested by one person, approval by another, then approval by first person",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(2),
+			events: []Event{
+				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(1), "user2", "APPROVED"),
+				ghReview(1, daysAgo(0), "user1", "APPROVED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			},
+		},
+		{
+			name: "single changeset with approval by one person, changes-requested by another, then changes-requested by first person",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(2)),
+			},
+			start: daysAgo(2),
+			events: []Event{
+				ghReview(1, daysAgo(2), "user1", "APPROVED"),
+				ghReview(1, daysAgo(1), "user2", "CHANGES_REQUESTED"),
+				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
 			},
 		},
 	}
