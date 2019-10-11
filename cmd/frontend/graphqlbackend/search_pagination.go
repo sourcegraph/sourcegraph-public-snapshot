@@ -340,6 +340,11 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		repos = repos[repoOffset:]
 	}
 
+	resultOffset := 0
+	if cursor := p.pagination.cursor; cursor != nil {
+		resultOffset = int(cursor.ResultOffset)
+	}
+
 	// Search over the repos list in batches.
 	//
 	// TODO(slimsag): future: scrutinize this code for off-by-one errors (I wrote this while sleepy.)
@@ -365,7 +370,8 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		// Accumulate the results and stop if we have enough for the user.
 		results = append(results, batchResults...)
 		common.update(*batchCommon)
-		if len(results) >= int(p.pagination.limit) {
+
+		if len(results) >= resultOffset+int(p.pagination.limit) {
 			break
 		}
 	}
@@ -376,11 +382,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	// likely to come back soon for more and we don't need to search a batch of
 	// repositories every time. This would give substantial performance
 	// benefits to subsequent requests against this API.
-	offset := 0
-	if cursor := p.pagination.cursor; cursor != nil {
-		offset = int(cursor.ResultOffset)
-	}
-	results, common, relativeCursor := sliceSearchResults(results, common, offset, int(p.pagination.limit))
+	results, common, relativeCursor := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
 	absoluteCursor := relativeCursor
 	absoluteCursor.Finished = len(results) == 0 && len(repos) == 0
 	if p.pagination.cursor != nil {
