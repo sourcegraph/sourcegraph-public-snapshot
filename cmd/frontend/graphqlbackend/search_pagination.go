@@ -30,6 +30,10 @@ type searchCursor struct {
 	// results within e.g. a single large repository.
 	ResultOffset int32
 
+	// Finished tells if there are more results for the query or if we've
+	// consumed them all.
+	Finished bool
+
 	// UserID is the ID of the user that created this cursor. This is useful
 	// for two reasons:
 	//
@@ -44,8 +48,9 @@ type searchCursor struct {
 	//    making a request for the same cursor. This is because user A and
 	//    user B may have access to a different set of repositories.
 	//
-	// Note that when a user is providing a cursor, they can forge any field
-	// they like and as such this user ID cannot be trusted in that case.
+	// Note that _when a user is providing a cursor_, they can forge any field
+	// they like and as such this user ID cannot be trusted in that case. When
+	// we are certain we have created it, it can be trusted.
 	UserID int32
 }
 
