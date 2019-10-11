@@ -1,1 +1,0 @@
--- Fake migration to make CI pass after we squashed repo history for open source
