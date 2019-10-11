@@ -15,6 +15,14 @@ hash migrate 2>/dev/null || {
 
 if [ -z "$1" ]; then
     echo "USAGE: $0 <migration>"
+    echo ""
+    echo "To use this tool, first find the migration version you want to squash. All"
+    echo "migrations prior to this version will be squashed into that version."
+    echo ""
+    echo "For example, if the latest release of Sourcegraph is v3.9.x then since we must"
+    echo "maintain backwards compatability for upgrading from 3.7.x and 3.8.x (two minor"
+    echo "versions), you should find the last migration that v3.6.x performed and specify"
+    echo "that as the version to squash to."
     exit 1
 fi
 
