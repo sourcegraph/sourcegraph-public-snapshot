@@ -179,27 +179,6 @@ You need a fresh Postgres database and a database user that has full ownership o
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
 
-    Note: Sourcegraph will create a secondary database in the same PostgreSQL
-    instance with a name of the form `{PGDATABASE}_lsif`. It is assumed the
-    PostgreSQL instance is dedicated solely to Sourcegraph.
-
-5. Configure PostgreSQL to use md5 authentication for the relevant users.
-
-    Update `pg_hba.conf` (typically located at `/etc/postgresql/${VERSION}/main/pg_hba.conf`). Check if it contains the following line:
-
-    ```
-    local   all             all                                     peer
-    ```
-
-    If it does (or if the `sourcegraph` user is otherwise configured to use `peer` as its authentication method), change it to the following:
-
-    ```
-    local   all             all                                     md5
-    ```
-
-    A value of `trust` is also acceptable, but `md5` is recommended. After updating the file,
-    restart PostgreSQL for the changes to take effect: `sudo systemctl restart postgresql`
-
 ### More info
 
 For more information about data storage, [read our full PostgreSQL Guide
@@ -321,49 +300,6 @@ If you ever need to wipe your local database and Redis, run the following comman
 ```bash
 ./dev/drop-entire-local-database-and-redis.sh
 ```
-
-#### `dblink` error or `peer authentication failed`
-
-If you see errors related to `dblink` and `peer authentication failed` that look the like the following:
-
-```
-18:08:28            lsif-worker | query failed:
-18:08:28            lsif-worker |         select * from
-18:08:28            lsif-worker |         dblink('dbname=' || $1 || ' user=' || current_user || ' password=' || $2, 'select * from schema_migrations')
-18:08:28            lsif-worker |         as temp(version text, dirty bool);
-18:08:28            lsif-worker |      -- PARAMETERS: ["sourcegraph","sourcegraph"]
-18:08:28            lsif-worker | error: { error: could not establish connection
-18:08:28            lsif-worker |     at Connection.parseE (/home/$USER/src/github.com/sourcegraph/sourcegraph/lsif/node_modules/pg/lib/connection.js:604:11)
-18:08:28            lsif-worker |     at Connection.parseMessage (/home/$USER/src/github.com/sourcegraph/sourcegraph/lsif/node_modules/pg/lib/connection.js:401:19)
-18:08:28            lsif-worker |     at Socket.<anonymous> (/home/$USER/src/github.com/sourcegraph/sourcegraph/lsif/node_modules/pg/lib/connection.js:121:22)
-18:08:28            lsif-worker |     at Socket.emit (events.js:198:13)
-18:08:28            lsif-worker |     at addChunk (_stream_readable.js:288:12)
-18:08:28            lsif-worker |     at readableAddChunk (_stream_readable.js:269:11)
-18:08:28            lsif-worker |     at Socket.Readable.push (_stream_readable.js:224:10)
-18:08:28            lsif-worker |     at TCP.onStreamRead [as onread] (internal/stream_base_commons.js:94:17)
-18:08:28            lsif-worker |   name: 'error',
-18:08:28            lsif-worker |   length: 149,
-18:08:28            lsif-worker |   severity: 'ERROR',
-18:08:28            lsif-worker |   code: '08001',
-18:08:28            lsif-worker |   detail: 'FATAL:  Peer authentication failed for user "sourcegraph"',
-18:08:28            lsif-worker |   hint: undefined,
-18:08:28            lsif-worker |   position: undefined,
-18:08:28            lsif-worker |   internalPosition: undefined,
-18:08:28            lsif-worker |   internalQuery: undefined,
-18:08:28            lsif-worker |   where: undefined,
-18:08:28            lsif-worker |   schema: undefined,
-18:08:28            lsif-worker |   table: undefined,
-18:08:28            lsif-worker |   column: undefined,
-18:08:28            lsif-worker |   dataType: undefined,
-18:08:28            lsif-worker |   constraint: undefined,
-18:08:28            lsif-worker |   file: 'dblink.c',
-18:08:28            lsif-worker |   line: '212',
-18:08:28            lsif-worker |   routine: 'dblink_get_conn' }
-```
-
-Ensure you've configured PostgreSQL to use `md5` or `trust` as the authentication mechanism for the
-`sourcegraph` PostgreSQL user. You can do this by modifying `pg_hba.conf` and restarting PostgreSQL
-(instructions are in the "Configure PostgreSQL to use md5 authentication" step above).
 
 ## How to Run Tests
 

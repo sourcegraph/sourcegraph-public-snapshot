@@ -119,8 +119,8 @@ export class XrepoDatabase {
                     -- seed result set with the target repository and commit marked
                     -- with both ancestor and descendant directions
                     select l.* from (
-                        select c.*, 0, 'A' from commits_with_lsif_data_markers c union
-                        select c.*, 0, 'D' from commits_with_lsif_data_markers c
+                        select c.*, 0, 'A' from lsif_commits_with_lsif_data_markers c union
+                        select c.*, 0, 'D' from lsif_commits_with_lsif_data_markers c
                     ) l
                     where l.repository = $1 and l."commit" = $2
 
@@ -128,7 +128,7 @@ export class XrepoDatabase {
 
                     -- get the next commit in the ancestor or descendant direction
                     select c.*, l.distance + 1, l.direction from lineage l
-                    join commits_with_lsif_data_markers c on (
+                    join lsif_commits_with_lsif_data_markers c on (
                         (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parent_commit) or
                         (l.direction = 'D' and c.repository = l.repository and c.parent_commit = l."commit")
                     )
