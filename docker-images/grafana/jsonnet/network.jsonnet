@@ -28,7 +28,7 @@ local httpPatterns = ['5..', '4..'];
 // Colors to pair to the patterns above (red, yellow)
 local errorColors = ['#7eb26d', '#cca300'];
 
-local gitServerHostSet =  {
+local dashboardTemplatingVars =  {
     "templating": {
         "list": [
           {
@@ -135,6 +135,6 @@ local repoupdaterDurationPercentilesPanel = makeHttpDurationPercentilesPanel(tit
 //
 // Dashboard Construction
 
-common.makeDashboard(title='Cluster-Internal Network Activity, Client POV', extra=gitServerHostSet)
+common.makeDashboard(title='Cluster-Internal Network Activity, Client POV', extra=dashboardTemplatingVars)
 .addRow(title='Requests to Gitserver', panels=[gitserverRequestsPanel, gitserverErrorRatePanel, gitserverDurationPercentilesPanel])
 .addRow(title='Requests to Repoupdater', panels=[repoupdaterRequestsPanel, repoupdaterErrorRatePanel, repoupdaterDurationPercentilesPanel])
