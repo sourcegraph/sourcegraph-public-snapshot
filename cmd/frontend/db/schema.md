@@ -295,6 +295,8 @@ Indexes:
 Indexes:
     "lsif_commits_pkey" PRIMARY KEY, btree (id)
     "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
+    "lsif_commits_commit" btree (repository, commit)
+    "lsif_commits_parent_commit" btree (repository, parent_commit)
     "lsif_commits_repo_commit" btree (repository, commit)
     "lsif_commits_repo_parent_commit" btree (repository, parent_commit)
 
