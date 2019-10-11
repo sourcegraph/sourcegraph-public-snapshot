@@ -93,7 +93,7 @@ func (r *searchResultsResolver) Finished(ctx context.Context) bool {
 	if r.cursor == nil {
 		return false // Will always be false for non-paginated requests.
 	}
-	panic("TODO(slimsag): before merge: implement")
+	return r.cursor.Finished
 }
 
 // Cursor returns the cursor that can be passed into a future search request in
@@ -372,6 +372,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	}
 	results, common, relativeCursor := sliceSearchResults(results, common, offset, int(p.pagination.limit))
 	absoluteCursor := relativeCursor
+	absoluteCursor.Finished = len(results) == 0 && len(repos) == 0
 	if p.pagination.cursor != nil {
 		absoluteCursor.RepositoryOffset += p.pagination.cursor.RepositoryOffset
 	}
