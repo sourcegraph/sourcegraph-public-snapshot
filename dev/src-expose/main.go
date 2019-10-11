@@ -90,7 +90,6 @@ func main() {
 		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
-		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	)
 
 	parseSnapshotter := func(flagSet *flag.FlagSet, args []string) (*Snapshotter, error) {
@@ -150,7 +149,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(*serveAddr, repoDir)
+			return serveRepos(*globalAddr, repoDir)
 		},
 	}
 
