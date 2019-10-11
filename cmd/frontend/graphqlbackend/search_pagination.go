@@ -12,7 +12,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -138,28 +137,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	////////////////////////////////////////////////////////////////////////////
-	// TODO(slimsag): before merge: duplicate code from doResults begins here //
-	////////////////////////////////////////////////////////////////////////////
-	forceOnlyResultType := ""
-	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
-	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
-	if len(repos) == 0 {
-		alert, err := r.alertForNoResolvedRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
-	}
-	if overLimit {
-		alert, err := r.alertForOverRepoLimit(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
+	if alertResult != nil {
+		return alertResult, nil
 	}
 
 	p, err := r.getPatternInfo(nil)
@@ -167,12 +150,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		return nil, err
 	}
 	args := search.Args{
-		Pattern: p,
-		Repos:   repos,
-		Query:   r.query,
-		//UseFullDeadline: r.searchTimeoutFieldSet(),
-		UseFullDeadline: true,
+		Pattern:         p,
+		Repos:           repos,
+		Query:           r.query,
+		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
+		SearcherURLs:    r.searcherURLs,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -183,28 +166,8 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		return nil, err
 	}
 
-	// Determine which types of results to return.
-	var resultTypes []string
-	if forceOnlyResultType != "" {
-		resultTypes = []string{forceOnlyResultType}
-	} else {
-		resultTypes, _ = r.query.StringValues(query.FieldType)
-		if len(resultTypes) == 0 {
-			//resultTypes = []string{"file", "path", "repo", "ref"}
-			resultTypes = []string{"file"}
-		}
-	}
-	for _, resultType := range resultTypes {
-		if resultType == "file" {
-			args.Pattern.PatternMatchesContent = true
-		} else if resultType == "path" {
-			args.Pattern.PatternMatchesPath = true
-		}
-	}
+	resultTypes, _ := r.determineResultTypes(args, "")
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
-	//////////////////////////////////////////////////////////////////////////
-	// TODO(slimsag): before merge: duplicate code from doResults ends here //
-	//////////////////////////////////////////////////////////////////////////
 
 	// TODO(slimsag): future: support non-file result types in the paginated
 	// search API.
