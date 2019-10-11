@@ -34,25 +34,24 @@
 /cmd/frontend/types @slimsag
 /cmd/frontend/hooks @beyang @slimsag
 /cmd/frontend/internal/ @beyang @slimsag
-/pkg/randstring/ @beyang
-/pkg/pubsub/ @beyang
-/pkg/repotrackutil/ @beyang
-/pkg/atomicvalue/ @beyang
-/pkg/testutil/ @beyang
-/pkg/debugserver/ @beyang
-/pkg/vfsutil/ @slimsag
-/pkg/gituri/ @beyang
-/pkg/db/ @keegancsmith
-/pkg/processrestart @slimsag @keegancsmith
-/pkg/honey @keegancsmith
-/pkg/ratelimit @beyang
-/pkg/registry @chrismwendt
-/pkg/slack @slimsag
-/pkg/prefixsuffixsaver @beyang
-/pkg/gosrc @beyang
-/pkg/txemail @slimsag
+/internal/randstring/ @beyang
+/internal/pubsub/ @beyang
+/internal/repotrackutil/ @beyang
+/internal/atomicvalue/ @beyang
+/internal/testutil/ @beyang
+/internal/debugserver/ @beyang
+/internal/vfsutil/ @slimsag
+/internal/gituri/ @beyang
+/internal/db/ @keegancsmith
+/internal/processrestart @slimsag @keegancsmith
+/internal/honey @keegancsmith
+/internal/ratelimit @beyang
+/internal/registry @chrismwendt
+/internal/slack @slimsag
+/internal/prefixsuffixsaver @beyang
+/internal/gosrc @beyang
+/internal/txemail @slimsag
 /gulpfile.ts @beyang
-/client @sqs
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
@@ -62,24 +61,30 @@
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
 .eslintrc.js @felixfbecker
-/pkg/httputil @beyang
-/pkg/diskcache @beyang
-/pkg/sysreq @beyang
-/pkg/errcode @beyang
-/pkg/routevar @beyang
-/pkg/env @beyang
-/pkg/pathmatch @beyang
-/pkg/version @beyang
-/pkg/httptestutil @beyang
-/pkg/mutablelimiter @beyang
-/pkg/buildkite @ggilmore
-/pkg/httpcli @sourcegraph/core-services
+/internal/httputil @beyang
+/internal/diskcache @beyang
+/internal/sysreq @beyang
+/internal/errcode @beyang
+/internal/routevar @beyang
+/internal/env @beyang
+/internal/pathmatch @beyang
+/internal/version @beyang
+/internal/httptestutil @beyang
+/internal/mutablelimiter @beyang
+/internal/buildkite @ggilmore
+/internal/httpcli @sourcegraph/core-services
 /packages @beyang
 /cmd/frontend @beyang
 /dev @beyang
+/dev/grafana.sh  @sourcegraph/distribution
+/dev/grafana  @sourcegraph/distribution
+/dev/prometheus.sh  @sourcegraph/distribution
+/dev/prometheus  @sourcegraph/distribution
+/dev/src-expose @keegancsmith
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
+/SECURITY.md @beyang @nicksnyder
 /.dockerignore @beyang
 /.mailmap @beyang
 /tsconfig.json @felixfbecker
@@ -95,16 +100,19 @@ tslint.config.js @felixfbecker
 /.editorconfig @felixfbecker
 /jest.config.js @felixfbecker
 /cmd @beyang @slimsag
-/pkg @beyang @slimsag
-/enterprise/cmd/frontend/internal/registry @sqs @beyang
+/internal @beyang @slimsag
+
+# Regression testing
+/web/src/regression @beyang
 
 # Frontend
-/shared @sourcegraph/code-nav
-/web @felixfbecker @lguychard
-/ui @felixfbecker @lguychard
-/enterprise/ui @felixfbecker @lguychard
+/shared @sourcegraph/web
+/web @sourcegraph/web
+/ui @sourcegraph/web
+/client @sourcegraph/web
+/enterprise/ui @sourcegraph/web
 /cmd/frontend/internal/app/jscontext @slimsag
-/packages/@sourcegraph @sourcegraph/code-nav
+/packages/@sourcegraph @sourcegraph/web
 /web/src/site-admin/externalServices.tsx @beyang
 /shared/src/components/activation/ @beyang
 
@@ -113,7 +121,13 @@ tslint.config.js @felixfbecker
 /web/src/tracking/ @dadlerj
 **/tracking @dadlerj
 /cmd/frontend/internal/pkg/usagestats @dadlerj
-/pkg/eventlogger @dadlerj
+/internal/eventlogger @dadlerj
+
+# Automation
+*/a8n/* @sourcegraph/automation
+/enterprise/pkg/a8n @sourcegraph/automation
+/internal/a8n @sourcegraph/automation
+**/campaigns/** @sourcegraph/automation
 
 # Auth
 /cmd/frontend/auth/ @beyang
@@ -125,18 +139,18 @@ tslint.config.js @felixfbecker
 /cmd/frontend/graphqlbackend/*session* @beyang
 /cmd/frontend/graphqlbackend/*auth* @beyang
 /cmd/frontend/graphqlbackend/access_token.go @beyang
-/pkg/actor/ @beyang
+/internal/actor/ @beyang
 
 # Core Services
 *git*/* @sourcegraph/core-services
 /cmd/gitserver/ @sourcegraph/core-services
 /cmd/repo-updater/ @sourcegraph/core-services
 /migrations/ @sourcegraph/core-services
-/pkg/gitserver/ @sourcegraph/core-services
-/pkg/repoupdater/ @sourcegraph/core-services
-/pkg/trace/ @sourcegraph/core-services
-/pkg/tracer/ @sourcegraph/core-services
-/pkg/vcs/ @sourcegraph/core-services
+/internal/gitserver/ @sourcegraph/core-services
+/internal/repoupdater/ @sourcegraph/core-services
+/internal/trace/ @sourcegraph/core-services
+/internal/tracer/ @sourcegraph/core-services
+/internal/vcs/ @sourcegraph/core-services
 /cmd/frontend/db @sourcegraph/core-services
 /cmd/frontend/graphqlbackend @sourcegraph/core-services @slimsag
 /cmd/frontend/globals @sourcegraph/core-services @slimsag
@@ -145,18 +159,18 @@ tslint.config.js @felixfbecker
 /schema @sourcegraph/core-services
 /cmd/frontend/internal/bg @sourcegraph/core-services @slimsag
 /cmd/github-proxy @sourcegraph/core-services
-/pkg/api/ @sourcegraph/core-services
-/pkg/jsonc @tsenart @slimsag
-/pkg/extsvc @sourcegraph/core-services
+/internal/api/ @sourcegraph/core-services
+/internal/jsonc @tsenart @slimsag
+/internal/extsvc @sourcegraph/core-services
 /cmd/frontend/authz/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/authz @sourcegraph/core-services
 # authz overrides (still owned by beyang for now)
 /enterprise/cmd/frontend/internal/authz/*github* @beyang
 /enterprise/cmd/frontend/internal/authz/*gitlab* @beyang
 
-# Code nav
-/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-nav
-/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-nav
+# Symbols
+/cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
+/enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
 
 # Search and code mod
 /cmd/frontend/graphqlbackend/*search* @sourcegraph/code-search
@@ -168,8 +182,8 @@ tslint.config.js @felixfbecker
 /cmd/symbols @sourcegraph/code-search
 /cmd/query-runner @sourcegraph/code-search
 /cmd/replacer @rvantonder
-/pkg/symbols/ @sourcegraph/code-search
-/pkg/search @sourcegraph/code-search
+/internal/symbols/ @sourcegraph/code-search
+/internal/search @sourcegraph/code-search
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan
@@ -187,9 +201,10 @@ Dockerfile @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
 /cmd/frontend/envvar @sourcegraph/distribution
 /cmd/server @sourcegraph/distribution
-/pkg/conf @slimsag
-/pkg/db/confdb @slimsag
-/pkg/db/globalstatedb @slimsag
+/internal/conf @slimsag
+/internal/db/confdb @slimsag
+/internal/db/globalstatedb @slimsag
+/enterprise/docs @sourcegraph/distribution
 
 # Licensing and billing
 /enterprise/cmd/frontend/internal/dotcom @sourcegraph/distribution
@@ -197,25 +212,25 @@ Dockerfile @sourcegraph/distribution
 
 # Documentation and homepage
 README.md @sqs
-/doc/ @sqs @ryan-blunden
+/doc/ @sourcegraph/distribution @ryan-blunden
+/doc/dev/ @nicksnyder
 /doc/dev/product/ @christinaforney
-/doc/dev/teams.md @beyang @nicksnyder
-/web/src/enterprise/dotcom/welcome/ @sqs
 
 # Browser extensions
-/browser/ @felixfbecker @lguychard
+/browser/ @sourcegraph/web
 
 # Extension API
-/packages/sourcegraph-extension-api/ @sourcegraph/code-nav
-/packages/@sourcegraph/extension-api-types @sourcegraph/code-nav
-/cmd/frontend/registry @felixfbecker
+/packages/sourcegraph-extension-api/ @sourcegraph/web
+/packages/@sourcegraph/extension-api-types @sourcegraph/web
+/cmd/frontend/registry @sourcegraph/web
+/enterprise/cmd/frontend/internal/registry @sourcegraph/web
 
 # Backend shared packages
-/pkg/endpoint/ @keegancsmith @slimsag
-/pkg/rcache/ @keegancsmith
-/pkg/redispool/ @keegancsmith
-/pkg/store/ @keegancsmith
-/pkg/metrics @keegancsmith @slimsag
+/internal/endpoint/ @keegancsmith @slimsag
+/internal/rcache/ @keegancsmith
+/internal/redispool/ @keegancsmith
+/internal/store/ @keegancsmith
+/internal/metrics @keegancsmith @slimsag
 
 # Management console
 /cmd/management-console @slimsag
@@ -231,29 +246,30 @@ README.md @sqs
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
-/lsif/ @chrismwendt @sourcegraph/code-nav
+/lsif/ @sourcegraph/code-intel
 
 # Development
-/dev/fakehub @ijt
-/dev/repogen @ijt
+/dev/fakehub @sourcegraph/core-services
+/dev/repogen @sourcegraph/core-services
 /.vscode @felixfbecker
+/.graphqlconfig @felixfbecker
 
 # Misc and special overrides
 /LICENSE* @sqs @beyang @slimsag
-/enterprise/pkg/license @sqs @beyang
+/enterprise/pkg/license @beyang
 /cmd/frontend/external/session @beyang
 /cmd/frontend/external @beyang
-/babel.config.js @sqs @felixfbecker
-/enterprise/docs @sqs
+/babel.config.js @felixfbecker
 /cmd/loadtest @beyang
-/pkg/legacyconf/ @slimsag
-/pkg/hubspot/ @dadlerj
-/pkg/highlight/ @slimsag
+/internal/hubspot/ @dadlerj
+/internal/highlight/ @slimsag
 
-# Don't set any reviewers for these,
-# configure by package through Renovate config (see renovate.json)
+# These are configured through Renovate config.
+# See ../renovate.json and https://github.com/sourcegraph/renovate-config/blob/master/renovate.json
+# This is so that automerged PRs do not trigger email notification spam.
 **/package.json
 **/yarn.lock
-/go.sum
-/go.mod
+
+/go.sum @sourcegraph/core-services
+/go.mod @sourcegraph/core-services
 /CHANGELOG.md

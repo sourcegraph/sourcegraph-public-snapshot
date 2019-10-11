@@ -3,16 +3,9 @@
 # Build commands, optionally with or without race detector.  a list of every command we know about,
 # to use by default
 #
-# This will install binaries into the `.bin` directory under the repository root by default or, if
-# $GOMOD_ROOT is set, under that directory.
+# This will install binaries into the `.bin` directory under the repository root.
 
 all_oss_commands=" gitserver query-runner github-proxy management-console searcher replacer frontend repo-updater symbols "
-
-# GOMOD_ROOT is the directory from which `go install` commands are run. It should contain a go.mod
-# file. The go.mod file may be updated as a side effect of updating the dependencies before the `go
-# install`.
-GOMOD_ROOT=${GOMOD_ROOT:-$PWD}
-echo >&2 "Running \`go install\` from $GOMOD_ROOT"
 
 # handle options
 verbose=false
@@ -112,7 +105,7 @@ do_install() {
 			cmds="$cmds github.com/sourcegraph/sourcegraph/cmd/$cmd"
 		fi
 	done
-	if ( cd $GOMOD_ROOT && go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then
+	if ( go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then
 		if $verbose; then
 			# echo each command on its own line
 			echo "$cmdlist" | tr ' ' '\012'

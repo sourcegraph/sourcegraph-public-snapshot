@@ -94,6 +94,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             <>
                                 <Spacer />
                                 <button
+                                    type="button"
                                     onClick={this.onSidebarToggle}
                                     className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
                                     title="Close sidebar (Alt+S/Opt+S)"

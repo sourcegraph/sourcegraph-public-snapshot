@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import { fromHoverMerged, HoverMerged } from '../../client/types/hover'
+import { fromHoverMerged, HoverMerged } from '../types/hover'
 import { TextDocumentPositionParams } from '../../protocol'
 import { DocumentFeatureProviderRegistry } from './registry'
 

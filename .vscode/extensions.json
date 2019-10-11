@@ -5,7 +5,7 @@
     "EditorConfig.editorconfig",
     "ms-vscode.vscode-typescript-tslint-plugin",
     "esbenp.prettier-vscode",
-    "kumar-harsh.graphql-for-vscode",
+    "prisma.vscode-graphql",
     "ms-vscode.Go",
     "shinnn.stylelint",
     "exiasr.hadolint",

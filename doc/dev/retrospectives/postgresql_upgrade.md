@@ -18,7 +18,7 @@ At the time we decided to upgrade Postgres, these were the reasons for pursuing 
 
 Working with the principle of making Sourcegraph admin's lives as easy and pain-free as possible, we decided to automate the whole upgrade procedure for server image and Kubernetes installations. In retrospect, it's now clear that undertaking this work was too risky in the time-frame we had available for the 3.0 release. I took over this from Keegan as a release blocker for 3.0. We grossly underestimated the effort involved to complete this. It would never have been possible to do it in time for 3.0
 
-> Nick says: Beyang flagged this as work we shouldn’t try to squeeze in, but we tried to anyway. I think trying to squeeze this in was the avoidable root mistake.
+> Nick says: Beyang flagged this as work we shouldn't try to squeeze in, but we tried to anyway. I think trying to squeeze this in was the avoidable root mistake.
 > Beyang says: More background: Nick asked me to look into this before the holidays. I said I would timebox to one day. After looking into it for an afternoon, I decided it was more trouble than it was worth.
 
 An even earlier root cause was that this didn't have a clear owner from the beginning of the iteration. It was a general proposal that was ownerless for awhile. I took it on, then Keegan, then Tomás.

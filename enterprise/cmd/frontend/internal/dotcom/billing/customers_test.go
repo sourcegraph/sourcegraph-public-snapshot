@@ -1,15 +1,17 @@
 package billing
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestGetOrAssignUserCustomerID(t *testing.T) {
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	c := 0
 	mockCreateCustomerID = func(userID int32) (string, error) {

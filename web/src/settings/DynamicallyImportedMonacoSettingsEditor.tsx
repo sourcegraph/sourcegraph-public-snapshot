@@ -4,7 +4,7 @@ import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { SaveToolbar } from '../components/SaveToolbar'
-import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
+import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
 import { ThemeProps } from '../theme'
 
@@ -39,7 +39,7 @@ interface State {
 }
 
 const MonacoSettingsEditor = React.lazy(async () => ({
-    default: (await import('../settings/MonacoSettingsEditor')).MonacoSettingsEditor,
+    default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
 /** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
@@ -92,7 +92,6 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                                     <button
                                         key={id}
                                         className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                        // tslint:disable-next-line:jsx-no-lambda
                                         onClick={() => this.runAction(id, this.configEditor)}
                                         type="button"
                                     >
@@ -153,7 +152,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         }
     }
 
-    private monacoRef = async (monacoValue: typeof _monaco | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
         if (this.monaco && MonacoSettingsEditor) {
             this.subscriptions.add(
@@ -168,7 +167,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                     this.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
                         // so this import call will not incur another load.
-                        const { MonacoSettingsEditor } = await import('../settings/MonacoSettingsEditor')
+                        const { MonacoSettingsEditor } = await import('./MonacoSettingsEditor')
 
                         if (
                             this.configEditor &&
@@ -188,7 +187,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
-            action.run().then(() => void 0, (err: any) => console.error(err))
+            action.run().then(() => undefined, (err: any) => console.error(err))
         } else {
             alert('Wait for editor to load before running action.')
         }

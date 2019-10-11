@@ -12,7 +12,7 @@ import { NavGroupDescriptor } from '../util/contributions'
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor {}
 
-export type SiteAdminSideBarGroups = ReadonlyArray<SiteAdminSideBarGroup>
+export type SiteAdminSideBarGroups = readonly SiteAdminSideBarGroup[]
 
 export interface SiteAdminSidebarProps {
     /** The items for the side bar, by group */
@@ -50,6 +50,9 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
         </Link>
         <a href="/-/debug/" className={SIDEBAR_BUTTON_CLASS}>
             Instrumentation
+        </a>
+        <a href="/-/debug/grafana" className={SIDEBAR_BUTTON_CLASS}>
+            Monitoring
         </a>
     </div>
 )

@@ -15,7 +15,7 @@ interface DiscussionsGutterOverlayProps extends RepoFile {
     overlayPosition?: { left: number; top: number }
 }
 
-const onCreateDiscussionClick = () => eventLogger.log('CreateDiscussionClicked')
+const onCreateDiscussionClick = (): void => eventLogger.log('CreateDiscussionClicked')
 
 export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutterOverlayProps> = props => {
     const hash = new URLSearchParams(props.location.hash.slice('#'.length))
@@ -34,7 +34,8 @@ export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutter
     return (
         <div
             className="discussions-gutter-overlay"
-            // tslint:disable-next-line:jsx-ban-props needed for dynamic styling
+            // needed for dynamic styling
+            // eslint-disable-next-line react/forbid-dom-props
             style={
                 props.overlayPosition
                     ? {

@@ -94,7 +94,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
 
         // Fetch the user with all of the fields we need (Props.user might not have them all).
         this.subscriptions.add(
-            combineLatest(userChanges, this.refreshRequests.pipe(startWith<void>(void 0)))
+            combineLatest([userChanges, this.refreshRequests.pipe(startWith<void>(undefined))])
                 .pipe(
                     switchMap(([user]) =>
                         queryUser(user.id).pipe(
@@ -144,8 +144,8 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -186,6 +186,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             <label htmlFor="user-settings-profile-page__form-username">Username</label>
                             <UsernameInput
                                 id="user-settings-profile-page__form-username"
+                                className="e2e-user-settings-profile-page-username"
                                 value={
                                     this.state.username === undefined
                                         ? this.state.userOrError.username
@@ -202,7 +203,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             />
                             <small className="form-text text-muted">
                                 A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
-                                with a hyphen nor a dot.
+                                with a dot, nor begin with a hyphen.
                             </small>
                         </div>
                         <div className="form-group">
@@ -248,7 +249,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             )}
                         </div>
                         <button
-                            className="btn btn-primary user-settings-profile-page__button"
+                            className="btn btn-primary user-settings-profile-page__button e2e-user-settings-profile-page-update-profile"
                             type="submit"
                             disabled={this.state.loading}
                         >
@@ -260,7 +261,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             </div>
                         )}
                         {this.state.saved && (
-                            <p className="alert alert-success user-settings-profile-page__alert">Profile saved!</p>
+                            <p className="alert alert-success user-settings-profile-page__alert e2e-user-settings-profile-page-alert-success">
+                                Profile saved!
+                            </p>
                         )}
                         {window.context.sourcegraphDotComMode && (
                             <p className="mt-4">

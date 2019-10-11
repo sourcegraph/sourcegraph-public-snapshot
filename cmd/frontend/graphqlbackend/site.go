@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -12,17 +13,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
 const singletonSiteGQLID = "site"
 
-func siteByGQLID(ctx context.Context, id graphql.ID) (node, error) {
+func siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
 	siteGQLID, err := unmarshalSiteGQLID(id)
 	if err != nil {
 		return nil, err
@@ -65,6 +67,15 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 		return nil, err
 	}
 	return &siteConfigurationResolver{}, nil
+}
+
+func (r *siteResolver) CriticalConfiguration(ctx context.Context) (*criticalConfigurationResolver, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	return &criticalConfigurationResolver{}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -178,6 +189,8 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(contents)
 }
 
+var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
+
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
@@ -187,7 +200,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	if os.Getenv("SITE_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("SITE_CONFIG_FILE") != "" && !siteConfigAllowEdits {
 		return false, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
 	}
 	if strings.TrimSpace(args.Input) == "" {
@@ -200,4 +213,24 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
+}
+
+type criticalConfigurationResolver struct{}
+
+func (r *criticalConfigurationResolver) ID(ctx context.Context) (int32, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return 0, err
+	}
+	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
+}
+
+func (r *criticalConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return "", err
+	}
+	return globals.ConfigurationServerFrontendOnly.Raw().Critical, nil
 }

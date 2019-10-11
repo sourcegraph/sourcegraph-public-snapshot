@@ -35,6 +35,8 @@ var defaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
+	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
+
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
 	// CACHE_DIR.
@@ -56,7 +58,7 @@ var defaultEnv = map[string]string{
 }
 
 // Set verbosity based on simple interpretation of env var to avoid external dependencies (such as
-// on github.com/sourcegraph/sourcegraph/pkg/env).
+// on github.com/sourcegraph/sourcegraph/internal/env).
 var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
 
 // Main is the main server command function which is shared between Sourcegraph
@@ -78,21 +80,6 @@ func Main() {
 		err = godotenv.Load(filepath.Join(configDir, "env"))
 		if err != nil && !os.IsNotExist(err) {
 			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
-		}
-
-		// Load the legacy config file if it exists.
-		//
-		// TODO(slimsag): Remove this code in the next significant version of
-		// Sourcegraph after 3.0.
-		configPath := os.Getenv("SOURCEGRAPH_CONFIG_FILE")
-		if configPath == "" {
-			configPath = filepath.Join(configDir, "sourcegraph-config.json")
-		}
-		_, err = os.Stat(configPath)
-		if err == nil {
-			if err := os.Setenv("SOURCEGRAPH_CONFIG_FILE", configPath); err != nil {
-				log.Fatal(err)
-			}
 		}
 	}
 
@@ -144,19 +131,33 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`lsif-server: node /lsif-server.js | grep -v 'Listening for HTTP requests'`,
+		`lsif-server: node /lsif/out/server.js`,
+		`lsif-worker: node /lsif/out/worker.js`,
 		`management-console: management-console`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
+		`prometheus: prometheus --config.file=/sg_config_prometheus/prometheus.yml  --storage.tsdb.path=/var/opt/sourcegraph/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles >> /var/opt/sourcegraph/prometheus.log 2>&1`,
+		`grafana: /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
-	if line, err := maybeRedisProcFile(); err != nil {
+
+	redisStoreLine, err := maybeRedisStoreProcFile()
+	if err != nil {
 		log.Fatal(err)
-	} else if line != "" {
-		procfile = append(procfile, line)
 	}
+	if redisStoreLine != "" {
+		procfile = append(procfile, redisStoreLine)
+	}
+	redisCacheLine, err := maybeRedisCacheProcFile()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if redisCacheLine != "" {
+		procfile = append(procfile, redisCacheLine)
+	}
+
 	if line, err := maybePostgresProcFile(); err != nil {
 		log.Fatal(err)
 	} else if line != "" {

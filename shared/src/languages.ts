@@ -97,11 +97,17 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'c':
         case 'cc':
         case 'cpp':
+        case 'cxx':
         case 'c++':
         case 'h++':
         case 'hh':
         case 'h':
             return 'cpp'
+
+        // CUDA
+        case 'cu':
+        case 'cuh':
+            return 'cuda'
 
         // Dart
         case 'dart':
@@ -139,7 +145,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'for':
         case 'frt':
         case 'fr':
-        case 'fs':
+        // case 'fs':
         case 'forth':
         case '4th':
         case 'fth':
@@ -275,7 +281,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'pl':
         case 'al':
         case 'cgi':
-        case 'fcgi':
+        // case 'fcgi':
         case 'perl':
         case 'ph':
         case 'plx':
@@ -325,7 +331,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'rb':
         case 'builder':
         case 'eye':
-        case 'fcgi':
+        // case 'fcgi':
         case 'gemspec':
         case 'god':
         case 'jbuilder':
@@ -452,7 +458,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'osm':
         case 'pkgproj':
         case 'plist':
-        case 'pluginspec':
+        // case 'pluginspec':
         case 'props':
         case 'ps1xml':
         case 'psc1':
@@ -460,7 +466,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'rdf':
         case 'resx':
         case 'rss':
-        case 'sch':
+        // case 'sch':
         case 'scxml':
         case 'sfproj':
         case 'srdf':
@@ -474,8 +480,8 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'tmPreferences':
         case 'tmSnippet':
         case 'tmTheme':
-        case 'ts':
-        case 'tsx':
+        // case 'ts':
+        // case 'tsx':
         case 'ui':
         case 'urdf':
         case 'ux':

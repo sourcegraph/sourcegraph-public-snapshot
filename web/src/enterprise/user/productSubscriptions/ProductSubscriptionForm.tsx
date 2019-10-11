@@ -83,7 +83,7 @@ interface State {
 /**
  * Displays a form for a product subscription.
  */
-// tslint:disable-next-line:class-name
+// eslint-disable-next-line @typescript-eslint/class-name-casing
 class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElements.InjectedStripeProps, State> {
     constructor(props: Props) {
         super(props)
@@ -153,6 +153,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
         // change without the component being unmounted, but handle this case for completeness
         // anyway.
         if (!isEqual(prevProps.initialValue, this.props.initialValue)) {
+            /* eslint react/no-did-update-set-state: warn */
             this.setState(this.getStateForInitialValue(this.props))
         }
     }

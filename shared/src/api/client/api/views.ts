@@ -36,7 +36,7 @@ export class ClientViews implements ClientViewsAPI {
         const panelView = new ReplaySubject<PanelViewData>(1)
         const registryUnsubscribable = this.viewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
-            combineLatest(
+            combineLatest([
                 panelView.pipe(
                     map(data => omit(data, 'component')),
                     distinctUntilChanged((x, y) => isEqual(x, y))
@@ -49,9 +49,9 @@ export class ClientViews implements ClientViewsAPI {
                             return undefined
                         }
 
-                        return from(this.editorService.editors).pipe(
-                            switchMap(editors => {
-                                const params = getActiveCodeEditorPosition(editors)
+                        return from(this.editorService.activeEditorUpdates).pipe(
+                            map(getActiveCodeEditorPosition),
+                            switchMap(params => {
                                 if (!params) {
                                     return of(of(null))
                                 }
@@ -59,8 +59,8 @@ export class ClientViews implements ClientViewsAPI {
                             })
                         )
                     })
-                )
-            ).pipe(
+                ),
+            ]).pipe(
                 map(([{ title, content, priority }, locationProvider]) => {
                     const panelView: PanelViewWithComponent = {
                         title,

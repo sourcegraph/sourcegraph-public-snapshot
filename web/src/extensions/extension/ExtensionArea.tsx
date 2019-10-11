@@ -57,7 +57,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
 
@@ -65,8 +65,8 @@ export interface ExtensionAreaProps
     extends ExtensionsAreaRouteContext,
         RouteComponentProps<{ extensionID: string }>,
         ThemeProps {
-    routes: ReadonlyArray<ExtensionAreaRoute>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    routes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
 interface ExtensionAreaState {
@@ -120,14 +120,14 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
 
         // Fetch extension.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 extensionIDChanges,
                 merge(
                     this.refreshRequests.pipe(mapTo(false)),
                     globalExtensionsSettingsChanges.pipe(mapTo(false)),
                     of(false)
-                )
-            )
+                ),
+            ])
                 .pipe(
                     switchMap(([extensionID, forceRefresh]) => {
                         type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>
@@ -147,8 +147,8 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: ExtensionAreaProps): void {
-        this.componentUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -195,18 +195,19 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
                                 {this.props.routes.map(
+                                    /* eslint-disable react/jsx-no-bind */
                                     ({ path, render, exact, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
                                                 path={url + path}
                                                 exact={exact}
                                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
                                             />
                                         )
+                                    /* eslint-enable react/jsx-no-bind */
                                 )}
                                 <Route key="hardcoded-key" component={NotFoundPage} />
                             </Switch>

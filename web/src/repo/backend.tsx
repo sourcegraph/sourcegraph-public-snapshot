@@ -67,7 +67,8 @@ export interface ResolvedRev {
 
 /**
  * When `rev` is undefined, the default branch is resolved.
- * @return Observable that emits the commit ID
+ *
+ * @returns Observable that emits the commit ID
  *         Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
@@ -175,7 +176,7 @@ const fetchHighlightedFile = memoizeObservable(
                 return { isDirectory: file.isDirectory, richHTML: file.richHTML, highlightedFile: file.highlight }
             })
         ),
-    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout} ` + `?isLightTheme=${ctx.isLightTheme}`
+    ctx => makeRepoURI(ctx) + `?disableTimeout=${ctx.disableTimeout}&sisLightTheme=${ctx.isLightTheme}`
 )
 
 /**

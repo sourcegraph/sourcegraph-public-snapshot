@@ -72,17 +72,17 @@ export function exec(node: ExpressionNode, context: ComputedContext): any {
 
     if ('Binary' in node) {
         const left = exec(node.Binary.left, context)
-        const right = () => exec(node.Binary.right, context) // lazy evaluation
+        const right = (): any => exec(node.Binary.right, context) // lazy evaluation
         switch (node.Binary.operator) {
             case '&&':
                 return left && right()
             case '||':
                 return left || right()
             case '==':
-                // tslint:disable-next-line:triple-equals
+                // eslint-disable-next-line eqeqeq
                 return left == right()
             case '!=':
-                // tslint:disable-next-line:triple-equals
+                // eslint-disable-next-line eqeqeq
                 return left != right()
             case '===':
                 return left === right()
@@ -146,7 +146,7 @@ export function exec(node: ExpressionNode, context: ComputedContext): any {
         const func = FUNCS[expr.name]
         if (typeof func === 'function') {
             const args = expr.args.map(arg => exec(arg, context))
-            return func.apply(null, args)
+            return func(...args)
         }
         throw new SyntaxError(`Undefined function: ${expr.name}`)
     }

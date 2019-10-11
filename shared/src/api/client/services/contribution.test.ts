@@ -13,10 +13,10 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './contribution'
-import { CodeEditorWithPartialModel } from './editorService'
 import { createTestEditorService } from './editorService.test'
+import { ModelService } from './modelService'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_CONTRIBUTIONS_1: Contributions = {
     actions: [
@@ -68,18 +68,27 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
     },
 }
 
+const TEST_MODEL_SERVICE: Pick<ModelService, 'getPartialModel'> = {
+    getPartialModel: () => ({ languageId: 'x' }),
+}
+
 describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
-            new ContributionRegistry(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
-                .entries.value
+            new ContributionRegistry(
+                createTestEditorService({}),
+                TEST_MODEL_SERVICE,
+                { data: of(EMPTY_SETTINGS_CASCADE) },
+                of({})
+            ).entries.value
         ).toEqual([])
     })
 
     test('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
         const registry = new ContributionRegistry(
-            createTestEditorService(of([])),
+            createTestEditorService({}),
+            TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -101,7 +110,8 @@ describe('ContributionRegistry', () => {
 
     test('replaces contributions', () => {
         const registry = new ContributionRegistry(
-            createTestEditorService(of([])),
+            createTestEditorService({}),
+            TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -123,14 +133,21 @@ describe('ContributionRegistry', () => {
 
     describe('contributions observable', () => {
         test('emits stream of results of registrations', () => {
-            const registry = new (class extends ContributionRegistry {
-                public getContributionsFromEntries(
-                    entries: Observable<ContributionsEntry[]>
-                ): Observable<Evaluated<Contributions>> {
-                    return super.getContributionsFromEntries(entries, undefined)
-                }
-            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) => {
+                const registry = new (class extends ContributionRegistry {
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Evaluated<Contributions>> {
+                        return super.getContributionsFromEntries(entries, undefined)
+                    }
+                })(
+                    {
+                        activeEditorUpdates: of(undefined),
+                    },
+                    TEST_MODEL_SERVICE,
+                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of({})
+                )
                 type Marble = 'a' | 'b' | 'c'
                 const values: Record<Marble, ContributionsEntry[]> = {
                     a: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }],
@@ -149,14 +166,21 @@ describe('ContributionRegistry', () => {
         })
 
         it('supports registration of an observable', () => {
-            const registry = new (class extends ContributionRegistry {
-                public getContributionsFromEntries(
-                    entries: Observable<ContributionsEntry[]>
-                ): Observable<Evaluated<Contributions>> {
-                    return super.getContributionsFromEntries(entries, undefined)
-                }
-            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) => {
+                const registry = new (class extends ContributionRegistry {
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Evaluated<Contributions>> {
+                        return super.getContributionsFromEntries(entries, undefined)
+                    }
+                })(
+                    {
+                        activeEditorUpdates: of(undefined),
+                    },
+                    TEST_MODEL_SERVICE,
+                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of({})
+                )
                 type Marble = 'b' | 'c'
                 const values: Record<Marble, Contributions | Contributions[]> = {
                     b: FIXTURE_CONTRIBUTIONS_1,
@@ -180,14 +204,12 @@ describe('ContributionRegistry', () => {
         test('emits when context changes and filters on context', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const registry = new (class extends ContributionRegistry {
-                    public constructor() {
+                    constructor() {
                         super(
                             {
-                                editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('-a-b-|', {
-                                    a: [],
-                                    b: [],
-                                }),
+                                activeEditorUpdates: of(undefined),
                             },
+                            TEST_MODEL_SERVICE,
                             {
                                 data: cold<SettingsCascadeOrError>('-a-b-|', {
                                     a: EMPTY_SETTINGS_CASCADE,
@@ -225,13 +247,10 @@ describe('ContributionRegistry', () => {
         test('continues after error thrown during evaluation', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const registry = new (class extends ContributionRegistry {
-                    public constructor() {
+                    constructor() {
                         super(
-                            {
-                                editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('a', {
-                                    a: [],
-                                }),
-                            },
+                            createTestEditorService({}),
+                            TEST_MODEL_SERVICE,
                             { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
                             cold<Context>('a', {})
                         )
@@ -366,7 +385,7 @@ describe('filterContributions()', () => {
     })
 })
 
-// tslint:disable:no-invalid-template-strings
+/* eslint-disable no-template-curly-in-string */
 describe('evaluateContributions()', () => {
     test('handles empty contributions', () => {
         const expected: Evaluated<Contributions> = {}
@@ -505,4 +524,4 @@ describe('parseContributionExpressions()', () => {
         ).toEqual(expected)
     })
 })
-// tslint:enable:no-invalid-template-strings
+/* eslint-enable no-template-curly-in-string */

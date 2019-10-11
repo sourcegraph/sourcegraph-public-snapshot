@@ -31,13 +31,13 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                 {this.props.error && (
                     <div className="alert alert-danger">
                         <p>Error saving configuration:</p>
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message)} />
+                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message.replace(/\t/g, ''))} />
                     </div>
                 )}
                 {this.props.warning && (
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.warning)} />
+                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.warning.replace(/\t/g, ''))} />
                     </div>
                 )}
                 <div className="form-group">

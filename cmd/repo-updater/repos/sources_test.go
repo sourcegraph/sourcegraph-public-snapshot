@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -19,45 +18,16 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-func TestOtherRepoName(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		in   string
-		out  string
-	}{
-		{"user and password elided", "https://user:pass@foo.bar/baz", "foo.bar/baz"},
-		{"scheme elided", "https://user@foo.bar/baz", "foo.bar/baz"},
-		{"raw query elided", "https://foo.bar/baz?secret_token=12345", "foo.bar/baz"},
-		{"fragment elided", "https://foo.bar/baz#fragment", "foo.bar/baz"},
-		{": replaced with -", "git://foo.bar/baz:bam", "foo.bar/baz-bam"},
-		{"@ replaced with -", "ssh://foo.bar/baz@bam", "foo.bar/baz-bam"},
-	} {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			cloneURL, err := url.Parse(tc.in)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if have, want := otherRepoName(cloneURL), tc.out; have != want {
-				t.Errorf("otherRepoName(%q):\nhave: %q\nwant: %q", tc.in, have, want)
-			}
-		})
-	}
-}
 
 func TestNewSourcer(t *testing.T) {
 	now := time.Now()
@@ -657,6 +627,61 @@ func TestSources_ListRepos(t *testing.T) {
 	{
 		svcs := ExternalServices{
 			{
+				Kind: "GITLAB",
+				Config: marshalJSON(t, &schema.GitLabConnection{
+					Url:                   "https://gitlab.com",
+					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
+					RepositoryPathPattern: "{host}/{pathWithNamespace}",
+					ProjectQuery:          []string{"none"},
+					Projects: []*schema.GitLabProject{
+						{Name: "sg-test.d/repo-git"},
+						{Name: "sg-test.d/repo-gitrepo"},
+					},
+					NameTransformations: []*schema.GitLabNameTransformation{
+						{
+							Regex:       "\\.d/",
+							Replacement: "/",
+						},
+						{
+							Regex:       "-git$",
+							Replacement: "",
+						},
+					},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "nameTransformations updates the repo name",
+			svcs: svcs,
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					have := rs.Names()
+					sort.Strings(have)
+
+					var want []string
+					switch s.Kind {
+					case "GITLAB":
+						want = []string{
+							"gitlab.com/sg-test/repo",
+							"gitlab.com/sg-test/repo-gitrepo",
+						}
+					}
+
+					if !reflect.DeepEqual(have, want) {
+						t.Error(cmp.Diff(have, want))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
+	{
+		svcs := ExternalServices{
+			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
@@ -780,7 +805,7 @@ func TestSources_ListRepos(t *testing.T) {
 					ctx = context.Background()
 				}
 
-				repos, err := srcs.ListRepos(ctx)
+				repos, err := listAll(ctx, srcs)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 				}

@@ -4,7 +4,7 @@ package types
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // RepoFields are lazy loaded data fields on a Repo (from the DB).
@@ -150,9 +150,4 @@ type SurveyResponse struct {
 	Reason    *string
 	Better    *string
 	CreatedAt time.Time
-}
-
-type StatusMessage struct {
-	Message string
-	Type    string
 }

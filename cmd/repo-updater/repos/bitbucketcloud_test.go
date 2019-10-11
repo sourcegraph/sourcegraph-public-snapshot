@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -95,7 +95,8 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			repos, err := bbcSrc.ListRepos(context.Background())
+			repos, err := listAll(context.Background(), bbcSrc)
+
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}

@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 type createAccessTokenInput struct {
@@ -97,7 +97,6 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 	}
 
 	var token *db.AccessToken
-	var err error
 	switch {
 	case args.ByID != nil:
 		accessTokenID, err := unmarshalAccessTokenID(*args.ByID)
@@ -123,9 +122,6 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err := db.AccessTokens.DeleteByToken(ctx, *args.ByToken); err != nil {
 			return nil, err
 		}
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
@@ -188,6 +184,9 @@ func (r *accessTokenConnectionResolver) Nodes(ctx context.Context) ([]*accessTok
 	accessTokens, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if r.opt.LimitOffset != nil && len(accessTokens) > r.opt.LimitOffset.Limit {
+		accessTokens = accessTokens[:r.opt.LimitOffset.Limit]
 	}
 
 	var l []*accessTokenResolver

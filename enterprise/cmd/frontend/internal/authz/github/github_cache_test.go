@@ -10,7 +10,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 // TestProvider_RepoPerms_cacheTTL tests that cache entries are invalidated after the cache TTL

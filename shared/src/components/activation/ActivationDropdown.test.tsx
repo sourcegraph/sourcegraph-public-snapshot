@@ -2,7 +2,7 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
-import { setLinkComponent } from '../../components/Link'
+import { setLinkComponent } from '../Link'
 import { Activation } from './Activation'
 import { ActivationDropdown } from './ActivationDropdown'
 

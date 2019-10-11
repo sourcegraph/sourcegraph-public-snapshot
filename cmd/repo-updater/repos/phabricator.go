@@ -7,10 +7,10 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -37,10 +37,11 @@ func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*Phabricat
 
 // ListRepos returns all Phabricator repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s *PhabricatorSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
+func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	cli, err := s.client(ctx)
 	if err != nil {
-		return nil, err
+		results <- SourceResult{Source: s, Err: err}
+		return
 	}
 
 	cursor := &phabricator.Cursor{Limit: 100, Order: "oldest"}
@@ -48,7 +49,8 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context) (repos []*Repo, err e
 		var page []*phabricator.Repo
 		page, cursor, err = cli.ListRepos(ctx, phabricator.ListReposArgs{Cursor: cursor})
 		if err != nil {
-			return nil, err
+			results <- SourceResult{Source: s, Err: err}
+			return
 		}
 
 		for _, r := range page {
@@ -58,17 +60,16 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context) (repos []*Repo, err e
 
 			repo, err := s.makeRepo(r)
 			if err != nil {
-				return nil, err
+				results <- SourceResult{Source: s, Err: err}
+				return
 			}
-			repos = append(repos, repo)
+			results <- SourceResult{Source: s, Repo: repo}
 		}
 
 		if cursor.After == "" {
 			break
 		}
 	}
-
-	return repos, nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -120,11 +121,11 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 	}
 
 	if cloneURL == "" {
-		return nil, errors.Errorf("no clone URL available for repo with id=%v", repo.ID)
+		log15.Warn("unable to construct clone URL for repo", "name", name, "phabricator_id", repo.PHID)
 	}
 
 	if name == "" {
-		return nil, errors.Errorf("no canonical name available for repo with id=%v", repo.ID)
+		return nil, errors.Errorf("no canonical name available for repo with id=%v", repo.PHID)
 	}
 
 	serviceID, err := urlx.NormalizeString(s.conn.Url)
@@ -197,7 +198,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 				continue
 			}
 
-			repos, err := src.ListRepos(ctx)
+			repos, err := listAll(ctx, src)
 			if err != nil {
 				log15.Error("Error fetching Phabricator repos", "err", err)
 				continue

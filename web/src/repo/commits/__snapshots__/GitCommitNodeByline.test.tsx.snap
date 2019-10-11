@@ -5,12 +5,14 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
-    className="avatar-icon icon-inline mr-1"
+    className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
@@ -29,12 +31,14 @@ exports[`GitCommitNodeByline author 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
-    className="avatar-icon icon-inline mr-1"
+    className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
@@ -53,26 +57,30 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
   className="git-commit-node-byline git-commit-node-byline--has-committer "
 >
   <img
-    className="avatar-icon icon-inline"
+    className="user-avatar icon-inline"
     data-tooltip="Alice Zhao (author)"
     src="http://example.com/alice.png"
   />
    
   <img
-    className="avatar-icon icon-inline mr-1"
-    data-tooltip="Bob Yang (committer)"
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="bYang (Bob Yang) (committer)"
     src="http://example.com/bob.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
   authored
    and
    
-  <strong>
-    Bob Yang
+  <strong
+    data-tooltip="bob@example.com"
+  >
+    bYang (Bob Yang)
   </strong>
    
   committed 
@@ -90,26 +98,30 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
   className="git-commit-node-byline git-commit-node-byline--has-committer "
 >
   <img
-    className="avatar-icon icon-inline"
+    className="user-avatar icon-inline"
     data-tooltip="Alice Zhao (author)"
     src="http://example.com/alice.png"
   />
    
   <img
-    className="avatar-icon icon-inline mr-1"
-    data-tooltip="Bob Yang (committer)"
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="bYang (Bob Yang) (committer)"
     src="http://example.com/bob.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
   authored
    and
    
-  <strong>
-    Bob Yang
+  <strong
+    data-tooltip="bob@example.com"
+  >
+    bYang (Bob Yang)
   </strong>
    
   committed 
@@ -127,12 +139,14 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
-    className="avatar-icon icon-inline mr-1"
+    className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    
@@ -151,12 +165,14 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
   className="git-commit-node-byline git-commit-node-byline--no-committer "
 >
   <img
-    className="avatar-icon icon-inline mr-1"
+    className="user-avatar icon-inline mr-1"
     data-tooltip="Alice Zhao"
     src="http://example.com/alice.png"
   />
    
-  <strong>
+  <strong
+    data-tooltip="alice@example.com"
+  >
     Alice Zhao
   </strong>
    

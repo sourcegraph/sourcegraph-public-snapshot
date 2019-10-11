@@ -113,6 +113,7 @@ interface State {
     blobOrError?: GQL.IGitBlob | ErrorLike
 }
 
+// eslint-disable-next-line react/no-unsafe
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
     private extendHighlightingTimeoutClicks = new Subject<void>()
@@ -135,7 +136,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         // Fetch repository revision.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 this.propsUpdates.pipe(
                     map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
@@ -143,8 +144,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 this.extendHighlightingTimeoutClicks.pipe(
                     mapTo(true),
                     startWith(false)
-                )
-            )
+                ),
+            ])
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
                     switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
@@ -171,14 +172,16 @@ export class BlobPage extends React.PureComponent<Props, State> {
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.propsUpdates.next(newProps)
+    // Use UNSAFE_componentWillReceiveProps to avoid this.state.blobOrError being out of sync
+    // with props (see https://github.com/sourcegraph/sourcegraph/issues/5575).
+    public UNSAFE_componentWillReceiveProps(nextProps: Props): void {
+        this.propsUpdates.next(nextProps)
         if (
-            newProps.repoName !== this.props.repoName ||
-            newProps.commitID !== this.props.commitID ||
-            newProps.filePath !== this.props.filePath ||
-            ToggleRenderedFileMode.getModeFromURL(newProps.location) !==
-                ToggleRenderedFileMode.getModeFromURL(this.props.location)
+            this.props.repoName !== nextProps.repoName ||
+            this.props.commitID !== nextProps.commitID ||
+            this.props.filePath !== nextProps.filePath ||
+            ToggleRenderedFileMode.getModeFromURL(this.props.location) !==
+                ToggleRenderedFileMode.getModeFromURL(nextProps.location)
         ) {
             this.logViewEvent()
         }
@@ -276,7 +279,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     <div className="blob-page__aborted">
                         <div className="alert alert-info">
                             Syntax-highlighting this file took too long. &nbsp;
-                            <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
+                            <button
+                                type="button"
+                                onClick={this.onExtendHighlightingTimeoutClick}
+                                className="btn btn-sm btn-primary"
+                            >
                                 Try again
                             </button>
                         </div>
@@ -286,7 +293,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {renderMode === 'code' && (
                     <Blob
                         {...this.props}
-                        className="blob-page__blob"
+                        className="blob-page__blob e2e-repo-blob"
                         content={this.state.blobOrError.content}
                         html={this.state.blobOrError.highlight.html}
                         wrapCode={this.state.wrapCode}

@@ -3,9 +3,9 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../../shared/src/api/client/services/view'
-import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../api/client/services/view'
+import { ContributableMenu, ContributableViewContainer } from '../api/protocol/contribution'
+import { ExtensionsControllerProps } from '../extensions/controller'
 import { ThemeProps } from '../../../web/src/theme'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
 import { ActivationProps } from '../components/activation/Activation'
@@ -109,6 +109,7 @@ export class Panel extends React.PureComponent<Props, State> {
                             <>
                                 <Spacer />
                                 <button
+                                    type="button"
                                     onClick={this.onDismiss}
                                     className="btn btn-icon tab-bar__end-fragment-other-element"
                                     data-tooltip="Close"

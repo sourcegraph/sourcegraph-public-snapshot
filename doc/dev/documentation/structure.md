@@ -22,7 +22,7 @@ Every document should include the following content in the following sequence:
 - **Requirements**: describes what software and/or configuration is required to be able to
   use the feature and, if applicable, prerequisite knowledge for being able to follow/implement the tutorial.
   For example, familiarity with Kubernetes, an account on a third-party service, dependencies installed, etc.
-  Link each one to its most relevant resource; i.e., where the reader can go to begin to fullfil that requirement.
+  Link each one to its most relevant resource; i.e., where the reader can go to begin to fulfill that requirement.
   (Another doc page, a third party application's site, etc.)
 - **Instructions**: clearly describes the steps to use the feature, leaving no gaps.
 - **Troubleshooting** guide (recommended but not required): if you know beforehand what issues

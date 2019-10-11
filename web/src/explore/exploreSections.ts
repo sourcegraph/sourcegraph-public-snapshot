@@ -1,7 +1,7 @@
 import { lazyComponent } from '../util/lazyComponent'
 import { ExploreSectionDescriptor } from './ExploreArea'
 
-export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
+export const exploreSections: readonly ExploreSectionDescriptor[] = [
     {
         render: lazyComponent(
             () => import('../integrations/explore/IntegrationsExploreSection'),

@@ -15,18 +15,31 @@ export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
 }
 
 /**
- * getDeltaFileName returns the path of the file container. It assumes
+ * Returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
-export function getDeltaFileName(container: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
-    const info = container.querySelector('.file-info') as HTMLElement
-
-    if (info.title) {
-        // for PR conversation snippets
-        return getPathNamesFromElement(info)
+export function getDiffFileName(container: HTMLElement): { headFilePath: string; baseFilePath?: string } {
+    const fileInfoElement = container.querySelector<HTMLElement>('.file-info')
+    if (fileInfoElement) {
+        if (fileInfoElement.tagName === 'A') {
+            // for PR conversation snippets on GHE, where the .file-info element
+            // is the link containing the file paths.
+            return getPathNamesFromElement(fileInfoElement)
+        }
+        // On commit code views, or code views on a PR's files tab,
+        // find the link contained in the .file-info element.
+        const link = fileInfoElement.querySelector<HTMLElement>('a')
+        if (link) {
+            return getPathNamesFromElement(link)
+        }
     }
-    const link = info.querySelector('a') as HTMLElement
-    return getPathNamesFromElement(link)
+    // If no file info element is present, the code view is probably a PR conversation snippet
+    // on github.com, where a link containing the file path can be found in the .file-header element.
+    const fileHeaderLink = container.querySelector<HTMLLinkElement>('.file-header a')
+    if (fileHeaderLink) {
+        return getPathNamesFromElement(fileHeaderLink)
+    }
+    throw new Error('Could not determine diff file name')
 }
 
 function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
@@ -54,29 +67,15 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
     const isCommentedSnippet = codeView.classList.contains('js-comment-container')
     if (pageType === 'pull') {
         if (fetchContainers && fetchContainers.length === 1) {
-            // tslint:disable-next-line
-            for (let i = 0; i < fetchContainers.length; ++i) {
+            for (const el of fetchContainers) {
                 // for conversation view of pull request
-                const el = fetchContainers[i] as HTMLElement
                 const url = el.getAttribute('data-url')
                 if (!url) {
                     continue
                 }
-
-                const urlSplit = url.split('?')
-                const query = urlSplit[1]
-                const querySplit = query.split('&')
-                for (const kv of querySplit) {
-                    const kvSplit = kv.split('=')
-                    const k = kvSplit[0]
-                    const v = kvSplit[1]
-                    if (k === 'base_commit_oid') {
-                        baseCommitID = v
-                    }
-                    if (k === 'end_commit_oid') {
-                        headCommitID = v
-                    }
-                }
+                const parsed = new URL(url, window.location.href)
+                baseCommitID = parsed.searchParams.get('base_commit_oid') || ''
+                headCommitID = parsed.searchParams.get('end_commit_oid') || ''
             }
         } else if (isCommentedSnippet) {
             const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
@@ -85,11 +84,11 @@ export function getDiffResolvedRev(codeView: HTMLElement): DiffResolvedRevSpec |
             }
         } else {
             // Last-ditch: look for inline comment form input which has base/head on it.
-            const baseInput = document.querySelector(`input[name="comparison_start_oid"]`)
+            const baseInput = document.querySelector('input[name="comparison_start_oid"]')
             if (baseInput) {
                 baseCommitID = (baseInput as HTMLInputElement).value
             }
-            const headInput = document.querySelector(`input[name="comparison_end_oid"]`)
+            const headInput = document.querySelector('input[name="comparison_end_oid"]')
             if (headInput) {
                 headCommitID = (headInput as HTMLInputElement).value
             }
@@ -201,7 +200,7 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
 export function getFilePath(): string {
     const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
     if (!permalink) {
-        throw new Error(`Unable to determine the file path because no a.js-permalink-shortcut element was found.`)
+        throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
     }
     const url = new URL(permalink.href)
     // <empty>/<user>/<repo>/blob/<commitID>/<path/to/file>

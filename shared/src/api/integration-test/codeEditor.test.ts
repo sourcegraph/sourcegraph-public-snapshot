@@ -13,12 +13,9 @@ describe('CodeEditor (integration)', () => {
                 services: { editor: editorService },
                 extensionAPI,
             } = await integrationTestContext()
-            const editors = await from(editorService.editors)
-                .pipe(first())
-                .toPromise()
-
-            editorService.setSelections(editors[0], [new Selection(1, 2, 3, 4)])
-            editorService.setSelections(editors[0], [])
+            const editor = editorService.editors.get('editor#0')!
+            editorService.setSelections(editor, [new Selection(1, 2, 3, 4)])
+            editorService.setSelections(editor, [])
 
             const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                 .pipe(
@@ -211,7 +208,7 @@ describe('CodeEditor (integration)', () => {
 })
 
 async function getFirstCodeEditor(extensionAPI: typeof sourcegraph): Promise<sourcegraph.CodeEditor> {
-    return from(extensionAPI.app.activeWindowChanges)
+    return await from(extensionAPI.app.activeWindowChanges)
         .pipe(
             first(isDefined),
             switchMap(win => win.activeViewComponentChanges),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,10 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
+
+var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
@@ -29,7 +33,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
@@ -67,7 +71,7 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
@@ -75,11 +79,12 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		return nil, fmt.Errorf("blank external service configuration is invalid (must be valid JSONC)")
 	}
 
+	ps := conf.Get().Critical.AuthProviders
 	update := &db.ExternalServiceUpdate{
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := db.ExternalServices.Update(ctx, externalServiceID, update); err != nil {
+	if err := db.ExternalServices.Update(ctx, ps, externalServiceID, update); err != nil {
 		return nil, err
 	}
 
@@ -121,7 +126,7 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !conf.IsDev(conf.DeployType()) {
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 

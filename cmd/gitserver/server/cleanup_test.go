@@ -60,20 +60,16 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	defer os.RemoveAll(root)
 
-	repoA := path.Join(root, testRepoA, ".git")
-	cmd := exec.Command("git", "--bare", "init", repoA)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
-	repoB := path.Join(root, testRepoB, ".git")
-	cmd = exec.Command("git", "--bare", "init", repoB)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
-	}
-	remote := path.Join(root, testRepoC, ".git")
-	cmd = exec.Command("git", "--bare", "init", remote)
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+	repoNew := path.Join(root, "repo-new", ".git")
+	repoOld := path.Join(root, "repo-old", ".git")
+	repoGCNew := path.Join(root, "repo-gc-new", ".git")
+	repoGCOld := path.Join(root, "repo-gc-old", ".git")
+	remote := path.Join(root, "remote", ".git")
+	for _, path := range []string{repoNew, repoOld, repoGCNew, repoGCOld, remote} {
+		cmd := exec.Command("git", "--bare", "init", path)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	origRepoRemoteURL := repoRemoteURL
@@ -82,38 +78,56 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	defer func() { repoRemoteURL = origRepoRemoteURL }()
 
-	atime, err := os.Stat(filepath.Join(repoA, "HEAD"))
-	if err != nil {
-		t.Fatal(err)
+	modTime := func(path string) time.Time {
+		t.Helper()
+		fi, err := os.Stat(filepath.Join(path, "HEAD"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return fi.ModTime()
 	}
-	cmd = exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Add(-(2*repoTTL)).Unix(), 10))
-	cmd.Dir = repoB
-	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+
+	writeFile(t, filepath.Join(repoGCNew, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
+	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
+
+	for path, delta := range map[string]time.Duration{
+		repoOld:   2 * repoTTL,
+		repoGCOld: 2 * repoTTLGC,
+	} {
+		ts := time.Now().Add(-delta)
+		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(ts.Unix(), 10))
+		cmd.Dir = path
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(filepath.Join(path, "HEAD"), ts, ts); err != nil {
+			t.Fatal(err)
+		}
 	}
+
+	repoNewTime := modTime(repoNew)
+	repoOldTime := modTime(repoOld)
+	repoGCNewTime := modTime(repoGCNew)
+	repoGCOldTime := modTime(repoGCOld)
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
 	s.cleanupRepos()
 
-	fi, err := os.Stat(filepath.Join(repoA, "HEAD"))
-	if err != nil {
-		// repoA should still exist.
-		t.Fatal(err)
+	// repos that shouldn't be recloned
+	if repoNewTime.Before(modTime(repoNew)) {
+		t.Error("expected repoNew to not be modified")
 	}
-	if atime.ModTime().Before(fi.ModTime()) {
-		// repoA should not have been recloned.
-		t.Error("expected repoA to not be modified")
+	if repoGCNewTime.Before(modTime(repoGCNew)) {
+		t.Error("expected repoGCNew to not be modified")
 	}
-	fi, err = os.Stat(repoB)
-	if err != nil {
-		// repoB should still exist after being recloned.
-		t.Fatal(err)
+
+	// repos that should be recloned
+	if !repoOldTime.Before(modTime(repoOld)) {
+		t.Error("expected repoOld to be recloned during clean up")
 	}
-	// Expect the repo to be recloned hand have a recent mod time.
-	ti := time.Now().Add(-repoTTL)
-	if fi.ModTime().Before(ti) {
-		t.Error("expected repoB to be recloned during clean up")
+	if !repoGCOldTime.Before(modTime(repoGCOld)) {
+		t.Error("expected repoGCOld to be recloned during clean up")
 	}
 }
 
@@ -313,6 +327,68 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	)
 }
 
+func Test_howManyBytesToFree(t *testing.T) {
+	const G = 1024 * 1024 * 1024
+	s := &Server{
+		DesiredPercentFree: 10,
+	}
+
+	tcs := []struct {
+		name      string
+		diskSize  uint64
+		bytesFree uint64
+		want      int64
+	}{
+		{
+			name:      "if there is already enough space, no space is freed",
+			diskSize:  10 * G,
+			bytesFree: 1.5 * G,
+			want:      0,
+		},
+		{
+			name:      "if there is exactly enough space, no space is freed",
+			diskSize:  10 * G,
+			bytesFree: 1 * G,
+			want:      0,
+		},
+		{
+			name:      "if there not enough space, some space is freed",
+			diskSize:  10 * G,
+			bytesFree: 0.5 * G,
+			want:      int64(0.5 * G),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			s.DiskSizer = &fakeDiskSizer{
+				diskSize:  tc.diskSize,
+				bytesFree: tc.bytesFree,
+			}
+			b, err := s.howManyBytesToFree()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if b != tc.want {
+				t.Errorf("s.howManyBytesToFree(...) is %v, want 0", b)
+			}
+		})
+	}
+}
+
+type fakeDiskSizer struct {
+	bytesFree uint64
+	diskSize  uint64
+}
+
+func (f *fakeDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
+	return f.bytesFree, nil
+}
+
+func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
+	return f.diskSize, nil
+}
+
 func tmpDir(t *testing.T) (string, func()) {
 	t.Helper()
 	dir, err := ioutil.TempDir("", t.Name())
@@ -328,13 +404,15 @@ func mkFiles(t *testing.T, root string, paths ...string) {
 		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(p)), os.ModePerm); err != nil {
 			t.Fatal(err)
 		}
-		fd, err := os.OpenFile(filepath.Join(root, p), os.O_RDONLY|os.O_CREATE, 0666)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := fd.Close(); err != nil {
-			t.Fatal(err)
-		}
+		writeFile(t, filepath.Join(root, p), nil)
+	}
+}
+
+func writeFile(t *testing.T, path string, content []byte) {
+	t.Helper()
+	err := ioutil.WriteFile(path, content, 0666)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -402,13 +480,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{}
+		s := &Server{DiskSizer: &fakeDiskSizer{}}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
@@ -439,7 +517,8 @@ func TestFreeUpSpace(t *testing.T) {
 
 		// Run.
 		s := Server{
-			ReposDir: rd,
+			ReposDir:  rd,
+			DiskSizer: &fakeDiskSizer{},
 		}
 		if err := s.freeUpSpace(1000); err != nil {
 			t.Fatal(err)

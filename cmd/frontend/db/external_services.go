@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -14,10 +15,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -109,7 +110,11 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		},
 	}
 	for _, err := range res.Errors() {
-		errs = multierror.Append(errs, errors.New(err.String()))
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
 	}
 
 	// Extra validation not based on JSON Schema.
@@ -181,8 +186,8 @@ func (e *ExternalServicesStore) validateGithubConnection(c *schema.GitHubConnect
 		err = multierror.Append(err, validate(c))
 	}
 
-	if c.Repos == nil && c.RepositoryQuery == nil {
-		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
+	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
+		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 
 	return err.ErrorOrNil()
@@ -243,7 +248,7 @@ type ExternalServiceUpdate struct {
 // Update updates a external service.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
-func (c *ExternalServicesStore) Update(ctx context.Context, id int64, update *ExternalServiceUpdate) error {
+func (c *ExternalServicesStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error {
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
 		externalService, err := c.GetByID(ctx, id)
@@ -251,7 +256,6 @@ func (c *ExternalServicesStore) Update(ctx context.Context, id int64, update *Ex
 			return err
 		}
 
-		ps := conf.Get().Critical.AuthProviders
 		if err := c.ValidateConfig(externalService.Kind, *update.Config, ps); err != nil {
 			return err
 		}

@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
 type symbolsArgs struct {
@@ -27,7 +27,7 @@ func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
 }
 
-func (r *gitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
+func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
 	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
@@ -47,7 +47,7 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
-func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
@@ -87,7 +87,7 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 	return resolvers, err
 }
 
-func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, commitResolver *gitCommitResolver) *symbolResolver {
+func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, commitResolver *GitCommitResolver) *symbolResolver {
 	resolver := &symbolResolver{
 		symbol:   symbol,
 		language: lang,
@@ -97,7 +97,6 @@ func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, 
 	resolver.location = &locationResolver{
 		resource: &gitTreeEntryResolver{
 			commit: commitResolver,
-			path:   resolver.uri.Fragment,
 			stat:   createFileInfo(resolver.uri.Fragment, false), // assume the path refers to a file (not dir)
 		},
 		lspRange: &symbolRange,
@@ -134,7 +133,11 @@ func (r *symbolResolver) ContainerName() *string {
 }
 
 func (r *symbolResolver) Kind() string /* enum SymbolKind */ {
-	return strings.ToUpper(ctagsKindToLSPSymbolKind(r.symbol.Kind).String())
+	kind := ctagsKindToLSPSymbolKind(r.symbol.Kind)
+	if kind == 0 {
+		return "UNKNOWN"
+	}
+	return strings.ToUpper(kind.String())
 }
 
 func (r *symbolResolver) Language() string { return r.language }

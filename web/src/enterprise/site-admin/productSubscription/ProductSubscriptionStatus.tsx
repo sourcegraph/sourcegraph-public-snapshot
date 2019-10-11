@@ -104,6 +104,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                     <a
                                         href="https://about.sourcegraph.com/pricing"
                                         className="btn btn-primary btn-sm"
+                                        // eslint-disable-next-line react/jsx-no-target-blank
                                         target="_blank"
                                     >
                                         Upgrade
@@ -121,6 +122,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                         <a
                                             href="http://sourcegraph.com/subscriptions/new"
                                             className="btn btn-primary btn-sm"
+                                            // eslint-disable-next-line react/jsx-no-target-blank
                                             target="_blank"
                                             data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
                                         >
@@ -145,6 +147,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             <div className="alert alert-warning">
                                 You have exceeded your licensed users.{' '}
                                 <Link to="/site-admin/license">View your license details</Link> or{' '}
+                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
                                 <a href="https://about.sourcegraph.com/pricing" target="_blank">
                                     upgrade your license
                                 </a>{' '}

@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	bbsauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -60,6 +60,15 @@ func bitbucketServerProvider(
 		errs = multierror.Append(errs, err)
 	}
 
+	hardTTL, err := parseTTL(a.HardTTL)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	if hardTTL < ttl {
+		errs = multierror.Append(errs, errors.Errorf("authorization.hardTTL: must be larger than ttl"))
+	}
+
 	baseURL, err := url.Parse(instanceURL)
 	if err != nil {
 		errs = multierror.Append(errs, err)
@@ -75,7 +84,7 @@ func bitbucketServerProvider(
 	var p authz.Provider
 	switch idp := a.IdentityProvider; {
 	case idp.Username != nil:
-		p = bbsauthz.NewProvider(cli, db, ttl)
+		p = bbsauthz.NewProvider(cli, db, ttl, hardTTL)
 	default:
 		errs = multierror.Append(errs, errors.Errorf("No identityProvider was specified"))
 	}

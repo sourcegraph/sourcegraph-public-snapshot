@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // recipientSpec identifies a recipient of a saved search notification. Exactly one of its fields is
@@ -30,13 +30,6 @@ type recipient struct {
 
 func (r *recipient) String() string {
 	return fmt.Sprintf("{%s email:%v slack:%v}", r.spec, r.email, r.slack)
-}
-
-func (r recipient) subject() api.SettingsSubject {
-	if r.spec.userID != 0 {
-		return api.SettingsSubject{User: &r.spec.userID}
-	}
-	return api.SettingsSubject{Org: &r.spec.orgID}
 }
 
 // getNotificationRecipients retrieves the list of recipients who should receive notifications for

@@ -45,11 +45,9 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         })
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        if (this.props.value !== nextProps.value) {
-            if (this.editor && this.editor.getValue() !== nextProps.value) {
-                this.editor.setValue(nextProps.value || '')
-            }
+    public componentDidUpdate(prevProps: Props): void {
+        if (this.props.value !== prevProps.value && this.editor && this.editor.getValue() !== this.props.value) {
+            this.editor.setValue(this.props.value || '')
         }
     }
 
@@ -58,15 +56,16 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
             this.editor.dispose()
 
             // HACK: Clean up ARIA container that Monaco apparently forgets to remove.
-            // tslint:disable-next-line:ban
-            document.querySelectorAll('.monaco-aria-container').forEach(e => e.remove())
+            for (const element of document.querySelectorAll('.monaco-aria-container')) {
+                element.remove()
+            }
         }
     }
 
     public render(): JSX.Element | null {
         return (
             <div
-                // tslint:disable-next-line:jsx-ban-props
+                // eslint-disable-next-line react/forbid-dom-props
                 style={{ height: `${this.props.height}px`, position: 'relative' }}
                 ref={this.setRef}
                 id={this.props.id}

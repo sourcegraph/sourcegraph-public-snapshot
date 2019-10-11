@@ -5,11 +5,10 @@ import { UserSettingsAreaRoute } from './UserSettingsArea'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
-export const userSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
+export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
         exact: true,
-        // tslint:disable-next-line:jsx-no-lambda
         render: props => (
             <SettingsArea
                 {...props}

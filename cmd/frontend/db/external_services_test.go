@@ -20,7 +20,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		"2 errors": {
 			kind:    "GITHUB",
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "", "x": 123}`,
-			wantErr: "- x: Additional property x is not allowed\n- token: String length must be greater than or equal to 1\n",
+			wantErr: "- Additional property x is not allowed\n- token: String length must be greater than or equal to 1\n",
 		},
 	}
 	for name, test := range tests {

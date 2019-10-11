@@ -6,7 +6,7 @@ import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { KeybindingsProps } from '../keybindings'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
@@ -44,11 +44,11 @@ describe('NavLinks', () => {
     afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
         'executeCommand' | 'services'
-    >['extensionsController'] = { executeCommand: async () => void 0, services: {} as any }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => void 0 }
-    const KEYBINDINGS: KeybindingsProps['keybindings'] = { commandPalette: [] }
+    >['extensionsController'] = { executeCommand: () => Promise.resolve(), services: {} as any }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
+    const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
-    // tslint:disable-next-line:no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
     const USER = { username: 'u' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = {
@@ -58,11 +58,11 @@ describe('NavLinks', () => {
         isLightTheme: true,
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: noop,
-        keybindings: KEYBINDINGS,
+        keyboardShortcuts: KEYBOARD_SHORTCUTS,
         settingsCascade: SETTINGS_CASCADE,
         history,
         isSourcegraphDotCom: false,
-        showStatusIndicator: false,
+        showCampaigns: true,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed

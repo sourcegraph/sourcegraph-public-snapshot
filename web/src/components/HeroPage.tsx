@@ -10,21 +10,17 @@ export interface HeroPageProps {
     cta?: JSX.Element
 }
 
-export class HeroPage extends React.Component<HeroPageProps, {}> {
-    public render(): JSX.Element | null {
-        return (
-            <div className={`hero-page ${this.props.className || ''}`}>
-                {this.props.icon && (
-                    <div className="hero-page__icon">
-                        <this.props.icon />
-                    </div>
-                )}
-                {this.props.title && <div className="hero-page__title">{this.props.title}</div>}
-                {this.props.subtitle && <div className="hero-page__subtitle">{this.props.subtitle}</div>}
-                {this.props.detail && <div className="hero-page__detail">{this.props.detail}</div>}
-                {this.props.body}
-                {this.props.cta && <div className="hero-page__cta">{this.props.cta}</div>}
+export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
+    <div className={`hero-page ${props.className || ''}`}>
+        {props.icon && (
+            <div className="hero-page__icon">
+                <props.icon />
             </div>
-        )
-    }
-}
+        )}
+        {props.title && <div className="hero-page__title">{props.title}</div>}
+        {props.subtitle && <div className="hero-page__subtitle">{props.subtitle}</div>}
+        {props.detail && <div className="hero-page__detail">{props.detail}</div>}
+        {props.body}
+        {props.cta && <div className="hero-page__cta">{props.cta}</div>}
+    </div>
+)

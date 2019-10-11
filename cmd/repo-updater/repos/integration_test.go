@@ -1,7 +1,6 @@
 package repos_test
 
 import (
-	"context"
 	"database/sql"
 	"flag"
 	"testing"
@@ -9,8 +8,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -28,11 +27,10 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	ctx := context.Background()
 	db, cleanup := dbtest.NewDB(t, *dsn)
 	defer cleanup()
 
-	dbstore := repos.NewDBStore(ctx, db, sql.TxOptions{
+	dbstore := repos.NewDBStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 
@@ -52,6 +50,7 @@ func TestIntegration(t *testing.T) {
 	}{
 		{"DBStore/Transact", testDBStoreTransact(dbstore)},
 		{"DBStore/ListExternalServices", testStoreListExternalServices(store)},
+		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos(store)},
 		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},

@@ -3,15 +3,18 @@ import { Observable } from 'rxjs'
 import uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
+import { SourcegraphIntegrationURLs } from './context'
 
-function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
+function createInPageExtensionHost({
+    assetsURL,
+}: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
     return new Observable(subscriber => {
         // Create an iframe pointing to extensionHostFrame.html,
         // which will load the extension host worker, and forward it
         // the client endpoints.
         const frame: HTMLIFrameElement = document.createElement('iframe')
-        frame.setAttribute('src', `${sourcegraphURL}/.assets/extension/extensionHostFrame.html`)
-        frame.setAttribute('style', `display: none;`)
+        frame.setAttribute('src', new URL('extensionHostFrame.html', assetsURL).href)
+        frame.setAttribute('style', 'display: none;')
         document.body.append(frame)
         const clientAPIChannel = new MessageChannel()
         const extensionHostAPIChannel = new MessageChannel()
@@ -23,7 +26,7 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
             proxy: extensionHostAPIChannel.port1,
             expose: clientAPIChannel.port1,
         }
-        // Subscribe to the load event on the frame,
+        // Subscribe to the load event on the frame
         frame.addEventListener(
             'load',
             () => {
@@ -35,7 +38,7 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
                             wrapEndpoints: false,
                         },
                     },
-                    sourcegraphURL,
+                    new URL(assetsURL).origin,
                     Object.values(clientEndpoints)
                 )
                 subscriber.next(workerEndpoints)
@@ -65,9 +68,9 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
  * worker per pair of ports, and forward messages between the port objects and
  * the extension host worker's endpoints.
  */
-export function createExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
+export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
     if (isInPage) {
-        return createInPageExtensionHost(sourcegraphURL)
+        return createInPageExtensionHost(urls)
     }
     const id = uuid.v4()
     return new Observable(subscriber => {
@@ -103,7 +106,7 @@ function endpointFromPort(port: browser.runtime.Port): MessagePort {
             if (event !== 'message') {
                 return
             }
-            const portListener = (data: unknown) => {
+            const portListener = (data: unknown): void => {
                 // This callback is called *very* often (e.g., ~900 times per keystroke in a
                 // monitored textarea). Avoid creating unneeded objects here because GC
                 // significantly hurts perf. See
@@ -114,7 +117,7 @@ function endpointFromPort(port: browser.runtime.Port): MessagePort {
                 // to reduce the amount of garbage created. There are no callers that depend on
                 // other MessageEvent properties; they would be set to their default values anyway,
                 // so losing the properties is not a big problem.
-                messageListener.call(this, { data } as any)
+                messageListener.call(this, { data } as MessageEvent)
             }
             messageListeners.set(messageListener, portListener)
             port.onMessage.addListener(portListener)

@@ -30,6 +30,7 @@
     &__close {
         cursor: pointer;
         flex: 0 0;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         font-size: 1.25rem;
         line-height: 1.25rem;
         background-color: transparent;

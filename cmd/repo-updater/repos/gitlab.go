@@ -9,24 +9,24 @@ import (
 	"sync"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc     *ExternalService
-	config  *schema.GitLabConnection
-	exclude map[string]bool
-	baseURL *url.URL // URL with path /api/v4 (no trailing slash)
-	client  *gitlab.Client
+	svc                 *ExternalService
+	config              *schema.GitLabConnection
+	exclude             map[string]bool
+	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
+	nameTransformations reposource.NameTransformations
+	client              *gitlab.Client
 }
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
@@ -74,23 +74,26 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		}
 	}
 
+	// Validate and cache user-defined name transformations.
+	nts, err := reposource.CompileGitLabNameTransformations(c.NameTransformations)
+	if err != nil {
+		return nil, err
+	}
+
 	return &GitLabSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		baseURL: baseURL,
-		client:  gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
+		svc:                 svc,
+		config:              c,
+		exclude:             exclude,
+		baseURL:             baseURL,
+		nameTransformations: nts,
+		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
 	}, nil
 }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GitLabSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	projs, err := s.listAllProjects(ctx)
-	for _, proj := range projs {
-		repos = append(repos, s.makeRepo(proj))
-	}
-	return repos, err
+func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	s.listAllProjects(ctx, results)
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -105,11 +108,13 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *Repo {
 			s.config.RepositoryPathPattern,
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
+			s.nameTransformations,
 		)),
 		URI: string(reposource.GitLabRepoName(
 			"",
 			s.baseURL.Hostname(),
 			proj.PathWithNamespace,
+			s.nameTransformations,
 		)),
 		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
 		Description:  proj.Description,
@@ -149,7 +154,7 @@ func (s *GitLabSource) excludes(p *gitlab.Project) bool {
 	return s.exclude[p.PathWithNamespace] || s.exclude[strconv.Itoa(p.ID)]
 }
 
-func (s *GitLabSource) listAllProjects(ctx context.Context) ([]*gitlab.Project, error) {
+func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {
 	type batch struct {
 		projs []*gitlab.Project
 		err   error
@@ -192,9 +197,11 @@ func (s *GitLabSource) listAllProjects(ctx context.Context) ([]*gitlab.Project, 
 	go func() {
 		defer wg.Done()
 		defer close(projch)
-		for _, p := range s.config.Projects {
+		// Admins normally add to end of lists, so end of list most likely has
+		// new repos => stream them first.
+		for i := len(s.config.Projects) - 1; i >= 0; i-- {
 			select {
-			case projch <- p:
+			case projch <- s.config.Projects[i]:
 			case <-ctx.Done():
 				return
 			}
@@ -245,24 +252,19 @@ func (s *GitLabSource) listAllProjects(ctx context.Context) ([]*gitlab.Project, 
 	}()
 
 	seen := make(map[int]bool)
-	errs := new(multierror.Error)
-	var projects []*gitlab.Project
-
 	for b := range ch {
 		if b.err != nil {
-			errs = multierror.Append(errs, b.err)
+			results <- SourceResult{Source: s, Err: b.err}
 			continue
 		}
 
 		for _, proj := range b.projs {
 			if !seen[proj.ID] && !s.excludes(proj) {
-				projects = append(projects, proj)
+				results <- SourceResult{Source: s, Repo: s.makeRepo(proj)}
 				seen[proj.ID] = true
 			}
 		}
 	}
-
-	return projects, errs.ErrorOrNil()
 }
 
 var schemeOrHostNotEmptyErr = errors.New("scheme and host should be empty")
@@ -282,17 +284,9 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	if u.Scheme != "" || u.Host != "" {
 		return "", schemeOrHostNotEmptyErr
 	}
-	normalizeQuery(u, perPage)
-
-	return u.String(), nil
-}
-
-func normalizeQuery(u *url.URL, perPage int) {
 	q := u.Query()
-	if q.Get("order_by") == "" && q.Get("sort") == "" {
-		// Apply default ordering to get the likely more relevant projects first.
-		q.Set("order_by", "last_activity_at")
-	}
 	q.Set("per_page", strconv.Itoa(perPage))
 	u.RawQuery = q.Encode()
+
+	return u.String(), nil
 }

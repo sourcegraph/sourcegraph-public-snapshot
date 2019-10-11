@@ -1,5 +1,4 @@
 import * as jsonc from '@sqs/jsonc-parser'
-// tslint:disable-next-line: no-submodule-imports as recommended by https://github.com/Microsoft/monaco-editor-webpack-plugin#using
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
@@ -95,8 +94,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

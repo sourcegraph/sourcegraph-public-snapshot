@@ -1,12 +1,13 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // 🚨 SECURITY: This tests the routine that creates org invitations and returns the invitation secret value
@@ -15,7 +16,8 @@ func TestOrgInvitations(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	sender, err := Users.Create(ctx, NewUser{
 		Email:                 "a1@example.com",

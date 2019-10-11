@@ -12,7 +12,7 @@ import {
 } from './linkPreview'
 import { Entry } from './registry'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 const FIXTURE_LINK_PREVIEW: sourcegraph.LinkPreview = {
     content: { value: 'x', kind: MarkupKind.PlainText },

@@ -4,7 +4,7 @@ import { lazyComponent } from '../../../util/lazyComponent'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 
-export const enterpriseUserSettingsAreaRoutes: ReadonlyArray<UserSettingsAreaRoute> = [
+export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     ...userSettingsAreaRoutes,
     {
         path: '/external-accounts',

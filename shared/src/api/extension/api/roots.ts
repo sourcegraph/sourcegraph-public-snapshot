@@ -12,14 +12,14 @@ export interface ExtRootsAPI extends ProxyValue {
 export class ExtRoots implements ExtRootsAPI, ProxyValue {
     public readonly [proxyValueSymbol] = true
 
-    private roots: ReadonlyArray<sourcegraph.WorkspaceRoot> = []
+    private roots: readonly sourcegraph.WorkspaceRoot[] = []
 
     /**
      * Returns all workspace roots.
      *
      * @internal
      */
-    public getAll(): ReadonlyArray<sourcegraph.WorkspaceRoot> {
+    public getAll(): readonly sourcegraph.WorkspaceRoot[] {
         return this.roots
     }
 

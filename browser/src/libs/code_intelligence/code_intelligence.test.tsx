@@ -3,7 +3,7 @@ import { Range } from '@sourcegraph/extension-api-classes'
 import { uniqueId } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
-import { filter, skip, switchMap, take } from 'rxjs/operators'
+import { filter, skip, switchMap, take, first } from 'rxjs/operators'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
@@ -25,6 +25,7 @@ import {
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
 const RENDER = jest.fn()
 
@@ -87,7 +88,7 @@ describe('code_intelligence', () => {
             subscriptions = new Subscription()
         })
 
-        const createTestElement = () => {
+        const createTestElement = (): HTMLElement => {
             const el = document.createElement('div')
             el.className = `test test-${uniqueId()}`
             document.body.appendChild(el)
@@ -208,7 +209,7 @@ describe('code_intelligence', () => {
                         requestGraphQL: mockRequestGraphQL({
                             ...DEFAULT_GRAPHQL_RESPONSES,
                             ResolveRepo: variables =>
-                                // tslint:disable-next-line: no-object-literal-type-assertion
+                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                 of({
                                     data: {
                                         repository: {
@@ -224,23 +225,15 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editorsAndModels)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
                     // The repo name exposed to extensions is affected by repositoryPathPattern
                     resource: 'git://github/foo?1#/bar.ts',
-                    model: {
-                        uri: 'git://github/foo?1#/bar.ts',
-                        text: 'Hello World',
-                        languageId: 'typescript',
-                    },
                     selections: [],
                     type: 'CodeEditor',
                 },
@@ -302,7 +295,7 @@ describe('code_intelligence', () => {
                     )
                     .toPromise()
                 const decorationType = extensionAPI.app.createDecorationType()
-                const decorated = () =>
+                const decorated = (): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: 'git://foo?1#/bar.ts' })
                         .pipe(
@@ -334,7 +327,18 @@ describe('code_intelligence', () => {
                         },
                     },
                 ])
-                await decorated()
+                await services.textDocumentDecoration
+                    .getDecorations({ uri: 'git://foo?1#/bar.ts' })
+                    .pipe(
+                        filter(
+                            decorations =>
+                                !!decorations &&
+                                !!decorations[0].after &&
+                                decorations[0].after.contentText === 'test decoration 2'
+                        ),
+                        take(1)
+                    )
+                    .toPromise()
                 expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
                 expect(line.querySelector('.line-decoration-attachment')!.textContent).toEqual('test decoration 2')
             })
@@ -400,7 +404,7 @@ describe('code_intelligence', () => {
                     )
                     .toPromise()
                 const decorationType = extensionAPI.app.createDecorationType()
-                const decorated = (commit: string) =>
+                const decorated = (commit: string): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
                         .pipe(
@@ -541,21 +545,16 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            let editors = await from(services.editor.editorsAndModels)
+            await from(services.editor.editorUpdates)
                 .pipe(
-                    skip(2),
+                    skip(1),
                     take(1)
                 )
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -563,11 +562,6 @@ describe('code_intelligence', () => {
                 {
                     editorId: 'editor#1',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -577,21 +571,13 @@ describe('code_intelligence', () => {
             // Simulate codeView1 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
             // One editor should have been removed, model should still exist
-            editors = await from(services.editor.editorsAndModels)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#1',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -601,13 +587,10 @@ describe('code_intelligence', () => {
             // Simulate codeView2 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
             // Second editor and model should have been removed
-            editors = await from(services.editor.editorsAndModels)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
-            expect(editors).toEqual([])
+            expect([...services.editor.editors.values()]).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
         })
 
@@ -651,13 +634,10 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
-            expect(editors.length).toEqual(1)
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
         })
@@ -712,14 +692,11 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
 
-            expect(editors.length).toEqual(1)
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.notCalled(dom.getCodeElementFromTarget)
         })
@@ -776,13 +753,10 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
-            expect(editors.length).toEqual(1)
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
@@ -833,13 +807,10 @@ describe('code_intelligence', () => {
                     render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+            await from(services.editor.editorUpdates)
+                .pipe(first())
                 .toPromise()
-            expect(editors).toEqual([
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,

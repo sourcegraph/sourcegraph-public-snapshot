@@ -1,8 +1,8 @@
 [
   {
     "ID": 0,
-    "Name": "/SG/go-langserver",
-    "URI": "/SG/go-langserver",
+    "Name": "bitbucket.example.com/SG/go-langserver",
+    "URI": "bitbucket.example.com/SG/go-langserver",
     "Description": "go-langserver",
     "Language": "",
     "Fork": false,
@@ -14,7 +14,7 @@
     "ExternalRepo": {
       "ID": "1",
       "ServiceType": "bitbucketServer",
-      "ServiceID": "bitbucket.example.com/"
+      "ServiceID": "https://bitbucket.example.com/"
     },
     "Sources": {
       "extsvc:bitbucketserver:1": {
@@ -67,8 +67,8 @@
   },
   {
     "ID": 0,
-    "Name": "/SG/python-langserver",
-    "URI": "/SG/python-langserver",
+    "Name": "bitbucket.example.com/SG/python-langserver",
+    "URI": "bitbucket.example.com/SG/python-langserver",
     "Description": "python-langserver",
     "Language": "",
     "Fork": false,
@@ -80,7 +80,7 @@
     "ExternalRepo": {
       "ID": "2",
       "ServiceType": "bitbucketServer",
-      "ServiceID": "bitbucket.example.com/"
+      "ServiceID": "https://bitbucket.example.com/"
     },
     "Sources": {
       "extsvc:bitbucketserver:1": {
@@ -133,8 +133,8 @@
   },
   {
     "ID": 0,
-    "Name": "/SG/python-langserver-fork",
-    "URI": "/SG/python-langserver-fork",
+    "Name": "bitbucket.example.com/SG/python-langserver-fork",
+    "URI": "bitbucket.example.com/SG/python-langserver-fork",
     "Description": "python-langserver-fork",
     "Language": "",
     "Fork": true,
@@ -146,7 +146,7 @@
     "ExternalRepo": {
       "ID": "5",
       "ServiceType": "bitbucketServer",
-      "ServiceID": "bitbucket.example.com/"
+      "ServiceID": "https://bitbucket.example.com/"
     },
     "Sources": {
       "extsvc:bitbucketserver:1": {
@@ -240,8 +240,8 @@
   },
   {
     "ID": 0,
-    "Name": "/~KEEGAN/rgp",
-    "URI": "/~KEEGAN/rgp",
+    "Name": "bitbucket.example.com/~KEEGAN/rgp",
+    "URI": "bitbucket.example.com/~KEEGAN/rgp",
     "Description": "rgp",
     "Language": "",
     "Fork": false,
@@ -253,7 +253,7 @@
     "ExternalRepo": {
       "ID": "4",
       "ServiceType": "bitbucketServer",
-      "ServiceID": "bitbucket.example.com/"
+      "ServiceID": "https://bitbucket.example.com/"
     },
     "Sources": {
       "extsvc:bitbucketserver:1": {
@@ -306,8 +306,8 @@
   },
   {
     "ID": 0,
-    "Name": "/~KEEGAN/rgp-unavailable",
-    "URI": "/~KEEGAN/rgp-unavailable",
+    "Name": "bitbucket.example.com/~KEEGAN/rgp-unavailable",
+    "URI": "bitbucket.example.com/~KEEGAN/rgp-unavailable",
     "Description": "rgp-unavailable",
     "Language": "",
     "Fork": false,
@@ -319,7 +319,7 @@
     "ExternalRepo": {
       "ID": "4",
       "ServiceType": "bitbucketServer",
-      "ServiceID": "bitbucket.example.com/"
+      "ServiceID": "https://bitbucket.example.com/"
     },
     "Sources": {
       "extsvc:bitbucketserver:1": {

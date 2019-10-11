@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -38,7 +38,7 @@ type discussionThreadTargetRepoSelectionInput struct {
 
 // discussionsResolveRepository resolves the repository given an ID, name, or
 // git clone URL. Only one must be specified, or else this function will panic.
-func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*repositoryResolver, error) {
+func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*RepositoryResolver, error) {
 	switch {
 	case id != nil:
 		return repositoryByID(ctx, *id)
@@ -47,7 +47,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	case gitCloneURL != nil:
 		repositoryName, err := cloneURLToRepoName(ctx, *gitCloneURL)
 		if err != nil {
@@ -57,7 +57,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	default:
 		panic("invalid state")
 	}
@@ -145,7 +145,7 @@ func (d *discussionThreadTargetRepoInput) validate() error {
 // d.LinesAfter fields by pulling the information directly from the repository.
 //
 // Precondition: d.Selection != nil && d.validate() == nil
-func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *repositoryResolver) error {
+func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *RepositoryResolver) error {
 	if d.Selection == nil {
 		panic("precondition failed")
 	}
@@ -401,29 +401,29 @@ type discussionThreadTargetRepoResolver struct {
 	t *types.DiscussionThreadTargetRepo
 }
 
-func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
-	return repositoryByIDInt32(ctx, r.t.RepoID)
+func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	return RepositoryByIDInt32(ctx, r.t.RepoID)
 }
 
 func (r *discussionThreadTargetRepoResolver) Path() *string { return r.t.Path }
 
-func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Branch)
 }
 
-func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Revision)
 }
 
-func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*GitRefResolver, error) {
 	if rev == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
-	return &gitRefResolver{repo: repo, name: *rev}, nil
+	return &GitRefResolver{repo: repo, name: *rev}, nil
 }
 
 func (r *discussionThreadTargetRepoResolver) Selection() *discussionThreadTargetRepoSelectionResolver {
@@ -439,7 +439,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	if r.t.Path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -465,7 +465,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	} else if r.t.Branch != nil {
 		rev = *r.t.Branch
 	}
-	comparison, err := repo.Comparison(ctx, &repositoryComparisonInput{
+	comparison, err := repo.Comparison(ctx, &RepositoryComparisonInput{
 		Base: &rev,
 		Head: &args.Rev,
 	})
@@ -579,7 +579,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 	if path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -687,19 +687,16 @@ func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, erro
 	return strptr(url.String()), nil
 }
 
-func (d *discussionThreadResolver) CreatedAt(ctx context.Context) string {
-	return d.t.CreatedAt.Format(time.RFC3339)
+func (d *discussionThreadResolver) CreatedAt() DateTime {
+	return DateTime{Time: d.t.CreatedAt}
 }
 
-func (d *discussionThreadResolver) UpdatedAt(ctx context.Context) string {
-	return d.t.UpdatedAt.Format(time.RFC3339)
+func (d *discussionThreadResolver) UpdatedAt() DateTime {
+	return DateTime{Time: d.t.UpdatedAt}
 }
 
-func (d *discussionThreadResolver) ArchivedAt(ctx context.Context) *string {
-	if d.t.ArchivedAt == nil {
-		return nil
-	}
-	return strptr(d.t.ArchivedAt.Format(time.RFC3339))
+func (d *discussionThreadResolver) ArchivedAt() *DateTime {
+	return DateTimeOrNil(d.t.ArchivedAt)
 }
 
 func (d *discussionThreadResolver) Comments(ctx context.Context, args *struct {

@@ -1,17 +1,19 @@
 .extension-card {
     flex: 1;
+    position: relative;
 
     &__body-title {
         color: var(--body-color) !important;
     }
 
     &__icon {
-        width: 6rem;
-        height: 6rem;
+        width: 3rem;
+        height: 3rem;
+        object-fit: contain;
     }
 
-    &__spacer {
-        flex: 1;
+    &__toggle {
+        z-index: 1;
     }
 
     &__footer {

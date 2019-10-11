@@ -1,11 +1,12 @@
 import { first } from 'lodash'
 import { Observable } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
-import { filter, map } from 'rxjs/operators'
+import { filter, map, switchMap } from 'rxjs/operators'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { isDefined } from '../../../../shared/src/util/types'
 import { DiffResolvedRevSpec } from '../../shared/repo'
 import { BitbucketRepoInfo } from './scrape'
+import { fromFetch } from 'rxjs/fetch'
+import { checkOk } from '../../../../shared/src/backend/fetch'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1
@@ -16,7 +17,7 @@ import { BitbucketRepoInfo } from './scrape'
  * `path` should have a leading slash.
  * `project` and `repoSlug` should have neither a leading nor a traling slash.
  */
-const buildURL = (project: string, repoSlug: string, path: string) =>
+const buildURL = (project: string, repoSlug: string, path: string): string =>
     // If possible, use the global `AJS.contextPath()` to reliably construct an absolute URL.
     // This is possible in the native integration only - browser extension content scripts cannot
     // access the page's global scope.
@@ -24,7 +25,11 @@ const buildURL = (project: string, repoSlug: string, path: string) =>
         project
     )}/repos/${repoSlug}${path}`
 
-const get = <T>(url: string): Observable<T> => ajax.get(url).pipe(map(({ response }) => response as T))
+const get = <T>(url: string): Observable<T> =>
+    fromFetch(url).pipe(
+        map(checkOk),
+        switchMap(response => response.json())
+    )
 
 interface Repo {
     project: { key: string }

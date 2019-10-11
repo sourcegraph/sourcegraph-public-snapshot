@@ -100,7 +100,6 @@ export const DiffHunk: React.FunctionComponent<
                                             data-line={oldLine - 1}
                                             data-part="base"
                                             id={oldAnchor}
-                                            // tslint:disable-next-line:jsx-no-lambda need access to props
                                             onClick={() => history.push({ hash: oldAnchor })}
                                         />
                                     ) : (
@@ -113,7 +112,6 @@ export const DiffHunk: React.FunctionComponent<
                                             data-line={newLine - 1}
                                             data-part="head"
                                             id={newAnchor}
-                                            // tslint:disable-next-line:jsx-no-lambda need access to props
                                             onClick={() => history.push({ hash: newAnchor })}
                                         />
                                     ) : (
@@ -122,7 +120,8 @@ export const DiffHunk: React.FunctionComponent<
                                 </>
                             )}
 
-                            {/* tslint:disable-next-line: jsx-ban-props Needed for decorations */}
+                            {/* Needed for decorations */}
+                            {/* eslint-disable-next-line react/forbid-dom-props */}
                             <td className="diff-hunk__content" style={lineStyle}>
                                 {line}
                                 {decorationsForLine.filter(propertyIsDefined('after')).map((decoration, i) => {
@@ -133,7 +132,6 @@ export const DiffHunk: React.FunctionComponent<
                                             <LinkOrSpan
                                                 to={decoration.after.linkURL}
                                                 data-tooltip={decoration.after.hoverMessage}
-                                                // tslint:disable-next-line: jsx-ban-props Needed for decorations
                                                 style={style}
                                             >
                                                 {decoration.after.contentText}

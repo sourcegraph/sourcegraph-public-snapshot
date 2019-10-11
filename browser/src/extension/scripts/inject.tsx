@@ -1,4 +1,4 @@
-import '../../config/polyfill'
+import '../polyfills'
 
 import * as H from 'history'
 import React from 'react'
@@ -16,7 +16,7 @@ import {
     NATIVE_INTEGRATION_ACTIVATED,
     signalBrowserExtensionInstalled,
 } from '../../libs/sourcegraph/inject'
-import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 
@@ -66,13 +66,9 @@ async function main(): Promise<void> {
         .toPromise()
 
     const items = await storage.sync.get()
-    if (items.disableExtension) {
-        return
-    }
+    const sourcegraphURL = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
 
-    const sourcegraphServerUrl = items.sourcegraphURL || DEFAULT_SOURCEGRAPH_URL
-
-    const isSourcegraphServer = checkIsSourcegraph(sourcegraphServerUrl)
+    const isSourcegraphServer = checkIsSourcegraph(sourcegraphURL)
     if (isSourcegraphServer) {
         signalBrowserExtensionInstalled()
         return
@@ -100,7 +96,9 @@ async function main(): Promise<void> {
         })
     }
 
-    subscriptions.add(await injectCodeIntelligence(IS_EXTENSION))
+    subscriptions.add(
+        injectCodeIntelligence({ sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) }, IS_EXTENSION)
+    )
 
     // Clean up susbscription if the native integration gets activated
     // later in the lifetime of the content script.

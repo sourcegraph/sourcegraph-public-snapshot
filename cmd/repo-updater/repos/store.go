@@ -10,14 +10,14 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -58,6 +58,8 @@ type StoreListReposArgs struct {
 type StoreListExternalServicesArgs struct {
 	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
+	// RepoIDs that the listed external services own.
+	RepoIDs []uint32
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 }
@@ -88,7 +90,7 @@ type DBStore struct {
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
-func NewDBStore(ctx context.Context, db dbutil.DB, txOpts sql.TxOptions) *DBStore {
+func NewDBStore(db dbutil.DB, txOpts sql.TxOptions) *DBStore {
 	return &DBStore{db: db, txOpts: txOpts}
 }
 
@@ -167,6 +169,12 @@ AND %s
 ORDER BY id ASC LIMIT %s
 `
 
+const listRepoExternalServiceIDsSubquery = `
+SELECT DISTINCT(split_part(jsonb_object_keys(sources), ':', 3)::bigint) repo_external_service_ids
+FROM repo
+WHERE id IN (%s)
+`
+
 func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuery {
 	var preds []*sqlf.Query
 
@@ -178,6 +186,17 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 			}
 		}
 		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	} else if len(args.RepoIDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(args.RepoIDs))
+		for _, id := range args.RepoIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf(
+			"id IN ("+listRepoExternalServiceIDsSubquery+")",
+			sqlf.Join(ids, ","),
+		))
 	}
 
 	if len(args.Kinds) > 0 {
@@ -187,6 +206,12 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 		}
 		preds = append(preds,
 			sqlf.Sprintf("LOWER(kind) IN (%s)", sqlf.Join(ks, ",")))
+	} else {
+		// HACK(tsenart): The syncer and all other places that load all external
+		// services do not want phabricator instances. These are handled separately
+		// by RunPhabricatorRepositorySyncWorker.
+		preds = append(preds,
+			sqlf.Sprintf("LOWER(kind) != 'phabricator'"))
 	}
 
 	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))

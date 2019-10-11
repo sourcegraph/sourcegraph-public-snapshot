@@ -6,7 +6,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 var ErrExtensionsDisabled = errors.New("extensions are disabled in site configuration (contact the site admin to enable extensions)")
@@ -109,9 +109,9 @@ type RegistryExtension interface {
 	Publisher(ctx context.Context) (RegistryPublisher, error)
 	Name() string
 	Manifest(ctx context.Context) (ExtensionManifest, error)
-	CreatedAt() *string
-	UpdatedAt() *string
-	PublishedAt(context.Context) (*string, error)
+	CreatedAt() *DateTime
+	UpdatedAt() *DateTime
+	PublishedAt(context.Context) (*DateTime, error)
 	URL() string
 	RemoteURL() *string
 	RegistryName() (string, error)

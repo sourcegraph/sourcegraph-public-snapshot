@@ -50,7 +50,7 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 
 ### Running locally
 
-To run all e2e tests locally against your dev server, **create a user `test` with password `test`**, then run:
+To run all e2e tests locally against your dev server, **create a user `test` with password `test`, promote as site admin**, then run:
 
 ```
 env GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
@@ -60,7 +60,16 @@ env GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
 
 This will open Chromium, create an external service, clone repositories, and execute the e2e tests.
 
-You can single-out one test with `test.only`. Alternatively, you can use `-t` to filter tests: `env ... test-e2e -t "some test name"`.
+You can single-out one test with `test.only`:
+
+
+```TypeScript
+        test.only('widgetizes quuxinators', async () => {
+            // ...
+        })
+```
+
+Alternatively, you can use `-t` to filter tests: `env ... test-e2e -t "some test name"`.
 
 ### Viewing e2e tests live in CI
 
@@ -81,10 +90,10 @@ Open VNC Viewer and type in `localhost:5900`. Hit <kbd>Enter</kbd> and accept th
 
 ### Adding a new e2e test
 
-Open `web/src/e2e/index.e2e.test.tsx` and add a new `test`:
+Open `web/src/e2e/e2e.test.ts` and add a new `test`:
 
 ```TypeScript
-        test.only('widgetizes quuxinators', async () => {
+        test('widgetizes quuxinators', async () => {
             await page.goto(baseURL + '/quuxinator/widgetize')
             await page.waitForSelector('.widgetize', { visible: true })
             // ...
@@ -116,14 +125,14 @@ Then you can select the button with `[data-e2e-item-name="foo"] .e2e-item-delete
 
 Tip: it's generally unreliable to hold references to items that are acted upon later. In other words, don't do this:
 
-```
+```ts
 const elem = page.selector(".selector")
 elem.click()
 ```
 
 Do this:
 
-```
+```ts
 page.click(".selector")
 ```
 
@@ -189,7 +198,16 @@ Buildkite to run on the Sourcegraph build farm. Some things that are tested
 include:
 
 - all of the Go source files that have tests
-- dev/check/all.sh (gofmt, lint, go generator, no Security TODO's, Bash syntax, others)
+- dev/check/all.sh (gofmt, lint, go generator, no Security TODOs, Bash syntax, others)
 - JS formatting/linting (prettier, tslint, stylelint, graphql-lint)
 - Dockerfile linter (hadolint)
 - Check whether the Go module folders are "tidy" (go mod tidy)
+
+## Release testing
+
+To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
+
+For testing with a single Docker image, run something like
+```
+IMAGE=sourcegraph/server:3.8.2-rc.1 ./dev/run-server-image.sh
+```

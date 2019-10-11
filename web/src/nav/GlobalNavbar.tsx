@@ -8,7 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
-import { KeybindingsProps } from '../keybindings'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { parseSearchURLQuery } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
@@ -19,7 +19,7 @@ interface Props
     extends SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeybindingsProps,
+        KeyboardShortcutsProps,
         EventLoggerProps,
         ThemeProps,
         ThemePreferenceProps,
@@ -30,6 +30,7 @@ interface Props
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     isSourcegraphDotCom: boolean
+    showCampaigns: boolean
 
     /**
      * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search
@@ -123,13 +124,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         )}
                     </>
                 )}
-                {!this.state.authRequired && (
-                    <NavLinks
-                        {...this.props}
-                        showStatusIndicator={!!window.context.showStatusIndicator}
-                        showDotComMarketing={showDotComMarketing}
-                    />
-                )}
+                {!this.state.authRequired && <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />}
             </div>
         )
     }

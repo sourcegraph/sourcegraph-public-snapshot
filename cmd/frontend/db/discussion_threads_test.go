@@ -1,13 +1,14 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 // TODO(slimsag:discussions): future: test that DiscussionThreadsListOptions.AuthorUserID works
@@ -16,7 +17,8 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -76,7 +78,8 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -133,7 +136,8 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -197,7 +201,8 @@ func TestDiscussionThreads_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -261,7 +266,8 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",

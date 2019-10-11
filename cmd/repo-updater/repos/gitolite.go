@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/sync/semaphore"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -72,21 +72,19 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 
 // ListRepos returns all Gitolite repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s *GitoliteSource) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	all, err := s.cli.ListGitolite(ctx, s.conn.Host)
 	if err != nil {
-		return nil, err
+		results <- SourceResult{Source: s, Err: err}
+		return
 	}
 
-	repos := make([]*Repo, 0, len(all))
 	for _, r := range all {
 		repo := s.makeRepo(r)
 		if !s.excludes(r, repo) {
-			repos = append(repos, repo)
+			results <- SourceResult{Source: s, Repo: repo}
 		}
 	}
-
-	return repos, nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.

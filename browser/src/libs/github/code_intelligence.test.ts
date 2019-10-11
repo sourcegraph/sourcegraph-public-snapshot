@@ -4,7 +4,7 @@ import { testCodeHostMountGetters, testToolbarMountGetter } from '../code_intell
 import { CodeView } from '../code_intelligence/code_views'
 import { createFileActionsToolbarMount, createFileLineContainerToolbarMount, githubCodeHost } from './code_intelligence'
 
-const testCodeHost = (fixturePath: string) => {
+const testCodeHost = (fixturePath: string): void => {
     if (existsSync(fixturePath)) {
         describe('githubCodeHost', () => {
             testCodeHostMountGetters(githubCodeHost, fixturePath)
@@ -16,7 +16,7 @@ const testMountGetter = (
     mountGetter: NonNullable<CodeView['getToolbarMount']>,
     mountGetterName: string,
     codeViewFixturePath: string
-) => {
+): void => {
     if (existsSync(codeViewFixturePath)) {
         describe(mountGetterName, () => {
             testToolbarMountGetter(codeViewFixturePath, mountGetter)

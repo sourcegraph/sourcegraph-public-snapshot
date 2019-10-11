@@ -63,8 +63,8 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        this.componentUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

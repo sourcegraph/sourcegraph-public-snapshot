@@ -12,20 +12,20 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
 // when computing the `git diff` of the root commit.
 const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-type repositoryComparisonInput struct {
+type RepositoryComparisonInput struct {
 	Base *string
 	Head *string
 }
 
-func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryComparisonInput) (*repositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -38,7 +38,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		headRevspec = *args.Head
 	}
 
-	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*gitCommitResolver, error) {
+	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*GitCommitResolver, error) {
 		if revspec == devNullSHA {
 			return nil, nil
 		}
@@ -70,7 +70,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		return nil, err
 	}
 
-	return &repositoryComparisonResolver{
+	return &RepositoryComparisonResolver{
 		baseRevspec: baseRevspec,
 		headRevspec: headRevspec,
 		base:        base,
@@ -79,13 +79,21 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 	}, nil
 }
 
-type repositoryComparisonResolver struct {
-	baseRevspec, headRevspec string
-	base, head               *gitCommitResolver
-	repo                     *repositoryResolver
+func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+	return NewRepositoryComparison(ctx, r, args)
 }
 
-func (r *repositoryComparisonResolver) Range() *gitRevisionRange {
+type RepositoryComparisonResolver struct {
+	baseRevspec, headRevspec string
+	base, head               *GitCommitResolver
+	repo                     *RepositoryResolver
+}
+
+func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { return r.repo }
+
+func (r *RepositoryComparisonResolver) HeadRepository() *RepositoryResolver { return r.repo }
+
+func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	return &gitRevisionRange{
 		expr:      r.baseRevspec + "..." + r.headRevspec,
 		base:      &gitRevSpec{expr: &gitRevSpecExpr{expr: r.baseRevspec, repo: r.repo}},
@@ -94,7 +102,7 @@ func (r *repositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
-func (r *repositoryComparisonResolver) Commits(args *struct {
+func (r *RepositoryComparisonResolver) Commits(args *struct {
 	First *int32
 }) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
@@ -104,7 +112,7 @@ func (r *repositoryComparisonResolver) Commits(args *struct {
 	}
 }
 
-func (r *repositoryComparisonResolver) FileDiffs(args *struct {
+func (r *RepositoryComparisonResolver) FileDiffs(args *struct {
 	First *int32
 }) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
@@ -114,7 +122,7 @@ func (r *repositoryComparisonResolver) FileDiffs(args *struct {
 }
 
 type fileDiffConnectionResolver struct {
-	cmp   *repositoryComparisonResolver // {base,head}{,RevSpec} and repo
+	cmp   *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
 	first *int32
 
 	// cache result because it is used by multiple fields
@@ -257,7 +265,7 @@ func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error
 
 type fileDiffResolver struct {
 	fileDiff *diff.FileDiff
-	cmp      *repositoryComparisonResolver // {base,head}{,RevSpec} and repo
+	cmp      *RepositoryComparisonResolver // {base,head}{,RevSpec} and repo
 }
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
@@ -285,7 +293,6 @@ func (r *fileDiffResolver) OldFile() *gitTreeEntryResolver {
 	}
 	return &gitTreeEntryResolver{
 		commit: r.cmp.base,
-		path:   r.fileDiff.OrigName,
 		stat:   createFileInfo(r.fileDiff.OrigName, false),
 	}
 }
@@ -296,7 +303,6 @@ func (r *fileDiffResolver) NewFile() *gitTreeEntryResolver {
 	}
 	return &gitTreeEntryResolver{
 		commit: r.cmp.head,
-		path:   r.fileDiff.NewName,
 		stat:   createFileInfo(r.fileDiff.NewName, false),
 	}
 }

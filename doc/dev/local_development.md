@@ -1,194 +1,204 @@
 # Getting started with developing Sourcegraph
 
-The best way to become familiar with the Sourcegraph repository is by
-reading the code at https://sourcegraph.com/github.com/sourcegraph/sourcegraph.
+Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph).
+
+## Outline
+
+- [Environment](#environment)
+- [Step 1: Install dependencies](#step-1-install-dependencies)
+- [Step 2: Initialize your database](#step-2-initialize-your-database)
+- [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
+- [Step 4: Get the code](#step-4-get-the-code)
+- [Step 5: Start the Server](#step-5-start-the-server)
+- [Troubleshooting](#troubleshooting)
+- [How to Run Tests](#how-to-run-tests)
+- [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
+- [How to debug live code](#how-to-debug-live-code)
+- [Windows support](#windows-support)
+- [Other nice things](#other-nice-things)
 
 ## Environment
 
-The Sourcegraph server is actually a collection of smaller binaries, each of
-which performs one task. The core entrypoint for the Sourcegraph development
-server is [dev/launch.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/launch.sh), which will initialize the environment, and start a
-process manager that runs all of the binaries.
+Sourcegraph server is a collection of smaller binaries. The development server, [dev/launch.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/launch.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/launch.sh`.
 
-See [the Architecture doc](architecture.md) for a full description of what each
-of these services does.
-
-The sections below describe the the dependencies that you need to have to be able to run `dev/launch.sh` properly.
-
-## Step 1: Get the code
-
-> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
-
-On Mac with homebrew, you can run
-```
-brew install golang
-```
-
-Run this command to get the Sourcegraph source code on your local machine:
-
-```
-go get github.com/sourcegraph/sourcegraph
-```
-
-This downloads your "Sourcegraph repository directory".
-
-## Step 2: Install dependencies
+## Step 1: Install dependencies
 
 Sourcegraph has the following dependencies:
 
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [Go](https://golang.org/doc/install) (v1.11 or higher)
+- [Go](https://golang.org/doc/install) (v1.13 or higher)
 - [Node JS](https://nodejs.org/en/download/) (version 8 or 10)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
-- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.0)
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v11 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
 - [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 
-You have two options for installing these dependencies.
+The following are two recommendations for installing these dependencies:
 
-### Option A: Homebrew setup for macOS
-
-This is a streamlined setup for Mac machines.
+### macOS
 
 1.  Install [Homebrew](https://brew.sh).
 2.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
 
     optionally via `brew`
 
-    ```
+    ```bash
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL 9.6, Redis, Git, nginx, and SQLite tools with the following command:
+3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, and SQLite tools with the following command:
 
-    ```
-    brew install go node redis postgresql@9.6 git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
+    ```bash
+    brew install go node yarn redis postgresql git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
 
-    ```
-    brew services start postgresql@9.6
+    ```bash
+    brew services start postgresql
     brew services start redis
     ```
 
     (You can stop them later by calling `stop` instead of `start` above.)
 
 5.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
-    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@9.6`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
+    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```bash
-    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
+    hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
     source ~/.bash_profile
     ```
 
 6.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
-### Option B: Linux / Manual Install
+### Ubuntu
 
-For Linux users or if you don't want to use Homebrew on macOS, install the dependencies listed above using your preferred method.
 
-#### NodeJS on Ubuntu
+1. Add package repositories:
 
-Ubuntu installs a fairly old NodeJS by default. To get a more recent version:
+    ```bash
+    # Go
+    sudo add-apt-repository ppa:longsleep/golang-backports
 
-```
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
+    # Docker
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 
-As of this writing, `setup_8.x` also works, but you may want to prefer the newer
-one.
+    # Yarn
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 
-#### Redis on Linux
+    # Node.js
+    curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+    ```
 
-You can follow these [instructions to install Redis
-natively](http://redis.io/topics/quickstart). If you have Docker installed and
-are running Linux, however, the easiest way to get Redis up and running is
-probably:
+2. Update repositories:
 
-```
-dockerd # if docker isn't already running
-docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
-```
+    ```bash
+    sudo apt-get update
+    ```
 
-_`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data._
+3. Install dependencies:
 
-You need to have the redis image running when you run the Sourcegraph
-`dev/launch.sh` script. If you do not have docker access without root, run these
-commands under `sudo`.
+    ```bash
+    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io nodejs yarn
+    ```
 
-#### SQLite tools
+4. Configure startup services
 
-On Ubuntu, you can get the required tools by running:
+    ```bash
+    sudo systemctl enable postgresql
+    sudo systemctl enable redis-server.service
+    ```
 
-```
-apt-get install libpcre3-dev libsqlite3-dev pkg-config musl-tools
-```
+5. (optional) You can also run Redis using Docker
 
-## Step 3: Install Yarn
+    In this case you should not enable the `redis-server.service` from the previous step.
 
-Run the following command to install Yarn, a package manager for Node.js.
+    ```bash
+    dockerd # if docker isn't already running
+    docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
+    # $REDIS_DATA_DIR should be an absolute path to a folder where you intend to store Redis data
+    ```
 
-```
-npm install -g yarn
-```
+    You need to have Redis running when you start the dev server later on. If you have issues running Docker, try [adding your user to the docker group][dockerGroup], and/or [updating the socket file persimissions][socketPermissions], or try running these commands under `sudo`.
 
-## Step 4: Initialize your database
+    [dockerGroup]: https://stackoverflow.com/a/48957722
+    [socketPermissions]: https://stackoverflow.com/a/51362528
 
-You need a fresh Postgres database, and a database user that has full ownership
-of that database.
+## Step 2: Initialize your database
 
-### I. Create a database for the current Unix user
+You need a fresh Postgres database and a database user that has full ownership of that database.
 
-Create the database - `createdb` with no arguments creates
-a database with a name matching the current user.
+1. Create a database for the current Unix user
 
-> If you are running on Linux, you may need to become the `postgres` user to
-> administer Postgres. Run `sudo su - postgres` first then continue.
+    ```bash
+    # For Linux users, first access the postgres user shell
+    sudo su - postgres
+    ```
 
-```bash
-createdb
-```
+    ```bash
+    createdb
+    ```
 
-### II. Create the Sourcegraph user and password
+2. Create the Sourcegraph user and password
 
-```
-createuser --superuser sourcegraph
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
-```
+    ```bash
+    createuser --superuser sourcegraph
+    psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
+    ```
 
-### III. Create the Sourcegraph database
+3. Create the Sourcegraph database
 
-```
-createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-```
+    ```bash
+    createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+    ```
 
-### IV. Configure database settings in your environment
+4. Configure database settings in your environment
 
-The Sourcegraph server reads PostgreSQL connection
-configuration from the [`PG*` environment
-variables](http://www.postgresql.org/docs/current/static/libpq-envars.html); for
-example, in your `~/.bashrc`:
+    The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
-```
-export PGPORT=5432
-export PGHOST=localhost
-export PGUSER=sourcegraph
-export PGPASSWORD=sourcegraph
-export PGDATABASE=sourcegraph
-export PGSSLMODE=disable
-```
+    Add these, for example, in your `~/.bashrc`:
 
-You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to
-source these env vars on demand when you start the server.
+    ```bash
+    export PGPORT=5432
+    export PGHOST=localhost
+    export PGUSER=sourcegraph
+    export PGPASSWORD=sourcegraph
+    export PGDATABASE=sourcegraph
+    export PGSSLMODE=disable
+    ```
 
-[envdir]: https://cr.yp.to/daemontools/envdir.html
-[dotenv]: https://github.com/joho/godotenv
+    You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to
+    source these env vars on demand when you start the server.
+
+    [envdir]: https://cr.yp.to/daemontools/envdir.html
+    [dotenv]: https://github.com/joho/godotenv
+
+    Note: Sourcegraph will create a secondary database in the same PostgreSQL
+    instance with a name of the form `{PGDATABASE}_lsif`. It is assumed the
+    PostgreSQL instance is dedicated solely to Sourcegraph.
+
+5. Configure PostgreSQL to use md5 authentication for the relevant users.
+
+    Update `pg_hba.conf` (typically located at `/etc/postgresql/${VERSION}/main/pg_hba.conf`). Check if it contains the following line:
+
+    ```
+    local   all             all                                     peer
+    ```
+
+    If it does (or if the `sourcegraph` user is otherwise configured to use `peer` as its authentication method), change it to the following:
+
+    ```
+    local   all             all                                     md5
+    ```
+
+    A value of `trust` is also acceptable, but `md5` is recommended. After updating the file,
+    restart PostgreSQL for the changes to take effect: `sudo systemctl restart postgresql`
 
 ### More info
 
@@ -197,9 +207,7 @@ page](postgresql.md).
 
 Migrations are applied automatically.
 
-## Step 5: Start Docker
-
-Start the Docker binary. You have two options:
+## Step 3: (macOS) Start Docker
 
 #### Option A: Docker for Mac
 
@@ -211,36 +219,44 @@ The Docker daemon should be running in the background, which you can test by
 running `docker ps`. If you're on OS X and using `docker-machine` instead of
 Docker for Mac, you may have to run:
 
-```
+```bash
 docker-machine start default
 eval $(docker-machine env)
 ```
 
-## Step 6: Start the Server
+## Step 4: Get the code
 
-You're finally ready to run launch.sh. In the terminal, `cd` to the directory
-that contains the Sourcegraph source code, and run:
-
+```bash
+git clone https://github.com/sourcegraph/sourcegraph.git
 ```
+
+## Step 5: Start the Server
+
+```bash
+cd sourcegraph
 ./dev/launch.sh
 ```
 
-This will continuously compile your code and live reload your locally running
-instance of Sourcegraph. Navigate your browser to http://localhost:3080 to
-see if everything worked.
+This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
-### Troubleshooting
+Navigate your browser to http://localhost:3080 to see if everything worked.
+
+## Troubleshooting
 
 #### Problems with node_modules or Javascript packages
 
 Noticing problems with <code>node_modules/</code> or package versions? Try
 running this command to clear the local package cache.
 
-```
-yarn cache clean; rm -rf node_modules web/node_modules; yarn; cd web; yarn
+```bash
+yarn cache clean
+rm -rf node_modules web/node_modules
+yarn
+cd web
+yarn
 ```
 
-##### dial tcp 127.0.0.1:3090: connect: connection refused
+#### dial tcp 127.0.0.1:3090: connect: connection refused
 
 This means the `frontend` server failed to start, for some reason. Look through
 the previous logs for possible explanations, such as failure to contact the
@@ -252,11 +268,7 @@ While developing Sourcegraph, you may run into:
 
 `frontend | failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:Dirty database version 1514702776. Fix and force version.`
 
-You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, and run something like:
-
-Then try:
-
-`dev/migrate.sh up`
+You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, then run `dev/migrate.sh up`
 
 If you get something like `error: Dirty database version 1514702776. Fix and force version.`, you need to roll things back and start from scratch.
 
@@ -265,11 +277,18 @@ dev/migrate.sh drop
 dev/migrate.sh up
 ```
 
+If you receive errors while migrating, try dropping the database
+
+```bash
+dev/drop-entire-local-database.sh
+dev/migrate.sh up
+```
+
 #### Internal Server Error
 
 If you see this error when opening the app:
 
-`500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/style.bundle.css: no such file or directory`
+`500 Internal Server Error template: app.html:21:70: executing "app.html" at <version "styles/styl...>: error calling version: open ui/assets/styles/app.bundle.css: no such file or directory`
 
 that means Webpack hasn't finished compiling the styles yet (it takes about 3 minutes).
 Simply wait a little while for a message from webpack like `web | Time: 180000ms` to appear
@@ -299,9 +318,52 @@ sudo sysctl fs.inotify.max_user_watches=524288
 
 If you ever need to wipe your local database and Redis, run the following command.
 
-```
+```bash
 ./dev/drop-entire-local-database-and-redis.sh
 ```
+
+#### `dblink` error or `peer authentication failed`
+
+If you see errors related to `dblink` and `peer authentication failed` that look the like the following:
+
+```
+18:08:28            lsif-worker | query failed:
+18:08:28            lsif-worker |         select * from
+18:08:28            lsif-worker |         dblink('dbname=' || $1 || ' user=' || current_user || ' password=' || $2, 'select * from schema_migrations')
+18:08:28            lsif-worker |         as temp(version text, dirty bool);
+18:08:28            lsif-worker |      -- PARAMETERS: ["sourcegraph","sourcegraph"]
+18:08:28            lsif-worker | error: { error: could not establish connection
+18:08:28            lsif-worker |     at Connection.parseE (/home/$USER/src/github.com/sourcegraph/sourcegraph/lsif/node_modules/pg/lib/connection.js:604:11)
+18:08:28            lsif-worker |     at Connection.parseMessage (/home/$USER/src/github.com/sourcegraph/sourcegraph/lsif/node_modules/pg/lib/connection.js:401:19)
+18:08:28            lsif-worker |     at Socket.<anonymous> (/home/$USER/src/github.com/sourcegraph/sourcegraph/lsif/node_modules/pg/lib/connection.js:121:22)
+18:08:28            lsif-worker |     at Socket.emit (events.js:198:13)
+18:08:28            lsif-worker |     at addChunk (_stream_readable.js:288:12)
+18:08:28            lsif-worker |     at readableAddChunk (_stream_readable.js:269:11)
+18:08:28            lsif-worker |     at Socket.Readable.push (_stream_readable.js:224:10)
+18:08:28            lsif-worker |     at TCP.onStreamRead [as onread] (internal/stream_base_commons.js:94:17)
+18:08:28            lsif-worker |   name: 'error',
+18:08:28            lsif-worker |   length: 149,
+18:08:28            lsif-worker |   severity: 'ERROR',
+18:08:28            lsif-worker |   code: '08001',
+18:08:28            lsif-worker |   detail: 'FATAL:  Peer authentication failed for user "sourcegraph"',
+18:08:28            lsif-worker |   hint: undefined,
+18:08:28            lsif-worker |   position: undefined,
+18:08:28            lsif-worker |   internalPosition: undefined,
+18:08:28            lsif-worker |   internalQuery: undefined,
+18:08:28            lsif-worker |   where: undefined,
+18:08:28            lsif-worker |   schema: undefined,
+18:08:28            lsif-worker |   table: undefined,
+18:08:28            lsif-worker |   column: undefined,
+18:08:28            lsif-worker |   dataType: undefined,
+18:08:28            lsif-worker |   constraint: undefined,
+18:08:28            lsif-worker |   file: 'dblink.c',
+18:08:28            lsif-worker |   line: '212',
+18:08:28            lsif-worker |   routine: 'dblink_get_conn' }
+```
+
+Ensure you've configured PostgreSQL to use `md5` or `trust` as the authentication mechanism for the
+`sourcegraph` PostgreSQL user. You can do this by modifying `pg_hba.conf` and restarting PostgreSQL
+(instructions are in the "Configure PostgreSQL to use md5 authentication" step above).
 
 ## How to Run Tests
 
@@ -348,14 +410,14 @@ Requires "Debugger for Chrome" extension.
 
 Install [Delve](https://github.com/derekparker/delve):
 
-```
+```bash
 xcode-select --install
 go get -u github.com/go-delve/delve/cmd/dlv
 ```
 
 Then install `pgrep`:
 
-```
+```bash
 brew install proctools
 ```
 
@@ -363,7 +425,7 @@ Make sure to run `env DELVE=true dev/launch.sh` to disable optimizations during 
 
 Now you can attach a debugger to any Go process (e.g. frontend, searcher, go-langserver) in 1 command:
 
-```
+```bash
 dlv attach $(pgrep frontend)
 ```
 
@@ -391,7 +453,7 @@ The Sourcegraph repository relies on code generation triggered by `go generate`.
 
 To generate everything, just run:
 
-```
+```bash
 ./dev/generate.sh
 ```
 
@@ -410,10 +472,6 @@ If you think a diff is erroneous, don't commit it. Add a tech debt
 item to the issue tracker and assign the person who you think is
 responsible (or ask).
 
-## [Code style guide](code_style_guide.md)
-
-See "[Code style guide](code_style_guide.md)".
-
 ## Windows support
 
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).
@@ -431,6 +489,6 @@ search without an Internet connection?" But lower your hand back to your keyboar
 further, for the year is 2019, and you *can* develop Sourcegraph with no connectivity by setting the
 `OFFLINE` environment variable:
 
-```
+```bash
 OFFLINE=true dev/launch.sh
 ```

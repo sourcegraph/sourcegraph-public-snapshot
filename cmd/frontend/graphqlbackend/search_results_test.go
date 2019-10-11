@@ -14,13 +14,15 @@ import (
 	"github.com/google/zoekt"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -44,7 +46,7 @@ func TestSearchResults(t *testing.T) {
 			// NOTE: Only supports one match per line. If we need to test other cases,
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
-			case *repositoryResolver:
+			case *RepositoryResolver:
 				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.repo.Name)
 			case *fileMatchResolver:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.JPath, m.JLineMatches[0].JLineNumber)
@@ -202,7 +204,9 @@ func BenchmarkSearchResults(b *testing.B) {
 }
 
 func BenchmarkIntegrationSearchResults(b *testing.B) {
-	ctx := dbtesting.TestContext(b)
+	dbtesting.SetupGlobalTestDB(b)
+
+	ctx := context.Background()
 
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
@@ -217,18 +221,37 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		DisableCache: true,
 	}
 
+	rows := make([]*sqlf.Query, 0, len(repos))
 	for _, r := range repos {
-		err := db.Repos.Upsert(ctx, api.InsertRepoOp{
-			Name:         r.Name,
-			Description:  r.Description,
-			Fork:         r.Fork,
-			Archived:     false,
-			Enabled:      true,
-			ExternalRepo: r.ExternalRepo,
-		})
-		if err != nil {
-			b.Fatal(err)
-		}
+		rows = append(rows, sqlf.Sprintf(
+			"(%s, %s, %s, %s, %s, %s, %s)",
+			r.Name,
+			r.Description,
+			r.Fork,
+			true,
+			r.ExternalRepo.ServiceType,
+			r.ExternalRepo.ServiceID,
+			r.ExternalRepo.ID,
+		))
+	}
+
+	q := sqlf.Sprintf(`
+		INSERT INTO repo (
+			name,
+			description,
+			fork,
+			enabled,
+			external_service_type,
+			external_service_id,
+			external_id
+		)
+		VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+
+	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		b.Fatal(err)
 	}
 
 	b.ResetTimer()
@@ -400,26 +423,26 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{`\.graphql$|\.gql$`},
+			IncludePatterns:        []string{`\.graphql$|\.gql$|\.graphqls$`},
 		},
 		"p lang:graphql file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			IncludePatterns:        []string{"f", `\.graphql$|\.gql$`},
+			IncludePatterns:        []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
 		},
 		"p -lang:graphql file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
 			IncludePatterns:        []string{"f"},
-			ExcludePattern:         `\.graphql$|\.gql$`,
+			ExcludePattern:         `\.graphql$|\.gql$|\.graphqls$`,
 		},
 		"p -lang:graphql -file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
-			ExcludePattern:         `f|(\.graphql$|\.gql$)`,
+			ExcludePattern:         `f|(\.graphql$|\.gql$|\.graphqls$)`,
 		},
 	}
 	for queryStr, want := range tests {
@@ -445,7 +468,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := &types.Repo{Name: "testRepo"}
 
-	repoMatch := &repositoryResolver{
+	repoMatch := &RepositoryResolver{
 		repo: repo,
 	}
 
@@ -666,10 +689,10 @@ func TestCompareSearchResults(t *testing.T) {
 
 	tests := []testCase{{
 		// Different repo matches
-		a: &repositoryResolver{
+		a: &RepositoryResolver{
 			repo: &types.Repo{Name: api.RepoName("a")},
 		},
-		b: &repositoryResolver{
+		b: &RepositoryResolver{
 			repo: &types.Repo{Name: api.RepoName("b")},
 		},
 		aIsLess: true,
@@ -680,7 +703,7 @@ func TestCompareSearchResults(t *testing.T) {
 
 			JPath: "a",
 		},
-		b: &repositoryResolver{
+		b: &RepositoryResolver{
 			repo: &types.Repo{Name: api.RepoName("a")},
 		},
 		aIsLess: false,
@@ -892,7 +915,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		case *fileMatchResolver:
 			assertRepoResolverHydrated(ctx, t, r.Repository(), hydratedRepo)
 
-		case *repositoryResolver:
+		case *RepositoryResolver:
 			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
 		}
 	}

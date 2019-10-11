@@ -1,7 +1,7 @@
 import { createBrowserHistory } from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
-import { cleanup, getAllByTestId, getByTestId, render } from 'react-testing-library'
+import { cleanup, getAllByTestId, getByTestId, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../../../web/src/search/testHelpers'
@@ -11,7 +11,7 @@ import { setLinkComponent } from './Link'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
     <>
-        <MockVisibilitySensor onChange={onChange} children={children} />
+        <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
     </>
 ))
 

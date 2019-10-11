@@ -102,8 +102,8 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillUpdate(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

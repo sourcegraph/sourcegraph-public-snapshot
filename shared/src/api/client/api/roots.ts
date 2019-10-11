@@ -10,7 +10,7 @@ export class ClientRoots {
     constructor(proxy: ProxyResult<ExtRootsAPI>, workspaceService: WorkspaceService) {
         this.subscriptions.add(
             workspaceService.roots.subscribe(roots => {
-                // tslint:disable-next-line: no-floating-promises
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 proxy.$acceptRoots(roots || [])
             })
         )

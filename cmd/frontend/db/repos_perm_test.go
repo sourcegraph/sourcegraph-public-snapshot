@@ -8,9 +8,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func Benchmark_authzFilter(b *testing.B) {
@@ -152,9 +153,11 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	defer func() { mockAuthzFilter = nil }()
+	defer func() { MockAuthzFilter = nil }()
 
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 	allRepos := mustCreate(ctx, t,
 		&types.Repo{
@@ -177,7 +180,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	)
 	{
 		calledFilter := false
-		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return repos, nil
 		}
@@ -195,7 +198,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	}
 	{
 		calledFilter := false
-		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return nil, nil
 		}
@@ -214,7 +217,7 @@ func Test_getBySQL_permissionsCheck(t *testing.T) {
 	{
 		calledFilter := false
 		filteredRepos := allRepos[0:1]
-		mockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
+		MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
 			calledFilter = true
 			return filteredRepos, nil
 		}

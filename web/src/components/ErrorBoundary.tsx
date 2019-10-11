@@ -45,6 +45,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
         if (prevProps.location !== this.props.location) {
             // Reset error state when location changes, so that the user can try navigating to a different page to
             // clear the error.
+            /* eslint react/no-did-update-set-state: warn */
             this.setState({ error: undefined })
         }
     }
@@ -62,7 +63,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                         subtitle={
                             <div className="container">
                                 <p>A new version of Sourcegraph is available.</p>
-                                <button className="btn btn-primary" onClick={this.onReloadClick}>
+                                <button type="button" className="btn btn-primary" onClick={this.onReloadClick}>
                                     Reload to update
                                 </button>
                             </div>

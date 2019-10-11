@@ -9,14 +9,12 @@ Code intelligence provides advanced code navigation and cross-references for you
 
 Code intelligence works out of the box with all of the most popular [programming language extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
 
-You can get more accurate (but usually slower) code intelligence by enabling a dedicated language extension and setting up the corresponding language server:
+There are two ways to get more precise code intelligence:
 
-- [Go](https://sourcegraph.com/extensions/sourcegraph/go)
-- [TypeScript](https://sourcegraph.com/extensions/sourcegraph/typescript)
-- [Python](https://sourcegraph.com/extensions/sourcegraph/python)
-- Check the [extension registry](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) for more
+- **Recommended**: [upload LSIF code intelligence data](./lsif.md)
+- Not recommended: [deploy a language server](./language_servers.md)
 
-Code intelligence is provided by [Sourcegraph extensions](../../extensions/index.md) and language servers that run securely in your self-hosted Sourcegraph instance. The extensions (and associated language servers) perform advanced, scalable code analysis and are derived from our popular open-source language servers in use by hundreds of thousands of developers in editors and on Sourcegraph.com.
+Code intelligence is provided by [Sourcegraph extensions](../../extensions/index.md).
 
 By spinning up Sourcegraph, you can get code intelligence:
 
@@ -25,19 +23,19 @@ By spinning up Sourcegraph, you can get code intelligence:
 - On diffs in your code review tool, via our [integrations](../../integration/index.md)
 - Via the Sourcegraph API (for programmatic access)
 
-**Hover tooltips with documentation and type signatures**
+**Hover tooltips with documentation and type signatures (using a language server)**
 
 <img src="img/hover-tooltip.png" width="500"/>
 
-**Go to definition**
+**Go to definition (using a language server)**
 
 <img src="img/go-to-def.gif" width="500"/>
 
-**Find references**
+**Find references (using a language server)**
 
 <img src="img/find-refs.gif" width="450"/>
 
-**GitHub pull request and file integration**
+**GitHub pull request and file integration (using a language server)**
 
 <img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>
 
@@ -48,20 +46,6 @@ By spinning up Sourcegraph, you can get code intelligence:
 **Symbol sidebar**
 
 <img src="img/SymbolSidebar.png" width="500"/>
-
-## Language server deployment
-
-Most Sourcegraph extensions that provide code intelligence require a server component, called a language server. These language servers are usually deployed alongside other Sourcegraph services in another Docker container or within the same Kubernetes cluster. Check the corresponding extension documentation for deployment instructions.
-
----
-
-### Open standards
-
-Code intelligence is powered by [Sourcegraph extensions](../index.md) and language servers based on the open-standard Language Server Protocol (published by Microsoft, with participation from Facebook, Google, Sourcegraph, GitHub, RedHat, Twitter, Salesforce, Eclipse, and others).
-
-Hundreds of thousands of developers already use Sourcegraph's language servers in their editor or while browsing public code on [Sourcegraph.com](https://sourcegraph.com). Microsoft's [Visual Studio Code](https://code.visualstudio.com) and GitHub's [Atom](https://atom.io) editors both use Sourcegraph language servers in official editor extensions. The language servers used for code intelligence on Sourcegraph are based on our widely used language servers, with extensive improvements for performance, cross-repository definitions and references, security, isolation, type/build inference, and robustness.
-
-For more information about the Language Server Protocol (LSP), visit [Microsoft's official LSP site](https://microsoft.github.io/language-server-protocol/). For a more detailed list of existing language servers, visit [langserver.org](https://langserver.org) (maintained by Sourcegraph).
 
 ---
 

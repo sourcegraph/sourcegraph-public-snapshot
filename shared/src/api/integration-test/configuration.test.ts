@@ -6,7 +6,7 @@ import { assertToJSON, integrationTestContext } from './testHelpers'
 describe('Configuration (integration)', () => {
     test('is synchronously available', async () => {
         const { extensionAPI } = await integrationTestContext({ settings: of(EMPTY_SETTINGS_CASCADE) })
-        expect(() => extensionAPI.configuration.subscribe(() => void 0)).not.toThrow()
+        expect(() => extensionAPI.configuration.subscribe(() => undefined)).not.toThrow()
         expect(() => extensionAPI.configuration.get()).not.toThrow()
     })
 
@@ -25,6 +25,7 @@ describe('Configuration (integration)', () => {
             const calls: (SettingsEdit | string)[] = []
             const { extensionAPI } = await integrationTestContext({
                 settings: of({ final: { a: 1 }, subjects: [{ subject: {} as any, lastID: null, settings: null }] }),
+                // eslint-disable-next-line require-await
                 updateSettings: async (_subject, edit) => {
                     calls.push(edit)
                 },

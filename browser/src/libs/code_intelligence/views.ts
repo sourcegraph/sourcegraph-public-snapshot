@@ -1,4 +1,4 @@
-import { asyncScheduler, defer, from, Observable, Subscription } from 'rxjs'
+import { asyncScheduler, defer, from, Subscription, OperatorFunction } from 'rxjs'
 import { concatAll, filter, mergeMap, observeOn, tap } from 'rxjs/operators'
 import { isDefined, isInstanceOf } from '../../../../shared/src/util/types'
 import { MutationRecordLike, querySelectorAllOrSelf } from '../../shared/util/dom'
@@ -7,7 +7,7 @@ interface View {
     element: HTMLElement
 }
 
-type ViewWithSubscriptions<V extends View> = V & {
+export type ViewWithSubscriptions<V extends View> = V & {
     /**
      * Maintains subscriptions to resources that should be freed when the view is removed.
      */
@@ -46,7 +46,7 @@ export interface ViewResolver<V extends View> {
  */
 export function trackViews<V extends View>(
     viewResolvers: ViewResolver<V>[]
-): (mutations: Observable<MutationRecordLike[]>) => Observable<ViewWithSubscriptions<V>> {
+): OperatorFunction<MutationRecordLike[], ViewWithSubscriptions<V>> {
     return mutations =>
         defer(() => {
             const viewStates = new Map<HTMLElement, ViewWithSubscriptions<V>>()

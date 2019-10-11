@@ -9,8 +9,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema" // Import for side effects so that the UI router gets created and is accessible in the
 	// ../app/ui/router package's Router var.
 )

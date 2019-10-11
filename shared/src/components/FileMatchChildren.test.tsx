@@ -1,12 +1,12 @@
 import * as H from 'history'
 import * as React from 'react'
-import { cleanup, fireEvent, render } from 'react-testing-library'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
     <>
-        <MockVisibilitySensor onChange={onChange} children={children} />
+        <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
     </>
 ))
 

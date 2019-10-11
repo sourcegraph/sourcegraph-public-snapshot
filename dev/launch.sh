@@ -15,9 +15,7 @@ if [ -f .env ]; then
 fi
 
 export GO111MODULE=on
-go run ./pkg/version/minversion
-
-export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
+go run ./internal/version/minversion
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
@@ -60,7 +58,10 @@ export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
+export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
 export ZOEKT_HOST=localhost:3070
+export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
+export GRAFANA_SERVER_URL=http://localhost:3370
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
 # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
@@ -71,6 +72,7 @@ export WEBPACK_DEV_SERVER=1
 
 export CRITICAL_CONFIG_FILE=${CRITICAL_CONFIG_FILE:-./dev/critical-config.json}
 export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
+export SITE_CONFIG_ALLOW_EDITS=true
 
 # WebApp
 export NODE_ENV=development
@@ -110,9 +112,9 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
 # LSIF server
 [ -n "${OFFLINE-}" ] || {
-    pushd ./lsif/server && yarn --no-progress && popd
+    pushd ./lsif && yarn --no-progress && popd
 }
 
 printf >&2 "\nStarting all binaries...\n\n"
-export GOREMAN="goreman --set-ports=false --exit-on-error -f ${PROCFILE:-dev/Procfile}"
+export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
 exec $GOREMAN start

@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type repositoryContributorsArgs struct {
@@ -15,7 +15,7 @@ type repositoryContributorsArgs struct {
 	Path          *string
 }
 
-func (r *repositoryResolver) Contributors(args *struct {
+func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
 	First *int32
 }) *repositoryContributorConnectionResolver {
@@ -30,7 +30,7 @@ type repositoryContributorConnectionResolver struct {
 	args  repositoryContributorsArgs
 	first *int32
 
-	repo *repositoryResolver
+	repo *RepositoryResolver
 
 	// cache result because it is used by multiple fields
 	once    sync.Once

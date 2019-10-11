@@ -11,6 +11,7 @@ import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubjec
 import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { Tooltip } from '../components/tooltip/Tooltip'
+import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
@@ -29,7 +30,7 @@ export function createPlatformContext(): PlatformContext {
             // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
                 const editDescription =
-                    typeof edit === 'string' ? 'edit settings' : `update setting ` + '`' + edit.path.join('.') + '`'
+                    typeof edit === 'string' ? 'edit settings' : 'update setting `' + edit.path.join('.') + '`'
                 const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
@@ -43,11 +44,13 @@ export function createPlatformContext(): PlatformContext {
             try {
                 await updateSettings(context, subject, edit, mutateSettings)
             } catch (error) {
-                if ('message' in error && /version mismatch/.test(error.message)) {
+                if ('message' in error && error.message.includes('version mismatch')) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
                     updatedSettings.next(await fetchViewerSettings().toPromise())
                     await updateSettings(context, subject, edit, mutateSettings)
+                } else {
+                    throw error
                 }
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
@@ -66,6 +69,7 @@ export function createPlatformContext(): PlatformContext {
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
+        telemetryService: eventLogger,
     }
     return context
 }
@@ -104,7 +108,7 @@ const settingsCascadeFragment = gql`
  * this function, to ensure that the result is propagated consistently throughout the app instead of only being
  * returned to the caller.
  *
- * @return Observable that emits the settings
+ * @returns Observable that emits the settings
  */
 function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
     return queryGraphQL(gql`

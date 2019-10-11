@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sqs/httpgzip"
 )
 
@@ -73,8 +73,5 @@ func init() {
 }
 
 func isPhabricatorAsset(path string) bool {
-	if strings.Contains(path, "phabricator.bundle.js") {
-		return true
-	}
-	return false
+	return strings.Contains(path, "phabricator.bundle.js")
 }

@@ -24,7 +24,7 @@ func maybeZoektProcFile() []string {
 	}
 
 	return []string{
-		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 %s", frontendInternalHost, indexDir, debugFlag),
-		fmt.Sprintf("zoekt-webserver: zoekt-webserver -rpc -pprof -listen %s -index %s", defaultHost, indexDir),
+		fmt.Sprintf("zoekt-indexserver: env GOGC=50 zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 %s", frontendInternalHost, indexDir, debugFlag),
+		fmt.Sprintf("zoekt-webserver: env GOGC=50 zoekt-webserver -rpc -pprof -listen %s -index %s", defaultHost, indexDir),
 	}
 }

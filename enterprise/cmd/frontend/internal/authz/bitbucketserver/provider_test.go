@@ -10,20 +10,27 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
 
 var update = flag.Bool("update", false, "update testdata")
 
 func TestProvider_Validate(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "http://127.0.0.1:7990"
+	}
+
 	for _, tc := range []struct {
 		name     string
 		client   func(*bitbucketserver.Client)
@@ -36,7 +43,7 @@ func TestProvider_Validate(t *testing.T) {
 			name:   "problems-when-authenticated-as-non-admin",
 			client: func(c *bitbucketserver.Client) { c.Oauth = nil },
 			problems: []string{
-				`Bitbucket API HTTP error: code=401 url="http://127.0.0.1:7990/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
+				`Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
 			},
 		},
 	} {
@@ -48,6 +55,10 @@ func TestProvider_Validate(t *testing.T) {
 
 			if tc.client != nil {
 				tc.client(p.client)
+			}
+
+			for i := range tc.problems {
+				tc.problems[i] = strings.ReplaceAll(tc.problems[i], "${INSTANCEURL}", instanceURL)
 			}
 
 			problems := p.Validate()
@@ -70,19 +81,34 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		repo := make(map[string]*types.Repo, len(f.repos))
-		repos := make([]*types.Repo, 0, len(f.repos))
+		stored := make([]*repos.Repo, 0, len(f.repos))
 		for _, r := range f.repos {
-			repo[r.Name] = &types.Repo{
-				ID:           api.RepoID(r.ID + 42), // Make them different
-				Name:         api.RepoName(r.Name),
+			stored = append(stored, &repos.Repo{
+				Name:         r.Name,
 				ExternalRepo: h.externalRepo(r),
-			}
-			repos = append(repos, repo[r.Name])
+				Sources:      map[string]*repos.SourceInfo{},
+			})
 		}
 
-		sort.Slice(repos, func(i, j int) bool {
-			return repos[i].Name <= repos[j].Name
+		ctx := context.Background()
+		err := repos.NewDBStore(db, sql.TxOptions{}).UpsertRepos(ctx, stored...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		repo := make(map[string]*types.Repo, len(f.repos))
+		toverify := make([]*types.Repo, 0, len(f.repos))
+		for _, r := range stored {
+			repo[r.Name] = &types.Repo{
+				ID:           api.RepoID(r.ID),
+				Name:         api.RepoName(r.Name),
+				ExternalRepo: r.ExternalRepo,
+			}
+			toverify = append(toverify, repo[r.Name])
+		}
+
+		sort.Slice(toverify, func(i, j int) bool {
+			return toverify[i].Name <= toverify[j].Name
 		})
 
 		for i, tc := range []struct {
@@ -172,7 +198,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 					acct = h.externalAccount(int32(i), tc.user)
 				}
 
-				perms, err := p.RepoPerms(tc.ctx, acct, repos)
+				perms, err := p.RepoPerms(tc.ctx, acct, toverify)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
@@ -459,7 +485,8 @@ func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 }
 
 func newProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Provider {
-	p := NewProvider(cli, db, ttl)
-	p.pageSize = 1 // Exercise pagination
+	p := NewProvider(cli, db, ttl, DefaultHardTTL)
+	p.pageSize = 1       // Exercise pagination
+	p.store.block = true // Wait for first update to complete.
 	return p
 }

@@ -1,6 +1,7 @@
 import { highlight, highlightAuto } from 'highlight.js/lib/highlight'
 import { without } from 'lodash'
-// tslint:disable-next-line:import-blacklist this is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
+// This is the only file allowed to import this module, all other modules must use renderMarkdown() exported from here
+// eslint-disable-next-line no-restricted-imports
 import marked from 'marked'
 import sanitize from 'sanitize-html'
 
@@ -20,7 +21,7 @@ const escapeHTML = (html: string): string => {
  *
  * @param code The code to highlight
  * @param language The language of the code, if known
- * @return Safe HTML
+ * @returns Safe HTML
  */
 export const highlightCodeSafe = (code: string, language?: string): string => {
     try {

@@ -1,4 +1,4 @@
-import '../../config/polyfill'
+import '../polyfills'
 
 import io from 'socket.io-client'
 

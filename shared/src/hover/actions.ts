@@ -106,8 +106,7 @@ export function getHoverActionsContext(
         share()
     )
 
-    return combineLatest(
-        // To reduce UI jitter, don't show "Go to definition" until (1) the result or an error was received or (2)
+    return combineLatest([
         // the fairly long LOADER_DELAY has elapsed.
         merge(
             [undefined], // don't block on the first emission
@@ -137,8 +136,8 @@ export function getHoverActionsContext(
                 filter(v => !!v),
                 map(v => !!v)
             )
-        ).pipe(startWith(false))
-    ).pipe(
+        ).pipe(startWith(false)),
+    ]).pipe(
         map(
             ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => ({
                 'goToDefinition.showLoading': definitionURLOrError === LOADING,
@@ -302,9 +301,9 @@ export function registerHoverContributions({
                         title: parseTemplate('Go to definition'),
                         command: 'goToDefinition',
                         commandArguments: [
-                            // tslint:disable:no-invalid-template-strings
+                            /* eslint-disable no-template-curly-in-string */
                             parseTemplate('${json(hoverPosition)}'),
-                            // tslint:enable:no-invalid-template-strings
+                            /* eslint-enable no-template-curly-in-string */
                         ],
                     },
                     {
@@ -313,7 +312,7 @@ export function registerHoverContributions({
                         id: 'goToDefinition.preloaded',
                         title: parseTemplate('Go to definition'),
                         command: 'open',
-                        // tslint:disable-next-line:no-invalid-template-strings
+                        // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: [parseTemplate('${goToDefinition.url}')],
                     },
                 ],
@@ -379,7 +378,7 @@ export function registerHoverContributions({
                         id: 'findReferences',
                         title: parseTemplate('Find references'),
                         command: 'open',
-                        // tslint:disable-next-line:no-invalid-template-strings
+                        // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: [parseTemplate('${findReferences.url}')],
                     },
                 ],

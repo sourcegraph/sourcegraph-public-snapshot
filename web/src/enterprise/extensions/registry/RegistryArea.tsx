@@ -31,8 +31,8 @@ export class RegistryArea extends React.Component<Props> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
-        this.componentUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -48,15 +48,16 @@ export class RegistryArea extends React.Component<Props> {
         return (
             <div className="registry-area">
                 <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
                     <Route
                         path={`${this.props.match.url}/new`}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
                         render={routeComponentProps => (
                             <RegistryNewExtensionPage {...routeComponentProps} {...transferProps} />
                         )}
                     />
+                    {/* eslint-enable react/jsx-no-bind */}
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>

@@ -2,7 +2,7 @@ import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import { UserAreaHeaderNavItem } from './UserAreaHeader'
 
-export const userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem> = [
+export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
         to: '',
         exact: true,

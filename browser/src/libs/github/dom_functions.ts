@@ -74,6 +74,10 @@ const getDiffCodeCellFromLineNumber = (
     line: number,
     part?: DiffPart
 ): HTMLTableCellElement | null => {
+    if (codeView.querySelector('.js-diff-load-container')) {
+        // Diff is collapsed
+        return null
+    }
     const isSplitDiff = isDomSplitDiff(codeView)
     const nthChild = getLineNumberElementIndex(part!, isSplitDiff) + 1 // nth-child() is 1-indexed
     const lineNumberCell = codeView.querySelector<HTMLTableCellElement>(
@@ -109,7 +113,7 @@ const getDiffCodeCellFromLineNumber = (
  * The code element on diff pages is the `<span class="blob-code-inner">` element inside the cell,
  * because the cell also contains a button to add a comment
  */
-const getBlobCodeInner = (codeCell: HTMLTableCellElement) =>
+const getBlobCodeInner = (codeCell: HTMLTableCellElement): HTMLElement =>
     codeCell.classList.contains('blob-code-inner')
         ? codeCell // `<td>`'s in sections of the table that were expanded are not commentable so the `.blob-code-inner` element is the `<td>`
         : (codeCell.querySelector('.blob-code-inner') as HTMLElement)
@@ -124,7 +128,7 @@ export const diffDomFunctions: DOMFunctions = {
     },
     getLineElementFromLineNumber: getDiffCodeCellFromLineNumber,
     getCodeElementFromLineNumber: (codeView, line, part) => {
-        const codeCell = getDiffCodeCellFromLineNumber(codeView, line, part!)
+        const codeCell = getDiffCodeCellFromLineNumber(codeView, line, part)
         return codeCell && getBlobCodeInner(codeCell)
     },
     getLineNumberFromCodeElement,

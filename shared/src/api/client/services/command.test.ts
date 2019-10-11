@@ -9,8 +9,8 @@ describe('CommandRegistry', () => {
     test('registers and unregisters commands', () => {
         const subscriptions = new Subscription()
         const registry = new CommandRegistry()
-        const entry1: CommandEntry = { command: 'command1', run: async () => void 0 }
-        const entry2: CommandEntry = { command: 'command2', run: async () => void 0 }
+        const entry1: CommandEntry = { command: 'command1', run: () => Promise.resolve() }
+        const entry2: CommandEntry = { command: 'command2', run: () => Promise.resolve() }
 
         const unregister1 = subscriptions.add(registry.registerCommand(entry1))
         expect(registry.commandsSnapshot).toEqual([entry1])
@@ -27,9 +27,9 @@ describe('CommandRegistry', () => {
 
     test('refuses to register 2 commands with the same ID', () => {
         const registry = new CommandRegistry()
-        registry.registerCommand({ command: 'c', run: async () => void 0 })
+        registry.registerCommand({ command: 'c', run: () => Promise.resolve() })
         expect(() => {
-            registry.registerCommand({ command: 'c', run: async () => void 0 })
+            registry.registerCommand({ command: 'c', run: () => Promise.resolve() })
         }).toThrow()
     })
 
@@ -37,6 +37,7 @@ describe('CommandRegistry', () => {
         const registry = new CommandRegistry()
         registry.registerCommand({
             command: 'command1',
+            // eslint-disable-next-line require-await
             run: async arg => {
                 expect(arg).toBe(123)
                 return 456
@@ -51,6 +52,7 @@ describe('executeCommand', () => {
         const commands: CommandEntry[] = [
             {
                 command: 'command1',
+                // eslint-disable-next-line require-await
                 run: async arg => {
                     expect(arg).toBe(123)
                     return 456
@@ -61,7 +63,8 @@ describe('executeCommand', () => {
     })
 
     test('runs the specified command with no args', async () => {
-        const commands: CommandEntry[] = [{ command: 'command1', run: async arg => void 0 }]
+        // eslint-disable-next-line require-await
+        const commands: CommandEntry[] = [{ command: 'command1', run: async arg => undefined }]
         expect(await executeCommand(commands, { command: 'command1' })).toBe(undefined)
     })
 

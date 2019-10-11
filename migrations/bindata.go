@@ -225,6 +225,38 @@
 // 1528395580_create_user_permissions_table.up.sql (331B)
 // 1528395581_allows_dots_in_usernames.down.sql (349B)
 // 1528395581_allows_dots_in_usernames.up.sql (355B)
+// 1528395582_add_default_repos.down.sql (51B)
+// 1528395582_add_default_repos.up.sql (80B)
+// 1528395583_add_default_repos_primary_key.down.sql (77B)
+// 1528395583_add_default_repos_primary_key.up.sql (67B)
+// 1528395584_add_campaigns_table.down.sql (50B)
+// 1528395584_add_campaigns_table.up.sql (822B)
+// 1528395585_go-1.13-dummy-migration.down.sql (109B)
+// 1528395585_go-1.13-dummy-migration.up.sql (109B)
+// 1528395586_add_threads_table.down.sql (48B)
+// 1528395586_add_threads_table.up.sql (501B)
+// 1528395587_campaigns_threads_many_to_many_relation.down.sql (244B)
+// 1528395587_campaigns_threads_many_to_many_relation.up.sql (459B)
+// 1528395588_rename_threads_to_changesets.down.sql (774B)
+// 1528395588_rename_threads_to_changesets.up.sql (774B)
+// 1528395589_add_external_id_to_schema.down.sql (73B)
+// 1528395589_add_external_id_to_schema.up.sql (210B)
+// 1528395590_add_external_service_type_to_changesets.down.sql (85B)
+// 1528395590_add_external_service_type_to_changesets.up.sql (411B)
+// 1528395591_create_events_logging_table.down.sql (50B)
+// 1528395591_create_events_logging_table.up.sql (1.192kB)
+// 1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql (317B)
+// 1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql (1.543kB)
+// 1528395593_allows_trailing_hyphen_in_usernames.down.sql (387B)
+// 1528395593_allows_trailing_hyphen_in_usernames.up.sql (391B)
+// 1528395594_create_changeset_events_table.down.sql (56B)
+// 1528395594_create_changeset_events_table.up.sql (588B)
+// 1528395595_create_lsif_database.down.sql (236B)
+// 1528395595_create_lsif_database.up.sql (1.871kB)
+// 1528395596_lsif_xrepo_init.down.sql (418B)
+// 1528395596_lsif_xrepo_init.up.sql (1.06kB)
+// 1528395597_lsif_commits.down.sql (334B)
+// 1528395597_lsif_commits.up.sql (1.136kB)
 
 package migrations
 
@@ -4793,6 +4825,646 @@ func _1528395581_allows_dots_in_usernamesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395582_add_default_reposDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\xb6\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x99\xbc\x45\x7e\x33\x00\x00\x00")
+
+func _1528395582_add_default_reposDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_add_default_reposDownSql,
+		"1528395582_add_default_repos.down.sql",
+	)
+}
+
+func _1528395582_add_default_reposDownSql() (*asset, error) {
+	bytes, err := _1528395582_add_default_reposDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_add_default_repos.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x0, 0x2a, 0xe7, 0xbf, 0xd7, 0x54, 0xaa, 0xf0, 0x5c, 0xf6, 0x8, 0x8d, 0xc, 0x10, 0x2e, 0x31, 0x7f, 0x4, 0xda, 0x30, 0x21, 0x10, 0x84, 0x28, 0x97, 0x60, 0x79, 0x73, 0xb1, 0xcd, 0x35, 0xb3}}
+	return a, nil
+}
+
+var __1528395582_add_default_reposUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\x0e\x72\x75\x0c\x71\x55\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\xd0\xe0\xe2\x04\x31\xe2\x33\x53\x14\x3c\xfd\x42\x14\x82\x5c\xdd\x5c\x83\x5c\xfd\x9c\x5d\x83\x15\x40\xc2\x1a\x99\x29\x9a\x5c\x9a\xd6\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x90\x26\xb2\x00\x50\x00\x00\x00")
+
+func _1528395582_add_default_reposUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395582_add_default_reposUpSql,
+		"1528395582_add_default_repos.up.sql",
+	)
+}
+
+func _1528395582_add_default_reposUpSql() (*asset, error) {
+	bytes, err := _1528395582_add_default_reposUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395582_add_default_repos.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x63, 0xa, 0xbb, 0xe8, 0x7f, 0xdc, 0x5, 0xd5, 0x5a, 0xa2, 0x84, 0xcf, 0x29, 0xe4, 0x3, 0xbf, 0x83, 0xb3, 0x57, 0x5f, 0x81, 0x21, 0xd3, 0xc6, 0x40, 0x13, 0x31, 0xea, 0x63, 0xc7, 0x7c, 0x42}}
+	return a, nil
+}
+
+var __1528395583_add_default_repos_primary_keyDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x41\x95\x8d\x2f\xc8\x4e\xad\xb4\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x12\x40\xa9\x9c\x4d\x00\x00\x00")
+
+func _1528395583_add_default_repos_primary_keyDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395583_add_default_repos_primary_keyDownSql,
+		"1528395583_add_default_repos_primary_key.down.sql",
+	)
+}
+
+func _1528395583_add_default_repos_primary_keyDownSql() (*asset, error) {
+	bytes, err := _1528395583_add_default_repos_primary_keyDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395583_add_default_repos_primary_key.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9e, 0xa5, 0xbd, 0x7d, 0x25, 0xe7, 0xa7, 0x4c, 0x10, 0xb0, 0x47, 0x87, 0xd, 0xe2, 0x7d, 0x2f, 0xe5, 0xa8, 0x1f, 0xd0, 0x95, 0xf0, 0xab, 0x1f, 0xc4, 0x46, 0xf1, 0xeb, 0xef, 0x49, 0x7a, 0x78}}
+	return a, nil
+}
+
+var __1528395583_add_default_repos_primary_keyUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x49\x4d\x4b\x2c\xcd\x29\x89\x2f\x4a\x2d\xc8\x2f\x56\x70\x74\x71\x51\x08\x08\xf2\xf4\x75\x0c\x8a\x54\xf0\x76\x8d\xd4\x00\x89\xc6\x67\xa6\x68\x5a\x73\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\x6c\x18\x41\x90\x43\x00\x00\x00")
+
+func _1528395583_add_default_repos_primary_keyUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395583_add_default_repos_primary_keyUpSql,
+		"1528395583_add_default_repos_primary_key.up.sql",
+	)
+}
+
+func _1528395583_add_default_repos_primary_keyUpSql() (*asset, error) {
+	bytes, err := _1528395583_add_default_repos_primary_keyUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395583_add_default_repos_primary_key.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x2d, 0x3b, 0xcb, 0xfb, 0x2b, 0x81, 0xe3, 0x6f, 0x5f, 0x98, 0xca, 0x62, 0x50, 0x9b, 0x68, 0x76, 0x63, 0x8e, 0x59, 0x31, 0xff, 0x17, 0x75, 0x94, 0x23, 0x40, 0x9e, 0xc4, 0x19, 0x9e, 0x23, 0xa2}}
+	return a, nil
+}
+
+var __1528395584_add_campaigns_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\xb6\xe6\xe2\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x79\x07\x8c\xe4\x32\x00\x00\x00")
+
+func _1528395584_add_campaigns_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395584_add_campaigns_tableDownSql,
+		"1528395584_add_campaigns_table.down.sql",
+	)
+}
+
+func _1528395584_add_campaigns_tableDownSql() (*asset, error) {
+	bytes, err := _1528395584_add_campaigns_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395584_add_campaigns_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x31, 0x79, 0x26, 0x3d, 0x7d, 0x91, 0xf3, 0x0, 0x6d, 0x53, 0x66, 0xa3, 0x8e, 0x1e, 0xfd, 0x4b, 0x4a, 0xa9, 0xb9, 0x99, 0xed, 0x52, 0xc4, 0xd4, 0x82, 0xbe, 0x49, 0xc8, 0xf, 0x49, 0x14, 0x14}}
+	return a, nil
+}
+
+var __1528395584_add_campaigns_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xb4\x92\xcd\xea\xdb\x30\x10\xc4\xcf\xd1\x53\x6c\x6f\x36\xe4\xd2\xb3\xe9\x41\xb1\x36\xad\x88\x2c\x17\x59\x81\xe6\x64\x54\x5b\x38\x82\xfa\x03\x49\x21\xa5\x4f\x5f\xec\xb6\x71\xc0\x84\x42\xcb\xff\x28\x8d\x76\x7e\xc3\x68\x0f\xf8\x91\xcb\x8c\x90\x5c\x21\xd5\x08\x9a\x1e\x04\x42\x63\xfa\xc9\xb8\x6e\x08\x90\x90\x9d\x6b\xe1\xab\xeb\x82\xf5\xce\x7c\x83\xcf\x8a\x17\x54\x5d\xe0\x84\x97\x3d\xd9\x0d\xa6\xb7\x10\xed\xf7\x08\xb2\xd4\x20\xcf\x42\xec\x09\x40\x6b\x43\xe3\xdd\x14\xdd\x38\x2c\xe2\x7c\x67\x6e\xf1\x3a\xfa\xda\xb5\xe0\x86\x68\x3b\xeb\x1f\x13\xa0\xf0\x88\x0a\x65\x8e\x15\xdc\x82\xf5\x21\x71\x6d\x4a\x00\x00\x4a\x09\x0c\x05\x6a\x84\x9c\x56\x39\x65\x08\x6c\x7e\xaa\x96\x88\x5c\x72\xcd\xa9\x10\x17\xe0\x45\x81\x8c\x53\x8d\x33\x67\x4e\x14\x26\xd3\xd8\x7a\xf6\x7a\xe6\xbd\x11\x66\xf4\xdd\x0b\xca\xe8\xbb\xff\x83\x34\xde\x9a\x68\xdb\xda\x44\x88\xae\xb7\x21\x9a\x7e\x82\xbb\x8b\xd7\xe5\x08\x3f\xc6\xc1\xae\x2d\x32\x3c\xd2\xb3\xd0\x30\x8c\xf7\x24\x9d\xa7\x6f\x53\xfb\x8f\xd3\x24\xcd\x08\xa1\x42\xa3\xda\xac\x03\x65\x0c\xf2\x52\x56\x5a\x51\x2e\xf5\x2a\xd4\x57\x13\xea\xf7\xf5\xa3\x16\x92\x7f\xc2\xfc\x04\x49\xb2\xfd\x0f\x5e\x2d\xc8\x14\xde\x7d\x80\x64\xd3\xe3\x1f\x35\x5d\x57\x92\x4b\x86\x5f\x9e\x50\x5b\xcb\x52\xae\xf2\x96\x98\x66\x7f\x77\xfa\x4d\x7f\x61\xf4\x4b\x5d\x22\x95\x45\xc1\x75\x46\x7e\x06\x00\x00\xff\xff\xd3\xe6\x6c\x45\x36\x03\x00\x00")
+
+func _1528395584_add_campaigns_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395584_add_campaigns_tableUpSql,
+		"1528395584_add_campaigns_table.up.sql",
+	)
+}
+
+func _1528395584_add_campaigns_tableUpSql() (*asset, error) {
+	bytes, err := _1528395584_add_campaigns_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395584_add_campaigns_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x96, 0x43, 0xb, 0xba, 0xae, 0x83, 0xfa, 0xb5, 0x39, 0x5e, 0x64, 0x40, 0xc5, 0xb8, 0xf, 0xf4, 0xeb, 0xff, 0x1, 0x9d, 0xad, 0x72, 0x94, 0xfe, 0xfd, 0x25, 0xaa, 0xa, 0xc8, 0xf6, 0x63, 0xf9}}
+	return a, nil
+}
+
+var __1528395585_go113DummyMigrationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xc6\xbd\x0e\xc2\x20\x10\x00\xe0\xdd\xa7\xb8\xc4\x19\x31\xb4\x1d\xea\xee\x83\x20\x12\x20\xf6\xb8\xcb\xfd\xc4\xf8\xf6\xce\xdd\xbe\x10\xe0\x89\x6c\x3f\xc0\xd1\x24\xdb\xa0\x09\x46\xf0\x25\xf9\x64\x21\x9f\x6f\xe8\x66\xac\x8f\x18\xdb\xb0\xee\xaf\x5b\x21\x8c\x4a\x2e\xa5\x36\xc9\xdc\x4f\x66\x3f\x8e\xb8\xad\x7b\xba\x0e\x55\xaf\x85\x10\xeb\xb4\xb0\xa5\xfd\x9e\xd6\xb4\x2c\x97\x7f\x00\x00\x00\xff\xff\x54\xa6\x6d\x03\x6d\x00\x00\x00")
+
+func _1528395585_go113DummyMigrationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_go113DummyMigrationDownSql,
+		"1528395585_go-1.13-dummy-migration.down.sql",
+	)
+}
+
+func _1528395585_go113DummyMigrationDownSql() (*asset, error) {
+	bytes, err := _1528395585_go113DummyMigrationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_go-1.13-dummy-migration.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4e, 0xc1, 0xe7, 0x92, 0x39, 0xb1, 0x7d, 0x39, 0x45, 0x6c, 0xa0, 0x14, 0x5b, 0x25, 0xae, 0xfd, 0xc5, 0x4b, 0x81, 0x4, 0x5, 0x4e, 0xca, 0x35, 0x9a, 0xfd, 0x26, 0x73, 0x58, 0x8a, 0x28, 0xf4}}
+	return a, nil
+}
+
+var __1528395585_go113DummyMigrationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xc6\xbd\x0e\xc2\x20\x10\x00\xe0\xdd\xa7\xb8\xc4\x19\x31\xb4\x1d\xea\xee\x83\x20\x12\x20\xf6\xb8\xcb\xfd\xc4\xf8\xf6\xce\xdd\xbe\x10\xe0\x89\x6c\x3f\xc0\xd1\x24\xdb\xa0\x09\x46\xf0\x25\xf9\x64\x21\x9f\x6f\xe8\x66\xac\x8f\x18\xdb\xb0\xee\xaf\x5b\x21\x8c\x4a\x2e\xa5\x36\xc9\xdc\x4f\x66\x3f\x8e\xb8\xad\x7b\xba\x0e\x55\xaf\x85\x10\xeb\xb4\xb0\xa5\xfd\x9e\xd6\xb4\x2c\x97\x7f\x00\x00\x00\xff\xff\x54\xa6\x6d\x03\x6d\x00\x00\x00")
+
+func _1528395585_go113DummyMigrationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395585_go113DummyMigrationUpSql,
+		"1528395585_go-1.13-dummy-migration.up.sql",
+	)
+}
+
+func _1528395585_go113DummyMigrationUpSql() (*asset, error) {
+	bytes, err := _1528395585_go113DummyMigrationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395585_go-1.13-dummy-migration.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4e, 0xc1, 0xe7, 0x92, 0x39, 0xb1, 0x7d, 0x39, 0x45, 0x6c, 0xa0, 0x14, 0x5b, 0x25, 0xae, 0xfd, 0xc5, 0x4b, 0x81, 0x4, 0x5, 0x4e, 0xca, 0x35, 0x9a, 0xfd, 0x26, 0x73, 0x58, 0x8a, 0x28, 0xf4}}
+	return a, nil
+}
+
+var __1528395586_add_threads_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\xc9\x28\x4a\x4d\x4c\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\xe2\x02\x04\x00\x00\xff\xff\xc5\x1a\x35\x21\x30\x00\x00\x00")
+
+func _1528395586_add_threads_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395586_add_threads_tableDownSql,
+		"1528395586_add_threads_table.down.sql",
+	)
+}
+
+func _1528395586_add_threads_tableDownSql() (*asset, error) {
+	bytes, err := _1528395586_add_threads_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395586_add_threads_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb3, 0xee, 0x7, 0x50, 0x1f, 0x3d, 0x9, 0xf, 0x77, 0xa4, 0xc9, 0xb, 0xd3, 0xc4, 0x5a, 0x13, 0xe6, 0x1d, 0xae, 0x4f, 0x50, 0x45, 0xb0, 0x22, 0xe3, 0x97, 0xc2, 0x97, 0x2, 0x0, 0x7f, 0x8b}}
+	return a, nil
+}
+
+var __1528395586_add_threads_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x91\xc1\x4a\xc3\x40\x10\x86\xef\xfb\x14\xff\x2d\x09\xf8\x06\xc5\xc3\x36\x99\xea\xd2\x4d\x2a\xc9\x16\xec\xa9\x6c\xbb\x63\xbb\xc5\x64\x43\xb2\x52\x54\x7c\x77\x49\x45\x3d\x78\xf0\xd0\xe3\xc0\xf7\xcd\x37\x30\x73\xba\x53\xd5\x4c\x88\xbc\x26\x69\x08\x46\xce\x35\x41\x2d\x50\xad\x0c\xe8\x51\x35\xa6\x41\x3c\x0e\x6c\xdd\x88\x54\x00\xde\x61\xe7\x0f\x23\x0f\xde\x3e\xe3\xa1\x56\xa5\xac\x37\x58\xd2\xe6\x46\x00\x7b\xdb\xf6\xd6\x1f\xba\xad\x77\xf0\x5d\xe4\x03\x0f\x97\x35\xd5\x5a\x6b\xd4\xb4\xa0\x9a\xaa\x9c\x9a\x1f\x6e\x4c\xbd\xcb\x04\x00\xac\x2a\x14\xa4\xc9\x10\x72\xd9\xe4\xb2\x20\x14\x13\x5e\x7f\x1d\x53\x29\xa3\xa4\xd6\x1b\xa8\xb2\xa4\x42\x49\x43\x53\x6d\xe0\x3e\xfc\x57\x9a\x98\xab\x22\xfb\x81\x6d\x64\xb7\xb5\x11\xd1\xb7\x3c\x46\xdb\xf6\x38\xfb\x78\xbc\x8c\x78\x0b\x1d\xff\x86\x0b\x5a\xc8\xb5\x36\xe8\xc2\x39\xcd\x26\xfb\xa5\x77\x57\xd8\x2d\x47\xeb\x6c\xb4\x38\x8d\xa1\xdb\xfd\x05\x93\xf7\x8f\x04\xf9\x3d\xe5\x4b\xa4\x17\x64\x1b\x5f\x7b\x0e\x4f\xe9\xb7\x98\xe1\x16\x49\xd8\x9d\x78\x1f\x93\x4c\x64\xd3\x93\x57\x65\xa9\xcc\x4c\x7c\x06\x00\x00\xff\xff\x26\x9a\xa4\x9d\xf5\x01\x00\x00")
+
+func _1528395586_add_threads_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395586_add_threads_tableUpSql,
+		"1528395586_add_threads_table.up.sql",
+	)
+}
+
+func _1528395586_add_threads_tableUpSql() (*asset, error) {
+	bytes, err := _1528395586_add_threads_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395586_add_threads_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x48, 0xeb, 0x2e, 0x32, 0x44, 0x7a, 0x2d, 0x4c, 0x46, 0x2c, 0xf6, 0x70, 0x9c, 0x27, 0x7f, 0x90, 0xec, 0xba, 0x90, 0x3e, 0x6e, 0x98, 0x90, 0xb4, 0x6f, 0xe8, 0x25, 0x59, 0xca, 0x6a, 0x26, 0xbf}}
+	return a, nil
+}
+
+var __1528395587_campaigns_threads_many_to_many_relationDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\xce\xb1\x8a\xc3\x30\x10\x04\xd0\x5e\x5f\xb1\xe5\xdd\x37\xa8\x92\xb5\x7b\xc7\xc2\x6a\x75\xc8\xeb\xe2\xaa\x60\x62\xe3\xa8\x88\x09\xb6\xff\x9f\x90\x84\x10\x0c\x49\x3b\x3c\x66\xa6\xa1\x5f\x56\xef\x5c\x10\xa3\x02\x16\x1a\x21\x38\xf6\xe7\x4b\x5f\xa7\x79\x05\x2c\xf9\x0f\x62\x96\x2e\x29\x6c\xa7\x65\xec\x87\x43\x1d\x56\xbf\xd3\x8f\x7c\x6f\x9f\x0d\x9f\x75\x40\x7c\x83\xa1\xce\xdb\x38\x8d\x8b\xd3\x6c\xa0\x9d\x08\x14\xfa\xa1\x42\x1a\xa9\x7d\xdd\xfa\xaa\xc3\x37\x64\x05\x24\x21\x23\x17\x43\x1b\x03\x12\xe0\x8d\x96\xfb\x0a\x2b\x1b\x07\x91\x7f\xe0\x94\x08\x39\x18\x79\xe7\x62\x4e\x89\xcd\xbb\x6b\x00\x00\x00\xff\xff\xce\xa5\x53\xac\xf4\x00\x00\x00")
+
+func _1528395587_campaigns_threads_many_to_many_relationDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395587_campaigns_threads_many_to_many_relationDownSql,
+		"1528395587_campaigns_threads_many_to_many_relation.down.sql",
+	)
+}
+
+func _1528395587_campaigns_threads_many_to_many_relationDownSql() (*asset, error) {
+	bytes, err := _1528395587_campaigns_threads_many_to_many_relationDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395587_campaigns_threads_many_to_many_relation.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9d, 0x55, 0xa2, 0xda, 0x44, 0xaf, 0x38, 0xf4, 0xa6, 0xd9, 0x5d, 0x62, 0x92, 0x11, 0xe5, 0x84, 0xc2, 0x61, 0xba, 0x98, 0x73, 0x2f, 0x9e, 0xaa, 0x38, 0xcf, 0x84, 0x78, 0x5b, 0x58, 0x94, 0x9c}}
+	return a, nil
+}
+
+var __1528395587_campaigns_threads_many_to_many_relationUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x8f\xc1\x4a\xc4\x30\x18\x84\xef\x79\x8a\xb9\x75\xf7\x19\x8a\x87\x6c\xf3\x5b\x83\xe9\x1f\xa9\x29\x78\x0b\xdd\x6d\x5d\xb3\x60\xbb\x98\x1e\x14\xf1\xdd\x45\xdd\x25\x51\x44\xf0\x3c\x33\xdf\xf0\x6d\xa8\xd6\x5c\x0a\x21\x8d\xa3\x16\x4e\x6e\x0c\x61\xd7\x3f\x1e\xfb\xb0\x9f\x22\xa4\x52\xa8\xac\xe9\x1a\xc6\xf2\xf0\x34\xf6\x83\x0f\x43\xc4\x21\xce\xd3\x56\xb0\x75\xe0\xce\x18\x28\xba\x94\x9d\x71\x28\x5e\xdf\x0a\x54\x57\x54\x5d\x63\xf5\x59\xf1\xcb\xcb\x71\x9c\xef\x57\x69\xba\xc6\x05\x8a\x79\x7b\x18\x77\x4b\xb1\x2e\x85\xa8\x5a\x92\x8e\xa0\x59\xd1\x5d\xba\xf5\x69\xe0\xf7\x61\xf2\x61\x78\x86\xe5\x94\x8b\xee\x56\x73\x8d\x5a\x33\x72\xf6\x0f\x8b\xaf\x24\x42\xb5\xf6\xe6\x2c\x71\x46\xf8\x30\x94\xbf\x96\x33\xe1\xac\xfb\x7f\xe5\x7c\xfc\xa7\xf4\xe9\xd8\xe7\x83\x5c\xfa\x94\xe7\xca\xdf\xd8\x1f\x3c\xdb\x34\xda\x95\xe2\x3d\x00\x00\xff\xff\x6f\xd6\xf7\xb6\xcb\x01\x00\x00")
+
+func _1528395587_campaigns_threads_many_to_many_relationUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395587_campaigns_threads_many_to_many_relationUpSql,
+		"1528395587_campaigns_threads_many_to_many_relation.up.sql",
+	)
+}
+
+func _1528395587_campaigns_threads_many_to_many_relationUpSql() (*asset, error) {
+	bytes, err := _1528395587_campaigns_threads_many_to_many_relationUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395587_campaigns_threads_many_to_many_relation.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8b, 0x81, 0x6, 0x8e, 0xf9, 0x87, 0x1d, 0x9e, 0x0, 0x50, 0x7d, 0x4b, 0x74, 0x74, 0x9b, 0xfa, 0x8b, 0xda, 0xf7, 0xdb, 0x38, 0x9f, 0x53, 0x8e, 0x3c, 0x74, 0x40, 0xa4, 0xbb, 0xf, 0x35, 0x94}}
+	return a, nil
+}
+
+var __1528395588_rename_threads_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x92\xdd\x6a\xdc\x30\x10\x85\xef\xf5\x14\x73\xb7\x36\xf4\x0d\x4c\x2f\x14\x7b\xb6\x15\x91\xe5\x20\x6b\x21\x7b\x65\xb4\x96\x6a\x2b\xad\x7f\xb0\x54\xd2\x1f\xfa\xee\xc5\xea\x1a\x27\x94\xa5\xd0\x5c\x0a\x9d\xf9\x66\xe6\x9c\xb9\xc3\x0f\x4c\x64\x84\x14\xb2\x7a\x00\x45\xef\x38\x02\x3b\x02\x3e\xb2\x5a\xd5\xd0\xf6\x7a\xec\xac\xb7\xc1\x67\x84\xe4\x12\xa9\xc2\x5d\x23\x2a\xb5\xe9\x42\xbf\x58\x6d\x3c\x24\x04\xc0\x19\xb8\xb8\xce\xdb\xc5\xe9\x2f\xf0\x20\x59\x49\xe5\x19\xee\xf1\xfc\x8e\x00\xb4\x7a\x98\xb5\xeb\xc6\xc6\x19\x0f\x4f\x7e\x1a\x2f\x91\x22\x4e\x9c\x43\x81\x47\x7a\xe2\x0a\x0e\x3f\x7f\x1d\x08\x00\x40\xfe\x11\xf3\x7b\x48\xa2\xac\x09\xdf\x67\x3b\x7d\x4a\x5e\x02\x52\x78\x0f\x87\xe9\xf2\x64\xdb\x70\x48\x57\xfa\x62\xe7\xa9\x71\x06\xdc\x18\x6c\x67\x97\x1d\x2d\xf1\x88\x12\x45\x8e\x75\xd4\x24\xce\xa4\xb1\x43\x25\xa0\x40\x8e\x0a\x21\xa7\x75\x4e\x0b\x5c\x87\x40\x29\xff\x6c\x28\x98\x62\x94\xf3\x33\xb0\xb2\xc4\x82\x51\x85\x71\x85\xc5\xea\x60\x4d\xa3\x03\x04\x37\x58\x1f\xf4\x30\xc3\xb3\x0b\x7d\x7c\xc2\x8f\x69\xb4\x7f\xef\x34\x4e\xcf\x49\x1c\xf1\xeb\x6c\xde\x50\x3d\xd8\xa0\x8d\x0e\xfa\xbf\xac\xdb\x8a\x5f\xd9\x46\xd2\x8c\x10\xca\x15\xca\x6b\xae\x9b\xc1\x1e\x24\x0a\x5a\x22\xe4\x15\x3f\x95\x62\xbf\x84\x18\x9d\xaa\xae\x91\xaf\xaf\xec\x0a\x60\xa2\xc0\xc7\x1d\xd0\xbc\x2a\x69\x3a\xb7\x86\xf6\x6d\xc3\xaa\xea\x85\x72\x67\x6d\xb2\xec\x5f\x43\x89\x5a\x49\xca\x84\xba\xd9\xaf\xed\x6d\xfb\xf9\x66\x9b\xf8\xbb\xde\x74\x55\x96\x4c\x65\xe4\x77\x00\x00\x00\xff\xff\xbd\x66\xa7\x6c\x06\x03\x00\x00")
+
+func _1528395588_rename_threads_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395588_rename_threads_to_changesetsDownSql,
+		"1528395588_rename_threads_to_changesets.down.sql",
+	)
+}
+
+func _1528395588_rename_threads_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395588_rename_threads_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395588_rename_threads_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4e, 0x36, 0x6e, 0x55, 0x8, 0x10, 0x74, 0xed, 0x21, 0x51, 0xa3, 0x2b, 0x37, 0xad, 0xea, 0x69, 0xd6, 0x50, 0xd9, 0x37, 0xe0, 0x4b, 0x31, 0xf7, 0x38, 0xf9, 0xf8, 0xe0, 0x99, 0xde, 0xde, 0x3d}}
+	return a, nil
+}
+
+var __1528395588_rename_threads_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x92\xdd\x8e\x94\x30\x14\xc7\xef\xfb\x14\xe7\x6e\x20\xf1\x0d\x88\x17\x5d\x38\xa3\xcd\x96\xb2\x29\x9d\x64\xe7\x8a\x74\x68\x85\xae\xf2\x11\x5a\xb3\x7e\xc4\x77\x37\xd4\x41\x9c\x68\x34\x71\x2f\x21\xbf\xf3\x3b\x1f\xff\xde\xe1\x1b\x26\x32\x42\x0a\x59\x3d\x80\xa2\x77\x1c\x81\x1d\x01\x1f\x59\xad\x6a\x08\xfd\x62\xb5\xf1\x19\x21\xb9\x44\xaa\x70\x07\x44\xa5\x36\xa8\xed\xf5\xd8\x59\x6f\x83\x87\x84\x00\x38\x03\x17\xd7\x79\xbb\x38\xfd\x01\x1e\x24\x2b\xa9\x3c\xc3\x3d\x9e\x5f\x11\x80\x56\x0f\xb3\x76\xdd\xd8\x38\xe3\xe1\xc9\x4f\xe3\x25\x8a\xc4\x89\x73\x28\xf0\x48\x4f\x5c\xc1\xe1\xeb\xb7\x03\x01\x00\xc8\xdf\x62\x7e\x0f\x49\xc4\x9a\xf0\x79\xb6\xd3\xbb\xe4\x57\x41\x0a\xaf\xe1\x30\x5d\x9e\x6c\x1b\x0e\xe9\x6a\x5f\xec\x3c\x35\xce\x80\x1b\x83\xed\xec\xb2\xab\x25\x1e\x51\xa2\xc8\xb1\x8e\x4c\xe2\x4c\x1a\x3b\x54\x02\x0a\xe4\xa8\x10\x72\x5a\xe7\xb4\xc0\x75\x08\x94\xf2\xc7\x92\x82\x29\x46\x39\x3f\x03\x2b\x4b\x2c\x18\x55\x18\x57\x58\xac\x0e\xd6\x34\x3a\x40\x70\x83\xf5\x41\x0f\x33\x3c\xbb\xd0\xc7\x4f\xf8\x32\x8d\xf6\xf7\x9d\xc6\xe9\x39\x89\x23\x7e\x9c\xcd\x0b\xaa\x07\x1b\xb4\xd1\x41\xff\xd7\xe9\xb6\xe2\x9b\xb3\x91\x34\x23\x84\x72\x85\xf2\x1a\xed\x76\x60\x0f\x12\x05\x2d\x11\xf2\x8a\x9f\x4a\x71\x7d\x09\x31\x37\x55\xed\x91\xaf\x3f\xb2\xab\x80\x89\x02\x1f\x77\x41\xb3\x97\x34\x9d\x5b\x13\xfb\xb4\x39\x57\xc3\x4f\xec\xc6\xb5\x91\xd9\xbf\x86\x12\xb5\x92\x94\x09\xf5\xe7\x7e\x6d\x6f\xdb\xf7\x7f\x6b\x13\x81\xf5\x59\x57\x65\xc9\x54\x46\xbe\x07\x00\x00\xff\xff\xaf\xef\x0a\xba\x06\x03\x00\x00")
+
+func _1528395588_rename_threads_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395588_rename_threads_to_changesetsUpSql,
+		"1528395588_rename_threads_to_changesets.up.sql",
+	)
+}
+
+func _1528395588_rename_threads_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395588_rename_threads_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395588_rename_threads_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4e, 0xc3, 0x4a, 0x96, 0x2e, 0x14, 0x41, 0xf1, 0x3f, 0xfe, 0x85, 0x3e, 0x25, 0x8c, 0xb0, 0x36, 0x89, 0xd9, 0x2e, 0x9b, 0x90, 0xec, 0x39, 0x73, 0xd7, 0xce, 0xdd, 0x81, 0x63, 0x4d, 0xb9, 0x66}}
+	return a, nil
+}
+
+var __1528395589_add_external_id_to_schemaDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\xcf\x4c\xb1\xe6\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x00\xbc\x36\x3c\x49\x00\x00\x00")
+
+func _1528395589_add_external_id_to_schemaDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395589_add_external_id_to_schemaDownSql,
+		"1528395589_add_external_id_to_schema.down.sql",
+	)
+}
+
+func _1528395589_add_external_id_to_schemaDownSql() (*asset, error) {
+	bytes, err := _1528395589_add_external_id_to_schemaDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395589_add_external_id_to_schema.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3d, 0x6e, 0xf8, 0x41, 0x13, 0xcb, 0xd8, 0xd1, 0x14, 0x7a, 0x9a, 0x7b, 0x46, 0x4a, 0x25, 0x3e, 0x43, 0x76, 0x28, 0x59, 0x0, 0x7f, 0x8c, 0xf1, 0xaa, 0x1, 0x3c, 0xf4, 0x2d, 0x9d, 0x85, 0xe8}}
+	return a, nil
+}
+
+var __1528395589_add_external_id_to_schemaUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\xce\x41\x0b\x82\x30\x18\xc6\xf1\xfb\x3e\xc5\xd3\x49\x85\xbe\x81\x74\x98\x73\xd4\x68\xbe\x92\x6d\xe7\x21\xf9\x52\x42\x58\xe9\x04\x3f\x7e\xd0\x69\xb7\xce\xcf\x9f\x1f\x4f\xa5\x8f\x86\x4a\x21\xad\xd3\x1d\x9c\xac\xac\xc6\xed\xd1\x4f\x77\x5e\x38\x2e\x90\x75\x0d\xd5\x5a\xdf\x10\x78\x8b\x3c\x4f\xfd\x33\x8c\x03\x22\x6f\x51\x00\xd4\x3a\x90\xb7\x16\xea\xa4\xd5\x19\x79\x9a\xec\x0e\xc8\xb2\xe2\x0f\x4c\x57\xd7\x49\x43\x2e\x59\xc2\xcc\xef\x57\x48\xa4\xb0\x4e\xe3\x67\x65\x01\x78\x32\x17\xaf\x91\xff\x8a\x71\xd8\xa7\x97\x8a\x52\xa8\xb6\x69\x8c\x2b\xc5\x37\x00\x00\xff\xff\xf1\x46\x06\x77\xd2\x00\x00\x00")
+
+func _1528395589_add_external_id_to_schemaUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395589_add_external_id_to_schemaUpSql,
+		"1528395589_add_external_id_to_schema.up.sql",
+	)
+}
+
+func _1528395589_add_external_id_to_schemaUpSql() (*asset, error) {
+	bytes, err := _1528395589_add_external_id_to_schemaUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395589_add_external_id_to_schema.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd7, 0xe6, 0xe9, 0xeb, 0x0, 0xb9, 0xd7, 0x45, 0xea, 0x9d, 0x7c, 0xa, 0xe5, 0x6f, 0x5e, 0xd8, 0x62, 0xb8, 0x2, 0xab, 0x32, 0xd4, 0xc, 0x70, 0x66, 0x46, 0x3d, 0xb9, 0x3b, 0xf5, 0x9e, 0x85}}
+	return a, nil
+}
+
+var __1528395590_add_external_service_type_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x4e\x2d\x2a\xcb\x4c\x4e\x8d\x2f\xa9\x2c\x48\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xce\xd0\xd0\x12\x55\x00\x00\x00")
+
+func _1528395590_add_external_service_type_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395590_add_external_service_type_to_changesetsDownSql,
+		"1528395590_add_external_service_type_to_changesets.down.sql",
+	)
+}
+
+func _1528395590_add_external_service_type_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395590_add_external_service_type_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395590_add_external_service_type_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x87, 0x82, 0xd5, 0xd3, 0x24, 0x73, 0x8d, 0x1e, 0xce, 0x3e, 0x50, 0x55, 0x73, 0x18, 0xa9, 0x66, 0x6a, 0x32, 0xa0, 0x2e, 0xb1, 0xcc, 0xb7, 0xdc, 0x1, 0x3a, 0xc4, 0xc9, 0xbe, 0xda, 0x1a, 0xe7}}
+	return a, nil
+}
+
+var __1528395590_add_external_service_type_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x90\xc1\x4e\xc3\x30\x10\x44\xef\xfb\x15\xc3\xa9\x70\xc9\x0f\x44\x39\xb8\x89\x81\x80\x63\xa3\x64\x73\xb6\x42\xba\x82\x88\xca\xad\x62\x0b\x95\xbf\x47\x14\x55\xca\x21\xed\xcd\xd6\xd3\x1b\xcd\xec\x56\x3f\xd5\x36\x27\x52\x86\x75\x0b\x56\x5b\xa3\x31\x7e\x0e\xe1\x43\xa2\xa4\x08\x55\x55\x28\x9d\xe9\x1b\x0b\x39\x25\x99\xc3\xb0\xf7\x51\xe6\xef\x69\x14\x9f\x7e\x8e\x82\x24\xa7\x94\x13\xf5\x6f\x95\xe2\xa5\x49\x9d\x66\xc2\x15\xa9\xc0\x2c\xc7\x43\xb6\x0a\xe9\xb1\x75\xcd\xb2\xc2\x18\xe9\xc5\xd5\x96\x70\x96\xc8\x5d\x5e\xd9\xb4\x43\x81\x31\x66\x7f\x1f\x3f\xed\xae\x8e\x20\xe0\x1f\xdc\x1c\xd2\x69\x86\x75\x0c\xdb\x1b\x73\x33\xea\x7c\x11\xdb\x71\xab\x6a\xcb\x0b\xe6\x57\x73\x7d\x38\x24\xff\xbe\x1f\xc2\x17\x01\xe5\xb3\x2e\x5f\x71\xbf\x5e\xe0\xae\xc0\x66\xf3\x90\x13\x95\xae\x69\x6a\xce\xe9\x37\x00\x00\xff\xff\xd5\xb9\xa6\x5b\x9b\x01\x00\x00")
+
+func _1528395590_add_external_service_type_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395590_add_external_service_type_to_changesetsUpSql,
+		"1528395590_add_external_service_type_to_changesets.up.sql",
+	)
+}
+
+func _1528395590_add_external_service_type_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395590_add_external_service_type_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395590_add_external_service_type_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4f, 0x1c, 0x6f, 0xfb, 0xb3, 0x47, 0x7c, 0xe9, 0x6b, 0xa9, 0x1b, 0x8c, 0xdb, 0x8e, 0xe7, 0x24, 0x8a, 0xf, 0x59, 0x9c, 0xa8, 0xad, 0xdf, 0x33, 0x6e, 0x3a, 0x40, 0xb4, 0xac, 0x5a, 0x8e, 0x20}}
+	return a, nil
+}
+
+var __1528395591_create_events_logging_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x2d\x4b\xcd\x2b\x89\xcf\xc9\x4f\x2f\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xfd\xdb\xa4\x84\x32\x00\x00\x00")
+
+func _1528395591_create_events_logging_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395591_create_events_logging_tableDownSql,
+		"1528395591_create_events_logging_table.down.sql",
+	)
+}
+
+func _1528395591_create_events_logging_tableDownSql() (*asset, error) {
+	bytes, err := _1528395591_create_events_logging_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395591_create_events_logging_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x7c, 0x55, 0xd, 0xe0, 0x3a, 0x6, 0x9, 0x6e, 0xf6, 0x44, 0x4b, 0x3a, 0x6, 0x1f, 0x74, 0x63, 0x63, 0x1b, 0x18, 0xd9, 0x2b, 0xa7, 0x33, 0x6c, 0x25, 0x98, 0x50, 0xa, 0x95, 0x57, 0xcc, 0xd2}}
+	return a, nil
+}
+
+var __1528395591_create_events_logging_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x93\xcd\x6e\xc2\x30\x10\x84\xef\x79\x8a\xed\x89\x44\xea\xa1\xf7\x88\x83\x49\xb6\x60\x91\x38\xc8\x18\x15\x7a\xb1\x22\x6a\x01\x2a\xb1\x51\x7e\xa8\x78\xfb\x8a\x84\x40\x20\x50\x54\xe0\xc6\x32\xf3\xd9\xec\x8c\x7b\xd8\xa7\xcc\xb5\x2c\x8f\x23\x11\x08\x82\xf4\x02\x04\xb5\x55\x3a\x97\x6b\xb3\xc8\xc0\xb6\x00\x00\x56\x5f\xd0\xfa\xf4\x68\x7f\x8c\x9c\x92\x00\x58\x24\x80\x4d\x82\x00\x46\x9c\x86\x84\xcf\x60\x88\xb3\xd7\xd2\xa7\xe3\x44\x5d\xfa\x04\x4e\xc5\xd1\x52\xc9\x8a\x74\xdd\xc2\x5f\x93\x65\x2a\x95\x17\x57\xa1\x4c\x60\x1f\xf9\x85\x32\xd6\x46\xef\x12\x53\x64\xf2\xe4\xb9\x02\xcc\x4c\x91\xce\xd5\xdd\x73\xe3\x74\x51\x24\x4a\xe7\x77\x64\x5b\x95\x66\x2b\xa3\xef\xd1\xf2\x55\xa2\xb2\x3c\x4e\x36\x4d\x19\x0d\x71\x2c\x48\x38\x82\x0f\x2a\x06\xe5\x57\xf8\x8c\x18\x9e\x56\xeb\xe3\x3b\x99\x04\x02\xb4\xf9\xb1\x1d\xcb\x71\x2d\x8b\x04\x02\x79\x3b\x30\xe2\xfb\xe0\x45\x6c\x2c\x38\xa1\x4c\x34\x7e\x91\xf3\xa5\x9a\x7f\xcb\x7d\x24\x52\x9b\x5c\xaa\x64\x93\xef\xc0\x1b\xa0\x37\x04\xbb\x0c\xea\xa5\x0b\x9d\x8e\xe3\x3e\x4a\x2e\xd2\x75\x1b\xbc\x8f\xf6\x49\xee\x32\xae\x62\xac\x91\x76\x9d\x69\x17\xde\x80\x30\xff\x4a\xda\xd5\x89\x10\x71\xb0\x1b\xa3\x5b\xea\x7f\x89\x2b\xf4\xe3\xff\xa6\xea\x5c\x7b\x51\x87\x2e\x3e\xb9\xab\x43\x07\xdb\xf8\xba\x9c\x35\xbf\x7e\xf0\x94\xf9\x38\x6d\x72\xca\x26\x44\xac\x31\x2a\xcb\xe1\xb8\x37\x1d\xf5\x66\xce\x4d\x87\xe9\x1f\xbe\xd3\x43\x38\x77\x1e\xe7\xe5\x35\xa3\x30\xa4\xc2\xb5\x7e\x03\x00\x00\xff\xff\x35\x8a\xe2\x67\xa8\x04\x00\x00")
+
+func _1528395591_create_events_logging_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395591_create_events_logging_tableUpSql,
+		"1528395591_create_events_logging_table.up.sql",
+	)
+}
+
+func _1528395591_create_events_logging_tableUpSql() (*asset, error) {
+	bytes, err := _1528395591_create_events_logging_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395591_create_events_logging_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xde, 0x6c, 0x17, 0xb3, 0x52, 0x73, 0xe6, 0xad, 0x6f, 0x9, 0xc1, 0x31, 0x56, 0x7c, 0x56, 0x3a, 0xf, 0xff, 0x97, 0x1, 0x63, 0x61, 0x1b, 0x5a, 0x30, 0xb7, 0x9c, 0xb, 0x29, 0x69, 0xdc, 0x9f}}
+	return a, nil
+}
+
+var __1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xce\xb1\x0a\xc2\x30\x10\xc6\xf1\xbd\x4f\x71\xa3\x3e\x43\x36\x6b\x1a\x6e\x68\x22\x69\x04\xb7\x23\xc4\x33\x16\x34\x4a\x92\xf7\x47\xa8\x5a\xc4\xa5\xdd\xbf\xef\xc7\x7f\x27\x15\x6a\xd1\x34\x7b\x6b\x0e\xe0\x2c\x2a\x25\x2d\x60\x07\xf2\x84\x83\x1b\xa0\xe6\x31\xd2\x99\x6f\x5c\x99\xc2\xd5\xa7\xc8\x85\x2b\x65\xbe\x70\xe6\x14\x98\x1e\x89\x82\xbf\x3f\xfd\x18\x53\x01\xa3\x61\xde\x14\xf1\x26\xbb\xa3\x6e\x1d\x1a\xfd\x63\xae\xe4\x36\xdb\x95\x59\x9f\xc3\x1f\x33\x87\x4c\x59\x5f\x74\xb9\x6a\x41\x9b\xaa\x5a\xd3\xf7\xe8\x44\xf3\x0a\x00\x00\xff\xff\x33\x26\x4d\x17\x3d\x01\x00\x00")
+
+func _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql,
+		"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql",
+	)
+}
+
+func _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x25, 0xe0, 0x17, 0x4f, 0xc, 0x5a, 0x1c, 0x39, 0x5, 0xbc, 0x35, 0x67, 0x91, 0x43, 0xb5, 0xb0, 0x64, 0xcc, 0xcf, 0xb7, 0x10, 0x96, 0xf9, 0xab, 0x31, 0x6d, 0xc6, 0x9e, 0x6f, 0x2a, 0xcc, 0x9d}}
+	return a, nil
+}
+
+var __1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\x93\xc1\x8e\xda\x30\x10\x86\xef\x7e\x8a\xff\xb0\x87\xf6\x00\x0f\x40\x54\x55\x69\x32\x64\x23\xb1\x31\x72\x1c\xb1\xb7\x04\xc1\x2c\x44\x82\x84\x26\xe9\xb6\x8f\x5f\x39\x0b\x0e\xb4\x4b\xe3\x2e\x27\xf0\xcc\x7c\xf6\x0c\xf3\x7d\xa3\x28\x4e\x3c\x21\x26\x13\xac\xf6\x5c\xe1\x27\x63\xcb\x07\xee\x18\x6b\x14\x9b\xfd\xba\xda\x71\xcb\x5d\x61\xce\x1b\x3e\xd6\xaf\x8c\xb2\x6b\x11\x87\x78\x69\xea\x23\xba\x3d\x5f\x65\xe5\xe5\xb6\x2d\x0c\x69\x53\x1f\x7e\x1c\x2b\xd4\x15\x8a\xcd\xfa\x78\x5a\x97\xbb\xaa\x2d\x84\x08\x14\xf9\x9a\x20\x15\x14\x2d\x17\x7e\x40\x98\x67\x49\xa0\x63\x99\x9c\xef\xcc\x07\x54\xc3\x2f\xdc\x70\xb5\xe1\xbc\xae\x72\x0b\xf9\xf4\x59\x00\x80\x22\x9d\xa9\x24\x85\x56\x71\x14\x91\x82\x9f\x8a\x07\x47\xc2\x43\x0f\xe8\xbb\xee\xbf\x99\x4f\xb6\x0c\x7d\x4d\xf6\x27\x60\xb3\xed\x59\x4a\xfa\x3a\x7e\xdd\x31\xbe\x0c\xf9\xd3\xdb\xc8\x04\x72\x11\x4e\xcb\xed\x6c\xd6\xf1\xaf\xce\x02\x56\x8f\xa4\xde\xbd\xee\x8f\xf2\xaf\x37\xe5\x9e\xb0\x25\x6f\xfd\x9b\xa8\xd7\x9f\x51\x12\x7a\xee\x13\xc0\xc2\x4f\xa2\xcc\x8f\x08\xa7\xc3\x69\xd7\x7e\x3f\x78\x42\x84\x4a\x2e\xed\x38\xe3\x39\xe8\x39\x4e\x75\x8a\xae\x29\x77\xb9\x23\x17\x32\x19\x06\xd3\x7a\xf6\xef\xbe\x50\xff\x87\x25\xfc\xb9\x26\x85\x90\x16\xa4\xc9\xec\xd1\x00\x16\x73\xa9\x40\x7e\xf0\x08\x25\x57\xa0\x67\x0a\x32\x4d\x58\x2a\x19\x50\x98\x29\x72\xdf\xa4\xb7\xa5\xd7\x7b\xb3\xd8\xaf\xdc\xb4\x3c\xbb\x23\xc1\xb9\xe4\xdf\x0e\x9c\x93\xde\x55\xc0\xbe\xdd\xcd\x81\x0b\xea\xf6\xe1\x16\xe2\xe0\xc0\x08\xc1\xcd\x81\x61\xe2\x77\x24\xb8\x6a\xd9\x38\x60\xf3\xa7\x37\x11\x57\x07\xee\x94\x7f\xd0\x81\xb1\x09\x7c\xd4\x81\x11\x6e\xef\xc0\x65\xc5\x46\x14\x18\x41\xfd\xad\x80\x95\xc3\xd1\x80\xd1\x3d\x32\x0f\x94\x4f\x4f\xb1\xf6\xc4\xef\x00\x00\x00\xff\xff\x34\x1c\xc3\xd0\x07\x06\x00\x00")
+
+func _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql,
+		"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql",
+	)
+}
+
+func _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x8c, 0xe, 0x5b, 0x37, 0x7, 0xb9, 0x36, 0x4, 0x8b, 0xb3, 0x9f, 0x59, 0xd5, 0xc2, 0xa0, 0x8f, 0x2e, 0x4c, 0x1a, 0x54, 0xfa, 0xec, 0xbc, 0xd3, 0x94, 0x1c, 0x23, 0xd8, 0x78, 0xae, 0x87, 0x8d}}
+	return a, nil
+}
+
+var __1528395593_allows_trailing_hyphen_in_usernamesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x4b\xc4\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x80\x95\x3a\xba\xb8\x10\x54\x09\x56\x08\x02\xce\x1e\xae\xce\xde\x0a\x1a\x20\x79\x85\x3a\x05\xf5\xb8\xe8\x44\xdd\x2a\x47\xdd\x28\x03\x5d\xcb\x58\x0d\x7b\x2b\x24\x5e\x4d\xb4\xae\x5e\xac\x86\xbd\x2d\x92\x90\xa6\xa6\x96\x8a\xba\x26\x9a\x8b\x4b\x8b\x53\x8b\xb0\x3b\x19\x2c\x13\x0f\x22\x89\x72\x37\x6e\xe5\xe8\x8e\x87\xa9\x21\xdf\x03\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x9a\xeb\x60\x34\x83\x01\x00\x00")
+
+func _1528395593_allows_trailing_hyphen_in_usernamesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395593_allows_trailing_hyphen_in_usernamesDownSql,
+		"1528395593_allows_trailing_hyphen_in_usernames.down.sql",
+	)
+}
+
+func _1528395593_allows_trailing_hyphen_in_usernamesDownSql() (*asset, error) {
+	bytes, err := _1528395593_allows_trailing_hyphen_in_usernamesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395593_allows_trailing_hyphen_in_usernames.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf5, 0xa5, 0x61, 0x68, 0xa9, 0xea, 0x3e, 0xbb, 0xfb, 0x73, 0xf5, 0x62, 0xa6, 0x7f, 0x18, 0x14, 0xd9, 0xb5, 0x2b, 0x1c, 0x44, 0x71, 0x60, 0x7b, 0x8, 0x28, 0x4e, 0x18, 0x57, 0x11, 0xd0, 0x95}}
+	return a, nil
+}
+
+var __1528395593_allows_trailing_hyphen_in_usernamesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x2f\x4a\x2f\xe6\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x01\x4b\xc4\xe7\x25\xe6\xa6\xc6\x97\x25\xe6\x64\xa6\xc4\x27\x67\x24\x16\x15\xeb\x80\x95\x3a\xba\xb8\x10\x54\x09\x56\x08\x02\xce\x1e\xae\xce\xde\x0a\x1a\x20\x79\x85\x3a\x05\xf5\xb8\xe8\x44\xdd\x2a\x47\xdd\x28\x03\x5d\xcb\x58\x0d\x7b\x2b\x24\x5e\x4d\xb4\xae\x5e\xac\x86\xbd\x2d\x92\x90\xa6\xa6\x96\xae\xbd\x8a\xba\x26\x9a\x9b\x4b\x8b\x53\x8b\xb0\x3b\x1a\x2c\x13\x0f\x22\x89\x72\x39\x6e\xe5\xe8\xce\x87\xa9\xa1\xc4\x0b\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\xda\x1f\x5e\x10\x87\x01\x00\x00")
+
+func _1528395593_allows_trailing_hyphen_in_usernamesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395593_allows_trailing_hyphen_in_usernamesUpSql,
+		"1528395593_allows_trailing_hyphen_in_usernames.up.sql",
+	)
+}
+
+func _1528395593_allows_trailing_hyphen_in_usernamesUpSql() (*asset, error) {
+	bytes, err := _1528395593_allows_trailing_hyphen_in_usernamesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395593_allows_trailing_hyphen_in_usernames.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3c, 0x75, 0xa7, 0x14, 0x38, 0x70, 0x58, 0x44, 0xed, 0xd1, 0x60, 0x9f, 0x62, 0x28, 0x3c, 0xa2, 0x7, 0x8c, 0xbd, 0x90, 0x6, 0xbe, 0xa, 0x9f, 0xc8, 0x88, 0xa4, 0xb0, 0x60, 0x70, 0x6b, 0x91}}
+	return a, nil
+}
+
+var __1528395594_create_changeset_events_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\x4f\x2d\x4b\xcd\x2b\x29\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x63\x8c\xac\xd5\x38\x00\x00\x00")
+
+func _1528395594_create_changeset_events_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395594_create_changeset_events_tableDownSql,
+		"1528395594_create_changeset_events_table.down.sql",
+	)
+}
+
+func _1528395594_create_changeset_events_tableDownSql() (*asset, error) {
+	bytes, err := _1528395594_create_changeset_events_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395594_create_changeset_events_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x60, 0x23, 0xad, 0xb7, 0x2c, 0xb0, 0x5d, 0xd5, 0xe, 0x7d, 0x63, 0x28, 0x9, 0xc6, 0x5e, 0x18, 0x9, 0xbc, 0x50, 0x49, 0xa6, 0x6, 0xed, 0xf0, 0xaa, 0xf7, 0x60, 0xd8, 0xa3, 0x68, 0xe4, 0x46}}
+	return a, nil
+}
+
+var __1528395594_create_changeset_events_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x91\x41\x6e\xdb\x30\x14\x44\xf7\x3c\xc5\x74\x25\x09\xf0\x0d\x8c\x2c\x18\xe9\xa7\x25\x42\xd1\x2d\x4d\x2f\xbc\x12\x68\xeb\x37\x61\x5c\x53\xa9\x45\x37\x55\x8b\xde\xbd\x90\x9a\xc2\x02\x12\x2f\x89\x79\xf3\x87\x98\xb9\xa5\x8f\xca\x2c\x85\x28\x2d\x49\x47\x70\xf2\x56\x13\xf6\x8f\x3e\x3e\x70\xcf\xa9\xe1\x1f\x1c\x53\x8f\x5c\x00\xa1\xc5\x2e\x3c\xf4\x7c\x0a\xfe\x1b\x3e\x5b\x55\x4b\xbb\xc5\x3d\x6d\x17\x02\x33\xc3\x3f\x2a\xc4\x04\xb3\x72\x30\x1b\xad\x61\xe9\x8e\x2c\x99\x92\xd6\x17\xae\xcf\x43\x5b\x08\x00\x58\x19\x54\xa4\xc9\x11\x4a\xb9\x2e\x65\x45\xa8\x46\xde\x4e\x1f\x51\x46\x39\x25\xb5\xde\x42\xd5\x35\x55\x4a\x3a\x1a\xe3\x0e\x21\xb6\x48\xfc\x73\x16\x52\x7e\xa2\xf2\x1e\xf9\xa4\x7c\xb8\x41\x96\x15\x23\xd8\x77\xe7\xd3\x9e\xdf\x47\x5f\xb5\x0b\x7c\xe0\xe1\xca\x51\x1e\x66\xd8\xfe\xc4\x3e\x71\xdb\xf8\x84\x14\x8e\xdc\x27\x7f\x7c\xc6\x4b\x48\x8f\xd3\x13\xbf\xba\xc8\x97\x0b\x15\xdd\xc9\x8d\x76\x88\xdd\x4b\x3e\xb9\x8f\x9c\x7c\xeb\x93\xc7\x53\xdf\xc5\xdd\x5b\x30\xfb\xfd\x27\x9b\x7a\x79\xcd\x9e\xb0\x26\x0d\xcf\xdc\x7d\xcd\xff\x9b\x0b\xdc\x20\xeb\x76\x4f\xbc\x4f\x59\x21\x8a\xa5\x10\x52\x3b\xb2\x57\xd6\x13\xb2\xaa\x50\xae\xcc\xda\x59\xa9\x8c\x7b\xa3\x37\xf3\xf5\x9a\xb1\xc1\xe6\xc0\x43\x73\x8e\xe1\xfb\x99\xc5\xc6\xa8\x2f\x1b\x42\x3e\x87\x16\xd3\x02\x8b\xb1\xb1\x31\xbc\x5c\xd5\xb5\x72\x4b\xf1\x37\x00\x00\xff\xff\xf3\x40\x80\x0d\x4c\x02\x00\x00")
+
+func _1528395594_create_changeset_events_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395594_create_changeset_events_tableUpSql,
+		"1528395594_create_changeset_events_table.up.sql",
+	)
+}
+
+func _1528395594_create_changeset_events_tableUpSql() (*asset, error) {
+	bytes, err := _1528395594_create_changeset_events_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395594_create_changeset_events_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa7, 0xa4, 0x98, 0x5c, 0xde, 0x72, 0x89, 0x9e, 0x92, 0xff, 0x35, 0x11, 0xab, 0xe2, 0x12, 0x8, 0xa5, 0x9b, 0x92, 0xb1, 0x7a, 0x8, 0x73, 0xda, 0x38, 0xea, 0xe9, 0x66, 0xe1, 0x38, 0x6f, 0x9a}}
+	return a, nil
+}
+
+var __1528395595_create_lsif_databaseDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x4c\x8e\xb1\x6a\xc3\x30\x14\x45\x77\x7d\xc5\x25\x8b\x62\x48\xf2\x03\x9e\xdc\x58\x06\x41\x48\x4a\xa5\x42\x37\xa3\xd8\xcf\x8d\xa8\x22\x19\xf9\x19\x32\xe4\xe3\x8b\x5b\x02\x5e\xee\x70\x87\x73\xce\x7e\x8f\x3a\xa7\x11\x7c\x23\x9c\x8c\x6e\xd0\x3b\x76\x57\x37\xd1\x01\x86\x08\xf3\x88\xbb\xff\xce\x8e\x7d\x8a\x18\x52\x46\x4f\xec\x7c\x98\x90\x22\xfa\x6b\xf0\xf1\xe7\x20\x8c\x3a\xa9\xa3\x45\xa6\x7b\x62\x6a\xe9\x41\xdd\x56\xca\x1d\x64\xfd\x71\x79\x47\x5d\xd9\xea\xad\x32\x0a\xba\x81\xfa\xd2\xc6\x1a\x6c\x24\x9e\x4f\x74\x73\xce\x14\xb9\x7d\xf9\xb6\xc5\xf2\xca\x36\x4c\x7e\xd8\x94\xb2\x28\x85\x78\xb5\xfd\x8b\x70\xa3\x30\x52\xc6\x30\xc7\x6e\xc9\x11\x7f\xfc\xe6\xf3\x7c\xb4\xfa\x72\x5e\xf1\xd7\x21\x4c\x0f\xde\x61\xd9\xa2\x14\xbf\x01\x00\x00\xff\xff\xe8\x0f\x72\x07\xec\x00\x00\x00")
+
+func _1528395595_create_lsif_databaseDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395595_create_lsif_databaseDownSql,
+		"1528395595_create_lsif_database.down.sql",
+	)
+}
+
+func _1528395595_create_lsif_databaseDownSql() (*asset, error) {
+	bytes, err := _1528395595_create_lsif_databaseDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395595_create_lsif_database.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x28, 0xb9, 0x8b, 0x3b, 0x36, 0x45, 0xa0, 0xd2, 0x13, 0x23, 0x6, 0xc3, 0x60, 0xbd, 0x85, 0x5f, 0x5c, 0xb, 0xc7, 0x76, 0x85, 0x61, 0xa2, 0xc1, 0x1b, 0x99, 0x3a, 0xcb, 0xd9, 0xd5, 0xd3, 0x59}}
+	return a, nil
+}
+
+var __1528395595_create_lsif_databaseUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x84\x55\x5d\x6f\xdb\x38\x10\x7c\xf7\xaf\x18\x14\x06\x94\x00\xfe\x38\x1c\xee\xa1\x68\xae\x07\xb8\x36\x9d\x1a\x70\x64\x9f\x24\x23\x7d\x4b\x69\x69\x2d\x11\xa1\x49\x95\xa4\xea\x18\x4d\xff\xfb\x81\x94\xec\x38\xc5\xb5\xf5\x8b\x05\x7d\xcc\xce\xce\xcc\x2e\x87\x43\x30\xc5\xb7\x92\x40\x4f\x8e\x94\x15\x5a\xc1\x55\xdc\x81\x4b\xa9\x0f\x68\x2c\x9c\x46\x4d\x66\xa7\xcd\x1e\xe9\xbf\x4b\x7c\x69\xc8\x08\xb2\x38\x08\x57\x09\x05\xae\xb4\xab\xc8\xf4\x86\x43\xe4\x5a\x29\xca\x9d\x47\xc8\xb5\x72\xf4\xe4\x46\xc8\x2a\x61\x21\x2c\x14\xe5\x64\x2d\x37\x47\x58\xdd\xe2\x1f\x08\x39\x57\x30\x8d\xc2\x5e\x94\x86\xfb\xef\xac\x87\x09\x04\x08\x7f\xdb\xf2\x9f\x07\x69\xc5\x0e\x05\x77\x7c\xcb\x2d\x8d\xfc\xd3\x58\x3b\x7a\x87\xcf\xfd\x7e\x7f\x7d\xbb\x9e\xa4\xe9\xfd\x2a\x99\xf5\xfb\xfd\xcf\xbe\x88\xa1\x5a\xf2\x9c\x0a\x6c\x8f\x01\x62\x67\x3c\x0d\x55\x04\xae\xe1\x8e\x21\x2e\x3d\x4a\xf7\xab\xb9\xb5\x07\x6d\x0a\xec\xb4\x09\xcf\xf3\xc6\x18\x52\x4e\x1e\xc1\x1b\x57\x51\x81\xc6\x92\xc1\x96\x76\xda\xd0\x05\x4d\xcf\x7a\xd4\xeb\x4d\x13\x36\xc9\x18\xd8\xa7\x8c\xc5\xe9\x62\x15\x63\x31\x47\xbc\xca\xc0\x3e\x2d\xd2\x2c\x45\xb1\x95\x42\x3d\xde\xf4\x7c\xc1\xa0\xc3\xae\x51\xad\x3c\xa6\x51\x36\xd4\x2b\xc5\x57\x52\x67\x59\x8f\xe0\xf6\x92\x46\x5b\x5d\x04\x3d\x3c\xc8\x49\x08\x28\xbe\xa7\x02\xdf\xba\xd7\x1e\x8a\xed\xf7\x6f\xb6\xd9\xed\xc4\xd3\xf7\x11\x16\x3b\xb4\xd7\x5e\x11\xda\xd7\xee\x38\xf0\xdf\x2b\x08\xe7\x31\x44\x20\xdf\x81\x9e\x0b\x9d\x91\x57\x9b\x2c\x5d\xcc\x18\xf4\x0e\x5c\x1d\x41\x4f\xc2\x3a\xa1\x4a\x38\xc3\x95\xe5\x81\xfd\x4b\xe3\xab\x04\x09\x5b\x2f\x27\x53\x86\xf9\x26\x9e\x66\x5e\x02\x43\x7b\xed\xe8\x81\x9e\x28\xbf\xea\x78\xf8\x24\x0c\xba\x06\xfd\xf5\x35\x12\x96\x6d\x92\x38\xc5\x57\x2d\x0a\x4c\x52\xf4\xfb\xbd\x0f\xec\x76\x11\xf7\xbc\x29\x6b\x96\xcc\x57\xc9\x5d\x27\x5f\x8b\x14\x15\x5b\xdf\xf3\xfb\x08\xcf\xcf\x38\xb7\xdd\x91\xbe\xba\xf6\x77\xbb\x62\xcf\xcf\x88\x82\x6e\xaf\xdf\x0d\x4a\x86\x67\x27\xcf\xdf\xff\x18\xa1\xa8\xe3\x78\x7d\xd3\x63\xf1\xec\xa6\xd7\xef\xf7\x96\x93\xf8\x76\x33\xb9\x65\xa8\x65\x5d\xda\x2f\xb2\xf5\x72\x6a\x88\x3b\x0a\xfa\x2d\xd3\xc5\xfc\x25\x9f\xb8\x0f\x99\x8e\x5c\x90\xd8\x79\xcb\x6b\x6e\x9c\xc8\x1b\xc9\x4d\x27\xc0\x69\x6c\x3c\xd0\x85\xa8\x38\x54\x22\xaf\x06\x21\x88\x56\xef\x43\x52\xad\x56\x03\xd4\xda\xba\xd2\x90\x05\x57\xc5\x58\x1b\x94\x5a\x72\x55\x0e\xdb\x2c\x7a\x12\x42\x3d\x86\xb1\x39\x50\x64\x08\x42\x8d\x90\x12\xa1\x72\xae\xb6\xef\xc6\xe3\x52\xb8\xaa\xd9\x8e\x72\xbd\x1f\xbf\xfe\x72\x7c\xfa\x17\xd6\x36\x64\xc7\x7f\xbe\xfd\xcb\x17\xf7\x48\xbc\x28\x84\xe7\xc4\x25\x0a\x72\x5c\x48\x3b\x42\xa6\x11\x5e\x6c\xbb\x6a\x5b\xf1\x6d\x40\x69\x35\xbc\xe8\x83\xcb\xd3\xec\x0f\x5a\x52\xde\x8b\xce\xca\x5f\x07\x27\x0f\xaa\x86\x89\x7f\x28\xb6\x57\xbf\x09\x49\x58\x5b\xb6\x31\x1e\x1b\x85\x26\xeb\x55\xe7\xd2\x10\x2f\xba\xd4\x9e\xa6\xd6\x99\x63\x08\xb0\xee\x2a\x40\xb8\x51\x80\x78\x3d\xac\x57\x29\x5b\xb2\x69\x86\x79\xb2\xba\x43\x5d\x3e\xe4\xdc\x71\xa9\xcb\x51\x5d\x9e\x73\x86\xfb\x8f\x2c\x61\xde\x6e\x9f\x45\xbc\xff\x49\x10\xa3\xd0\x43\x74\x8d\xec\x23\x6b\xc9\x5e\xa6\xfa\x72\x3e\xa2\x68\x80\xa8\x93\x64\x36\xc9\x26\x1f\x26\x29\xc3\x9b\x5f\x64\xbc\x85\x7e\x83\xd5\x7d\xcc\x12\xcc\xd8\x7c\xb2\x59\x66\xc8\xd8\xdd\x7a\xe9\x31\x1c\xed\x6b\xc9\x1d\xfd\x01\x16\x4f\x57\xb3\x45\x7c\x8b\x28\xda\x64\xf3\xb7\x51\x14\x5d\xdf\x04\x2a\x2c\x9e\x61\x31\x3f\x27\x1c\xff\x93\xf0\x4e\x88\x1f\xfd\xb8\xe9\xcd\x92\xd5\xfa\xe7\x7e\xb5\xb3\x71\x36\xc5\x1b\x7e\x71\xa4\xf8\x5d\x14\x8e\x99\xe2\xb4\xdf\xc3\xb1\x01\x2b\x0a\xf2\x5b\xef\x40\x52\x9e\x4f\x0b\x0f\xf4\x72\x60\x74\x3b\x31\x8c\x5a\x6d\xb4\xbf\x4d\x16\x79\x45\xf9\x63\x78\x70\x5e\xcb\xb0\xce\xfb\xdb\x5e\x18\xd7\xd4\x6d\x04\xfd\x60\xf9\xfa\xdd\xca\xb3\xba\x31\x39\x95\x86\xd7\xd5\xc5\xc9\x72\xea\xfa\x95\x3d\xad\x91\x2f\x1e\xfd\x66\xd1\x7b\x8d\xff\x0b\x00\x00\xff\xff\xd6\x05\x58\x22\x4f\x07\x00\x00")
+
+func _1528395595_create_lsif_databaseUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395595_create_lsif_databaseUpSql,
+		"1528395595_create_lsif_database.up.sql",
+	)
+}
+
+func _1528395595_create_lsif_databaseUpSql() (*asset, error) {
+	bytes, err := _1528395595_create_lsif_databaseUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395595_create_lsif_database.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa0, 0xc4, 0xbe, 0x42, 0x77, 0xa6, 0x82, 0xd1, 0x92, 0x6, 0x3a, 0x3d, 0x72, 0x13, 0x4c, 0xe0, 0xb5, 0x90, 0x4a, 0x25, 0x42, 0x6b, 0x67, 0x9d, 0x76, 0x44, 0x40, 0xbf, 0x1e, 0x1c, 0x54, 0x69}}
+	return a, nil
+}
+
+var __1528395596_lsif_xrepo_initDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x90\xb1\x6e\xf2\x30\x14\x85\x77\x3f\xc5\x11\x4b\xfe\x5f\x22\x3c\x40\x33\x15\x30\x95\xa5\x10\xaa\xc6\x03\x9b\x71\xe3\x43\x65\x95\xc4\x60\x3b\xa5\x8f\x5f\xa9\xa2\x62\x41\x88\xed\x0c\xdf\xfd\xee\xbd\xa7\x2c\xa1\x69\x23\x5c\x38\x0f\xf0\x83\xcf\xf6\x80\xba\x55\x2b\x38\x9b\xed\xbb\x4d\x9c\x89\xb2\x44\x13\x32\x9f\xb0\x8b\xdc\x33\x72\xe8\x98\x76\xf0\x09\x16\x91\x89\xf1\x8b\x0e\xe7\x10\xdd\x14\x29\xc0\xe7\x22\xe1\x34\x86\x4c\x37\x13\xa2\x95\xb5\x5c\x68\x44\xf6\x21\xd3\xf0\x9b\xdd\xbf\xc2\x1c\x92\xdf\x17\x53\x14\x02\x00\xe6\xf2\x45\x35\x95\xf8\xcd\xcb\xb7\xcd\x2b\x54\xb3\x94\x5b\xa8\x15\xe4\x56\xb5\xba\xc5\xd1\x76\x9f\xf6\x83\xc9\x5c\x82\x19\x07\x7f\x1a\x59\x3d\x30\x11\x79\x0c\xa6\x0b\x7d\xef\xf3\x1d\xfc\xfa\xd4\xdf\x8a\xc7\xe0\xdb\x76\xfd\x3c\xaf\xe5\x8d\x63\xee\x20\x93\xab\x74\x72\x69\x62\xb1\x59\xaf\x95\xae\x44\xf1\xbf\x12\x3f\x01\x00\x00\xff\xff\x41\x15\x8c\xa1\xa2\x01\x00\x00")
+
+func _1528395596_lsif_xrepo_initDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395596_lsif_xrepo_initDownSql,
+		"1528395596_lsif_xrepo_init.down.sql",
+	)
+}
+
+func _1528395596_lsif_xrepo_initDownSql() (*asset, error) {
+	bytes, err := _1528395596_lsif_xrepo_initDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395596_lsif_xrepo_init.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xef, 0xfa, 0xd7, 0x31, 0xf6, 0xbc, 0xa, 0x8, 0x5e, 0x51, 0x75, 0x2, 0xfb, 0x89, 0x27, 0x96, 0xbb, 0xec, 0xc8, 0xb2, 0x91, 0xaa, 0x32, 0xa1, 0x72, 0xb8, 0xd9, 0xbb, 0xeb, 0x9d, 0x29, 0xd2}}
+	return a, nil
+}
+
+var __1528395596_lsif_xrepo_initUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xd4\x91\xc1\x6e\x9b\x40\x10\x86\xef\x3c\xc5\x2f\x2e\xd8\x12\xf4\x01\xca\x89\xa4\x9b\x6a\x55\x8c\x5b\xc0\x52\x72\x22\x1b\x18\xb7\xab\x1a\xd6\xde\x5d\x5c\xfb\xed\x2b\x43\x6d\x70\x25\xec\xaa\xb7\x70\x1a\xf1\x33\x1f\xf3\xcd\x04\x01\x32\xb2\x68\xb7\x90\x8d\xb4\x52\x6c\x10\x67\xfc\x09\x95\xb0\xe2\x4d\x18\xfa\xe0\x04\x01\x12\x65\xe9\x23\x5e\x4b\x55\xd7\xd2\xbe\x42\x1a\x08\x68\x32\xa4\xf7\x54\xe1\x97\xd2\x95\x0f\xa3\x20\xad\x67\xb0\x6b\x95\xa5\x6a\xdc\xa5\x69\x4d\x9a\x9a\x92\xcc\xbf\x75\x3a\x19\x8b\xd9\x63\x0e\x4d\xb5\xb2\x54\xd0\x81\xca\x99\x57\x6c\x8c\x5c\x7b\x3e\x3c\x07\x00\x1e\xd8\x67\x9e\x84\x4e\x57\x3f\xa6\x2c\xca\x19\xf2\xe8\x21\x66\xe0\x4f\x48\x96\x39\xd8\x33\xcf\xf2\x0c\x5b\x51\xfe\x14\xdf\xc9\x60\xd6\x7d\x79\x7a\x64\x85\x8c\xa5\x3c\x8a\xf1\x35\xe5\x8b\x28\x7d\xc1\x17\xf6\xe2\x5f\x62\x53\xfe\xa0\x9a\x60\xe9\x60\x3b\x50\xb2\x8a\xe3\x21\x6d\xc4\x74\xb6\x27\x6d\xa4\x6a\xba\x78\x78\xab\x69\xab\x8c\xb4\x4a\x1f\xa7\xfa\xdc\x7e\xa9\xee\x75\xde\xc5\xf3\xfb\x86\xee\xb0\x5c\xf7\xfd\x59\x0e\xf9\x5a\x6e\x2c\x69\xbc\x1d\x2d\x89\x9b\x4b\x58\x25\xfc\xdb\x8a\x81\x27\x9f\xd8\xf3\xc4\xb5\x8b\x3f\x45\xd1\x36\x72\xd7\x12\x96\xc9\x25\x9a\xf5\xe6\x7e\xe7\xe8\x9f\x6d\xe6\xe1\xf8\x0f\x37\xd1\x27\xd3\xa2\x77\xb9\xe2\x0e\x1b\xf0\x2f\xae\xf7\xb1\xc3\xf1\xce\x33\x9f\xa0\xe3\x9b\xfe\xef\xc0\x23\xf2\x5f\x23\x5f\xd1\x27\xc6\xee\xe9\xcb\xc5\x82\xe7\xa1\xe3\xcd\x43\xe7\x77\x00\x00\x00\xff\xff\x88\x5d\x6a\xe4\x24\x04\x00\x00")
+
+func _1528395596_lsif_xrepo_initUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395596_lsif_xrepo_initUpSql,
+		"1528395596_lsif_xrepo_init.up.sql",
+	)
+}
+
+func _1528395596_lsif_xrepo_initUpSql() (*asset, error) {
+	bytes, err := _1528395596_lsif_xrepo_initUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395596_lsif_xrepo_init.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x72, 0x49, 0x53, 0xd2, 0x15, 0x29, 0x78, 0xf2, 0x3b, 0x56, 0x82, 0x8e, 0x97, 0x1d, 0x29, 0x61, 0x82, 0xf2, 0x8e, 0xbb, 0x19, 0xdd, 0x30, 0x42, 0xfc, 0xc4, 0xfd, 0x19, 0xdb, 0xc2, 0x5a, 0x55}}
+	return a, nil
+}
+
+var __1528395597_lsif_commitsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x0a\x76\xf5\x71\x75\x0e\x51\x28\x4a\xcd\xcd\x2f\x49\x8d\x4f\xad\x48\x4d\xd6\x50\x8f\xcf\x29\xce\x4c\x53\xd7\x51\x50\xe7\x52\x50\x50\x50\x70\x09\xf2\x0f\x50\x08\xf3\x74\x0d\x57\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\xcf\xcd\xcd\x2c\x29\x8e\x2f\xcf\x2c\xc9\x00\xab\x8e\x4f\x49\x2c\x49\x8c\xcf\x4d\x2c\xca\x4e\x2d\x2a\xb6\x46\xe8\xf3\xf4\x73\x71\x8d\xc0\xa2\xb1\x28\xb5\x20\x3f\x1e\xc2\x89\x2f\x48\x2c\x4a\xcd\x2b\x81\xf1\x4a\xf3\x32\x0b\x4b\x53\x49\x33\x82\x58\xd5\x28\x36\x21\x69\x0a\x71\x74\xf2\x71\xc5\xd4\x84\x47\x05\x16\x3f\xab\x6b\x5a\x73\x01\x02\x00\x00\xff\xff\xcb\xe4\x10\xcd\x4e\x01\x00\x00")
+
+func _1528395597_lsif_commitsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395597_lsif_commitsDownSql,
+		"1528395597_lsif_commits.down.sql",
+	)
+}
+
+func _1528395597_lsif_commitsDownSql() (*asset, error) {
+	bytes, err := _1528395597_lsif_commitsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395597_lsif_commits.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x41, 0x8, 0x93, 0xd0, 0x63, 0x32, 0x15, 0xbe, 0x35, 0x30, 0x27, 0xae, 0xdc, 0x12, 0x59, 0xe8, 0xc7, 0x41, 0x18, 0xbf, 0x68, 0xed, 0x88, 0xf6, 0x97, 0xae, 0x83, 0xfd, 0x15, 0x7e, 0xfc, 0x5e}}
+	return a, nil
+}
+
+var __1528395597_lsif_commitsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x53\xc1\x6e\x9c\x30\x14\xbc\xf3\x15\xa3\x5c\x00\x89\x44\xea\xb5\xa8\x07\x77\xe3\xa8\xa8\x04\x52\xc3\x36\xc9\xc9\x41\xe0\x2a\x56\x4b\x9c\xd8\xde\x26\xfd\xfb\x0a\xd8\x05\xbc\x50\x6d\xab\xfa\x66\xbf\xf1\xcc\xbc\x79\xf6\xf9\x39\x32\x65\xc5\x7b\x3c\xd4\xaa\x6d\xa5\x7d\x80\x34\xa8\xa0\x85\x11\xfa\xa7\x68\xf0\xaa\x74\x13\xc1\x28\x48\xeb\x1b\xbc\xec\x94\x15\xcd\x85\xe7\x15\x34\xa5\x9b\x12\x5a\xb4\xca\x0a\x2e\xde\x44\x1d\xf8\xfc\x87\x91\xdf\xfc\x08\xbe\x07\x00\x1b\x46\x49\x49\x51\x92\x8f\x29\x45\x72\x85\x2c\x2f\x41\xef\x92\xa2\x2c\x30\x28\x19\x04\x3d\xb0\x5b\xb2\x41\x41\x59\x42\x52\xdc\xb0\xe4\x9a\xb0\x7b\x7c\xa6\xf7\xd1\x58\xd6\xe2\x59\x19\x69\x95\xfe\x05\x2b\xde\x6c\xcf\x95\x6d\xd3\x74\x42\x9c\x0d\x9c\x67\x7f\xaa\x3f\x57\x5a\x3c\x59\x3e\xa0\x5c\x50\x8f\x09\x63\xef\x94\xeb\xae\x3b\xde\x54\xb6\xe2\x6d\xa5\xbf\x0b\x3d\xf7\xff\xff\x06\x67\x7d\x23\x98\xe8\xa2\xf1\x62\xb8\xe6\x73\x9b\x25\x5f\xb6\x14\x49\x76\x49\xef\xd6\x43\xe6\x1d\xd7\xbe\x6f\xee\xa4\xc0\x77\x4f\xf2\x65\x27\x90\x67\x07\xec\xaa\x6e\xe4\x66\x17\xc6\x73\xfd\xbf\x14\x3e\xa5\xf1\x8f\xa4\xee\x30\x4f\x73\xcf\xc9\x73\x06\x46\x6f\x52\xb2\xa1\xf8\x9a\xd0\xdb\x91\xf8\x55\xda\x47\xbe\x1c\x31\x29\xc6\x09\x0d\x4f\x7e\xdc\x76\xab\xbe\x98\x29\x1e\x55\xc6\xfc\x8e\xce\x1d\xf3\x6e\x71\xdf\x6b\xe0\x1c\x4e\xd2\x78\xb7\x28\x5c\xb1\xfc\x7a\xe5\x61\xb6\x0b\xe0\xed\x27\xca\x28\xda\x99\x5f\x7c\x70\xec\x2f\x6e\x90\xec\x12\xed\xd8\x45\x8f\x3e\x6c\x1c\x6c\x08\x52\xe0\xb1\x32\x53\x78\x9e\xe3\xee\xf0\xd9\xeb\xd8\xf3\xc3\xd8\xfb\x1d\x00\x00\xff\xff\x2f\xb3\x30\xe5\x70\x04\x00\x00")
+
+func _1528395597_lsif_commitsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395597_lsif_commitsUpSql,
+		"1528395597_lsif_commits.up.sql",
+	)
+}
+
+func _1528395597_lsif_commitsUpSql() (*asset, error) {
+	bytes, err := _1528395597_lsif_commitsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395597_lsif_commits.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x85, 0x6, 0x1c, 0x6c, 0xef, 0xdd, 0xe2, 0x26, 0xbf, 0xf, 0x3d, 0x8c, 0x7d, 0x27, 0x95, 0xd7, 0x7a, 0x6b, 0x80, 0xbb, 0xdd, 0xfc, 0x55, 0x4e, 0x4d, 0xfc, 0x3, 0x89, 0x54, 0x91, 0xb5, 0x1a}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -5333,6 +6005,70 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395581_allows_dots_in_usernames.down.sql": _1528395581_allows_dots_in_usernamesDownSql,
 
 	"1528395581_allows_dots_in_usernames.up.sql": _1528395581_allows_dots_in_usernamesUpSql,
+
+	"1528395582_add_default_repos.down.sql": _1528395582_add_default_reposDownSql,
+
+	"1528395582_add_default_repos.up.sql": _1528395582_add_default_reposUpSql,
+
+	"1528395583_add_default_repos_primary_key.down.sql": _1528395583_add_default_repos_primary_keyDownSql,
+
+	"1528395583_add_default_repos_primary_key.up.sql": _1528395583_add_default_repos_primary_keyUpSql,
+
+	"1528395584_add_campaigns_table.down.sql": _1528395584_add_campaigns_tableDownSql,
+
+	"1528395584_add_campaigns_table.up.sql": _1528395584_add_campaigns_tableUpSql,
+
+	"1528395585_go-1.13-dummy-migration.down.sql": _1528395585_go113DummyMigrationDownSql,
+
+	"1528395585_go-1.13-dummy-migration.up.sql": _1528395585_go113DummyMigrationUpSql,
+
+	"1528395586_add_threads_table.down.sql": _1528395586_add_threads_tableDownSql,
+
+	"1528395586_add_threads_table.up.sql": _1528395586_add_threads_tableUpSql,
+
+	"1528395587_campaigns_threads_many_to_many_relation.down.sql": _1528395587_campaigns_threads_many_to_many_relationDownSql,
+
+	"1528395587_campaigns_threads_many_to_many_relation.up.sql": _1528395587_campaigns_threads_many_to_many_relationUpSql,
+
+	"1528395588_rename_threads_to_changesets.down.sql": _1528395588_rename_threads_to_changesetsDownSql,
+
+	"1528395588_rename_threads_to_changesets.up.sql": _1528395588_rename_threads_to_changesetsUpSql,
+
+	"1528395589_add_external_id_to_schema.down.sql": _1528395589_add_external_id_to_schemaDownSql,
+
+	"1528395589_add_external_id_to_schema.up.sql": _1528395589_add_external_id_to_schemaUpSql,
+
+	"1528395590_add_external_service_type_to_changesets.down.sql": _1528395590_add_external_service_type_to_changesetsDownSql,
+
+	"1528395590_add_external_service_type_to_changesets.up.sql": _1528395590_add_external_service_type_to_changesetsUpSql,
+
+	"1528395591_create_events_logging_table.down.sql": _1528395591_create_events_logging_tableDownSql,
+
+	"1528395591_create_events_logging_table.up.sql": _1528395591_create_events_logging_tableUpSql,
+
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql,
+
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql,
+
+	"1528395593_allows_trailing_hyphen_in_usernames.down.sql": _1528395593_allows_trailing_hyphen_in_usernamesDownSql,
+
+	"1528395593_allows_trailing_hyphen_in_usernames.up.sql": _1528395593_allows_trailing_hyphen_in_usernamesUpSql,
+
+	"1528395594_create_changeset_events_table.down.sql": _1528395594_create_changeset_events_tableDownSql,
+
+	"1528395594_create_changeset_events_table.up.sql": _1528395594_create_changeset_events_tableUpSql,
+
+	"1528395595_create_lsif_database.down.sql": _1528395595_create_lsif_databaseDownSql,
+
+	"1528395595_create_lsif_database.up.sql": _1528395595_create_lsif_databaseUpSql,
+
+	"1528395596_lsif_xrepo_init.down.sql": _1528395596_lsif_xrepo_initDownSql,
+
+	"1528395596_lsif_xrepo_init.up.sql": _1528395596_lsif_xrepo_initUpSql,
+
+	"1528395597_lsif_commits.down.sql": _1528395597_lsif_commitsDownSql,
+
+	"1528395597_lsif_commits.up.sql": _1528395597_lsif_commitsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -5376,231 +6112,263 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"1503574972_extensions.down.sql":                              {_1503574972_extensionsDownSql, map[string]*bintree{}},
-	"1503574972_extensions.up.sql":                                {_1503574972_extensionsUpSql, map[string]*bintree{}},
-	"1503575261_repos.down.sql":                                   {_1503575261_reposDownSql, map[string]*bintree{}},
-	"1503575261_repos.up.sql":                                     {_1503575261_reposUpSql, map[string]*bintree{}},
-	"1503575588_global_deps.down.sql":                             {_1503575588_global_depsDownSql, map[string]*bintree{}},
-	"1503575588_global_deps.up.sql":                               {_1503575588_global_depsUpSql, map[string]*bintree{}},
-	"1504637681_orgs.down.sql":                                    {_1504637681_orgsDownSql, map[string]*bintree{}},
-	"1504637681_orgs.up.sql":                                      {_1504637681_orgsUpSql, map[string]*bintree{}},
-	"1504821553_add_org_constraints.down.sql":                     {_1504821553_add_org_constraintsDownSql, map[string]*bintree{}},
-	"1504821553_add_org_constraints.up.sql":                       {_1504821553_add_org_constraintsUpSql, map[string]*bintree{}},
-	"1505517457_rename_org_members_columns.down.sql":              {_1505517457_rename_org_members_columnsDownSql, map[string]*bintree{}},
-	"1505517457_rename_org_members_columns.up.sql":                {_1505517457_rename_org_members_columnsUpSql, map[string]*bintree{}},
-	"1505882864_update_org_members.down.sql":                      {_1505882864_update_org_membersDownSql, map[string]*bintree{}},
-	"1505882864_update_org_members.up.sql":                        {_1505882864_update_org_membersUpSql, map[string]*bintree{}},
-	"1506466653_add_users.down.sql":                               {_1506466653_add_usersDownSql, map[string]*bintree{}},
-	"1506466653_add_users.up.sql":                                 {_1506466653_add_usersUpSql, map[string]*bintree{}},
-	"1506646657_alter_orgs_citext.down.sql":                       {_1506646657_alter_orgs_citextDownSql, map[string]*bintree{}},
-	"1506646657_alter_orgs_citext.up.sql":                         {_1506646657_alter_orgs_citextUpSql, map[string]*bintree{}},
-	"1506710237_user_org_constraint_updates.down.sql":             {_1506710237_user_org_constraint_updatesDownSql, map[string]*bintree{}},
-	"1506710237_user_org_constraint_updates.up.sql":               {_1506710237_user_org_constraint_updatesUpSql, map[string]*bintree{}},
-	"1506989402_add_tags.down.sql":                                {_1506989402_add_tagsDownSql, map[string]*bintree{}},
-	"1506989402_add_tags.up.sql":                                  {_1506989402_add_tagsUpSql, map[string]*bintree{}},
-	"1507422179_remove_org_members_columns.down.sql":              {_1507422179_remove_org_members_columnsDownSql, map[string]*bintree{}},
-	"1507422179_remove_org_members_columns.up.sql":                {_1507422179_remove_org_members_columnsUpSql, map[string]*bintree{}},
-	"1507656459_add_org_settings.down.sql":                        {_1507656459_add_org_settingsDownSql, map[string]*bintree{}},
-	"1507656459_add_org_settings.up.sql":                          {_1507656459_add_org_settingsUpSql, map[string]*bintree{}},
-	"1507755085_add_editor_beta_tags.down.sql":                    {_1507755085_add_editor_beta_tagsDownSql, map[string]*bintree{}},
-	"1507755085_add_editor_beta_tags.up.sql":                      {_1507755085_add_editor_beta_tagsUpSql, map[string]*bintree{}},
-	"1507828928_add-slack-webhook-url.down.sql":                   {_1507828928_addSlackWebhookUrlDownSql, map[string]*bintree{}},
-	"1507828928_add-slack-webhook-url.up.sql":                     {_1507828928_addSlackWebhookUrlUpSql, map[string]*bintree{}},
-	"1508361685_add_phabricator_repos.down.sql":                   {_1508361685_add_phabricator_reposDownSql, map[string]*bintree{}},
-	"1508361685_add_phabricator_repos.up.sql":                     {_1508361685_add_phabricator_reposUpSql, map[string]*bintree{}},
-	"1508795218_update_constraints.down.sql":                      {_1508795218_update_constraintsDownSql, map[string]*bintree{}},
-	"1508795218_update_constraints.up.sql":                        {_1508795218_update_constraintsUpSql, map[string]*bintree{}},
-	"1509599098_add-users-provider-column.down.sql":               {_1509599098_addUsersProviderColumnDownSql, map[string]*bintree{}},
-	"1509599098_add-users-provider-column.up.sql":                 {_1509599098_addUsersProviderColumnUpSql, map[string]*bintree{}},
-	"1509645961_rename-users-auth0_id-to-uid.down.sql":            {_1509645961_renameUsersAuth0_idToUidDownSql, map[string]*bintree{}},
-	"1509645961_rename-users-auth0_id-to-uid.up.sql":              {_1509645961_renameUsersAuth0_idToUidUpSql, map[string]*bintree{}},
-	"1510709195_add_server_user_events_table.down.sql":            {_1510709195_add_server_user_events_tableDownSql, map[string]*bintree{}},
-	"1510709195_add_server_user_events_table.up.sql":              {_1510709195_add_server_user_events_tableUpSql, map[string]*bintree{}},
-	"1511004249_generalize_org_settings.down.sql":                 {_1511004249_generalize_org_settingsDownSql, map[string]*bintree{}},
-	"1511004249_generalize_org_settings.up.sql":                   {_1511004249_generalize_org_settingsUpSql, map[string]*bintree{}},
-	"1511011666_add_user_settings.down.sql":                       {_1511011666_add_user_settingsDownSql, map[string]*bintree{}},
-	"1511011666_add_user_settings.up.sql":                         {_1511011666_add_user_settingsUpSql, map[string]*bintree{}},
-	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.down.sql": {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyDownSql, map[string]*bintree{}},
-	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":   {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql, map[string]*bintree{}},
-	"1511852763_user_invite_quota.down.sql":                       {_1511852763_user_invite_quotaDownSql, map[string]*bintree{}},
-	"1511852763_user_invite_quota.up.sql":                         {_1511852763_user_invite_quotaUpSql, map[string]*bintree{}},
-	"1512437090_update_phabricator_repos.down.sql":                {_1512437090_update_phabricator_reposDownSql, map[string]*bintree{}},
-	"1512437090_update_phabricator_repos.up.sql":                  {_1512437090_update_phabricator_reposUpSql, map[string]*bintree{}},
-	"1512998571_repo_nullable.down.sql":                           {_1512998571_repo_nullableDownSql, map[string]*bintree{}},
-	"1512998571_repo_nullable.up.sql":                             {_1512998571_repo_nullableUpSql, map[string]*bintree{}},
-	"1513000124_rm_repos_cols.down.sql":                           {_1513000124_rm_repos_colsDownSql, map[string]*bintree{}},
-	"1513000124_rm_repos_cols.up.sql":                             {_1513000124_rm_repos_colsUpSql, map[string]*bintree{}},
-	"1513188842_add_app_config_table.down.sql":                    {_1513188842_add_app_config_tableDownSql, map[string]*bintree{}},
-	"1513188842_add_app_config_table.up.sql":                      {_1513188842_add_app_config_tableUpSql, map[string]*bintree{}},
-	"1513578663_user-passwords.down.sql":                          {_1513578663_userPasswordsDownSql, map[string]*bintree{}},
-	"1513578663_user-passwords.up.sql":                            {_1513578663_userPasswordsUpSql, map[string]*bintree{}},
-	"1513800341_update_username_orgname_regex.down.sql":           {_1513800341_update_username_orgname_regexDownSql, map[string]*bintree{}},
-	"1513800341_update_username_orgname_regex.up.sql":             {_1513800341_update_username_orgname_regexUpSql, map[string]*bintree{}},
-	"1514312401_add_site_admin_column_to_users.down.sql":          {_1514312401_add_site_admin_column_to_usersDownSql, map[string]*bintree{}},
-	"1514312401_add_site_admin_column_to_users.up.sql":            {_1514312401_add_site_admin_column_to_usersUpSql, map[string]*bintree{}},
-	"1514534085_add_orgs_deleted_at.down.sql":                     {_1514534085_add_orgs_deleted_atDownSql, map[string]*bintree{}},
-	"1514534085_add_orgs_deleted_at.up.sql":                       {_1514534085_add_orgs_deleted_atUpSql, map[string]*bintree{}},
-	"1514536731_add_org_members_user_fkey.down.sql":               {_1514536731_add_org_members_user_fkeyDownSql, map[string]*bintree{}},
-	"1514536731_add_org_members_user_fkey.up.sql":                 {_1514536731_add_org_members_user_fkeyUpSql, map[string]*bintree{}},
-	"1514691735_rename_deployment_configuration.down.sql":         {_1514691735_rename_deployment_configurationDownSql, map[string]*bintree{}},
-	"1514691735_rename_deployment_configuration.up.sql":           {_1514691735_rename_deployment_configurationUpSql, map[string]*bintree{}},
-	"1514693059_user_emails_table.down.sql":                       {_1514693059_user_emails_tableDownSql, map[string]*bintree{}},
-	"1514693059_user_emails_table.up.sql":                         {_1514693059_user_emails_tableUpSql, map[string]*bintree{}},
-	"1514702776_add_settings_user_fkey.down.sql":                  {_1514702776_add_settings_user_fkeyDownSql, map[string]*bintree{}},
-	"1514702776_add_settings_user_fkey.up.sql":                    {_1514702776_add_settings_user_fkeyUpSql, map[string]*bintree{}},
-	"1514713044_rename_users_auth_id_to_external_id.down.sql":     {_1514713044_rename_users_auth_id_to_external_idDownSql, map[string]*bintree{}},
-	"1514713044_rename_users_auth_id_to_external_id.up.sql":       {_1514713044_rename_users_auth_id_to_external_idUpSql, map[string]*bintree{}},
-	"1514714572_external_provider.down.sql":                       {_1514714572_external_providerDownSql, map[string]*bintree{}},
-	"1514714572_external_provider.up.sql":                         {_1514714572_external_providerUpSql, map[string]*bintree{}},
-	"1514718560_external_provider_and_id.down.sql":                {_1514718560_external_provider_and_idDownSql, map[string]*bintree{}},
-	"1514718560_external_provider_and_id.up.sql":                  {_1514718560_external_provider_and_idUpSql, map[string]*bintree{}},
-	"1514876826_site_id.down.sql":                                 {_1514876826_site_idDownSql, map[string]*bintree{}},
-	"1514876826_site_id.up.sql":                                   {_1514876826_site_idUpSql, map[string]*bintree{}},
-	"1514937919_remove_user_activity_table.down.sql":              {_1514937919_remove_user_activity_tableDownSql, map[string]*bintree{}},
-	"1514937919_remove_user_activity_table.up.sql":                {_1514937919_remove_user_activity_tableUpSql, map[string]*bintree{}},
-	"1515125883_repo_blocked_to_enabled.down.sql":                 {_1515125883_repo_blocked_to_enabledDownSql, map[string]*bintree{}},
-	"1515125883_repo_blocked_to_enabled.up.sql":                   {_1515125883_repo_blocked_to_enabledUpSql, map[string]*bintree{}},
-	"1515651962_drop_has_subject_constraint.down.sql":             {_1515651962_drop_has_subject_constraintDownSql, map[string]*bintree{}},
-	"1515651962_drop_has_subject_constraint.up.sql":               {_1515651962_drop_has_subject_constraintUpSql, map[string]*bintree{}},
-	"1516491388_remove_repo_private.down.sql":                     {_1516491388_remove_repo_privateDownSql, map[string]*bintree{}},
-	"1516491388_remove_repo_private.up.sql":                       {_1516491388_remove_repo_privateUpSql, map[string]*bintree{}},
-	"1516608575_repo_cleanup.down.sql":                            {_1516608575_repo_cleanupDownSql, map[string]*bintree{}},
-	"1516608575_repo_cleanup.up.sql":                              {_1516608575_repo_cleanupUpSql, map[string]*bintree{}},
-	"1516834731_add_saved_queries.down.sql":                       {_1516834731_add_saved_queriesDownSql, map[string]*bintree{}},
-	"1516834731_add_saved_queries.up.sql":                         {_1516834731_add_saved_queriesUpSql, map[string]*bintree{}},
-	"1517129075_repo_external.down.sql":                           {_1517129075_repo_externalDownSql, map[string]*bintree{}},
-	"1517129075_repo_external.up.sql":                             {_1517129075_repo_externalUpSql, map[string]*bintree{}},
-	"1518102181_cert_cache.down.sql":                              {_1518102181_cert_cacheDownSql, map[string]*bintree{}},
-	"1518102181_cert_cache.up.sql":                                {_1518102181_cert_cacheUpSql, map[string]*bintree{}},
-	"1518581786_remove_site_config_telemetry.down.sql":            {_1518581786_remove_site_config_telemetryDownSql, map[string]*bintree{}},
-	"1518581786_remove_site_config_telemetry.up.sql":              {_1518581786_remove_site_config_telemetryUpSql, map[string]*bintree{}},
-	"1518581860_add_site_config_initialized.down.sql":             {_1518581860_add_site_config_initializedDownSql, map[string]*bintree{}},
-	"1518581860_add_site_config_initialized.up.sql":               {_1518581860_add_site_config_initializedUpSql, map[string]*bintree{}},
-	"1519507899_drop_global_dep_private.down.sql":                 {_1519507899_drop_global_dep_privateDownSql, map[string]*bintree{}},
-	"1519507899_drop_global_dep_private.up.sql":                   {_1519507899_drop_global_dep_privateUpSql, map[string]*bintree{}},
-	"1520588597_user_emails_unique_verified_only.down.sql":        {_1520588597_user_emails_unique_verified_onlyDownSql, map[string]*bintree{}},
-	"1520588597_user_emails_unique_verified_only.up.sql":          {_1520588597_user_emails_unique_verified_onlyUpSql, map[string]*bintree{}},
-	"1520708880_users_display_name_nullable.down.sql":             {_1520708880_users_display_name_nullableDownSql, map[string]*bintree{}},
-	"1520708880_users_display_name_nullable.up.sql":               {_1520708880_users_display_name_nullableUpSql, map[string]*bintree{}},
-	"1522555179_create_access_tokens_table.down.sql":              {_1522555179_create_access_tokens_tableDownSql, map[string]*bintree{}},
-	"1522555179_create_access_tokens_table.up.sql":                {_1522555179_create_access_tokens_tableUpSql, map[string]*bintree{}},
-	"1522961518_create_survey_responses_table.down.sql":           {_1522961518_create_survey_responses_tableDownSql, map[string]*bintree{}},
-	"1522961518_create_survey_responses_table.up.sql":             {_1522961518_create_survey_responses_tableUpSql, map[string]*bintree{}},
-	"1524535307_remove_survey_responses_updated_at.down.sql":      {_1524535307_remove_survey_responses_updated_atDownSql, map[string]*bintree{}},
-	"1524535307_remove_survey_responses_updated_at.up.sql":        {_1524535307_remove_survey_responses_updated_atUpSql, map[string]*bintree{}},
-	"1524724144_add_access_tokens_fields.down.sql":                {_1524724144_add_access_tokens_fieldsDownSql, map[string]*bintree{}},
-	"1524724144_add_access_tokens_fields.up.sql":                  {_1524724144_add_access_tokens_fieldsUpSql, map[string]*bintree{}},
-	"1524942857_trim_site_config.down.sql":                        {_1524942857_trim_site_configDownSql, map[string]*bintree{}},
-	"1524942857_trim_site_config.up.sql":                          {_1524942857_trim_site_configUpSql, map[string]*bintree{}},
-	"1524949295_simplify_initialization.down.sql":                 {_1524949295_simplify_initializationDownSql, map[string]*bintree{}},
-	"1524949295_simplify_initialization.up.sql":                   {_1524949295_simplify_initializationUpSql, map[string]*bintree{}},
-	"1525150355_add_access_tokens_scopes.down.sql":                {_1525150355_add_access_tokens_scopesDownSql, map[string]*bintree{}},
-	"1525150355_add_access_tokens_scopes.up.sql":                  {_1525150355_add_access_tokens_scopesUpSql, map[string]*bintree{}},
-	"1525961108_user_unique_among_non-deleted.down.sql":           {_1525961108_user_unique_among_nonDeletedDownSql, map[string]*bintree{}},
-	"1525961108_user_unique_among_non-deleted.up.sql":             {_1525961108_user_unique_among_nonDeletedUpSql, map[string]*bintree{}},
-	"1526364839_user_multiple_external_accounts.down.sql":         {_1526364839_user_multiple_external_accountsDownSql, map[string]*bintree{}},
-	"1526364839_user_multiple_external_accounts.up.sql":           {_1526364839_user_multiple_external_accountsUpSql, map[string]*bintree{}},
-	"1526804768_add_external_account_client.down.sql":             {_1526804768_add_external_account_clientDownSql, map[string]*bintree{}},
-	"1526804768_add_external_account_client.up.sql":               {_1526804768_add_external_account_clientUpSql, map[string]*bintree{}},
-	"1527691234_reuse_org_name.down.sql":                          {_1527691234_reuse_org_nameDownSql, map[string]*bintree{}},
-	"1527691234_reuse_org_name.up.sql":                            {_1527691234_reuse_org_nameUpSql, map[string]*bintree{}},
-	"1528179233_drop_code_comments_tables.down.sql":               {_1528179233_drop_code_comments_tablesDownSql, map[string]*bintree{}},
-	"1528179233_drop_code_comments_tables.up.sql":                 {_1528179233_drop_code_comments_tablesUpSql, map[string]*bintree{}},
-	"1528277031_create_org_invitations_table.down.sql":            {_1528277031_create_org_invitations_tableDownSql, map[string]*bintree{}},
-	"1528277031_create_org_invitations_table.up.sql":              {_1528277031_create_org_invitations_tableUpSql, map[string]*bintree{}},
-	"1528395534_.down.sql":                                        {_1528395534_DownSql, map[string]*bintree{}},
-	"1528395534_.up.sql":                                          {_1528395534_UpSql, map[string]*bintree{}},
-	"1528395535_.down.sql":                                        {_1528395535_DownSql, map[string]*bintree{}},
-	"1528395535_.up.sql":                                          {_1528395535_UpSql, map[string]*bintree{}},
-	"1528395536_.down.sql":                                        {_1528395536_DownSql, map[string]*bintree{}},
-	"1528395536_.up.sql":                                          {_1528395536_UpSql, map[string]*bintree{}},
-	"1528395537_.down.sql":                                        {_1528395537_DownSql, map[string]*bintree{}},
-	"1528395537_.up.sql":                                          {_1528395537_UpSql, map[string]*bintree{}},
-	"1528395538_.down.sql":                                        {_1528395538_DownSql, map[string]*bintree{}},
-	"1528395538_.up.sql":                                          {_1528395538_UpSql, map[string]*bintree{}},
-	"1528395539_.down.sql":                                        {_1528395539_DownSql, map[string]*bintree{}},
-	"1528395539_.up.sql":                                          {_1528395539_UpSql, map[string]*bintree{}},
-	"1528395540_.down.sql":                                        {_1528395540_DownSql, map[string]*bintree{}},
-	"1528395540_.up.sql":                                          {_1528395540_UpSql, map[string]*bintree{}},
-	"1528395541_.down.sql":                                        {_1528395541_DownSql, map[string]*bintree{}},
-	"1528395541_.up.sql":                                          {_1528395541_UpSql, map[string]*bintree{}},
-	"1528395542_.down.sql":                                        {_1528395542_DownSql, map[string]*bintree{}},
-	"1528395542_.up.sql":                                          {_1528395542_UpSql, map[string]*bintree{}},
-	"1528395544_.down.sql":                                        {_1528395544_DownSql, map[string]*bintree{}},
-	"1528395544_.up.sql":                                          {_1528395544_UpSql, map[string]*bintree{}},
-	"1528395545_.down.sql":                                        {_1528395545_DownSql, map[string]*bintree{}},
-	"1528395545_.up.sql":                                          {_1528395545_UpSql, map[string]*bintree{}},
-	"1528395546_.down.sql":                                        {_1528395546_DownSql, map[string]*bintree{}},
-	"1528395546_.up.sql":                                          {_1528395546_UpSql, map[string]*bintree{}},
-	"1528395547_.down.sql":                                        {_1528395547_DownSql, map[string]*bintree{}},
-	"1528395547_.up.sql":                                          {_1528395547_UpSql, map[string]*bintree{}},
-	"1528395548_.down.sql":                                        {_1528395548_DownSql, map[string]*bintree{}},
-	"1528395548_.up.sql":                                          {_1528395548_UpSql, map[string]*bintree{}},
-	"1528395549_.down.sql":                                        {_1528395549_DownSql, map[string]*bintree{}},
-	"1528395549_.up.sql":                                          {_1528395549_UpSql, map[string]*bintree{}},
-	"1528395550_.down.sql":                                        {_1528395550_DownSql, map[string]*bintree{}},
-	"1528395550_.up.sql":                                          {_1528395550_UpSql, map[string]*bintree{}},
-	"1528395551_.down.sql":                                        {_1528395551_DownSql, map[string]*bintree{}},
-	"1528395551_.up.sql":                                          {_1528395551_UpSql, map[string]*bintree{}},
-	"1528395552_.down.sql":                                        {_1528395552_DownSql, map[string]*bintree{}},
-	"1528395552_.up.sql":                                          {_1528395552_UpSql, map[string]*bintree{}},
-	"1528395553_.down.sql":                                        {_1528395553_DownSql, map[string]*bintree{}},
-	"1528395553_.up.sql":                                          {_1528395553_UpSql, map[string]*bintree{}},
-	"1528395554_oss_fake_migration.down.sql":                      {_1528395554_oss_fake_migrationDownSql, map[string]*bintree{}},
-	"1528395554_oss_fake_migration.up.sql":                        {_1528395554_oss_fake_migrationUpSql, map[string]*bintree{}},
-	"1528395555_.down.sql":                                        {_1528395555_DownSql, map[string]*bintree{}},
-	"1528395555_.up.sql":                                          {_1528395555_UpSql, map[string]*bintree{}},
-	"1528395556_.down.sql":                                        {_1528395556_DownSql, map[string]*bintree{}},
-	"1528395556_.up.sql":                                          {_1528395556_UpSql, map[string]*bintree{}},
-	"1528395557_.down.sql":                                        {_1528395557_DownSql, map[string]*bintree{}},
-	"1528395557_.up.sql":                                          {_1528395557_UpSql, map[string]*bintree{}},
-	"1528395558_.down.sql":                                        {_1528395558_DownSql, map[string]*bintree{}},
-	"1528395558_.up.sql":                                          {_1528395558_UpSql, map[string]*bintree{}},
-	"1528395559_.down.sql":                                        {_1528395559_DownSql, map[string]*bintree{}},
-	"1528395559_.up.sql":                                          {_1528395559_UpSql, map[string]*bintree{}},
-	"1528395560_.down.sql":                                        {_1528395560_DownSql, map[string]*bintree{}},
-	"1528395560_.up.sql":                                          {_1528395560_UpSql, map[string]*bintree{}},
-	"1528395561_.down.sql":                                        {_1528395561_DownSql, map[string]*bintree{}},
-	"1528395561_.up.sql":                                          {_1528395561_UpSql, map[string]*bintree{}},
-	"1528395562_.down.sql":                                        {_1528395562_DownSql, map[string]*bintree{}},
-	"1528395562_.up.sql":                                          {_1528395562_UpSql, map[string]*bintree{}},
-	"1528395563_.down.sql":                                        {_1528395563_DownSql, map[string]*bintree{}},
-	"1528395563_.up.sql":                                          {_1528395563_UpSql, map[string]*bintree{}},
-	"1528395564_.down.sql":                                        {_1528395564_DownSql, map[string]*bintree{}},
-	"1528395564_.up.sql":                                          {_1528395564_UpSql, map[string]*bintree{}},
-	"1528395565_.down.sql":                                        {_1528395565_DownSql, map[string]*bintree{}},
-	"1528395565_.up.sql":                                          {_1528395565_UpSql, map[string]*bintree{}},
-	"1528395566_.down.sql":                                        {_1528395566_DownSql, map[string]*bintree{}},
-	"1528395566_.up.sql":                                          {_1528395566_UpSql, map[string]*bintree{}},
-	"1528395567_.down.sql":                                        {_1528395567_DownSql, map[string]*bintree{}},
-	"1528395567_.up.sql":                                          {_1528395567_UpSql, map[string]*bintree{}},
-	"1528395568_.down.sql":                                        {_1528395568_DownSql, map[string]*bintree{}},
-	"1528395568_.up.sql":                                          {_1528395568_UpSql, map[string]*bintree{}},
-	"1528395569_.down.sql":                                        {_1528395569_DownSql, map[string]*bintree{}},
-	"1528395569_.up.sql":                                          {_1528395569_UpSql, map[string]*bintree{}},
-	"1528395570_.down.sql":                                        {_1528395570_DownSql, map[string]*bintree{}},
-	"1528395570_.up.sql":                                          {_1528395570_UpSql, map[string]*bintree{}},
-	"1528395571_.down.sql":                                        {_1528395571_DownSql, map[string]*bintree{}},
-	"1528395571_.up.sql":                                          {_1528395571_UpSql, map[string]*bintree{}},
-	"1528395572_.down.sql":                                        {_1528395572_DownSql, map[string]*bintree{}},
-	"1528395572_.up.sql":                                          {_1528395572_UpSql, map[string]*bintree{}},
-	"1528395573_recent_searches.down.sql":                         {_1528395573_recent_searchesDownSql, map[string]*bintree{}},
-	"1528395573_recent_searches.up.sql":                           {_1528395573_recent_searchesUpSql, map[string]*bintree{}},
-	"1528395574_.down.sql":                                        {_1528395574_DownSql, map[string]*bintree{}},
-	"1528395574_.up.sql":                                          {_1528395574_UpSql, map[string]*bintree{}},
-	"1528395575_.down.sql":                                        {_1528395575_DownSql, map[string]*bintree{}},
-	"1528395575_.up.sql":                                          {_1528395575_UpSql, map[string]*bintree{}},
-	"1528395576_.down.sql":                                        {_1528395576_DownSql, map[string]*bintree{}},
-	"1528395576_.up.sql":                                          {_1528395576_UpSql, map[string]*bintree{}},
-	"1528395577_.up.sql":                                          {_1528395577_UpSql, map[string]*bintree{}},
-	"1528395578_.down.sql":                                        {_1528395578_DownSql, map[string]*bintree{}},
-	"1528395578_.up.sql":                                          {_1528395578_UpSql, map[string]*bintree{}},
-	"1528395579_.down.sql":                                        {_1528395579_DownSql, map[string]*bintree{}},
-	"1528395579_.up.sql":                                          {_1528395579_UpSql, map[string]*bintree{}},
-	"1528395580_create_user_permissions_table.down.sql":           {_1528395580_create_user_permissions_tableDownSql, map[string]*bintree{}},
-	"1528395580_create_user_permissions_table.up.sql":             {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
-	"1528395581_allows_dots_in_usernames.down.sql":                {_1528395581_allows_dots_in_usernamesDownSql, map[string]*bintree{}},
-	"1528395581_allows_dots_in_usernames.up.sql":                  {_1528395581_allows_dots_in_usernamesUpSql, map[string]*bintree{}},
+	"1503574972_extensions.down.sql":                                        {_1503574972_extensionsDownSql, map[string]*bintree{}},
+	"1503574972_extensions.up.sql":                                          {_1503574972_extensionsUpSql, map[string]*bintree{}},
+	"1503575261_repos.down.sql":                                             {_1503575261_reposDownSql, map[string]*bintree{}},
+	"1503575261_repos.up.sql":                                               {_1503575261_reposUpSql, map[string]*bintree{}},
+	"1503575588_global_deps.down.sql":                                       {_1503575588_global_depsDownSql, map[string]*bintree{}},
+	"1503575588_global_deps.up.sql":                                         {_1503575588_global_depsUpSql, map[string]*bintree{}},
+	"1504637681_orgs.down.sql":                                              {_1504637681_orgsDownSql, map[string]*bintree{}},
+	"1504637681_orgs.up.sql":                                                {_1504637681_orgsUpSql, map[string]*bintree{}},
+	"1504821553_add_org_constraints.down.sql":                               {_1504821553_add_org_constraintsDownSql, map[string]*bintree{}},
+	"1504821553_add_org_constraints.up.sql":                                 {_1504821553_add_org_constraintsUpSql, map[string]*bintree{}},
+	"1505517457_rename_org_members_columns.down.sql":                        {_1505517457_rename_org_members_columnsDownSql, map[string]*bintree{}},
+	"1505517457_rename_org_members_columns.up.sql":                          {_1505517457_rename_org_members_columnsUpSql, map[string]*bintree{}},
+	"1505882864_update_org_members.down.sql":                                {_1505882864_update_org_membersDownSql, map[string]*bintree{}},
+	"1505882864_update_org_members.up.sql":                                  {_1505882864_update_org_membersUpSql, map[string]*bintree{}},
+	"1506466653_add_users.down.sql":                                         {_1506466653_add_usersDownSql, map[string]*bintree{}},
+	"1506466653_add_users.up.sql":                                           {_1506466653_add_usersUpSql, map[string]*bintree{}},
+	"1506646657_alter_orgs_citext.down.sql":                                 {_1506646657_alter_orgs_citextDownSql, map[string]*bintree{}},
+	"1506646657_alter_orgs_citext.up.sql":                                   {_1506646657_alter_orgs_citextUpSql, map[string]*bintree{}},
+	"1506710237_user_org_constraint_updates.down.sql":                       {_1506710237_user_org_constraint_updatesDownSql, map[string]*bintree{}},
+	"1506710237_user_org_constraint_updates.up.sql":                         {_1506710237_user_org_constraint_updatesUpSql, map[string]*bintree{}},
+	"1506989402_add_tags.down.sql":                                          {_1506989402_add_tagsDownSql, map[string]*bintree{}},
+	"1506989402_add_tags.up.sql":                                            {_1506989402_add_tagsUpSql, map[string]*bintree{}},
+	"1507422179_remove_org_members_columns.down.sql":                        {_1507422179_remove_org_members_columnsDownSql, map[string]*bintree{}},
+	"1507422179_remove_org_members_columns.up.sql":                          {_1507422179_remove_org_members_columnsUpSql, map[string]*bintree{}},
+	"1507656459_add_org_settings.down.sql":                                  {_1507656459_add_org_settingsDownSql, map[string]*bintree{}},
+	"1507656459_add_org_settings.up.sql":                                    {_1507656459_add_org_settingsUpSql, map[string]*bintree{}},
+	"1507755085_add_editor_beta_tags.down.sql":                              {_1507755085_add_editor_beta_tagsDownSql, map[string]*bintree{}},
+	"1507755085_add_editor_beta_tags.up.sql":                                {_1507755085_add_editor_beta_tagsUpSql, map[string]*bintree{}},
+	"1507828928_add-slack-webhook-url.down.sql":                             {_1507828928_addSlackWebhookUrlDownSql, map[string]*bintree{}},
+	"1507828928_add-slack-webhook-url.up.sql":                               {_1507828928_addSlackWebhookUrlUpSql, map[string]*bintree{}},
+	"1508361685_add_phabricator_repos.down.sql":                             {_1508361685_add_phabricator_reposDownSql, map[string]*bintree{}},
+	"1508361685_add_phabricator_repos.up.sql":                               {_1508361685_add_phabricator_reposUpSql, map[string]*bintree{}},
+	"1508795218_update_constraints.down.sql":                                {_1508795218_update_constraintsDownSql, map[string]*bintree{}},
+	"1508795218_update_constraints.up.sql":                                  {_1508795218_update_constraintsUpSql, map[string]*bintree{}},
+	"1509599098_add-users-provider-column.down.sql":                         {_1509599098_addUsersProviderColumnDownSql, map[string]*bintree{}},
+	"1509599098_add-users-provider-column.up.sql":                           {_1509599098_addUsersProviderColumnUpSql, map[string]*bintree{}},
+	"1509645961_rename-users-auth0_id-to-uid.down.sql":                      {_1509645961_renameUsersAuth0_idToUidDownSql, map[string]*bintree{}},
+	"1509645961_rename-users-auth0_id-to-uid.up.sql":                        {_1509645961_renameUsersAuth0_idToUidUpSql, map[string]*bintree{}},
+	"1510709195_add_server_user_events_table.down.sql":                      {_1510709195_add_server_user_events_tableDownSql, map[string]*bintree{}},
+	"1510709195_add_server_user_events_table.up.sql":                        {_1510709195_add_server_user_events_tableUpSql, map[string]*bintree{}},
+	"1511004249_generalize_org_settings.down.sql":                           {_1511004249_generalize_org_settingsDownSql, map[string]*bintree{}},
+	"1511004249_generalize_org_settings.up.sql":                             {_1511004249_generalize_org_settingsUpSql, map[string]*bintree{}},
+	"1511011666_add_user_settings.down.sql":                                 {_1511011666_add_user_settingsDownSql, map[string]*bintree{}},
+	"1511011666_add_user_settings.up.sql":                                   {_1511011666_add_user_settingsUpSql, map[string]*bintree{}},
+	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.down.sql":           {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyDownSql, map[string]*bintree{}},
+	"1511365156_pkgs_and_global_dep_to_repo_foreign_key.up.sql":             {_1511365156_pkgs_and_global_dep_to_repo_foreign_keyUpSql, map[string]*bintree{}},
+	"1511852763_user_invite_quota.down.sql":                                 {_1511852763_user_invite_quotaDownSql, map[string]*bintree{}},
+	"1511852763_user_invite_quota.up.sql":                                   {_1511852763_user_invite_quotaUpSql, map[string]*bintree{}},
+	"1512437090_update_phabricator_repos.down.sql":                          {_1512437090_update_phabricator_reposDownSql, map[string]*bintree{}},
+	"1512437090_update_phabricator_repos.up.sql":                            {_1512437090_update_phabricator_reposUpSql, map[string]*bintree{}},
+	"1512998571_repo_nullable.down.sql":                                     {_1512998571_repo_nullableDownSql, map[string]*bintree{}},
+	"1512998571_repo_nullable.up.sql":                                       {_1512998571_repo_nullableUpSql, map[string]*bintree{}},
+	"1513000124_rm_repos_cols.down.sql":                                     {_1513000124_rm_repos_colsDownSql, map[string]*bintree{}},
+	"1513000124_rm_repos_cols.up.sql":                                       {_1513000124_rm_repos_colsUpSql, map[string]*bintree{}},
+	"1513188842_add_app_config_table.down.sql":                              {_1513188842_add_app_config_tableDownSql, map[string]*bintree{}},
+	"1513188842_add_app_config_table.up.sql":                                {_1513188842_add_app_config_tableUpSql, map[string]*bintree{}},
+	"1513578663_user-passwords.down.sql":                                    {_1513578663_userPasswordsDownSql, map[string]*bintree{}},
+	"1513578663_user-passwords.up.sql":                                      {_1513578663_userPasswordsUpSql, map[string]*bintree{}},
+	"1513800341_update_username_orgname_regex.down.sql":                     {_1513800341_update_username_orgname_regexDownSql, map[string]*bintree{}},
+	"1513800341_update_username_orgname_regex.up.sql":                       {_1513800341_update_username_orgname_regexUpSql, map[string]*bintree{}},
+	"1514312401_add_site_admin_column_to_users.down.sql":                    {_1514312401_add_site_admin_column_to_usersDownSql, map[string]*bintree{}},
+	"1514312401_add_site_admin_column_to_users.up.sql":                      {_1514312401_add_site_admin_column_to_usersUpSql, map[string]*bintree{}},
+	"1514534085_add_orgs_deleted_at.down.sql":                               {_1514534085_add_orgs_deleted_atDownSql, map[string]*bintree{}},
+	"1514534085_add_orgs_deleted_at.up.sql":                                 {_1514534085_add_orgs_deleted_atUpSql, map[string]*bintree{}},
+	"1514536731_add_org_members_user_fkey.down.sql":                         {_1514536731_add_org_members_user_fkeyDownSql, map[string]*bintree{}},
+	"1514536731_add_org_members_user_fkey.up.sql":                           {_1514536731_add_org_members_user_fkeyUpSql, map[string]*bintree{}},
+	"1514691735_rename_deployment_configuration.down.sql":                   {_1514691735_rename_deployment_configurationDownSql, map[string]*bintree{}},
+	"1514691735_rename_deployment_configuration.up.sql":                     {_1514691735_rename_deployment_configurationUpSql, map[string]*bintree{}},
+	"1514693059_user_emails_table.down.sql":                                 {_1514693059_user_emails_tableDownSql, map[string]*bintree{}},
+	"1514693059_user_emails_table.up.sql":                                   {_1514693059_user_emails_tableUpSql, map[string]*bintree{}},
+	"1514702776_add_settings_user_fkey.down.sql":                            {_1514702776_add_settings_user_fkeyDownSql, map[string]*bintree{}},
+	"1514702776_add_settings_user_fkey.up.sql":                              {_1514702776_add_settings_user_fkeyUpSql, map[string]*bintree{}},
+	"1514713044_rename_users_auth_id_to_external_id.down.sql":               {_1514713044_rename_users_auth_id_to_external_idDownSql, map[string]*bintree{}},
+	"1514713044_rename_users_auth_id_to_external_id.up.sql":                 {_1514713044_rename_users_auth_id_to_external_idUpSql, map[string]*bintree{}},
+	"1514714572_external_provider.down.sql":                                 {_1514714572_external_providerDownSql, map[string]*bintree{}},
+	"1514714572_external_provider.up.sql":                                   {_1514714572_external_providerUpSql, map[string]*bintree{}},
+	"1514718560_external_provider_and_id.down.sql":                          {_1514718560_external_provider_and_idDownSql, map[string]*bintree{}},
+	"1514718560_external_provider_and_id.up.sql":                            {_1514718560_external_provider_and_idUpSql, map[string]*bintree{}},
+	"1514876826_site_id.down.sql":                                           {_1514876826_site_idDownSql, map[string]*bintree{}},
+	"1514876826_site_id.up.sql":                                             {_1514876826_site_idUpSql, map[string]*bintree{}},
+	"1514937919_remove_user_activity_table.down.sql":                        {_1514937919_remove_user_activity_tableDownSql, map[string]*bintree{}},
+	"1514937919_remove_user_activity_table.up.sql":                          {_1514937919_remove_user_activity_tableUpSql, map[string]*bintree{}},
+	"1515125883_repo_blocked_to_enabled.down.sql":                           {_1515125883_repo_blocked_to_enabledDownSql, map[string]*bintree{}},
+	"1515125883_repo_blocked_to_enabled.up.sql":                             {_1515125883_repo_blocked_to_enabledUpSql, map[string]*bintree{}},
+	"1515651962_drop_has_subject_constraint.down.sql":                       {_1515651962_drop_has_subject_constraintDownSql, map[string]*bintree{}},
+	"1515651962_drop_has_subject_constraint.up.sql":                         {_1515651962_drop_has_subject_constraintUpSql, map[string]*bintree{}},
+	"1516491388_remove_repo_private.down.sql":                               {_1516491388_remove_repo_privateDownSql, map[string]*bintree{}},
+	"1516491388_remove_repo_private.up.sql":                                 {_1516491388_remove_repo_privateUpSql, map[string]*bintree{}},
+	"1516608575_repo_cleanup.down.sql":                                      {_1516608575_repo_cleanupDownSql, map[string]*bintree{}},
+	"1516608575_repo_cleanup.up.sql":                                        {_1516608575_repo_cleanupUpSql, map[string]*bintree{}},
+	"1516834731_add_saved_queries.down.sql":                                 {_1516834731_add_saved_queriesDownSql, map[string]*bintree{}},
+	"1516834731_add_saved_queries.up.sql":                                   {_1516834731_add_saved_queriesUpSql, map[string]*bintree{}},
+	"1517129075_repo_external.down.sql":                                     {_1517129075_repo_externalDownSql, map[string]*bintree{}},
+	"1517129075_repo_external.up.sql":                                       {_1517129075_repo_externalUpSql, map[string]*bintree{}},
+	"1518102181_cert_cache.down.sql":                                        {_1518102181_cert_cacheDownSql, map[string]*bintree{}},
+	"1518102181_cert_cache.up.sql":                                          {_1518102181_cert_cacheUpSql, map[string]*bintree{}},
+	"1518581786_remove_site_config_telemetry.down.sql":                      {_1518581786_remove_site_config_telemetryDownSql, map[string]*bintree{}},
+	"1518581786_remove_site_config_telemetry.up.sql":                        {_1518581786_remove_site_config_telemetryUpSql, map[string]*bintree{}},
+	"1518581860_add_site_config_initialized.down.sql":                       {_1518581860_add_site_config_initializedDownSql, map[string]*bintree{}},
+	"1518581860_add_site_config_initialized.up.sql":                         {_1518581860_add_site_config_initializedUpSql, map[string]*bintree{}},
+	"1519507899_drop_global_dep_private.down.sql":                           {_1519507899_drop_global_dep_privateDownSql, map[string]*bintree{}},
+	"1519507899_drop_global_dep_private.up.sql":                             {_1519507899_drop_global_dep_privateUpSql, map[string]*bintree{}},
+	"1520588597_user_emails_unique_verified_only.down.sql":                  {_1520588597_user_emails_unique_verified_onlyDownSql, map[string]*bintree{}},
+	"1520588597_user_emails_unique_verified_only.up.sql":                    {_1520588597_user_emails_unique_verified_onlyUpSql, map[string]*bintree{}},
+	"1520708880_users_display_name_nullable.down.sql":                       {_1520708880_users_display_name_nullableDownSql, map[string]*bintree{}},
+	"1520708880_users_display_name_nullable.up.sql":                         {_1520708880_users_display_name_nullableUpSql, map[string]*bintree{}},
+	"1522555179_create_access_tokens_table.down.sql":                        {_1522555179_create_access_tokens_tableDownSql, map[string]*bintree{}},
+	"1522555179_create_access_tokens_table.up.sql":                          {_1522555179_create_access_tokens_tableUpSql, map[string]*bintree{}},
+	"1522961518_create_survey_responses_table.down.sql":                     {_1522961518_create_survey_responses_tableDownSql, map[string]*bintree{}},
+	"1522961518_create_survey_responses_table.up.sql":                       {_1522961518_create_survey_responses_tableUpSql, map[string]*bintree{}},
+	"1524535307_remove_survey_responses_updated_at.down.sql":                {_1524535307_remove_survey_responses_updated_atDownSql, map[string]*bintree{}},
+	"1524535307_remove_survey_responses_updated_at.up.sql":                  {_1524535307_remove_survey_responses_updated_atUpSql, map[string]*bintree{}},
+	"1524724144_add_access_tokens_fields.down.sql":                          {_1524724144_add_access_tokens_fieldsDownSql, map[string]*bintree{}},
+	"1524724144_add_access_tokens_fields.up.sql":                            {_1524724144_add_access_tokens_fieldsUpSql, map[string]*bintree{}},
+	"1524942857_trim_site_config.down.sql":                                  {_1524942857_trim_site_configDownSql, map[string]*bintree{}},
+	"1524942857_trim_site_config.up.sql":                                    {_1524942857_trim_site_configUpSql, map[string]*bintree{}},
+	"1524949295_simplify_initialization.down.sql":                           {_1524949295_simplify_initializationDownSql, map[string]*bintree{}},
+	"1524949295_simplify_initialization.up.sql":                             {_1524949295_simplify_initializationUpSql, map[string]*bintree{}},
+	"1525150355_add_access_tokens_scopes.down.sql":                          {_1525150355_add_access_tokens_scopesDownSql, map[string]*bintree{}},
+	"1525150355_add_access_tokens_scopes.up.sql":                            {_1525150355_add_access_tokens_scopesUpSql, map[string]*bintree{}},
+	"1525961108_user_unique_among_non-deleted.down.sql":                     {_1525961108_user_unique_among_nonDeletedDownSql, map[string]*bintree{}},
+	"1525961108_user_unique_among_non-deleted.up.sql":                       {_1525961108_user_unique_among_nonDeletedUpSql, map[string]*bintree{}},
+	"1526364839_user_multiple_external_accounts.down.sql":                   {_1526364839_user_multiple_external_accountsDownSql, map[string]*bintree{}},
+	"1526364839_user_multiple_external_accounts.up.sql":                     {_1526364839_user_multiple_external_accountsUpSql, map[string]*bintree{}},
+	"1526804768_add_external_account_client.down.sql":                       {_1526804768_add_external_account_clientDownSql, map[string]*bintree{}},
+	"1526804768_add_external_account_client.up.sql":                         {_1526804768_add_external_account_clientUpSql, map[string]*bintree{}},
+	"1527691234_reuse_org_name.down.sql":                                    {_1527691234_reuse_org_nameDownSql, map[string]*bintree{}},
+	"1527691234_reuse_org_name.up.sql":                                      {_1527691234_reuse_org_nameUpSql, map[string]*bintree{}},
+	"1528179233_drop_code_comments_tables.down.sql":                         {_1528179233_drop_code_comments_tablesDownSql, map[string]*bintree{}},
+	"1528179233_drop_code_comments_tables.up.sql":                           {_1528179233_drop_code_comments_tablesUpSql, map[string]*bintree{}},
+	"1528277031_create_org_invitations_table.down.sql":                      {_1528277031_create_org_invitations_tableDownSql, map[string]*bintree{}},
+	"1528277031_create_org_invitations_table.up.sql":                        {_1528277031_create_org_invitations_tableUpSql, map[string]*bintree{}},
+	"1528395534_.down.sql":                                                  {_1528395534_DownSql, map[string]*bintree{}},
+	"1528395534_.up.sql":                                                    {_1528395534_UpSql, map[string]*bintree{}},
+	"1528395535_.down.sql":                                                  {_1528395535_DownSql, map[string]*bintree{}},
+	"1528395535_.up.sql":                                                    {_1528395535_UpSql, map[string]*bintree{}},
+	"1528395536_.down.sql":                                                  {_1528395536_DownSql, map[string]*bintree{}},
+	"1528395536_.up.sql":                                                    {_1528395536_UpSql, map[string]*bintree{}},
+	"1528395537_.down.sql":                                                  {_1528395537_DownSql, map[string]*bintree{}},
+	"1528395537_.up.sql":                                                    {_1528395537_UpSql, map[string]*bintree{}},
+	"1528395538_.down.sql":                                                  {_1528395538_DownSql, map[string]*bintree{}},
+	"1528395538_.up.sql":                                                    {_1528395538_UpSql, map[string]*bintree{}},
+	"1528395539_.down.sql":                                                  {_1528395539_DownSql, map[string]*bintree{}},
+	"1528395539_.up.sql":                                                    {_1528395539_UpSql, map[string]*bintree{}},
+	"1528395540_.down.sql":                                                  {_1528395540_DownSql, map[string]*bintree{}},
+	"1528395540_.up.sql":                                                    {_1528395540_UpSql, map[string]*bintree{}},
+	"1528395541_.down.sql":                                                  {_1528395541_DownSql, map[string]*bintree{}},
+	"1528395541_.up.sql":                                                    {_1528395541_UpSql, map[string]*bintree{}},
+	"1528395542_.down.sql":                                                  {_1528395542_DownSql, map[string]*bintree{}},
+	"1528395542_.up.sql":                                                    {_1528395542_UpSql, map[string]*bintree{}},
+	"1528395544_.down.sql":                                                  {_1528395544_DownSql, map[string]*bintree{}},
+	"1528395544_.up.sql":                                                    {_1528395544_UpSql, map[string]*bintree{}},
+	"1528395545_.down.sql":                                                  {_1528395545_DownSql, map[string]*bintree{}},
+	"1528395545_.up.sql":                                                    {_1528395545_UpSql, map[string]*bintree{}},
+	"1528395546_.down.sql":                                                  {_1528395546_DownSql, map[string]*bintree{}},
+	"1528395546_.up.sql":                                                    {_1528395546_UpSql, map[string]*bintree{}},
+	"1528395547_.down.sql":                                                  {_1528395547_DownSql, map[string]*bintree{}},
+	"1528395547_.up.sql":                                                    {_1528395547_UpSql, map[string]*bintree{}},
+	"1528395548_.down.sql":                                                  {_1528395548_DownSql, map[string]*bintree{}},
+	"1528395548_.up.sql":                                                    {_1528395548_UpSql, map[string]*bintree{}},
+	"1528395549_.down.sql":                                                  {_1528395549_DownSql, map[string]*bintree{}},
+	"1528395549_.up.sql":                                                    {_1528395549_UpSql, map[string]*bintree{}},
+	"1528395550_.down.sql":                                                  {_1528395550_DownSql, map[string]*bintree{}},
+	"1528395550_.up.sql":                                                    {_1528395550_UpSql, map[string]*bintree{}},
+	"1528395551_.down.sql":                                                  {_1528395551_DownSql, map[string]*bintree{}},
+	"1528395551_.up.sql":                                                    {_1528395551_UpSql, map[string]*bintree{}},
+	"1528395552_.down.sql":                                                  {_1528395552_DownSql, map[string]*bintree{}},
+	"1528395552_.up.sql":                                                    {_1528395552_UpSql, map[string]*bintree{}},
+	"1528395553_.down.sql":                                                  {_1528395553_DownSql, map[string]*bintree{}},
+	"1528395553_.up.sql":                                                    {_1528395553_UpSql, map[string]*bintree{}},
+	"1528395554_oss_fake_migration.down.sql":                                {_1528395554_oss_fake_migrationDownSql, map[string]*bintree{}},
+	"1528395554_oss_fake_migration.up.sql":                                  {_1528395554_oss_fake_migrationUpSql, map[string]*bintree{}},
+	"1528395555_.down.sql":                                                  {_1528395555_DownSql, map[string]*bintree{}},
+	"1528395555_.up.sql":                                                    {_1528395555_UpSql, map[string]*bintree{}},
+	"1528395556_.down.sql":                                                  {_1528395556_DownSql, map[string]*bintree{}},
+	"1528395556_.up.sql":                                                    {_1528395556_UpSql, map[string]*bintree{}},
+	"1528395557_.down.sql":                                                  {_1528395557_DownSql, map[string]*bintree{}},
+	"1528395557_.up.sql":                                                    {_1528395557_UpSql, map[string]*bintree{}},
+	"1528395558_.down.sql":                                                  {_1528395558_DownSql, map[string]*bintree{}},
+	"1528395558_.up.sql":                                                    {_1528395558_UpSql, map[string]*bintree{}},
+	"1528395559_.down.sql":                                                  {_1528395559_DownSql, map[string]*bintree{}},
+	"1528395559_.up.sql":                                                    {_1528395559_UpSql, map[string]*bintree{}},
+	"1528395560_.down.sql":                                                  {_1528395560_DownSql, map[string]*bintree{}},
+	"1528395560_.up.sql":                                                    {_1528395560_UpSql, map[string]*bintree{}},
+	"1528395561_.down.sql":                                                  {_1528395561_DownSql, map[string]*bintree{}},
+	"1528395561_.up.sql":                                                    {_1528395561_UpSql, map[string]*bintree{}},
+	"1528395562_.down.sql":                                                  {_1528395562_DownSql, map[string]*bintree{}},
+	"1528395562_.up.sql":                                                    {_1528395562_UpSql, map[string]*bintree{}},
+	"1528395563_.down.sql":                                                  {_1528395563_DownSql, map[string]*bintree{}},
+	"1528395563_.up.sql":                                                    {_1528395563_UpSql, map[string]*bintree{}},
+	"1528395564_.down.sql":                                                  {_1528395564_DownSql, map[string]*bintree{}},
+	"1528395564_.up.sql":                                                    {_1528395564_UpSql, map[string]*bintree{}},
+	"1528395565_.down.sql":                                                  {_1528395565_DownSql, map[string]*bintree{}},
+	"1528395565_.up.sql":                                                    {_1528395565_UpSql, map[string]*bintree{}},
+	"1528395566_.down.sql":                                                  {_1528395566_DownSql, map[string]*bintree{}},
+	"1528395566_.up.sql":                                                    {_1528395566_UpSql, map[string]*bintree{}},
+	"1528395567_.down.sql":                                                  {_1528395567_DownSql, map[string]*bintree{}},
+	"1528395567_.up.sql":                                                    {_1528395567_UpSql, map[string]*bintree{}},
+	"1528395568_.down.sql":                                                  {_1528395568_DownSql, map[string]*bintree{}},
+	"1528395568_.up.sql":                                                    {_1528395568_UpSql, map[string]*bintree{}},
+	"1528395569_.down.sql":                                                  {_1528395569_DownSql, map[string]*bintree{}},
+	"1528395569_.up.sql":                                                    {_1528395569_UpSql, map[string]*bintree{}},
+	"1528395570_.down.sql":                                                  {_1528395570_DownSql, map[string]*bintree{}},
+	"1528395570_.up.sql":                                                    {_1528395570_UpSql, map[string]*bintree{}},
+	"1528395571_.down.sql":                                                  {_1528395571_DownSql, map[string]*bintree{}},
+	"1528395571_.up.sql":                                                    {_1528395571_UpSql, map[string]*bintree{}},
+	"1528395572_.down.sql":                                                  {_1528395572_DownSql, map[string]*bintree{}},
+	"1528395572_.up.sql":                                                    {_1528395572_UpSql, map[string]*bintree{}},
+	"1528395573_recent_searches.down.sql":                                   {_1528395573_recent_searchesDownSql, map[string]*bintree{}},
+	"1528395573_recent_searches.up.sql":                                     {_1528395573_recent_searchesUpSql, map[string]*bintree{}},
+	"1528395574_.down.sql":                                                  {_1528395574_DownSql, map[string]*bintree{}},
+	"1528395574_.up.sql":                                                    {_1528395574_UpSql, map[string]*bintree{}},
+	"1528395575_.down.sql":                                                  {_1528395575_DownSql, map[string]*bintree{}},
+	"1528395575_.up.sql":                                                    {_1528395575_UpSql, map[string]*bintree{}},
+	"1528395576_.down.sql":                                                  {_1528395576_DownSql, map[string]*bintree{}},
+	"1528395576_.up.sql":                                                    {_1528395576_UpSql, map[string]*bintree{}},
+	"1528395577_.up.sql":                                                    {_1528395577_UpSql, map[string]*bintree{}},
+	"1528395578_.down.sql":                                                  {_1528395578_DownSql, map[string]*bintree{}},
+	"1528395578_.up.sql":                                                    {_1528395578_UpSql, map[string]*bintree{}},
+	"1528395579_.down.sql":                                                  {_1528395579_DownSql, map[string]*bintree{}},
+	"1528395579_.up.sql":                                                    {_1528395579_UpSql, map[string]*bintree{}},
+	"1528395580_create_user_permissions_table.down.sql":                     {_1528395580_create_user_permissions_tableDownSql, map[string]*bintree{}},
+	"1528395580_create_user_permissions_table.up.sql":                       {_1528395580_create_user_permissions_tableUpSql, map[string]*bintree{}},
+	"1528395581_allows_dots_in_usernames.down.sql":                          {_1528395581_allows_dots_in_usernamesDownSql, map[string]*bintree{}},
+	"1528395581_allows_dots_in_usernames.up.sql":                            {_1528395581_allows_dots_in_usernamesUpSql, map[string]*bintree{}},
+	"1528395582_add_default_repos.down.sql":                                 {_1528395582_add_default_reposDownSql, map[string]*bintree{}},
+	"1528395582_add_default_repos.up.sql":                                   {_1528395582_add_default_reposUpSql, map[string]*bintree{}},
+	"1528395583_add_default_repos_primary_key.down.sql":                     {_1528395583_add_default_repos_primary_keyDownSql, map[string]*bintree{}},
+	"1528395583_add_default_repos_primary_key.up.sql":                       {_1528395583_add_default_repos_primary_keyUpSql, map[string]*bintree{}},
+	"1528395584_add_campaigns_table.down.sql":                               {_1528395584_add_campaigns_tableDownSql, map[string]*bintree{}},
+	"1528395584_add_campaigns_table.up.sql":                                 {_1528395584_add_campaigns_tableUpSql, map[string]*bintree{}},
+	"1528395585_go-1.13-dummy-migration.down.sql":                           {_1528395585_go113DummyMigrationDownSql, map[string]*bintree{}},
+	"1528395585_go-1.13-dummy-migration.up.sql":                             {_1528395585_go113DummyMigrationUpSql, map[string]*bintree{}},
+	"1528395586_add_threads_table.down.sql":                                 {_1528395586_add_threads_tableDownSql, map[string]*bintree{}},
+	"1528395586_add_threads_table.up.sql":                                   {_1528395586_add_threads_tableUpSql, map[string]*bintree{}},
+	"1528395587_campaigns_threads_many_to_many_relation.down.sql":           {_1528395587_campaigns_threads_many_to_many_relationDownSql, map[string]*bintree{}},
+	"1528395587_campaigns_threads_many_to_many_relation.up.sql":             {_1528395587_campaigns_threads_many_to_many_relationUpSql, map[string]*bintree{}},
+	"1528395588_rename_threads_to_changesets.down.sql":                      {_1528395588_rename_threads_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395588_rename_threads_to_changesets.up.sql":                        {_1528395588_rename_threads_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395589_add_external_id_to_schema.down.sql":                         {_1528395589_add_external_id_to_schemaDownSql, map[string]*bintree{}},
+	"1528395589_add_external_id_to_schema.up.sql":                           {_1528395589_add_external_id_to_schemaUpSql, map[string]*bintree{}},
+	"1528395590_add_external_service_type_to_changesets.down.sql":           {_1528395590_add_external_service_type_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395590_add_external_service_type_to_changesets.up.sql":             {_1528395590_add_external_service_type_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395591_create_events_logging_table.down.sql":                       {_1528395591_create_events_logging_tableDownSql, map[string]*bintree{}},
+	"1528395591_create_events_logging_table.up.sql":                         {_1528395591_create_events_logging_tableUpSql, map[string]*bintree{}},
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql": {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql, map[string]*bintree{}},
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql":   {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql, map[string]*bintree{}},
+	"1528395593_allows_trailing_hyphen_in_usernames.down.sql":               {_1528395593_allows_trailing_hyphen_in_usernamesDownSql, map[string]*bintree{}},
+	"1528395593_allows_trailing_hyphen_in_usernames.up.sql":                 {_1528395593_allows_trailing_hyphen_in_usernamesUpSql, map[string]*bintree{}},
+	"1528395594_create_changeset_events_table.down.sql":                     {_1528395594_create_changeset_events_tableDownSql, map[string]*bintree{}},
+	"1528395594_create_changeset_events_table.up.sql":                       {_1528395594_create_changeset_events_tableUpSql, map[string]*bintree{}},
+	"1528395595_create_lsif_database.down.sql":                              {_1528395595_create_lsif_databaseDownSql, map[string]*bintree{}},
+	"1528395595_create_lsif_database.up.sql":                                {_1528395595_create_lsif_databaseUpSql, map[string]*bintree{}},
+	"1528395596_lsif_xrepo_init.down.sql":                                   {_1528395596_lsif_xrepo_initDownSql, map[string]*bintree{}},
+	"1528395596_lsif_xrepo_init.up.sql":                                     {_1528395596_lsif_xrepo_initUpSql, map[string]*bintree{}},
+	"1528395597_lsif_commits.down.sql":                                      {_1528395597_lsif_commitsDownSql, map[string]*bintree{}},
+	"1528395597_lsif_commits.up.sql":                                        {_1528395597_lsif_commitsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

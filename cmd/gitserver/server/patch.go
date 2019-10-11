@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -172,7 +172,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "update-ref", req.TargetRef, cmtHash)
+	cmd = exec.CommandContext(ctx, "git", "update-ref", "--", req.TargetRef, cmtHash)
 	cmd.Dir = repoGitDir
 
 	if out, err = run(cmd); err != nil {

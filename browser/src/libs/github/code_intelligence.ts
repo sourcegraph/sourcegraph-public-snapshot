@@ -203,16 +203,18 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
             return null
         }
 
-        const files = document.getElementsByClassName('file')
         const { pageType } = parseURL()
         const isSingleCodeFile =
-            files.length === 1 && pageType === 'blob' && document.getElementsByClassName('diff-view').length === 0
+            pageType === 'blob' &&
+            document.getElementsByClassName('file').length === 1 &&
+            document.getElementsByClassName('diff-view').length === 0
 
         if (isSingleCodeFile) {
             return { element: elem, ...singleFileCodeView }
         }
 
-        if (elem.closest('.discussion-item-body')) {
+        if (elem.closest('.discussion-item-body') || elem.classList.contains('js-comment-container')) {
+            // This code view is embedded on a PR conversation page.
             return { element: elem, ...diffConversationCodeView }
         }
 
@@ -318,6 +320,7 @@ export const githubCodeHost: CodeHost = {
         listItemClassName: 'text-normal',
     },
     hoverOverlayClassProps: {
+        className: 'Box',
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',

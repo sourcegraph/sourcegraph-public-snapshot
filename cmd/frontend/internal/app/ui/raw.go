@@ -13,11 +13,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 )
 
 // Examples:
@@ -67,7 +68,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		// - Gitserver content updating
 		// - Consistent error handling (permissions, revision not found, repo not found, etc).
 		//
-		common, err = newCommon(w, r, "Sourcegraph", serveError)
+		common, err = newCommon(w, r, conf.BrandName(), serveError)
 		if err != nil {
 			return err
 		}

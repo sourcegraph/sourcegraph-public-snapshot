@@ -7,23 +7,23 @@ import (
 	"github.com/dghubble/gologin/github"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	gh "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
 
 const sessionKey = "githuboauth@0"
 
-func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, problems []string) {
+func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
 	if rawURL == "" {
 		rawURL = "https://github.com/"
 	}
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		problems = append(problems, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
-		return nil, problems
+		messages = append(messages, fmt.Sprintf("Could not parse GitHub URL %q. You will not be able to login via this GitHub instance.", rawURL))
+		return nil, messages
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, gh.ServiceType)
 	oauth2Cfg := oauth2.Config{

@@ -2,12 +2,19 @@ import { createBrowserHistory } from 'history'
 import { range } from 'lodash'
 import * as React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from 'react-testing-library'
+import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { HIGHLIGHTED_FILE_LINES_REQUEST, MULTIPLE_SEARCH_REQUEST, RESULT, SEARCH_REQUEST } from '../testHelpers'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import {
+    extensionsController,
+    HIGHLIGHTED_FILE_LINES_REQUEST,
+    MULTIPLE_SEARCH_REQUEST,
+    RESULT,
+    SEARCH_REQUEST,
+} from '../testHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
@@ -32,7 +39,7 @@ class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: bool
 }
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
-    <MockVisibilitySensor onChange={onChange} children={children} />
+    <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
 ))
 
 describe('SearchResultsList', () => {
@@ -107,6 +114,9 @@ describe('SearchResultsList', () => {
             subjects: null,
             final: null,
         },
+        extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
+        platformContext: { forceUpdateTooltip: sinon.spy() },
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
     it('displays loading text when results is undefined', () => {
@@ -164,8 +174,7 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...props} />
             </BrowserRouter>
         )
-        expect(getByTestId(container, 'result-container')).toBeTruthy()
-        expect(getAllByTestId(container, 'result-container').length).toBe(3)
+        expect(getAllByTestId(container, 'result-container')).toHaveLength(3)
     })
 
     it('displays "Show More" when the limit is hit', () => {

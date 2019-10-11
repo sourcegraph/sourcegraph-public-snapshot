@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/temoto/robotstxt-go"
+	"github.com/temoto/robotstxt"
 )
 
 func TestRobotsTxt(t *testing.T) {

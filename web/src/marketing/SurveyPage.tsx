@@ -12,13 +12,14 @@ import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
+import { Subscription } from 'rxjs'
 interface SurveyFormProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
     score?: number
     onScoreChange?: (score: number) => void
-    onSubmit: () => void
+    onSubmit?: () => void
 }
 
 interface SurveyFormState {
@@ -37,6 +38,8 @@ export interface SurveyResponse {
 }
 
 class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
+    private subscriptions = new Subscription()
+
     constructor(props: SurveyFormProps) {
         super(props)
         this.state = {
@@ -58,7 +61,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                 {!this.props.authenticatedUser && (
                     <div className="form-group">
                         <input
-                            className={`form-control survey-form__input`}
+                            className="form-control survey-form__input"
                             type="text"
                             placeholder="Email"
                             onChange={this.onEmailFieldChange}
@@ -72,7 +75,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                         What is the most important reason for the score you gave Sourcegraph?
                     </label>
                     <textarea
-                        className={`form-control survey-form__input`}
+                        className="form-control survey-form__input"
                         onChange={this.onReasonFieldChange}
                         value={this.state.reason}
                         disabled={this.state.loading}
@@ -82,7 +85,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                 <div className="form-group">
                     <label className="survey-form__label">What could Sourcegraph do to provide a better product?</label>
                     <textarea
-                        className={`form-control survey-form__input`}
+                        className="form-control survey-form__input"
                         onChange={this.onBetterProductFieldChange}
                         value={this.state.betterProduct}
                         disabled={this.state.loading}
@@ -141,22 +144,26 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         eventLogger.log('SurveySubmitted')
         this.setState({ loading: true })
 
-        submitSurvey({
-            score: this.props.score,
-            email: this.state.email,
-            reason: this.state.reason,
-            better: this.state.betterProduct,
-        })
-            .pipe(
-                catchError(error => {
-                    this.setState({ error })
-                    return []
-                })
-            )
-            .subscribe(() => {
-                this.props.onSubmit()
-                this.props.history.push('/survey/thanks')
+        this.subscriptions.add(
+            submitSurvey({
+                score: this.props.score,
+                email: this.state.email,
+                reason: this.state.reason,
+                better: this.state.betterProduct,
             })
+                .pipe(
+                    catchError(error => {
+                        this.setState({ error })
+                        return []
+                    })
+                )
+                .subscribe(() => {
+                    if (this.props.onSubmit) {
+                        this.props.onSubmit()
+                    }
+                    this.props.history.push('/survey/thanks')
+                })
+        )
     }
 }
 
@@ -190,18 +197,11 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
                 <PageTitle title="Almost there..." />
                 <HeroPage
                     title="Almost there..."
-                    cta={
-                        <SurveyForm
-                            score={this.intScore(this.props.match.params.score)}
-                            onSubmit={this.onSubmit}
-                            {...this.props}
-                        />
-                    }
+                    cta={<SurveyForm score={this.intScore(this.props.match.params.score)} {...this.props} />}
                 />
             </div>
         )
     }
 
-    private intScore = (score?: string) => (!!score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined)
-    private onSubmit = () => this.setState({ complete: true })
+    private intScore = (score?: string) => (score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined)
 }

@@ -41,7 +41,7 @@ import { LineDecorationAttachment } from './LineDecorationAttachment'
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
  */
-const toPortalID = (line: number) => `line-decoration-attachment-${line}`
+const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
 interface BlobProps
     extends AbsoluteRepoFile,
@@ -178,12 +178,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         })
         this.subscriptions.add(hoverifier)
 
-        const resolveContext = () => ({
-            repoName: this.props.repoName,
-            rev: this.props.rev,
-            commitID: this.props.commitID,
-            filePath: this.props.filePath,
-        })
         this.subscriptions.add(
             hoverifier.hoverify({
                 positionEvents: this.codeViewElements.pipe(
@@ -200,11 +194,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         scrollElement: scrollElement!,
                     }))
                 ),
-                resolveContext,
+                resolveContext: () => ({
+                    repoName: this.props.repoName,
+                    rev: this.props.rev,
+                    commitID: this.props.commitID,
+                    filePath: this.props.filePath,
+                }),
                 dom: domFunctions,
             })
         )
-        const goToDefinition = (ev: MouseEvent) => {
+        const goToDefinition = (ev: MouseEvent): void => {
             const goToDefinitionAction =
                 Array.isArray(this.state.actionsOrError) &&
                 this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
@@ -320,7 +319,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
-            combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
+            combineLatest([modelChanges, locationPositions]).subscribe(([model, pos]) => {
                 const uri = `git://${model.repoName}?${model.commitID}#${model.filePath}`
                 if (!this.props.extensionsController.services.model.hasModel(uri)) {
                     this.props.extensionsController.services.model.addModel({
@@ -341,8 +340,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(modelChanges).pipe(
-            switchMap(([model]) => {
+        const decorations: Observable<TextDocumentDecoration[] | null> = modelChanges.pipe(
+            switchMap(model => {
                 const modelChanged = !isEqual(model, lastModel)
                 lastModel = model // record so we can compute modelChanged
 
@@ -366,7 +365,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         /** Render decorations. */
         let decoratedElements: HTMLElement[] = []
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 decorations.pipe(
                     map(decorations => decorations || []),
                     catchError(error => {
@@ -376,8 +375,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         return [[] as TextDocumentDecoration[]]
                     })
                 ),
-                this.codeViewElements
-            ).subscribe(([decorations, codeView]) => {
+                this.codeViewElements,
+            ]).subscribe(([decorations, codeView]) => {
                 if (codeView) {
                     if (decoratedElements) {
                         // Clear previous decorations.

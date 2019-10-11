@@ -4,7 +4,7 @@ import io from 'socket.io'
 /**
  * Returns a trigger function that notifies the extension to reload itself.
  */
-export const initializeServer = () => {
+export const initializeServer = (): (() => void) => {
     const logger = new signale.Signale({ scope: 'Auto reloading' })
     logger.config({ displayTimestamp: true })
 

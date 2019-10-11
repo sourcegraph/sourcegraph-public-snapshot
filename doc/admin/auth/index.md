@@ -57,8 +57,6 @@ Site configuration example:
 }
 ```
 
-The top-level `auth.public` [critical configuration](../config/critical_config.md) option (default `false`) controls whether anonymous users are allowed to access and use the site without being signed in.
-
 ## GitHub
 
 > Note: GitHub authentication is currently beta.
@@ -256,7 +254,7 @@ See the [`saml` auth provider documentation](../config/critical_config.md#saml) 
 
 ### SAML troubleshooting
 
-Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the `sourcegraph/server` Docker conatiner (or the `sourcegraph-frontend` pod if Sourcegraph is deployed to a Kubernetes cluster) causes all SAML requests and responses to be logged.
+Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` pod if Sourcegraph is deployed to a Kubernetes cluster) causes all SAML requests and responses to be logged.
 
 ### Vendor-specific SAML instructions
 
@@ -273,7 +271,7 @@ https://sourcegraph.example.com/.auth/saml/metadata
 
 ## HTTP authentication proxies
 
-You can wrap Sourcegraph in an authentication proxy that authenticates the user and passes the user's username to Sourcegraph via HTTP headers. The most popular such authentication proxy is [bitly/oauth2_proxy](https://github.com/bitly/oauth2_proxy). Another example is [Google Identity-Aware Proxy (IAP)](https://cloud.google.com/iap/). Both work well with Sourcegraph.
+You can wrap Sourcegraph in an authentication proxy that authenticates the user and passes the user's username to Sourcegraph via HTTP headers. The most popular such authentication proxy is [pusher/oauth2_proxy](https://github.com/pusher/oauth2_proxy). Another example is [Google Identity-Aware Proxy (IAP)](https://cloud.google.com/iap/). Both work well with Sourcegraph.
 
 To use an authentication proxy to authenticate users to Sourcegraph, add the following lines to your critical configuration:
 
@@ -293,7 +291,7 @@ Replace `X-Forwarded-User` with the name of the HTTP header added by the authent
 
 Ensure that the HTTP proxy is not setting its own `Authorization` header on the request. Sourcegraph rejects requests with unrecognized `Authorization` headers and prints the error log `lvl=eror msg="Invalid Authorization header." err="unrecognized HTTP Authorization request header scheme (supported values: token, token-sudo)"`.
 
-For bitly/oauth2_proxy, use the `-pass-basic-auth false` option to prevent it from sending the `Authorization` header.
+For pusher/oauth2_proxy, use the `-pass-basic-auth false` option to prevent it from sending the `Authorization` header.
 
 ### Username header prefixes
 
@@ -305,7 +303,7 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
   "auth.providers": [
     {
       "type": "http-header",
-      "usernameHeader": "x-goog-authenticated-user-id",
+      "usernameHeader": "x-goog-authenticated-user-email",
       "stripUsernameHeaderPrefix": "accounts.google.com:"
     }
   ]
@@ -316,10 +314,13 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
 
 Usernames on Sourcegraph are normalized according to the following rules.
 
-- Any portion of the username after a '@' character is removed
+
 - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
-- Usernames with consecutive '-' or '.' characters are not allowed
-- Usernames that start or end with '-' or '.' are not allowed
+- Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
+- Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
+- Usernames with consecutive `-` or `.` characters are not allowed
+- Usernames that start or end with `.` are not allowed
+- Usernames that start with `-` are not allowed
 
 Usernames from authentication providers are normalized before being used in Sourcegraph. Usernames chosen by users are rejected if they do not meet these criteria.
 

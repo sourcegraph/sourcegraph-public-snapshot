@@ -76,7 +76,7 @@ export class BlobPanel extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
-    public constructor(props: Props) {
+    constructor(props: Props) {
         super(props)
 
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
@@ -95,14 +95,24 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.editor.editorsAndModels).pipe(
-                switchMap(editors =>
-                    registry.hasProvidersForActiveTextDocument(editors).pipe(
+            provider: from(this.props.extensionsController.services.editor.activeEditorUpdates).pipe(
+                map(activeEditor =>
+                    activeEditor
+                        ? {
+                              ...activeEditor,
+                              model: this.props.extensionsController.services.model.getPartialModel(
+                                  activeEditor.resource
+                              ),
+                          }
+                        : undefined
+                ),
+                switchMap(activeEditor =>
+                    registry.hasProvidersForActiveTextDocument(activeEditor).pipe(
                         map(hasProviders => {
                             if (!hasProviders) {
                                 return null
                             }
-                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(editors)
+                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(activeEditor)
                             if (!params) {
                                 return null
                             }
@@ -114,7 +124,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 // This disable directive is necessary because TypeScript is not yet smart
                                 // enough to know that (typeof params & typeof extraParams) is P.
                                 //
-                                // tslint:disable-next-line:no-object-literal-type-assertion
+                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                 locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
                                     map(locationsObservable =>
                                         locationsObservable.pipe(
@@ -169,7 +179,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 reactElement: (
                                     <RepoRevSidebarCommits
                                         key="commits"
-                                        repoName={subject.repoName}
                                         repoID={this.props.repoID}
                                         rev={subject.rev}
                                         filePath={subject.filePath}

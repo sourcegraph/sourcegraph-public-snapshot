@@ -90,8 +90,8 @@ export class FileLocations extends React.PureComponent<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

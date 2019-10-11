@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -136,8 +135,8 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 	return &productLicenseConnection{opt: opt}, nil
 }
 
-func (r *productSubscription) CreatedAt() string {
-	return r.v.CreatedAt.Format(time.RFC3339)
+func (r *productSubscription) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.v.CreatedAt}
 }
 
 func (r *productSubscription) IsArchived() bool { return r.v.ArchivedAt != nil }

@@ -35,7 +35,7 @@ echo "Copying $IMAGE to the dedicated e2e testing node... done"
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev $IMAGE)"
-trap 'kill $(jobs -p)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
+trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
 # Connect the server container's port 7080 to localhost:7080 so that e2e tests
@@ -44,15 +44,14 @@ docker exec "$CONTAINER" apk add --no-cache socat
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
 set +e
-timeout 30s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
 done"
 if [ $? -ne 0 ]; then
     echo "^^^ +++"
-    echo "$URL was not accessible within 30s. Here's the output of docker inspect and docker logs:"
+    echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
     docker inspect "$CONTAINER"
-    docker logs --timestamps "$CONTAINER"
     exit 1
 fi
 set -e

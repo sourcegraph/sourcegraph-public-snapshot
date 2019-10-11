@@ -9,15 +9,116 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.7.0 (unreleased)
+## 3.9.0 (unreleased)
 
 ### Added
 
+- Our external service syncing model will stream in new repositories to Sourcegraph. Previously we could only add a repository to our database and clone it once we had synced all information from all external services (to detect deletions and renames). Now adding a repository to an external service configuration should be reflected much sooner, even on large instances. [#5145](https://github.com/sourcegraph/sourcegraph/issues/5145)
+- There is now an easy way for site admins to view and export settings and configuration when reporting a bug. The page for doing so is at /site-admin/report-bug, linked to from the site admin side panel under "Report a bug".
+
 ### Changed
+
+- **Recommended Kubernetes Migration:** The [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifest for indexed-search pods has changed from a Deployment to a StatefulSet. This is to enable future work on horizontally scaling indexed search. To retain your existing indexes there is a [migration guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/migrate.md#39).
+- Allow single trailing hyphen in usernames and org names [#5680](https://github.com/sourcegraph/sourcegraph/pull/5680)
+- Indexed search won't spam the logs on startup if the frontend API is not yet available. [zoekt#30](https://github.com/sourcegraph/zoekt/pull/30), [#5866](https://github.com/sourcegraph/sourcegraph/pull/5866)
+- Sourcegraph now creates a secondary database within the configured PostgreSQL instance. This database has a name of the form `{PGDATABASE}_lsif`, where `{PGDATABASE}` is the name of the primary database. This is done automatically, but please ensure the configured PostgreSQL user has permission to perform `CREATE DATABASE` if using an external database before upgrading.
+- Search query fields are now case insensitive. For example `repoHasFile:` will now be recognized, not just `repohasfile:`. [#5168](https://github.com/sourcegraph/sourcegraph/issues/5168)
+
+### Fixed
+
+- Fixed an issue that rendered the search filter `repohascommitafter` unusable in the presence of an empty repository. [#5149](https://github.com/sourcegraph/sourcegraph/issues/5149)
+- An issue where `externalURL` not being configured in the management console could go unnoticed. [#3899](https://github.com/sourcegraph/sourcegraph/issues/3899)
+- Listing branches and refs now falls back to a fast path if there are a large number of branches. Previously we would time out. [#4581](https://github.com/sourcegraph/sourcegraph/issues/4581)
+- Sourcegraph will now ignore the ambiguous ref HEAD if a repository contains it. [#5291](https://github.com/sourcegraph/sourcegraph/issues/5291)
+
+### Removed
+
+## 3.8.2
+
+### Fixed
+
+- Sourcegraph cluster deployments now run a more stable syntax highlighting server which can self-recover from rarer failure cases such as getting stuck at high CPU usage when highlighting some specific files. [#5406](https://github.com/sourcegraph/sourcegraph/issues/5406) This will be ported to single-container deployments [at a later date](https://github.com/sourcegraph/sourcegraph/issues/5841).
+
+## 3.8.1
+
+### Added
+
+- Add `nameTransformations` setting to GitLab external service to help transform repository name that shows up in the Sourcegraph UI.
+
+## 3.8.0
+
+### Added
+
+- A toggle button for browser extension to quickly enable/disable the core functionality without actually enable/disable the entire extension in the browser extension manager.
+- Tabs to easily toggle between the different search result types on the search results page.
+
+### Changed
+
+- A `hardTTL` setting was added to the [Bitbucket Server `authorization` config](https://docs.sourcegraph.com/admin/external_service/bitbucketserver#configuration). This setting specifies a duration after which a user's cached permissions must be updated before any user action is authorized. This contrasts with the already existing `ttl` setting which defines a duration after which a user's cached permissions will get updated in the background, but the previously cached (and now stale) permissions are used to authorize any user action occuring before the update concludes. If your previous `ttl` value is larger than the default of the new `hardTTL` setting (i.e. **3 days**), you must change the `ttl` to be smaller or, `hardTTL` to be larger.
 
 ### Fixed
 
 ### Removed
+
+- The `statusIndicator` feature flag has been removed from the site configuration's `experimentalFeatures` section. The status indicator has been enabled by default since 3.6.0 and you can now safely remove the feature flag from your configuration.
+- Public usage is now only available on Sourcegraph.com. Because many core features rely on persisted user settings, anonymous usage leads to a degraded experience for most users. As a result, for self-hosted private instances it is preferable for all users to have accounts. But on sourcegraph.com, users will continue to have to opt-in to accounts, despite the degraded UX.
+
+## 3.7.2
+
+### Added
+
+- A [migration guide for Sourcegraph v3.7+](doc/admin/migration/3_7.md).
+
+### Fixed
+
+- Fixed an issue where some repositories with very long symbol names would fail to index after v3.7.
+- We now retain one prior search index version after an upgrade, meaning upgrading AND downgrading from v3.6.2 <-> v3.7.2 is now 100% seamless and involves no downtime or negated search performance while repositories reindex. Please refer to the [v3.7+ migration guide](doc/admin/migration/3_7.md) for details.
+
+## 3.7.1
+
+### Fixed
+
+- When re-indexing repositories, we now continue to serve from the old index in the meantime. Thus, you can upgrade to 3.7.1 without downtime.
+- Indexed symbol search is now faster, as we've fixed a performance issue that occurred when many repositories without any symbols existed.
+- Indexed symbol search now uses less disk space when upgrading directly to v3.7.1 as we properly remove old indexes.
+
+## 3.7.0
+
+### Added
+
+- Indexed search now supports symbol queries. This feature will require re-indexing all repositories. This will increase the disk and memory usage of indexed search by roughly 10%. You can disable the feature with the configuration `search.index.symbols.enabled`. [#3534](https://github.com/sourcegraph/sourcegraph/issues/3534)
+- Multi-line search now works for non-indexed search. [#4518](https://github.com/sourcegraph/sourcegraph/issues/4518)
+- When using `SITE_CONFIG_FILE` and `EXTSVC_CONFIG_FILE`, you [may now also specify e.g. `SITE_CONFIG_ALLOW_EDITS=true`](https://docs.sourcegraph.com/admin/config/advanced_config_file) to allow edits to be made to the config in the application which will be overwritten on the next process restart. [#4912](https://github.com/sourcegraph/sourcegraph/issues/4912)
+
+### Changed
+
+- In the [GitHub external service config](https://docs.sourcegraph.com/admin/external_service/github#configuration) it's now possible to specify `orgs` without specifying `repositoryQuery` or `repos` too.
+- Out-of-the-box TypeScript code intelligence is much better with an updated ctags version with a built-in TypeScript parser.
+- Sourcegraph uses Git protocol version 2 for increased efficiency and performance when fetching data from compatible code hosts.
+- Searches with `repohasfile:` are faster at finding repository matches. [#4833](https://github.com/sourcegraph/sourcegraph/issues/4833).
+- Zoekt now runs with GOGC=50 by default, helping to reduce the memory consumption of Sourcegraph. [#3792](https://github.com/sourcegraph/sourcegraph/issues/3792)
+- Upgraded the version of Go in use, which improves security for publicly accessible Sourcegraph instances.
+
+### Fixed
+
+- Disk cleanup in gitserver is now done in terms of percentages to fix [#5059](https://github.com/sourcegraph/sourcegraph/issues/5059).
+- Search results now correctly show highlighting of matches with runes like 'İ' that lowercase to runes with a different number of bytes in UTF-8 [#4791](https://github.com/sourcegraph/sourcegraph/issues/4791).
+- Fixed an issue where search would sometimes crash with a panic due to a nil pointer. [#5246](https://github.com/sourcegraph/sourcegraph/issues/5246)
+
+### Removed
+
+## 3.6.2
+
+### Fixed
+
+- Fixed Phabricator external services so they won't stop the syncing process for repositories when Phabricator doesn't return clone URLs. [#5101](https://github.com/sourcegraph/sourcegraph/pull/5101)
+
+## 3.6.1
+
+### Added
+
+- New site config option `branding.brandName` configures the brand name to display in the Sourcegraph \<title\> element.
+- `repositoryPathPattern` option added to the "Other" external service type for repository name customization.
 
 ## 3.6.0
 
@@ -42,6 +143,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Commit searches now correctly highlight unicode characters, for example 加. [#4512](https://github.com/sourcegraph/sourcegraph/issues/4512)
 - Symbol searches now show the number of symbol matches rather than the number of file matches found. [#4578](https://github.com/sourcegraph/sourcegraph/issues/4578)
 - Symbol searches with truncated results now show a `+` on the results page to signal that some results have been omitted. [#4579](https://github.com/sourcegraph/sourcegraph/issues/4579)
+
+## 3.5.4
+
+### Fixed
+
+- Fixed Phabricator external services so they won't stop the syncing process for repositories when Phabricator doesn't return clone URLs. [#5101](https://github.com/sourcegraph/sourcegraph/pull/5101)
 
 ## 3.5.2
 

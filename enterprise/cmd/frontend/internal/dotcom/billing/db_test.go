@@ -1,11 +1,12 @@
 package billing
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func init() {
@@ -13,7 +14,8 @@ func init() {
 }
 
 func TestDBUsersBillingCustomerID(t *testing.T) {
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	t.Run("existing user", func(t *testing.T) {
 		u, err := db.Users.Create(ctx, db.NewUser{Username: "u"})

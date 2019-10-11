@@ -5,8 +5,7 @@ import { mergeMap } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { syncSubscription } from '../../util'
-
-const convertError = (err: any) => err && Object.assign(Error(), err)
+import { asError } from '../../../util/errors'
 
 /**
  * When a Subscribable is returned from the other thread (wrapped with `proxySubscribable()`),
@@ -19,7 +18,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
     from(proxyPromise).pipe(
         mergeMap(
             proxySubscribable =>
-                // tslint:disable-next-line: no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                 ({
                     // Needed for Rx type check
                     [observable](): Subscribable<T> {
@@ -34,7 +33,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                             proxyObserver = {
                                 [proxyValueSymbol]: true,
                                 next: args[0] || noop,
-                                error: args[1] ? err => args[1](convertError(err)) : noop,
+                                error: args[1] ? err => args[1](asError(err)) : noop,
                                 complete: args[2] || noop,
                             }
                         } else {
@@ -42,7 +41,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                             proxyObserver = {
                                 [proxyValueSymbol]: true,
                                 next: partialObserver.next ? val => partialObserver.next(val) : noop,
-                                error: partialObserver.error ? err => partialObserver.error(convertError(err)) : noop,
+                                error: partialObserver.error ? err => partialObserver.error(asError(err)) : noop,
                                 complete: partialObserver.complete ? () => partialObserver.complete() : noop,
                             }
                         }

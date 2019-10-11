@@ -3,14 +3,14 @@ package saml
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
 		input        conf.Unified
-		wantProblems []string
+		wantProblems conf.Problems
 	}{
 		"duplicates": {
 			input: conf.Unified{Critical: schema.CriticalConfiguration{
@@ -20,7 +20,7 @@ func TestValidateCustom(t *testing.T) {
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
 				},
 			}},
-			wantProblems: []string{"SAML auth provider at index 1 is duplicate of index 0"},
+			wantProblems: conf.NewCriticalProblems("SAML auth provider at index 1 is duplicate of index 0"),
 		},
 	}
 	for name, test := range tests {

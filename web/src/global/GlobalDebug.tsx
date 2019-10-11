@@ -17,15 +17,13 @@ const ExtensionLink: React.FunctionComponent<{ id: string }> = props => (
  */
 export const GlobalDebug: React.FunctionComponent<Props> = props =>
     SHOW_DEBUG ? (
-        <div className="global-debug navbar navbar-expand">
-            <ul className="navbar-nav align-items-center">
-                <li className="nav-item">
-                    <ExtensionStatusPopover
-                        link={ExtensionLink}
-                        extensionsController={props.extensionsController}
-                        platformContext={props.platformContext}
-                    />
-                </li>
-            </ul>
-        </div>
+        <ul className="global-debug nav">
+            <li className="nav-item">
+                <ExtensionStatusPopover
+                    link={ExtensionLink}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                />
+            </li>
+        </ul>
     ) : null

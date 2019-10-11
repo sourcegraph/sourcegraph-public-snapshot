@@ -21,19 +21,19 @@ describe('Parser', () => {
                 value: 'a',
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`${x}`': {
             Template: {
                 parts: [{ Identifier: 'x' }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`${x}${y}`': {
             Template: {
                 parts: [{ Identifier: 'x' }, { Identifier: 'y' }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`${x+y}`': {
             Template: {
                 parts: [
@@ -47,19 +47,19 @@ describe('Parser', () => {
                 ],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`a${x}`': {
             Template: {
                 parts: [{ Literal: { type: TokenType.String, value: 'a' } }, { Identifier: 'x' }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`${x}b`': {
             Template: {
                 parts: [{ Identifier: 'x' }, { Literal: { type: TokenType.String, value: 'b' } }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`a${x}b`': {
             Template: {
                 parts: [
@@ -69,7 +69,7 @@ describe('Parser', () => {
                 ],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`a${x}b${y}c`': {
             Template: {
                 parts: [
@@ -81,7 +81,7 @@ describe('Parser', () => {
                 ],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '`a${`x${y}z`}b`': {
             Template: {
                 parts: [
@@ -209,19 +209,19 @@ describe('Parser', () => {
 
 describe('TemplateParser', () => {
     const TESTS: { [template: string]: ExpressionNode } = {
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '${x}': {
             Template: {
                 parts: [{ Identifier: 'x' }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '${x}${y}': {
             Template: {
                 parts: [{ Identifier: 'x' }, { Identifier: 'y' }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '${x+y}': {
             Template: {
                 parts: [
@@ -235,19 +235,19 @@ describe('TemplateParser', () => {
                 ],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         'a${x}': {
             Template: {
                 parts: [{ Literal: { type: TokenType.String, value: 'a' } }, { Identifier: 'x' }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         '${x}b': {
             Template: {
                 parts: [{ Identifier: 'x' }, { Literal: { type: TokenType.String, value: 'b' } }],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         'a${x}b': {
             Template: {
                 parts: [
@@ -257,7 +257,7 @@ describe('TemplateParser', () => {
                 ],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         'a${x}b${y}c': {
             Template: {
                 parts: [
@@ -269,7 +269,7 @@ describe('TemplateParser', () => {
                 ],
             },
         },
-        // tslint:disable-next-line:no-invalid-template-strings
+        // eslint-disable-next-line no-template-curly-in-string
         'a${`x${y}z`}b': {
             Template: {
                 parts: [

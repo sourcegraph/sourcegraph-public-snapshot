@@ -7,31 +7,29 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/routevar"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type InjectedHTML struct {
@@ -62,13 +60,15 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	InjectSourcegraphTracker bool
+	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
 
 	// The fields below have zero values when not on a repo page.
 	Repo         *types.Repo
 	Rev          string // unresolved / user-specified revision (e.x.: "@master")
 	api.CommitID        // resolved SHA1 revision
 }
+
+var webpackDevServer, _ = strconv.ParseBool(os.Getenv("WEBPACK_DEV_SERVER"))
 
 // repoShortName trims the first path element of the given repo name if it has
 // at least two path components.
@@ -107,19 +107,19 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 		Metadata: &Metadata{
-			Title:       "Sourcegraph",
+			Title:       conf.BrandName(),
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
 			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
 		},
 
-		InjectSourcegraphTracker: envvar.SourcegraphDotComMode(),
+		WebpackDevServer: webpackDevServer,
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && git.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && gitserver.IsRevisionNotFound(errors.Cause(err)) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			if e, ok := err.(*handlerutil.URLMovedError); ok {
 				// The repository has been renamed, e.g. "github.com/docker/docker"
@@ -141,7 +141,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if git.IsRevisionNotFound(errors.Cause(err)) {
+			if gitserver.IsRevisionNotFound(errors.Cause(err)) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
@@ -196,9 +196,9 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 type handlerFunc func(w http.ResponseWriter, r *http.Request) error
 
-func serveBasicPageString(title string) handlerFunc {
+func serveBrandedPageString(titles ...string) handlerFunc {
 	return serveBasicPage(func(c *Common, r *http.Request) string {
-		return title
+		return brandNameSubtitle(titles...)
 	})
 }
 
@@ -217,7 +217,7 @@ func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "Sourcegraph", serveError)
+	common, err := newCommon(w, r, conf.BrandName(), serveError)
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 	if common == nil {
 		return nil // request was handled
 	}
-	common.Title = "Sign in - Sourcegraph"
+	common.Title = brandNameSubtitle("Sign in")
 
 	// If we are being redirected to another page after sign in, it means the
 	// user attempted to access something without authorization. Reflect this

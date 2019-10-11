@@ -49,7 +49,7 @@ The following sections guide you through the migration process.
 You can deploy Sourcegraph in 2 ways:
 
 - [Single Docker container](../install/docker/index.md): single-server deployment from the `sourcegraph/server` Docker image
-- [Kubernetes cluster](../install/kubernetes_cluster.md): cluster deployment using Kubernetes for 1,000s of repositories/users
+- [Kubernetes cluster](../install/cluster.md): cluster deployment using Kubernetes for 1,000s of repositories/users
 
 The fastest way to try it is to run Sourcegraph Server locally [with the quickstart instructions](../index.md).
 

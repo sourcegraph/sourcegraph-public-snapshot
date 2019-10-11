@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import * as React from 'react'
-import { combineLatest, concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
+import { concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
 import {
     ConfiguredRegistryExtension,
@@ -149,9 +149,9 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            combineLatest(debouncedQueryChanges)
+            debouncedQueryChanges
                 .pipe(
-                    switchMap(([{ query, immediate }]) => {
+                    switchMap(({ query, immediate }) => {
                         const resultOrError = this.queryRegistryExtensions({ query }).pipe(
                             catchError(err => [asError(err)])
                         )
@@ -171,8 +171,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         this.queryChanges.next({ query: this.state.query, immediate: true })
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

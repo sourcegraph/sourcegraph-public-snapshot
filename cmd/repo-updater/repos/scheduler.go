@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -254,6 +254,19 @@ func (s *updateScheduler) Update(rs ...*Repo) {
 	schedKnownRepos.Set(float64(known))
 }
 
+// Set updates the schedule with the given repos. However, rs is assumed to be
+// the known universe of repositories, rather than a subset.
+func (s *updateScheduler) Set(rs ...*Repo) {
+	s.Update(rs...)
+	known := 0
+	for _, r := range rs {
+		if !r.IsDeleted() {
+			known++
+		}
+	}
+	schedKnownRepos.Set(float64(known))
+}
+
 func (s *updateScheduler) upsert(r *Repo) {
 	repo := configuredRepo2FromRepo(r)
 
@@ -425,14 +438,6 @@ func (s *updateScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerI
 	s.updateQueue.mu.Unlock()
 
 	return &result
-}
-
-func (s *updateScheduler) UpdateQueueLen() int {
-	s.updateQueue.mu.Lock()
-	queueLen := len(s.updateQueue.index)
-	s.updateQueue.mu.Unlock()
-
-	return queueLen
 }
 
 // updateQueue is a priority queue of repos to update.

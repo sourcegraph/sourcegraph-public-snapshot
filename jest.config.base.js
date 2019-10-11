@@ -9,12 +9,10 @@ const config = {
   testEnvironment: __dirname + '/shared/dev/jest-environment.js',
 
   collectCoverage: !!process.env.CI,
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
   coverageDirectory: '<rootDir>/coverage',
   coveragePathIgnorePatterns: [/\.test\.tsx?$/.source],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  preset: 'ts-jest/presets/js-with-ts',
   roots: ['<rootDir>/src'],
-  transform: { '^.+\\.[jt]sx?$': 'ts-jest' },
 
   // Transform packages that do not distribute CommonJS packages (typically because they only distribute ES6
   // modules). If you get an error from jest like "Jest encountered an unexpected token. ... SyntaxError:
@@ -30,16 +28,15 @@ const config = {
   // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.
   coverageReporters: ['json', 'lcov', 'text-summary'],
-  globals: {
-    'ts-jest': {
-      diagnostics: {
-        pathRegex: '(browser|shared|web)/src',
-        warnOnly: true,
-      },
-    },
-  },
 
-  setupFiles: [path.join(__dirname, 'shared/dev/mockDate.js'), path.join(__dirname, 'shared/dev/globalThis.js')],
+  setupFiles: [
+    path.join(__dirname, 'shared/dev/mockDate.js'),
+    path.join(__dirname, 'shared/dev/globalThis.js'),
+    // Needed for reusing API functions that use fetch
+    // Neither NodeJS nor JSDOM have fetch + AbortController yet
+    require.resolve('abort-controller/polyfill'),
+    path.join(__dirname, 'shared/dev/fetch'),
+  ],
 }
 
 module.exports = config

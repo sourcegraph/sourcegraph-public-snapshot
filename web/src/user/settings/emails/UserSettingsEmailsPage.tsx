@@ -51,6 +51,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                     </div>
                     <div>
                         <button
+                            type="button"
                             className="btn btn-sm btn-danger"
                             onClick={this.remove}
                             disabled={this.state.loading}
@@ -60,6 +61,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                         </button>{' '}
                         {this.props.node.viewerCanManuallyVerify && (
                             <button
+                                type="button"
                                 className="btn btn-sm btn-secondary"
                                 onClick={this.props.node.verified ? this.setAsUnverified : this.setAsVerified}
                                 disabled={this.state.loading}

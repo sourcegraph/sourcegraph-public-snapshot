@@ -37,7 +37,7 @@ describe('Workspace roots (integration)', () => {
             workspace.roots.next([{ uri: 'file:///a' }])
             await extensionAPI.internal.sync()
 
-            expect(values).toEqual([void 0])
+            expect(values).toEqual([undefined])
         })
     })
 })

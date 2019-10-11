@@ -1,7 +1,7 @@
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
-import { cleanup, fireEvent, getByTestId, getByText, render } from 'react-testing-library'
+import { cleanup, fireEvent, getByTestId, getByText, render } from '@testing-library/react'
 import sinon from 'sinon'
 import {
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
@@ -79,8 +79,8 @@ describe('ResultContainer', () => {
         ),
         expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} />,
         collapsedChildren: <FileMatchChildren {...fileMatchChildrenProps} allMatches={false} />,
-        collapseLabel: `Hide matches`,
-        expandLabel: `Show matches`,
+        collapseLabel: 'Hide matches',
+        expandLabel: 'Show matches',
         allExpanded: false,
     }
 

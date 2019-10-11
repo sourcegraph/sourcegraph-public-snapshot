@@ -4,6 +4,7 @@ exports[`Toggle className 1`] = `
 <button
   className="toggle  c"
   onClick={[Function]}
+  type="button"
   value={0}
 >
   <span
@@ -19,6 +20,7 @@ exports[`Toggle disabled 1`] = `
 <button
   className="toggle toggle__disabled "
   onClick={[Function]}
+  type="button"
   value={0}
 >
   <span
@@ -34,6 +36,7 @@ exports[`Toggle disabled 2`] = `
 <button
   className="toggle toggle__disabled "
   onClick={[Function]}
+  type="button"
   value={0}
 >
   <span
@@ -49,6 +52,7 @@ exports[`Toggle value is false 1`] = `
 <button
   className="toggle  "
   onClick={[Function]}
+  type="button"
   value={0}
 >
   <span
@@ -64,6 +68,7 @@ exports[`Toggle value is true 1`] = `
 <button
   className="toggle  "
   onClick={[Function]}
+  type="button"
   value={1}
 >
   <span

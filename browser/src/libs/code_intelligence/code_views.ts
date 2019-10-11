@@ -1,6 +1,6 @@
 import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
-import { Observable, of, zip } from 'rxjs'
+import { Observable, of, zip, OperatorFunction } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
@@ -11,7 +11,8 @@ import { ButtonProps } from '../../shared/components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, FileInfo, FileInfoWithRepoNames } from './code_intelligence'
 import { ensureRevisionsAreCloned } from './util/file_info'
-import { trackViews, ViewResolver } from './views'
+import { trackViews, ViewResolver, ViewWithSubscriptions } from './views'
+import { MutationRecordLike } from '../../shared/util/dom'
 
 export interface DOMFunctions extends CodeIntellifyDOMFuncions {
     /**
@@ -79,7 +80,9 @@ export const toCodeViewResolver = (selector: string, spec: Omit<CodeView, 'eleme
  * Find all the code views on a page using both the code view specs and the code view spec
  * resolvers, calling down to {@link trackViews}.
  */
-export const trackCodeViews = ({ codeViewResolvers }: Pick<CodeHost, 'codeViewResolvers'>) =>
+export const trackCodeViews = ({
+    codeViewResolvers,
+}: Pick<CodeHost, 'codeViewResolvers'>): OperatorFunction<MutationRecordLike[], ViewWithSubscriptions<CodeView>> =>
     trackViews<CodeView>(codeViewResolvers)
 
 export interface FileInfoWithContents extends FileInfoWithRepoNames {

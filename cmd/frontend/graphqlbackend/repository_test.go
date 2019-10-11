@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -30,7 +30,7 @@ func TestRepository_Commit(t *testing.T) {
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: GraphQLSchema,
+			Schema: mustParseGraphQLSchema(t, nil),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
@@ -88,7 +88,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
-		repoResolver := &repositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{repo: minimalRepo}
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 	})
 
@@ -102,7 +102,7 @@ func TestRepositoryHydration(t *testing.T) {
 		}
 		defer func() { db.Mocks = db.MockStores{} }()
 
-		repoResolver := &repositoryResolver{repo: minimalRepo}
+		repoResolver := &RepositoryResolver{repo: minimalRepo}
 		_, err := repoResolver.Description(ctx)
 		if err == nil {
 			t.Fatal("err is unexpected nil")
@@ -124,7 +124,7 @@ func TestRepositoryHydration(t *testing.T) {
 	})
 }
 
-func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *repositoryResolver, hydrated *types.Repo) {
+func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *RepositoryResolver, hydrated *types.Repo) {
 	t.Helper()
 
 	description, err := r.Description(ctx)

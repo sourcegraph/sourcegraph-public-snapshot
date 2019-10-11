@@ -9,12 +9,12 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = {
         ...userSettingsSideBarItems.account.slice(0, 2),
         {
             label: 'Subscriptions',
-            to: `/subscriptions`,
+            to: '/subscriptions',
             condition: ({ user }) => SHOW_BUSINESS_FEATURES && user.viewerCanAdminister,
         },
         {
             label: 'External accounts',
-            to: `/external-accounts`,
+            to: '/external-accounts',
             exact: true,
             condition: () => authExp,
         },

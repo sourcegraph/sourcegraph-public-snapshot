@@ -1,5 +1,6 @@
 /**
  * Returns the sum of the number of matches of the patterns in the string.
+ *
  * @param patterns Patterns to match in the string.
  */
 export function count(str: string, ...patterns: RegExp[]): number {

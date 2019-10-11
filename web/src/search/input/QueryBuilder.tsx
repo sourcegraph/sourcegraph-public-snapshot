@@ -1,6 +1,5 @@
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
-import { Select } from '../../components/Select'
 import { InfoDropdown } from './InfoDropdown'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 
@@ -71,30 +70,36 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
     private onInputChange = (key: keyof QueryBuilderState['fields']) => (
         event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
-        event.persist()
-        this.setState(({ fields }) => {
-            const newFields = { ...fields, [key]: event.target.value }
+        const { value } = event.target
+        this.setState(
+            ({ fields }) => {
+                const newFields = { ...fields, [key]: value }
 
-            const fieldsQueryParts: string[] = []
-            for (const [inputField, inputValue] of Object.entries(newFields)) {
-                if (inputValue !== '') {
-                    if (inputField === 'patterns') {
-                        // Patterns should be added to the query as-is.
-                        fieldsQueryParts.push(inputValue)
-                    } else if (inputField === 'exactMatch') {
-                        // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                        fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
-                    } else if (inputField === 'type' && inputValue === 'code') {
-                        // code searches don't need to be specified.
-                        continue
-                    } else {
-                        fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                const fieldsQueryParts: string[] = []
+                for (const [inputField, inputValue] of Object.entries(newFields)) {
+                    if (inputValue !== '') {
+                        if (inputField === 'patterns') {
+                            // Patterns should be added to the query as-is.
+                            fieldsQueryParts.push(inputValue)
+                        } else if (inputField === 'exactMatch') {
+                            // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
+                            fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
+                        } else if (inputField === 'type' && inputValue === 'code') {
+                            // code searches don't need to be specified.
+                            continue
+                        } else {
+                            fieldsQueryParts.push(formatFieldForQuery(inputField, inputValue))
+                        }
                     }
                 }
-            }
+                const builderQuery = fieldsQueryParts.join(' ')
 
-            return { fields: newFields, builderQuery: fieldsQueryParts.join(' ') }
-        })
+                return { fields: newFields, builderQuery }
+            },
+            () => {
+                this.props.onFieldsQueryChange(this.state.builderQuery)
+            }
+        )
     }
 
     private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -124,19 +129,13 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         timeout: this.onInputChange('timeout'),
     }
 
-    public componentDidUpdate(prevProps: Props, prevState: QueryBuilderState): void {
-        if (prevState.builderQuery !== this.state.builderQuery) {
-            this.props.onFieldsQueryChange(this.state.builderQuery)
-        }
-    }
-
     public render(): JSX.Element | null {
         const docsURLPrefix = this.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
         return (
             <>
                 <div className="query-builder__toggle">
                     <a href="" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
-                        {!!this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
+                        {this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
                     </a>
                 </div>
 
@@ -151,7 +150,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     Type:
                                 </label>
                                 <div className="query-builder__row-input">
-                                    <Select
+                                    <select
                                         id="query-builder__type"
                                         className="form-control query-builder__input"
                                         onChange={this.onTypeChange}
@@ -163,7 +162,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                         <option value="diff">Commit diffs</option>
                                         <option value="commit">Commit messages</option>
                                         <option value="symbol">Symbols</option>
-                                    </Select>
+                                    </select>
                                 </div>
                                 <InfoDropdown
                                     title="Type"
@@ -281,7 +280,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                     Case sensitive:
                                 </label>
                                 <div className="query-builder__row-input">
-                                    <Select
+                                    <select
                                         id="query-builder-case"
                                         className="form-control query-builder__input"
                                         onChange={this.onCaseChange}
@@ -290,7 +289,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                             No
                                         </option>
                                         <option value="yes">Yes</option>
-                                    </Select>
+                                    </select>
                                 </div>
                                 <InfoDropdown
                                     title="Case sensitive"
@@ -334,7 +333,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                                 title="File paths"
                                 isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                 shortName="file"
-                                description={`Only include results from matching file paths. Supports regexp. To exclude files, use the \`-file:\` keyword in the main search bar.`}
+                                description="Only include results from matching file paths. Supports regexp. To exclude files, use the `-file:` keyword in the main search bar."
                                 examples={[
                                     {
                                         description: 'Search in files whose full path contains `internal`',

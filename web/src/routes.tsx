@@ -17,6 +17,13 @@ export interface LayoutRouteProps {
     render: (props: LayoutRouteComponentProps) => React.ReactNode
 
     /**
+     * A condition function that needs to return true if the route should be rendered
+     *
+     * @default () => true
+     */
+    condition?: (props: LayoutRouteComponentProps) => boolean
+
+    /**
      * Whether or not to force the width of the page to be narrow.
      */
     forceNarrowWidth?: boolean
@@ -36,7 +43,7 @@ export const repoRevRoute: LayoutRouteProps = {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: ReadonlyArray<LayoutRouteProps> = [
+export const routes: readonly LayoutRouteProps[] = [
     {
         path: '/',
         render: (props: any) =>
@@ -60,7 +67,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/search/searches',
         render: lazyComponent(
-            () => import('./search/saved-searches/RedirectToUserSavedSearches'),
+            () => import('./savedSearches/RedirectToUserSavedSearches'),
             'RedirectToUserSavedSearches'
         ),
         exact: true,

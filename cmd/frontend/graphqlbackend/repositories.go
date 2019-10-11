@@ -14,10 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
 
 func (r *schemaResolver) Repositories(args *struct {
@@ -114,7 +115,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed map[string]*zoekt.Repository
-		searchIndexEnabled := IndexedSearch().Enabled()
+		searchIndexEnabled := search.Indexed().Enabled()
 		isIndexed := func(repo api.RepoName) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
@@ -126,7 +127,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
 			var err error
-			indexed, err = IndexedSearch().ListAll(listCtx)
+			indexed, err = search.Indexed().ListAll(listCtx)
 			if err != nil {
 				r.err = err
 				return
@@ -198,18 +199,18 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 	return r.repos, r.err
 }
 
-func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*repositoryResolver, error) {
+func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*RepositoryResolver, error) {
 	repos, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*repositoryResolver, 0, len(repos))
+	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
 
-		resolvers = append(resolvers, &repositoryResolver{repo: repo})
+		resolvers = append(resolvers, &RepositoryResolver{repo: repo})
 	}
 	return resolvers, nil
 }
@@ -377,14 +378,14 @@ func repoNamesToStrings(repoNames []api.RepoName) []string {
 	return strings
 }
 
-func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
+func toRepositoryResolvers(repos []*types.Repo) []*RepositoryResolver {
 	if len(repos) == 0 {
-		return []*repositoryResolver{}
+		return []*RepositoryResolver{}
 	}
 
-	resolvers := make([]*repositoryResolver, len(repos))
+	resolvers := make([]*RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = &repositoryResolver{repo: repos[i]}
+		resolvers[i] = &RepositoryResolver{repo: repos[i]}
 	}
 
 	return resolvers
