@@ -35,7 +35,7 @@ func TestCalcCounts(t *testing.T) {
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -52,8 +52,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
@@ -84,7 +84,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2).Add(-18 * time.Hour), Total: 0, Merged: 0},
-				{Time: daysAgo(1).Add(-18 * time.Hour), Total: 1, Open: 1},
+				{Time: daysAgo(1).Add(-18 * time.Hour), Total: 1, Open: 1, OpenPending: 1},
 				{Time: now.Add(-18 * time.Hour), Total: 1, Merged: 1},
 			},
 		},
@@ -100,7 +100,7 @@ func TestCalcCounts(t *testing.T) {
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 2, Open: 2},
+				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
 				{Time: daysAgo(1), Total: 2, Merged: 2},
 				{Time: daysAgo(0), Total: 2, Merged: 2},
 			},
@@ -118,8 +118,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1},
-				{Time: daysAgo(2), Total: 2, Open: 1, Merged: 1},
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
 				{Time: daysAgo(1), Total: 2, Merged: 2},
 				{Time: daysAgo(0), Total: 2, Merged: 2},
 			},
@@ -135,7 +135,7 @@ func TestCalcCounts(t *testing.T) {
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -151,7 +151,7 @@ func TestCalcCounts(t *testing.T) {
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -169,9 +169,9 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(5), Total: 0, Open: 0},
-				{Time: daysAgo(4), Total: 1, Open: 1},
+				{Time: daysAgo(4), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -193,11 +193,11 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(6), Total: 0, Open: 0},
-				{Time: daysAgo(5), Total: 1, Open: 1},
-				{Time: daysAgo(4), Total: 2, Open: 1, Closed: 1},
-				{Time: daysAgo(3), Total: 2, Open: 1, Closed: 1},
-				{Time: daysAgo(2), Total: 2, Open: 2},
-				{Time: daysAgo(1), Total: 2, Open: 1, Merged: 1},
+				{Time: daysAgo(5), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(4), Total: 2, Open: 1, OpenPending: 1, Closed: 1},
+				{Time: daysAgo(3), Total: 2, Open: 1, OpenPending: 1, Closed: 1},
+				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
+				{Time: daysAgo(1), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 2, Merged: 2},
 			},
 		},
@@ -214,9 +214,9 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(5), Total: 0, Open: 0},
-				{Time: daysAgo(4), Total: 1, Open: 1},
+				{Time: daysAgo(4), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -233,8 +233,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -252,8 +252,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -269,8 +269,8 @@ func TestCalcCounts(t *testing.T) {
 				ghReview(1, daysAgo(0), "APPROVED"),
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
 			},
 		},
 		{
@@ -284,23 +284,8 @@ func TestCalcCounts(t *testing.T) {
 				ghReview(1, daysAgo(0), "CHANGES_REQUESTED"),
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
-			},
-		},
-		{
-			name: "single changeset multiple pending reviews counting once",
-			changesets: []*a8n.Changeset{
-				ghChangeset(1, daysAgo(1)),
-			},
-			start: daysAgo(1),
-			events: []Event{
-				ghReview(1, daysAgo(1), "PENDING"),
-				ghReview(1, daysAgo(0), "PENDING"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
 			},
 		},
 		{
@@ -315,26 +300,8 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
-			},
-		},
-		{
-			name: "single changeset open, pending review, pending, merged",
-			changesets: []*a8n.Changeset{
-				ghChangeset(1, daysAgo(3)),
-			},
-			start: daysAgo(4),
-			events: []Event{
-				ghReview(1, daysAgo(2), "PENDING"),
-				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
 				{Time: daysAgo(1), Total: 1, Merged: 1},
 				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
@@ -348,8 +315,7 @@ func TestCalcCounts(t *testing.T) {
 			},
 			start: daysAgo(7),
 			events: []Event{
-				ghReview(1, daysAgo(5), "PENDING"),
-				ghReview(1, daysAgo(4), "PENDING"),
+				ghReview(1, daysAgo(5), "APPROVED"),
 				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 				ghReview(2, daysAgo(4), "APPROVED"),
 				ghReview(2, daysAgo(3), "APPROVED"),
@@ -360,11 +326,11 @@ func TestCalcCounts(t *testing.T) {
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(7), Total: 0, Open: 0},
-				{Time: daysAgo(6), Total: 3, Open: 3},
-				{Time: daysAgo(5), Total: 3, Open: 3, OpenPending: 1},
-				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 1},
-				{Time: daysAgo(3), Total: 3, Open: 2, OpenApproved: 1, Merged: 1},
-				{Time: daysAgo(2), Total: 3, Open: 1, OpenChangesRequested: 1, Merged: 2},
+				{Time: daysAgo(6), Total: 3, Open: 3, OpenPending: 3},
+				{Time: daysAgo(5), Total: 3, Open: 3, OpenPending: 2, OpenApproved: 1},
+				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
+				{Time: daysAgo(3), Total: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
+				{Time: daysAgo(2), Total: 3, Open: 1, OpenPending: 0, OpenChangesRequested: 1, Merged: 2},
 				{Time: daysAgo(1), Total: 3, Merged: 3},
 				{Time: daysAgo(0), Total: 3, Merged: 3},
 			},
@@ -380,7 +346,7 @@ func TestCalcCounts(t *testing.T) {
 			start: daysAgo(4),
 			end:   daysAgo(2),
 			events: []Event{
-				ghReview(1, daysAgo(5), "PENDING"),
+				ghReview(1, daysAgo(5), "APPROVED"),
 				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
 				ghReview(2, daysAgo(4), "APPROVED"),
 				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
@@ -388,9 +354,9 @@ func TestCalcCounts(t *testing.T) {
 				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 1},
-				{Time: daysAgo(3), Total: 3, Open: 2, OpenApproved: 1, Merged: 1},
-				{Time: daysAgo(2), Total: 3, Open: 1, OpenChangesRequested: 1, Merged: 2},
+				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
+				{Time: daysAgo(3), Total: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
+				{Time: daysAgo(2), Total: 3, Open: 1, OpenPending: 0, OpenChangesRequested: 1, Merged: 2},
 			},
 		},
 	}

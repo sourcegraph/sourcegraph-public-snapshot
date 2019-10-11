@@ -92,6 +92,7 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 			if openedAt.Before(t) || openedAt.Equal(t) {
 				count.Total++
 				count.Open++
+				count.OpenPending++
 			} else {
 				// No need to look at events if changeset was not created yet
 				continue
@@ -104,9 +105,9 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 			var (
 				merged           = false
 				closed           = false
+				reviewed         = false
 				approved         = false
 				changesRequested = false
-				pending          = false
 			)
 
 			for _, e := range csEvents {
@@ -129,11 +130,17 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 					}
 					count.Open--
 					count.Closed++
+					if !reviewed {
+						count.OpenPending--
+					}
 					closed = true
 
 				case a8n.ChangesetEventKindGitHubReopened:
 					count.Open++
 					count.Closed--
+					if !reviewed {
+						count.OpenPending++
+					}
 					closed = false
 
 				case a8n.ChangesetEventKindGitHubMerged:
@@ -141,6 +148,9 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 					if closed {
 						count.Closed--
 						count.Open++
+						if !reviewed {
+							count.OpenPending++
+						}
 					}
 					if approved {
 						count.OpenApproved--
@@ -148,7 +158,7 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 					if changesRequested {
 						count.OpenChangesRequested--
 					}
-					if pending {
+					if !reviewed {
 						count.OpenPending--
 					}
 					count.Merged++
@@ -166,17 +176,17 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 						if !approved {
 							approved = true
 							count.OpenApproved++
+							reviewed = true
+							count.OpenPending--
 						}
 					case a8n.ChangesetReviewStateChangesRequested:
 						if !changesRequested {
 							changesRequested = true
 							count.OpenChangesRequested++
+							reviewed = true
+							count.OpenPending--
 						}
 					case a8n.ChangesetReviewStatePending:
-						if !pending {
-							pending = true
-							count.OpenPending++
-						}
 					case a8n.ChangesetReviewStateCommented:
 						// Ignore
 					}

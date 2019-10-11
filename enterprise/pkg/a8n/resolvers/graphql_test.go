@@ -736,10 +736,10 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	want := []*ee.ChangesetCounts{
 		&ee.ChangesetCounts{Time: daysBeforeEnd(5), Total: 0, Open: 0},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(4), Total: 1, Open: 1},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(3), Total: 2, Merged: 1, Open: 1},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(2), Total: 2, Merged: 1, Open: 1},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(1), Total: 2, Merged: 1, Open: 1},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(4), Total: 1, Open: 1, OpenPending: 1},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(3), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(2), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		&ee.ChangesetCounts{Time: daysBeforeEnd(1), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
 		&ee.ChangesetCounts{Time: end, Total: 2, Merged: 2},
 	}
 
