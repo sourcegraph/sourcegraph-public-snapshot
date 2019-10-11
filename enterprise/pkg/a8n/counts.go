@@ -84,113 +84,120 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 		// For each changeset and its events, go through every point in time we
 		// want to record and reconstruct the state of the changeset at that
 		// point in time
-		for _, count := range counts {
-			t := count.Time
-
-			if openedAt.Before(t) || openedAt.Equal(t) {
-				count.Total++
-				count.Open++
-				count.OpenPending++
-			} else {
+		for _, c := range counts {
+			if openedAt.After(c.Time) {
 				// No need to look at events if changeset was not created yet
 				continue
 			}
 
-			// Since some events cancel out another events effects we need to keep track of the
-			// changesets state up until an event so we know what to revert
-			// i.e. "merge" decrements OpenApproved counts, but only if
-			// changeset was previously approved
-			var (
-				merged           = false
-				closed           = false
-				reviewed         = false
-				approved         = false
-				changesRequested = false
-			)
+			c.Total++
+			c.Open++
+			c.OpenPending++
 
-			for _, e := range csEvents {
-				// Event happened after point in time we're looking at, ignore
-				et := e.Timestamp()
-				if et.IsZero() || et.After(t) {
-					continue
-				}
-
-				switch e.Type() {
-				case a8n.ChangesetEventKindGitHubClosed:
-					// GitHub emits Closed/Merged events at the same time when a PR is
-					// merged. We want to count that as a single Merged, not Closed
-					// See: https://github.com/sourcegraph/sourcegraph/pull/5847#discussion_r332477806
-					if merged {
-						continue
-					}
-					count.Open--
-					count.Closed++
-					if !reviewed {
-						count.OpenPending--
-					}
-					closed = true
-
-				case a8n.ChangesetEventKindGitHubReopened:
-					count.Open++
-					count.Closed--
-					if !reviewed {
-						count.OpenPending++
-					}
-					closed = false
-
-				case a8n.ChangesetEventKindGitHubMerged:
-					// Reverse effects of closed for counting purposes
-					if closed {
-						count.Closed--
-						count.Open++
-						if !reviewed {
-							count.OpenPending++
-						}
-					}
-					if approved {
-						count.OpenApproved--
-					}
-					if changesRequested {
-						count.OpenChangesRequested--
-					}
-					if !reviewed {
-						count.OpenPending--
-					}
-					count.Merged++
-					count.Open--
-					merged = true
-
-				case a8n.ChangesetEventKindGitHubReviewed:
-					s, err := reviewState(e)
-					if err != nil {
-						return nil, err
-					}
-
-					switch s {
-					case a8n.ChangesetReviewStateApproved:
-						if !approved {
-							approved = true
-							count.OpenApproved++
-							reviewed = true
-							count.OpenPending--
-						}
-					case a8n.ChangesetReviewStateChangesRequested:
-						if !changesRequested {
-							changesRequested = true
-							count.OpenChangesRequested++
-							reviewed = true
-							count.OpenPending--
-						}
-					case a8n.ChangesetReviewStatePending:
-					case a8n.ChangesetReviewStateCommented:
-						// Ignore
-					}
-				}
+			err := computeCounts(c, csEvents)
+			if err != nil {
+				return counts, err
 			}
 		}
 	}
 
 	return counts, nil
+}
+
+func computeCounts(c *ChangesetCounts, csEvents Events) error {
+	// Since some events cancel out another events effects we need to keep track of the
+	// changesets state up until an event so we know what to revert
+	// i.e. "merge" decrements OpenApproved counts, but only if
+	// changeset was previously approved
+	var (
+		merged           = false
+		closed           = false
+		reviewed         = false
+		approved         = false
+		changesRequested = false
+	)
+
+	for _, e := range csEvents {
+		// Event happened after point in time we're looking at, ignore
+		et := e.Timestamp()
+		if et.IsZero() || et.After(c.Time) {
+			continue
+		}
+
+		switch e.Type() {
+		case a8n.ChangesetEventKindGitHubClosed:
+			// GitHub emits Closed/Merged events at the same time when a PR is
+			// merged. We want to count that as a single Merged, not Closed
+			// See: https://github.com/sourcegraph/sourcegraph/pull/5847#discussion_r332477806
+			if merged {
+				continue
+			}
+			c.Open--
+			c.Closed++
+			if !reviewed {
+				c.OpenPending--
+			}
+			closed = true
+
+		case a8n.ChangesetEventKindGitHubReopened:
+			c.Open++
+			c.Closed--
+			if !reviewed {
+				c.OpenPending++
+			}
+			closed = false
+
+		case a8n.ChangesetEventKindGitHubMerged:
+			// Reverse effects of closed for counting purposes
+			if closed {
+				c.Closed--
+				c.Open++
+				if !reviewed {
+					c.OpenPending++
+				}
+			}
+			if approved {
+				c.OpenApproved--
+			}
+			if changesRequested {
+				c.OpenChangesRequested--
+			}
+			if !reviewed {
+				c.OpenPending--
+			}
+			c.Merged++
+			c.Open--
+			merged = true
+
+		case a8n.ChangesetEventKindGitHubReviewed:
+			s, err := reviewState(e)
+			if err != nil {
+				return err
+			}
+
+			switch s {
+			case a8n.ChangesetReviewStateApproved:
+				if !approved {
+					approved = true
+					c.OpenApproved++
+					reviewed = true
+					c.OpenPending--
+				}
+			case a8n.ChangesetReviewStateChangesRequested:
+				if !changesRequested {
+					changesRequested = true
+					c.OpenChangesRequested++
+					reviewed = true
+					c.OpenPending--
+				}
+			case a8n.ChangesetReviewStatePending:
+			case a8n.ChangesetReviewStateCommented:
+				// Ignore
+			}
+		}
+	}
+
+	return nil
 }
 
 func generateTimestamps(start, end time.Time) []time.Time {
