@@ -39,9 +39,9 @@ func NewPreCreateUserHook(s UsersStore) func(context.Context) error {
 			} else {
 				message := "Unable to create user account: "
 				if info == nil {
-					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users, and new users can not be created above %d (this instance now has %d users). A site admin must purchase a subscription at https://sourcegraph.com/user/settings/subscriptions/new. Enter the license key in the Sourcegraph management console.", NoLicenseWarningUserCount, NoLicenseMaximumAllowedUserCount, userCount)
+					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users (this instance now has %d users). Contact Sourcegraph to learn more at https://about.sourcegraph.com/contact/sales.", NoLicenseMaximumAllowedUserCount, userCount)
 				} else {
-					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Enter the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console)."
+					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Contact Sourcegraph at https://about.sourcegraph.com/contact/sales."
 				}
 				return errcode.NewPresentationError(message)
 			}

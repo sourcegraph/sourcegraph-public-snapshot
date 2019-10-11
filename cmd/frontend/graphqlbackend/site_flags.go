@@ -74,5 +74,5 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	return *NoLicenseWarningUserCount < int32(userCount), nil
+	return *NoLicenseWarningUserCount <= int32(userCount), nil
 }

@@ -471,9 +471,17 @@ export class Database {
             }
         }
 
-        return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
-            Promise.resolve(document.data)
-        )
+        try {
+            return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
+                Promise.resolve(document.data)
+            )
+        } catch (error) {
+            if (error.name === 'EntityNotFound') {
+                return undefined
+            }
+
+            throw error
+        }
     }
 
     /**
