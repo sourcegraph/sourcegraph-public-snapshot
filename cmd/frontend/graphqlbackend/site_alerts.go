@@ -63,7 +63,9 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 
 // doRuntimeValidation performs additional validations at runtime which otherwise will
 // prevent server from starting via conf.ContributeValidator.
-func doRuntimeValidation() (problems conf.Problems, err error) {
+// getConfigWarnings identifies problems with the configuration that a site
+// admin should address, but do not prevent Sourcegraph from running.
+func getConfigWarnings() (problems conf.Problems, err error) {
 	var c conf.Unified
 	if err := jsonc.Unmarshal(globals.ConfigurationServerFrontendOnly.Raw().Critical, &c.Critical); err != nil {
 		return nil, err
@@ -94,7 +96,7 @@ func init() {
 			}
 		}
 
-		runtimeProblems, err := doRuntimeValidation()
+		configWarnings, err := getConfigWarnings()
 		if err != nil {
 			return []*Alert{
 				{
@@ -103,7 +105,7 @@ func init() {
 				},
 			}
 		}
-		problems = append(problems, runtimeProblems...)
+		problems = append(problems, configWarnings...)
 
 		if len(problems) == 0 {
 			return nil
