@@ -2,12 +2,13 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
 import { createDatabaseFilename, hashKey, mustGet, hasErrorCode } from './util'
-import { databaseQueryDurationHistogram, databaseQueryErrorsCounter, instrument } from './metrics'
+import { instrument } from './metrics'
+import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './database.metrics'
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
 import * as fs from 'mz/fs'
 import { isEqual, uniqWith } from 'lodash'
-import { PackageModel } from './models.xrepo'
+import { PackageModel } from './xrepo.models'
 import { XrepoDatabase } from './xrepo'
 import {
     DefinitionModel,
@@ -23,7 +24,7 @@ import {
     DefinitionReferenceResultId,
     RangeId,
     entities,
-} from './models.database'
+} from './database.models'
 import { TracingContext, logSpan } from './tracing'
 
 /**
@@ -375,14 +376,14 @@ export class Database {
         this.logSpan(ctx, 'package_entity', {
             moniker,
             packageInformation,
-            packageRepository: packageEntity.repository,
-            packageCommit: packageEntity.commit,
+            packageRepository: packageEntity.dump.repository,
+            packageCommit: packageEntity.dump.commit,
         })
 
         const db = this.createNewDatabase(
-            packageEntity.repository,
-            packageEntity.commit,
-            createDatabaseFilename(this.storageRoot, packageEntity.repository, packageEntity.commit)
+            packageEntity.dump.repository,
+            packageEntity.dump.commit,
+            createDatabaseFilename(this.storageRoot, packageEntity.dump.repository, packageEntity.dump.commit)
         )
 
         const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
@@ -428,21 +429,21 @@ export class Database {
         this.logSpan(ctx, 'package_references', {
             moniker,
             packageInformation,
-            references: references.map(r => ({ repository: r.repository, commit: r.commit })),
+            references: references.map(r => ({ repository: r.dump.repository, commit: r.dump.commit })),
         })
 
         let allReferences: lsp.Location[] = []
         for (const reference of references) {
             // Skip the remote reference that show up for ourselves - we've already gathered
             // these in the previous step of the references query.
-            if (reference.repository === this.repository && reference.commit === this.commit) {
+            if (reference.dump.repository === this.repository && reference.dump.commit === this.commit) {
                 continue
             }
 
             const db = this.createNewDatabase(
-                reference.repository,
-                reference.commit,
-                createDatabaseFilename(this.storageRoot, reference.repository, reference.commit)
+                reference.dump.repository,
+                reference.dump.commit,
+                createDatabaseFilename(this.storageRoot, reference.dump.repository, reference.dump.commit)
             )
 
             const pathTransformer = (path: string): string => createRemoteUri(reference, path)
@@ -696,8 +697,8 @@ export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
  * @param path The path relative to the project root.
  */
 export function createRemoteUri(pkg: PackageModel, path: string): string {
-    const url = new URL(`git://${pkg.repository}`)
-    url.search = pkg.commit
+    const url = new URL(`git://${pkg.dump.repository}`)
+    url.search = pkg.dump.commit
     url.hash = path
     return url.href
 }

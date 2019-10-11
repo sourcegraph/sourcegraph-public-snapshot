@@ -1,1 +1,0 @@
-ALTER TABLE site_config DROP COLUMN initialized;

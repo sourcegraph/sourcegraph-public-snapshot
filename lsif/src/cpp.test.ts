@@ -5,7 +5,7 @@ import { convertLsif } from './importer'
 import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
 import { createDatabaseFilename } from './util'
 import { Database } from './database'
-import { entities } from './models.xrepo'
+import { entities } from './xrepo.models'
 import { XrepoDatabase } from './xrepo'
 
 describe('Database', () => {

@@ -1,6 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { comparePosition, createRemoteUri, mapRangesToLocations, findRanges } from './database'
-import { MonikerId, RangeData, RangeId } from './models.database'
+import { MonikerId, RangeData, RangeId } from './database.models'
 
 describe('findRanges', () => {
     it('should return ranges containing position', () => {
@@ -119,8 +119,11 @@ describe('createRemoteUri', () => {
             scheme: '',
             name: '',
             version: '',
-            repository: 'github.com/sourcegraph/codeintellify',
-            commit: 'deadbeef',
+            dump: {
+                id: 0,
+                repository: 'github.com/sourcegraph/codeintellify',
+                commit: 'deadbeef',
+            },
         }
 
         const uri = createRemoteUri(pkg, 'src/position.ts')

@@ -2,7 +2,7 @@ import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
 import { getCleanSqliteDatabase } from './test-utils'
-import { entities } from './models.xrepo'
+import { entities } from './xrepo.models'
 
 describe('XrepoDatabase', () => {
     let storageRoot!: string

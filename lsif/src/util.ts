@@ -1,6 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import { DefinitionReferenceResultId } from './models.database'
+import { DefinitionReferenceResultId } from './database.models'
 import { Id } from 'lsif-protocol'
 
 /**

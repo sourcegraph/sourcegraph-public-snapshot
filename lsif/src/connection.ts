@@ -1,5 +1,5 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
-import { entities } from './models.xrepo'
+import { entities } from './xrepo.models'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
 import { Logger } from 'winston'
@@ -13,7 +13,7 @@ import pRetry from 'p-retry'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395600
+const MINIMUM_MIGRATION_VERSION = 1528395601
 
 /**
  * How many times to try to check the current database migration version on startup.

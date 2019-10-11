@@ -196,6 +196,23 @@ local makeRequestsPanel(titleValue, metricValue, timeRange, buckets, colors, met
   ]
 );
 
+// Make a panel to display the total number of HTTP requests performed regardless
+// of the status code. This assumes a histogram metric is emitted by Prometheus.
+// See makeHttpRequestsPanel for the histogram version.
+local makeHttpTotalRequestsPanel(titleValue, metricValue, timeRange, metricFilter='') = makePanel(
+  title='Total number of %s' % titleValue,
+  targets=[
+    prometheus.target(
+      "rate(%s_duration_seconds_bucket{le='+Inf'%s}[%s])" % [
+        metricValue,
+        if metricFilter == '' then '' else ',%s' % metricFilter,
+        timeRange,
+      ],
+      legendFormat='Total requests',
+    ),
+  ]
+);
+
 // Make a panel to display the total number of HTTP requests performed and a
 // histogram of their duration. This assumes a histogram metric is emitted
 // by Prometheus with a code label. See makeRequestsPanel for reference.
@@ -339,6 +356,7 @@ local makeHttpDurationPercentilesPanel(titleValue, metricValue, timeRange, perce
   makeDashboard:: makeDashboard,
   makePanel:: makePanel,
   makeRequestsPanel:: makeRequestsPanel,
+  makeHttpTotalRequestsPanel:: makeHttpTotalRequestsPanel,
   makeHttpRequestsPanel:: makeHttpRequestsPanel,
   makeErrorRatePanel:: makeErrorRatePanel,
   makeHttpErrorRatePanel:: makeHttpErrorRatePanel,
