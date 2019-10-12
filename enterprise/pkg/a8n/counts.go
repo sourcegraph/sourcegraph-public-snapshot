@@ -106,9 +106,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 	// i.e. "merge" decrements OpenApproved counts, but only if
 	// changeset was previously approved
 	var (
-		merged   = false
-		closed   = false
-		reviewed = false
+		merged = false
+		closed = false
 	)
 
 	c.Total++
@@ -168,8 +167,13 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			if closed {
 				c.Closed--
 				c.Open++
-				if !reviewed {
+				switch previousReviewState {
+				case a8n.ChangesetReviewStatePending:
 					c.OpenPending++
+				case a8n.ChangesetReviewStateApproved:
+					c.OpenApproved++
+				case a8n.ChangesetReviewStateChangesRequested:
+					c.OpenChangesRequested++
 				}
 			}
 			switch previousReviewState {
@@ -209,7 +213,6 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				switch previousReviewState {
 				case a8n.ChangesetReviewStatePending:
 					c.OpenApproved++
-					reviewed = true
 					c.OpenPending--
 				case a8n.ChangesetReviewStateChangesRequested:
 					c.OpenChangesRequested--
@@ -220,7 +223,6 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				switch previousReviewState {
 				case a8n.ChangesetReviewStatePending:
 					c.OpenChangesRequested++
-					reviewed = true
 					c.OpenPending--
 				case a8n.ChangesetReviewStateApproved:
 					c.OpenChangesRequested++

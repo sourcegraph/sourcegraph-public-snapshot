@@ -258,6 +258,25 @@ func TestCalcCounts(t *testing.T) {
 			},
 		},
 		{
+			name: "single changeset open, approved, closed, merged",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(3),
+			events: []Event{
+				ghReview(1, daysAgo(2), "user1", "APPROVED"),
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
+				fakeEvent{t: daysAgo(0), kind: a8n.ChangesetEventKindGitHubReopened, id: 1},
+				fakeEvent{t: daysAgo(0), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
+			},
+		},
+		{
 			name: "single changeset open, changes-requested, closed, reopened",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(3)),
@@ -273,6 +292,24 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
 				{Time: daysAgo(1), Total: 1, Closed: 1},
 				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			},
+		},
+		{
+			name: "single changeset open, changes-requested, closed, merged",
+			changesets: []*a8n.Changeset{
+				ghChangeset(1, daysAgo(3)),
+			},
+			start: daysAgo(3),
+			events: []Event{
+				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
+				fakeEvent{t: daysAgo(0), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
+				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(1), Total: 1, Closed: 1},
+				{Time: daysAgo(0), Total: 1, Merged: 1},
 			},
 		},
 		{
