@@ -215,7 +215,7 @@ export class XrepoDatabase {
         return await this.withTransactionalEntityManager(async entityManager => {
             const dumpID = await this.insertDump(repository, commit, entityManager)
 
-            const packageInserter = new TableInserter(
+            const packageInserter = new TableInserter<PackageModel, new () => PackageModel>(
                 entityManager,
                 PackageModel,
                 PackageModel.BatchSize,
@@ -223,7 +223,7 @@ export class XrepoDatabase {
                 true // Do nothing on conflict
             )
 
-            const referenceInserter = new TableInserter(
+            const referenceInserter = new TableInserter<ReferenceModel, new () => ReferenceModel>(
                 entityManager,
                 ReferenceModel,
                 ReferenceModel.BatchSize,
@@ -231,12 +231,12 @@ export class XrepoDatabase {
             )
 
             for (const pkg of packages) {
-                await packageInserter.insert({ dump: dumpID, ...pkg })
+                await packageInserter.insert({ dump_id: dumpID, ...pkg })
             }
 
             for (const reference of references) {
                 await referenceInserter.insert({
-                    dump: dumpID,
+                    dump_id: dumpID,
                     filter: await createFilter(reference.identifiers),
                     ...reference.package,
                 })

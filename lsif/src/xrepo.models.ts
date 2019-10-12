@@ -104,9 +104,19 @@ class Package {
     @Column('text', { nullable: true })
     public version!: string | null
 
+    /**
+     * The corresponding dump, `LsifDump` when querying and `DumpID` when
+     * inserting.
+     */
     @OneToOne(type => LsifDump, { eager: true })
     @JoinColumn({ name: 'dump_id' })
     public dump!: LsifDump
+
+    /**
+     * The foreign key to the dump.
+     */
+    @Column('integer')
+    public dump_id!: DumpID
 }
 
 /**
