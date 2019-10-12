@@ -106,7 +106,6 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 	// i.e. "merge" decrements OpenApproved counts, but only if
 	// changeset was previously approved
 	var (
-		merged = false
 		closed = false
 	)
 
@@ -128,13 +127,6 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 
 		switch e.Type() {
 		case a8n.ChangesetEventKindGitHubClosed:
-			// GitHub emits Closed/Merged events at the same time when a PR is
-			// merged. We want to count that as a single Merged, not Closed
-			// See: https://github.com/sourcegraph/sourcegraph/pull/5847#discussion_r332477806
-			if merged {
-				continue
-			}
-
 			c.Open--
 			c.Closed++
 			closed = true
@@ -163,18 +155,12 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			}
 
 		case a8n.ChangesetEventKindGitHubMerged:
-			// Reverse effects of closed for counting purposes
+			// If it was closed, all "review counts" have been updated by the
+			// closed events and we just need to reverse these two counts
 			if closed {
 				c.Closed--
-				c.Open++
-				switch previousReviewState {
-				case a8n.ChangesetReviewStatePending:
-					c.OpenPending++
-				case a8n.ChangesetReviewStateApproved:
-					c.OpenApproved++
-				case a8n.ChangesetReviewStateChangesRequested:
-					c.OpenChangesRequested++
-				}
+				c.Merged++
+				return nil
 			}
 			switch previousReviewState {
 			case a8n.ChangesetReviewStatePending:
@@ -186,7 +172,10 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			}
 			c.Merged++
 			c.Open--
-			merged = true
+
+			// Merged is a final state, we return here and don't need to look at
+			// other events
+			return nil
 
 		case a8n.ChangesetEventKindGitHubReviewed:
 			s, err := reviewState(e)
