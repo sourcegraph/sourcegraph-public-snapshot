@@ -1168,7 +1168,7 @@ describe('e2e test suite', () => {
                 expect(numberOfResults).toBeGreaterThan(0)
             })
         })
-        // TODO should we wait for an element to prevent flakiness
+
         test('redirects to a URL with &patternType=literal if no patternType in URL', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
