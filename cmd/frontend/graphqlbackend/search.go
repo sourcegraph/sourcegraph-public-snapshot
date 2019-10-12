@@ -59,7 +59,7 @@ func maxReposToSearch() int {
 func (r *schemaResolver) Search(args *struct {
 	Query  string
 	Cursor *graphql.ID
-	Limit  *int32
+	First  *int32
 }) (interface {
 	Results(context.Context) (*searchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
@@ -75,20 +75,20 @@ func (r *schemaResolver) Search(args *struct {
 
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
-	if args.Limit != nil {
+	if args.First != nil {
 		cursor, err := unmarshalSearchCursor(args.Cursor)
 		if err != nil {
 			return nil, err
 		}
-		if *args.Limit < 1 || *args.Limit > 5000 {
-			return nil, errors.New("search: requested pagination limit outside allowed range (1 - 5000)")
+		if *args.First < 0 || *args.First > 5000 {
+			return nil, errors.New("search: requested pagination 'first' value outside allowed range (0 - 5000)")
 		}
 		pagination = &searchPaginationInfo{
 			cursor: cursor,
-			limit:  *args.Limit,
+			limit:  *args.First,
 		}
 	} else if args.Cursor != nil {
-		return nil, errors.New("Search: paginated requests providing a 'cursor' but no 'limit' is forbidden")
+		return nil, errors.New("Search: paginated requests providing a 'cursor' but no 'first' is forbidden")
 	}
 
 	return &searchResolver{

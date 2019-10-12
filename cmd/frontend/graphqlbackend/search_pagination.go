@@ -11,6 +11,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -87,26 +88,11 @@ type searchPaginationInfo struct {
 	limit int32
 }
 
-// Finished tells whether or not pagination has consumed all results that are
-// available.
-func (r *searchResultsResolver) Finished(ctx context.Context) bool {
-	if r.cursor == nil {
-		return false // Will always be false for non-paginated requests.
+func (r *searchResultsResolver) PageInfo() *graphqlutil.PageInfo {
+	if r.cursor == nil || r.cursor.Finished {
+		return graphqlutil.HasNextPage(false)
 	}
-	return r.cursor.Finished
-}
-
-// Cursor returns the cursor that can be passed into a future search request in
-// order to fetch more results starting where this search left off.
-func (r *searchResultsResolver) Cursor(ctx context.Context) *graphql.ID {
-	if r.cursor == nil {
-		return nil // Only present when the original request was a paginated one.
-	}
-	if r.cursor.Finished {
-		return nil // Only present when the paginated search has not finished.
-	}
-	cursor := marshalSearchCursor(r.cursor)
-	return &cursor
+	return graphqlutil.NextPageCursor(marshalSearchCursor(r.cursor))
 }
 
 // paginatedResults handles serving paginated search queries. It's logic does
