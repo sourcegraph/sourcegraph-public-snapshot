@@ -392,8 +392,8 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	// benefits to subsequent requests against this API.
 	results, common, relativeCursor := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
 	absoluteCursor := relativeCursor
-	absoluteCursor.Finished = len(results) == 0 && len(repos) == 0
 	absoluteCursor.RepositoryOffset += int32(repositoryOffset)
+	absoluteCursor.Finished = int(absoluteCursor.RepositoryOffset) == len(repos) // Finished if we searched the last repository.
 	return absoluteCursor, results, common, nil
 }
 
