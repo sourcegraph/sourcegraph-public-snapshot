@@ -356,7 +356,7 @@ export class XrepoDatabase {
      *
      * @param callback The function invoke with the entity manager.
      */
-    public withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
+    private withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
         return this.withConnection(connection => connection.transaction(callback))
     }
 }
