@@ -7,7 +7,7 @@ import {
 import { instrument } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, LsifDump } from './xrepo.models'
+import { PackageModel, ReferenceModel, Commit, DumpID, LsifDump } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
 import { TracingContext } from './tracing'
@@ -211,9 +211,11 @@ export class XrepoDatabase {
         commit: string,
         packages: Package[],
         references: SymbolReferences[]
-    ): Promise<void> {
+    ): Promise<DumpID> {
         return this.withTransactionalEntityManager(async entityManager => {
-            const packageInserter = new TableInserter(
+            const dumpID = await this.insertDump(repository, commit, entityManager)
+
+            const packageInserter = new TableInserter<PackageModel, new () => PackageModel>(
                 entityManager,
                 PackageModel,
                 PackageModel.BatchSize,
@@ -221,44 +223,20 @@ export class XrepoDatabase {
                 true // Do nothing on conflict
             )
 
-            const referenceInserter = new TableInserter(
+            const referenceInserter = new TableInserter<ReferenceModel, new () => ReferenceModel>(
                 entityManager,
                 ReferenceModel,
                 ReferenceModel.BatchSize,
                 insertionMetrics
             )
 
-            // Remove all previous package data for this repo/commit (this
-            // cascades to packages and references)
-            await entityManager
-                .createQueryBuilder()
-                .delete()
-                .from(LsifDump)
-                .where({ repository, commit })
-                .execute()
-
-            // Mark that we have data available for this commit
-            const result = await entityManager
-                .createQueryBuilder()
-                .insert()
-                .onConflict('DO NOTHING')
-                .into(LsifDump)
-                .values({ repository, commit })
-                .execute()
-            if (result.identifiers.length === 0) {
-                throw new Error(
-                    `Unable to insert row into lsif_dumps table for repository ${repository} commit ${commit}.`
-                )
-            }
-            const dump_id: number = result.identifiers[0].id
-
             for (const pkg of packages) {
-                await packageInserter.insert({ dump: dump_id, ...pkg })
+                await packageInserter.insert({ dump_id: dumpID, ...pkg })
             }
 
             for (const reference of references) {
                 await referenceInserter.insert({
-                    dump: dump_id,
+                    dump_id: dumpID,
                     filter: await createFilter(reference.identifiers),
                     ...reference.package,
                 })
@@ -266,7 +244,59 @@ export class XrepoDatabase {
 
             await packageInserter.flush()
             await referenceInserter.flush()
+
+            return dumpID
         })
+    }
+
+    /**
+     * Inserts the given repository and commit into the `lsif_dumps` table.
+     *
+     * @param repository The repository.
+     * @param commit The commit.
+     * @param entityManager The EntityManager for the connection to the xrepo database.
+     */
+    public async insertDump(
+        repository: string,
+        commit: string,
+        entityManager: EntityManager = this.connection.createEntityManager()
+    ): Promise<DumpID> {
+        // Remove all previous package data for this repo/commit (this
+        // cascades to packages and references)
+        await entityManager
+            .createQueryBuilder()
+            .delete()
+            .from(LsifDump)
+            .where({ repository, commit })
+            .execute()
+
+        // Mark that we have data available for this commit
+        const result = await entityManager
+            .createQueryBuilder()
+            .insert()
+            .onConflict('DO NOTHING')
+            .into(LsifDump)
+            .values({ repository, commit })
+            .execute()
+
+        if (result.identifiers.length === 0) {
+            throw new Error(`Unable to insert row into lsif_dumps table for repository ${repository} commit ${commit}.`)
+        }
+
+        return result.identifiers[0].id
+    }
+
+    /**
+     * Find the dump for the given repository and commit.
+     *
+     * @param repository The repository.
+     * @param commit The commit.
+     * @param entityManager The EntityManager for the connection to the xrepo database.
+     */
+    public async getDump(repository: string, commit: string): Promise<LsifDump | undefined> {
+        return await this.withConnection(connection =>
+            connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
+        )
     }
 
     /**
