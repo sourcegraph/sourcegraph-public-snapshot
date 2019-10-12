@@ -37,7 +37,7 @@ var DockerContainer = conftypes.RawUnified{
 	Critical: `{
 	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 	// This is required to be configured for Sourcegraph to work correctly.
-	"externalURL": "https://sourcegraph.example.com",
+	// "externalURL": "https://sourcegraph.example.com",
 
 	"auth.providers": [
 		{
@@ -58,7 +58,7 @@ var Cluster = conftypes.RawUnified{
 	Critical: `{
 	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 	// This is required to be configured for Sourcegraph to work correctly.
-	"externalURL": "https://sourcegraph.example.com",
+	// "externalURL": "https://sourcegraph.example.com",
 
 	// The authentication provider to use for identifying and signing in users.
 	// Only one entry is supported.

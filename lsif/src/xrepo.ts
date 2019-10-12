@@ -1,15 +1,16 @@
 import {
     bloomFilterEventsCounter,
-    instrument,
     xrepoInsertionDurationHistogram,
     xrepoQueryDurationHistogram,
     xrepoQueryErrorsCounter,
-} from './metrics'
+} from './xrepo.metrics'
+import { instrument } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
+import { PackageModel, ReferenceModel, Commit, LsifDump } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
+import { TracingContext } from './tracing'
 
 /**
  * The maximum traversal distance when finding the closest commit.
@@ -94,11 +95,13 @@ export class XrepoDatabase {
      *
      * @param repository The name of the repository.
      * @param commit The target commit.
+     * @param ctx The tracing context.
      * @param gitserverUrls The set of ordered gitserver urls.
      */
     public async findClosestCommitWithData(
         repository: string,
         commit: string,
+        ctx: TracingContext = {},
         gitserverUrls?: string[]
     ): Promise<string | undefined> {
         // Request updated commit data from gitserver if this commit isn't
@@ -107,7 +110,7 @@ export class XrepoDatabase {
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (gitserverUrls) {
-            await discoverAndUpdateCommit(this, repository, commit, gitserverUrls)
+            await discoverAndUpdateCommit({ xrepoDatabase: this, repository, commit, gitserverUrls, ctx })
         }
 
         return this.withConnection(async connection => {
@@ -116,8 +119,8 @@ export class XrepoDatabase {
                     -- seed result set with the target repository and commit marked
                     -- with both ancestor and descendant directions
                     select l.* from (
-                        select c.*, 0, 'A' from commits_with_lsif_data_markers c union
-                        select c.*, 0, 'D' from commits_with_lsif_data_markers c
+                        select c.*, 0, 'A' from lsif_commits_with_lsif_data c union
+                        select c.*, 0, 'D' from lsif_commits_with_lsif_data c
                     ) l
                     where l.repository = $1 and l."commit" = $2
 
@@ -125,7 +128,7 @@ export class XrepoDatabase {
 
                     -- get the next commit in the ancestor or descendant direction
                     select c.*, l.distance + 1, l.direction from lineage l
-                    join commits_with_lsif_data_markers c on (
+                    join lsif_commits_with_lsif_data c on (
                         (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parent_commit) or
                         (l.direction = 'D' and c.repository = l.repository and c.parent_commit = l."commit")
                     )
@@ -226,49 +229,44 @@ export class XrepoDatabase {
                 insertionMetrics
             )
 
-            const lsifDataMarkerInserter = new TableInserter(
-                entityManager,
-                LsifDataMarker,
-                LsifDataMarker.BatchSize,
-                insertionMetrics,
-                true // Do nothing on conflict
-            )
-
-            // Remove all previous package data for this repo/commit
+            // Remove all previous package data for this repo/commit (this
+            // cascades to packages and references)
             await entityManager
                 .createQueryBuilder()
                 .delete()
-                .from(PackageModel)
+                .from(LsifDump)
                 .where({ repository, commit })
                 .execute()
 
-            // Remove all previous reference data for this repo/commit
-            await entityManager
+            // Mark that we have data available for this commit
+            const result = await entityManager
                 .createQueryBuilder()
-                .delete()
-                .from(ReferenceModel)
-                .where({ repository, commit })
+                .insert()
+                .onConflict('DO NOTHING')
+                .into(LsifDump)
+                .values({ repository, commit })
                 .execute()
+            if (result.identifiers.length === 0) {
+                throw new Error(
+                    `Unable to insert row into lsif_dumps table for repository ${repository} commit ${commit}.`
+                )
+            }
+            const dump_id: number = result.identifiers[0].id
 
             for (const pkg of packages) {
-                await packageInserter.insert({ repository, commit, ...pkg })
+                await packageInserter.insert({ dump: dump_id, ...pkg })
             }
 
             for (const reference of references) {
                 await referenceInserter.insert({
-                    repository,
-                    commit,
+                    dump: dump_id,
                     filter: await createFilter(reference.identifiers),
                     ...reference.package,
                 })
             }
 
-            // Mark that we have data available for this commit
-            await lsifDataMarkerInserter.insert({ repository, commit })
-
             await packageInserter.flush()
             await referenceInserter.flush()
-            await lsifDataMarkerInserter.flush()
         })
     }
 
@@ -279,10 +277,7 @@ export class XrepoDatabase {
      * pair that does not reference `value`. See cache.ts for configuration values that tune
      * the bloom filter false positive rates.
      *
-     * @param scheme The package manager scheme (e.g. npm, pip).
-     * @param name The package name.
-     * @param version The package version.
-     * @param value The value to test.
+     * @param args Parameter bag.
      */
     public async getReferences({
         scheme,
@@ -290,9 +285,13 @@ export class XrepoDatabase {
         version,
         value,
     }: {
+        /** The package manager scheme (e.g. npm, pip).  */
         scheme: string
+        /** The package name.  */
         name: string
+        /** The package version.  */
         version: string | null
+        /** The value to test.  */
         value: string
     }): Promise<ReferenceModel[]> {
         const results = await this.withConnection(connection =>

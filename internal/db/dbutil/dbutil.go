@@ -1,7 +1,6 @@
 package dbutil
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"database/sql/driver"
@@ -111,48 +110,8 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewMigrationSourceLoader(dataSource string) (*bindata.AssetSource, error) {
-	// The following constructs a map of text placeholder/replacements
-	// that are run over the content of the migration files before being
-	// run. This is necessary as the lsif-server migrations need to reference
-	// the PGPASSWORD envvar to make a successful dblink connection in an
-	// environment where there is no superuser account (such as Amazon RDS).
-
-	pgPassword, err := pgPassword(dataSource)
-	if err != nil {
-		return nil, err
-	}
-
-	replacements := map[string]string{
-		"$$$PGPASSWORD$$$": pgPassword,
-	}
-
-	return bindata.Resource(migrations.AssetNames(), func(name string) ([]byte, error) {
-		asset, err := migrations.Asset(name)
-		if err != nil {
-			return nil, err
-		}
-
-		for placeholder, replacement := range replacements {
-			asset = bytes.Replace(asset, []byte(placeholder), []byte(replacement), -1)
-		}
-
-		return asset, nil
-	}), nil
-}
-
-func pgPassword(dataSource string) (string, error) {
-	if dataSource == "" {
-		return os.Getenv("PGPASSWORD"), nil
-	}
-
-	url, err := url.Parse(dataSource)
-	if err != nil {
-		return "", errors.Wrap(err, "dataSource is not a valid URL")
-	}
-
-	password, _ := url.User.Password()
-	return password, nil
+func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
+	return bindata.Resource(migrations.AssetNames(), migrations.Asset)
 }
 
 // MigrateDB runs all migrations from github.com/sourcegraph/sourcegraph/migrations
@@ -164,12 +123,7 @@ func MigrateDB(db *sql.DB, dataSource string) error {
 		return err
 	}
 
-	s, err := NewMigrationSourceLoader(dataSource)
-	if err != nil {
-		return err
-	}
-
-	d, err := bindata.WithInstance(s)
+	d, err := bindata.WithInstance(NewMigrationSourceLoader(dataSource))
 	if err != nil {
 		return err
 	}

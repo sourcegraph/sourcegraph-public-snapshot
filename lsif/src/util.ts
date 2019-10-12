@@ -1,6 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import { DefinitionReferenceResultId } from './models.database'
+import { DefinitionReferenceResultId } from './database.models'
 import { Id } from 'lsif-protocol'
 
 /**
@@ -124,17 +124,6 @@ export async function ensureDirectory(path: string): Promise<void> {
             throw e
         }
     }
-}
-
-/**
- * Log an error value to standard error and exit the process after a short
- * timeout to allow outstanding logs to flush.
- *
- * @param e The error value.
- */
-export function logErrorAndExit(e: any): void {
-    console.error(e)
-    setTimeout(() => process.exit(1), 100)
 }
 
 /**

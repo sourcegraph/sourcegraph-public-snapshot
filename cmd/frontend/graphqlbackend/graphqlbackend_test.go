@@ -61,6 +61,15 @@ func TestNodeResolverTo(t *testing.T) {
 		if _, b := r.ToAccessToken(); b {
 			continue
 		}
+		if _, b := r.ToCampaign(); b {
+			continue
+		}
+		if _, b := r.ToChangeset(); b {
+			continue
+		}
+		if _, b := r.ToChangesetEvent(); b {
+			continue
+		}
 		if _, b := r.ToDiscussionComment(); b {
 			continue
 		}
