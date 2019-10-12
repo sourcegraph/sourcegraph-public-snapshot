@@ -139,6 +139,12 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			if !reviewed {
 				c.OpenPending--
 			}
+			if changesRequested {
+				c.OpenChangesRequested--
+			}
+			if approved {
+				c.OpenApproved--
+			}
 			closed = true
 
 		case a8n.ChangesetEventKindGitHubReopened:
@@ -146,6 +152,12 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			c.Closed--
 			if !reviewed {
 				c.OpenPending++
+			}
+			if approved {
+				c.OpenApproved++
+			}
+			if changesRequested {
+				c.OpenChangesRequested++
 			}
 			closed = false
 
