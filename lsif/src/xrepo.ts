@@ -206,13 +206,13 @@ export class XrepoDatabase {
      * @param packages The list of packages that this repository defines (scheme, name, and version).
      * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      */
-    public async addPackagesAndReferences(
+    public addPackagesAndReferences(
         repository: string,
         commit: string,
         packages: Package[],
         references: SymbolReferences[]
     ): Promise<DumpID> {
-        return await this.withTransactionalEntityManager(async entityManager => {
+        return this.withTransactionalEntityManager(async entityManager => {
             const dumpID = await this.insertDump(repository, commit, entityManager)
 
             const packageInserter = new TableInserter<PackageModel, new () => PackageModel>(
