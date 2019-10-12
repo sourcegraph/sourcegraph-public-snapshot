@@ -27,25 +27,22 @@ To enable better programmatic consumption of search results, Sourcegraph 3.9 int
 
 Sourcegraph's paginated search API is cursor-based. Each response contains a new cursor indicating where we left off when searching. It tells Sourcegraph where to continue when a future request with that cursor is made. The typical request flow looks something like:
 
-- Fetch results 0-100: `search(query:"some query", limit:100, cursor:null)`
-- Fetch results 100-200: `search(query:"some query", limit:100, cursor:"<SearchResults.cursor>")`
-- Fetch results 200-300: `search(query:"some query", limit:100, cursor:"<SearchResults.cursor>")`
+- Fetch results 0-100: `search(query:"some query", first:100, cursor:null)`
+- Fetch results 100-200: `search(query:"some query", first:100, cursor:"<.results.pageInfo.endCursor>")`
+- Fetch results 200-300: `search(query:"some query", first:100, cursor:"<.results.pageInfo.endCursor>")`
 
 Until `SearchResults.finished` is `true` - indicating no more results are available.
 
-#### Choosing the right `limit`
+#### Choosing the right per-page value
 
-When performing paginated requests, it is very important to choose a `limit` based on your use case. Unlike regular paginated APIs which simply iterate over some existing data, Sourcegraph is performing nearly-live searches and compiling the data for you from our index and other sources in realtime.
+When performing paginated requests, it is very important to choose a per-page value (`first`) based on your use case. Unlike regular paginated APIs which simply iterate over some existing data, Sourcegraph is performing nearly-live searches and compiling the data for you from our index and other sources in realtime.
 
-For example, if you intend to display the results to a user like our web UI it is very important to choose a small `limit` in order to always get quick responses. A request for `limit:10` may be substantially faster than `limit:11` in specific cases such as if the 11th result only exists in the last repository Sourcegraph would search based on your query.
+For example, if you intend to display the results to a user like our web UI it is very important to choose a small `first` in order to always get quick responses. A request for `first:10` may be substantially faster than `first:11` in specific cases such as if the 11th result only exists in the last repository Sourcegraph would search based on your query.
 
 In general, to get the best performance:
 
-- User interfaces intending to display results should specify very
-  conservative limits around 2x as many results will fit on the screen at
-  a given time.
-- Programatic consumption of search results should specify generous limits
-  around 1,000 to 5,000 (max), depending on their real-time nature.
+- User interfaces intending to display results should specify very conservative per-page values of around 2x as many results will fit on the screen at a given time.
+- Programatic consumption of search results should specify generous per-page values around 1,000 to 5,000 (max), depending on their real-time nature.
 
 #### Result ordering
 
