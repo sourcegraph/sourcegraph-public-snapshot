@@ -293,12 +293,10 @@ export class XrepoDatabase {
      * @param commit The commit.
      * @param entityManager The EntityManager for the connection to the xrepo database.
      */
-    public async getDump(
-        repository: string,
-        commit: string,
-        entityManager: EntityManager = this.connection.createEntityManager()
-    ): Promise<LsifDump | undefined> {
-        return await this.connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
+    public async getDump(repository: string, commit: string): Promise<LsifDump | undefined> {
+        return await this.withConnection(connection =>
+            connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
+        )
     }
 
     /**
