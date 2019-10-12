@@ -38,7 +38,11 @@ export default class LiteralSearchToast extends React.Component<Props, State> {
                     subtitle="Search queries are no longer interpreted as regular expressions by default. Click the .* icon in the search bar to toggle regular expression search. Learn more about this update in the docs."
                     onDismiss={this.onDismiss}
                     cta={
-                        <Link to={`${docsURLPrefix}/user/search/queries`} className="btn btn-primary mr-2">
+                        <Link
+                            to={`${docsURLPrefix}/user/search/queries`}
+                            className="btn btn-primary mr-2"
+                            aria-label="Visit documentation for the new regular expression toggle"
+                        >
                             Learn more
                         </Link>
                     }

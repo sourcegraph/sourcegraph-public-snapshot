@@ -19,7 +19,12 @@ export const Toast: React.FunctionComponent<Props> = props => (
             {props.subtitle}
             {props.cta && <div className="toast__contents-cta">{props.cta}</div>}
         </div>
-        <button type="button" onClick={props.onDismiss} className="toast__close-button btn btn-icon e2e-close-toast">
+        <button
+            type="button"
+            onClick={props.onDismiss}
+            className="toast__close-button btn btn-icon e2e-close-toast"
+            aria-label="Close"
+        >
             <CloseIcon className="icon-inline" />
         </button>
     </div>

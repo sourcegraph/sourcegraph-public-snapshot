@@ -47,6 +47,7 @@ export default class RegexpToggle extends React.Component<RegexpToggleProps> {
                 className="btn btn-icon icon-inline regexp-toggle e2e-regexp-toggle"
                 role="checkbox"
                 aria-checked={this.props.toggled}
+                aria-label="Regular expression toggle"
                 tabIndex={0}
                 data-tooltip={`${this.props.toggled ? 'Disable' : 'Enable'} regular expressions`}
             >
