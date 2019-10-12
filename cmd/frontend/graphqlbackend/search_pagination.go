@@ -393,9 +393,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	results, common, relativeCursor := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
 	absoluteCursor := relativeCursor
 	absoluteCursor.Finished = len(results) == 0 && len(repos) == 0
-	if p.pagination.cursor != nil {
-		absoluteCursor.RepositoryOffset += int32(repositoryOffset)
-	}
+	absoluteCursor.RepositoryOffset += int32(repositoryOffset)
 	return absoluteCursor, results, common, nil
 }
 
