@@ -1186,8 +1186,8 @@ type SearchResults {
     # fetch more results starting where this search left off. See the 'search'
     # resolver for more details.
     #
-    # Only valid when the original request was a paginated one.
-    cursor: ID!
+    # Only present when the original request was a paginated one, and finished = false.
+    cursor: ID
     # Whether or not pagination has consumed all results that are available.
     #
     # Will always be false for non-paginated requests.

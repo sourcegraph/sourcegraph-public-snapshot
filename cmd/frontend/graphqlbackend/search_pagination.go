@@ -98,11 +98,15 @@ func (r *searchResultsResolver) Finished(ctx context.Context) bool {
 
 // Cursor returns the cursor that can be passed into a future search request in
 // order to fetch more results starting where this search left off.
-func (r *searchResultsResolver) Cursor(ctx context.Context) graphql.ID {
+func (r *searchResultsResolver) Cursor(ctx context.Context) *graphql.ID {
 	if r.cursor == nil {
-		return "" // Only valid when the original request was a paginated one.
+		return nil // Only present when the original request was a paginated one.
 	}
-	return marshalSearchCursor(r.cursor)
+	if r.cursor.Finished {
+		return nil // Only present when the paginated search has not finished.
+	}
+	cursor := marshalSearchCursor(r.cursor)
+	return &cursor
 }
 
 // paginatedResults handles serving paginated search queries. It's logic does
@@ -128,12 +132,14 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 			otlog.Int("Cursor.RepositoryOffset", int(r.pagination.cursor.RepositoryOffset)),
 			otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
 			otlog.Int("Cursor.UserID", int(r.pagination.cursor.UserID)),
+			otlog.Bool("Cursor.Finished", r.pagination.cursor.Finished),
 		)
 		log15.Info("paginated search continue request",
 			"query", fmt.Sprintf("%q", r.rawQuery()),
 			"RepositoryOffset", int(r.pagination.cursor.RepositoryOffset),
 			"ResultOffset", int(r.pagination.cursor.ResultOffset),
 			"UserID", int(r.pagination.cursor.UserID),
+			"Finished", r.pagination.cursor.Finished,
 		)
 	} else {
 		tr.LogFields(otlog.String("Cursor", "nil"))
@@ -354,8 +360,6 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	}
 
 	// Search over the repos list in batches.
-	//
-	// TODO(slimsag): future: scrutinize this code for off-by-one errors (I wrote this while sleepy.)
 	common = &searchResultsCommon{}
 	for start := 0; start <= len(repos); start += batchSize {
 		if start > len(repos) {
@@ -390,24 +394,60 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	// likely to come back soon for more and we don't need to search a batch of
 	// repositories every time. This would give substantial performance
 	// benefits to subsequent requests against this API.
-	results, common, relativeCursor := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
-	absoluteCursor := relativeCursor
-	absoluteCursor.RepositoryOffset += int32(repositoryOffset)
-	absoluteCursor.Finished = int(absoluteCursor.RepositoryOffset) == len(repos) // Finished if we searched the last repository.
-	return absoluteCursor, results, common, nil
+	sliced := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
+	nextCursor := &searchCursor{ResultOffset: sliced.resultOffset}
+	for globalOffset, repo := range p.repositories {
+		if repo.Repo == sliced.lastRepoConsumed {
+			nextCursor.RepositoryOffset = int32(globalOffset)
+		}
+	}
+	nextCursor.Finished = !sliced.limitHit || int(nextCursor.RepositoryOffset) == len(p.repositories) // Finished if we searched the last repository
+	return nextCursor, sliced.results, sliced.common, nil
 }
 
-// sliceSearchResults returns results[offset:offset+limit] and a searchResultsCommon
-// structure reflecting that slice of results.
-//
-// Also returned is a cursor indicating (relative to the input results) where
-// the search could be continued.
-func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) ([]searchResultResolver, *searchResultsCommon, *searchCursor) {
-	cursor := &searchCursor{RepositoryOffset: 0, ResultOffset: 0}
-	results = results[offset:]
-	if len(results) < limit {
-		return results, common, cursor
+type slicedSearchResults struct {
+	// results is the new results, sliced.
+	results []searchResultResolver
+
+	// common is the new common results structure, updated to reflect the sliced results only.
+	common *searchResultsCommon
+
+	// resultOffset indicates where the search would continue within the last
+	// repository whose results were consumed. For example:
+	//
+	// 	limit := 5
+	// 	results := [a1, a2, a3, b1, b2, b3, c1, c2, c3]
+	// 	sliceSearchResults(results, ..., limit).resultOffset = 2 // in repository B, resume at result offset 2 (b3)
+	//
+	resultOffset int32
+
+	// lastRepoConsumed indicates the last repo whose results were consumed
+	// within the input result set.
+	lastRepoConsumed *types.Repo
+
+	// limitHit indicates if the limit was hit and results were truncated.
+	limitHit bool
+}
+
+// sliceSearchResults effectively slices results[offset:offset+limit] and
+// returns an updated searchResultsCommon structure to reflect that, as well as
+// information about the slicing that was performed.
+func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
+	// First we handle the case of having few enough results that we do not
+	// need to slice anything.
+	if len(results[offset:]) < limit {
+		final.results = results[offset:]
+		final.common = common
+		lastRepoConsumedName, _ := results[len(results)-1].searchResultURIs()
+		for _, repo := range common.repos {
+			if string(repo.Name) == lastRepoConsumedName {
+				final.lastRepoConsumed = repo
+			}
+		}
+		return
 	}
+	final.limitHit = true
+	results = results[offset:]
 
 	// Break results into repositories because for each result we need to add
 	// the respective repository to the new common structure.
@@ -439,12 +479,12 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		if i == limit-1 && repo == lastResultRepo {
 			// resultsInRepoConsumed is the last result we consumed, so add one
 			// so the next query starts on a new result.
-			cursor.ResultOffset = resultsInRepoConsumed + 1
+			final.resultOffset = resultsInRepoConsumed + 1
 			break
 		}
 		if repo != lastResultRepo {
 			resultsInRepoConsumed = 1
-			cursor.RepositoryOffset++
+			final.lastRepoConsumed = reposByName[repo]
 		} else {
 			resultsInRepoConsumed++
 		}
@@ -453,8 +493,8 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 
 	// Construct the new searchResultsCommon structure for just the results
 	// we're returning.
-	finalResults := make([]searchResultResolver, 0, limit)
-	finalCommon := &searchResultsCommon{
+	final.results = make([]searchResultResolver, 0, limit)
+	final.common = &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
 		partial:          make(map[api.RepoName]struct{}),
@@ -476,19 +516,19 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		// prior paginated requests with the cursor.
 
 		// Include the results and copy over metadata from the common structure.
-		finalResults = append(finalResults, results...)
-		finalCommon.resultCount += int32(len(results))
-		copy(repo, &finalCommon.repos, common.repos)
-		copy(repo, &finalCommon.searched, common.searched)
-		copy(repo, &finalCommon.indexed, common.indexed)
-		copy(repo, &finalCommon.cloning, common.cloning)
-		copy(repo, &finalCommon.missing, common.missing)
-		copy(repo, &finalCommon.timedout, common.timedout)
+		final.results = append(final.results, results...)
+		final.common.resultCount += int32(len(results))
+		copy(repo, &final.common.repos, common.repos)
+		copy(repo, &final.common.searched, common.searched)
+		copy(repo, &final.common.indexed, common.indexed)
+		copy(repo, &final.common.cloning, common.cloning)
+		copy(repo, &final.common.missing, common.missing)
+		copy(repo, &final.common.timedout, common.timedout)
 		if _, ok := common.partial[repo.Name]; ok {
-			finalCommon.partial[repo.Name] = struct{}{}
+			final.common.partial[repo.Name] = struct{}{}
 		}
 	}
-	return finalResults, finalCommon, cursor
+	return
 }
 
 // clamp clamps x into the range of [min, max].
