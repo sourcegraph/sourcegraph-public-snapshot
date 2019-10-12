@@ -1,1 +1,0 @@
-ALTER TABLE repo DROP COLUMN archived;

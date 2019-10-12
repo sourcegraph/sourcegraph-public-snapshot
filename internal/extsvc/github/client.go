@@ -384,7 +384,7 @@ func IsRateLimitExceeded(err error) bool {
 }
 
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
-// requestGraphQL. See https://facebook.github.io/graphql/#sec-Errors.
+// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
 type graphqlErrors []struct {
 	Message   string        `json:"message"`
 	Type      string        `json:"type"`
