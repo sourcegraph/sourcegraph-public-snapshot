@@ -1,3 +1,4 @@
+import * as path from 'path'
 import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
@@ -23,7 +24,7 @@ describe('Database', () => {
         xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, entities))
 
         const input = await getTestData('cpp/data/data.lsif.gz')
-        const tmp = 'tmp'
+        const tmp = path.join(storageRoot, 'tmp')
         const { packages, references } = await convertLsif(input, tmp)
         const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
         await fs.rename(tmp, dbFilename(storageRoot, dumpID, repository, commit))
