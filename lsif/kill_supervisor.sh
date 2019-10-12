@@ -22,4 +22,4 @@ read line
 >&2 echo "terminating supervisor"
 
 # Kill the supervisor
-kill -3 $(cat /supervisord.pid)
+kill -s SIGQUIT $(cat /supervisord.pid)
