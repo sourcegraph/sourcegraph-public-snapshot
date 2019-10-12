@@ -350,23 +350,21 @@ async function lsifEndpoints(
         { logger = createSilentLogger(), span = new Span() }: TracingContext,
         gitserverUrls: string[]
     ): Promise<{ database: Database | undefined; ctx: TracingContext }> => {
-        const dump = await connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
-        if (!dump) {
-            return { database: undefined, ctx: { logger, span } }
-        }
-
         // Try to construct database for the exact commit
-        const database = await tryCreateDatabase(
-            STORAGE_ROOT,
-            xrepoDatabase,
-            connectionCache,
-            documentCache,
-            resultChunkCache,
-            dump.id,
-            dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
-        )
-        if (database) {
-            return { database, ctx: { logger, span } }
+        const dump = await xrepoDatabase.getDump(repository, commit)
+        if (dump) {
+            const database = await tryCreateDatabase(
+                STORAGE_ROOT,
+                xrepoDatabase,
+                connectionCache,
+                documentCache,
+                resultChunkCache,
+                dump.id,
+                dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
+            )
+            if (database) {
+                return { database, ctx: { logger, span } }
+            }
         }
 
         // Determine the closest commit that we actually have LSIF data for. If the commit is
@@ -381,7 +379,7 @@ async function lsifEndpoints(
             return { database: undefined, ctx: { logger, span } }
         }
 
-        const dumpWithData = await connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
+        const dumpWithData = await xrepoDatabase.getDump(repository, commitWithData)
         if (!dumpWithData) {
             return { database: undefined, ctx: { logger, span } }
         }
