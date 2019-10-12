@@ -41,6 +41,11 @@ export class Commit {
 }
 
 /**
+ * The primary key of the `lsif_dumps` table.
+ */
+export type DumpID = number
+
+/**
  * An entity within the cross-repo database. A row with a repository and commit
  * indicates that there exists LSIF data for that pair.
  */
@@ -50,7 +55,7 @@ export class LsifDump {
      * A unique ID required by typeorm entities.
      */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
-    public id!: number
+    public id!: DumpID
 
     /**
      * The name of the source repository.

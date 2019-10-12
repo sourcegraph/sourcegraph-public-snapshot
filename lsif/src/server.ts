@@ -13,7 +13,7 @@ import {
     documentCacheCapacityGauge,
     resultChunkCacheCapacityGauge,
 } from './cache.metrics'
-import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
 import { Database, tryCreateDatabase } from './database'
@@ -33,6 +33,8 @@ import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger, createSilentLogger } from './logging'
 import { enqueue } from './queue'
+import { Connection } from 'typeorm'
+import { LsifDump } from './xrepo.models'
 
 const pipeline = promisify(_pipeline)
 
@@ -164,6 +166,30 @@ async function main(logger: Logger): Promise<void> {
     app.use(errorHandler(logger))
 
     app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
+}
+
+/**
+ * If it hasn't been done already, migrate from the old pre-3.9 filename format
+ * `$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
+ */
+async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
+    const doneFile = path.join(STORAGE_ROOT, 'id-based-filenames')
+    if (fs.existsSync(doneFile)) {
+        // Already migrated.
+        return
+    }
+
+    for (const dump of await db.getRepository(LsifDump).find()) {
+        const oldFile = dbFilenameOld(STORAGE_ROOT, dump.repository, dump.commit)
+        const newFile = dbFilename(STORAGE_ROOT, dump.id)
+        if (!fs.existsSync(oldFile)) {
+            continue
+        }
+        fs.renameSync(oldFile, newFile)
+    }
+
+    // Create an empty done file to record that all files have been renamed.
+    fs.closeSync(fs.openSync(doneFile, 'w'))
 }
 
 /**
@@ -303,6 +329,8 @@ async function lsifEndpoints(
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
+    await ensureFilenamesAreIDs(connection)
+
     /**
      * Create a database instance for the given repository at the commit
      * closest to the target commit for which we have LSIF data. Returns
@@ -322,6 +350,11 @@ async function lsifEndpoints(
         { logger = createSilentLogger(), span = new Span() }: TracingContext,
         gitserverUrls: string[]
     ): Promise<{ database: Database | undefined; ctx: TracingContext }> => {
+        const dump = await connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
+        if (!dump) {
+            return { database: undefined, ctx: { logger, span } }
+        }
+
         // Try to construct database for the exact commit
         const database = await tryCreateDatabase(
             STORAGE_ROOT,
@@ -329,9 +362,8 @@ async function lsifEndpoints(
             connectionCache,
             documentCache,
             resultChunkCache,
-            repository,
-            commit,
-            createDatabaseFilename(STORAGE_ROOT, repository, commit)
+            dump.id,
+            dbFilename(STORAGE_ROOT, dump.id)
         )
         if (database) {
             return { database, ctx: { logger, span } }
@@ -349,6 +381,11 @@ async function lsifEndpoints(
             return { database: undefined, ctx: { logger, span } }
         }
 
+        const dumpWithData = await connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
+        if (!dumpWithData) {
+            return { database: undefined, ctx: { logger, span } }
+        }
+
         // Try to construct a database for the approximate commit
         const approximateDatabase = await tryCreateDatabase(
             STORAGE_ROOT,
@@ -356,9 +393,8 @@ async function lsifEndpoints(
             connectionCache,
             documentCache,
             resultChunkCache,
-            repository,
-            commitWithData,
-            createDatabaseFilename(STORAGE_ROOT, repository, commitWithData)
+            dumpWithData.id,
+            dbFilename(STORAGE_ROOT, dumpWithData.id)
         )
 
         return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: commitWithData }) }

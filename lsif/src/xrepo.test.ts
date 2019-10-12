@@ -38,9 +38,9 @@ describe('XrepoDatabase', () => {
         ])
 
         // Add relations
-        await xrepoDatabase.addPackagesAndReferences('foo', 'a', [], [])
-        await xrepoDatabase.addPackagesAndReferences('foo', 'c', [], [])
-        await xrepoDatabase.addPackagesAndReferences('foo', 'g', [], [])
+        await xrepoDatabase.insertDump('foo', 'a')
+        await xrepoDatabase.insertDump('foo', 'c')
+        await xrepoDatabase.insertDump('foo', 'g')
 
         // Test closest commit
         expect(await xrepoDatabase.findClosestCommitWithData('foo', 'a')).toEqual('a')
@@ -78,7 +78,7 @@ describe('XrepoDatabase', () => {
         ])
 
         // Add markers
-        await xrepoDatabase.addPackagesAndReferences('foo', 'b', [], [])
+        await xrepoDatabase.insertDump('foo', 'b')
 
         // Test closest commit
         expect(await xrepoDatabase.findClosestCommitWithData('foo', 'a')).toEqual('b')
@@ -103,7 +103,7 @@ describe('XrepoDatabase', () => {
         await xrepoDatabase.updateCommits('foo', commits)
 
         // Add markers
-        await xrepoDatabase.addPackagesAndReferences('foo', '0', [], [])
+        await xrepoDatabase.insertDump('foo', '0')
 
         // Test closest commit
         expect(await xrepoDatabase.findClosestCommitWithData('foo', '0')).toEqual('0')
@@ -123,7 +123,7 @@ describe('XrepoDatabase', () => {
         expect(await xrepoDatabase.findClosestCommitWithData('foo', '50')).toBeUndefined()
 
         // Mark commit 1
-        await xrepoDatabase.addPackagesAndReferences('foo', '1', [], [])
+        await xrepoDatabase.insertDump('foo', '1')
 
         // Now commit 1 should be found
         expect(await xrepoDatabase.findClosestCommitWithData('foo', '50')).toEqual('1')
