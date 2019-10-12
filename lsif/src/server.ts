@@ -174,7 +174,7 @@ async function main(logger: Logger): Promise<void> {
  */
 async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
     const doneFile = path.join(STORAGE_ROOT, 'id-based-filenames')
-    if (fs.existsSync(doneFile)) {
+    if (await fs.exists(doneFile)) {
         // Already migrated.
         return
     }
@@ -182,14 +182,14 @@ async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
     for (const dump of await db.getRepository(LsifDump).find()) {
         const oldFile = dbFilenameOld(STORAGE_ROOT, dump.repository, dump.commit)
         const newFile = dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
-        if (!fs.existsSync(oldFile)) {
+        if (!(await fs.exists(oldFile))) {
             continue
         }
-        fs.renameSync(oldFile, newFile)
+        await fs.rename(oldFile, newFile)
     }
 
     // Create an empty done file to record that all files have been renamed.
-    fs.closeSync(fs.openSync(doneFile, 'w'))
+    await fs.close(await fs.open(doneFile, 'w'))
 }
 
 /**
