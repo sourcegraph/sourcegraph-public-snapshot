@@ -8,7 +8,7 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserGroupIcon from 'mdi-react/UserGroupIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { SHOW_DIAGNOSTICS_AFTER_CREATION, SUPPORT_CAMPAIGN_UPDATES, USE_CAMPAIGN_RULES } from '..'
+import { SHOW_DIAGNOSTICS_AFTER_CREATION, USE_CAMPAIGN_RULES } from '..'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
@@ -261,7 +261,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                                     <CampaignManagePage {...context} match={match} className={PAGE_CLASS_NAME} />
                                 </>
                             ),
-                            condition: () => USE_CAMPAIGN_RULES && SUPPORT_CAMPAIGN_UPDATES,
+                            condition: () => USE_CAMPAIGN_RULES,
                         },
                     ]}
                     location={props.location}

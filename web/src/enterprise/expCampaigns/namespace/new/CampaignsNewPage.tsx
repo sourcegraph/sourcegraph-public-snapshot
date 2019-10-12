@@ -2,7 +2,7 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { first, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { USE_CAMPAIGN_RULES } from '../..'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
@@ -13,7 +13,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 import { ThemeProps } from '../../../../theme'
 import { useLocalStorage } from '../../../../util/useLocalStorage'
 import { RuleDefinition } from '../../../rules/types'
-import { getCampaignExtensionData } from '../../extensionData'
+import { getCompleteCampaignExtensionData } from '../../extensionData'
 import { CampaignFormData } from '../../form/CampaignForm'
 import { EMPTY_RULE_TEMPLATE_ID } from '../../form/templates'
 import { CampaignPreview } from '../../preview/CampaignPreview'
@@ -104,12 +104,10 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback(async () => {
         setCreationOrError(LOADING)
         try {
-            const [extensionData] = await getCampaignExtensionData(
+            const extensionData = await getCompleteCampaignExtensionData(
                 props.extensionsController,
                 value.rules ? value.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
             )
-                .pipe(first(xd => !xd[1].isLoading))
-                .toPromise()
             setCreationOrError(await createCampaign({ ...value, namespace: namespace.id, extensionData }))
         } catch (err) {
             setCreationOrError(null)

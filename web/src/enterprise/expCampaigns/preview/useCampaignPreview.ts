@@ -1,14 +1,27 @@
 import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
 import { combineLatest, merge, Observable, of, Subject } from 'rxjs'
-import { catchError, debounceTime, distinctUntilChanged, map, mapTo, share, switchMap, tap, throttleTime } from 'rxjs/operators'
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    mapTo,
+    share,
+    switchMap,
+    tap,
+    throttleTime,
+} from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { ActorFragment, ActorQuery } from '../../../actor/graphql'
 import { queryGraphQL } from '../../../backend/graphql'
-import { diffStatFieldsFragment, fileDiffHunkRangeFieldsFragment } from '../../../repo/compare/RepositoryCompareDiffPage'
+import {
+    diffStatFieldsFragment,
+    fileDiffHunkRangeFieldsFragment,
+} from '../../../repo/compare/RepositoryCompareDiffPage'
 import { RuleDefinition } from '../../rules/types'
 import { ThreadConnectionFiltersFragment } from '../../threads/list/useThreads'
 import { ExtensionDataStatus, getCampaignExtensionData } from '../extensionData'

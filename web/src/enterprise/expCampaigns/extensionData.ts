@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import { combineLatest, Observable, of } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap, throttleTime } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, first, map, startWith, switchMap, throttleTime } from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../shared/src/api/types/action'
@@ -223,3 +223,12 @@ export const getCampaignExtensionData = (
                   errors: ['No campaign extensions are active. Enable extensions to create a campaign.'],
               },
           ])
+
+/** Waits for `getCampaignExtensionData` to finish loading and returns the result. */
+export const getCompleteCampaignExtensionData = (
+    extensionsController: ExtensionsControllerProps['extensionsController'],
+    rules: RuleDefinition[]
+): Promise<GQL.IExpCreateCampaignInput['extensionData']> =>
+    getCampaignExtensionData(extensionsController, rules)
+        .pipe(first(([, status]) => !status.isLoading))
+        .toPromise()

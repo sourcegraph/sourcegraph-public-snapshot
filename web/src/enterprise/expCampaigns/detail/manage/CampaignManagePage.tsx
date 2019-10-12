@@ -1,19 +1,19 @@
-import H from 'history'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import React, { useState, useCallback } from 'react'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { ThemeProps } from '../../../../theme'
-import { CampaignAreaContext } from '../CampaignArea'
-import { CampaignFormData } from '../../form/CampaignForm'
-import { EditCampaignForm } from './EditCampaignForm'
-import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
-import { map, first } from 'rxjs/operators'
-import { mutateGraphQL } from '../../../../backend/graphql'
-import { getCampaignExtensionData } from '../../extensionData'
-import { RuleDefinition } from '../../../rules/types'
 import { NotificationType } from '@sourcegraph/extension-api-classes'
+import H from 'history'
+import React, { useCallback, useState } from 'react'
+import { map } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
+import { mutateGraphQL } from '../../../../backend/graphql'
+import { ThemeProps } from '../../../../theme'
+import { RuleDefinition } from '../../../rules/types'
+import { getCompleteCampaignExtensionData } from '../../extensionData'
+import { CampaignFormData } from '../../form/CampaignForm'
 import { CampaignUpdatePreview } from '../../updatePreview/CampaignUpdatePreview'
+import { CampaignAreaContext } from '../CampaignArea'
+import { EditCampaignForm } from './EditCampaignForm'
 
 export const updateCampaign = (input: GQL.IExpUpdateCampaignInput): Promise<GQL.IExpCampaign> =>
     mutateGraphQL(
@@ -81,12 +81,10 @@ export const CampaignManagePage: React.FunctionComponent<Props> = ({ campaign, c
     const onSubmit = useCallback(async () => {
         setIsLoading(true)
         try {
-            const extensionData = await getCampaignExtensionData(
+            const extensionData = await getCompleteCampaignExtensionData(
                 props.extensionsController,
                 value.rules ? value.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
             )
-                .pipe(first())
-                .toPromise()
             await updateCampaign({
                 id: campaign.id,
                 ...value,
