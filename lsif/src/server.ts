@@ -181,7 +181,7 @@ async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
 
     for (const dump of await db.getRepository(LsifDump).find()) {
         const oldFile = dbFilenameOld(STORAGE_ROOT, dump.repository, dump.commit)
-        const newFile = dbFilename(STORAGE_ROOT, dump.id)
+        const newFile = dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
         if (!fs.existsSync(oldFile)) {
             continue
         }
@@ -363,7 +363,7 @@ async function lsifEndpoints(
             documentCache,
             resultChunkCache,
             dump.id,
-            dbFilename(STORAGE_ROOT, dump.id)
+            dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
         )
         if (database) {
             return { database, ctx: { logger, span } }
@@ -394,7 +394,7 @@ async function lsifEndpoints(
             documentCache,
             resultChunkCache,
             dumpWithData.id,
-            dbFilename(STORAGE_ROOT, dumpWithData.id)
+            dbFilename(STORAGE_ROOT, dumpWithData.id, dumpWithData.repository, dumpWithData.commit)
         )
 
         return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: commitWithData }) }

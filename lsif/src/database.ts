@@ -378,7 +378,15 @@ export class Database {
             packageCommit: packageEntity.dump.commit,
         })
 
-        const db = this.createNewDatabase(packageEntity.dump.id, dbFilename(this.storageRoot, packageEntity.dump.id))
+        const db = this.createNewDatabase(
+            packageEntity.dump.id,
+            dbFilename(
+                this.storageRoot,
+                packageEntity.dump.id,
+                packageEntity.dump.repository,
+                packageEntity.dump.commit
+            )
+        )
 
         const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
         return await db.monikerResults(model, moniker, pathTransformer, ctx)
@@ -434,7 +442,10 @@ export class Database {
                 continue
             }
 
-            const db = this.createNewDatabase(reference.dump.id, dbFilename(this.storageRoot, reference.dump.id))
+            const db = this.createNewDatabase(
+                reference.dump.id,
+                dbFilename(this.storageRoot, reference.dump.id, reference.dump.repository, reference.dump.commit)
+            )
 
             const pathTransformer = (path: string): string => createRemoteUri(reference, path)
             const references = await db.monikerResults(ReferenceModel, moniker, pathTransformer, ctx)

@@ -130,7 +130,7 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: Conf
             )
 
             // Move the temp file where it can be found by the server
-            await fs.rename(tempFile, dbFilename(STORAGE_ROOT, dumpID))
+            await fs.rename(tempFile, dbFilename(STORAGE_ROOT, dumpID, repository, commit))
         } catch (e) {
             // Don't leave busted artifacts
             await fs.unlink(tempFile)

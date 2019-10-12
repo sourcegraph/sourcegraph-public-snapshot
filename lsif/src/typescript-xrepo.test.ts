@@ -24,7 +24,7 @@ describe('Database', () => {
             const tmp = 'tmp'
             const { packages, references } = await convertLsif(input, tmp)
             const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
-            await fs.rename(tmp, dbFilename(storageRoot, dumpID))
+            await fs.rename(tmp, dbFilename(storageRoot, dumpID, repository, commit))
         }
     })
 
@@ -43,7 +43,7 @@ describe('Database', () => {
             documentCache,
             resultChunkCache,
             dump.id,
-            dbFilename(storageRoot, dump.id)
+            dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
         )
     }
 

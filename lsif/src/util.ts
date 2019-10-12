@@ -117,8 +117,8 @@ export function dbFilenameOld(storageRoot: string, repository: string, commit: s
  * @param storageRoot The path where SQLite databases are stored.
  * @param id The ID of the dump.
  */
-export function dbFilename(storageRoot: string, id: number): string {
-    return path.join(storageRoot, `${id}.lsif.db`)
+export function dbFilename(storageRoot: string, id: number, repository: string, commit: string): string {
+    return path.join(storageRoot, `${id}-${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
 /**
