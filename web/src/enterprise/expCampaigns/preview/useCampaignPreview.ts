@@ -232,7 +232,7 @@ export const useCampaignPreview = (
     const inputSubject = useMemo(() => new Subject<CreateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
-    const [status, setStatus] = useState<ExtensionDataStatus>({ message: '' })
+    const [status, setStatus] = useState<ExtensionDataStatus>({ isLoading: false })
     useEffect(() => {
         // Refresh more slowly on changes to the name or description.
         const inputSubjectChanges = merge(

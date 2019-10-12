@@ -1,21 +1,21 @@
 import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
-import { merge, Subject, Observable } from 'rxjs'
-import { debounceTime, distinctUntilChanged, map, switchMap, throttleTime, catchError, startWith } from 'rxjs/operators'
+import { from, merge, Observable, Subject } from 'rxjs'
+import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, throttleTime } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../../backend/graphql'
-import { getCampaignExtensionData } from '../extensionData'
-import { RuleDefinition } from '../../rules/types'
-import { ThreadFragment } from '../../threads/util/graphql'
-import { ThreadPreviewFragment, RepositoryComparisonQuery } from '../preview/useCampaignPreview'
 import { ActorFragment } from '../../../actor/graphql'
+import { queryGraphQL } from '../../../backend/graphql'
 import {
     diffStatFieldsFragment,
     fileDiffHunkRangeFieldsFragment,
 } from '../../../repo/compare/RepositoryCompareDiffPage'
+import { RuleDefinition } from '../../rules/types'
+import { ThreadFragment } from '../../threads/util/graphql'
+import { getCompleteCampaignExtensionData } from '../extensionData'
+import { RepositoryComparisonQuery, ThreadPreviewFragment } from '../preview/useCampaignPreview'
 
 export const CampaignUpdatePreviewFragment = gql`
     fragment CampaignUpdatePreviewFragment on ExpCampaignUpdatePreview {
@@ -69,9 +69,11 @@ const queryCampaignUpdatePreview = ({
 }: ExtensionsControllerProps & {
     input: Pick<GQL.IExpUpdateCampaignInput, Exclude<keyof GQL.IExpUpdateCampaignInput, 'extensionData'>>
 }): Observable<GQL.IExpCampaignUpdatePreview> =>
-    getCampaignExtensionData(
-        extensionsController,
-        input.rules ? input.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
+    from(
+        getCompleteCampaignExtensionData(
+            extensionsController,
+            input.rules ? input.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
+        )
     ).pipe(
         switchMap(extensionData =>
             queryGraphQL(

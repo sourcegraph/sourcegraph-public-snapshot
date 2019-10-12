@@ -123,7 +123,7 @@ const getDiagnosticsAndFileDiffs = (
                                 progress: [totalCount - loadingCount, totalCount] as const,
                                 messages: [
                                     loadingCount > 0
-                                        ? `Generating fixes... ${errorsFoundStr ? `(${errorsFoundStr})` : ``}`
+                                        ? `Generating fixes... ${errorsFoundStr ? `(${errorsFoundStr})` : ''}`
                                         : errorsFoundStr,
                                 ],
                                 errors: allErrors.map(e => e.message),
@@ -230,5 +230,8 @@ export const getCompleteCampaignExtensionData = (
     rules: RuleDefinition[]
 ): Promise<GQL.IExpCreateCampaignInput['extensionData']> =>
     getCampaignExtensionData(extensionsController, rules)
-        .pipe(first(([, status]) => !status.isLoading))
+        .pipe(
+            first(([, status]) => !status.isLoading),
+            map(([extensionData]) => extensionData)
+        )
         .toPromise()
