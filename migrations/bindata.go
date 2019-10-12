@@ -40,6 +40,8 @@
 // 1528395600_lsif_commits_indexes.up.sql (253B)
 // 1528395601_lsif_dumps.down.sql (1.708kB)
 // 1528395601_lsif_dumps.up.sql (2.075kB)
+// 1528395602_add_patterntype_to_saved_searches.down.sql (99B)
+// 1528395602_add_patterntype_to_saved_searches.up.sql (87B)
 
 package migrations
 
@@ -908,6 +910,46 @@ func _1528395601_lsif_dumpsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395602_add_patterntype_to_saved_searchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x28\x4e\x2c\x4b\x4d\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\x56\x08\x76\x0d\x51\x28\x2c\x4d\x2d\xaa\xb4\x55\x08\x09\xf2\xf4\xd5\x08\x09\x72\xf4\xf4\xf1\xf4\x73\x57\x50\x57\x28\x48\x2c\x29\x49\x2d\xca\x0b\xa9\x2c\x48\xb5\x2a\x4a\x4d\x4f\xad\x28\x50\x57\x70\x0b\xf2\xf7\x85\xa8\xd7\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb2\x1a\x3a\xa1\x63\x00\x00\x00")
+
+func _1528395602_add_patterntype_to_saved_searchesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395602_add_patterntype_to_saved_searchesDownSql,
+		"1528395602_add_patterntype_to_saved_searches.down.sql",
+	)
+}
+
+func _1528395602_add_patterntype_to_saved_searchesDownSql() (*asset, error) {
+	bytes, err := _1528395602_add_patterntype_to_saved_searchesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395602_add_patterntype_to_saved_searches.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa4, 0x12, 0x6, 0xf5, 0x4, 0xdd, 0x61, 0x9f, 0x62, 0x7d, 0x10, 0x80, 0x33, 0xc0, 0x88, 0x6, 0x6b, 0x55, 0x1d, 0x67, 0x60, 0xe7, 0x82, 0xb2, 0x1b, 0x40, 0x4c, 0x4b, 0xb6, 0xb0, 0x7f, 0x2}}
+	return a, nil
+}
+
+var __1528395602_add_patterntype_to_saved_searchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x28\x4e\x2c\x4b\x4d\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\x56\x08\x76\x0d\x51\x28\x2c\x4d\x2d\xaa\xb4\x75\xf6\xf7\x73\x76\x0c\xd1\x00\x73\x74\x14\xd4\x15\x0a\x12\x4b\x4a\x52\x8b\xf2\x42\x2a\x0b\x52\xad\x8a\x52\xd3\x53\x2b\x0a\xd4\x35\xad\xb9\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xaf\xf7\xc0\x0c\x57\x00\x00\x00")
+
+func _1528395602_add_patterntype_to_saved_searchesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395602_add_patterntype_to_saved_searchesUpSql,
+		"1528395602_add_patterntype_to_saved_searches.up.sql",
+	)
+}
+
+func _1528395602_add_patterntype_to_saved_searchesUpSql() (*asset, error) {
+	bytes, err := _1528395602_add_patterntype_to_saved_searchesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395602_add_patterntype_to_saved_searches.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3d, 0x81, 0xe8, 0x5, 0x3e, 0xfa, 0xf4, 0xe0, 0xcb, 0xbc, 0xad, 0x38, 0x95, 0x94, 0x2f, 0x38, 0xb9, 0xe7, 0xce, 0x6e, 0xda, 0x3f, 0x54, 0xca, 0x86, 0x89, 0x75, 0xd, 0x3c, 0xce, 0xd0, 0xa1}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -937,17 +979,17 @@ func MustAsset(name string) []byte {
 		panic("asset: Asset(" + name + "): " + err.Error())
 	}
 
-<<<<<<< HEAD
-	info := bindataFileInfo{name: "1511004249_generalize_org_settings.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1e, 0x76, 0x9b, 0xc8, 0x36, 0xa6, 0x67, 0x2f, 0x45, 0x99, 0x58, 0x24, 0x38, 0x62, 0x4c, 0x37, 0x30, 0x12, 0x88, 0x30, 0x8, 0x34, 0xe8, 0xb6, 0xba, 0xf9, 0xfe, 0xb, 0xe6, 0xa1, 0x5e, 0x98}}
-	return a, nil
+	return a
 }
 
-var __1511004249_generalize_org_settingsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x91\x41\x6f\xea\x30\x10\x84\xef\xf9\x15\x73\x04\xe9\xc1\x1f\xe0\x94\x97\x58\x7a\xe8\x05\xa7\x0d\x46\xea\x2d\x0a\x64\x49\x52\xa8\x9d\x7a\x6d\x21\xfe\x7d\x65\x4a\x28\x20\x38\xf5\xba\xb3\x33\x9f\x67\x1d\x67\x4a\x14\x50\xf1\xdf\x4c\xc0\xd8\xa6\x64\x72\xae\xd3\x0d\xa3\x10\x32\x5e\x08\xa8\x1c\xc3\x68\x16\x5d\x2f\xdf\x2f\x26\xb9\x5c\xaa\x22\x9e\x4b\x75\x93\x53\x5a\xda\x92\x25\xbd\x21\x2e\x8d\x6d\xf8\x3a\xf0\x5e\xfb\x35\xc0\x33\xd9\xa7\x84\x93\x38\x20\x96\xe2\x75\x25\x64\x72\xdb\xb9\xec\xea\x92\xe9\xf3\x41\xf5\xb3\x32\xb8\xe7\x32\x15\x6f\xb7\xd6\x7e\x47\xc7\x47\xc6\x30\x9f\x45\xd1\x64\x82\x45\xb5\x23\xb0\xb7\x04\xd7\x56\x0e\xae\x25\x4b\xe8\x18\x15\xd8\xaf\xdf\x69\xe3\x30\x3a\x9c\x85\x9f\xee\x55\xdf\xef\x8f\x70\x66\x3c\x85\x6a\x09\x46\xef\x8f\x21\x8b\x7d\xdf\x1b\xeb\xa8\xbe\x78\x43\x90\x0e\x4f\x82\x36\x87\x3f\x58\xfb\x10\xd4\xf1\xb0\xc9\xa8\xea\xba\xd3\x0d\x3e\x4c\xa0\xea\x13\x65\xeb\x9d\xb7\x34\x7d\x7c\xf5\x38\x4d\xaf\x4f\xde\x56\x5c\x0e\xac\xe4\x9f\x48\xfe\x63\x14\xfa\x77\x35\xe6\x4b\xc8\x5c\x41\xae\xb2\x6c\xfc\xe4\x07\xbf\x87\x49\x9e\xad\x16\x12\x67\x5b\x5a\xe4\x2f\x17\xe3\x2c\xfa\x0a\x00\x00\xff\xff\xb6\xbc\x62\xd7\x88\x02\x00\x00")
+// MustAssetString is like AssetString but panics when Asset would return an
+// error. It simplifies safe initialization of global variables.
+func MustAssetString(name string) string {
+	return string(MustAsset(name))
+}
 
-func _1511004249_generalize_org_settingsUpSqlBytes() ([]byte, error) {
-	return bindataRead(
-		__1511004249_generalize_org_settingsUpSql,
+// AssetInfo loads and returns the asset info for the given name.
+// It returns an error if the asset could not be found or
 // could not be loaded.
 func AssetInfo(name string) (os.FileInfo, error) {
 	canonicalName := strings.Replace(name, "\\", "/", -1)
@@ -1063,11 +1105,6 @@ var _bindata = map[string]func() (*asset, error){
 
 	"1528395597_lsif_commits.up.sql": _1528395597_lsif_commitsUpSql,
 
-<<<<<<< HEAD
-	"1528395598_add_patterntype_to_saved_searches.down.sql": _1528395598_add_patterntype_to_saved_searchesDownSql,
-
-	"1528395598_add_patterntype_to_saved_searches.up.sql": _1528395598_add_patterntype_to_saved_searchesUpSql,
-=======
 	"1528395598_destroy_separate_lsif_db.down.sql": _1528395598_destroy_separate_lsif_dbDownSql,
 
 	"1528395598_destroy_separate_lsif_db.up.sql": _1528395598_destroy_separate_lsif_dbUpSql,
@@ -1083,7 +1120,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395601_lsif_dumps.down.sql": _1528395601_lsif_dumpsDownSql,
 
 	"1528395601_lsif_dumps.up.sql": _1528395601_lsif_dumpsUpSql,
->>>>>>> master
+
+	"1528395602_add_patterntype_to_saved_searches.down.sql": _1528395602_add_patterntype_to_saved_searchesDownSql,
+
+	"1528395602_add_patterntype_to_saved_searches.up.sql": _1528395602_add_patterntype_to_saved_searchesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1159,10 +1199,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395596_lsif_xrepo_init.up.sql":                                     {_1528395596_lsif_xrepo_initUpSql, map[string]*bintree{}},
 	"1528395597_lsif_commits.down.sql":                                      {_1528395597_lsif_commitsDownSql, map[string]*bintree{}},
 	"1528395597_lsif_commits.up.sql":                                        {_1528395597_lsif_commitsUpSql, map[string]*bintree{}},
-<<<<<<< HEAD
-	"1528395598_add_patterntype_to_saved_searches.down.sql":                 {_1528395598_add_patterntype_to_saved_searchesDownSql, map[string]*bintree{}},
-	"1528395598_add_patterntype_to_saved_searches.up.sql":                   {_1528395598_add_patterntype_to_saved_searchesUpSql, map[string]*bintree{}},
-=======
 	"1528395598_destroy_separate_lsif_db.down.sql":                          {_1528395598_destroy_separate_lsif_dbDownSql, map[string]*bintree{}},
 	"1528395598_destroy_separate_lsif_db.up.sql":                            {_1528395598_destroy_separate_lsif_dbUpSql, map[string]*bintree{}},
 	"1528395599_create_lsif_tables.down.sql":                                {_1528395599_create_lsif_tablesDownSql, map[string]*bintree{}},
@@ -1171,7 +1207,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395600_lsif_commits_indexes.up.sql":                                {_1528395600_lsif_commits_indexesUpSql, map[string]*bintree{}},
 	"1528395601_lsif_dumps.down.sql":                                        {_1528395601_lsif_dumpsDownSql, map[string]*bintree{}},
 	"1528395601_lsif_dumps.up.sql":                                          {_1528395601_lsif_dumpsUpSql, map[string]*bintree{}},
->>>>>>> master
+	"1528395602_add_patterntype_to_saved_searches.down.sql":                 {_1528395602_add_patterntype_to_saved_searchesDownSql, map[string]*bintree{}},
+	"1528395602_add_patterntype_to_saved_searches.up.sql":                   {_1528395602_add_patterntype_to_saved_searchesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
