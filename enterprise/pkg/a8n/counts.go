@@ -232,7 +232,7 @@ func generateTimestamps(start, end time.Time) []time.Time {
 	// Walk backwards from `end` to >= `start` in 1 day intervals
 	// Backwards so we always end exactly on `end`
 	ts := []time.Time{}
-	for t := end; t.After(start) || t.Equal(start); t = t.Add(-24 * time.Hour) {
+	for t := end; !t.Before(start); t = t.AddDate(0, 0, -1) {
 		ts = append(ts, t)
 	}
 
