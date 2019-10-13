@@ -82,7 +82,7 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 		}
 
 		// For each changeset and its events, go through every point in time we
-		// want to record and reconstruct the state of the changeset at that
+		// want to record the counts for and reconstruct the state of the changeset at that
 		// point in time
 		for _, c := range counts {
 			if openedAt.After(c.Time) {
