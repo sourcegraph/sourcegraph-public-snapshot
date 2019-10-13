@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
+// ChangesetCounts represents the states in which a given set of Changesets was
+// at a given point in time
 type ChangesetCounts struct {
 	Time                 time.Time
 	Total                int32
@@ -21,6 +23,8 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
+// IncReviewStateCount increments the corresponding count for a given
+// ChangesetReviewState
 func (c *ChangesetCounts) IncReviewStateCount(s a8n.ChangesetReviewState) {
 	switch s {
 	case a8n.ChangesetReviewStatePending:
@@ -32,6 +36,8 @@ func (c *ChangesetCounts) IncReviewStateCount(s a8n.ChangesetReviewState) {
 	}
 }
 
+// IncReviewStateCount decrements the corresponding count for a given
+// ChangesetReviewState
 func (c *ChangesetCounts) DecReviewStateCount(s a8n.ChangesetReviewState) {
 	switch s {
 	case a8n.ChangesetReviewStatePending:
@@ -56,12 +62,15 @@ func (cc *ChangesetCounts) String() string {
 	)
 }
 
+// Event is a single event that happened in the lifetime of a single Changeset,
+// for example a review or a merge.
 type Event interface {
 	Timestamp() time.Time
 	Type() a8n.ChangesetEventKind
 	Changeset() int64
 }
 
+// Events is a collection of Events that can be sorted by their Timestamps
 type Events []Event
 
 func (es Events) Len() int      { return len(es) }
@@ -72,6 +81,11 @@ func (es Events) Less(i, j int) bool {
 	return es[i].Timestamp().Before(es[j].Timestamp())
 }
 
+// CalcCounts calculates ChangesetCounts for the given Changesets and their
+// Events in the timeframe specified by the start and end parameters.
+// The number of ChangesetCounts returns is the number of 1 day intervals
+// between start and end, with each ChangesetCounts representing a point in
+// time.
 func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*ChangesetCounts, error) {
 	ts := generateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
