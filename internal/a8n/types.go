@@ -106,15 +106,17 @@ func (t *Changeset) Title() (string, error) {
 	}
 }
 
-// ExternalCreatedAt is when the Changeset was created on the codehost
-func (t *Changeset) ExternalCreatedAt() (time.Time, error) {
+// ExternalCreatedAt is when the Changeset was created on the codehost. When it
+// cannot be determined when the changeset was created, a zero-value timestamp
+// is returned.
+func (t *Changeset) ExternalCreatedAt() time.Time {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
-		return m.CreatedAt, nil
+		return m.CreatedAt
 	case *bitbucketserver.PullRequest:
-		return unixMilliToTime(int64(m.CreatedDate)), nil
+		return unixMilliToTime(int64(m.CreatedDate))
 	default:
-		return time.Time{}, errors.New("unknown changeset type")
+		return time.Time{}
 	}
 }
 

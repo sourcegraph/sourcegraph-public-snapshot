@@ -76,9 +76,9 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 	for c, csEvents := range byChangeset {
 		// We don't have an event for "open", so we check when it was
 		// created on codehost
-		openedAt, err := c.ExternalCreatedAt()
-		if err != nil {
-			return nil, err
+		openedAt := c.ExternalCreatedAt()
+		if openedAt.IsZero() {
+			continue
 		}
 
 		// For each changeset and its events, go through every point in time we
