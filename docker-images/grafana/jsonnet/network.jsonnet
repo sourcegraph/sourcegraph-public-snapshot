@@ -174,10 +174,10 @@ local gitserverErrorRatePanel = makeHttpErrorRatePanel(titleValue='Gitserver', m
 local gitserverDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Gitserver request', metricValue='src_gitserver_request', metricFilter=gitServerMetricFilter);
 
 local gitserverDeadlineExceededRatePanel = common.makePanel(
-    title='Deadline Exceeded Rate 5m',
+    title='Deadline Exceeded Rate',
     targets=[
       prometheus.target(
-        "rate(src_gitserver_client_deadline_exceeded[5m])",
+        "rate(src_gitserver_client_deadline_exceeded[$interval])",
         legendFormat='Gitserver Deadline Exceeded Rate',
       ),
     ]
