@@ -1,5 +1,5 @@
 import NpmIcon from 'mdi-react/NpmIcon'
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { RuleTemplate, RuleTemplateComponentContext } from '.'
 import { PackageJsonDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/packageJsonDependency/packageJsonDependency'
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../diagnostics/diagnosticQuery'
@@ -26,8 +26,17 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             const newContext = { ...context, ...update }
             const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
                 parseDiagnosticQuery(`${newContext.filters || ''}${newContext.filters ? ' ' : ''}${query}`)
-            const campaignName = `Upgrade npm dependency ${newContext.packageName ||
-                '<package>'} to ${newContext.upgradeToVersion || '<version>'}`
+            const packageNameAndVersion = `${newContext.packageName || '<package>'}${
+                newContext.matchVersion ? `@${newContext.matchVersion}` : ''
+            }`
+            const campaignName =
+                newContext.action === 'ban'
+                    ? `Ban npm dependency ${packageNameAndVersion}`
+                    : `Upgrade npm dependency ${packageNameAndVersion} to ${
+                          newContext.action && newContext.action.requireVersion
+                              ? newContext.action.requireVersion
+                              : '<version>'
+                      }`
             onCampaignChange({
                 isValid: !!newContext.packageName,
                 name: campaignName,
@@ -43,7 +52,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     type: 'DiagnosticRule',
                     query: diagnosticQuery('type:packageJsonDependency'),
                     context: newContext,
-                    action: 'packageJsonDependency.upgrade',
+                    action: 'packageJsonDependency.action',
                 } as RuleDefinition),
             })
         },
@@ -57,25 +66,34 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             const update: Partial<PackageJsonDependencyCampaignContext> = {}
 
             const params = new URLSearchParams(locationSearch)
+
             const packageName = params.get('packageName')
             if (packageName !== null) {
                 update.packageName = packageName
             }
-            const upgradeToVersion = params.get('upgradeToVersion')
-            if (upgradeToVersion !== null) {
-                update.upgradeToVersion = upgradeToVersion
+
+            if (params.has('ban')) {
+                update.action = 'ban'
+            } else {
+                const requireVersion = params.get('requireVersion')
+                if (requireVersion) {
+                    update.action = { requireVersion }
+                }
             }
+
             const createChangesets = params.get('createChangesets')
             if (createChangesets !== null) {
                 update.createChangesets =
                     createChangesets === 'true' || createChangesets === '1' || createChangesets === 'yes'
             }
+
             const filters = params.get('filters')
             if (filters !== null) {
                 update.filters = filters
             }
 
             updateContext({
+                matchVersion: '*',
                 ...update,
             })
         }
@@ -86,9 +104,29 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         [updateContext]
     )
 
-    const onUpgradeToVersionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        e => updateContext({ upgradeToVersion: e.currentTarget.value }),
+    const onMatchVersionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => updateContext({ matchVersion: e.currentTarget.value }),
         [updateContext]
+    )
+
+    const [actionRequireVersion, setActionRequireVersion] = useState('')
+    const onActionRequireVersionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e => {
+            setActionRequireVersion(e.currentTarget.value)
+            if (context && context.action && context.action !== 'ban') {
+                updateContext({ action: { requireVersion: e.currentTarget.value } })
+            }
+        },
+        [context, updateContext]
+    )
+
+    const onActionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        e =>
+            updateContext({
+                action:
+                    e.currentTarget.value === 'ban' ? e.currentTarget.value : { requireVersion: actionRequireVersion },
+            }),
+        [actionRequireVersion, updateContext]
     )
 
     const onCreateChangesetsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -105,38 +143,126 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
     return (
         <>
             <div className="form-group">
-                <label htmlFor="campaign-template-form__packageName">Package name</label>
-                <input
-                    type="text"
-                    id="campaign-template-form__packageName"
-                    className="form-control"
-                    required={true}
-                    minLength={1}
-                    placeholder="npm package name (e.g., lodash)"
-                    value={context.packageName || ''}
-                    onChange={onPackageNameChange}
-                    autoFocus={true}
-                    disabled={disabled}
-                />
+                <div className="form-row">
+                    <div className="col col-md-4">
+                        <label htmlFor="campaign-template-form__packageName">Dependency package name</label>
+                        <input
+                            type="text"
+                            id="campaign-template-form__packageName"
+                            className="form-control"
+                            required={true}
+                            minLength={1}
+                            value={context.packageName || ''}
+                            onChange={onPackageNameChange}
+                            autoFocus={true}
+                            disabled={disabled}
+                        />
+                        <p className="form-help text-muted small mb-0 mt-1">
+                            Examples: <code className="border-bottom small mr-2">lodash</code>{' '}
+                            <code className="border-bottom small mr-2">react</code>{' '}
+                            <code className="border-bottom small mr-2">@babel/core</code>
+                        </p>
+                    </div>
+                    <div className="col col-md-3">
+                        <label htmlFor="campaign-template-form__matchVersion">Version range</label>
+                        <div className="input-group">
+                            <div className="input-group-prepend">
+                                <span className="input-group-text">@</span>
+                            </div>
+                            <input
+                                type="text"
+                                id="campaign-template-form__matchVersion"
+                                className="form-control w-auto"
+                                required={true}
+                                minLength={1}
+                                size={15}
+                                value={context.matchVersion || ''}
+                                onChange={onMatchVersionChange}
+                                autoFocus={true}
+                                disabled={disabled}
+                            />
+                        </div>
+                        <p className="form-help text-muted small mb-0 mt-1">
+                            Supports{' '}
+                            <a
+                                href="https://docs.npmjs.com/misc/semver#ranges"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                semver ranges
+                            </a>
+                            .
+                        </p>
+                    </div>
+                </div>
             </div>
             <div className="form-group">
-                <label htmlFor="campaign-template-form__upgradeToVersion">Upgrade to version</label>
-                <input
-                    type="text"
-                    id="campaign-template-form__upgradeToVersion"
-                    className="form-control"
-                    placeholder="semver range (e.g., <1.2.3)"
-                    value={context.upgradeToVersion || ''}
-                    onChange={onUpgradeToVersionChange}
-                    disabled={disabled}
-                />
-                <p className="form-help text-muted small mb-0 mt-1">
-                    <a href="https://semver.npmjs.com/" target="_blank" rel="noopener noreferrer">
-                        Version range calculator
-                    </a>{' '}
-                    &bull; Examples: <code className="border-bottom mr-3">&gt;=1.10.0</code>
-                    <code className="border-bottom mr-3">~0.2.2 || ^0.3.2</code>
-                </p>
+                <label htmlFor="campaign-template-form__action">Action</label>
+                <ul className="list-unstyled">
+                    <li>
+                        <div className="form-check">
+                            <input
+                                type="radio"
+                                id="campaign-template-form__action-minVersion-check"
+                                className="form-check-input"
+                                checked={context.action !== 'ban'}
+                                value="requireVersion"
+                                onChange={onActionChange}
+                            />
+                            <div>
+                                <label
+                                    className="form-check-label mb-3"
+                                    htmlFor="campaign-template-form__action-minVersion-check"
+                                >
+                                    Upgrade to version{context.action === 'ban' ? '...' : ''}
+                                </label>
+                                {context.action !== 'ban' && (
+                                    <>
+                                        <input
+                                            type="text"
+                                            id="campaign-template-form__action-minVersion"
+                                            className="form-control w-auto"
+                                            required={true}
+                                            minLength={1}
+                                            placeholder=""
+                                            size={30}
+                                            value={context.action.requireVersion}
+                                            onChange={onActionRequireVersionChange}
+                                            disabled={disabled}
+                                        />
+                                        <p className="form-help text-muted small mb-0 mt-1">
+                                            Supports{' '}
+                                            <a
+                                                href="https://docs.npmjs.com/misc/semver#ranges"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                semver ranges
+                                            </a>
+                                            . Examples: <code className="border-bottom mr-3 small">&gt;=1.10.0</code>
+                                            <code className="border-bottom mr-3 small">~0.2.2 || ^0.3.2</code>
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div className="form-check mt-2">
+                            <input
+                                type="radio"
+                                id="campaign-template-form__action-ban-check"
+                                className="form-check-input"
+                                checked={context.action === 'ban'}
+                                value="ban"
+                                onChange={onActionChange}
+                            />
+                            <label className="form-check-label" htmlFor="campaign-template-form__action-ban-check">
+                                Ban
+                            </label>
+                        </div>
+                    </li>
+                </ul>
             </div>
             <div className="form-group">
                 <label>Options</label>

@@ -6,15 +6,15 @@ import * as sourcegraph from 'sourcegraph'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { ExecServerClient } from '../execServer/client'
 import { ResolvedDependencyInPackage } from './packageManager'
+import { PackageJsonDependencyCampaignContext } from './packageJsonDependency'
 
 const MINIMAL_WORKTREE = true
 
-export const editForDependencyUpgrade = async (
+export const editForCommands = async (
     {
         packageJson,
         lockfile,
-        dependency,
-    }: Pick<ResolvedDependencyInPackage, 'dependency'> & {
+    }: {
         packageJson: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
         lockfile: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
     },
@@ -40,7 +40,7 @@ export const editForDependencyUpgrade = async (
                       commit: p.commitID!,
                   },
               }),
-        label: `editForDependencyUpgrade(${packageJson.uri} dep=${dependency.name}@${dependency.version})`,
+        label: `editForCommands(${packageJson.uri} commands=${JSON.stringify(commands)})`,
     })
 
     if (MINIMAL_WORKTREE) {
@@ -56,6 +56,17 @@ export const editForDependencyUpgrade = async (
     //     { old: lockfile, newText: result.files![lockfileName] },
     // ])
 }
+
+export const editForDependencyAction = (
+    dep: Pick<ResolvedDependencyInPackage, 'dependency'> & {
+        packageJson: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
+        lockfile: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
+    },
+    action: PackageJsonDependencyCampaignContext['action'],
+    commands: Record<'upgradeCommands' | 'removeCommands', string[][]>,
+    execServerClient: ExecServerClient
+): Promise<sourcegraph.WorkspaceEdit> =>
+    editForCommands(dep, action === 'ban' ? commands.removeCommands : commands.upgradeCommands, execServerClient)
 
 // function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }[]): sourcegraph.WorkspaceEdit {
 //     const edit = new sourcegraph.WorkspaceEdit()

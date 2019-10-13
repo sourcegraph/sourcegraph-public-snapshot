@@ -8,7 +8,7 @@ import { isDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
 import { PackageJsonPackageManager, ResolvedDependency, ResolvedDependencyInPackage } from '../packageManager'
-import { editForDependencyUpgrade, editPackageJson } from '../packageManagerCommon'
+import { editForDependencyAction, editPackageJson, editForCommands } from '../packageManagerCommon'
 import { yarnLogicalTree } from './logicalTree'
 
 const yarnExecClient = createExecServerClient('a8n-yarn-exec', [])
@@ -31,7 +31,7 @@ const YARN_OPTS = [
 ]
 
 export const yarnPackageManager: PackageJsonPackageManager = {
-    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters = '') => {
+    packagesWithDependencySatisfyingVersionRange: async ({ name, version }, filters = '') => {
         const parsedVersionRange = new semver.Range(version)
 
         const results = flatten(
@@ -71,8 +71,8 @@ export const yarnPackageManager: PackageJsonPackageManager = {
                         return null
                     }
                     return semver.satisfies(dep.version, parsedVersionRange)
-                        ? null
-                        : { packageJson, lockfile, dependency: dep }
+                        ? { packageJson, lockfile, dependency: dep }
+                        : null
                 } catch (err) {
                     console.error(`Error checking yarn.lock and package.json for ${result.uri}.`, err, {
                         lockfile: lockfile.text,
@@ -88,11 +88,17 @@ export const yarnPackageManager: PackageJsonPackageManager = {
         return (await Promise.all(results.map(check))).filter(isDefined)
     },
 
-    editForDependencyUpgrade: async dep => {
+    editForDependencyAction: async (dep, action) => {
         if (dep.dependency.direct) {
-            return editForDependencyUpgrade(
+            return editForDependencyAction(
                 dep,
-                [['yarn', 'upgrade', ...YARN_OPTS, '--', `${dep.dependency.name}@${dep.dependency.version}`]],
+                action,
+                {
+                    upgradeCommands: [
+                        ['yarn', 'upgrade', ...YARN_OPTS, '--', `${dep.dependency.name}@${dep.dependency.version}`],
+                    ],
+                    removeCommands: [['yarn', 'remove', ...YARN_OPTS, '--', dep.dependency.name]],
+                },
                 yarnExecClient
             )
         }
@@ -104,9 +110,9 @@ export const yarnPackageManager: PackageJsonPackageManager = {
             { path: ['resolutions', dep.dependency.name], value: dep.dependency.version },
         ])
         const packageJsonObj = JSON.parse(dep.packageJson.text!)
-        const edits2 = await editForDependencyUpgrade(
+        const edits2 = await editForCommands(
             {
-                ...dep,
+                lockfile: dep.lockfile,
                 packageJson: {
                     uri: dep.packageJson.uri,
                     text: JSON.stringify({

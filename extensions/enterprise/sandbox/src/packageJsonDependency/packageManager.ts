@@ -1,4 +1,5 @@
 import { TextDocument, WorkspaceEdit } from 'sourcegraph'
+import { PackageJsonDependencyCampaignContext } from './packageJsonDependency'
 
 export interface ResolvedDependencyInPackage {
     packageJson: TextDocument
@@ -17,9 +18,12 @@ export interface ResolvedDependency extends PackageJsonDependency {
 }
 
 export interface PackageJsonPackageManager {
-    packagesWithUnsatisfiedDependencyVersionRange(
+    packagesWithDependencySatisfyingVersionRange(
         dep: PackageJsonDependency,
         queryFilters?: string
     ): Promise<ResolvedDependencyInPackage[]>
-    editForDependencyUpgrade(dep: ResolvedDependencyInPackage): Promise<WorkspaceEdit>
+    editForDependencyAction(
+        dep: ResolvedDependencyInPackage,
+        action: PackageJsonDependencyCampaignContext['action']
+    ): Promise<WorkspaceEdit>
 }

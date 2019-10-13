@@ -7,14 +7,17 @@ import { npmPackageManager } from './npm/npm'
 import { PackageJsonDependency, ResolvedDependency } from './packageManager'
 import { yarnPackageManager } from './yarn/yarn'
 
-const UPGRADE_DEPENDENCY_COMMAND = 'packageJsonDependency.upgrade'
+const COMMAND_ID = 'packageJsonDependency.action'
 
 export interface PackageJsonDependencyCampaignContext {
     packageName?: string
-    upgradeToVersion?: string
+    matchVersion?: string
+    action: PackageJsonDependencyAction
     createChangesets: boolean
     filters?: string
 }
+
+export type PackageJsonDependencyAction = { requireVersion: string } | 'ban'
 
 const LOADING = 'loading' as const
 
@@ -30,11 +33,11 @@ export function register(): Unsubscribable {
     )
     subscriptions.add(sourcegraph.languages.registerCodeActionProvider(['*'], createCodeActionProvider()))
     subscriptions.add(
-        sourcegraph.commands.registerActionEditCommand(UPGRADE_DEPENDENCY_COMMAND, diagnostic => {
+        sourcegraph.commands.registerActionEditCommand(COMMAND_ID, diagnostic => {
             if (!diagnostic || (diagnostic.tags && !diagnostic.tags.includes('fix'))) {
                 return new sourcegraph.WorkspaceEdit()
             }
-            return computeUpgradeDependencyEdit(diagnostic)
+            return editForDependencyAction(diagnostic)
         })
     )
     return subscriptions
@@ -46,16 +49,18 @@ interface DiagnosticData {
     dependency: ResolvedDependency
     packageJson: { uri: string; text: string }
     lockfile: { uri: string; text: string }
+    action: PackageJsonDependencyCampaignContext['action']
     type: 'npm' | 'yarn'
 }
 
 function provideDiagnostics({
     packageName,
-    upgradeToVersion,
+    matchVersion,
+    action,
     createChangesets,
     filters,
 }: PackageJsonDependencyCampaignContext): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
-    return packageName && upgradeToVersion
+    return packageName && matchVersion && action
         ? from(sourcegraph.workspace.rootChanges).pipe(
               startWith(undefined),
               map(() => sourcegraph.workspace.roots),
@@ -64,18 +69,18 @@ function provideDiagnostics({
                       return [] as sourcegraph.Diagnostic[] // TODO!(sqs): dont run in comparison mode
                   }
 
-                  const dep: PackageJsonDependency = {
+                  const matchDep: PackageJsonDependency = {
                       name: packageName,
-                      version: upgradeToVersion,
+                      version: matchVersion,
                   }
                   const hits = [
-                      ...(await npmPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep, filters)).map(
+                      ...(await npmPackageManager.packagesWithDependencySatisfyingVersionRange(matchDep, filters)).map(
                           d => ({
                               ...d,
                               type: 'npm' as const,
                           })
                       ),
-                      ...(await yarnPackageManager.packagesWithUnsatisfiedDependencyVersionRange(dep, filters)).map(
+                      ...(await yarnPackageManager.packagesWithDependencySatisfyingVersionRange(matchDep, filters)).map(
                           d => ({
                               ...d,
                               type: 'yarn' as const,
@@ -108,14 +113,17 @@ function provideDiagnostics({
                                   resource: new URL(matchDoc.uri),
                                   message: `${
                                       matchDoc === hit.lockfile ? 'Indirect ' : ''
-                                  }npm dependency '${packageName}' must be upgraded to ${upgradeToVersion}`,
+                                  }npm dependency ${packageName}${matchVersion === '*' ? '' : `@${matchVersion}`} ${
+                                      action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`
+                                  }`,
                                   range: matchRange,
                                   severity: sourcegraph.DiagnosticSeverity.Warning,
                                   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                   data: JSON.stringify({
-                                      dependency: { ...hit.dependency, version: upgradeToVersion },
+                                      dependency: hit.dependency,
                                       packageJson: { uri: hit.packageJson.uri },
                                       lockfile: { uri: hit.lockfile.uri },
+                                      action,
                                       type,
                                   } as DiagnosticData),
                                   tags: [DEPENDENCY_TAG, packageName, createChangesets ? 'fix' : undefined].filter(
@@ -142,8 +150,8 @@ function createCodeActionProvider(): sourcegraph.CodeActionProvider {
             return [
                 {
                     title: 'Upgrade dependency in package.json',
-                    edit: await computeUpgradeDependencyEdit(diag),
-                    computeEdit: { title: 'Upgrade dependency', command: UPGRADE_DEPENDENCY_COMMAND },
+                    edit: await editForDependencyAction(diag),
+                    computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
                     diagnostics: [diag],
                 },
             ]
@@ -169,11 +177,14 @@ function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
     return JSON.parse(diag.data!)
 }
 
-async function computeUpgradeDependencyEdit(diag: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
+async function editForDependencyAction(diag: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
     const data = getDiagnosticData(diag)
-    return await (data.type === 'npm' ? npmPackageManager : yarnPackageManager).editForDependencyUpgrade({
-        packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
-        lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
-        dependency: data.dependency,
-    })
+    return await (data.type === 'npm' ? npmPackageManager : yarnPackageManager).editForDependencyAction(
+        {
+            packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
+            lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
+            dependency: data.dependency,
+        },
+        data.action
+    )
 }

@@ -8,13 +8,15 @@ import { isDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
 import { PackageJsonPackageManager, ResolvedDependency, ResolvedDependencyInPackage } from '../packageManager'
-import { editForDependencyUpgrade } from '../packageManagerCommon'
+import { editForDependencyAction } from '../packageManagerCommon'
 import { lockTree } from './logicalTree'
 
 const npmExecClient = createExecServerClient('a8n-npm-exec')
 
+const NPM_OPTS = ['--no-audit', '--package-lock-only', '--ignore-scripts']
+
 export const npmPackageManager: PackageJsonPackageManager = {
-    packagesWithUnsatisfiedDependencyVersionRange: async ({ name, version }, filters = '') => {
+    packagesWithDependencySatisfyingVersionRange: async ({ name, version }, filters = '') => {
         const parsedVersionRange = new semver.Range(version)
 
         const results = flatten(
@@ -54,8 +56,8 @@ export const npmPackageManager: PackageJsonPackageManager = {
                         return null
                     }
                     return semver.satisfies(dep.version, parsedVersionRange)
-                        ? null
-                        : { packageJson, lockfile, dependency: dep }
+                        ? { packageJson, lockfile, dependency: dep }
+                        : null
                 } catch (err) {
                     console.error(`Error checking package-lock.json and package.json for ${result.uri}.`, err, {
                         lockfile: lockfile.text,
@@ -71,20 +73,16 @@ export const npmPackageManager: PackageJsonPackageManager = {
         return (await Promise.all(results.map(check))).filter(isDefined)
     },
 
-    editForDependencyUpgrade: dep =>
-        editForDependencyUpgrade(
+    editForDependencyAction: (dep, action) =>
+        editForDependencyAction(
             dep,
-            [
-                [
-                    'npm',
-                    'install',
-                    '--no-audit',
-                    '--package-lock-only',
-                    '--ignore-scripts',
-                    '--',
-                    `${dep.dependency.name}@${dep.dependency.version}`,
+            action,
+            {
+                upgradeCommands: [
+                    ['npm', 'install', ...NPM_OPTS, '--', `${dep.dependency.name}@${dep.dependency.version}`],
                 ],
-            ],
+                removeCommands: [['npm', 'uninstall', ...NPM_OPTS, '--', `${dep.dependency.name}`]],
+            },
             npmExecClient
         ),
 }
