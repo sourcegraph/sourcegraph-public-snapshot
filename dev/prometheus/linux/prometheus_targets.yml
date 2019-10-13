@@ -15,7 +15,7 @@
     # query-runner
     - 127.0.0.1:6067
     # zoekt-indexserver
-    # - 127.0.0.1:6072
+    - 127.0.0.1:6072
     # lsif-server
     - 127.0.0.1:3186
     # lsif-worker
