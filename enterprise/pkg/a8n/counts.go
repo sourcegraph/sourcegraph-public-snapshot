@@ -21,6 +21,28 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
+func (c *ChangesetCounts) IncReviewStateCount(s a8n.ChangesetReviewState) {
+	switch s {
+	case a8n.ChangesetReviewStatePending:
+		c.OpenPending++
+	case a8n.ChangesetReviewStateApproved:
+		c.OpenApproved++
+	case a8n.ChangesetReviewStateChangesRequested:
+		c.OpenChangesRequested++
+	}
+}
+
+func (c *ChangesetCounts) DecReviewStateCount(s a8n.ChangesetReviewState) {
+	switch s {
+	case a8n.ChangesetReviewStatePending:
+		c.OpenPending--
+	case a8n.ChangesetReviewStateApproved:
+		c.OpenApproved--
+	case a8n.ChangesetReviewStateChangesRequested:
+		c.OpenChangesRequested--
+	}
+}
+
 func (cc *ChangesetCounts) String() string {
 	return fmt.Sprintf("%s (Total: %d, Merged: %d, Closed: %d, Open: %d, OpenApproved: %d, OpenChangesRequested: %d, OpenPending: %d)",
 		cc.Time.String(),
@@ -82,7 +104,7 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 		}
 
 		// For each changeset and its events, go through every point in time we
-		// want to record the counts for and reconstruct the state of the changeset at that
+		// want to record and reconstruct the state of the changeset at that
 		// point in time
 		for _, c := range counts {
 			if openedAt.After(c.Time) {
@@ -101,19 +123,20 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 }
 
 func computeCounts(c *ChangesetCounts, csEvents Events) error {
-	// Since some events cancel out another event's effects we need to keep
-	// track of the changesets state up until an event so we know what to
-	// revert i.e. "merge" decrements OpenApproved counts, but only if
-	// changeset was previously approved
 	var (
+		// Since "Merged" and "Closed" are exclusive events and cancel each others
+		// effects on ChangesetCounts out, we need to keep track of when a
+		// changeset was closed, so we can undo the effect of the "Closed" event
+		// when we come across a "Merge" (since, on GitHub, a PR can be closed AND
+		// merged)
 		closed = false
+
+		lastReviewByAuthor = map[string]a8n.ChangesetReviewState{}
 	)
 
 	c.Total++
 	c.Open++
 	c.OpenPending++
-
-	lastReviewByAuthor := map[string]a8n.ChangesetReviewState{}
 
 	for _, e := range csEvents {
 		// Event happened after point in time we're looking at, no need to look
@@ -123,8 +146,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			return nil
 		}
 
-		// Compute previous overall review state
-		previousReviewState := computeReviewState(lastReviewByAuthor)
+		// Compute current overall review state
+		currentReviewState := computeReviewState(lastReviewByAuthor)
 
 		switch e.Type() {
 		case a8n.ChangesetEventKindGitHubClosed:
@@ -132,28 +155,14 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			c.Closed++
 			closed = true
 
-			switch previousReviewState {
-			case a8n.ChangesetReviewStatePending:
-				c.OpenPending--
-			case a8n.ChangesetReviewStateApproved:
-				c.OpenApproved--
-			case a8n.ChangesetReviewStateChangesRequested:
-				c.OpenChangesRequested--
-			}
+			c.DecReviewStateCount(currentReviewState)
 
 		case a8n.ChangesetEventKindGitHubReopened:
 			c.Open++
 			c.Closed--
 			closed = false
 
-			switch previousReviewState {
-			case a8n.ChangesetReviewStatePending:
-				c.OpenPending++
-			case a8n.ChangesetReviewStateApproved:
-				c.OpenApproved++
-			case a8n.ChangesetReviewStateChangesRequested:
-				c.OpenChangesRequested++
-			}
+			c.IncReviewStateCount(currentReviewState)
 
 		case a8n.ChangesetEventKindGitHubMerged:
 			// If it was closed, all "review counts" have been updated by the
@@ -163,14 +172,9 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				c.Merged++
 				return nil
 			}
-			switch previousReviewState {
-			case a8n.ChangesetReviewStatePending:
-				c.OpenPending--
-			case a8n.ChangesetReviewStateApproved:
-				c.OpenApproved--
-			case a8n.ChangesetReviewStateChangesRequested:
-				c.OpenChangesRequested--
-			}
+
+			c.DecReviewStateCount(currentReviewState)
+
 			c.Merged++
 			c.Open--
 
@@ -189,6 +193,8 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				return err
 			}
 
+			c.DecReviewStateCount(currentReviewState)
+
 			// Insert new review, potentially replacing old review, but only if
 			// it's not "PENDING" or "COMMENTED"
 			if s == a8n.ChangesetReviewStateApproved || s == a8n.ChangesetReviewStateChangesRequested {
@@ -196,32 +202,9 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			}
 
 			// Compute new overall review state
-			newOverallState := computeReviewState(lastReviewByAuthor)
+			newReviewState := computeReviewState(lastReviewByAuthor)
 
-			switch newOverallState {
-			case a8n.ChangesetReviewStateApproved:
-				switch previousReviewState {
-				case a8n.ChangesetReviewStatePending:
-					c.OpenApproved++
-					c.OpenPending--
-				case a8n.ChangesetReviewStateChangesRequested:
-					c.OpenChangesRequested--
-					c.OpenApproved++
-				}
-
-			case a8n.ChangesetReviewStateChangesRequested:
-				switch previousReviewState {
-				case a8n.ChangesetReviewStatePending:
-					c.OpenChangesRequested++
-					c.OpenPending--
-				case a8n.ChangesetReviewStateApproved:
-					c.OpenChangesRequested++
-					c.OpenApproved--
-				}
-			case a8n.ChangesetReviewStatePending:
-			case a8n.ChangesetReviewStateCommented:
-				// Ignore
-			}
+			c.IncReviewStateCount(newReviewState)
 		}
 	}
 
