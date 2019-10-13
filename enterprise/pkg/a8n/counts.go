@@ -101,9 +101,9 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 }
 
 func computeCounts(c *ChangesetCounts, csEvents Events) error {
-	// Since some events cancel out another events effects we need to keep track of the
-	// changesets state up until an event so we know what to revert
-	// i.e. "merge" decrements OpenApproved counts, but only if
+	// Since some events cancel out another event's effects we need to keep
+	// track of the changesets state up until an event so we know what to
+	// revert i.e. "merge" decrements OpenApproved counts, but only if
 	// changeset was previously approved
 	var (
 		closed = false
