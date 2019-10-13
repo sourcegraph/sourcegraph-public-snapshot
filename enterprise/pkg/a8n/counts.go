@@ -116,10 +116,11 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 	lastReviewByAuthor := map[string]a8n.ChangesetReviewState{}
 
 	for _, e := range csEvents {
-		// Event happened after point in time we're looking at, ignore
+		// Event happened after point in time we're looking at, no need to look
+		// at the events in future
 		et := e.Timestamp()
 		if et.IsZero() || et.After(c.Time) {
-			continue
+			return nil
 		}
 
 		// Compute previous overall review state
