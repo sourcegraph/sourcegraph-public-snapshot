@@ -188,23 +188,29 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				return err
 			}
 
+			// We only care about "Approved" or "ChangesRequested" reviews
+			if s != a8n.ChangesetReviewStateApproved && s != a8n.ChangesetReviewStateChangesRequested {
+				continue
+			}
+
 			author, err := reviewAuthor(e)
 			if err != nil {
 				return err
 			}
 
-			c.DecReviewStateCount(currentReviewState)
-
-			// Insert new review, potentially replacing old review, but only if
-			// it's not "PENDING" or "COMMENTED"
-			if s == a8n.ChangesetReviewStateApproved || s == a8n.ChangesetReviewStateChangesRequested {
-				lastReviewByAuthor[author] = s
-			}
-
-			// Compute new overall review state
+			// Save current review state, then insert new review and recompute
+			// overall review state
+			oldReviewState := currentReviewState
+			lastReviewByAuthor[author] = s
 			newReviewState := computeReviewState(lastReviewByAuthor)
 
-			c.IncReviewStateCount(newReviewState)
+			if newReviewState != oldReviewState {
+				// Decrement the counts increased by old review state
+				c.DecReviewStateCount(oldReviewState)
+
+				// Increase the counts for new review state
+				c.IncReviewStateCount(newReviewState)
+			}
 		}
 	}
 
