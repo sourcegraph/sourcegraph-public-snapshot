@@ -1,7 +1,6 @@
 package a8n
 
 import (
-	"flag"
 	"reflect"
 	"testing"
 	"time"
@@ -10,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
-
-var update = flag.Bool("update", false, "update testdata")
 
 func TestCalcCounts(t *testing.T) {
 	now := time.Now().Truncate(time.Microsecond)
