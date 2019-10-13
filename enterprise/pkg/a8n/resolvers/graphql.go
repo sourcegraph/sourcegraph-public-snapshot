@@ -381,11 +381,15 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
+	changesetIDs := make([]int64, len(cs))
+	for i, c := range cs {
+		changesetIDs[i] = c.ID
+	}
 	var (
 		events     []ee.Event
 		eventsOpts = ee.ListChangesetEventsOpts{
-			CampaignID: r.Campaign.ID,
-			Limit:      1000,
+			ChangesetIDs: changesetIDs,
+			Limit:        1000,
 		}
 	)
 
@@ -651,8 +655,8 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 		store:     r.store,
 		changeset: r.Changeset,
 		opts: ee.ListChangesetEventsOpts{
-			ChangesetID: r.Changeset.ID,
-			Limit:       int(args.ConnectionArgs.GetFirst()),
+			ChangesetIDs: []int64{r.Changeset.ID},
+			Limit:        int(args.ConnectionArgs.GetFirst()),
 		},
 	}, nil
 }
@@ -682,7 +686,7 @@ func (r *changesetEventsConnectionResolver) Nodes(ctx context.Context) ([]graphq
 }
 
 func (r *changesetEventsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetEventsOpts{ChangesetID: r.opts.ChangesetID}
+	opts := ee.CountChangesetEventsOpts{ChangesetID: r.opts.ChangesetIDs[0]}
 	count, err := r.store.CountChangesetEvents(ctx, opts)
 	return int32(count), err
 }

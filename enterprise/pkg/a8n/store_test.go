@@ -682,9 +682,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("List", func(t *testing.T) {
-				t.Run("ByChangesetID", func(t *testing.T) {
+				t.Run("ByChangesetIDs", func(t *testing.T) {
 					for i := 1; i <= len(events); i++ {
-						opts := ListChangesetEventsOpts{ChangesetID: int64(i)}
+						opts := ListChangesetEventsOpts{ChangesetIDs: []int64{int64(i)}}
 
 						ts, next, err := s.ListChangesetEvents(ctx, opts)
 						if err != nil {
@@ -702,6 +702,28 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 						if diff := cmp.Diff(have, want); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						opts := ListChangesetEventsOpts{ChangesetIDs: []int64{}}
+
+						for i := 1; i <= len(events); i++ {
+							opts.ChangesetIDs = append(opts.ChangesetIDs, int64(i))
+						}
+
+						ts, next, err := s.ListChangesetEvents(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, events
+						if len(have) != len(want) {
+							t.Fatalf("listed %d events, want: %d", len(have), len(want))
 						}
 					}
 				})
@@ -752,92 +774,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						}
 
 						cursor = next
-					}
-				})
-
-				t.Run("ByCampaignID", func(t *testing.T) {
-					c := &a8n.Campaign{
-						Name:            "Test campaign",
-						Description:     "All the Javascripts are belong to us",
-						AuthorID:        24,
-						NamespaceUserID: 42,
-					}
-
-					err := s.CreateCampaign(ctx, c)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					changesets := make([]*a8n.Changeset, 0, 3)
-					for i := 0; i < cap(changesets); i++ {
-						cs := &a8n.Changeset{
-							RepoID:              42,
-							CreatedAt:           now,
-							UpdatedAt:           now,
-							CampaignIDs:         []int64{c.ID},
-							ExternalID:          fmt.Sprintf("foobar-%d", i),
-							ExternalServiceType: "github",
-						}
-
-						changesets = append(changesets, cs)
-					}
-
-					err = s.CreateChangesets(ctx, changesets...)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					for i := 0; i < len(events); i++ {
-						e := &a8n.ChangesetEvent{
-							ChangesetID: changesets[i].ID,
-							Kind:        a8n.ChangesetEventKindGitHubCommented,
-							Key:         issueComment.Key(),
-							CreatedAt:   now,
-							Metadata:    issueComment,
-						}
-
-						events[i] = e
-					}
-
-					err = s.UpsertChangesetEvents(ctx, events...)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					// List with the correct CampaignID
-					opts := ListChangesetEventsOpts{CampaignID: c.ID}
-					ts, next, err := s.ListChangesetEvents(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := next, int64(0); have != want {
-						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-					}
-
-					have, want := ts, events
-					if len(have) != len(want) {
-						t.Fatalf("listed %d events, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-
-					// Verify that with a different Campaign ID the events are not
-					// returned
-					opts = ListChangesetEventsOpts{CampaignID: c.ID + 999}
-					ts, next, err = s.ListChangesetEvents(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := next, int64(0); have != want {
-						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-					}
-
-					if len(ts) != 0 {
-						t.Fatalf("listed %d events, want: none", len(ts))
 					}
 				})
 			})

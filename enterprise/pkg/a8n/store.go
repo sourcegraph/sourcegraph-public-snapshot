@@ -502,10 +502,9 @@ func getChangesetEventQuery(opts *GetChangesetEventOpts) *sqlf.Query {
 // ListChangesetEventsOpts captures the query options needed for
 // listing changeset events.
 type ListChangesetEventsOpts struct {
-	ChangesetID int64
-	CampaignID  int64
-	Cursor      int64
-	Limit       int
+	ChangesetIDs []int64
+	Cursor       int64
+	Limit        int
 }
 
 // ListChangesetEvents lists ChangesetEvents with the given filters.
@@ -546,11 +545,6 @@ ORDER BY id ASC
 LIMIT %s
 `
 
-var listChangesetEventsChangesetIDsSubqueryFmtstr = `
--- source: pkg/a8n/store.go:ListChangesetEvents
-SELECT id FROM changesets WHERE changesets.campaign_ids ? %s
-`
-
 func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 	if opts.Limit == 0 {
 		opts.Limit = defaultListLimit
@@ -561,15 +555,15 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
 
-	if opts.ChangesetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
-	}
-
-	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf(
-			"changeset_id IN ("+listChangesetEventsChangesetIDsSubqueryFmtstr+")",
-			opts.CampaignID,
-		))
+	if len(opts.ChangesetIDs) != 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
+		for _, id := range opts.ChangesetIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds,
+			sqlf.Sprintf("changeset_id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(
