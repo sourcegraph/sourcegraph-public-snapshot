@@ -59,6 +59,8 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         [context, onCampaignChange, onChange]
     )
 
+    const [actionRequireVersion, setActionRequireVersion] = useState<string>('')
+
     // Set defaults.
     const locationSearch = location ? location.search : ''
     useEffect(() => {
@@ -78,6 +80,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                 const requireVersion = params.get('requireVersion')
                 if (requireVersion) {
                     update.action = { requireVersion }
+                    setActionRequireVersion(requireVersion)
                 }
             }
 
@@ -109,7 +112,6 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         [updateContext]
     )
 
-    const [actionRequireVersion, setActionRequireVersion] = useState('')
     const onActionRequireVersionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => {
             setActionRequireVersion(e.currentTarget.value)

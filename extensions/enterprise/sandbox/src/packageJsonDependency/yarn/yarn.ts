@@ -38,12 +38,11 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
         return from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `\\b${name}\\b ${filters}`,
+                    pattern: `\\b${parsedQuery.name}\\b ${filters}`,
                     type: 'regexp',
                 },
                 {
                     repositories: {
-                        includes: [],
                         type: 'regexp',
                     },
                     files: {
@@ -51,7 +50,7 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
                         excludes: ['node_modules'],
                         type: 'regexp',
                     },
-                    maxResults: 100, // TODO!(sqs): increase
+                    maxResults: 99999999, // TODO!(sqs): un-hardcode
                 }
             )
         ).pipe(

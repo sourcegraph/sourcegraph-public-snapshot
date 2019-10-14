@@ -23,12 +23,11 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
         return from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `'"${name}"' ${filters}`,
+                    pattern: `'"${parsedQuery.name}"' ${filters}`,
                     type: 'regexp',
                 },
                 {
                     repositories: {
-                        includes: [],
                         type: 'regexp',
                     },
                     files: {
@@ -36,7 +35,7 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
                         excludes: ['node_modules'],
                         type: 'regexp',
                     },
-                    maxResults: 100, // TODO!(sqs): increase
+                    maxResults: 99999999, // TODO!(sqs): un-hardcode
                 }
             )
         ).pipe(

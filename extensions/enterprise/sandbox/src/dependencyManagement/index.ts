@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs'
 import { Location, WorkspaceEdit } from 'sourcegraph'
+import { ErrorLike } from '../../../../../shared/src/util/errors'
 
 export interface DependencyQuery {
     readonly name: string
@@ -43,6 +44,9 @@ export interface DependencySpecification<Q extends DependencyQuery> {
 
     /** The locations where the dependency is resolved. */
     readonly resolutions: readonly DependencyResolution[]
+
+    /** Errors describing problems that occurred while resolving this dependency. */
+    readonly error?: ErrorLike
 }
 
 export interface DependencyManagementProvider<

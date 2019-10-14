@@ -75,27 +75,37 @@ function provideDiagnostics({
                   )
                   return specs.pipe(
                       map(specs =>
-                          specs.map(spec => {
-                              const mainDecl = spec.declarations[0]
-                              if (!mainDecl.location.range) {
-                                  throw new Error('no range')
-                              }
-                              const data: DiagnosticData = { ...spec, action }
-                              const diagnostic: sourcegraph.Diagnostic = {
-                                  resource: mainDecl.location.uri,
-                                  message: `${mainDecl.direct ? '' : 'Indirect '}npm dependency ${mainDecl.name}${
-                                      depQuery.versionRange === '*' ? '' : `@${depQuery.versionRange}`
-                                  } ${action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`}`,
-                                  range: mainDecl.location.range,
-                                  severity: sourcegraph.DiagnosticSeverity.Warning,
-                                  // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
-                                  data: JSON.stringify(data),
-                                  tags: [DEPENDENCY_TAG, packageName, createChangesets ? 'fix' : undefined].filter(
-                                      isDefined
-                                  ),
-                              }
-                              return diagnostic
-                          })
+                          specs
+                              .map(spec => {
+                                  if (spec.error) {
+                                      console.error(spec.error)
+                                      return null
+                                  }
+                                  const mainDecl = spec.declarations[0]
+                                  if (!mainDecl.location.range) {
+                                      throw new Error('no range')
+                                  }
+                                  const data: DiagnosticData = { ...spec, action }
+                                  const diagnostic: sourcegraph.Diagnostic = {
+                                      resource: mainDecl.location.uri,
+                                      message: `${mainDecl.direct ? '' : 'Indirect '}npm dependency ${mainDecl.name}${
+                                          depQuery.versionRange === '*' ? '' : `@${depQuery.versionRange}`
+                                      } ${
+                                          action === 'ban'
+                                              ? 'is banned'
+                                              : `must be upgraded to ${action.requireVersion}`
+                                      }`,
+                                      range: mainDecl.location.range,
+                                      severity: sourcegraph.DiagnosticSeverity.Warning,
+                                      // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                      data: JSON.stringify(data),
+                                      tags: [DEPENDENCY_TAG, packageName, createChangesets ? 'fix' : undefined].filter(
+                                          isDefined
+                                      ),
+                                  }
+                                  return diagnostic
+                              })
+                              .filter(isDefined)
                       )
                   )
               }),
