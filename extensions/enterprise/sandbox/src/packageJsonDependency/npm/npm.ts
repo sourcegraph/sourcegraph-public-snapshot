@@ -1,71 +1,17 @@
-import { from, combineLatest, Observable, merge } from 'rxjs'
-import { toArray, map, switchMap, filter } from 'rxjs/operators'
+import { from, merge } from 'rxjs'
+import { toArray, switchMap, filter } from 'rxjs/operators'
 import semver from 'semver'
-import * as sourcegraph from 'sourcegraph'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import {
-    ResolvedDependency,
-    PackageJsonDependencyQuery,
-    PackageJsonDependencyManagementProvider,
-} from '../packageManager'
+import { ResolvedDependency, PackageJsonDependencyManagementProvider } from '../packageManager'
 import { editForCommands2 } from '../packageManagerCommon'
 import { lockTree } from './logicalTree'
-import { DependencySpecification } from '../../dependencyManagement'
+import { provideDependencySpecification } from '../util'
 
 const npmExecClient = createExecServerClient('a8n-npm-exec')
 
 const NPM_OPTS = ['--no-audit', '--package-lock-only', '--ignore-scripts']
-
-const provideDependencySpecification = (
-    result: sourcegraph.TextSearchResult,
-    query: PackageJsonDependencyQuery & { parsedVersionRange: semver.Range }
-): Observable<DependencySpecification<PackageJsonDependencyQuery> | null> => {
-    const packageJson = from(
-        sourcegraph.workspace.openTextDocument(new URL(result.uri.replace(/package-lock\.json$/, 'package.json')))
-    )
-    const packageLockJson = from(sourcegraph.workspace.openTextDocument(new URL(result.uri)))
-    return combineLatest([packageJson, packageLockJson]).pipe(
-        map(([packageJson, packageLockJson]) => {
-            try {
-                // TODO!(sqs): support multiple versions in lockfile/package.json
-                const dep = getPackageLockDependency(packageJson.text!, packageLockJson.text!, name)
-                if (!dep) {
-                    return null
-                }
-                if (!semver.satisfies(dep.version, query.parsedVersionRange)) {
-                    return null
-                }
-                const spec: DependencySpecification<PackageJsonDependencyQuery> = {
-                    query,
-                    declarations: [
-                        {
-                            name: dep.name,
-                            // requestedVersion: // TODO!(sqs): get from package.json
-                            direct: dep.direct,
-                            location: { uri: new URL(packageJson.uri) },
-                        },
-                    ],
-                    resolutions: [
-                        {
-                            name: dep.name,
-                            resolvedVersion: dep.version,
-                            location: { uri: new URL(packageLockJson.uri) },
-                        },
-                    ],
-                }
-                return spec
-            } catch (err) {
-                console.error(`Error checking lockfile and package.json for ${result.uri}.`, err, {
-                    packageLockJson: packageLockJson.text,
-                    packagejson: packageJson.text,
-                })
-                return null
-            }
-        })
-    )
-}
 
 export const npmPackageManager: PackageJsonDependencyManagementProvider = {
     type: 'npm',
@@ -97,7 +43,12 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
             switchMap(textSearchResults =>
                 merge(
                     ...textSearchResults.map(textSearchResult =>
-                        provideDependencySpecification(textSearchResult, parsedQuery)
+                        provideDependencySpecification(
+                            new URL(textSearchResult.uri.replace(/package-lock\.json$/, 'package.json')),
+                            new URL(textSearchResult.uri),
+                            parsedQuery,
+                            getPackageLockDependency
+                        )
                     )
                 ).pipe(
                     filter(isDefined),

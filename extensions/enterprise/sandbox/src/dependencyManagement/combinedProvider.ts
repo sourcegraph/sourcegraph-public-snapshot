@@ -5,13 +5,13 @@ import { DependencyManagementProvider, DependencyQuery, DependencySpecification 
 import { propertyIsDefined } from '../../../../../shared/src/util/types'
 import { combineWorkspaceEdits } from '../../../../../shared/src/api/types/workspaceEdit'
 
-interface DependencySpecificationWithType<Q extends DependencyQuery> extends DependencySpecification<Q> {
+export interface DependencySpecificationWithType<Q extends DependencyQuery> extends DependencySpecification<Q> {
     type: string
 }
 
 export const combinedProvider = <Q extends DependencyQuery>(
     providers: (DependencyManagementProvider<Q> & { type: string })[]
-): DependencyManagementProvider<Q, DependencySpecificationWithType<Q>> => ({
+): Required<DependencyManagementProvider<Q, DependencySpecificationWithType<Q>>> => ({
     provideDependencySpecifications: (query, filters) =>
         combineLatest(
             providers.map(provider =>

@@ -1,12 +1,10 @@
-import { flatten } from 'lodash'
 import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
 import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { npmPackageManager } from './npm/npm'
-import { PackageJsonDependency, ResolvedDependency, PackageJsonDependencyQuery } from './packageManager'
-import { yarnPackageManager } from './yarn/yarn'
+import { PackageJsonDependencyQuery } from './packageManager'
 import { packageJsonDependencyManagementProviderRegistry } from './providers'
+import { DependencySpecificationWithType } from '../dependencyManagement/combinedProvider'
 
 const COMMAND_ID = 'packageJsonDependency.action'
 
@@ -27,6 +25,7 @@ export function register(): Unsubscribable {
     subscriptions.add(
         sourcegraph.workspace.registerDiagnosticProvider('packageJsonDependency', {
             provideDiagnostics: (_scope, context) =>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 provideDiagnostics((context as any) as PackageJsonDependencyCampaignContext).pipe(
                     filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING)
                 ),
@@ -36,9 +35,9 @@ export function register(): Unsubscribable {
     subscriptions.add(
         sourcegraph.commands.registerActionEditCommand(COMMAND_ID, diagnostic => {
             if (!diagnostic || (diagnostic.tags && !diagnostic.tags.includes('fix'))) {
-                return new sourcegraph.WorkspaceEdit()
+                return Promise.resolve(new sourcegraph.WorkspaceEdit())
             }
-            return editForDependencyAction(diagnostic)
+            return editForDependencyAction(diagnostic).toPromise()
         })
     )
     return subscriptions
@@ -46,12 +45,8 @@ export function register(): Unsubscribable {
 
 const DEPENDENCY_TAG = 'type:packageJsonDependency'
 
-interface DiagnosticData {
-    dependency: ResolvedDependency
-    packageJson: { uri: string; text: string }
-    lockfile: { uri: string; text: string }
+interface DiagnosticData extends DependencySpecificationWithType<PackageJsonDependencyQuery> {
     action: PackageJsonDependencyCampaignContext['action']
-    type: 'npm' | 'yarn'
 }
 
 function provideDiagnostics({
@@ -65,9 +60,9 @@ function provideDiagnostics({
         ? from(sourcegraph.workspace.rootChanges).pipe(
               startWith(undefined),
               map(() => sourcegraph.workspace.roots),
-              switchMap(async roots => {
+              switchMap(roots => {
                   if (roots.length > 0) {
-                      return [] as sourcegraph.Diagnostic[] // TODO!(sqs): dont run in comparison mode
+                      return of<sourcegraph.Diagnostic[]>([]) // TODO!(sqs): dont run in comparison mode
                   }
 
                   const depQuery: PackageJsonDependencyQuery = {
@@ -78,52 +73,30 @@ function provideDiagnostics({
                       depQuery,
                       filters
                   )
-                  return flatten(
-                      hits
-                          .map(({ type, ...hit }) => {
-                              let matchRange = findMatchRange(hit.packageJson.text!, `"${packageName}"`)
-                              let matchDoc: sourcegraph.TextDocument | undefined
-                              if (matchRange) {
-                                  matchDoc = hit.packageJson
+                  return specs.pipe(
+                      map(specs =>
+                          specs.map(spec => {
+                              const mainDecl = spec.declarations[0]
+                              if (!mainDecl.location.range) {
+                                  throw new Error('no range')
                               }
-                              if (!matchRange) {
-                                  matchRange = findMatchRange(
-                                      hit.lockfile.text!,
-                                      type === 'npm' ? `"${packageName}"` : `${packageName}@`
-                                  )
-                                  if (matchRange) {
-                                      matchDoc = hit.lockfile
-                                  }
-                              }
-
-                              if (!matchRange || !matchDoc) {
-                                  return null
-                              }
-
+                              const data: DiagnosticData = { ...spec, action }
                               const diagnostic: sourcegraph.Diagnostic = {
-                                  resource: new URL(matchDoc.uri),
-                                  message: `${
-                                      matchDoc === hit.lockfile ? 'Indirect ' : ''
-                                  }npm dependency ${packageName}${matchVersion === '*' ? '' : `@${matchVersion}`} ${
-                                      action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`
-                                  }`,
-                                  range: matchRange,
+                                  resource: mainDecl.location.uri,
+                                  message: `${mainDecl.direct ? '' : 'Indirect '}npm dependency ${mainDecl.name}${
+                                      depQuery.versionRange === '*' ? '' : `@${depQuery.versionRange}`
+                                  } ${action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`}`,
+                                  range: mainDecl.location.range,
                                   severity: sourcegraph.DiagnosticSeverity.Warning,
                                   // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
-                                  data: JSON.stringify({
-                                      dependency: hit.dependency,
-                                      packageJson: { uri: hit.packageJson.uri },
-                                      lockfile: { uri: hit.lockfile.uri },
-                                      action,
-                                      type,
-                                  } as DiagnosticData),
+                                  data: JSON.stringify(data),
                                   tags: [DEPENDENCY_TAG, packageName, createChangesets ? 'fix' : undefined].filter(
                                       isDefined
                                   ),
                               }
-                              return [diagnostic]
+                              return diagnostic
                           })
-                          .filter(isDefined)
+                      )
                   )
               }),
               startWith(LOADING)
@@ -133,31 +106,23 @@ function provideDiagnostics({
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: async (_doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
+        provideCodeActions: (_doc, _rangeOrSelection, context): Observable<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(d => isProviderDiagnostic(d) && d.tags && d.tags.includes('fix'))
             if (!diag) {
-                return []
+                return of<sourcegraph.Action[]>([])
             }
-            return [
-                {
-                    title: 'Upgrade dependency in package.json',
-                    edit: await editForDependencyAction(diag),
-                    computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
-                    diagnostics: [diag],
-                },
-            ]
+            return editForDependencyAction(diag).pipe(
+                map(edit => [
+                    {
+                        title: 'Upgrade dependency in package.json',
+                        edit,
+                        computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
+                        diagnostics: [diag],
+                    },
+                ])
+            )
         },
     }
-}
-
-function findMatchRange(text: string, str: string): sourcegraph.Range | null {
-    for (const [i, line] of text.split('\n').entries()) {
-        const j = line.indexOf(str)
-        if (j !== -1) {
-            return new sourcegraph.Range(i, j, i, j + str.length)
-        }
-    }
-    return null
 }
 
 function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
@@ -165,17 +130,19 @@ function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
 }
 
 function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
-    return JSON.parse(diag.data!)
+    if (!diag.data) {
+        throw new Error('no diagnostic data')
+    }
+    return JSON.parse(diag.data)
 }
 
-async function editForDependencyAction(diag: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
+function editForDependencyAction(diag: sourcegraph.Diagnostic): Observable<sourcegraph.WorkspaceEdit> {
     const data = getDiagnosticData(diag)
-    return await (data.type === 'npm' ? npmPackageManager : yarnPackageManager).editForDependencyAction(
-        {
-            packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
-            lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
-            dependency: data.dependency,
-        },
-        data.action
+    if (data.action === 'ban') {
+        return packageJsonDependencyManagementProviderRegistry.resolveDependencyBanAction(data)
+    }
+    return packageJsonDependencyManagementProviderRegistry.resolveDependencyUpgradeAction(
+        data,
+        data.action.requireVersion
     )
 }

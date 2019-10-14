@@ -1,18 +1,13 @@
-import { from, merge, Observable, combineLatest } from 'rxjs'
-import { toArray, map, switchMap, filter } from 'rxjs/operators'
+import { from, merge } from 'rxjs'
+import { toArray, switchMap, filter } from 'rxjs/operators'
 import semver from 'semver'
-import * as sourcegraph from 'sourcegraph'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import {
-    ResolvedDependency,
-    PackageJsonDependencyManagementProvider,
-    PackageJsonDependencyQuery,
-} from '../packageManager'
+import { ResolvedDependency, PackageJsonDependencyManagementProvider } from '../packageManager'
 import { editForCommands2 } from '../packageManagerCommon'
 import { yarnLogicalTree } from './logicalTree'
-import { DependencySpecification } from '../../dependencyManagement'
+import { provideDependencySpecification } from '../util'
 
 const yarnExecClient = createExecServerClient('a8n-yarn-exec', [])
 
@@ -32,55 +27,6 @@ const YARN_OPTS = [
     '--skip-integrity-check',
     '--no-default-rc',
 ]
-
-const provideDependencySpecification = (
-    result: sourcegraph.TextSearchResult,
-    query: PackageJsonDependencyQuery & { parsedVersionRange: semver.Range }
-): Observable<DependencySpecification<PackageJsonDependencyQuery> | null> => {
-    const packageJson = from(
-        sourcegraph.workspace.openTextDocument(new URL(result.uri.replace(/yarn\.lock$/, 'package.json')))
-    )
-    const yarnLock = from(sourcegraph.workspace.openTextDocument(new URL(result.uri)))
-    return combineLatest([packageJson, yarnLock]).pipe(
-        map(([packageJson, yarnLock]) => {
-            try {
-                // TODO!(sqs): support multiple versions in lockfile/package.json
-                const dep = getYarnLockDependency(packageJson.text!, yarnLock.text!, name)
-                if (!dep) {
-                    return null
-                }
-                if (!semver.satisfies(dep.version, query.parsedVersionRange)) {
-                    return null
-                }
-                const spec: DependencySpecification<PackageJsonDependencyQuery> = {
-                    query,
-                    declarations: [
-                        {
-                            name: dep.name,
-                            // requestedVersion: // TODO!(sqs): get from package.json
-                            direct: dep.direct,
-                            location: { uri: new URL(packageJson.uri) },
-                        },
-                    ],
-                    resolutions: [
-                        {
-                            name: dep.name,
-                            resolvedVersion: dep.version,
-                            location: { uri: new URL(yarnLock.uri) },
-                        },
-                    ],
-                }
-                return spec
-            } catch (err) {
-                console.error(`Error checking yarn.lock and package.json for ${result.uri}.`, err, {
-                    yarnLock: yarnLock.text,
-                    packagejson: packageJson.text,
-                })
-                return null
-            }
-        })
-    )
-}
 
 export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
     type: 'yarn',
@@ -112,7 +58,12 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
             switchMap(textSearchResults =>
                 merge(
                     ...textSearchResults.map(textSearchResult =>
-                        provideDependencySpecification(textSearchResult, parsedQuery)
+                        provideDependencySpecification(
+                            new URL(textSearchResult.uri.replace(/yarn\.lock$/, 'package.json')),
+                            new URL(textSearchResult.uri),
+                            parsedQuery,
+                            getYarnLockDependency
+                        )
                     )
                 ).pipe(
                     filter(isDefined),

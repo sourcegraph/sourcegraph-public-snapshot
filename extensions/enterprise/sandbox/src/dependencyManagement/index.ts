@@ -49,7 +49,7 @@ export interface DependencyManagementProvider<
     Q extends DependencyQuery,
     S extends DependencySpecification<Q> = DependencySpecification<Q>
 > {
-    provideDependencySpecifications(dep: Q, filters: string): Observable<readonly S[]>
+    provideDependencySpecifications(dep: Q, filters?: string): Observable<readonly S[]>
     resolveDependencyUpgradeAction?(dep: S, version: string): Observable<WorkspaceEdit>
     resolveDependencyBanAction?(dep: S): Observable<WorkspaceEdit>
 }
