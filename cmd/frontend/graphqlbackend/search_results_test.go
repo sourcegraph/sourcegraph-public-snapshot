@@ -32,7 +32,7 @@ func TestSearchResults(t *testing.T) {
 		r, err := (&schemaResolver{}).Search(&struct {
 			Query  string
 			Cursor *graphql.ID
-			Limit  *int32
+			First  *int32
 		}{Query: query})
 		if err != nil {
 			t.Fatal("Search:", err)
