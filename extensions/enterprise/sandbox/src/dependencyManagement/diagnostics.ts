@@ -8,9 +8,8 @@ import { isDefined } from '../../../../../shared/src/util/types'
 import { toLocation } from '../../../../../shared/src/api/extension/api/types'
 
 export interface DependencyManagementDiagnosticData<Q extends DependencyQuery>
-    extends DependencySpecificationWithType<Q> {
-    action: DependencyManagementCampaignContextCommon['action']
-}
+    extends DependencySpecificationWithType<Q>,
+        Pick<DependencyManagementCampaignContextCommon, 'action' | 'createChangesets'> {}
 
 export interface DependencyManagementDiagnostic<Q extends DependencyQuery> extends sourcegraph.Diagnostic {
     parsedData: DependencyManagementDiagnosticData<Q>
@@ -46,8 +45,11 @@ export const provideDependencyManagementDiagnostics = <
     { provideDependencySpecifications }: DependencyManagementProvider<Q, S>,
     dependencyTag: string,
     query: Q,
-    action: DependencyManagementCampaignContextCommon['action'],
-    filters: DependencyManagementCampaignContextCommon['filters']
+    {
+        action,
+        createChangesets,
+        filters,
+    }: Pick<DependencyManagementCampaignContextCommon, 'action' | 'createChangesets' | 'filters'>
 ): Observable<sourcegraph.Diagnostic[] | typeof LOADING> =>
     from(sourcegraph.workspace.rootChanges).pipe(
         startWith(undefined),
@@ -72,7 +74,7 @@ export const provideDependencyManagementDiagnostics = <
                             if (!specMain.location) {
                                 return null
                             }
-                            const data: DependencyManagementDiagnosticData<Q> = { ...spec, action }
+                            const data: DependencyManagementDiagnosticData<Q> = { ...spec, action, createChangesets }
                             const diagnostic: sourcegraph.Diagnostic = {
                                 resource: specMain.location.uri,
                                 message: `${specMain.direct ? '' : 'Indirect '}npm dependency ${specMain.name}${

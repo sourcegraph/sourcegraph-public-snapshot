@@ -52,7 +52,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                     type: 'DiagnosticRule',
                     query: diagnosticQuery('type:packageJsonDependency'),
                     context: newContext,
-                    action: 'packageJsonDependency.action',
+                    action: 'dependencyManagement.packageJsonDependency.action',
                 } as RuleDefinition),
             })
         },

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { Location, WorkspaceEdit, ContextValues } from 'sourcegraph'
+import { Location, WorkspaceEdit } from 'sourcegraph'
 import { ErrorLike } from '../../../../../shared/src/util/errors'
 
 export interface DependencyQuery {

@@ -69,7 +69,7 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
         ),
     resolveDependencyUpgradeAction: (dep, version) => {
         // TODO!(sqs): this is not correct w.r.t. indirect deps
-        if (dep.declarations.length !== 1) {
+        if (dep.declarations.length === 0) {
             console.error('Invalid declarations.', dep)
             throw new Error('invalid declarations')
         }
@@ -89,7 +89,7 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
     },
     resolveDependencyBanAction: dep => {
         // TODO!(sqs): this is not correct w.r.t. indirect deps
-        if (dep.declarations.length !== 1) {
+        if (dep.declarations.length === 0) {
             console.error('Invalid declarations.', dep)
             throw new Error('invalid declarations')
         }
@@ -108,7 +108,7 @@ async function addYarnResolutions(
     dep: DependencySpecification<PackageJsonDependencyQuery>,
     version: string
 ): Promise<sourcegraph.WorkspaceEdit> {
-    if (dep.declarations.length !== 1) {
+    if (dep.declarations.length === 0) {
         console.error('Invalid declarations.', dep)
         throw new Error('invalid declarations')
     }

@@ -102,14 +102,12 @@ export const traversePackageJsonLockfile = (
     // eslint-disable-next-line ban/ban
     tree.forEach((dep, next) => {
         if (dep.name === parsedQuery.name && semver.satisfies(dep.version, parsedQuery.parsedVersionRange)) {
-            if (dep.requiredBy.has(tree)) {
-                declarations.push({
-                    name: dep.name,
-                    requestedVersion: dep.version,
-                    direct: true,
-                    location: 'TODO!(sqs)' as any,
-                })
-            }
+            declarations.push({
+                name: dep.name,
+                requestedVersion: dep.version,
+                direct: dep.requiredBy.has(tree),
+                location: 'TODO!(sqs)' as any,
+            })
             resolutions.push({ name: dep.name, resolvedVersion: dep.version })
         } else {
             // eslint-disable-next-line callback-return

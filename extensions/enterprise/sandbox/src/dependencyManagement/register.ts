@@ -32,8 +32,7 @@ export function registerDependencyManagementProviders<
                     provider,
                     DEPENDENCY_TAG,
                     parseQuery(context),
-                    context.action as DependencyManagementCampaignContextCommon['action'],
-                    context.filters as DependencyManagementCampaignContextCommon['filters']
+                    (context as unknown) as DependencyManagementCampaignContextCommon
                 ).pipe(filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING)),
         })
     )
@@ -80,6 +79,9 @@ function editForDependencyAction<Q extends DependencyQuery>(
     provider: DependencyManagementProvider<Q>,
     { parsedData }: DependencyManagementDiagnostic<Q>
 ): Observable<sourcegraph.WorkspaceEdit> {
+    if (!parsedData.createChangesets) {
+        return of(new sourcegraph.WorkspaceEdit())
+    }
     if (parsedData.action === 'ban') {
         return provider.resolveDependencyBanAction
             ? provider.resolveDependencyBanAction(parsedData)
