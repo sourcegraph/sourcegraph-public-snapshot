@@ -173,8 +173,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	resultTypes, _ := r.determineResultTypes(args, "")
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
-	// TODO(slimsag): future: support non-file result types in the paginated
-	// search API.
 	if len(resultTypes) != 1 || resultTypes[0] != "file" {
 		return nil, fmt.Errorf("experimental paginated search currently only supports 'file' (text match) result types. Found %q", resultTypes)
 	}
@@ -258,12 +256,8 @@ func repoIsLess(i, j *types.Repo) bool {
 //
 func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) (*searchCursor, []searchResultResolver, *searchResultsCommon, error) {
 	plan := &repoPaginationPlan{
-		pagination:   pagination,
-		repositories: args.Repos,
-		// TODO(slimsag): future: Potentially update and reason about these choices
-		// more. They are mostly arbitrary currently and should instead be
-		// based on measurements from benchmarking + measuring NITH query
-		// performance, etc.
+		pagination:          pagination,
+		repositories:        args.Repos,
 		searchBucketDivisor: 8,
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
@@ -276,8 +270,6 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 			return nil, nil, err
 		}
 		// fileCommon is sorted, but fileResults is not so we must sort it now.
-		//
-		// TODO(slimsag): future: add tests verifying this does not change.
 		sort.Slice(fileResults, func(i, j int) bool {
 			return fileResults[i].uri < fileResults[j].uri
 		})
@@ -357,13 +349,6 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		// TODO(slimsag): future: Unlike in non-paginated search, if we see:
-		//
-		// 	len(batchCommon.cloning) > 0 || len(batchCommon.missing) > 0 || len(batchCommon.timedout) > 0 || len(batchCommon.partial) > 0
-		//
-		// We most likely want to cancel the request and return an error?
-		// Otherwise, this breaks ordering guarantees perhaps? Needs more
-		// thought.
 
 		// Accumulate the results and stop if we have enough for the user.
 		results = append(results, batchResults...)
@@ -375,11 +360,6 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	}
 	// If we found more results than the user wanted, discard the remaining
 	// ones.
-	//
-	// TODO(slimsag): future: cache these results somewhere because the user is
-	// likely to come back soon for more and we don't need to search a batch of
-	// repositories every time. This would give substantial performance
-	// benefits to subsequent requests against this API.
 	sliced := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
 	nextCursor := &searchCursor{ResultOffset: sliced.resultOffset}
 	for globalOffset, repo := range p.repositories {
@@ -496,10 +476,6 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	for _, r := range common.repos {
 		repo := reposByName[string(r.Name)]
 		results := resultsByRepo[repo]
-
-		// TODO(slimsag): future: approximateResultCount in paginated requests
-		// is certainly wrong because it doesn't account for prior repos in
-		// prior paginated requests with the cursor.
 
 		// Include the results and copy over metadata from the common structure.
 		final.results = append(final.results, results...)
