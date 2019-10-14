@@ -49,6 +49,12 @@ Verify that the migration is backward-compatible:
 dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so make sure the work tree is clean before running
 ```
 
+Update the schema and bindata:
+
+```
+./dev/update-schema-and-bindata.sh
+```
+
 ### Migrating up/down
 
 Up migrations happen automatically on server start-up after running the
