@@ -1,15 +1,25 @@
 import { Unsubscribable } from 'rxjs'
 import semver from 'semver'
-import { packageJsonDependencyManagementProviderRegistry } from './providers'
 import { DependencyManagementCampaignContextCommon } from '../dependencyManagement/common'
 import { registerDependencyManagementProviders } from '../dependencyManagement/register'
+import { combinedProvider } from '../dependencyManagement/combinedProvider'
+import { DependencyManagementProvider, DependencyQuery } from '../dependencyManagement'
+import { yarnDependencyManagementProvider } from './yarn/yarn'
+import { npmDependencyManagementProvider } from './npm/npm'
 
 export interface PackageJsonDependencyCampaignContext extends DependencyManagementCampaignContextCommon {}
+
+export interface PackageJsonDependencyQuery extends Required<DependencyQuery> {
+    parsedVersionRange: semver.Range
+}
+
+export interface PackageJsonDependencyManagementProvider
+    extends DependencyManagementProvider<PackageJsonDependencyQuery> {}
 
 export function register(): Unsubscribable {
     return registerDependencyManagementProviders(
         'packageJsonDependency',
-        packageJsonDependencyManagementProviderRegistry,
+        combinedProvider([npmDependencyManagementProvider, yarnDependencyManagementProvider]),
         context => {
             if (typeof context.packageName !== 'string') {
                 throw new Error('invalid packageName')

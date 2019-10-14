@@ -9,7 +9,7 @@ import {
 } from './diagnostics'
 import { filter, map } from 'rxjs/operators'
 import { LOADING, DependencyManagementCampaignContextCommon } from './common'
-import { DependencySpecificationWithType } from './combinedProvider'
+import { DependencySpecificationWithType, WithoutType } from './combinedProvider'
 import { isDefined } from '../../../../../shared/src/util/types'
 
 export function registerDependencyManagementProviders<
@@ -17,7 +17,7 @@ export function registerDependencyManagementProviders<
     S extends DependencySpecificationWithType<Q>
 >(
     id: string,
-    provider: DependencyManagementProvider<Q, S>,
+    provider: WithoutType<DependencyManagementProvider<Q, S>>,
     parseQuery: (context: sourcegraph.ContextValues) => Q
 ): Unsubscribable {
     const COMMAND_ID = `dependencyManagement.${id}.action`
@@ -76,7 +76,7 @@ export function registerDependencyManagementProviders<
 }
 
 function editForDependencyAction<Q extends DependencyQuery>(
-    provider: DependencyManagementProvider<Q>,
+    provider: WithoutType<DependencyManagementProvider<Q>>,
     { parsedData }: DependencyManagementDiagnostic<Q>
 ): Observable<sourcegraph.WorkspaceEdit> {
     if (!parsedData.createChangesets) {

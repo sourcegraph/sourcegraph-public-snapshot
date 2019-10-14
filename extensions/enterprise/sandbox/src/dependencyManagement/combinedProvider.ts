@@ -9,9 +9,11 @@ export interface DependencySpecificationWithType<Q extends DependencyQuery> exte
     type: string
 }
 
+export type WithoutType<T> = Pick<T, Exclude<keyof T, 'type'>>
+
 export const combinedProvider = <Q extends DependencyQuery>(
-    providers: (DependencyManagementProvider<Q> & { type: string })[]
-): Required<DependencyManagementProvider<Q, DependencySpecificationWithType<Q>>> => ({
+    providers: DependencyManagementProvider<Q>[]
+): WithoutType<Required<DependencyManagementProvider<Q, DependencySpecificationWithType<Q>>>> => ({
     provideDependencySpecifications: (query, filters) =>
         combineLatest(
             providers.map(provider =>

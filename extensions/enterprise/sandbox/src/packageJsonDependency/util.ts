@@ -10,7 +10,7 @@ import { ExecServerClient } from '../execServer/client'
 import { Observable, combineLatest, from, of } from 'rxjs'
 import { switchMap, map } from 'rxjs/operators'
 import { DependencySpecification, DependencyDeclaration, DependencyResolution } from '../dependencyManagement'
-import { PackageJsonDependencyQuery } from './providers'
+import { PackageJsonDependencyQuery } from '.'
 import { LogicalTree } from './npm/logicalTree'
 
 export const editForCommands2 = (

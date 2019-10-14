@@ -42,7 +42,7 @@ export const provideDependencyManagementDiagnostics = <
     Q extends DependencyQuery,
     S extends DependencySpecificationWithType<Q> = DependencySpecificationWithType<Q>
 >(
-    { provideDependencySpecifications }: DependencyManagementProvider<Q, S>,
+    { provideDependencySpecifications }: Pick<DependencyManagementProvider<Q, S>, 'provideDependencySpecifications'>,
     dependencyTag: string,
     query: Q,
     {

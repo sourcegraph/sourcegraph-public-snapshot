@@ -3,7 +3,7 @@ import { toArray, switchMap, filter } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '../providers'
+import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '..'
 import { yarnLogicalTree } from './logicalTree'
 import { provideDependencySpecification, editForCommands2, editPackageJson, traversePackageJsonLockfile } from '../util'
 import * as sourcegraph from 'sourcegraph'
@@ -29,7 +29,7 @@ const YARN_OPTS = [
     '--no-default-rc',
 ]
 
-export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
+export const yarnDependencyManagementProvider: PackageJsonDependencyManagementProvider = {
     type: 'yarn',
     provideDependencySpecifications: (query, filters = '') =>
         from(

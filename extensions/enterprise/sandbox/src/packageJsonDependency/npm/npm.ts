@@ -3,7 +3,7 @@ import { toArray, switchMap, filter } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '../providers'
+import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '..'
 import { lockTree } from './logicalTree'
 import { provideDependencySpecification, editForCommands2, traversePackageJsonLockfile } from '../util'
 import { DependencySpecification } from '../../dependencyManagement'
@@ -12,7 +12,7 @@ const npmExecClient = createExecServerClient('a8n-npm-exec')
 
 const NPM_OPTS = ['--no-audit', '--package-lock-only', '--ignore-scripts']
 
-export const npmPackageManager: PackageJsonDependencyManagementProvider = {
+export const npmDependencyManagementProvider: PackageJsonDependencyManagementProvider = {
     type: 'npm',
     provideDependencySpecifications: (query, filters = '') =>
         from(
