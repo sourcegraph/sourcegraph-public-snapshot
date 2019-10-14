@@ -1,33 +1,35 @@
+// TODO!(sqs): https://github.com/kevcodez/gradle-upgrade-interactive/blob/master/ReplaceVersion.js
+
 import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
 import semver from 'semver'
 import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { packageJsonDependencyManagementProviderRegistry, PackageJsonDependencyQuery } from './providers'
+import { javaDependencyManagementProviderRegistry, JavaDependencyQuery } from '.'
 import { DependencySpecificationWithType } from '../dependencyManagement/combinedProvider'
 import { toLocation } from '../../../../../shared/src/api/extension/api/types'
 
-const COMMAND_ID = 'packageJsonDependency.action'
+const COMMAND_ID = 'javaDependency.action'
 
-export interface PackageJsonDependencyCampaignContext {
+export interface JavaDependencyCampaignContext {
     packageName?: string
     matchVersion?: string
-    action: PackageJsonDependencyAction
+    action: JavaDependencyAction
     createChangesets: boolean
     filters?: string
 }
 
-export type PackageJsonDependencyAction = { requireVersion: string } | 'ban'
+export type JavaDependencyAction = { requireVersion: string }
 
 const LOADING = 'loading' as const
 
 export function register(): Unsubscribable {
     const subscriptions = new Subscription()
     subscriptions.add(
-        sourcegraph.workspace.registerDiagnosticProvider('packageJsonDependency', {
+        sourcegraph.workspace.registerDiagnosticProvider('javaDependency', {
             provideDiagnostics: (_scope, context) =>
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                provideDiagnostics((context as any) as PackageJsonDependencyCampaignContext).pipe(
+                provideDiagnostics((context as any) as JavaDependencyCampaignContext).pipe(
                     filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING)
                 ),
         })
@@ -44,10 +46,10 @@ export function register(): Unsubscribable {
     return subscriptions
 }
 
-const DEPENDENCY_TAG = 'type:packageJsonDependency'
+const DEPENDENCY_TAG = 'type:javaDependency'
 
-interface DiagnosticData extends DependencySpecificationWithType<PackageJsonDependencyQuery> {
-    action: PackageJsonDependencyCampaignContext['action']
+interface DiagnosticData extends DependencySpecificationWithType<JavaDependencyQuery> {
+    action: JavaDependencyCampaignContext['action']
 }
 
 function provideDiagnostics({
@@ -56,7 +58,7 @@ function provideDiagnostics({
     action,
     createChangesets,
     filters,
-}: PackageJsonDependencyCampaignContext): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
+}: JavaDependencyCampaignContext): Observable<sourcegraph.Diagnostic[] | typeof LOADING> {
     return packageName && matchVersion && action
         ? from(sourcegraph.workspace.rootChanges).pipe(
               startWith(undefined),
@@ -66,12 +68,12 @@ function provideDiagnostics({
                       return of<sourcegraph.Diagnostic[]>([]) // TODO!(sqs): dont run in comparison mode
                   }
 
-                  const depQuery: PackageJsonDependencyQuery = {
+                  const depQuery: JavaDependencyQuery = {
                       name: packageName,
                       versionRange: matchVersion,
                       parsedVersionRange: new semver.Range(matchVersion),
                   }
-                  const specs = packageJsonDependencyManagementProviderRegistry.provideDependencySpecifications(
+                  const specs = javaDependencyManagementProviderRegistry.provideDependencySpecifications(
                       depQuery,
                       filters
                   )
@@ -161,10 +163,7 @@ function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
 function editForDependencyAction(diag: sourcegraph.Diagnostic): Observable<sourcegraph.WorkspaceEdit> {
     const data = getDiagnosticData(diag)
     if (data.action === 'ban') {
-        return packageJsonDependencyManagementProviderRegistry.resolveDependencyBanAction(data)
+        return javaDependencyManagementProviderRegistry.resolveDependencyBanAction(data)
     }
-    return packageJsonDependencyManagementProviderRegistry.resolveDependencyUpgradeAction(
-        data,
-        data.action.requireVersion
-    )
+    return javaDependencyManagementProviderRegistry.resolveDependencyUpgradeAction(data, data.action.requireVersion)
 }
