@@ -28,6 +28,13 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     const password = process.env.PGPASSWORD || ''
     const database = `sourcegraph-test-lsif-xrepo-${suffix}`
 
+    // Determine the path of the migrate binary. Throws if it doesn't exist.
+    const [stdout] = await child_process.exec('which migrate')
+    const migratePath = stdout.toString().trim()
+    if (migratePath === '') {
+        throw new Error('migrate command not found')
+    }
+
     // Determine the path of the migrate script. This will cover the case
     // where `yarn test` is run from within the root or from the lsif directory.
     // const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
@@ -44,13 +51,12 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     }
 
     // Construct postgres connection string using environment above
-    const connectionString = `postgres://${username}:${password}@${host}:${port}/${database}?sslmode=disable`
+    const connectionString = 'postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable'
 
     // Define command text
     const createCommand = `createdb ${database}`
     const dropCommand = `dropdb --if-exists ${database}`
-    // const migrateCommand = `${migrateScriptPath} up`
-    const migrateCommand = `migrate -database "${connectionString}" -path  ${migrationsPath} up`
+    const migrateCommand = `${migratePath} -database "${connectionString}" -path  ${migrationsPath} up`
 
     // Create cleanup function to run after test
     const cleanup = (): Promise<void> => child_process.exec(dropCommand, { env }).then(() => {})
@@ -59,15 +65,8 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     await child_process.exec(createCommand, { env })
 
     try {
-        console.log('PERFORMING SANITY CHECK')
-        console.log('which migrate', await child_process.exec('which migrate'))
-        console.log('hash migrate', await child_process.exec('hash migrate'))
-        console.log('migrate --version', await child_process.exec('migrate --version'))
-        console.log(`echo "${connectionString}"`, await child_process.exec(`echo "${connectionString}"`, { env }))
         // Run migrations then connect to database
-        console.log(migrateCommand, await child_process.exec(migrateCommand, { env, shell: '/bin/sh' }))
-        console.log('DONE WITH SANITY CHECK')
-
+        await child_process.exec(migrateCommand, { env })
         const connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
         return { connection, cleanup }
     } catch (error) {
