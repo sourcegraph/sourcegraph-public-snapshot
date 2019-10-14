@@ -1,6 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { dbFilename, mustGet } from './util'
+import { dbFilename, mustGet, NoLSIFDumpError } from './util'
 import { XrepoDatabase } from './xrepo'
 import { TracingContext, logAndTraceCall, addTags, logSpan } from './tracing'
 import * as constants from './constants'
@@ -422,16 +422,3 @@ function stripPrefix(prefix: string, s: string): string {
 function mapLocation(map: (uri: string) => string, { uri, range }: lsp.Location): lsp.Location {
     return lsp.Location.create(map(uri), range)
 }
-
-/**
- * No matching LSIF dump was found. This could be because:
- *
- * - You're currently browsing while on a commit that is too far away from the
- *   last uploaded LSIF dump
- * - You're currently viewing a file that is under a different root from what
- *   the LSIF dump is associated with (i.e. the current file is not contained in
- *   the dump)
- * - You're currently viewing a file that is not part of the LSIF dump (e.g. due
- *   to tsconfig.json exclude rules)
- */
-export class NoLSIFDumpError extends Error {}

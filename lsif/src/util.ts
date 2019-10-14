@@ -148,3 +148,16 @@ export async function ensureDirectory(path: string): Promise<void> {
 export function getBatchSize(numFields: number): number {
     return Math.floor(999 / numFields)
 }
+
+/**
+ * No matching LSIF dump was found. This could be because:
+ *
+ * - You're currently browsing while on a commit that is too far away from the
+ *   last uploaded LSIF dump
+ * - You're currently viewing a file that is under a different root from what
+ *   the LSIF dump is associated with (i.e. the current file is not contained in
+ *   the dump)
+ * - You're currently viewing a file that is not part of the LSIF dump (e.g. due
+ *   to tsconfig.json exclude rules)
+ */
+export class NoLSIFDumpError extends Error {}
