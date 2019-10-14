@@ -388,8 +388,11 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 		changesetIDs[i] = c.ID
 	}
 
-	eventsOpts := ee.ListChangesetEventsOpts{ChangesetIDs: changesetIDs}
-	es, err := r.store.ListAllChangesetEvents(ctx, eventsOpts)
+	eventsOpts := ee.ListChangesetEventsOpts{
+		ChangesetIDs: changesetIDs,
+		Limit:        -1,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
 	if err != nil {
 		return resolvers, err
 	}
@@ -642,8 +645,11 @@ func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetRevie
 		return r.Changeset.ReviewState()
 	}
 
-	opts := ee.ListChangesetEventsOpts{ChangesetIDs: []int64{r.Changeset.ID}}
-	es, err := r.store.ListAllChangesetEvents(ctx, opts)
+	opts := ee.ListChangesetEventsOpts{
+		ChangesetIDs: []int64{r.Changeset.ID},
+		Limit:        -1,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, opts)
 	if err != nil {
 		return a8n.ChangesetReviewStatePending, err
 	}

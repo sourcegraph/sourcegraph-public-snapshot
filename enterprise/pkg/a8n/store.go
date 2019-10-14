@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -571,7 +572,6 @@ SELECT
 FROM changeset_events
 WHERE %s
 ORDER BY id ASC
-LIMIT %s
 `
 
 func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
@@ -579,6 +579,11 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 		opts.Limit = defaultListLimit
 	}
 	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
@@ -596,9 +601,8 @@ func listChangesetEventsQuery(opts *ListChangesetEventsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetEventsQueryFmtstr,
+		listChangesetEventsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
-		opts.Limit,
 	)
 }
 
