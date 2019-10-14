@@ -18,7 +18,7 @@ When in doubt, reach out!
 Thank you
 EOF
 
-issues=$(hub issue --include-pulls -M "$1" -F "%I%n")
+issues=$(hub issue --include-pulls -M "$1" -f "%I%n")
 
 for i in $issues; do
   hub api --flat -XPOST "/repos/sourcegraph/sourcegraph/issues/$i/comments" -F "body=@comment.txt"
