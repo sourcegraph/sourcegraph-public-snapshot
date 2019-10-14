@@ -347,6 +347,7 @@ LIMIT %s
 `
 
 const defaultListLimit = 50
+const defaultListAllBatchSize = 1000
 
 func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	if opts.Limit == 0 {
@@ -505,6 +506,34 @@ type ListChangesetEventsOpts struct {
 	ChangesetIDs []int64
 	Cursor       int64
 	Limit        int
+}
+
+// ListAllChangesetEvents lists all ChangesetEvents with the given filters, except for Limit.
+func (s *Store) ListAllChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*a8n.ChangesetEvent, err error) {
+	opts.Limit = defaultListAllBatchSize
+
+	for {
+		var (
+			next  int64
+			batch = make([]*a8n.ChangesetEvent, opts.Limit)
+		)
+
+		batch, next, err = s.ListChangesetEvents(ctx, opts)
+		if err != nil {
+			return cs, err
+		}
+
+		for _, e := range batch {
+			cs = append(cs, e)
+		}
+
+		if next == 0 {
+			break
+		}
+		opts.Cursor = next
+	}
+
+	return cs, err
 }
 
 // ListChangesetEvents lists ChangesetEvents with the given filters.
