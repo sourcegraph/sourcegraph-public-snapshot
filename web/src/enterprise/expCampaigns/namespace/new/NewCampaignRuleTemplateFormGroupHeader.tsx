@@ -7,9 +7,10 @@ import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 
 interface Props {
     template: null | RuleTemplate | ErrorLike
+    ruleIndex: number
 }
 
-export const NewCampaignRuleTemplateFormGroupHeader: React.FunctionComponent<Props> = ({ template }) => {
+export const NewCampaignRuleTemplateFormGroupHeader: React.FunctionComponent<Props> = ({ template, ruleIndex }) => {
     const TemplateIcon = template !== null && !isErrorLike(template) ? template.icon : undefined
 
     return template === null || isErrorLike(template) ? (
@@ -21,8 +22,8 @@ export const NewCampaignRuleTemplateFormGroupHeader: React.FunctionComponent<Pro
             ) : (
                 <>
                     <h2 className="d-flex align-items-start">
-                        {TemplateIcon && <TemplateIcon className="icon-inline mr-2 flex-0" />} New campaign:{' '}
-                        {template.title}
+                        {TemplateIcon && <TemplateIcon className="icon-inline mr-2 flex-0" />}{' '}
+                        {ruleIndex === 0 ? 'New campaign:' : 'Next rule:'} {template.title}
                     </h2>
                     <p>
                         {template.detail && (

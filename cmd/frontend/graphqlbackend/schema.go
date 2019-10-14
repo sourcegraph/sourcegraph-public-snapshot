@@ -1168,7 +1168,7 @@ type Query {
     ruleContainer(id: ID!): RuleContainer
 
     # The result of running Comby.
-    comby(matchTemplate: String!, rule: String, rewriteTemplate: String): CombyPayload!
+    comby(repositoryNames: [String!]!, matchTemplate: String!, rule: String, rewriteTemplate: String): CombyPayload!
 }
 
 type CombyPayload {

@@ -39,9 +39,9 @@ export const RULE_TEMPLATES: RuleTemplate[] = [
               PackageJsonDependencyRuleTemplate,
               JavaDependencyRuleTemplate,
               NPMCredentialsRuleTemplate,
-              RubyGemDependencyRuleTemplate,
+              // RubyGemDependencyRuleTemplate,
               FindReplaceRuleTemplate,
-              TriageSearchResultsRuleTemplate,
+              // TriageSearchResultsRuleTemplate,
           ]
         : []),
     ExistingExternalChangesetsAndIssuesRuleTemplate,

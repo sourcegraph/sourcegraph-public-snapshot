@@ -16,11 +16,14 @@ export function register(): Unsubscribable {
     return subscriptions
 }
 
-async function rewrite(context: FindReplaceCampaignContext): Promise<sourcegraph.WorkspaceEdit> {
+async function rewrite(
+    context: FindReplaceCampaignContext,
+    repositoryNames: string[]
+): Promise<sourcegraph.WorkspaceEdit> {
     const { data, errors } = await queryGraphQL({
         query: `
-                query Comby($matchTemplate: String!, $rule: String, $rewriteTemplate: String!) {
-                    comby(matchTemplate: $matchTemplate, rule: $rule, rewriteTemplate: $rewriteTemplate) {
+                query Comby($repositoryNames: [String!]!, $matchTemplate: String!, $rule: String, $rewriteTemplate: String!) {
+                    comby(repositoryNames: $repositoryNames, matchTemplate: $matchTemplate, rule: $rule, rewriteTemplate: $rewriteTemplate) {
                         results {
                             file {
                                 path
@@ -37,6 +40,7 @@ async function rewrite(context: FindReplaceCampaignContext): Promise<sourcegraph
                 }
             `,
         vars: {
+            repositoryNames,
             matchTemplate: context.matchTemplate,
             rule: context.rule,
             rewriteTemplate: context.rewriteTemplate,

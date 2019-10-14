@@ -9,6 +9,7 @@ import (
 )
 
 type CombyQueryArgs struct {
+	RepositoryNames []string
 	MatchTemplate   string
 	Rule            *string
 	RewriteTemplate *string
@@ -17,15 +18,8 @@ type CombyQueryArgs struct {
 func (schemaResolver) Comby(ctx context.Context, arg *struct {
 	CombyQueryArgs
 }) (combyPayload, error) {
-	// TODO!(sqs): narrow down first
-	repoNames := []string{
-		"github.com/sd9/about",
-		"github.com/sd9/codeintellify",
-		"github.com/sd9/sourcegraph-lightstep",
-		"github.com/sd9/TypeScriptSamples",
-	}
 	var allResults []combyResult
-	for _, repoName := range repoNames {
+	for _, repoName := range arg.RepositoryNames {
 		results, err := runComby(ctx, &arg.CombyQueryArgs, repoName)
 		if err != nil {
 			return nil, err

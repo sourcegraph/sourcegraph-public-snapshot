@@ -8,6 +8,7 @@ import { NewCampaignRuleTemplateFormGroupHeader } from './NewCampaignRuleTemplat
 import { Link } from 'react-router-dom'
 import { RuleTemplateChooser } from '../../form/RuleTemplateChooser'
 import { EMPTY_RULE_TEMPLATE_ID } from '../../form/templates'
+import { CampaignFormAddRuleTemplateDropdownButton } from '../../form/CampaignFormAddRuleTemplateDropdownButton'
 
 interface Props extends CampaignFormProps {
     /** The URL of the form. */
@@ -51,6 +52,7 @@ export const NewCampaignForm: React.FunctionComponent<Props> = ({ match, locatio
                                 header={NewCampaignRuleTemplateFormGroupHeader}
                             />
                         ))}
+                        <CampaignFormAddRuleTemplateDropdownButton {...props} />
                         {form}
                         <div className="form-group mt-4">
                             <CreateCampaignButton
