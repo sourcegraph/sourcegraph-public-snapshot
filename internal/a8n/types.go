@@ -261,6 +261,93 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 	return &ee
 }
 
+// ChangesetEvents is a collection of changeset events
+type ChangesetEvents []*ChangesetEvent
+
+func (ce ChangesetEvents) Len() int      { return len(ce) }
+func (ce ChangesetEvents) Swap(i, j int) { ce[i], ce[j] = ce[j], ce[i] }
+
+// Less sorts changeset events by their Timestamps
+func (ce ChangesetEvents) Less(i, j int) bool {
+	return ce[i].Timestamp().Before(ce[j].Timestamp())
+}
+
+// ReviewState returns the overall review state of the review events in the
+// slice
+func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
+	reviewsByActor := map[string]ChangesetReviewState{}
+
+	for _, e := range ce {
+		switch e.Type() {
+		case ChangesetEventKindGitHubReviewed:
+			s, ok := e.ReviewState()
+			if !ok {
+				continue
+			}
+
+			actor := e.Actor()
+
+			reviewsByActor[actor] = s
+		}
+	}
+
+	states := make(map[ChangesetReviewState]bool)
+	for _, s := range reviewsByActor {
+		states[s] = true
+	}
+	return SelectReviewState(states), nil
+}
+
+// Actor returns the actor of the ChangesetEvent.
+func (e *ChangesetEvent) Actor() string {
+	var a string
+
+	switch e := e.Metadata.(type) {
+	case *github.AssignedEvent:
+		a = e.Actor.Login
+	case *github.ClosedEvent:
+		a = e.Actor.Login
+	case *github.IssueComment:
+		a = e.Author.Login
+	case *github.RenamedTitleEvent:
+		a = e.Actor.Login
+	case *github.MergedEvent:
+		a = e.Actor.Login
+	case *github.PullRequestReview:
+		a = e.Author.Login
+	case *github.PullRequestReviewComment:
+		a = e.Author.Login
+	case *github.ReopenedEvent:
+		a = e.Actor.Login
+	case *github.ReviewDismissedEvent:
+		a = e.Actor.Login
+	case *github.ReviewRequestRemovedEvent:
+		a = e.Actor.Login
+	case *github.ReviewRequestedEvent:
+		a = e.Actor.Login
+	case *github.UnassignedEvent:
+		a = e.Actor.Login
+	}
+
+	return a
+}
+
+// ReviewState returns the review state of the ChangesetEvent if it is a review event.
+func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, bool) {
+	var s ChangesetReviewState
+
+	review, ok := e.Metadata.(*github.PullRequestReview)
+	if !ok {
+		return s, false
+	}
+
+	s = ChangesetReviewState(review.State)
+	if !s.Valid() {
+		return s, false
+	}
+	return s, true
+}
+
 // Type returns the ChangesetEventKind of the ChangesetEvent.
 func (e *ChangesetEvent) Type() ChangesetEventKind {
 	return e.Kind

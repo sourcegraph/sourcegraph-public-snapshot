@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"path"
+	"sort"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -644,8 +646,41 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState() (a8n.ChangesetReviewState, error) {
-	return r.Changeset.ReviewState()
+func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {
+	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
+		return r.Changeset.ReviewState()
+	}
+
+	// Load all events for this changeset with type "review"
+	// Sort events by their timestamp
+	// Calculate latest review state
+	var (
+		events     a8n.ChangesetEvents
+		eventsOpts = ee.ListChangesetEventsOpts{
+			ChangesetIDs: []int64{r.Changeset.ID},
+			Limit:        1000,
+		}
+	)
+
+	for {
+		es, next, err := r.store.ListChangesetEvents(ctx, eventsOpts)
+		if err != nil {
+			return a8n.ChangesetReviewStatePending, err
+		}
+
+		for _, e := range es {
+			events = append(events, e)
+		}
+
+		if next == 0 {
+			break
+		}
+		eventsOpts.Cursor = next
+	}
+
+	sort.Sort(events)
+
+	return events.ReviewState()
 }
 
 func (r *changesetResolver) Events(ctx context.Context, args *struct {

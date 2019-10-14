@@ -149,7 +149,7 @@ type ChangesetResolver interface {
 	Body() (string, error)
 	State() (a8n.ChangesetState, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState() (a8n.ChangesetReviewState, error)
+	ReviewState(context.Context) (a8n.ChangesetReviewState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
