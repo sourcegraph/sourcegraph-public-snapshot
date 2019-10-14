@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+trap "rm -f comment.txt" EXIT
+
 cat > comment.txt <<EOF
 Dear all,
 
