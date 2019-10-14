@@ -71,7 +71,8 @@ func (es Events) Less(i, j int) bool {
 // CalcCounts calculates ChangesetCounts for the given Changesets and their
 // Events in the timeframe specified by the start and end parameters. The
 // number of ChangesetCounts returned is the number of 1 day intervals between
-// start and end, with each ChangesetCounts representing a point in time.
+// start and end, with each ChangesetCounts representing a point in time at the
+// boundary of each 24h interval.
 func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*ChangesetCounts, error) {
 	ts := generateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
