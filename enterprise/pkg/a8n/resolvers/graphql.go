@@ -741,7 +741,7 @@ type changesetCountsResolver struct {
 }
 
 func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{r.counts.Time}
+	return graphqlbackend.DateTime{Time: r.counts.Time}
 }
 func (r *changesetCountsResolver) Total() int32                { return r.counts.Total }
 func (r *changesetCountsResolver) Merged() int32               { return r.counts.Merged }

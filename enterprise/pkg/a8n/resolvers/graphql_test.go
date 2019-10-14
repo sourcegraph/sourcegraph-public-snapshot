@@ -724,9 +724,12 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	r := &campaignResolver{store: store, Campaign: campaign}
 	rs, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
-		From: &graphqlbackend.DateTime{start},
-		To:   &graphqlbackend.DateTime{end},
+		From: &graphqlbackend.DateTime{Time: start},
+		To:   &graphqlbackend.DateTime{Time: end},
 	})
+	if err != nil {
+		t.Fatalf("ChangsetCountsOverTime failed with error: %s", err)
+	}
 
 	have := make([]*ee.ChangesetCounts, 0, len(rs))
 	for _, cr := range rs {
@@ -851,7 +854,7 @@ func marshalJSON(t testing.TB, v interface{}) string {
 func marshalDateTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
-	dt := graphqlbackend.DateTime{ts}
+	dt := graphqlbackend.DateTime{Time: ts}
 
 	bs, err := dt.MarshalJSON()
 	if err != nil {

@@ -543,17 +543,6 @@ func TestCalcCounts(t *testing.T) {
 	}
 }
 
-func parse(t testing.TB, ts string) time.Time {
-	t.Helper()
-
-	timestamp, err := time.Parse(time.RFC3339, ts)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return timestamp
-}
-
 type fakeEvent struct {
 	t    time.Time
 	kind a8n.ChangesetEventKind
