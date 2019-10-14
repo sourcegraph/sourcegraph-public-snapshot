@@ -2,36 +2,150 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as uuid from 'uuid'
 import { Connection } from 'typeorm'
-import { createSqliteConnection } from './connection'
+import { connectPostgres } from './connection'
 import { lsp } from 'lsif-protocol'
-import { Readable } from 'stream'
+import { child_process } from 'mz'
+import { convertLsif } from './importer'
+import { XrepoDatabase } from './xrepo'
+import { dbFilename } from './util'
+import { userInfo } from 'os'
 
 /**
- * Return a filesystem read stream for the given test file. This will cover
- * the cases where `yarn test` is ran from the root or from the lsif directory.
- *
- * @param filename The path relative to test-data directory.
+ * Create a new postgres database with a random suffix, apply the frontend
+ * migrations (via the ./dev/migrate.sh script) and return an open connection.
+ * This uses the PG* environment variables for host, port, user, and password.
+ * This also returns a cleanup function that will destroy the database, which
+ * should be called at the end of the test.
  */
-export async function getTestData(filename: string): Promise<Readable> {
-    return fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
+export async function createCleanPostgresDatabase(): Promise<{ connection: Connection; cleanup: () => Promise<void> }> {
+    // Each test has a random dbname suffix
+    const suffix = uuid.v4().substring(0, 8)
+
+    // Pull test db config from environment
+    const host = process.env.PGHOST || 'localhost'
+    const port = parseInt(process.env.PGPORT || '5432', 10)
+    const username = process.env.PGUSER || userInfo().username || 'postgres'
+    const password = process.env.PGPASSWORD || ''
+    const database = `sourcegraph-test-lsif-xrepo-${suffix}`
+
+    // Determine the path of the migrate script. This will cover the case
+    // where `yarn test` is run from within the root or from the lsif directory.
+    // const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
+    const migrationsPath = path.join((await fs.exists('migrations')) ? '' : '..', 'migrations')
+
+    // Ensure environment gets passed to child commands
+    const env = {
+        ...process.env,
+        PGHOST: host,
+        PGPORT: `${port}`,
+        PGUSER: username,
+        PGPASSWORD: password,
+        PGSSLMODE: 'disable',
+        PGDATABASE: database,
+    }
+
+    // Construct postgres connection string using environment above. We disable this
+    // eslint rule because we want it to use bash interpolation, not typescript string
+    // templates.
+    //
+    // eslint-disable-next-line no-template-curly-in-string
+    const connectionString = 'postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable'
+
+    // Define command text
+    const createCommand = `createdb ${database}`
+    const dropCommand = `dropdb --if-exists ${database}`
+    const migrateCommand = `migrate -database "${connectionString}" -path  ${migrationsPath} up`
+
+    // Create cleanup function to run after test. This will close the connection
+    // created below (if successful), then destroy the database that was created
+    // for the test. It is necessary to close teh database first, otherwise we
+    // get failures during the after hooks:
+    //
+    // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-xrepo-5033c9e8" is being accessed by other users
+
+    let connection: Connection
+    const cleanup = async (): Promise<void> => {
+        if (connection) {
+            await connection.close()
+        }
+
+        await child_process.exec(dropCommand, { env }).then(() => {})
+    }
+
+    // Try to create database
+    await child_process.exec(createCommand, { env })
+
+    try {
+        // Run migrations then connect to database
+        await child_process.exec(migrateCommand, { env })
+        connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
+        return { connection, cleanup }
+    } catch (error) {
+        // We made a database but can't use it - try to clean up
+        // before throwing the original error.
+
+        try {
+            await cleanup()
+        } catch (error) {
+            // If a new error occurs, swallow it
+        }
+
+        // Throw the original error
+        throw error
+    }
 }
 
 /**
- * Create a new SQLite database connection with a randomized filename and
- * connection cache key.
+ * Truncate all tables that do not match `schema_migrations`.
  *
- * @param storageRoot The directory in which to create the database.
- * @param entities The set of expected entities present in this schema.
+ * @param connection The connection to use.
  */
-export function getCleanSqliteDatabase(
+export async function truncatePostgresTables(connection: Connection): Promise<void> {
+    const results = (await connection.query(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'"
+    )) as { table_name: string }[]
+
+    const tableNames = results.map(row => row.table_name).join(', ')
+    await connection.query(`truncate ${tableNames} restart identity`)
+}
+
+/**
+ * Mock an upload of the given file. This will create a SQLite database in the
+ * given storage root and will insert dump, package, and reference data into
+ * the given cross-repository database.
+ *
+ * @param xrepoDatabase The cross-repository database.
+ * @param storageRoot The temporary storage root.
+ * @param repository The repository name.
+ * @param commit The commit.
+ * @param filename The filename of the (gzipped) LSIF dump.
+ */
+export async function convertTestData(
+    xrepoDatabase: XrepoDatabase,
     storageRoot: string,
-    // Decorators are not possible type check
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    entities: Function[]
-): Promise<Connection> {
-    return createSqliteConnection(path.join(storageRoot, `${uuid.v4()}.db`), entities)
+    repository: string,
+    commit: string,
+    filename: string
+): Promise<void> {
+    // Create a filesystem read stream for the given test file. This will cover
+    // the cases where `yarn test` is run from the root or from the lsif directory.
+    const input = fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
+
+    const tmp = path.join(storageRoot, 'tmp')
+    const { packages, references } = await convertLsif(input, tmp)
+    const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+    await fs.rename(tmp, dbFilename(storageRoot, dumpID, repository, commit))
 }
 
+/**
+ * Create an LSP location.
+ *
+ * @param uri The document path.
+ * @param startLine The starting line.
+ * @param startCharacter The starting character.
+ * @param endLine The ending line.
+ * @param endCharacter The ending character.
+ */
 export function createLocation(
     uri: string,
     startLine: number,
@@ -45,6 +159,16 @@ export function createLocation(
     })
 }
 
+/**
+ * Create an LSP location with a remote URI.
+ *
+ * @param repository The repository name.
+ * @param path The document path.
+ * @param startLine The starting line.
+ * @param startCharacter The starting character.
+ * @param endLine The ending line.
+ * @param endCharacter The ending character.
+ */
 export function createRemoteLocation(
     repository: string,
     path: string,
@@ -60,6 +184,11 @@ export function createRemoteLocation(
     return createLocation(url.href, startLine, startCharacter, endLine, endCharacter)
 }
 
+/**
+ * Create a 40-character commit by repeating the given string.
+ *
+ * @param repository The repository name.
+ */
 export function createCommit(repository: string): string {
     return repository.repeat(40).substring(0, 40)
 }

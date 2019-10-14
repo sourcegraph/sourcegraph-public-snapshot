@@ -1,17 +1,18 @@
-import * as path from 'path'
 import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './importer'
-import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
+import { createCommit, createLocation, convertTestData, createCleanPostgresDatabase } from './test-utils'
 import { dbFilename } from './util'
 import { Database } from './database'
-import { entities } from './xrepo.models'
 import { XrepoDatabase } from './xrepo'
+import { Connection } from 'typeorm'
 
 describe('Database', () => {
+    let connection!: Connection
+    let cleanup!: () => Promise<void>
     let storageRoot!: string
     let xrepoDatabase!: XrepoDatabase
+
     const repository = 'five'
     const commit = createCommit('five')
 
@@ -20,19 +21,27 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
+        ;({ connection, cleanup } = await createCleanPostgresDatabase())
         storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, entities))
+        xrepoDatabase = new XrepoDatabase(connection)
 
-        const input = await getTestData('cpp/data/data.lsif.gz')
-        const tmp = path.join(storageRoot, 'tmp')
-        const { packages, references } = await convertLsif(input, tmp)
-        const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
-        await fs.rename(tmp, dbFilename(storageRoot, dumpID, repository, commit))
+        // Prepare test data
+        await convertTestData(xrepoDatabase, storageRoot, repository, commit, 'cpp/data/data.lsif.gz')
     })
 
-    afterAll(async () => await rmfr(storageRoot))
+    afterAll(async () => {
+        await rmfr(storageRoot)
+
+        if (cleanup) {
+            await cleanup()
+        }
+    })
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database> => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const dump = await xrepoDatabase.getDump(repository, commit)
         if (!dump) {
             throw new Error(`Unknown repository@commit ${repository}@${commit}`)
