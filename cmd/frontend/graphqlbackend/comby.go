@@ -47,7 +47,7 @@ func runComby(ctx context.Context, arg *CombyQueryArgs, repoName string) ([]comb
 	}, &args{
 		matchTemplate:     arg.MatchTemplate,
 		rewriteTemplate:   s(arg.RewriteTemplate),
-		includeFileFilter: ".test.ts,.ts,.tsx,.go",
+		includeFileFilter: ".test.ts,.ts,.tsx,.go,.java,.gradle",
 	})
 	if err != nil {
 		return nil, err

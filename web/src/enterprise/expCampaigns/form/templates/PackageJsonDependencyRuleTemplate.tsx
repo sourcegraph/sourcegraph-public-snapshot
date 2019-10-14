@@ -119,11 +119,9 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
     const onActionRequireVersionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => {
             setActionRequireVersion(e.currentTarget.value)
-            if (context && context.action && context.action !== 'ban') {
-                updateContext({ action: { requireVersion: e.currentTarget.value } })
-            }
+            updateContext({ action: { requireVersion: e.currentTarget.value } })
         },
-        [context, updateContext]
+        [updateContext]
     )
 
     const onActionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -184,7 +182,6 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 size={15}
                                 value={context.matchVersion || ''}
                                 onChange={onMatchVersionChange}
-                                autoFocus={true}
                                 disabled={disabled}
                             />
                         </div>

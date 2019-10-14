@@ -117,11 +117,9 @@ const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
     const onActionRequireVersionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         e => {
             setActionRequireVersion(e.currentTarget.value)
-            if (context && context.action && context.action !== 'ban') {
-                updateContext({ action: { requireVersion: e.currentTarget.value } })
-            }
+            updateContext({ action: { requireVersion: e.currentTarget.value } })
         },
-        [context, updateContext]
+        [updateContext]
     )
 
     const onActionChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -148,7 +146,7 @@ const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
         <>
             <div className="form-group">
                 <div className="form-row">
-                    <div className="col col-md-4">
+                    <div className="col col-xl-4">
                         <label htmlFor="campaign-template-form__packageName">Dependency group and name</label>
                         <input
                             type="text"
@@ -166,7 +164,7 @@ const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
                             Examples: <code className="border-bottom small mr-2">com.google.guava:guava</code>{' '}
                         </p>
                     </div>
-                    <div className="col col-md-3">
+                    <div className="col col-xl-3">
                         <label htmlFor="campaign-template-form__matchVersion">Version range</label>
                         <div className="input-group">
                             <div className="input-group-prepend">
@@ -181,7 +179,6 @@ const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
                                 size={15}
                                 value={context.matchVersion || ''}
                                 onChange={onMatchVersionChange}
-                                autoFocus={true}
                                 disabled={disabled}
                             />
                         </div>

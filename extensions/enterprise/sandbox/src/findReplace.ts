@@ -18,7 +18,7 @@ export function register(): Unsubscribable {
 
 async function rewrite(
     context: FindReplaceCampaignContext,
-    repositoryNames: string[]
+    repositoryNames: string[] = ['github.com/sd9/guava19to21-sample'] // TODO!(sqs)
 ): Promise<sourcegraph.WorkspaceEdit> {
     const { data, errors } = await queryGraphQL({
         query: `
@@ -55,23 +55,13 @@ async function rewrite(
     const docs = await Promise.all(canonicalURLs.map(url => sourcegraph.workspace.openTextDocument(new URL(url))))
 
     const edit = new sourcegraph.WorkspaceEdit()
-    for (const doc of docs) {
+    for (const [i, doc] of docs.entries()) {
         if (doc.text!.length > 15000) {
             continue // TODO!(sqs): skip too large
         }
-
-        // TODO!(sqs): actually implement comby by hitting the api or something
-        let i = 0
-        while (i !== -1 && i < doc.text!.length) {
-            i = doc.text!.indexOf(context.matchTemplate, i)
-            if (i !== -1) {
-                const start = doc.positionAt(i)
-                const end = doc.positionAt(i + context.matchTemplate.length)
-                edit.replace(new URL(doc.uri), new sourcegraph.Range(start, end), context.rewriteTemplate)
-                i += context.matchTemplate.length
-            }
-        }
+        edit.set(new URL(doc.uri), [sourcegraph.TextEdit.patch(data.comby.results[i].rawDiff)])
     }
 
+    console.log(edit.toJSON())
     return (edit as any).toJSON()
 }

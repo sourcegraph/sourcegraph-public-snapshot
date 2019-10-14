@@ -59,10 +59,9 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 		}
 
 		var args []string
-		args = append(args, spec.MatchTemplate, spec.RewriteTemplate)
 
 		if spec.FileExtension != "" {
-			args = append(args, spec.FileExtension)
+			args = append(args, "-extensions", spec.FileExtension)
 		}
 
 		args = append(args, "-zip", zipPath, "-json-lines", "-json-only-diff")
@@ -70,6 +69,8 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 		if spec.DirectoryExclude != "" {
 			args = append(args, "-exclude-dir", spec.DirectoryExclude)
 		}
+
+		args = append(args, spec.MatchTemplate, spec.RewriteTemplate)
 
 		log15.Info(fmt.Sprintf("running command: comby %q", strings.Join(args[:], " ")))
 		return exec.Command(t.BinaryPath, args...), nil
