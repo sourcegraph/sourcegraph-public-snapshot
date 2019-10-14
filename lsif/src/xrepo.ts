@@ -148,7 +148,7 @@ export class XrepoDatabase {
                 commit: string
             }[]
 
-            if (results.length === 0 || !results[0].commit) {
+            if (results.length === 0) {
                 return undefined
             }
 
