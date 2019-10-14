@@ -10,9 +10,9 @@ failed=false
 
 for i; do
 	case $i in
-	# "cmd/frontend/graphqlbackend/schema.graphql")
-	# 	generate_graphql=true
-	# 	;;
+	"cmd/frontend/graphqlbackend/schema.graphql")
+		generate_graphql=true
+		;;
     docker-images/grafana/jsonnet/*.jsonnet)
         generate_dashboards=true
         ;;

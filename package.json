@@ -19,6 +19,7 @@
     "all:typecheck": "gulp generate && dev/foreach-ts-project.sh yarn -s run typecheck -p tsconfig.json",
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
+    "prepublish": "gulp generate",
     "test": "jest --testPathIgnorePatterns e2e regression",
     "storybook": "start-storybook -p 9001 -c .storybook",
     "storybook:build": "build-storybook -c .storybook",
