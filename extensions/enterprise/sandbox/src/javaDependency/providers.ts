@@ -1,13 +1,13 @@
-import { flatten } from 'lodash'
+// TODO!(sqs): https://github.com/kevcodez/gradle-upgrade-interactive/blob/master/ReplaceVersion.js
+
 import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
 import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { npmPackageManager } from './npm/npm'
-import { JavaDependency, ResolvedDependency } from './packageManager'
-import { yarnPackageManager } from './yarn/yarn'
-
-// TODO!(sqs): https://github.com/kevcodez/gradle-upgrade-interactive/blob/master/ReplaceVersion.js
+import { JavaDependencyQuery } from './packageManager'
+import { javaDependencyManagementProviderRegistry } from './providers'
+import { DependencySpecificationWithType } from '../dependencyManagement/combinedProvider'
+import { toLocation } from '../../../../../shared/src/api/extension/api/types'
 
 const COMMAND_ID = 'javaDependency.action'
 
@@ -28,6 +28,7 @@ export function register(): Unsubscribable {
     subscriptions.add(
         sourcegraph.workspace.registerDiagnosticProvider('javaDependency', {
             provideDiagnostics: (_scope, context) =>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 provideDiagnostics((context as any) as JavaDependencyCampaignContext).pipe(
                     filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING)
                 ),
@@ -37,9 +38,9 @@ export function register(): Unsubscribable {
     subscriptions.add(
         sourcegraph.commands.registerActionEditCommand(COMMAND_ID, diagnostic => {
             if (!diagnostic || (diagnostic.tags && !diagnostic.tags.includes('fix'))) {
-                return new sourcegraph.WorkspaceEdit()
+                return Promise.resolve(new sourcegraph.WorkspaceEdit())
             }
-            return editForDependencyAction(diagnostic)
+            return editForDependencyAction(diagnostic).toPromise()
         })
     )
     return subscriptions
@@ -47,11 +48,8 @@ export function register(): Unsubscribable {
 
 const DEPENDENCY_TAG = 'type:javaDependency'
 
-interface DiagnosticData {
-    dependency: ResolvedDependency
-    packageJson: { uri: string; text: string }
-    lockfile: { uri: string; text: string }
-    action: { requireVersion: string }
+interface DiagnosticData extends DependencySpecificationWithType<JavaDependencyQuery> {
+    action: JavaDependencyCampaignContext['action']
 }
 
 function provideDiagnostics({
@@ -65,75 +63,55 @@ function provideDiagnostics({
         ? from(sourcegraph.workspace.rootChanges).pipe(
               startWith(undefined),
               map(() => sourcegraph.workspace.roots),
-              switchMap(async roots => {
+              switchMap(roots => {
                   if (roots.length > 0) {
-                      return [] as sourcegraph.Diagnostic[] // TODO!(sqs): dont run in comparison mode
+                      return of<sourcegraph.Diagnostic[]>([]) // TODO!(sqs): dont run in comparison mode
                   }
 
-                  const matchDep: JavaDependency = {
+                  const depQuery: JavaDependencyQuery = {
                       name: packageName,
-                      version: matchVersion,
+                      versionRange: matchVersion,
                   }
-                  const hits = [
-                      ...(await npmPackageManager.packagesWithDependencySatisfyingVersionRange(matchDep, filters)).map(
-                          d => ({
-                              ...d,
-                              type: 'npm' as const,
-                          })
-                      ),
-                      ...(await yarnPackageManager.packagesWithDependencySatisfyingVersionRange(matchDep, filters)).map(
-                          d => ({
-                              ...d,
-                              type: 'yarn' as const,
-                          })
-                      ),
-                  ]
-                  return flatten(
-                      hits
-                          .map(({ type, ...hit }) => {
-                              let matchRange = findMatchRange(hit.packageJson.text!, `"${packageName}"`)
-                              let matchDoc: sourcegraph.TextDocument | undefined
-                              if (matchRange) {
-                                  matchDoc = hit.packageJson
-                              }
-                              if (!matchRange) {
-                                  matchRange = findMatchRange(
-                                      hit.lockfile.text!,
-                                      type === 'npm' ? `"${packageName}"` : `${packageName}@`
-                                  )
-                                  if (matchRange) {
-                                      matchDoc = hit.lockfile
+                  const specs = javaDependencyManagementProviderRegistry.provideDependencySpecifications(
+                      depQuery,
+                      filters
+                  )
+                  return specs.pipe(
+                      map(specs =>
+                          specs
+                              .map(spec => {
+                                  if (spec.error) {
+                                      console.error(spec.error)
+                                      return null
                                   }
-                              }
-
-                              if (!matchRange || !matchDoc) {
-                                  return null
-                              }
-
-                              const diagnostic: sourcegraph.Diagnostic = {
-                                  resource: new URL(matchDoc.uri),
-                                  message: `${
-                                      matchDoc === hit.lockfile ? 'Indirect ' : ''
-                                  }npm dependency ${packageName}${matchVersion === '*' ? '' : `@${matchVersion}`} ${
-                                      action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`
-                                  }`,
-                                  range: matchRange,
-                                  severity: sourcegraph.DiagnosticSeverity.Warning,
-                                  // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
-                                  data: JSON.stringify({
-                                      dependency: hit.dependency,
-                                      packageJson: { uri: hit.packageJson.uri },
-                                      lockfile: { uri: hit.lockfile.uri },
-                                      action,
-                                      type,
-                                  } as DiagnosticData),
-                                  tags: [DEPENDENCY_TAG, packageName, createChangesets ? 'fix' : undefined].filter(
-                                      isDefined
-                                  ),
-                              }
-                              return [diagnostic]
-                          })
-                          .filter(isDefined)
+                                  const specMain = spec.declarations[0]
+                                      ? spec.declarations[0]
+                                      : { ...spec.resolutions[0], direct: false }
+                                  if (!specMain.location) {
+                                      return null
+                                  }
+                                  const data: DiagnosticData = { ...spec, action }
+                                  const diagnostic: sourcegraph.Diagnostic = {
+                                      resource: specMain.location.uri,
+                                      message: `${specMain.direct ? '' : 'Indirect '}npm dependency ${specMain.name}${
+                                          depQuery.versionRange === '*' ? '' : `@${depQuery.versionRange}`
+                                      } ${
+                                          action === 'ban'
+                                              ? 'is banned'
+                                              : `must be upgraded to ${action.requireVersion}`
+                                      }`,
+                                      range: specMain.location.range || new sourcegraph.Range(0, 0, 0, 0),
+                                      severity: sourcegraph.DiagnosticSeverity.Warning,
+                                      // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                      data: JSON.stringify(data),
+                                      tags: [DEPENDENCY_TAG, packageName, createChangesets ? 'fix' : undefined].filter(
+                                          isDefined
+                                      ),
+                                  }
+                                  return diagnostic
+                              })
+                              .filter(isDefined)
+                      )
                   )
               }),
               startWith(LOADING)
@@ -143,31 +121,23 @@ function provideDiagnostics({
 
 function createCodeActionProvider(): sourcegraph.CodeActionProvider {
     return {
-        provideCodeActions: async (_doc, _rangeOrSelection, context): Promise<sourcegraph.Action[]> => {
+        provideCodeActions: (_doc, _rangeOrSelection, context): Observable<sourcegraph.Action[]> => {
             const diag = context.diagnostics.find(d => isProviderDiagnostic(d) && d.tags && d.tags.includes('fix'))
             if (!diag) {
-                return []
+                return of<sourcegraph.Action[]>([])
             }
-            return [
-                {
-                    title: 'Upgrade dependency in package.json',
-                    edit: await editForDependencyAction(diag),
-                    computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
-                    diagnostics: [diag],
-                },
-            ]
+            return editForDependencyAction(diag).pipe(
+                map(edit => [
+                    {
+                        title: 'Upgrade dependency in package.json',
+                        edit,
+                        computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
+                        diagnostics: [diag],
+                    },
+                ])
+            )
         },
     }
-}
-
-function findMatchRange(text: string, str: string): sourcegraph.Range | null {
-    for (const [i, line] of text.split('\n').entries()) {
-        const j = line.indexOf(str)
-        if (j !== -1) {
-            return new sourcegraph.Range(i, j, i, j + str.length)
-        }
-    }
-    return null
 }
 
 function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
@@ -175,17 +145,24 @@ function isProviderDiagnostic(diag: sourcegraph.Diagnostic): boolean {
 }
 
 function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
-    return JSON.parse(diag.data!)
+    if (!diag.data) {
+        throw new Error('no diagnostic data')
+    }
+    const parsed: DiagnosticData = JSON.parse(diag.data)
+    return {
+        ...parsed,
+        declarations: parsed.declarations.map(d => ({ ...d, location: toLocation(d.location as any) })),
+        resolutions: parsed.resolutions.map(r => ({
+            ...r,
+            location: r.location ? toLocation(r.location as any) : undefined,
+        })),
+    }
 }
 
-async function editForDependencyAction(diag: sourcegraph.Diagnostic): Promise<sourcegraph.WorkspaceEdit> {
+function editForDependencyAction(diag: sourcegraph.Diagnostic): Observable<sourcegraph.WorkspaceEdit> {
     const data = getDiagnosticData(diag)
-    return await (data.type === 'npm' ? npmPackageManager : yarnPackageManager).editForDependencyAction(
-        {
-            packageJson: await sourcegraph.workspace.openTextDocument(new URL(data.packageJson.uri)),
-            lockfile: await sourcegraph.workspace.openTextDocument(new URL(data.lockfile.uri)),
-            dependency: data.dependency,
-        },
-        data.action
-    )
+    if (data.action === 'ban') {
+        return javaDependencyManagementProviderRegistry.resolveDependencyBanAction(data)
+    }
+    return javaDependencyManagementProviderRegistry.resolveDependencyUpgradeAction(data, data.action.requireVersion)
 }

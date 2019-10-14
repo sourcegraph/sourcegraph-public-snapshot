@@ -1,13 +1,12 @@
 import { from, merge } from 'rxjs'
 import { toArray, switchMap, filter } from 'rxjs/operators'
-import semver from 'semver'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import { ResolvedDependency, PackageJsonDependencyManagementProvider } from '../packageManager'
-import { editForCommands2 } from '../packageManagerCommon'
+import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '../providers'
 import { lockTree } from './logicalTree'
-import { provideDependencySpecification } from '../util'
+import { provideDependencySpecification, editForCommands2, traversePackageJsonLockfile } from '../util'
+import { DependencySpecification } from '../../dependencyManagement'
 
 const npmExecClient = createExecServerClient('a8n-npm-exec')
 
@@ -15,15 +14,11 @@ const NPM_OPTS = ['--no-audit', '--package-lock-only', '--ignore-scripts']
 
 export const npmPackageManager: PackageJsonDependencyManagementProvider = {
     type: 'npm',
-    provideDependencySpecifications: (query, filters = '') => {
-        const parsedQuery = {
-            ...query,
-            parsedVersionRange: new semver.Range(query.versionRange),
-        }
-        return from(
+    provideDependencySpecifications: (query, filters = '') =>
+        from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `'"${parsedQuery.name}"' ${filters}`,
+                    pattern: `'"${query.name}"' ${filters}`,
                     type: 'regexp',
                 },
                 {
@@ -45,7 +40,7 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
                         provideDependencySpecification(
                             new URL(textSearchResult.uri.replace(/package-lock\.json$/, 'package.json')),
                             new URL(textSearchResult.uri),
-                            parsedQuery,
+                            query,
                             getPackageLockDependency
                         )
                     )
@@ -54,8 +49,7 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
                     toArray()
                 )
             )
-        )
-    },
+        ),
     resolveDependencyUpgradeAction: (dep, version) => {
         // TODO!(sqs): this is not correct w.r.t. indirect deps
         if (dep.declarations.length !== 1) {
@@ -91,18 +85,8 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
 function getPackageLockDependency(
     packageJson: string,
     packageLock: string,
-    packageName: string
-): ResolvedDependency | null {
+    parsedQuery: PackageJsonDependencyQuery
+): Pick<DependencySpecification<PackageJsonDependencyQuery>, 'declarations' | 'resolutions'> {
     const tree = lockTree(JSON.parse(packageJson), JSON.parse(packageLock))
-    let found: any
-    // eslint-disable-next-line ban/ban
-    tree.forEach((dep: any, next: any) => {
-        if (dep.name === packageName) {
-            found = dep
-        } else {
-            // eslint-disable-next-line callback-return
-            next()
-        }
-    })
-    return found ? { name: packageName, version: found.version, direct: !!tree.getDep(packageName) } : null
+    return traversePackageJsonLockfile(tree, parsedQuery)
 }

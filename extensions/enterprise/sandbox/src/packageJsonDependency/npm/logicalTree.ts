@@ -4,9 +4,19 @@
 
 import path from 'path'
 
-interface Opts {
+export interface Dependency extends Node, NodeInfo {}
+
+export interface Node {
+    name: string
     version: string
-    address?: string
+    address: string | null
+    dependencies: Map<string, Node>
+    requiredBy: Set<Node>
+    isRoot: boolean
+}
+
+interface NodeInfo {
+    version: string
     optional?: boolean
     dev?: boolean
     bundled?: boolean
@@ -14,42 +24,37 @@ interface Opts {
     integrity: boolean
 }
 
-class LogicalTree implements Opts {
-    public name: string
+export class LogicalTree implements Node, NodeInfo {
     public version: string
-    public address?: string
     public optional?: boolean
     public dev?: boolean
     public bundled?: boolean
     public resolved: string
     public integrity: boolean
-    public dependencies: Map<string, any>
-    public requiredBy: Set<any>
+    public dependencies = new Map<string, Node>()
+    public requiredBy = new Set<Node>()
 
-    constructor(name: string, address: string, opts: Opts) {
+    constructor(public readonly name: string, public readonly address: string | null, info: NodeInfo) {
         this.name = name
-        this.version = opts.version
-        this.address = address || ''
-        this.optional = !!opts.optional
-        this.dev = !!opts.dev
-        this.bundled = !!opts.bundled
-        this.resolved = opts.resolved
-        this.integrity = opts.integrity
-        this.dependencies = new Map()
-        this.requiredBy = new Set()
+        this.version = info.version
+        this.optional = !!info.optional
+        this.dev = !!info.dev
+        this.bundled = !!info.bundled
+        this.resolved = info.resolved
+        this.integrity = info.integrity
     }
 
     public get isRoot(): boolean {
         return !this.requiredBy.size
     }
 
-    public addDep(dep: any) {
+    public addDep(dep: Node) {
         this.dependencies.set(dep.name, dep)
         dep.requiredBy.add(this)
         return this
     }
 
-    public delDep(dep: any) {
+    public delDep(dep: Node) {
         this.dependencies.delete(dep.name)
         dep.requiredBy.delete(this)
         return this
@@ -89,30 +94,7 @@ class LogicalTree implements Opts {
         return false
     }
 
-    public forEachAsync(fn: any, opts: any, _pending?: any) {
-        if (!opts) {
-            opts = _pending || {}
-        }
-        if (!_pending) {
-            _pending = new Map()
-        }
-        const P = opts.Promise || Promise
-        if (_pending.has(this)) {
-            return P.resolve(this.hasCycle() || _pending.get(this))
-        }
-        const pending = P.resolve().then(() =>
-            fn(this, () =>
-                promiseMap(this.dependencies.values(), (dep: any) => dep.forEachAsync(fn, opts, _pending), opts)
-            )
-        )
-        _pending.set(this, pending)
-        return pending
-    }
-
-    public forEach(fn: any, _seen?: any) {
-        if (!_seen) {
-            _seen = new Set()
-        }
+    public forEach(fn: (dep: Dependency, next: () => void) => void, _seen = new Set<LogicalTree>()) {
         if (_seen.has(this)) {
             return
         }
@@ -205,19 +187,4 @@ function atAddr(pkgLock: any, addr: string) {
     }
     const parts = addr.split(':')
     return parts.reduce((acc, next) => acc && (acc.dependencies || {})[next], pkgLock)
-}
-
-function promiseMap(arr: any, fn: any, opts: any, _index?: any) {
-    _index = _index || 0
-    const P = (opts && opts.Promise) || Promise
-    if (P.map) {
-        return P.map(arr, fn, opts)
-    }
-    if (!(arr instanceof Array)) {
-        arr = Array.from(arr)
-    }
-    if (_index >= arr.length) {
-        return P.resolve()
-    }
-    return P.resolve(fn(arr[_index], _index, arr)).then(() => promiseMap(arr, fn, opts, _index + 1))
 }

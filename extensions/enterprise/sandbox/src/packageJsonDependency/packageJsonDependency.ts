@@ -1,9 +1,9 @@
 import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import semver from 'semver'
 import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { PackageJsonDependencyQuery } from './packageManager'
-import { packageJsonDependencyManagementProviderRegistry } from './providers'
+import { packageJsonDependencyManagementProviderRegistry, PackageJsonDependencyQuery } from './providers'
 import { DependencySpecificationWithType } from '../dependencyManagement/combinedProvider'
 import { toLocation } from '../../../../../shared/src/api/extension/api/types'
 
@@ -69,6 +69,7 @@ function provideDiagnostics({
                   const depQuery: PackageJsonDependencyQuery = {
                       name: packageName,
                       versionRange: matchVersion,
+                      parsedVersionRange: new semver.Range(matchVersion),
                   }
                   const specs = packageJsonDependencyManagementProviderRegistry.provideDependencySpecifications(
                       depQuery,
@@ -82,21 +83,23 @@ function provideDiagnostics({
                                       console.error(spec.error)
                                       return null
                                   }
-                                  const mainDecl = spec.declarations[0]
-                                  if (!mainDecl.location.range) {
-                                      throw new Error('no range')
+                                  const specMain = spec.declarations[0]
+                                      ? spec.declarations[0]
+                                      : { ...spec.resolutions[0], direct: false }
+                                  if (!specMain.location) {
+                                      return null
                                   }
                                   const data: DiagnosticData = { ...spec, action }
                                   const diagnostic: sourcegraph.Diagnostic = {
-                                      resource: mainDecl.location.uri,
-                                      message: `${mainDecl.direct ? '' : 'Indirect '}npm dependency ${mainDecl.name}${
+                                      resource: specMain.location.uri,
+                                      message: `${specMain.direct ? '' : 'Indirect '}npm dependency ${specMain.name}${
                                           depQuery.versionRange === '*' ? '' : `@${depQuery.versionRange}`
                                       } ${
                                           action === 'ban'
                                               ? 'is banned'
                                               : `must be upgraded to ${action.requireVersion}`
                                       }`,
-                                      range: mainDecl.location.range,
+                                      range: specMain.location.range || new sourcegraph.Range(0, 0, 0, 0),
                                       severity: sourcegraph.DiagnosticSeverity.Warning,
                                       // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                                       data: JSON.stringify(data),

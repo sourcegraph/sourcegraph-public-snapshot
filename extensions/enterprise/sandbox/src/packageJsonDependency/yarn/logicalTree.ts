@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import semver from 'semver'
-import { makeNode } from '../npm/logicalTree'
+import { makeNode, LogicalTree } from '../npm/logicalTree'
 import { parse as parseLockfile } from '@yarnpkg/lockfile'
 
-export function yarnLogicalTree(pkg: any, yarnLock: any) {
-    yarnLock = parseLockfile(yarnLock).object
+export function yarnLogicalTree(pkg: any, yarnLockStr: string): LogicalTree {
+    const yarnLock = parseLockfile(yarnLockStr).object
     const tree = makeNode(pkg.name, null, pkg)
-    const allDeps = new Map()
+    const allDeps = new Map<string, any>()
     const pkgDeps = { ...(pkg.devDependencies || {}), ...(pkg.optionalDependencies || {}), ...(pkg.dependencies || {}) }
     Object.keys(pkgDeps).forEach(name => {
         const semverString = pkgDeps[name]

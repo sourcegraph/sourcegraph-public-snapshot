@@ -1,19 +1,13 @@
 import { from, merge } from 'rxjs'
 import { toArray, switchMap, filter } from 'rxjs/operators'
-import semver from 'semver'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import {
-    ResolvedDependency,
-    PackageJsonDependencyManagementProvider,
-    PackageJsonDependencyQuery,
-} from '../packageManager'
-import { editForCommands2, editPackageJson } from '../packageManagerCommon'
+import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '../providers'
 import { yarnLogicalTree } from './logicalTree'
-import { provideDependencySpecification } from '../util'
+import { provideDependencySpecification, editForCommands2, editPackageJson, traversePackageJsonLockfile } from '../util'
 import * as sourcegraph from 'sourcegraph'
-import { DependencySpecification, DependencyQuery } from '../../dependencyManagement'
+import { DependencySpecification } from '../../dependencyManagement'
 import { combineWorkspaceEdits } from '../../../../../../shared/src/api/types/workspaceEdit'
 
 const yarnExecClient = createExecServerClient('a8n-yarn-exec', [])
@@ -37,15 +31,11 @@ const YARN_OPTS = [
 
 export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
     type: 'yarn',
-    provideDependencySpecifications: (query, filters = '') => {
-        const parsedQuery = {
-            ...query,
-            parsedVersionRange: new semver.Range(query.versionRange),
-        }
-        return from(
+    provideDependencySpecifications: (query, filters = '') =>
+        from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `\\b${parsedQuery.name}\\b ${filters}`,
+                    pattern: `\\b${query.name}\\b ${filters}`,
                     type: 'regexp',
                 },
                 {
@@ -67,7 +57,7 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
                         provideDependencySpecification(
                             new URL(textSearchResult.uri.replace(/yarn\.lock$/, 'package.json')),
                             new URL(textSearchResult.uri),
-                            parsedQuery,
+                            query,
                             getYarnLockDependency
                         )
                     )
@@ -76,8 +66,7 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
                     toArray()
                 )
             )
-        )
-    },
+        ),
     resolveDependencyUpgradeAction: (dep, version) => {
         // TODO!(sqs): this is not correct w.r.t. indirect deps
         if (dep.declarations.length !== 1) {
@@ -150,17 +139,11 @@ async function addYarnResolutions(
     return combineWorkspaceEdits([workspaceEdit, edits2])
 }
 
-function getYarnLockDependency(packageJson: string, yarnLock: string, packageName: string): ResolvedDependency | null {
+function getYarnLockDependency(
+    packageJson: string,
+    yarnLock: string,
+    parsedQuery: PackageJsonDependencyQuery
+): Pick<DependencySpecification<PackageJsonDependencyQuery>, 'declarations' | 'resolutions'> {
     const tree = yarnLogicalTree(JSON.parse(packageJson), yarnLock)
-    let found: any
-    // eslint-disable-next-line ban/ban
-    tree.forEach((dep: { name: string }, next: () => void) => {
-        if (dep.name === packageName) {
-            found = dep
-        } else {
-            // eslint-disable-next-line callback-return
-            next()
-        }
-    })
-    return found ? { name: packageName, version: found.version, direct: !!tree.getDep(packageName) } : null
+    return traversePackageJsonLockfile(tree, parsedQuery)
 }
