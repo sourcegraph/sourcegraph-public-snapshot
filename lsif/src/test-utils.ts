@@ -28,6 +28,9 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     const password = process.env.PGPASSWORD || ''
     const database = `sourcegraph-test-lsif-xrepo-${suffix}`
 
+    // TODO - temporary
+    await child_process.exec("go get -tags 'postgres' -u github.com/golang-migrate/migrate/cmd/migrate")
+
     // Determine the path of the migrate script. This will cover the case
     // where `yarn test` is run from within the root or from the lsif directory.
     const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
