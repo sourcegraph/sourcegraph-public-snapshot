@@ -7,9 +7,3 @@ out
 
 # Test data
 test-data
-
-# Run/test artifacts
-lsif-storage
-cpp-*
-typescript-*
-xrepo-*
