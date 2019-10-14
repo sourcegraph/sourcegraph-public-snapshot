@@ -1,12 +1,11 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { dbFilename, hashKey, mustGet, hasErrorCode } from './util'
+import { dbFilename, hashKey, mustGet } from './util'
 import { instrument } from './metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './database.metrics'
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
-import * as fs from 'mz/fs'
 import { isEqual, uniqWith } from 'lodash'
 import { PackageModel, DumpID } from './xrepo.models'
 import { XrepoDatabase } from './xrepo'
@@ -733,50 +732,6 @@ export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: strin
     }
 
     return locations
-}
-
-/**
- * Create a new `Database` backed by the given file. A databases is only
- * created if the file exists.
- *
- * @param storageRoot The path where SQLite databases are stored.
- * @param xrepoDatabase The cross-repo database.
- * @param connectionCache The cache of SQLite connections.
- * @param documentCache The cache of loaded documents.
- * @param resultChunkCache The cache of loaded result chunks.
- * @param dumpID The ID of the dump for which this database answers queries.
- * @param databasePath The path to the database file.
- */
-export async function tryCreateDatabase(
-    storageRoot: string,
-    xrepoDatabase: XrepoDatabase,
-    connectionCache: ConnectionCache,
-    documentCache: DocumentCache,
-    resultChunkCache: ResultChunkCache,
-    dumpID: DumpID,
-    databasePath: string,
-    root: string
-): Promise<Database | undefined> {
-    try {
-        await fs.stat(databasePath)
-    } catch (e) {
-        if (hasErrorCode(e, 'ENOENT')) {
-            return undefined
-        }
-
-        throw e
-    }
-
-    return new Database(
-        storageRoot,
-        xrepoDatabase,
-        connectionCache,
-        documentCache,
-        resultChunkCache,
-        dumpID,
-        databasePath,
-        root
-    )
 }
 
 /**

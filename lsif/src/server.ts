@@ -6,7 +6,6 @@ import express from 'express'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
 import uuid from 'uuid'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
 import {
     connectionCacheCapacityGauge,
@@ -16,7 +15,7 @@ import {
 import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
-import { Database, tryCreateDatabase } from './database'
+import { Backend } from './backend'
 import { Edge, Vertex } from 'lsif-protocol'
 import { identity } from 'lodash'
 import { logger as loggingMiddleware } from 'express-winston'
@@ -31,10 +30,11 @@ import { createTracer, logAndTraceCall, TracingContext, addTags } from './tracin
 import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
-import { createLogger, createSilentLogger } from './logging'
+import { createLogger } from './logging'
 import { enqueue } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
+import * as constants from './constants'
 
 const pipeline = promisify(_pipeline)
 
@@ -54,23 +54,6 @@ const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
  *  Additionally keep this logic in sync with pkg/redispool/redispool.go and cmd/server/redis.go
  */
 const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_ENDPOINT || 'redis-store:6379'
-
-/**
- * The number of SQLite connections that can be opened at once. This
- * value may be exceeded for a short period if many handles are held
- * at once.
- */
-const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
-
-/**
- * The maximum number of documents that can be held in memory at once.
- */
-const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
-
-/**
- * The maximum number of result chunks that can be held in memory at once.
- */
-const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Where on the file system to store LSIF files.
@@ -129,9 +112,9 @@ async function main(logger: Logger): Promise<void> {
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
     // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
-    documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
-    resultChunkCacheCapacityGauge.set(RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(constants.CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(constants.DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(constants.RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -328,61 +311,12 @@ async function lsifEndpoints(
     const router = express.Router()
 
     // Create cross-repo database
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
-
-    // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
     await ensureFilenamesAreIDs(connection)
 
-    /**
-     * Create a database instance for the given repository at the commit
-     * closest to the target commit for which we have LSIF data. Returns
-     * undefined if no such database can be created. Will also return a
-     * tracing context tagged with the closest commit found. This new
-     * tracing context should be used in all downstream requests so that
-     * the original commit and the effective commit are both known.
-     *
-     * @param repository The repository name.
-     * @param commit The target commit.
-     * @param file One of the files in the dump.
-     * @param ctx The tracing context.
-     * @param gitserverUrls The set of ordered gitserver urls.
-     */
-    const loadDatabase = async (
-        repository: string,
-        commit: string,
-        file: string,
-        { logger = createSilentLogger(), span = new Span() }: TracingContext,
-        gitserverUrls: string[]
-    ): Promise<{ database: Database | undefined; ctx: TracingContext }> => {
-        // Determine the closest commit that we actually have LSIF data for. If the commit is
-        // not tracked, then commit data is requested from gitserver and insert the ancestors
-        // data for this commit.
-        const dump = await logAndTraceCall({ logger, span }, 'determining closest commit', (ctx: TracingContext) =>
-            xrepoDatabase.findClosestDump(repository, commit, file, ctx, gitserverUrls)
-        )
-        if (!dump) {
-            return { database: undefined, ctx: { logger, span } }
-        }
-
-        // Try to construct a database for the approximate commit
-        const approximateDatabase = await tryCreateDatabase(
-            STORAGE_ROOT,
-            xrepoDatabase,
-            connectionCache,
-            documentCache,
-            resultChunkCache,
-            dump.id,
-            dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit),
-            dump.root
-        )
-
-        return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: dump.commit }) }
-    }
+    const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
 
     /**
      * Create a tracing context from the request logger and tracing span
@@ -439,16 +373,7 @@ async function lsifEndpoints(
                 checkFile(file)
 
                 const ctx = createTracingContext(req, { repository, commit })
-                const { database } = await logAndTraceCall(ctx, 'creating database', ctx => {
-                    return loadDatabase(repository, commit, file, ctx, fetchConfiguration().gitServers)
-                })
-                if (!database) {
-                    res.json(false)
-                    return
-                }
-
-                const result = await database.exists(file)
-                res.json(result)
+                res.json(await backend.exists(repository, commit, file, ctx))
             }
         )
     )
@@ -466,16 +391,7 @@ async function lsifEndpoints(
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 const ctx = createTracingContext(req, { repository, commit })
-                const { database, ctx: newCtx } = await logAndTraceCall(ctx, 'creating database', ctx =>
-                    loadDatabase(repository, commit, path, ctx, fetchConfiguration().gitServers)
-                )
-                if (!database) {
-                    throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
-                        status: 404,
-                    })
-                }
-
-                res.json(await database[cleanMethod](path, position, newCtx))
+                res.json(await backend[cleanMethod](repository, commit, path, position, ctx))
             }
         )
     )
