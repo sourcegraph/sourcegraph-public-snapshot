@@ -1,5 +1,6 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
+import { SearchPatternType } from '../graphql/schema'
 
 export interface RepoSpec {
     /**
@@ -533,12 +534,36 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
+ *
+ * @param query the search query
+ * @param patternType the pattern type this query should be interpreted in.
+ * Having a `patternType:` filter in the query overrides this argument.
  */
-export function buildSearchURLQuery(query: string): string {
+export function buildSearchURLQuery(query: string, patternType: SearchPatternType): string {
     const searchParams = new URLSearchParams()
-    searchParams.set('q', query)
+    const patternTypeInQuery = parsePatternTypeFromQuery(query)
+    if (patternTypeInQuery) {
+        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+        const newQuery = query.replace(patternTypeRegexp, '')
+        searchParams.set('q', newQuery)
+        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+    } else {
+        searchParams.set('q', query)
+        searchParams.set('patternType', patternType)
+    }
+
     return searchParams
         .toString()
         .replace(/%2F/g, '/')
         .replace(/%3A/g, ':')
+}
+
+function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
+    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+    const matches = query.match(patternTypeRegexp)
+    if (matches && matches.groups && matches.groups.type) {
+        return matches.groups.type as SearchPatternType
+    }
+
+    return undefined
 }

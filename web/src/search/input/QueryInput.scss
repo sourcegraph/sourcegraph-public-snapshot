@@ -4,10 +4,16 @@
     flex: 1 1 auto;
     position: relative;
 
+    // The width of the toggle icons in the query input.
+    $toggle-icon-width: 24px;
+
     &__input {
         // Right side is flush with SearchButton.
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
+        // Padding added so that the input value does not overlap with the toggle buttons.
+        // The padding should be calculated by the width of an icon width * number of icons + 0. 5rem.
+        padding-right: calc(#{$toggle-icon-width} + 0.5rem);
     }
 
     &__suggestions {
@@ -61,6 +67,7 @@
 
 .theme-light {
     .query-input2 {
+        background-color: $color-light-bg-1;
         &__loading-notifier {
             background-color: $color-light-bg-1;
         }

@@ -2,8 +2,9 @@ import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../components/Form'
+import { PatternTypeProps } from '../search'
 
-interface Props {
+interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -91,8 +92,8 @@ export class SavedSearchModal extends React.Component<Props, State> {
             const encodedQuery = encodeURIComponent(this.props.query)
             this.props.history.push(
                 this.state.saveLocation.toLowerCase() === 'user'
-                    ? `/users/${this.props.authenticatedUser.username}/searches/add?query=${encodedQuery}`
-                    : `/organizations/${this.state.organization}/searches/add?query=${encodedQuery}`
+                    ? `/users/${this.props.authenticatedUser.username}/searches/add?query=${encodedQuery}&patternType=${this.props.patternType}`
+                    : `/organizations/${this.state.organization}/searches/add?query=${encodedQuery}&patternType=${this.props.patternType}`
             )
         }
     }

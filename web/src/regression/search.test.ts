@@ -337,28 +337,32 @@ describe('Search regression test suite', () => {
         })
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this'
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Non-indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this index:no'
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this index:no',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\('
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\(',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
         test('Non-indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no'
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)

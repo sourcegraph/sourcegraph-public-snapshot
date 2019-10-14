@@ -20,6 +20,7 @@ import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
+import { PatternTypeProps } from '../../search'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(
@@ -70,7 +71,8 @@ interface Props
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
@@ -95,7 +97,8 @@ export interface OrgAreaPageProps
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        NamespaceProps {
+        NamespaceProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     /** The org that is the subject of the page. */
     org: GQL.IOrg
 
@@ -172,6 +175,7 @@ export class OrgArea extends React.Component<Props> {
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
+            patternType: this.props.patternType,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

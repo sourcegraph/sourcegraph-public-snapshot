@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, parseSearchURLPatternType, PatternTypeProps } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -27,13 +27,15 @@ import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip'>,
         SettingsCascadeProps,
         TelemetryProps,
-        ThemeProps {
+        ThemeProps,
+        PatternTypeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -42,6 +44,8 @@ export interface SearchResultsProps
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
         query: string,
+        version: string,
+        patternType: GQL.SearchPatternType,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
@@ -64,6 +68,11 @@ interface SearchResultsState {
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | null
 
+// The latest supported version of our search syntax. Users should never be able to determine the search version.
+// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
+// and will therefore default to V1.
+const LATEST_VERSION = 'V2'
+
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
@@ -76,17 +85,32 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        const patternType = parseSearchURLPatternType(this.props.location.search)
+
+        if (!patternType) {
+            // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
+            // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
+            const newLoc = '/search?' + buildSearchURLQuery(this.props.navbarSearchQuery, GQL.SearchPatternType.regexp)
+            window.location.replace(newLoc)
+        }
+
         this.props.telemetryService.logViewEvent('SearchResults')
 
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => parseSearchURLQuery(props.location.search)),
+                    map(props => [
+                        parseSearchURLQuery(props.location.search),
+                        parseSearchURLPatternType(props.location.search),
+                    ]),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    filter((query): query is string => !!query),
-                    tap(query => {
+                    filter(
+                        (queryAndPatternType): queryAndPatternType is [string, GQL.SearchPatternType] =>
+                            !!queryAndPatternType[0] && !!queryAndPatternType[1]
+                    ),
+                    tap(([query]) => {
                         const query_data = queryTelemetryData(query)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
@@ -99,7 +123,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(query =>
+                    switchMap(([query, patternType]) =>
                         concat(
                             // Reset view state
                             [
@@ -110,10 +134,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                 },
                             ],
                             // Do async search request
-                            this.props.searchRequest(query, this.props).pipe(
+                            this.props.searchRequest(query, LATEST_VERSION, patternType, this.props).pipe(
                                 // Log telemetry
                                 tap(
-                                    results =>
+                                    results => {
                                         this.props.telemetryService.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
@@ -124,7 +148,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                         : results.cloning.length > 0,
                                                 },
                                             },
-                                        }),
+                                        })
+                                        if (patternType && patternType !== this.props.patternType) {
+                                            this.props.togglePatternType()
+                                        }
+                                    },
                                     error => {
                                         this.props.telemetryService.log('SearchResultsFetchFailed', {
                                             code_search: { error_message: error.message },
@@ -290,6 +318,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQuery, value)
             : toggleSearchFilter(this.props.navbarSearchQuery, value)
 
-        submitSearch(this.props.history, newQuery, 'filter')
+        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
     }
 }

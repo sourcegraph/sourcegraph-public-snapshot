@@ -22,6 +22,7 @@ const (
 	FieldType               = "type"
 	FieldRepoHasFile        = "repohasfile"
 	FieldRepoHasCommitAfter = "repohascommitafter"
+	FieldPatternType        = "patterntype"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -44,15 +45,16 @@ var (
 
 	conf = types.Config{
 		FieldTypes: map[string]types.FieldType{
-			FieldDefault:   {Literal: types.RegexpType, Quoted: types.StringType},
-			FieldCase:      {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
-			FieldRepo:      regexpNegatableFieldType,
-			FieldRepoGroup: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldFile:      regexpNegatableFieldType,
-			FieldFork:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
-			FieldType:      stringFieldType,
+			FieldDefault:     {Literal: types.RegexpType, Quoted: types.StringType},
+			FieldCase:        {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+			FieldRepo:        regexpNegatableFieldType,
+			FieldRepoGroup:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldFile:        regexpNegatableFieldType,
+			FieldFork:        {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldArchived:    {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldLang:        {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
+			FieldType:        stringFieldType,
+			FieldPatternType: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldRepoHasFile:        regexpNegatableFieldType,
 			FieldRepoHasCommitAfter: {Literal: types.StringType, Quoted: types.StringType, Singular: true},

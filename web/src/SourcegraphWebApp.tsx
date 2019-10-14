@@ -50,6 +50,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { parseSearchURLPatternType } from './search'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -94,6 +95,10 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
+    /**
+     * The current search pattern type.
+     */
+    searchPatternType: GQL.SearchPatternType
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -138,12 +143,18 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     constructor(props: SourcegraphWebAppProps) {
         super(props)
         this.subscriptions.add(this.extensionsController)
+
+        // The patternType in the URL query parameter. If none is provided, default to literal.
+        // This will be updated with the default in settings when the web app mounts.
+        const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
+
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
             navbarSearchQuery: '',
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
+            searchPatternType: urlPatternType,
         }
     }
 
@@ -185,6 +196,23 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             from(this.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
 
+        this.subscriptions.add(
+            from(this.platformContext.settings).subscribe(settingsCascade => {
+                if (!parseSearchURLPatternType(window.location.search)) {
+                    // When the web app mounts, if there is no patternType parameter in the URL,
+                    // set the search pattern type to the default based on settings, if it is set.
+                    // Otherwise, default to literal.
+                    const defaultPatternType =
+                        settingsCascade.final &&
+                        !isErrorLike(settingsCascade.final) &&
+                        settingsCascade.final['search.defaultPatternType']
+
+                    const searchPatternType = defaultPatternType || 'literal'
+
+                    this.setState({ searchPatternType })
+                }
+            })
+        )
         // React to OS theme change
         this.subscriptions.add(
             fromEventPattern<MediaQueryListEvent>(
@@ -277,6 +305,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     extensionsController={this.extensionsController}
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                    patternType={this.state.searchPatternType}
+                                    togglePatternType={this.togglePatternType}
                                 />
                             )}
                         />
@@ -295,6 +325,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {
         this.setState({ navbarSearchQuery })
+    }
+
+    private togglePatternType = () => {
+        const currentPatternType = this.state.searchPatternType
+        this.setState({
+            searchPatternType:
+                currentPatternType === GQL.SearchPatternType.regexp
+                    ? GQL.SearchPatternType.literal
+                    : GQL.SearchPatternType.regexp,
+        })
     }
 }
 
