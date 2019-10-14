@@ -32,8 +32,16 @@ explicit transaction blocks added to the migration script template.
 
 After adding SQL statements to those files, embed them into the Go code and update the schema doc:
 
+- If you're running Postgres 9.6:
+
 ```
 ./dev/generate.sh
+```
+
+- If you're not running Postgres 9.6:
+
+```
+./dev/update-schema-and-bindata.sh
 ```
 
 or, to only run the DB generate scripts (subset of the command above):
@@ -47,12 +55,6 @@ Verify that the migration is backward-compatible:
 
 ```
 dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so make sure the work tree is clean before running
-```
-
-Update the schema and bindata:
-
-```
-./dev/update-schema-and-bindata.sh
 ```
 
 ### Migrating up/down

@@ -236,7 +236,7 @@ func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	// In case another process was faster and runs migrations, we will wait
 	// this long
 	m.LockTimeout = 5 * time.Minute
-	if os.Getenv("LOG_MIGRATE") != "" {
+	if os.Getenv("LOG_MIGRATE_TO_STDOUT") != "" {
 		m.Log = stdoutLogger{}
 	}
 
