@@ -153,7 +153,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                     ],
                     [
                         [
-                            './gradlew',
+                            'gradle',
                             ...GRADLE_OPTS,
                             'generateLock',
                             'saveLock',
