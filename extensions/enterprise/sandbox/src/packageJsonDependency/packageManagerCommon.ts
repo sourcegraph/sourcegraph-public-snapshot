@@ -7,8 +7,44 @@ import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { ExecServerClient } from '../execServer/client'
 import { ResolvedDependencyInPackage } from './packageManager'
 import { PackageJsonDependencyCampaignContext } from './packageJsonDependency'
+import { Observable, combineLatest, from } from 'rxjs'
+import { switchMap, map } from 'rxjs/operators'
 
 const MINIMAL_WORKTREE = true
+
+export const editForCommands2 = (
+    files: URL[],
+    commands: string[][],
+    execServerClient: ExecServerClient
+): Observable<sourcegraph.WorkspaceEdit> =>
+    combineLatest(files.map(url => from(sourcegraph.workspace.openTextDocument(url)))).pipe(
+        switchMap(files => {
+            const dir = path.dirname(parseRepoURI(files[0].uri).filePath!)
+
+            const filesToText: { [path: string]: string } = {}
+            for (const file of files) {
+                const name = path.basename(parseRepoURI(file.uri).filePath!)
+                filesToText[name] = file.text!
+            }
+            return from(
+                execServerClient({
+                    commands,
+                    dir,
+                    files: filesToText,
+                    label: `editForCommands(${JSON.stringify({ files: files.map(f => f.uri), commands })})`,
+                })
+            ).pipe(
+                map(result => {
+                    const edit = new sourcegraph.WorkspaceEdit()
+                    for (const file of files) {
+                        const name = path.basename(parseRepoURI(file.uri).filePath!)
+                        edit.set(new URL(file.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![name])])
+                    }
+                    return edit
+                })
+            )
+        })
+    )
 
 export const editForCommands = async (
     {
@@ -21,40 +57,7 @@ export const editForCommands = async (
     commands: string[][],
     execServerClient: ExecServerClient
 ): Promise<sourcegraph.WorkspaceEdit> => {
-    const p = parseRepoURI(packageJson.uri)
-    const packageJsonName = path.basename(parseRepoURI(packageJson.uri).filePath!)
-    const lockfileName = path.basename(parseRepoURI(lockfile.uri).filePath!)
-    const result = await execServerClient({
-        commands,
-        dir: path.dirname(p.filePath!),
-        ...(MINIMAL_WORKTREE
-            ? {
-                  files: {
-                      [packageJsonName]: packageJson.text!,
-                      [lockfileName]: lockfile.text!,
-                  },
-              }
-            : {
-                  context: {
-                      repository: p.repoName,
-                      commit: p.commitID!,
-                  },
-              }),
-        label: `editForCommands(${packageJson.uri} commands=${JSON.stringify(commands)})`,
-    })
-
-    if (MINIMAL_WORKTREE) {
-        const edit = new sourcegraph.WorkspaceEdit()
-        edit.set(new URL(packageJson.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![packageJsonName])])
-        edit.set(new URL(lockfile.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![lockfileName])])
-        return edit
-    }
-
     throw new Error('only MINIMAL_WORKTREE is supported')
-    // return computeDiffs([
-    //     { old: packageJson, newText: result.files![packageJsonName] },
-    //     { old: lockfile, newText: result.files![lockfileName] },
-    // ])
 }
 
 export const editForDependencyAction = (

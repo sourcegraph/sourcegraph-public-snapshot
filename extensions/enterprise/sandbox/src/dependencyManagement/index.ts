@@ -13,11 +13,11 @@ export interface DependencyDeclaration {
     /** The requested version of the dependency. */
     readonly requestedVersion?: string
 
-    /** The location where the dependency is declared. */
-    readonly location: Location
-
     /** Whether the dependency was declared directly. */
     readonly direct: boolean
+
+    /** The location where the dependency is declared. */
+    readonly location: Location
 }
 
 export interface DependencyResolution {

@@ -1,5 +1,11 @@
 import { TextDocument, WorkspaceEdit } from 'sourcegraph'
 import { PackageJsonDependencyCampaignContext } from './packageJsonDependency'
+import { DependencyQuery, DependencyManagementProvider } from '../dependencyManagement'
+
+export interface PackageJsonDependencyQuery extends Required<DependencyQuery> {}
+
+export interface PackageJsonDependencyManagementProvider
+    extends DependencyManagementProvider<PackageJsonDependencyQuery> {}
 
 export interface ResolvedDependencyInPackage {
     packageJson: TextDocument
