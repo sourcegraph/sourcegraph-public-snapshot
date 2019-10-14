@@ -1169,9 +1169,9 @@ describe('e2e test suite', () => {
             })
         })
 
-        test('redirects to a URL with &patternType=literal if no patternType in URL', async () => {
+        test('redirects to a URL with &patternType=regexp if no patternType in URL', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
         })
 
         test('regexp toggle appears and updates patternType query parameter when clicked', async () => {

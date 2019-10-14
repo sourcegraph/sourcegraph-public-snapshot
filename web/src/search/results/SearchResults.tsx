@@ -88,9 +88,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const patternType = parseSearchURLPatternType(this.props.location.search)
 
         if (!patternType) {
-            // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL using
-            // the default pattern type.
-            const newLoc = '/search?' + buildSearchURLQuery(this.props.navbarSearchQuery, this.props.patternType)
+            // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
+            // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
+            const newLoc = '/search?' + buildSearchURLQuery(this.props.navbarSearchQuery, GQL.SearchPatternType.regexp)
             window.location.replace(newLoc)
         }
 
