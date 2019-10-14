@@ -2,36 +2,131 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as uuid from 'uuid'
 import { Connection } from 'typeorm'
-import { createSqliteConnection } from './connection'
+import { connectPostgres } from './connection'
 import { lsp } from 'lsif-protocol'
 import { Readable } from 'stream'
+import { child_process } from 'mz'
+import { convertLsif } from './importer'
+import { XrepoDatabase } from './xrepo'
+import { dbFilename } from './util'
 
 /**
- * Return a filesystem read stream for the given test file. This will cover
- * the cases where `yarn test` is ran from the root or from the lsif directory.
- *
- * @param filename The path relative to test-data directory.
+ * Create a new postgres database with a random suffix, apply the frontend
+ * migrations (via the ./dev/migrate.sh script) and return an open connection.
+ * This uses the PG* environment variables for host, port, user, and password.
+ * This also returns a cleanup function that will destroy the database, which
+ * should be called at the end of the test.
  */
-export async function getTestData(filename: string): Promise<Readable> {
-    return fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
+export async function createCleanPostgresDatabase(): Promise<{ connection: Connection; cleanup: () => Promise<void> }> {
+    // Each test has a random dbname suffix
+    const suffix = uuid.v4().substring(0, 8)
+
+    // Pull test db config from environment
+    const host = process.env.PGHOST || 'localhost'
+    const port = parseInt(process.env.PGPORT || '5432', 10)
+    const username = process.env.PGUSER || 'postgres'
+    const password = process.env.PGPASSWORD || ''
+    const database = `sourcegraph-test-lsif-xrepo-${suffix}`
+
+    // Determine the path of the migrate script. This will cover the case
+    // where `yarn test` is run from within the root or from the lsif directory.
+    const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
+
+    // Ensure environment gets passed to child commands
+    const env = `PGHOST=${host} PGPORT=${port} PGSSLMODE=disable`
+    const createCommand = `${env} createdb ${database}`
+    const dropCommand = `${env} dropdb --if-exists ${database}`
+    const migrateCommand = `${env} PGDATABASE=${database} ${migrateScriptPath} up`
+
+    // Create cleanup function to run after test
+    const cleanup = (): Promise<void> => child_process.exec(dropCommand).then(() => {})
+
+    // Try to create database
+    await child_process.exec(createCommand)
+
+    try {
+        // Run migrations on new database
+        await child_process.exec(migrateCommand)
+
+        const connection = await connectPostgres(
+            {
+                host,
+                port,
+                username,
+                password,
+                database,
+                ssl: false,
+            },
+            suffix
+        )
+
+        return { connection, cleanup }
+    } catch (error) {
+        // We made a database but can't use it - try to clean up
+        // before throwing the original error.
+
+        try {
+            await cleanup()
+        } catch (error) {
+            // If a new error occurs, swallow it
+        }
+
+        // Throw the original error
+        throw error
+    }
 }
 
 /**
- * Create a new SQLite database connection with a randomized filename and
- * connection cache key.
+ * Truncate all tables that do not match `schema_migrations`.
  *
- * @param storageRoot The directory in which to create the database.
- * @param entities The set of expected entities present in this schema.
+ * @param connection The connection to use.
  */
-export function getCleanSqliteDatabase(
+export async function truncatePostgresTables(connection: Connection): Promise<void> {
+    const results = (await connection.query(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'"
+    )) as { table_name: string }[]
+
+    const tableNames = results.map(row => row.table_name).join(', ')
+    await connection.query(`truncate ${tableNames} restart identity`)
+}
+
+/**
+ * Mock an upload of the given file. This will create a SQLite database in the
+ * given storage root and will insert dump, package, and reference data into
+ * the given cross-repository database.
+ *
+ * @param xrepoDatabase The cross-repository database.
+ * @param storageRoot The temporary storage root.
+ * @param repository The repository name.
+ * @param commit The commit.
+ * @param filename The filename of the (gzipped) LSIF dump.
+ */
+export async function convertTestData(
+    xrepoDatabase: XrepoDatabase,
     storageRoot: string,
-    // Decorators are not possible type check
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    entities: Function[]
-): Promise<Connection> {
-    return createSqliteConnection(path.join(storageRoot, `${uuid.v4()}.db`), entities)
+    repository: string,
+    commit: string,
+    filename: string
+): Promise<void> {
+    // Create a filesystem read stream for the given test file. This will cover
+    // the cases where `yarn test` is run from the root or from the lsif directory.
+    const input = fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
+
+    const tmp = path.join(storageRoot, 'tmp')
+    const { packages, references } = await convertLsif(input, tmp)
+    const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+    await fs.rename(tmp, dbFilename(storageRoot, dumpID, repository, commit))
 }
 
+/**
+ * Create an LSP location.
+ *
+ * @param uri The document path.
+ * @param startLine The starting line.
+ * @param startCharacter The starting character.
+ * @param endLine The ending line.
+ * @param endCharacter The ending character.
+ */
 export function createLocation(
     uri: string,
     startLine: number,
@@ -45,6 +140,16 @@ export function createLocation(
     })
 }
 
+/**
+ * Create an LSP location with a remote URI.
+ *
+ * @param repository The repository name.
+ * @param path The document path.
+ * @param startLine The starting line.
+ * @param startCharacter The starting character.
+ * @param endLine The ending line.
+ * @param endCharacter The ending character.
+ */
 export function createRemoteLocation(
     repository: string,
     path: string,
@@ -60,6 +165,11 @@ export function createRemoteLocation(
     return createLocation(url.href, startLine, startCharacter, endLine, endCharacter)
 }
 
+/**
+ * Create a 40-character commit by repeating the given string.
+ *
+ * @param repository The repository name.
+ */
 export function createCommit(repository: string): string {
     return repository.repeat(40).substring(0, 40)
 }
