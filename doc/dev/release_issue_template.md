@@ -26,7 +26,7 @@ Run a find replace on:
 
 ## 5 working days before release (YYYY-MM-DD)
 
-- [ ] Private message each teammate who has open issues in the milestone and ask them to remove any issues that won't be done by the time that the release branch is scheduled to be created.
+- [ ] Use `./dev/release-ping.sh` to message teammates who have open issues / PRs in the milestone and ask them to remove those that won't be done by the time that the release branch is scheduled to be created.
 - [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
 - [ ] Ping each team, and ask them to identify which of the optional rows that they own on the release testing grid should be tested this iteration.
 - [ ] Ping the @distribution team to determine which environments each row on the release testing grid should be tested in.
