@@ -30,14 +30,18 @@ describe('Database', () => {
     })
 
     afterAll(async () => {
+        await rmfr(storageRoot)
+
         if (cleanup) {
             await cleanup()
         }
-
-        await rmfr(storageRoot)
     })
 
     const loadDatabase = async (repository: string, commit: string): Promise<Database> => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const dump = await xrepoDatabase.getDump(repository, commit)
         if (!dump) {
             throw new Error(`Unknown repository@commit ${repository}@${commit}`)

@@ -3,6 +3,7 @@ import rmfr from 'rmfr'
 import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
 import { createCleanPostgresDatabase, createCommit, truncatePostgresTables } from './test-utils'
 import { Connection } from 'typeorm'
+import { fail } from 'assert'
 
 describe('XrepoDatabase', () => {
     let connection!: Connection
@@ -17,16 +18,20 @@ describe('XrepoDatabase', () => {
     })
 
     afterAll(async () => {
+        await rmfr(storageRoot)
+
         if (cleanup) {
             await cleanup()
         }
-
-        await rmfr(storageRoot)
     })
 
     beforeEach(() => truncatePostgresTables(connection))
 
     it('should find closest commits with LSIF data', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         // This database has the following commit graph:
         //
         // [a] --+--- b --------+--e -- f --+-- [g]
@@ -73,6 +78,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should return empty string as closest commit with no reachable lsif data', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         // This database has the following commit graph:
         //
         // a --+-- [b] ---- c
@@ -116,6 +125,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should not return elements farther than MAX_TRAVERSAL_LIMIT', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         // This repository has the following commit graph (ancestors to the right):
         //
         // 0 -- 1 -- 2 -- ... -- MAX_TRAVERSAL_LIMIT
