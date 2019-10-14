@@ -1,28 +1,26 @@
-import NpmIcon from 'mdi-react/NpmIcon'
+import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { RuleTemplate, RuleTemplateComponentContext } from '.'
-import { PackageJsonDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/packageJsonDependency'
+import { JavaDependencyCampaignContext } from '../../../../../../extensions/enterprise/sandbox/src/javaDependency'
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../rules/types'
 import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormControl'
 
-const TEMPLATE_ID = 'packageJsonDependency'
+const TEMPLATE_ID = 'javaDependency'
 
 interface Props extends RuleTemplateComponentContext {}
 
-const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
+const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
     value,
     onChange,
     onCampaignChange,
     disabled,
     location,
 }) => {
-    const context: PackageJsonDependencyCampaignContext | undefined = value.template
-        ? value.template.context
-        : undefined
+    const context: JavaDependencyCampaignContext | undefined = value.template ? value.template.context : undefined
 
     const updateContext = useCallback(
-        (update: Partial<PackageJsonDependencyCampaignContext>): void => {
+        (update: Partial<JavaDependencyCampaignContext>): void => {
             const newContext = { ...context, ...update }
             const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
                 parseDiagnosticQuery(`${newContext.filters || ''}${newContext.filters ? ' ' : ''}${query}`)
@@ -31,8 +29,8 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             }`
             const campaignName =
                 newContext.action === 'ban'
-                    ? `Ban npm dependency ${packageNameAndVersion}`
-                    : `Upgrade npm dependency ${packageNameAndVersion} to ${
+                    ? `Ban Java dependency ${packageNameAndVersion}`
+                    : `Upgrade Java dependency ${packageNameAndVersion} to ${
                           newContext.action && newContext.action.requireVersion
                               ? newContext.action.requireVersion
                               : '<version>'
@@ -42,7 +40,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                 name: campaignName,
             })
             onChange({
-                name: 'Remove dependency from package.json',
+                name: 'Remove dependency from build',
                 template: {
                     template: TEMPLATE_ID,
                     context: newContext,
@@ -50,9 +48,9 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                 // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
                 definition: JSON.stringify({
                     type: 'DiagnosticRule',
-                    query: diagnosticQuery('type:packageJsonDependency'),
+                    query: diagnosticQuery('type:javaDependency'),
                     context: newContext,
-                    action: 'dependencyManagement.packageJsonDependency.action',
+                    action: 'dependencyManagement.javaDependency.action',
                 } as RuleDefinition),
             })
         },
@@ -65,7 +63,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
     const locationSearch = location ? location.search : ''
     useEffect(() => {
         if (context === undefined) {
-            const update: Partial<PackageJsonDependencyCampaignContext> = {}
+            const update: Partial<JavaDependencyCampaignContext> = {}
 
             const params = new URLSearchParams(locationSearch)
 
@@ -152,7 +150,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
             <div className="form-group">
                 <div className="form-row">
                     <div className="col col-md-4">
-                        <label htmlFor="campaign-template-form__packageName">Dependency package name</label>
+                        <label htmlFor="campaign-template-form__packageName">Dependency group and name</label>
                         <input
                             type="text"
                             id="campaign-template-form__packageName"
@@ -160,21 +158,20 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                             required={true}
                             minLength={1}
                             value={context.packageName || ''}
+                            placeholder="group:name"
                             onChange={onPackageNameChange}
                             autoFocus={true}
                             disabled={disabled}
                         />
                         <p className="form-help text-muted small mb-0 mt-1">
-                            Examples: <code className="border-bottom small mr-2">lodash</code>{' '}
-                            <code className="border-bottom small mr-2">react</code>{' '}
-                            <code className="border-bottom small mr-2">@babel/core</code>
+                            Examples: <code className="border-bottom small mr-2">com.google.guava:guava</code>{' '}
                         </p>
                     </div>
                     <div className="col col-md-3">
                         <label htmlFor="campaign-template-form__matchVersion">Version range</label>
                         <div className="input-group">
                             <div className="input-group-prepend">
-                                <span className="input-group-text">@</span>
+                                <span className="input-group-text">:</span>
                             </div>
                             <input
                                 type="text"
@@ -190,7 +187,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                             />
                         </div>
                         <p className="form-help text-muted small mb-0 mt-1">
-                            Supports{' '}
+                            Supports exact version strings or{' '}
                             <a
                                 href="https://docs.npmjs.com/misc/semver#ranges"
                                 target="_blank"
@@ -238,7 +235,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                             disabled={disabled}
                                         />
                                         <p className="form-help text-muted small mb-0 mt-1">
-                                            Supports{' '}
+                                            Supports exact version strings or{' '}
                                             <a
                                                 href="https://docs.npmjs.com/misc/semver#ranges"
                                                 target="_blank"
@@ -263,10 +260,12 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                                 checked={context.action === 'ban'}
                                 value="ban"
                                 onChange={onActionChange}
+                                disabled={true}
                             />
                             <label className="form-check-label" htmlFor="campaign-template-form__action-ban-check">
                                 Ban
                             </label>
+                            <span className="badge badge-secondary ml-2">Not yet supported</span>
                         </div>
                     </li>
                 </ul>
@@ -298,11 +297,11 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
     )
 }
 
-export const PackageJsonDependencyRuleTemplate: RuleTemplate = {
+export const JavaDependencyRuleTemplate: RuleTemplate = {
     id: TEMPLATE_ID,
-    title: 'package.json dependency upgrade',
+    title: 'Java dependency upgrade',
     detail:
-        'Upgrade an npm/yarn dependency in package.json files, opening issues/changesets for all affected code owners.',
-    icon: NpmIcon,
-    renderForm: PackageJsonDependencyCampaignTemplateForm,
+        'Upgrade a Java dependency in build.gradle files and refactor API usage in Java source files, opening issues/changesets for all affected code owners.',
+    icon: LanguageJavaIcon,
+    renderForm: JavaDependencyCampaignTemplateForm,
 }

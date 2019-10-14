@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { openTextDocument } from '../dependencyManagement/util'
+import { openTextDocument, findMatchRange } from '../dependencyManagement/util'
 import semver from 'semver'
 import { FormattingOptions, Segment } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
@@ -140,13 +140,3 @@ export const provideDependencySpecification = (
             }
         })
     )
-
-function findMatchRange(text: string, str: string): sourcegraph.Range | undefined {
-    for (const [i, line] of text.split('\n').entries()) {
-        const j = line.indexOf(str)
-        if (j !== -1) {
-            return new sourcegraph.Range(i, j, i, j + str.length)
-        }
-    }
-    return undefined
-}

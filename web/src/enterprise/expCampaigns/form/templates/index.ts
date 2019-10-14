@@ -9,6 +9,7 @@ import { NPMCredentialsRuleTemplate } from './NPMCredentialsRuleTemplate'
 import { PackageJsonDependencyRuleTemplate } from './PackageJsonDependencyRuleTemplate'
 import { RubyGemDependencyRuleTemplate } from './RubyGemDependencyRuleTemplate'
 import { TriageSearchResultsRuleTemplate } from './TriageSearchResultsRuleTemplate'
+import { JavaDependencyRuleTemplate } from './JavaDependencyRuleTemplate'
 
 export interface RuleTemplateComponentContext {
     value: GQL.INewRuleInput
@@ -36,6 +37,7 @@ export const RULE_TEMPLATES: RuleTemplate[] = [
     ...(USE_CAMPAIGN_RULES
         ? [
               PackageJsonDependencyRuleTemplate,
+              JavaDependencyRuleTemplate,
               NPMCredentialsRuleTemplate,
               RubyGemDependencyRuleTemplate,
               FindReplaceRuleTemplate,

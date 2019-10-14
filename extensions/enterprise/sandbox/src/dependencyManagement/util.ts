@@ -12,3 +12,13 @@ export const openTextDocument = (uri: URL): Observable<sourcegraph.TextDocument 
             return throwError(err)
         })
     )
+
+export function findMatchRange(text: string, str: string): sourcegraph.Range | undefined {
+    for (const [i, line] of text.split('\n').entries()) {
+        const j = line.indexOf(str)
+        if (j !== -1) {
+            return new sourcegraph.Range(i, j, i, j + str.length)
+        }
+    }
+    return undefined
+}
