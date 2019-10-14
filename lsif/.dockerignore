@@ -1,4 +1,9 @@
-node_modules
 Dockerfile
 .dockerignore
+
+# Build artifacts
+node_modules
 out
+
+# Test data
+test-data

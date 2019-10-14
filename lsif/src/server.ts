@@ -13,7 +13,7 @@ import {
     documentCacheCapacityGauge,
     resultChunkCacheCapacityGauge,
 } from './cache.metrics'
-import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
 import { Database, tryCreateDatabase } from './database'
@@ -33,6 +33,8 @@ import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger, createSilentLogger } from './logging'
 import { enqueue } from './queue'
+import { Connection } from 'typeorm'
+import { LsifDump } from './xrepo.models'
 
 const pipeline = promisify(_pipeline)
 
@@ -167,12 +169,43 @@ async function main(logger: Logger): Promise<void> {
 }
 
 /**
- * Used to filter out this noisy and quite alarm message. This is really just
- * a warning from node resque that comes on a somehwat misnamed event. See
- * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
+ * If it hasn't been done already, migrate from the old pre-3.9 filename format
+ * `$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
  */
-function isSpuriousSchedulerError(error: Error): boolean {
-    return /force-cleaning worker .* but cannot find queues/.test(error.message)
+async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
+    const doneFile = path.join(STORAGE_ROOT, 'id-based-filenames')
+    if (await fs.exists(doneFile)) {
+        // Already migrated.
+        return
+    }
+
+    for (const dump of await db.getRepository(LsifDump).find()) {
+        const oldFile = dbFilenameOld(STORAGE_ROOT, dump.repository, dump.commit)
+        const newFile = dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
+        if (!(await fs.exists(oldFile))) {
+            continue
+        }
+        await fs.rename(oldFile, newFile)
+    }
+
+    // Create an empty done file to record that all files have been renamed.
+    await fs.close(await fs.open(doneFile, 'w'))
+}
+
+/**
+ * Used to filter out this noisy and quite alarm message. This is really just
+ * a warning from node resque that comes on a (somewhat) misnamed event. See
+ * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
+ *
+ * Additionally, the value we're trying to catch is thrown as a string, not
+ * an error object, so we need to catch the case where there's no message
+ * attribute.
+ *
+ * See https://github.com/taskrabbit/node-resque/blob/9a1f5d86dd1725322fb09d40454de5dbea7d7910/lib/queue.js#L251
+ * for the source of the error:
+ */
+function isSpuriousSchedulerError(error: Error | string): boolean {
+    return /force-cleaning worker .* but cannot find queues/.test(typeof error === 'string' ? error : error.message)
 }
 
 /**
@@ -303,6 +336,8 @@ async function lsifEndpoints(
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
+    await ensureFilenamesAreIDs(connection)
+
     /**
      * Create a database instance for the given repository at the commit
      * closest to the target commit for which we have LSIF data. Returns
@@ -323,18 +358,20 @@ async function lsifEndpoints(
         gitserverUrls: string[]
     ): Promise<{ database: Database | undefined; ctx: TracingContext }> => {
         // Try to construct database for the exact commit
-        const database = await tryCreateDatabase(
-            STORAGE_ROOT,
-            xrepoDatabase,
-            connectionCache,
-            documentCache,
-            resultChunkCache,
-            repository,
-            commit,
-            createDatabaseFilename(STORAGE_ROOT, repository, commit)
-        )
-        if (database) {
-            return { database, ctx: { logger, span } }
+        const dump = await xrepoDatabase.getDump(repository, commit)
+        if (dump) {
+            const database = await tryCreateDatabase(
+                STORAGE_ROOT,
+                xrepoDatabase,
+                connectionCache,
+                documentCache,
+                resultChunkCache,
+                dump.id,
+                dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
+            )
+            if (database) {
+                return { database, ctx: { logger, span } }
+            }
         }
 
         // Determine the closest commit that we actually have LSIF data for. If the commit is
@@ -349,6 +386,11 @@ async function lsifEndpoints(
             return { database: undefined, ctx: { logger, span } }
         }
 
+        const dumpWithData = await xrepoDatabase.getDump(repository, commitWithData)
+        if (!dumpWithData) {
+            return { database: undefined, ctx: { logger, span } }
+        }
+
         // Try to construct a database for the approximate commit
         const approximateDatabase = await tryCreateDatabase(
             STORAGE_ROOT,
@@ -356,9 +398,8 @@ async function lsifEndpoints(
             connectionCache,
             documentCache,
             resultChunkCache,
-            repository,
-            commitWithData,
-            createDatabaseFilename(STORAGE_ROOT, repository, commitWithData)
+            dumpWithData.id,
+            dbFilename(STORAGE_ROOT, dumpWithData.id, dumpWithData.repository, dumpWithData.commit)
         )
 
         return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: commitWithData }) }

@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, ViewEntity, ViewColumn, OneToOne, JoinColumn } from 'typeorm'
+import { PrimaryGeneratedColumn, Column, Entity, OneToOne, JoinColumn } from 'typeorm'
 import { getBatchSize } from './util'
 import { EncodedBloomFilter } from './encoding'
 
@@ -41,6 +41,11 @@ export class Commit {
 }
 
 /**
+ * The primary key of the `lsif_dumps` table.
+ */
+export type DumpID = number
+
+/**
  * An entity within the cross-repo database. A row with a repository and commit
  * indicates that there exists LSIF data for that pair.
  */
@@ -50,7 +55,7 @@ export class LsifDump {
      * A unique ID required by typeorm entities.
      */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
-    public id!: number
+    public id!: DumpID
 
     /**
      * The name of the source repository.
@@ -99,9 +104,19 @@ class Package {
     @Column('text', { nullable: true })
     public version!: string | null
 
+    /**
+     * The corresponding dump, `LsifDump` when querying and `DumpID` when
+     * inserting.
+     */
     @OneToOne(type => LsifDump, { eager: true })
     @JoinColumn({ name: 'dump_id' })
     public dump!: LsifDump
+
+    /**
+     * The foreign key to the dump.
+     */
+    @Column('integer')
+    public dump_id!: DumpID
 }
 
 /**
@@ -132,49 +147,12 @@ export class ReferenceModel extends Package {
      * and commit imports from the given package. Testing this filter will prevent
      * the backend from opening databases that will yield no results for a particular
      * symbol.
-     *
-     * The type of the column is determined by the database backend: we use Postgres
-     * with type `bytea` in production, but use SQLite in unit tests with type `blob`.
      */
-    @Column(process.env.JEST_WORKER_ID !== undefined ? 'blob' : 'bytea')
+    @Column('bytea')
     public filter!: EncodedBloomFilter
-}
-
-/**
- * A view that adds a `hasLsifData` column to the `lsif_commits` table. We define the
- * view in a migration as well as inline so that when we run unit tests (via a SQLite db)
- * we will also have access to the view.
- */
-@ViewEntity({
-    name: 'lsif_commits_with_lsif_data',
-    expression: `
-        select
-            c.repository,
-            c."commit",
-            c.parent_commit,
-            exists (
-                select 1
-                from lsif_dumps dump
-                where dump.repository = c.repository and dump."commit" = c."commit"
-            ) as has_lsif_data
-        from lsif_commits c
-    `,
-})
-export class CommitWithLsifMarkers {
-    @ViewColumn()
-    public repository!: string
-
-    @ViewColumn()
-    public commit!: string
-
-    @ViewColumn()
-    public parentCommit!: string
-
-    @ViewColumn()
-    public hasLsifData!: boolean
 }
 
 /**
  * The entities composing the cross-repository database models.
  */
-export const entities = [Commit, CommitWithLsifMarkers, LsifDump, PackageModel, ReferenceModel]
+export const entities = [Commit, LsifDump, PackageModel, ReferenceModel]

@@ -1,14 +1,14 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { createDatabaseFilename, hashKey, mustGet, hasErrorCode } from './util'
+import { dbFilename, hashKey, mustGet, hasErrorCode } from './util'
 import { instrument } from './metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './database.metrics'
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
 import * as fs from 'mz/fs'
 import { isEqual, uniqWith } from 'lodash'
-import { PackageModel } from './xrepo.models'
+import { PackageModel, DumpID } from './xrepo.models'
 import { XrepoDatabase } from './xrepo'
 import {
     DefinitionModel,
@@ -46,8 +46,7 @@ export class Database {
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded documents.
      * @param resultChunkCache The cache of loaded result chunks.
-     * @param repository The repository for which this database answers queries.
-     * @param commit The commit for which this database answers queries.
+     * @param dumpID The ID of the dump for which this database answers queries.
      * @param databasePath The path to the database file.
      */
     constructor(
@@ -56,8 +55,7 @@ export class Database {
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
         private resultChunkCache: ResultChunkCache,
-        private repository: string,
-        private commit: string,
+        private dumpID: DumpID,
         private databasePath: string
     ) {}
 
@@ -381,9 +379,13 @@ export class Database {
         })
 
         const db = this.createNewDatabase(
-            packageEntity.dump.repository,
-            packageEntity.dump.commit,
-            createDatabaseFilename(this.storageRoot, packageEntity.dump.repository, packageEntity.dump.commit)
+            packageEntity.dump.id,
+            dbFilename(
+                this.storageRoot,
+                packageEntity.dump.id,
+                packageEntity.dump.repository,
+                packageEntity.dump.commit
+            )
         )
 
         const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
@@ -436,14 +438,13 @@ export class Database {
         for (const reference of references) {
             // Skip the remote reference that show up for ourselves - we've already gathered
             // these in the previous step of the references query.
-            if (reference.dump.repository === this.repository && reference.dump.commit === this.commit) {
+            if (reference.dump.id === this.dumpID) {
                 continue
             }
 
             const db = this.createNewDatabase(
-                reference.dump.repository,
-                reference.dump.commit,
-                createDatabaseFilename(this.storageRoot, reference.dump.repository, reference.dump.commit)
+                reference.dump.id,
+                dbFilename(this.storageRoot, reference.dump.id, reference.dump.repository, reference.dump.commit)
             )
 
             const pathTransformer = (path: string): string => createRemoteUri(reference, path)
@@ -570,19 +571,17 @@ export class Database {
      * Create a new database with the same configuration but a different repository,
      * commit, and databasePath.
      *
-     * @param repository The repository for which this database answers queries.
-     * @param commit The commit for which this database answers queries.
+     * @param dumpID The ID of the dump for which this database answers queries.
      * @param databasePath The path to the database file.
      */
-    private createNewDatabase(repository: string, commit: string, databasePath: string): Database {
+    private createNewDatabase(dumpID: DumpID, databasePath: string): Database {
         return new Database(
             this.storageRoot,
             this.xrepoDatabase,
             this.connectionCache,
             this.documentCache,
             this.resultChunkCache,
-            repository,
-            commit,
+            dumpID,
             databasePath
         )
     }
@@ -607,7 +606,7 @@ export class Database {
      * @param pairs The values to log.
      */
     private logSpan(ctx: TracingContext, event: string, pairs: { [K: string]: any }): void {
-        logSpan(ctx, event, { ...pairs, dbRepository: this.repository, dbCommit: this.commit })
+        logSpan(ctx, event, { ...pairs, dbID: this.dumpID })
     }
 }
 
@@ -742,8 +741,7 @@ export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: strin
  * @param connectionCache The cache of SQLite connections.
  * @param documentCache The cache of loaded documents.
  * @param resultChunkCache The cache of loaded result chunks.
- * @param repository The repository for which this database answers queries.
- * @param commit The commit for which this database answers queries.
+ * @param dumpID The ID of the dump for which this database answers queries.
  * @param databasePath The path to the database file.
  */
 export async function tryCreateDatabase(
@@ -752,8 +750,7 @@ export async function tryCreateDatabase(
     connectionCache: ConnectionCache,
     documentCache: DocumentCache,
     resultChunkCache: ResultChunkCache,
-    repository: string,
-    commit: string,
+    dumpID: DumpID,
     databasePath: string
 ): Promise<Database | undefined> {
     try {
@@ -772,8 +769,7 @@ export async function tryCreateDatabase(
         connectionCache,
         documentCache,
         resultChunkCache,
-        repository,
-        commit,
+        dumpID,
         databasePath
     )
 }

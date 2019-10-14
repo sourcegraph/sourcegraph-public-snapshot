@@ -1,69 +1,97 @@
 import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './importer'
-import { createCommit, createLocation, createRemoteLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
-import { createDatabaseFilename } from './util'
+import {
+    createCommit,
+    createLocation,
+    createRemoteLocation,
+    createCleanPostgresDatabase,
+    convertTestData,
+} from './test-utils'
+import { dbFilename } from './util'
 import { Database } from './database'
-import { entities } from './xrepo.models'
-import { Readable } from 'stream'
 import { XrepoDatabase } from './xrepo'
+import { Connection } from 'typeorm'
 
 describe('Database', () => {
+    let connection!: Connection
+    let cleanup!: () => Promise<void>
     let storageRoot!: string
     let xrepoDatabase!: XrepoDatabase
+
     const connectionCache = new ConnectionCache(10)
     const documentCache = new DocumentCache(10)
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
+        ;({ connection, cleanup } = await createCleanPostgresDatabase())
         storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, entities))
+        xrepoDatabase = new XrepoDatabase(connection)
 
-        for (const { input, repository, commit } of await createTestInputs()) {
-            const database = createDatabaseFilename(storageRoot, repository, commit)
-            const { packages, references } = await convertLsif(input, database)
-            await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+        // Prepare test data
+        for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {
+            await convertTestData(
+                xrepoDatabase,
+                storageRoot,
+                repository,
+                createCommit(repository),
+                `typescript/xrepo/data/${repository}.lsif.gz`
+            )
         }
     })
 
-    afterAll(async () => await rmfr(storageRoot))
+    afterAll(async () => {
+        await rmfr(storageRoot)
 
-    const loadDatabase = (repository: string, commit: string): Database =>
-        new Database(
+        if (cleanup) {
+            await cleanup()
+        }
+    })
+
+    const loadDatabase = async (repository: string, commit: string): Promise<Database> => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
+        const dump = await xrepoDatabase.getDump(repository, commit)
+        if (!dump) {
+            throw new Error(`Unknown repository@commit ${repository}@${commit}`)
+        }
+
+        return new Database(
             storageRoot,
             xrepoDatabase,
             connectionCache,
             documentCache,
             resultChunkCache,
-            repository,
-            commit,
-            createDatabaseFilename(storageRoot, repository, commit)
+            dump.id,
+            dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
         )
+    }
 
     it('should find all defs of `add` from repo a', async () => {
-        const db = loadDatabase('a', createCommit('a'))
+        const db = await loadDatabase('a', createCommit('a'))
         const definitions = await db.definitions('src/index.ts', { line: 11, character: 18 })
         expect(definitions).toContainEqual(createLocation('src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `add` from repo b1', async () => {
-        const db = loadDatabase('b1', createCommit('b1'))
+        const db = await loadDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 12 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all defs of `mul` from repo b1', async () => {
-        const db = loadDatabase('b1', createCommit('b1'))
+        const db = await loadDatabase('b1', createCommit('b1'))
         const definitions = await db.definitions('src/index.ts', { line: 3, character: 16 })
         expect(definitions).toContainEqual(createRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19))
         expect(definitions && definitions.length).toEqual(1)
     })
 
     it('should find all refs of `mul` from repo a', async () => {
-        const db = loadDatabase('a', createCommit('a'))
+        const db = await loadDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 4, character: 19 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -86,7 +114,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `mul` from repo b1', async () => {
-        const db = loadDatabase('b1', createCommit('b1'))
+        const db = await loadDatabase('b1', createCommit('b1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -109,7 +137,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo a', async () => {
-        const db = loadDatabase('a', createCommit('a'))
+        const db = await loadDatabase('a', createCommit('a'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 0, character: 17 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -142,7 +170,7 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo c1', async () => {
-        const db = loadDatabase('c1', createCommit('c1'))
+        const db = await loadDatabase('c1', createCommit('c1'))
         // TODO - (FIXME) why are these garbage results in the index
         const references = (await db.references('src/index.ts', { line: 3, character: 16 }))!.filter(
             l => !l.uri.includes('node_modules')
@@ -174,22 +202,3 @@ describe('Database', () => {
         expect(references && references.length).toEqual(20)
     })
 })
-
-async function createTestInputs(): Promise<
-    {
-        input: Readable
-        repository: string
-        commit: string
-    }[]
-> {
-    const repositories = ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']
-
-    const inputs = []
-    for (const repository of repositories) {
-        const input = await getTestData(`typescript/xrepo/data/${repository}.lsif.gz`)
-        const commit = createCommit(repository)
-        inputs.push({ input, repository, commit })
-    }
-
-    return inputs
-}

@@ -83,13 +83,16 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Source       string
 	Argument     *string
 }) (*EmptyResponse, error) {
-	if !conf.EventLoggingEnabled() || pubSubDotComEventsTopicID == "" {
+	if !conf.EventLoggingEnabled() {
 		return nil, nil
 	}
 	actor := actor.FromContext(ctx)
 
 	// On Sourcegraph.com, log events to BigQuery instead of the internal Postgres table.
 	if envvar.SourcegraphDotComMode() {
+		if pubSubDotComEventsTopicID == "" {
+			return nil, nil
+		}
 		var argument string
 		if args.Argument != nil {
 			argument = *args.Argument
