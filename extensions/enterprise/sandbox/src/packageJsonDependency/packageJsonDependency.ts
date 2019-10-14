@@ -4,8 +4,9 @@ import { filter, map, startWith, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { npmPackageManager } from './npm/npm'
-import { PackageJsonDependency, ResolvedDependency } from './packageManager'
+import { PackageJsonDependency, ResolvedDependency, PackageJsonDependencyQuery } from './packageManager'
 import { yarnPackageManager } from './yarn/yarn'
+import { packageJsonDependencyManagementProviderRegistry } from './providers'
 
 const COMMAND_ID = 'packageJsonDependency.action'
 
@@ -69,24 +70,14 @@ function provideDiagnostics({
                       return [] as sourcegraph.Diagnostic[] // TODO!(sqs): dont run in comparison mode
                   }
 
-                  const matchDep: PackageJsonDependency = {
+                  const depQuery: PackageJsonDependencyQuery = {
                       name: packageName,
-                      version: matchVersion,
+                      versionRange: matchVersion,
                   }
-                  const hits = [
-                      ...(await npmPackageManager.packagesWithDependencySatisfyingVersionRange(matchDep, filters)).map(
-                          d => ({
-                              ...d,
-                              type: 'npm' as const,
-                          })
-                      ),
-                      ...(await yarnPackageManager.packagesWithDependencySatisfyingVersionRange(matchDep, filters)).map(
-                          d => ({
-                              ...d,
-                              type: 'yarn' as const,
-                          })
-                      ),
-                  ]
+                  const specs = packageJsonDependencyManagementProviderRegistry.provideDependencySpecifications(
+                      depQuery,
+                      filters
+                  )
                   return flatten(
                       hits
                           .map(({ type, ...hit }) => {

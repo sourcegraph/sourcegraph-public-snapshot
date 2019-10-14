@@ -95,7 +95,7 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
                     !(edit.type === WorkspaceEditOperationType.FileTextEdit && edit.uri.toString() === uri.toString())
             )
         } else {
-            // Append edit to the end.
+            // Append edit to the end. TODO!(sqs): why not overwrite?
             for (const edit of edits) {
                 if (edit) {
                     this.operations.push({ type: WorkspaceEditOperationType.FileTextEdit, uri, edit })
@@ -165,4 +165,20 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
         })
         return workspaceEdit
     }
+}
+
+export const combineWorkspaceEdits = (edits: sourcegraph.WorkspaceEdit[]): sourcegraph.WorkspaceEdit => {
+    if (edits.length === 0) {
+        return new WorkspaceEdit()
+    }
+    if (edits.length === 1) {
+        return edits[0]
+    }
+
+    // TODO!(sqs): if WorkspaceEdit#set changes to replace not append, then this needs to change too
+    const combined: SerializedWorkspaceEdit = { operations: [] }
+    for (const edit of edits) {
+        combined.operations.push(...(edit as WorkspaceEdit).toJSON().operations)
+    }
+    return WorkspaceEdit.fromJSON(combined)
 }

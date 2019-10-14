@@ -45,8 +45,11 @@ export interface DependencySpecification<Q extends DependencyQuery> {
     readonly resolutions: readonly DependencyResolution[]
 }
 
-export interface DependencyManagementProvider<Q extends DependencyQuery> {
-    provideDependencySpecifications(dep: Q, filters: string): Observable<readonly DependencySpecification<Q>[]>
-    resolveDependencyUpgradeAction?(dep: DependencySpecification<Q>, version: string): Observable<WorkspaceEdit>
-    resolveDependencyBanAction?(dep: DependencySpecification<Q>): Observable<WorkspaceEdit>
+export interface DependencyManagementProvider<
+    Q extends DependencyQuery,
+    S extends DependencySpecification<Q> = DependencySpecification<Q>
+> {
+    provideDependencySpecifications(dep: Q, filters: string): Observable<readonly S[]>
+    resolveDependencyUpgradeAction?(dep: S, version: string): Observable<WorkspaceEdit>
+    resolveDependencyBanAction?(dep: S): Observable<WorkspaceEdit>
 }

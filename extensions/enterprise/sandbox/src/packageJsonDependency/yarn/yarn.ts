@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { flatten } from 'lodash'
 import { from, merge, Observable, combineLatest } from 'rxjs'
 import { toArray, map, switchMap, filter } from 'rxjs/operators'
 import semver from 'semver'
@@ -8,13 +6,11 @@ import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
 import {
-    PackageJsonPackageManager,
     ResolvedDependency,
-    ResolvedDependencyInPackage,
     PackageJsonDependencyManagementProvider,
     PackageJsonDependencyQuery,
 } from '../packageManager'
-import { editForDependencyAction, editPackageJson, editForCommands, editForCommands2 } from '../packageManagerCommon'
+import { editForCommands2 } from '../packageManagerCommon'
 import { yarnLogicalTree } from './logicalTree'
 import { DependencySpecification } from '../../dependencyManagement'
 
@@ -87,6 +83,7 @@ const provideDependencySpecification = (
 }
 
 export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
+    type: 'yarn',
     provideDependencySpecifications: (query, filters = '') => {
         const parsedQuery = {
             ...query,

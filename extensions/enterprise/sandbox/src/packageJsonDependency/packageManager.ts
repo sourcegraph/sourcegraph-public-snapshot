@@ -5,7 +5,9 @@ import { DependencyQuery, DependencyManagementProvider } from '../dependencyMana
 export interface PackageJsonDependencyQuery extends Required<DependencyQuery> {}
 
 export interface PackageJsonDependencyManagementProvider
-    extends DependencyManagementProvider<PackageJsonDependencyQuery> {}
+    extends DependencyManagementProvider<PackageJsonDependencyQuery> {
+    type: string
+}
 
 export interface ResolvedDependencyInPackage {
     packageJson: TextDocument
