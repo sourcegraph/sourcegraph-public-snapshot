@@ -63,7 +63,7 @@ It should be noted that while we do want to improve this behavior in the future,
 
 #### Known limitations
 
-There are a few known limitations with the implementation we are working to resolve in upcoming Sourcegraph versions:
+There are a few known limitations with the current implementation:
 
 1. You cannot query multiple result types yet. For example, you cannot ask for both text and symbol results in the same query.
 2. The paginated search API currently only works with text results. If you try to include `type:symbol` in your query, for example, an error will be returned.
