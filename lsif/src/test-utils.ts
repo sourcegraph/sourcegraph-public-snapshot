@@ -59,7 +59,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
     try {
         // Run migrations then connect to database
-        await child_process.exec(migrateCommand, { env })
+        console.log(await child_process.exec(migrateCommand, { env }))
         const connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
         return { connection, cleanup }
     } catch (error) {
