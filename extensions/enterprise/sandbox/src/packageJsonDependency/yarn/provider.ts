@@ -5,10 +5,11 @@ import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
 import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '..'
 import { yarnLogicalTree } from './logicalTree'
-import { provideDependencySpecification, editForCommands2, editPackageJson, traversePackageJsonLockfile } from '../util'
+import { provideDependencySpecification, editPackageJson, traversePackageJsonLockfile } from '../util'
 import * as sourcegraph from 'sourcegraph'
 import { DependencySpecification } from '../../dependencyManagement'
 import { combineWorkspaceEdits } from '../../../../../../shared/src/api/types/workspaceEdit'
+import { editForCommands } from '../../execServer/editsForCommands'
 
 const yarnExecClient = createExecServerClient('a8n-yarn-exec', [])
 
@@ -78,7 +79,7 @@ export const yarnDependencyManagementProvider: PackageJsonDependencyManagementPr
             // TODO!(sqs)
             console.log(addYarnResolutions)
         }
-        return editForCommands2(
+        return editForCommands(
             [
                 ...dep.declarations.map(d => d.location.uri),
                 ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
@@ -93,7 +94,7 @@ export const yarnDependencyManagementProvider: PackageJsonDependencyManagementPr
             console.error('Invalid declarations.', dep)
             throw new Error('invalid declarations')
         }
-        return editForCommands2(
+        return editForCommands(
             [
                 ...dep.declarations.map(d => d.location.uri),
                 ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
@@ -122,7 +123,7 @@ async function addYarnResolutions(
     ])
     const packageJsonObj = JSON.parse(packageJson.text!)
     const otherFiles = dep.resolutions.filter(propertyIsDefined('location')).map(res => res.location.uri)
-    const edits2 = await editForCommands2(
+    const edits2 = await editForCommands(
         [
             ...otherFiles,
             {

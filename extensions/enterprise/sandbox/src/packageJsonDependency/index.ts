@@ -4,8 +4,8 @@ import { DependencyManagementCampaignContextCommon } from '../dependencyManageme
 import { registerDependencyManagementProviders } from '../dependencyManagement/register'
 import { combinedProvider } from '../dependencyManagement/combinedProvider'
 import { DependencyManagementProvider, DependencyQuery } from '../dependencyManagement'
-import { yarnDependencyManagementProvider } from './yarn/yarn'
-import { npmDependencyManagementProvider } from './npm/npm'
+import { yarnDependencyManagementProvider } from './yarn/provider'
+import { npmDependencyManagementProvider } from './npm/provider'
 
 export interface PackageJsonDependencyCampaignContext extends DependencyManagementCampaignContextCommon {}
 

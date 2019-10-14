@@ -1,24 +1,30 @@
-import { from, merge } from 'rxjs'
-import { toArray, switchMap, filter } from 'rxjs/operators'
+import { from, merge, Observable } from 'rxjs'
+import { toArray, switchMap, filter, map } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import { PackageJsonDependencyManagementProvider, PackageJsonDependencyQuery } from '..'
-import { lockTree } from './logicalTree'
-import { provideDependencySpecification, editForCommands2, traversePackageJsonLockfile } from '../util'
+import { JavaDependencyManagementProvider, JavaDependencyQuery } from '..'
 import { DependencySpecification } from '../../dependencyManagement'
+import { editForCommands } from '../../execServer/editsForCommands'
+import { openTextDocument } from '../../dependencyManagement/util'
 
-const npmExecClient = createExecServerClient('a8n-npm-exec')
+const gradleExecClient = createExecServerClient('a8n-java-gradle-exec')
 
-const NPM_OPTS = ['--no-audit', '--package-lock-only', '--ignore-scripts']
+const GRADLE_OPTS = ['--no-audit', '--package-lock-only', '--ignore-scripts']
 
-export const npmDependencyManagementProvider: PackageJsonDependencyManagementProvider = {
-    type: 'npm',
+const provideDependencySpecification = (
+    buildGradle: URL,
+    query: JavaDependencyQuery
+): Observable<DependencySpecification<JavaDependencyQuery> | null> =>
+    openTextDocument(buildGradle).pipe(switchMap(buildGradle => {}))
+
+export const gradleDependencyManagementProvider: JavaDependencyManagementProvider = {
+    type: 'gradle',
     provideDependencySpecifications: (query, filters = '') =>
         from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `'"${query.name}"' ${filters}`,
+                    pattern: `${JSON.stringify(query.name)} ${filters}`,
                     type: 'regexp',
                 },
                 {
@@ -26,7 +32,7 @@ export const npmDependencyManagementProvider: PackageJsonDependencyManagementPro
                         type: 'regexp',
                     },
                     files: {
-                        includes: ['(^|/)package-lock.json$'],
+                        includes: ['(^|/)build.gradle$'],
                         excludes: ['node_modules'],
                         type: 'regexp',
                     },
@@ -37,12 +43,7 @@ export const npmDependencyManagementProvider: PackageJsonDependencyManagementPro
             switchMap(textSearchResults =>
                 merge(
                     ...textSearchResults.map(textSearchResult =>
-                        provideDependencySpecification(
-                            new URL(textSearchResult.uri.replace(/package-lock\.json$/, 'package.json')),
-                            new URL(textSearchResult.uri),
-                            query,
-                            getPackageLockDependency
-                        )
+                        provideDependencySpecification(new URL(textSearchResult.uri), query)
                     )
                 ).pipe(
                     filter(isDefined),
@@ -56,13 +57,13 @@ export const npmDependencyManagementProvider: PackageJsonDependencyManagementPro
             console.error('Invalid declarations.', dep)
             throw new Error('invalid declarations')
         }
-        return editForCommands2(
+        return editForCommands(
             [
                 ...dep.declarations.map(d => d.location.uri),
                 ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
             ],
-            [['npm', 'install', ...NPM_OPTS, '--', `${dep.declarations[0].name}@${version}`]],
-            npmExecClient
+            [['gradle', 'install', ...GRADLE_OPTS, '--', `${dep.declarations[0].name}@${version}`]],
+            gradleExecClient
         )
     },
     resolveDependencyBanAction: dep => {
@@ -71,13 +72,13 @@ export const npmDependencyManagementProvider: PackageJsonDependencyManagementPro
             console.error('Invalid declarations.', dep)
             throw new Error('invalid declarations')
         }
-        return editForCommands2(
+        return editForCommands(
             [
                 ...dep.declarations.map(d => d.location.uri),
                 ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
             ],
-            [['npm', 'uninstall', ...NPM_OPTS, '--', `${dep.declarations[0].name}`]],
-            npmExecClient
+            [['gradle', 'uninstall', ...GRADLE_OPTS, '--', `${dep.declarations[0].name}`]],
+            gradleExecClient
         )
     },
 }
@@ -85,8 +86,8 @@ export const npmDependencyManagementProvider: PackageJsonDependencyManagementPro
 function getPackageLockDependency(
     packageJson: string,
     packageLock: string,
-    parsedQuery: PackageJsonDependencyQuery
-): Pick<DependencySpecification<PackageJsonDependencyQuery>, 'declarations' | 'resolutions'> {
+    parsedQuery: JavaDependencyQuery
+): Pick<DependencySpecification<JavaDependencyQuery>, 'declarations' | 'resolutions'> {
     const tree = lockTree(JSON.parse(packageJson), JSON.parse(packageLock))
-    return traversePackageJsonLockfile(tree, parsedQuery)
+    return traverseJavaLockfile(tree, parsedQuery)
 }
