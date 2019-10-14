@@ -65,7 +65,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
         console.log('migrate --version', await child_process.exec('migrate --version'))
         console.log(`echo "${connectionString}"`, await child_process.exec(`echo "${connectionString}"`, { env }))
         // Run migrations then connect to database
-        console.log(migrateCommand, await child_process.exec(migrateCommand, { env }))
+        console.log(migrateCommand, await child_process.exec(migrateCommand, { env, shell: '/bin/sh' }))
         console.log('DONE WITH SANITY CHECK')
 
         const connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
