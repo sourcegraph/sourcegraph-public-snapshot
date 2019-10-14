@@ -5,6 +5,7 @@ import { isDefined } from '../../../../../shared/src/util/types'
 import { PackageJsonDependencyQuery } from './packageManager'
 import { packageJsonDependencyManagementProviderRegistry } from './providers'
 import { DependencySpecificationWithType } from '../dependencyManagement/combinedProvider'
+import { toLocation } from '../../../../../shared/src/api/extension/api/types'
 
 const COMMAND_ID = 'packageJsonDependency.action'
 
@@ -143,7 +144,15 @@ function getDiagnosticData(diag: sourcegraph.Diagnostic): DiagnosticData {
     if (!diag.data) {
         throw new Error('no diagnostic data')
     }
-    return JSON.parse(diag.data)
+    const parsed: DiagnosticData = JSON.parse(diag.data)
+    return {
+        ...parsed,
+        declarations: parsed.declarations.map(d => ({ ...d, location: toLocation(d.location as any) })),
+        resolutions: parsed.resolutions.map(r => ({
+            ...r,
+            location: r.location ? toLocation(r.location as any) : undefined,
+        })),
+    }
 }
 
 function editForDependencyAction(diag: sourcegraph.Diagnostic): Observable<sourcegraph.WorkspaceEdit> {

@@ -5,19 +5,21 @@ import path from 'path'
 import * as sourcegraph from 'sourcegraph'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
 import { ExecServerClient } from '../execServer/client'
-import { ResolvedDependencyInPackage } from './packageManager'
-import { PackageJsonDependencyCampaignContext } from './packageJsonDependency'
-import { Observable, combineLatest, from } from 'rxjs'
+import { Observable, combineLatest, from, of } from 'rxjs'
 import { switchMap, map } from 'rxjs/operators'
 
-const MINIMAL_WORKTREE = true
-
 export const editForCommands2 = (
-    files: URL[],
+    files: (URL | Pick<sourcegraph.TextDocument, 'uri' | 'text'>)[],
     commands: string[][],
     execServerClient: ExecServerClient
 ): Observable<sourcegraph.WorkspaceEdit> =>
-    combineLatest(files.map(url => from(sourcegraph.workspace.openTextDocument(url)))).pipe(
+    combineLatest(
+        files.map(file =>
+            file instanceof URL
+                ? from(sourcegraph.workspace.openTextDocument(file))
+                : of<Pick<sourcegraph.TextDocument, 'uri' | 'text'>>(file)
+        )
+    ).pipe(
         switchMap(files => {
             const dir = path.dirname(parseRepoURI(files[0].uri).filePath!)
 
@@ -45,31 +47,6 @@ export const editForCommands2 = (
             )
         })
     )
-
-export const editForCommands = async (
-    {
-        packageJson,
-        lockfile,
-    }: {
-        packageJson: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
-        lockfile: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
-    },
-    commands: string[][],
-    execServerClient: ExecServerClient
-): Promise<sourcegraph.WorkspaceEdit> => {
-    throw new Error('only MINIMAL_WORKTREE is supported')
-}
-
-export const editForDependencyAction = (
-    dep: Pick<ResolvedDependencyInPackage, 'dependency'> & {
-        packageJson: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
-        lockfile: Pick<sourcegraph.TextDocument, 'uri' | 'text'>
-    },
-    action: PackageJsonDependencyCampaignContext['action'],
-    commands: Record<'upgradeCommands' | 'removeCommands', string[][]>,
-    execServerClient: ExecServerClient
-): Promise<sourcegraph.WorkspaceEdit> =>
-    editForCommands(dep, action === 'ban' ? commands.removeCommands : commands.upgradeCommands, execServerClient)
 
 // function computeDiffs(files: { old: sourcegraph.TextDocument; newText?: string }[]): sourcegraph.WorkspaceEdit {
 //     const edit = new sourcegraph.WorkspaceEdit()

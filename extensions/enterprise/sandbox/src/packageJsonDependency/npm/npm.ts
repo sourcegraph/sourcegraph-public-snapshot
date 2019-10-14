@@ -56,8 +56,8 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
             )
         )
     },
-
     resolveDependencyUpgradeAction: (dep, version) => {
+        // TODO!(sqs): this is not correct w.r.t. indirect deps
         if (dep.declarations.length !== 1) {
             console.error('Invalid declarations.', dep)
             throw new Error('invalid declarations')
@@ -71,9 +71,22 @@ export const npmPackageManager: PackageJsonDependencyManagementProvider = {
             npmExecClient
         )
     },
+    resolveDependencyBanAction: dep => {
+        // TODO!(sqs): this is not correct w.r.t. indirect deps
+        if (dep.declarations.length !== 1) {
+            console.error('Invalid declarations.', dep)
+            throw new Error('invalid declarations')
+        }
+        return editForCommands2(
+            [
+                ...dep.declarations.map(d => d.location.uri),
+                ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
+            ],
+            [['npm', 'uninstall', ...NPM_OPTS, '--', `${dep.declarations[0].name}`]],
+            npmExecClient
+        )
+    },
 }
-
-// TODO!(sqs) removeCommands: [['npm', 'uninstall', ...NPM_OPTS, '--', `${dep.dependency.name}`]],
 
 function getPackageLockDependency(
     packageJson: string,

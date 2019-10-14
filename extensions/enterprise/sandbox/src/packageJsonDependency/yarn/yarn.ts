@@ -4,10 +4,17 @@ import semver from 'semver'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import { ResolvedDependency, PackageJsonDependencyManagementProvider } from '../packageManager'
-import { editForCommands2 } from '../packageManagerCommon'
+import {
+    ResolvedDependency,
+    PackageJsonDependencyManagementProvider,
+    PackageJsonDependencyQuery,
+} from '../packageManager'
+import { editForCommands2, editPackageJson } from '../packageManagerCommon'
 import { yarnLogicalTree } from './logicalTree'
 import { provideDependencySpecification } from '../util'
+import * as sourcegraph from 'sourcegraph'
+import { DependencySpecification, DependencyQuery } from '../../dependencyManagement'
+import { combineWorkspaceEdits } from '../../../../../../shared/src/api/types/workspaceEdit'
 
 const yarnExecClient = createExecServerClient('a8n-yarn-exec', [])
 
@@ -71,11 +78,16 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
             )
         )
     },
-
     resolveDependencyUpgradeAction: (dep, version) => {
+        // TODO!(sqs): this is not correct w.r.t. indirect deps
         if (dep.declarations.length !== 1) {
             console.error('Invalid declarations.', dep)
             throw new Error('invalid declarations')
+        }
+        // eslint-disable-next-line no-constant-condition
+        if (1 * 2 === 4) {
+            // TODO!(sqs)
+            console.log(addYarnResolutions)
         }
         return editForCommands2(
             [
@@ -86,35 +98,57 @@ export const yarnPackageManager: PackageJsonDependencyManagementProvider = {
             yarnExecClient
         )
     },
+    resolveDependencyBanAction: dep => {
+        // TODO!(sqs): this is not correct w.r.t. indirect deps
+        if (dep.declarations.length !== 1) {
+            console.error('Invalid declarations.', dep)
+            throw new Error('invalid declarations')
+        }
+        return editForCommands2(
+            [
+                ...dep.declarations.map(d => d.location.uri),
+                ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
+            ],
+            [['yarn', 'remove', ...YARN_OPTS, '--', dep.declarations[0].name]],
+            yarnExecClient
+        )
+    },
 }
 
-// TODO!(sqs) removeCommands: [['yarn', 'remove', ...YARN_OPTS, '--', dep.dependency.name]],
+async function addYarnResolutions(
+    dep: DependencySpecification<PackageJsonDependencyQuery>,
+    version: string
+): Promise<sourcegraph.WorkspaceEdit> {
+    if (dep.declarations.length !== 1) {
+        console.error('Invalid declarations.', dep)
+        throw new Error('invalid declarations')
+    }
 
-/*const addYarnResolutions = () => {
     // Handle indirect dep upgrades by adding to Yarn resolutions. This causes an error in `yarn
     // check` if the resolution is not compatible. TODO(sqs): Find the minimum upgrade path (if
     // any) to eliminate the old version dep without using resolutions.
-    const workspaceEdit = editPackageJson(dep.packageJson, [
-        { path: ['resolutions', dep.dependency.name], value: dep.dependency.version },
+    const packageJson = await sourcegraph.workspace.openTextDocument(dep.declarations[0].location.uri)
+    const workspaceEdit = editPackageJson(packageJson, [
+        { path: ['resolutions', dep.declarations[0].name], value: version },
     ])
-    const packageJsonObj = JSON.parse(dep.packageJson.text!)
-    const edits2 = await editForCommands(
-        {
-            lockfile: dep.lockfile,
-            packageJson: {
-                uri: dep.packageJson.uri,
+    const packageJsonObj = JSON.parse(packageJson.text!)
+    const otherFiles = dep.resolutions.filter(propertyIsDefined('location')).map(res => res.location.uri)
+    const edits2 = await editForCommands2(
+        [
+            ...otherFiles,
+            {
+                uri: packageJson.uri,
                 text: JSON.stringify({
                     ...packageJsonObj,
-                    resolutions: { ...packageJsonObj.resolutions, [dep.dependency.name]: dep.dependency.version },
+                    resolutions: { ...packageJsonObj.resolutions, [dep.declarations[0].name]: version },
                 }),
             },
-        },
+        ],
         [['yarn', ...YARN_OPTS, 'install']],
         yarnExecClient
-    )
-    workspaceEdit.set(new URL(dep.lockfile.uri), edits2.get(new URL(dep.lockfile.uri)))
-    return workspaceEdit
-}*/
+    ).toPromise()
+    return combineWorkspaceEdits([workspaceEdit, edits2])
+}
 
 function getYarnLockDependency(packageJson: string, yarnLock: string, packageName: string): ResolvedDependency | null {
     const tree = yarnLogicalTree(JSON.parse(packageJson), yarnLock)
