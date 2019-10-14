@@ -9,6 +9,7 @@ import { child_process } from 'mz'
 import { convertLsif } from './importer'
 import { XrepoDatabase } from './xrepo'
 import { dbFilename } from './util'
+import { userInfo } from 'os'
 
 /**
  * Create a new postgres database with a random suffix, apply the frontend
@@ -24,7 +25,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     // Pull test db config from environment
     const host = process.env.PGHOST || 'localhost'
     const port = parseInt(process.env.PGPORT || '5432', 10)
-    const username = process.env.PGUSER || 'postgres'
+    const username = process.env.PGUSER || userInfo().username || 'postgres'
     const password = process.env.PGPASSWORD || ''
     const database = `sourcegraph-test-lsif-xrepo-${suffix}`
 
