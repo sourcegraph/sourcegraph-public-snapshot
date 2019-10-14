@@ -133,4 +133,4 @@ libsqlite3-pcre.so
 # Direnv
 .envrc
 
-dev/comment.txt
+comment.txt
