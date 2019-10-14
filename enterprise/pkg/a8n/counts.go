@@ -83,16 +83,17 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 	events := Events(es)
 	sort.Sort(events)
 
-	// Map sorted events to their changesets
+	// Grouping Events by their Changeset ID
+	byChangesetID := make(map[int64]Events)
+	for _, e := range events {
+		id := e.Changeset()
+		byChangesetID[id] = append(byChangesetID[id], e)
+	}
+
+	// Map Events to their Changeset
 	byChangeset := make(map[*a8n.Changeset]Events)
 	for _, c := range cs {
-		group := Events{}
-		for _, e := range events {
-			if e.Changeset() == c.ID {
-				group = append(group, e)
-			}
-		}
-		byChangeset[c] = group
+		byChangeset[c] = byChangesetID[c.ID]
 	}
 
 	for changeset, csEvents := range byChangeset {
