@@ -674,13 +674,13 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	}
 
 	changesets := []*a8n.Changeset{
-		&a8n.Changeset{
+		{
 			RepoID:              int32(githubRepo.ID),
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 			CampaignIDs:         []int64{campaign.ID},
 		},
-		&a8n.Changeset{
+		{
 			RepoID:              int32(githubRepo.ID),
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
@@ -735,12 +735,12 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	}
 
 	want := []*ee.ChangesetCounts{
-		&ee.ChangesetCounts{Time: daysBeforeEnd(5), Total: 0, Open: 0},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(4), Total: 1, Open: 1, OpenPending: 1},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(3), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(2), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-		&ee.ChangesetCounts{Time: daysBeforeEnd(1), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-		&ee.ChangesetCounts{Time: end, Total: 2, Merged: 2},
+		{Time: daysBeforeEnd(5), Total: 0, Open: 0},
+		{Time: daysBeforeEnd(4), Total: 1, Open: 1, OpenPending: 1},
+		{Time: daysBeforeEnd(3), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: daysBeforeEnd(2), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: daysBeforeEnd(1), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: end, Total: 2, Merged: 2},
 	}
 
 	if !reflect.DeepEqual(have, want) {
