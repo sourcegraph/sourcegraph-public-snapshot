@@ -23,29 +23,16 @@ type ChangesetCounts struct {
 	OpenPending          int32
 }
 
-// IncReviewStateCount increments the corresponding count for a given
+// AddReviewState adds n to the corresponding counter for a given
 // ChangesetReviewState
-func (c *ChangesetCounts) IncReviewStateCount(s a8n.ChangesetReviewState) {
+func (c *ChangesetCounts) AddReviewState(s a8n.ChangesetReviewState, n int32) {
 	switch s {
 	case a8n.ChangesetReviewStatePending:
-		c.OpenPending++
+		c.OpenPending += n
 	case a8n.ChangesetReviewStateApproved:
-		c.OpenApproved++
+		c.OpenApproved += n
 	case a8n.ChangesetReviewStateChangesRequested:
-		c.OpenChangesRequested++
-	}
-}
-
-// IncReviewStateCount decrements the corresponding count for a given
-// ChangesetReviewState
-func (c *ChangesetCounts) DecReviewStateCount(s a8n.ChangesetReviewState) {
-	switch s {
-	case a8n.ChangesetReviewStatePending:
-		c.OpenPending--
-	case a8n.ChangesetReviewStateApproved:
-		c.OpenApproved--
-	case a8n.ChangesetReviewStateChangesRequested:
-		c.OpenChangesRequested--
+		c.OpenChangesRequested += n
 	}
 }
 
@@ -171,14 +158,14 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			c.Closed++
 			closed = true
 
-			c.DecReviewStateCount(currentReviewState)
+			c.AddReviewState(currentReviewState, -1)
 
 		case a8n.ChangesetEventKindGitHubReopened:
 			c.Open++
 			c.Closed--
 			closed = false
 
-			c.IncReviewStateCount(currentReviewState)
+			c.AddReviewState(currentReviewState, 1)
 
 		case a8n.ChangesetEventKindGitHubMerged:
 			// If it was closed, all "review counts" have been updated by the
@@ -189,7 +176,7 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				return nil
 			}
 
-			c.DecReviewStateCount(currentReviewState)
+			c.AddReviewState(currentReviewState, -1)
 
 			c.Merged++
 			c.Open--
@@ -222,10 +209,10 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 
 			if newReviewState != oldReviewState {
 				// Decrement the counts increased by old review state
-				c.DecReviewStateCount(oldReviewState)
+				c.AddReviewState(oldReviewState, -1)
 
 				// Increase the counts for new review state
-				c.IncReviewStateCount(newReviewState)
+				c.AddReviewState(newReviewState, 1)
 			}
 		}
 	}
