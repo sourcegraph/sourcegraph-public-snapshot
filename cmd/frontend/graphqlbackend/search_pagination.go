@@ -138,6 +138,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 	}()
 
 	// All paginated search requests should complete within this timeframe.
+	//
+	// This should not be increased or made to be configurable, because from a
+	// product POV it should never take longer than 10s to fetch 5,000 results
+	// (the max you can fetch in one request). If it does timeout and you are
+	// thinking of increasing this value, it means there is a different part of
+	// the underlying system which needs to be improved instead.
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
