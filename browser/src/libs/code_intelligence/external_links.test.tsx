@@ -1,4 +1,4 @@
-import { fireEvent } from 'react-testing-library'
+import { fireEvent } from '@testing-library/react'
 import { of } from 'rxjs'
 import * as sinon from 'sinon'
 import { renderViewContextOnSourcegraph } from './external_links'

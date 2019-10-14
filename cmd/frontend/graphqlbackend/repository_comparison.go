@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
@@ -293,7 +293,6 @@ func (r *fileDiffResolver) OldFile() *gitTreeEntryResolver {
 	}
 	return &gitTreeEntryResolver{
 		commit: r.cmp.base,
-		path:   r.fileDiff.OrigName,
 		stat:   createFileInfo(r.fileDiff.OrigName, false),
 	}
 }
@@ -304,7 +303,6 @@ func (r *fileDiffResolver) NewFile() *gitTreeEntryResolver {
 	}
 	return &gitTreeEntryResolver{
 		commit: r.cmp.head,
-		path:   r.fileDiff.NewName,
 		stat:   createFileInfo(r.fileDiff.NewName, false),
 	}
 }

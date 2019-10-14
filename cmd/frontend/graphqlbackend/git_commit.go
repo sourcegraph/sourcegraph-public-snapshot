@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -138,7 +138,6 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	}
 	return &gitTreeEntryResolver{
 		commit:      r,
-		path:        args.Path,
 		stat:        stat,
 		isRecursive: args.Recursive,
 	}, nil
@@ -160,7 +159,6 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	}
 	return &gitTreeEntryResolver{
 		commit: r,
-		path:   args.Path,
 		stat:   stat,
 	}, nil
 }

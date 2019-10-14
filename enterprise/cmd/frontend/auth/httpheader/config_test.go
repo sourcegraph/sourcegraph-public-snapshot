@@ -3,14 +3,14 @@ package httpheader
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
 		input        conf.Unified
-		wantProblems []string
+		wantProblems conf.Problems
 	}{
 		"single": {
 			input: conf.Unified{Critical: schema.CriticalConfiguration{
@@ -27,7 +27,7 @@ func TestValidateCustom(t *testing.T) {
 					{HttpHeader: &schema.HTTPHeaderAuthProvider{Type: "http-header"}},
 				},
 			}},
-			wantProblems: []string{"at most 1"},
+			wantProblems: conf.NewCriticalProblems("at most 1"),
 		},
 	}
 	for name, test := range tests {

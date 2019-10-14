@@ -2,7 +2,7 @@ import { createBrowserHistory } from 'history'
 import { range } from 'lodash'
 import * as React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from 'react-testing-library'
+import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
@@ -117,6 +117,8 @@ describe('SearchResultsList', () => {
         extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
         platformContext: { forceUpdateTooltip: sinon.spy() },
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        patternType: GQL.SearchPatternType.regexp,
+        togglePatternType: sinon.spy(),
     }
 
     it('displays loading text when results is undefined', () => {
@@ -174,8 +176,7 @@ describe('SearchResultsList', () => {
                 <SearchResultsList {...props} />
             </BrowserRouter>
         )
-        expect(getByTestId(container, 'result-container')).toBeTruthy()
-        expect(getAllByTestId(container, 'result-container').length).toBe(3)
+        expect(getAllByTestId(container, 'result-container')).toHaveLength(3)
     })
 
     it('displays "Show More" when the limit is hit', () => {

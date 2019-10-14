@@ -14,8 +14,9 @@ import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter, toggleSearchFilterAndReplaceSampleRepogroup } from '../helpers'
+import { PatternTypeProps } from '..'
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -165,7 +166,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
             ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.query, value)
             : toggleSearchFilter(this.props.query, value)
 
-        submitSearch(this.props.history, newQuery, 'filter')
+        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
     }
 }
 

@@ -13,29 +13,27 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+	"github.com/src-d/enry/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -58,7 +56,9 @@ func maxReposToSearch() int {
 
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
-	Query string
+	Version     string
+	PatternType *string
+	Query       string
 }) (interface {
 	Results(context.Context) (*searchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
@@ -67,14 +67,49 @@ func (r *schemaResolver) Search(args *struct {
 }, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
-	q, err := query.ParseAndCheck(args.Query)
+
+	defaultIsRegexp, err := defaultToRegexp(args.Version, args.PatternType)
+	if err != nil {
+		return nil, err
+	}
+
+	qs := query.HandlePatternType(args.Query, defaultIsRegexp)
+	q, err := query.ParseAndCheck(qs)
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
+
 	return &searchResolver{
-		query: q,
-		zoekt: IndexedSearch(),
+		query:        q,
+		zoekt:        search.Indexed(),
+		searcherURLs: search.SearcherURLs(),
 	}, nil
+}
+
+// defaultToRegexp determines whether to default to using regexp search based on the version and patternType
+// parameters passed to the search endpoint. It does not account for any `patternType:` filters in the query.
+func defaultToRegexp(version string, patternType *string) (bool, error) {
+	var defaultToRegexp bool
+	switch version {
+	case "V1":
+		defaultToRegexp = true
+	case "V2":
+		defaultToRegexp = false
+	default:
+		return false, fmt.Errorf("unrecognized version: %v", version)
+	}
+
+	if patternType != nil {
+		switch *patternType {
+		case "regexp":
+			defaultToRegexp = true
+		case "literal":
+			defaultToRegexp = false
+		default:
+			return false, fmt.Errorf("unrecognized patternType: %v", patternType)
+		}
+	}
+	return defaultToRegexp, nil
 }
 
 func asString(v *searchquerytypes.Value) string {
@@ -98,7 +133,8 @@ type searchResolver struct {
 	repoOverLimit             bool
 	repoErr                   error
 
-	zoekt *searchbackend.Zoekt
+	zoekt        *searchbackend.Zoekt
+	searcherURLs *endpoint.Map
 }
 
 // rawQuery returns the original query string input.
@@ -409,7 +445,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	var defaultRepos []*types.Repo
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
 		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-			return zoektIndexedRepos(ctx, IndexedSearch(), revs, nil)
+			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
 		}
 		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
 		if err != nil {
@@ -588,10 +624,14 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if ctx.Err() != nil {
-						run.Error(errors.New("timeout due to repohascommitafter: filter, please try setting a larger timeout: in your query (we are improving this, see https://github.com/sourcegraph/sourcegraph/issues/4614)"))
+					if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
 						continue
 					}
+
+					if ctx.Err() != nil {
+						err = errors.New("timeout due to repohascommitafter: filter, please try setting a larger timeout: in your query (we are improving this, see https://github.com/sourcegraph/sourcegraph/issues/4614)")
+					}
+
 					run.Error(err)
 					continue
 				}
@@ -641,6 +681,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
+		SearcherURLs:    r.searcherURLs,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, err
@@ -746,7 +787,7 @@ func newSearchResultResolver(result interface{}, score int) *searchSuggestionRes
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
 	case *gitTreeEntryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
 	case *searchSymbolResult:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
@@ -778,29 +819,15 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 // and -lang: filter values in a search query. For example, a query containing "lang:go" should
 // include files whose paths match /\.go$/.
 func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
-	lookup := func(value string) *filelang.Language {
-		value = strings.ToLower(value)
-		for _, lang := range filelang.Langs {
-			if strings.ToLower(lang.Name) == value {
-				return lang
-			}
-			for _, alias := range lang.Aliases {
-				if alias == value {
-					return lang
-				}
-			}
-		}
-		return nil
-	}
-
 	do := func(values []string, patterns *[]string) error {
 		for _, value := range values {
-			lang := lookup(value)
-			if lang == nil {
+			lang, ok := enry.GetLanguageByAlias(value)
+			if !ok {
 				return fmt.Errorf("unknown language: %q", value)
 			}
-			extPatterns := make([]string, len(lang.Extensions))
-			for i, ext := range lang.Extensions {
+			exts := enry.GetLanguageExtensions(lang)
+			extPatterns := make([]string, len(exts))
+			for i, ext := range exts {
 				// Add `\.ext$` pattern to match files with the given extension.
 				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
 			}
@@ -847,38 +874,3 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 }
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
-
-var (
-	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-
-	searcherURLsOnce sync.Once
-	searcherURLs     *endpoint.Map
-
-	indexedSearchOnce sync.Once
-	indexedSearch     *searchbackend.Zoekt
-)
-
-func SearcherURLs() *endpoint.Map {
-	searcherURLsOnce.Do(func() {
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		} else {
-			searcherURLs = endpoint.New(searcherURL)
-		}
-	})
-	return searcherURLs
-}
-
-func IndexedSearch() *searchbackend.Zoekt {
-	indexedSearchOnce.Do(func() {
-		indexedSearch = &searchbackend.Zoekt{}
-		if zoektAddr != "" {
-			indexedSearch.Client = zoektrpc.Client(zoektAddr)
-		}
-		conf.Watch(func() {
-			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
-		})
-	})
-	return indexedSearch
-}

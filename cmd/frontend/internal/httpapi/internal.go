@@ -12,12 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -470,5 +470,24 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("pong"))
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "could not parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	for _, service := range r.Form["service"] {
+		switch service {
+		case "gitserver":
+			if err := gitserver.DefaultClient.WaitForGitServers(r.Context()); err != nil {
+				http.Error(w, "wait for gitservers failed: "+err.Error(), http.StatusBadGateway)
+				return
+			}
+
+		default:
+			http.Error(w, "unknown service: "+service, http.StatusBadRequest)
+			return
+		}
+	}
+
+	_, _ = w.Write([]byte("pong"))
 }

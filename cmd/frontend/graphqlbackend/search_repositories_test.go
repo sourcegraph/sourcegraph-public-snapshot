@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 
 func TestSearchRepositories(t *testing.T) {
@@ -215,7 +215,11 @@ func TestRepoShouldBeAdded(t *testing.T) {
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
 	repos := []*search.RepositoryRevisions{repo}
-	rsta, err := reposToAdd(ctx, zoekt, repos, pattern)
+	args := search.Args{
+		Pattern: pattern,
+		Zoekt:   zoekt,
+	}
+	rsta, err := reposToAdd(ctx, &args, repos)
 	if err != nil {
 		return false, err
 	}

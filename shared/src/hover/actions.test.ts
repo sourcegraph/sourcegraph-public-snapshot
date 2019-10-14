@@ -382,7 +382,10 @@ describe('getDefinitionURL', () => {
 describe('registerHoverContributions()', () => {
     beforeEach(() => resetAllMemoizationCaches())
     const contribution = new ContributionRegistry(
-        createTestEditorService(of([])),
+        createTestEditorService({}),
+        {
+            getPartialModel: () => ({ languageId: 'x' }),
+        },
         { data: of(EMPTY_SETTINGS_CASCADE) },
         of({})
     )

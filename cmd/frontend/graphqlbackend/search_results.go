@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
 	"github.com/hashicorp/go-multierror"
@@ -26,14 +27,13 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs
@@ -238,18 +238,12 @@ func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	}
 
 	addLangFilter := func(fileMatchPath string, lineMatchCount int, limitHit bool) {
-		extensionToLanguageLookup := func(ext string) string {
-			for _, lang := range filelang.Langs {
-				for _, langExt := range lang.Extensions {
-					if ext == langExt {
-						return strings.ToLower(lang.Name)
-					}
-				}
-			}
-			return ""
+		extensionToLanguageLookup := func(path string) string {
+			language, _ := inventory.GetLanguageByFilename(path)
+			return strings.ToLower(language)
 		}
 		if ext := path.Ext(fileMatchPath); ext != "" {
-			language := extensionToLanguageLookup(path.Ext(fileMatchPath))
+			language := extensionToLanguageLookup(fileMatchPath)
 			if language != "" {
 				value := fmt.Sprintf(`lang:%s`, language)
 				add(value, value, lineMatchCount, limitHit, "lang")
@@ -740,6 +734,52 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
+func (r *searchResolver) determineResultTypes(args search.Args, forceOnlyResultType string) (resultTypes []string, seenResultTypes map[string]struct{}) {
+	// Determine which types of results to return.
+	if forceOnlyResultType != "" {
+		resultTypes = []string{forceOnlyResultType}
+	} else if len(r.query.Values(query.FieldReplace)) > 0 {
+		resultTypes = []string{"codemod"}
+	} else {
+		resultTypes, _ = r.query.StringValues(query.FieldType)
+		if len(resultTypes) == 0 {
+			resultTypes = []string{"file", "path", "repo", "ref"}
+		}
+	}
+	seenResultTypes = make(map[string]struct{}, len(resultTypes))
+	for _, resultType := range resultTypes {
+		if resultType == "file" {
+			args.Pattern.PatternMatchesContent = true
+		} else if resultType == "path" {
+			args.Pattern.PatternMatchesPath = true
+		}
+	}
+	return resultTypes, seenResultTypes
+}
+
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *searchResultsResolver, err error) {
+	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
+	if len(repos) == 0 {
+		alert, err := r.alertForNoResolvedRepos(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return nil, nil, &searchResultsResolver{alert: alert, start: start}, nil
+	}
+	if overLimit {
+		alert, err := r.alertForOverRepoLimit(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return nil, nil, &searchResultsResolver{alert: alert, start: start}, nil
+	}
+	return repos, missingRepoRevs, nil, nil
+}
+
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
@@ -755,24 +795,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
-	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
-	if len(repos) == 0 {
-		alert, err := r.alertForNoResolvedRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
-	}
-	if overLimit {
-		alert, err := r.alertForOverRepoLimit(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
+	if alertResult != nil {
+		return alertResult, nil
 	}
 
 	p, err := r.getPatternInfo(nil)
@@ -785,6 +813,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
+		SearcherURLs:    r.searcherURLs,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -795,26 +824,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 
-	// Determine which types of results to return.
-	var resultTypes []string
-	if forceOnlyResultType != "" {
-		resultTypes = []string{forceOnlyResultType}
-	} else if len(r.query.Values(query.FieldReplace)) > 0 {
-		resultTypes = []string{"codemod"}
-	} else {
-		resultTypes, _ = r.query.StringValues(query.FieldType)
-		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo", "ref"}
-		}
-	}
-	seenResultTypes := make(map[string]struct{}, len(resultTypes))
-	for _, resultType := range resultTypes {
-		if resultType == "file" {
-			args.Pattern.PatternMatchesContent = true
-		} else if resultType == "path" {
-			args.Pattern.PatternMatchesPath = true
-		}
-	}
+	resultTypes, seenResultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	var (

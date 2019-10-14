@@ -21,6 +21,88 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.campaigns"
+```
+      Column       |           Type           |                       Modifiers                        
+-------------------+--------------------------+--------------------------------------------------------
+ id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
+ name              | text                     | not null
+ description       | text                     | 
+ author_id         | integer                  | not null
+ namespace_user_id | integer                  | 
+ namespace_org_id  | integer                  | 
+ created_at        | timestamp with time zone | not null default now()
+ updated_at        | timestamp with time zone | not null default now()
+ changeset_ids     | jsonb                    | not null default '{}'::jsonb
+Indexes:
+    "campaigns_pkey" PRIMARY KEY, btree (id)
+    "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
+    "campaigns_namespace_org_id" btree (namespace_org_id)
+    "campaigns_namespace_user_id" btree (namespace_user_id)
+Check constraints:
+    "campaigns_changeset_ids_check" CHECK (jsonb_typeof(changeset_ids) = 'object'::text)
+    "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
+Foreign-key constraints:
+    "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+    "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+Triggers:
+    trig_delete_campaign_reference_on_changesets AFTER DELETE ON campaigns FOR EACH ROW EXECUTE PROCEDURE delete_campaign_reference_on_changesets()
+
+```
+
+# Table "public.changeset_events"
+```
+    Column    |           Type           |                           Modifiers                           
+--------------+--------------------------+---------------------------------------------------------------
+ id           | bigint                   | not null default nextval('changeset_events_id_seq'::regclass)
+ changeset_id | bigint                   | not null
+ kind         | text                     | not null
+ key          | text                     | not null
+ created_at   | timestamp with time zone | not null default now()
+ metadata     | jsonb                    | not null default '{}'::jsonb
+ updated_at   | timestamp with time zone | not null default now()
+Indexes:
+    "changeset_events_pkey" PRIMARY KEY, btree (id)
+    "changeset_events_changeset_id_kind_key_unique" UNIQUE CONSTRAINT, btree (changeset_id, kind, key)
+Check constraints:
+    "changeset_events_key_check" CHECK (key <> ''::text)
+    "changeset_events_kind_check" CHECK (kind <> ''::text)
+    "changeset_events_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+Foreign-key constraints:
+    "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.changesets"
+```
+        Column         |           Type           |                        Modifiers                        
+-----------------------+--------------------------+---------------------------------------------------------
+ id                    | bigint                   | not null default nextval('changesets_id_seq'::regclass)
+ campaign_ids          | jsonb                    | not null default '{}'::jsonb
+ repo_id               | integer                  | not null
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | not null default now()
+ metadata              | jsonb                    | not null default '{}'::jsonb
+ external_id           | text                     | not null
+ external_service_type | text                     | not null
+Indexes:
+    "changesets_pkey" PRIMARY KEY, btree (id)
+    "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
+Check constraints:
+    "changesets_campaign_ids_check" CHECK (jsonb_typeof(campaign_ids) = 'object'::text)
+    "changesets_external_id_check" CHECK (external_id <> ''::text)
+    "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
+    "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
+Foreign-key constraints:
+    "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+Triggers:
+    trig_delete_changeset_reference_on_campaigns AFTER DELETE ON changesets FOR EACH ROW EXECUTE PROCEDURE delete_changeset_reference_on_campaigns()
+
+```
+
 # Table "public.critical_and_site_config"
 ```
    Column   |           Type           |                               Modifiers                               
@@ -143,6 +225,33 @@ Referenced by:
 
 ```
 
+# Table "public.event_logs"
+```
+      Column       |           Type           |                        Modifiers                        
+-------------------+--------------------------+---------------------------------------------------------
+ id                | bigint                   | not null default nextval('event_logs_id_seq'::regclass)
+ name              | text                     | not null
+ url               | text                     | not null
+ user_id           | integer                  | not null
+ anonymous_user_id | text                     | not null
+ source            | text                     | not null
+ argument          | text                     | not null
+ version           | text                     | not null
+ timestamp         | timestamp with time zone | not null default now()
+Indexes:
+    "event_logs_pkey" PRIMARY KEY, btree (id)
+    "event_logs_name" btree (name)
+    "event_logs_timestamp" btree ("timestamp")
+    "event_logs_user_id" btree (user_id)
+Check constraints:
+    "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
+    "event_logs_check_name_not_empty" CHECK (name <> ''::text)
+    "event_logs_check_source_not_empty" CHECK (source <> ''::text)
+    "event_logs_check_url_not_empty" CHECK (url <> ''::text)
+    "event_logs_check_version_not_empty" CHECK (version <> ''::text)
+
+```
+
 # Table "public.external_services"
 ```
     Column    |           Type           |                           Modifiers                            
@@ -171,6 +280,78 @@ Check constraints:
  mgmt_password_bcrypt    | text    | not null default ''::text
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
+
+```
+
+# Table "public.lsif_commits"
+```
+    Column     |  Type   |                         Modifiers                         
+---------------+---------+-----------------------------------------------------------
+ id            | integer | not null default nextval('lsif_commits_id_seq'::regclass)
+ repository    | text    | not null
+ commit        | text    | not null
+ parent_commit | text    | not null
+Indexes:
+    "lsif_commits_pkey" PRIMARY KEY, btree (id)
+    "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
+    "lsif_commits_commit" btree (repository, commit)
+    "lsif_commits_parent_commit" btree (repository, parent_commit)
+    "lsif_commits_repo_commit" btree (repository, commit)
+    "lsif_commits_repo_parent_commit" btree (repository, parent_commit)
+
+```
+
+# Table "public.lsif_dumps"
+```
+   Column   |  Type   |                        Modifiers                        
+------------+---------+---------------------------------------------------------
+ id         | integer | not null default nextval('lsif_dumps_id_seq'::regclass)
+ repository | text    | not null
+ commit     | text    | not null
+Indexes:
+    "lsif_dumps_pkey" PRIMARY KEY, btree (id)
+    "lsif_dumps_repository_commit_key" UNIQUE CONSTRAINT, btree (repository, commit)
+Check constraints:
+    "lsif_dumps_commit_check" CHECK (length(commit) = 40)
+    "lsif_dumps_repository_check" CHECK (repository <> ''::text)
+Referenced by:
+    TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+    TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+
+```
+
+# Table "public.lsif_packages"
+```
+ Column  |  Type   |                         Modifiers                          
+---------+---------+------------------------------------------------------------
+ id      | integer | not null default nextval('lsif_packages_id_seq'::regclass)
+ scheme  | text    | not null
+ name    | text    | not null
+ version | text    | 
+ dump_id | integer | not null
+Indexes:
+    "lsif_packages_pkey" PRIMARY KEY, btree (id)
+    "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
+Foreign-key constraints:
+    "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+
+```
+
+# Table "public.lsif_references"
+```
+ Column  |  Type   |                          Modifiers                           
+---------+---------+--------------------------------------------------------------
+ id      | integer | not null default nextval('lsif_references_id_seq'::regclass)
+ scheme  | text    | not null
+ name    | text    | not null
+ version | text    | 
+ filter  | bytea   | not null
+ dump_id | integer | not null
+Indexes:
+    "lsif_references_pkey" PRIMARY KEY, btree (id)
+    "lsif_references_package" btree (scheme, name, version)
+Foreign-key constraints:
+    "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
 
 ```
 
@@ -268,8 +449,9 @@ Indexes:
 Check constraints:
     "orgs_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "orgs_name_max_length" CHECK (char_length(name::text) <= 255)
-    "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*$'::citext)
+    "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
 Referenced by:
+    TABLE "campaigns" CONSTRAINT "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -440,6 +622,7 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
+    TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
@@ -625,10 +808,12 @@ Indexes:
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "users_username_max_length" CHECK (char_length(username::text) <= 255)
-    "users_username_valid_chars" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*$'::citext)
+    "users_username_valid_chars" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+    TABLE "campaigns" CONSTRAINT "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "campaigns" CONSTRAINT "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT

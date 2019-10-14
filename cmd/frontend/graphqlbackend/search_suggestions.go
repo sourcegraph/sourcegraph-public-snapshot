@@ -14,8 +14,8 @@ import (
 	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -116,7 +116,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := searchSymbols(ctx, &search.Args{Pattern: p, Repos: repoRevs, Query: r.query, Zoekt: r.zoekt}, 7)
+		fileMatches, _, err := searchSymbols(ctx, &search.Args{
+			Pattern:      p,
+			Repos:        repoRevs,
+			Query:        r.query,
+			Zoekt:        r.zoekt,
+			SearcherURLs: r.searcherURLs,
+		}, 7)
 		if err != nil {
 			return nil, err
 		}
@@ -253,7 +259,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources
 			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
 			// equal.
-			k.file = s.path
+			k.file = s.Path()
 		case *searchSymbolResult:
 			k.repoName = s.commit.repo.repo.Name
 			k.symbol = s.symbol.Name + s.symbol.Parent

@@ -21,13 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -153,10 +153,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	run.Acquire()
 	goroutine.Go(func() {
 		defer run.Release()
-		query := args.Pattern
-		k := zoektResultCountFactor(len(zoektRepos), query)
-		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, args.Zoekt.Client, opts, true, time.Since)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args, zoektRepos, true, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
@@ -294,9 +291,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			inputRev: &inputRev,
 			// NOTE: Not all fields are set, for performance.
 		}
-		if inputRev != "" {
-			commit.inputRev = &inputRev
-		}
 		symbolRes := &searchSymbolResult{
 			symbol:  symbol,
 			baseURI: baseURI,
@@ -358,22 +352,22 @@ func ctagsSymbolCharacter(s protocol.Symbol) int {
 
 func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
-	switch kind {
+	switch strings.ToLower(kind) {
 	case "file":
 		return lsp.SKFile
 	case "module":
 		return lsp.SKModule
 	case "namespace":
 		return lsp.SKNamespace
-	case "package", "packageName", "subprogspec":
+	case "package", "packagename", "subprogspec":
 		return lsp.SKPackage
 	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
-	case "method", "methodSpec":
+	case "method", "methodspec":
 		return lsp.SKMethod
 	case "property":
 		return lsp.SKProperty
-	case "field", "member", "anonMember":
+	case "field", "member", "anonmember", "recordfield":
 		return lsp.SKField
 	case "constructor":
 		return lsp.SKConstructor
@@ -381,9 +375,9 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKEnum
 	case "interface":
 		return lsp.SKInterface
-	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonMethod":
+	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonmethod":
 		return lsp.SKFunction
-	case "variable", "var", "functionVar", "define", "alias":
+	case "variable", "var", "functionvar", "define", "alias", "val":
 		return lsp.SKVariable
 	case "constant", "const":
 		return lsp.SKConstant
@@ -401,7 +395,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKKey
 	case "null":
 		return lsp.SKNull
-	case "enum member", "enumConstant":
+	case "enum member", "enumconstant":
 		return lsp.SKEnumMember
 	case "struct":
 		return lsp.SKStruct

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -16,23 +17,23 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
-	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
-	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/processrestart"
+	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -77,17 +78,21 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main() error {
+func Main(githubWebhook http.Handler) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	// Connect to the database and start the configuration server.
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
+	if dbconn.Global == nil {
+		// Connect to the database and start the configuration server.
+		if err := dbconn.ConnectToDB(""); err != nil {
+			log.Fatal(err)
+		}
 	}
+
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
 	}
+
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
 
@@ -153,20 +158,35 @@ func Main() error {
 	goroutine.Go(func() { bg.LogSearchQueries(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
+	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
-	if hooks.AfterDBInit != nil {
-		hooks.AfterDBInit()
+
+	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
+	// being initialized
+	if dbconn.Global == nil {
+		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
+	}
+
+	// graphqlbackend.A8NResolver is set by enterprise frontend
+	var a8nResolver graphqlbackend.A8NResolver
+	if graphqlbackend.NewA8NResolver != nil {
+		a8nResolver = graphqlbackend.NewA8NResolver(dbconn.Global)
+	}
+
+	schema, err := graphqlbackend.NewSchema(a8nResolver)
+	if err != nil {
+		return err
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(context.Background())
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook)
 	if err != nil {
 		return err
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler()
+	internalHandler := newInternalHTTPHandler(schema)
 
 	// serve will serve externalHandler on l. It additionally handles graceful restarts.
 	srv := &httpServers{}

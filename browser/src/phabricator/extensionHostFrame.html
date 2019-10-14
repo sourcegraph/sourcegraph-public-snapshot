@@ -1,6 +1,13 @@
 <script type="text/javascript">
     // Create extension host worker
-    const hostWorker = new Worker('/.assets/extension/scripts/extensionHostWorker.bundle.js')
+    let assetsUrl = new URL('/.assets/extension/', window.location.origin).href
+    try {
+        assetsUrl = window.parent.SOURCEGRAPH_ASSETS_URL
+    } catch (e) {
+        // Catch SecurityErrors caused by accessing cross-origin iframes
+        // when the assets are not self-hosted by a code host.
+    }
+    const hostWorker = new Worker(new URL('scripts/extensionHostWorker.bundle.js', assetsUrl).href)
     // Forward extension host worker init message,
     // making sur to transfer the endpoint MessagePort objects.
     window.addEventListener('message', ({ data }) => {

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sync/atomic"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 

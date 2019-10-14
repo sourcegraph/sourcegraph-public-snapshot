@@ -17,6 +17,7 @@ export interface OptionsMenuProps
     onURLSubmit: ServerURLFormProps['onSubmit']
 
     isSettingsOpen?: boolean
+    isActivated: boolean
     toggleFeatureFlag: (key: string) => void
     featureFlags?: ConfigurableFeatureFlag[]
     currentTabStatus?: {
@@ -49,6 +50,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     onURLChange,
     onURLSubmit,
     isSettingsOpen,
+    isActivated,
     toggleFeatureFlag,
     featureFlags,
     status,
@@ -57,7 +59,7 @@ export const OptionsMenu: React.FunctionComponent<OptionsMenuProps> = ({
     ...props
 }) => (
     <div className={`options-menu ${isFullPage() ? 'options-menu--full' : ''}`}>
-        <OptionsHeader {...props} className="options-menu__section" />
+        <OptionsHeader {...props} isActivated={isActivated} className="options-menu__section" />
         <ServerURLForm
             {...props}
             value={sourcegraphURL}

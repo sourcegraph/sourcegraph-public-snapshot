@@ -26,7 +26,8 @@ type DeployType = 'cluster' | 'docker-container' | 'dev'
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
-interface SourcegraphContext {
+interface SourcegraphContext
+    extends Pick<Required<import('./schema/site.schema').SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
     csrfToken: string
     userAgentIsBot: boolean
@@ -54,7 +55,7 @@ interface SourcegraphContext {
     sourcegraphDotComMode: boolean
 
     /**
-     * siteID is the identifier of the Sourcegraph site. It is also the Telligent app ID.
+     * siteID is the identifier of the Sourcegraph site.
      */
     siteID: string
 
@@ -126,9 +127,6 @@ interface SourcegraphContext {
 
         brandName: string
     }
-
-    /** Whether new external service status indicator is shown in navbar or not. */
-    showStatusIndicator?: boolean
 }
 
 interface BrandAssets {

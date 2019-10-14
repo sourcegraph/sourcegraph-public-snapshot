@@ -20,6 +20,7 @@ import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
+import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 
 interface Props
     extends SettingsCascadeProps,
@@ -34,8 +35,8 @@ interface Props
     history: H.History
     authenticatedUser: GQL.IUser | null
     showDotComMarketing: boolean
+    showCampaigns: boolean
     isSourcegraphDotCom: boolean
-    showStatusIndicator: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -62,11 +63,9 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
+                {this.props.showCampaigns && (
                     <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            Explore
-                        </Link>
+                        <CampaignsNavItem />
                     </li>
                 )}
                 {!this.props.authenticatedUser && (
@@ -98,7 +97,6 @@ export class NavLinks extends React.PureComponent<Props> {
                     </>
                 )}
                 {!this.props.isSourcegraphDotCom &&
-                    this.props.showStatusIndicator &&
                     this.props.authenticatedUser &&
                     this.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">

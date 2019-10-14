@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
 type symbolsArgs struct {
@@ -97,7 +97,6 @@ func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, 
 	resolver.location = &locationResolver{
 		resource: &gitTreeEntryResolver{
 			commit: commitResolver,
-			path:   resolver.uri.Fragment,
 			stat:   createFileInfo(resolver.uri.Fragment, false), // assume the path refers to a file (not dir)
 		},
 		lspRange: &symbolRange,
@@ -134,7 +133,11 @@ func (r *symbolResolver) ContainerName() *string {
 }
 
 func (r *symbolResolver) Kind() string /* enum SymbolKind */ {
-	return strings.ToUpper(ctagsKindToLSPSymbolKind(r.symbol.Kind).String())
+	kind := ctagsKindToLSPSymbolKind(r.symbol.Kind)
+	if kind == 0 {
+		return "UNKNOWN"
+	}
+	return strings.ToUpper(kind.String())
 }
 
 func (r *symbolResolver) Language() string { return r.language }

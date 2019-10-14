@@ -10,19 +10,34 @@ import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubjec
 import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
 import { background } from '../browser/runtime'
-import { observeStorageKey } from '../browser/storage'
 import { isInPage } from '../context'
 import { CodeHost } from '../libs/code_intelligence'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 
+export interface SourcegraphIntegrationURLs {
+    /**
+     * The URL of the configured Sourcegraph instance. Used for extensions, find-references, ...
+     */
+    sourcegraphURL: string
+
+    /**
+     * The base URL where assets will be fetched from (CSS, extension host
+     * worker bundle, ...)
+     *
+     * This is the sourcegraph URL in most cases, but may be different for
+     * native code hosts that self-host the integration bundle.
+     */
+    assetsURL: string
+}
+
 /**
  * Creates the {@link PlatformContext} for the browser extension.
  */
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
-    sourcegraphURL: string,
+    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean
 ): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
@@ -54,12 +69,7 @@ export function createPlatformContext(
                     request,
                     variables,
                     baseUrl: window.SOURCEGRAPH_URL,
-                    headers: {},
-                    requestOptions: {
-                        crossDomain: true,
-                        withCredentials: true,
-                        async: true,
-                    },
+                    credentials: 'include',
                 })
             })
         )
@@ -74,14 +84,7 @@ export function createPlatformContext(
          *   the UX).
          */
         settings: combineLatest([
-            merge(
-                isInPage
-                    ? fetchViewerSettings(requestGraphQL)
-                    : observeStorageKey('sync', 'sourcegraphURL').pipe(
-                          switchMap(() => fetchViewerSettings(requestGraphQL))
-                      ),
-                updatedViewerSettings
-            ).pipe(
+            merge(fetchViewerSettings(requestGraphQL), updatedViewerSettings).pipe(
                 publishReplay(1),
                 refCount()
             ),
@@ -112,6 +115,8 @@ export function createPlatformContext(
                     // try once more.
                     updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
                     await updateSettings(context, subject, edit, mutateSettings)
+                } else {
+                    throw error
                 }
             }
             updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
@@ -120,7 +125,7 @@ export function createPlatformContext(
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
-        createExtensionHost: () => createExtensionHost(sourcegraphURL),
+        createExtensionHost: () => createExtensionHost({ assetsURL }),
         getScriptURLForExtension: async bundleURL => {
             if (isInPage) {
                 return bundleURL

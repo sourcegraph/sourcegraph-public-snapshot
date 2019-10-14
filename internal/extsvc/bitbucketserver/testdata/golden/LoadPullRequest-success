@@ -1,0 +1,53 @@
+{
+  "id": 2,
+  "version": 0,
+  "title": "Release testing pr",
+  "description": "* Remove dump.go\r\n* make make make",
+  "state": "OPEN",
+  "open": true,
+  "closed": false,
+  "createdDate": 1563286307998,
+  "updatedDate": 1563286307998,
+  "fromRef": {
+   "id": "refs/heads/release-testing-pr",
+   "repository": {
+    "slug": "vegeta",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "toRef": {
+   "id": "refs/heads/master",
+   "repository": {
+    "slug": "vegeta",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "locked": false,
+  "author": {
+   "user": {
+    "name": "milton",
+    "emailAddress": "dev@sourcegraph.com",
+    "id": 1,
+    "displayName": "milton woof",
+    "active": true,
+    "slug": "milton",
+    "type": "NORMAL"
+   },
+   "role": "AUTHOR",
+   "approved": false,
+   "status": "UNAPPROVED"
+  },
+  "reviewers": [],
+  "participants": [],
+  "links": {
+   "self": [
+    {
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2"
+    }
+   ]
+  }
+ }

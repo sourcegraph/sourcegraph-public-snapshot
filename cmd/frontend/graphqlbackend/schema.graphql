@@ -29,6 +29,16 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
+    # Creates a list of Changesets of a given repository in a code host (e.g. pull request on GitHub)
+    createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
+    # Adds a list of Changesets to a Campaign.
+    addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
+    # Create a campaign in a namespace. The newly created campaign is returned.
+    createCampaign(input: CreateCampaignInput!): Campaign!
+    # Updates a campaign.
+    updateCampaign(input: UpdateCampaignInput!): Campaign!
+    # Deletes a campaign.
+    deleteCampaign(campaign: ID!): EmptyResponse
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -265,7 +275,20 @@ type Mutation {
         date: String
     ): GitCommit
     # Logs a user event.
-    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
+    # Logs an event.
+    logEvent(
+        # The name of the event.
+        event: String!
+        # The randomly generated unique user ID stored in a browser cookie.
+        userCookieID: String!
+        # The URL when the event was logged.
+        url: String!
+        # The source of the event.
+        source: EventSource!
+        # The additional argument information.
+        argument: String
+    ): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
     #
@@ -348,6 +371,197 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+}
+
+# Input arguments for creating a campaign.
+input CreateCampaignInput {
+    # The ID of the namespace where this campaign is defined.
+    namespace: ID!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description of the campaign as Markdown.
+    description: String!
+}
+
+# Input arguments for updating a campaign.
+input UpdateCampaignInput {
+    # The ID of the campaign to update.
+    id: ID!
+
+    # The updated name of the campaign (if non-null).
+    name: String
+
+    # The updated description of the campaign as Markdown (if non-null).
+    description: String
+}
+
+# A collection of threads.
+type Campaign implements Node {
+    # The unique ID for the campaign.
+    id: ID!
+
+    # The namespace where this campaign is defined.
+    namespace: Namespace!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description as Markdown.
+    description: String!
+
+    # The user who authored the campaign.
+    author: User!
+
+    # The URL to this campaign.
+    url: String!
+
+    # The date and time when the campaign was created.
+    createdAt: DateTime!
+
+    # The date and time when the campaign was updated.
+    updatedAt: DateTime!
+
+    # The changesets in this campaign.
+    changesets(first: Int): ChangesetConnection!
+
+    # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
+    changesetCountsOverTime(
+        # Only include changeset counts up to this point in time (inclusive).
+        # Defaults to createdAt.
+        from: DateTime
+        # Only include changeset counts up to this point in time (inclusive).
+        # Defaults to now.
+        to: DateTime
+    ): [ChangesetCounts!]!
+}
+
+# The counts of changesets in certain states at a specific point in time.
+type ChangesetCounts {
+    # The point in time these counts were recorded.
+    date: DateTime!
+    # The total number of changesets.
+    total: Int!
+    # The number of merged changesets.
+    merged: Int!
+    # The number of closed changesets.
+    closed: Int!
+    # The number of open changesets (independent of review state).
+    open: Int!
+    # The number of changesets that are both open and approved.
+    openApproved: Int!
+    # The number of changesets that are both open and have requested changes.
+    openChangesRequested: Int!
+    # The number of changesets that are both open and are pending review.
+    openPending: Int!
+}
+
+# A list of campaigns.
+type CampaignConnection {
+    # A list of campaigns.
+    nodes: [Campaign!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A Changeset's state
+enum ChangesetState {
+    OPEN
+    CLOSED
+    MERGED
+}
+
+# The state of a Changeset Review
+enum ChangesetReviewState {
+    APPROVED
+    CHANGES_REQUESTED
+    PENDING
+}
+
+# The input to the createChangesets mutation.
+input CreateChangesetInput {
+    # The repository ID that this Changeset belongs to.
+    repository: ID!
+    # The external ID that uniquely identifies this Changeset in the above repository.
+    # Github: PR number
+    externalID: String!
+}
+
+# A changeset in a code host (e.g. a PR on Github)
+type Changeset implements Node {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The repository where this changeset is defined.
+    repository: Repository!
+
+    # The campaigns that have this changeset in them.
+    campaigns(first: Int): CampaignConnection!
+
+    # The events belonging to this changeset.
+    events(first: Int): ChangesetEventConnection!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The title of the changeset
+    title: String!
+
+    # The body of the changeset
+    body: String!
+
+    # The state of the changeset
+    state: ChangesetState!
+
+    # The external URL of the changeset on the code host
+    externalURL: ExternalLink!
+
+    # The review state of this changeset.
+    reviewState: ChangesetReviewState!
+}
+
+# A list of changesets.
+type ChangesetConnection {
+    # A list of changesets.
+    nodes: [Changeset!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A changeset event in a code host (e.g. a comment on a PR on Github)
+type ChangesetEvent implements Node {
+    # The unique ID for the changeset event.
+    id: ID!
+
+    # The changeset this event belongs to.
+    changeset: Changeset!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+}
+
+# A list of changeset events.
+type ChangesetEventConnection {
+    # A list of changeset events.
+    nodes: [ChangesetEvent!]!
+
+    # The total number of changeset events in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A new external service.
@@ -535,6 +749,12 @@ input MarkdownOptions {
     alwaysNil: String
 }
 
+# The product sources where events can come from.
+enum EventSource {
+    WEB
+    CODEHOSTINTEGRATION
+}
+
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
 # settings) mutations need.
 input SettingsMutationGroupInput {
@@ -668,6 +888,13 @@ type Query {
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
+
+    # A list of campaigns.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+    ): CampaignConnection!
+
     # Looks up a repository by either name or cloneURL.
     repository(
         # Query the repository by name, for example "github.com/gorilla/mux".
@@ -808,6 +1035,12 @@ type Query {
     clientConfiguration: ClientConfigurationDetails!
     # Runs a search.
     search(
+        # The version of the search syntax being used.
+        # All new clients should use the latest version.
+        version: SearchVersion = V1
+        # PatternType controls the search pattern type, if and only if it is not specified in the query string using
+        # the patternType: field.
+        patternType: SearchPatternType
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
@@ -838,6 +1071,20 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+}
+
+# The version of the search syntax.
+enum SearchVersion {
+    # Search syntax that defaults to regexp search.
+    V1
+    # Search syntax that defaults to literal search.
+    V2
+}
+
+# The search pattern type.
+enum SearchPatternType {
+    literal
+    regexp
 }
 
 # A query and an associated number of times it occurred.
@@ -1255,6 +1502,10 @@ type Repository implements Node & GenericSearchResultInterface {
         type: GitRefType
         # Ordering for Git refs in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git branches.
     branches(
@@ -1264,6 +1515,10 @@ type Repository implements Node & GenericSearchResultInterface {
         query: String
         # Ordering for Git branches in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git tags.
     tags(
@@ -1554,8 +1809,8 @@ type RepositoryContributor {
 
 # A code symbol (e.g., a function, variable, type, class, etc.).
 #
-# It is derived from symbols as defined in the Language Server Protocol (see
-# https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+# It is derived from DocumentSymbol as defined in the Language Server Protocol (see
+# https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
 type Symbol {
     # The name of the symbol.
     name: String!
@@ -2784,6 +3039,8 @@ type Site implements SettingsSubject {
     siteID: String!
     # The site's configuration. Only visible to site admins.
     configuration: SiteConfiguration!
+    # The site's critical configuration. Only visible to site admins.
+    criticalConfiguration: CriticalConfiguration!
     # The site's latest site-wide settings (which are the second-lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
@@ -2889,6 +3146,14 @@ type SiteConfiguration {
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
+}
+
+# The critical configuration for a site.
+type CriticalConfiguration {
+    # The unique identifier of this site configuration version.
+    id: Int!
+    # The effective configuration JSON.
+    effectiveContents: String!
 }
 
 # Information about software updates for Sourcegraph.

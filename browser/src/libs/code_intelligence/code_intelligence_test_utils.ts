@@ -125,6 +125,11 @@ interface Line {
      * The part of the diff, if the code view is a diff code view.
      */
     diffPart?: DiffPart
+
+    /**
+     * Whether the first character of the line is a diff indicator
+     */
+    firstCharacterIsDiffIndicator?: boolean
 }
 
 export interface DOMFunctionsTest {
@@ -136,16 +141,11 @@ export interface DOMFunctionsTest {
     lineCases: Line[]
 
     url?: string // TODO DOM functions should not rely on global state like the URL
-
-    /**
-     * Whether the code view is a diff code view and the first character the a diff indicator
-     */
-    firstCharacterIsDiffIndicator: boolean
 }
 
 export function testDOMFunctions(
     domFunctions: DOMFunctions,
-    { htmlFixturePath, lineCases: codeElements, url, firstCharacterIsDiffIndicator }: DOMFunctionsTest
+    { htmlFixturePath, lineCases: codeElements, url }: DOMFunctionsTest
 ): void {
     let codeViewElement: HTMLElement
     beforeEach(async () => {
@@ -154,7 +154,7 @@ export function testDOMFunctions(
         }
         codeViewElement = await getFixtureBody({ htmlFixturePath, isFullDocument: false })
     })
-    for (const { diffPart, lineNumber } of codeElements) {
+    for (const { diffPart, lineNumber, firstCharacterIsDiffIndicator } of codeElements) {
         describe(`line number ${lineNumber}` + (diffPart !== undefined ? ` in ${diffPart} diff part` : ''), () => {
             const simmerOptions: SimmerOptions = {
                 depth: 20,
@@ -219,7 +219,7 @@ export function testDOMFunctions(
                         domFunctions.isFirstCharacterDiffIndicator &&
                             domFunctions.isFirstCharacterDiffIndicator(codeElement)
                     )
-                    expect(is).toBe(firstCharacterIsDiffIndicator)
+                    expect(is).toBe(Boolean(firstCharacterIsDiffIndicator))
                     if (is) {
                         // Check that the first character is truly a diff indicator
                         const diffIndicators = new Set(['+', '-', ' '])

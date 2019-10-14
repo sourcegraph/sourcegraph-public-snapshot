@@ -3,7 +3,7 @@ package router
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
+	"github.com/sourcegraph/sourcegraph/internal/routevar"
 )
 
 const (
@@ -18,6 +18,8 @@ const (
 	RepoShield  = "repo.shield"
 	RepoRefresh = "repo.refresh"
 	Telemetry   = "telemetry"
+
+	GitHubWebhooks = "github.webhooks"
 
 	SavedQueriesListAll    = "internal.saved-queries.list-all"
 	SavedQueriesGetInfo    = "internal.saved-queries.get-info"
@@ -60,6 +62,7 @@ func New(base *mux.Router) *mux.Router {
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
+	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/lsif/challenge").Methods("GET").Name(LSIFChallenge)
 	base.Path("/lsif/verify").Methods("GET").Name(LSIFVerify)

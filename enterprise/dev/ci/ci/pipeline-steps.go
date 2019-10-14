@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	bk "github.com/sourcegraph/sourcegraph/pkg/buildkite"
+	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
 
 var allDockerImages = []string{
@@ -71,6 +71,13 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
+}
+
+// Tests the LSIF server.
+func addLSIFServer(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":jest:",
+		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
+		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -141,15 +148,16 @@ func addCodeCov(pipeline *bk.Pipeline) {
 
 // Release the browser extension.
 func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome", "firefox"} {
+	for _, browser := range []string{"chrome" /* , "firefox" */} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("E2E_BROWSER", browser),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
-			bk.Cmd("yarn -s run test-e2e"),
+			bk.Cmd("yarn -s jest --runInBand ./e2e/github.test"),
 			bk.Cmd("popd"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
@@ -158,7 +166,6 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome:",
-		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd browser"),
 		bk.Cmd("yarn -s run build"),
@@ -167,10 +174,17 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Build and self sign the FF extension and upload it to ...
 	pipeline.AddStep(":rocket::firefox:",
-		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd browser"),
 		bk.Cmd("yarn release:ff"),
+		bk.Cmd("popd"))
+
+	// Release to npm
+	pipeline.AddStep(":rocket::npm:",
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("pushd browser"),
+		bk.Cmd("yarn -s run build"),
+		bk.Cmd("yarn release:npm"),
 		bk.Cmd("popd"))
 }
 
@@ -239,7 +253,7 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 
 		cmdDir := func() string {
 			cmdDirByApp := map[string]string{
-				"lsif-server": "lsif/server",
+				"lsif-server": "lsif",
 			}
 			if cmdDir, ok := cmdDirByApp[app]; ok {
 				return cmdDir

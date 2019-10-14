@@ -1,10 +1,11 @@
 import { first } from 'lodash'
 import { Observable } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
-import { map } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { GitLabDiffInfo } from './scrape'
+import { fromFetch } from 'rxjs/fetch'
+import { checkOk } from '../../../../shared/src/backend/fetch'
 
 /**
  * Significant revisions for a merge request.
@@ -36,7 +37,11 @@ type GetBaseCommitIDInput = Pick<GitLabDiffInfo, 'owner' | 'projectName' | 'merg
 const buildURL = (owner: string, projectName: string, path: string): string =>
     `${window.location.origin}/api/v4/projects/${encodeURIComponent(owner)}%2f${projectName}${path}`
 
-const get = <T>(url: string): Observable<T> => ajax.get(url).pipe(map(({ response }) => response as T))
+const get = <T>(url: string): Observable<T> =>
+    fromFetch(url).pipe(
+        map(checkOk),
+        switchMap(response => response.json())
+    )
 
 /**
  * Get the base commit ID for a merge request.

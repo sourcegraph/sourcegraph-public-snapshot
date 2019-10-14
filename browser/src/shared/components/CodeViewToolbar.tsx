@@ -88,13 +88,6 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                         repoName: props.repoName,
                         filePath: props.filePath,
                         rev: props.rev || props.commitID,
-                        query: props.commitID
-                            ? {
-                                  diff: {
-                                      rev: props.commitID,
-                                  },
-                              }
-                            : undefined,
                     }}
                 />
             </li>

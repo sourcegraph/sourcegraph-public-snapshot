@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -114,19 +114,64 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}, nil
 }
 
+type githubResult struct {
+	err  error
+	repo *github.Repository
+}
+
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s GithubSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	rs, err := s.listAllRepositories(ctx)
-	for _, r := range rs {
-		repos = append(repos, s.makeRepo(r))
+func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	unfiltered := make(chan *githubResult)
+	go func() {
+		s.listAllRepositories(ctx, unfiltered)
+		close(unfiltered)
+	}()
+
+	seen := make(map[int64]bool)
+	for res := range unfiltered {
+		if res.err != nil {
+			results <- SourceResult{Source: s, Err: res.err}
+			continue
+		}
+		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
+			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+			seen[res.repo.DatabaseID] = true
+		}
 	}
-	return repos, err
 }
 
 // ExternalServices returns a singleton slice containing the external service.
 func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
+}
+
+// LoadChangesets loads the latest state of the given Changesets from the codehost.
+func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	prs := make([]*github.PullRequest, len(cs))
+	for i := range cs {
+		repo := cs[i].Repo.Metadata.(*github.Repository)
+		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		prs[i] = &github.PullRequest{
+			RepoWithOwner: repo.NameWithOwner,
+			Number:        number,
+		}
+	}
+
+	err := s.client.LoadPullRequests(ctx, prs...)
+	if err != nil {
+		return err
+	}
+
+	for i := range cs {
+		cs[i].Changeset.Metadata = prs[i]
+	}
+
+	return nil
 }
 
 // GetRepo returns the Github repository with the given name and owner
@@ -210,13 +255,12 @@ type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, c
 // paginate returns all the repositories from the given repositoryPager.
 // It repeatedly calls `pager` with incrementing page count until it
 // returns false for hasNext.
-func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map[int64]*github.Repository, error) {
-	set := make(map[int64]*github.Repository)
-
+func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
 	hasNext := true
 	for page := 1; hasNext; page++ {
 		if err := ctx.Err(); err != nil {
-			return set, err
+			results <- &githubResult{err: err}
+			return
 		}
 
 		var pageRepos []*github.Repository
@@ -224,27 +268,36 @@ func (s *GithubSource) paginate(ctx context.Context, pager repositoryPager) (map
 		var err error
 		pageRepos, hasNext, cost, err = pager(page)
 		if err != nil {
-			return set, err
+			results <- &githubResult{err: err}
+			return
 		}
 
 		for _, r := range pageRepos {
-			set[r.DatabaseID] = r
+			results <- &githubResult{repo: r}
 		}
 
 		if hasNext && cost > 0 {
 			time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(cost))
 		}
 	}
-
-	return set, nil
 }
 
 // listOrg handles the `org` config option.
 // It returns all the repositories belonging to the given organization
 // by hitting the /orgs/:org/repos endpoint.
-func (s *GithubSource) listOrg(ctx context.Context, org string) (map[int64]*github.Repository, error) {
-	return s.paginate(ctx, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+//
+// It returns an error if the request fails on the first page.
+func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
+	var oerr error
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
+			// Catch 404 to handle
+			if page == 1 {
+				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
+					oerr, err = err, nil
+				}
+			}
+
 			remaining, reset, retry, _ := s.client.RateLimit.Get()
 			log15.Debug(
 				"github sync: ListOrgRepositories",
@@ -257,15 +310,47 @@ func (s *GithubSource) listOrg(ctx context.Context, org string) (map[int64]*gith
 		}()
 		return s.client.ListOrgRepositories(ctx, org, page)
 	})
+
+	// Handle 404 from org repos endpoint by trying user repos endpoint
+	if oerr != nil && s.listUser(ctx, org, results) != nil {
+		results <- &githubResult{
+			err: oerr,
+		}
+	}
+}
+
+// listUser returns all the repositories belonging to the given user
+// by hitting the /users/:user/repos endpoint.
+//
+// It returns an error if the request fails on the first page.
+func (s *GithubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		defer func() {
+			if err != nil && page == 1 {
+				fail, err = err, nil
+			}
+
+			remaining, reset, retry, _ := s.client.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListUserRepositories",
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
+			)
+		}()
+		return s.client.ListUserRepositories(ctx, user, page)
+	})
+	return
 }
 
 // listRepos returns the valid repositories from the given list of repository names.
 // This is done by hitting the /repos/:owner/:name endpoint for each of the given
 // repository names.
-func (s *GithubSource) listRepos(ctx context.Context, repos []string) (map[int64]*github.Repository, error) {
-	set := make(map[int64]*github.Repository)
-	if err := s.fetchAllRepositoriesInBatches(ctx, set); err == nil {
-		return set, nil
+func (s *GithubSource) listRepos(ctx context.Context, repos []string, results chan *githubResult) {
+	if err := s.fetchAllRepositoriesInBatches(ctx, results); err == nil {
+		return
 	} else {
 		// The way we fetch repositories in batches through the GraphQL API -
 		// using aliases to query multiple repositories in one query - is
@@ -276,14 +361,19 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string) (map[int64
 		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
 	}
 
-	for _, nameWithOwner := range repos {
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for i := len(repos) - 1; i >= 0; i-- {
+		nameWithOwner := repos[i]
 		if err := ctx.Err(); err != nil {
-			return set, err
+			results <- &githubResult{err: err}
+			return
 		}
 
 		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 		if err != nil {
-			return set, errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)
+			results <- &githubResult{err: errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)}
+			return
 		}
 		var repo *github.Repository
 		repo, err = s.client.GetRepository(ctx, owner, name)
@@ -294,39 +384,43 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string) (map[int64
 				log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
 				continue
 			}
-			return set, errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)
+
+			results <- &githubResult{err: errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)}
+			break
 		}
 		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
-		set[repo.DatabaseID] = repo
+
+		results <- &githubResult{repo: repo}
+
 		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
 	}
-
-	return set, nil
 }
 
 // listPublic handles the `public` keyword of the `repositoryQuery` config option.
 // It returns the public repositories listed on the /repositories endpoint.
-func (s *GithubSource) listPublic(ctx context.Context) (map[int64]*github.Repository, error) {
-	set := make(map[int64]*github.Repository)
+func (s *GithubSource) listPublic(ctx context.Context, results chan *githubResult) {
 	if s.githubDotCom {
-		return set, errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)
+		results <- &githubResult{err: errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)}
+		return
 	}
 	var sinceRepoID int64
 	for {
 		if err := ctx.Err(); err != nil {
-			return set, err
+			results <- &githubResult{err: err}
+			return
 		}
 
 		repos, err := s.client.ListPublicRepositories(ctx, sinceRepoID)
 		if err != nil {
-			return set, errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)
+			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
+			return
 		}
 		if len(repos) == 0 {
-			return set, nil
+			return
 		}
 		log15.Debug("github sync public", "repos", len(repos), "error", err)
 		for _, r := range repos {
-			set[r.DatabaseID] = r
+			results <- &githubResult{repo: r}
 			if sinceRepoID < r.DatabaseID {
 				sinceRepoID = r.DatabaseID
 			}
@@ -340,8 +434,8 @@ func (s *GithubSource) listPublic(ctx context.Context) (map[int64]*github.Reposi
 //
 // Affiliation is present if the user: (1) owns the repo, (2) is apart of an org that
 // the repo belongs to, or (3) is a collaborator.
-func (s *GithubSource) listAffiliated(ctx context.Context) (map[int64]*github.Repository, error) {
-	return s.paginate(ctx, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			remaining, reset, retry, _ := s.client.RateLimit.Get()
 			log15.Debug(
@@ -353,15 +447,15 @@ func (s *GithubSource) listAffiliated(ctx context.Context) (map[int64]*github.Re
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListUserRepositories(ctx, page)
+		return s.client.ListAffiliatedRepositories(ctx, page)
 	})
 }
 
 // listSearch handles the `repositoryQuery` config option when a keyword is not present.
 // It returns the repositories resulting from from GitHub's advanced repository search
 // by hitting the /search/repositories endpoint.
-func (s *GithubSource) listSearch(ctx context.Context, query string) (map[int64]*github.Repository, error) {
-	return s.paginate(ctx, func(page int) ([]*github.Repository, bool, int, error) {
+func (s *GithubSource) listSearch(ctx context.Context, query string, results chan *githubResult) {
+	s.paginate(ctx, results, func(page int) ([]*github.Repository, bool, int, error) {
 		reposPage, err := s.searchClient.ListRepositoriesForSearch(ctx, query, page)
 		if err != nil {
 			return nil, false, 0, errors.Wrapf(err, "failed to list GitHub repositories for search: page=%d, searchString=%q", page, query)
@@ -426,74 +520,50 @@ func matchOrg(q string) string {
 // - `none`: disables `repositoryQuery`
 // Inputs other than these three keywords will be queried using
 // GitHub advanced repository search (endpoint: /search/repositories)
-func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string) (map[int64]*github.Repository, error) {
+func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, results chan *githubResult) {
 	switch query {
 	case "public":
-		return s.listPublic(ctx)
+		s.listPublic(ctx, results)
+		return
 	case "affiliated":
-		return s.listAffiliated(ctx)
+		s.listAffiliated(ctx, results)
+		return
 	case "none":
 		// nothing
-		return nil, nil
+		return
 	}
 
 	// Special-casing for `org:<org-name>`
 	// to directly use GitHub's org repo
 	// list API instead of the limited
 	// search API.
+	//
+	// If the org repo list API fails, we
+	// try the user repo list API.
 	if org := matchOrg(query); org != "" {
-		return s.listOrg(ctx, org)
+		s.listOrg(ctx, org, results)
+		return
 	}
 
 	// Run the query as a GitHub advanced repository search
 	// (https://github.com/search/advanced).
-	return s.listSearch(ctx, query)
+	s.listSearch(ctx, query, results)
 }
 
 // listAllRepositories returns the repositories from the given `orgs`, `repos`, and
 // `repositoryQuery` config options excluding the ones specified by `exclude`.
-func (s *GithubSource) listAllRepositories(ctx context.Context) ([]*github.Repository, error) {
-	set := make(map[int64]*github.Repository)
-	errs := new(multierror.Error)
+func (s *GithubSource) listAllRepositories(ctx context.Context, results chan *githubResult) {
+	s.listRepos(ctx, s.config.Repos, results)
 
-	for _, query := range s.config.RepositoryQuery {
-		list, err := s.listRepositoryQuery(ctx, query)
-		if err != nil {
-			errs = multierror.Append(errs, err)
-			continue
-		}
-		for id, r := range list {
-			set[id] = r
-		}
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for i := len(s.config.RepositoryQuery) - 1; i >= 0; i-- {
+		s.listRepositoryQuery(ctx, s.config.RepositoryQuery[i], results)
 	}
 
-	list, err := s.listRepos(ctx, s.config.Repos)
-	if err != nil {
-		errs = multierror.Append(errs, err)
+	for i := len(s.config.Orgs) - 1; i >= 0; i-- {
+		s.listOrg(ctx, s.config.Orgs[i], results)
 	}
-	for id, r := range list {
-		set[id] = r
-	}
-
-	for _, org := range s.config.Orgs {
-		list, err := s.listOrg(ctx, org)
-		if err != nil {
-			errs = multierror.Append(errs, errors.Wrapf(err, "failed to list organization %s repos", org))
-			continue
-		}
-		for id, r := range list {
-			set[id] = r
-		}
-	}
-
-	repos := make([]*github.Repository, 0, len(set))
-	for _, repo := range set {
-		if !s.excludes(repo) {
-			repos = append(repos, repo)
-		}
-	}
-
-	return repos, errs.ErrorOrNil()
 }
 
 func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) (*github.Repository, error) {
@@ -512,18 +582,19 @@ func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) 
 
 // fetchAllRepositoriesInBatches fetches the repositories configured in
 // config.Repos in batches and adds them to the supplied set
-func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, set map[int64]*github.Repository) error {
+func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, results chan *githubResult) error {
 	const batchSize = 30
 
-	for i := 0; i < len(s.config.Repos); i += batchSize {
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for end := len(s.config.Repos); end > 0; end -= batchSize {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 
-		start := i
-		end := i + batchSize
-		if end > len(s.config.Repos) {
-			end = len(s.config.Repos)
+		start := end - batchSize
+		if start < 0 {
+			start = 0
 		}
 		batch := s.config.Repos[start:end]
 
@@ -534,7 +605,7 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, set ma
 
 		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
 		for _, r := range repos {
-			set[r.DatabaseID] = r
+			results <- &githubResult{repo: r}
 		}
 
 		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion

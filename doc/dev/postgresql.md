@@ -56,6 +56,12 @@ export PGDATABASE=sourcegraph
 export PGSSLMODE=disable
 ```
 
+You can also use a tool like [`envdir`][s] or [a `.dotenv` file][dotenv] to
+source these env vars on demand when you start the server.
+
+[envdir]: https://cr.yp.to/daemontools/envdir.html
+[dotenv]: https://github.com/joho/godotenv
+
 To test the environment's credentials, run `psql` (the PostgreSQL CLI
 client) with the `PG*` environment variables set. If you see a
 database prompt, then the environment's credentials are valid.

@@ -15,13 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
-
-// GraphQLSchema is the parsed Schema with the root resolver attached. It is
-// exported since it is accessed in our httpapi.
-var GraphQLSchema *graphql.Schema
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
@@ -48,12 +44,12 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func init() {
-	var err error
-	GraphQLSchema, err = graphql.ParseSchema(Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
-	if err != nil {
-		panic(err)
-	}
+func NewSchema(a8n A8NResolver) (*graphql.Schema, error) {
+	return graphql.ParseSchema(
+		Schema,
+		&schemaResolver{a8nResolver: a8n},
+		graphql.Tracer(prometheusTracer{}),
+	)
 }
 
 // EmptyResponse is a type that can be used in the return signature for graphql queries
@@ -76,6 +72,21 @@ type NodeResolver struct {
 
 func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	n, ok := r.Node.(*accessTokenResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
+	n, ok := r.Node.(CampaignResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToChangeset() (ChangesetResolver, bool) {
+	n, ok := r.Node.(ChangesetResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
+	n, ok := r.Node.(ChangesetEventResolver)
 	return n, ok
 }
 
@@ -156,24 +167,12 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-// stringLogger describes something that can log strings, list them and also
-// clean up to make sure they don't use too much storage space.
-type stringLogger interface {
-	// Log stores the given string s.
-	Log(ctx context.Context, s string) error
-
-	// Top returns the top n most frequently occurring strings.
-	// The returns are parallel slices for the unique strings and their associated counts.
-	Top(ctx context.Context, n int32) ([]string, []int32, error)
-
-	// Cleanup removes old entries such that there are no more than limit remaining.
-	Cleanup(ctx context.Context, limit int) error
-}
-
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
-type schemaResolver struct{}
+type schemaResolver struct {
+	a8nResolver A8NResolver
+}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
@@ -181,17 +180,27 @@ func (r *schemaResolver) Root() *schemaResolver {
 }
 
 func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
-	n, err := NodeByID(ctx, args.ID)
+	n, err := r.nodeByID(ctx, args.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &NodeResolver{n}, nil
 }
 
-func NodeByID(ctx context.Context, id graphql.ID) (Node, error) {
+func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
+	case "Campaign":
+		if r.a8nResolver == nil {
+			return nil, onlyInEnterprise
+		}
+		return r.a8nResolver.CampaignByID(ctx, id)
+	case "Changeset":
+		if r.a8nResolver == nil {
+			return nil, onlyInEnterprise
+		}
+		return r.a8nResolver.ChangesetByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

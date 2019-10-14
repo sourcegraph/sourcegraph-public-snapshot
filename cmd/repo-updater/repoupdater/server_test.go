@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -17,15 +19,15 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -653,7 +655,7 @@ func TestServer_StatusMessages(t *testing.T) {
 				Messages: []protocol.StatusMessage{
 					{
 						SyncError: &protocol.SyncError{
-							Message: "syncer.sync.store.list-repos: could not connect to database",
+							Message: "syncer.sync.streaming: syncer.storedExternalIDs: could not connect to database",
 						},
 					},
 				},
@@ -679,14 +681,17 @@ func TestServer_StatusMessages(t *testing.T) {
 			}
 
 			clock := repos.NewFakeClock(time.Now(), 0)
-			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+			syncer := &repos.Syncer{
+				Store: store,
+				Now:   clock.Now,
+			}
 
 			if tc.sourcerErr != nil || tc.listRepoErr != nil {
 				store.ListReposError = tc.listRepoErr
 				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
 				// Run Sync so that possibly `LastSyncErrors` is set
-				syncer = repos.NewSyncer(store, sourcer, nil, clock.Now)
-				_, _ = syncer.Sync(ctx)
+				syncer.Sourcer = sourcer
+				_ = syncer.Sync(ctx)
 			}
 
 			s := &Server{
@@ -982,7 +987,10 @@ func TestRepoLookup(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			syncer := repos.NewSyncer(store, nil, nil, clock.Now)
+			syncer := &repos.Syncer{
+				Store: store,
+				Now:   clock.Now,
+			}
 			s := &Server{Syncer: syncer, Store: store}
 			if tc.githubDotComSource != nil {
 				s.GithubDotComSource = tc.githubDotComSource
@@ -1034,13 +1042,6 @@ type fakeScheduler struct {
 	queue repos.Repos
 }
 
-func (s *fakeScheduler) UpdateQueueLen() int {
-	if s.queue != nil {
-		return s.queue.Len()
-	}
-	return 0
-}
-
 func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
 func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
@@ -1068,8 +1069,10 @@ func must(err error) {
 	}
 }
 
-func init() {
+func TestMain(m *testing.M) {
+	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 	}
+	os.Exit(m.Run())
 }

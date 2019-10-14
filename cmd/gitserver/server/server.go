@@ -31,15 +31,15 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/honey"
-	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -230,7 +230,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
 	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
 	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
-	mux.HandleFunc("/repo", s.handleDeprecatedRepoInfo) // TODO(slimsag): Remove this after 3.3 is released.
 	mux.HandleFunc("/repos", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
@@ -403,7 +402,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
-		_, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
+		_, err := s.cloneRepo(ctx, req.Repo, req.URL, &cloneOptions{Block: true})
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -812,6 +811,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
+		removeBadRefs(ctx, tmpPath)
+
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmpPath); err != nil {
 			return errors.Wrapf(err, "failed to update last changed time")
@@ -1069,6 +1070,46 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, url string
 	}
 }
 
+var (
+	badRefsOnce sync.Once
+	badRefs     []string
+)
+
+// removeBadRefs removes bad refs and tags from the git repo at dir. This
+// should be run after a clone or fetch. If your repository contains a ref or
+// tag called HEAD (case insensitive), most commands will output a warning
+// from git:
+//
+//  warning: refname 'HEAD' is ambiguous.
+//
+// Instead we just remove this ref.
+func removeBadRefs(ctx context.Context, dir string) {
+	// older versions of git do not remove tags case insensitively, so we
+	// generate every possible case of HEAD (2^4 = 16)
+	badRefsOnce.Do(func() {
+		for bits := uint8(0); bits < (1 << 4); bits++ {
+			s := []byte("HEAD")
+			for i, c := range s {
+				// lowercase if the i'th bit of bits is 1
+				if bits&(1<<i) != 0 {
+					s[i] = c - 'A' + 'a'
+				}
+			}
+			badRefs = append(badRefs, string(s))
+		}
+	})
+
+	args := append([]string{"branch", "-D"}, badRefs...)
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = dir
+	_ = cmd.Run()
+
+	args = append([]string{"tag", "-d"}, badRefs...)
+	cmd = exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = dir
+	_ = cmd.Run()
+}
+
 // setLastChanged discerns an approximate last-changed timestamp for a
 // repository. This can be approximate; it's used to determine how often we
 // should run `git fetch`, but is not relied on strongly. The basic plan
@@ -1259,6 +1300,8 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to update")
 	}
+
+	removeBadRefs(ctx, dir)
 
 	// Update the last-changed stamp.
 	if err := setLastChanged(dir); err != nil {

@@ -3,7 +3,7 @@ import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import { HoverAlert } from '../../../../shared/src/hover/HoverOverlay'
 import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { observeStorageKey, storage } from '../../browser/storage'
-import { StorageItems } from '../../browser/types'
+import { SyncStorageItems } from '../../browser/types'
 import { isInPage } from '../../context'
 
 export type ExtensionHoverAlertType = 'nativeTooltips'
@@ -36,7 +36,7 @@ export function getActiveHoverAlerts(
  */
 export async function onHoverAlertDismissed(alertType: ExtensionHoverAlertType): Promise<void> {
     try {
-        const partialStorageItems: Pick<StorageItems, 'dismissedHoverAlerts'> = {
+        const partialStorageItems: Pick<SyncStorageItems, 'dismissedHoverAlerts'> = {
             dismissedHoverAlerts: {},
             ...(await storage.sync.get('dismissedHoverAlerts')),
         }

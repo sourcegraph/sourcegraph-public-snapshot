@@ -1,9 +1,14 @@
+/**
+ * @jest-environment node
+ */
+
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
-import { sourcegraphBaseUrl, createDriverForTest, Driver, gitHubToken } from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { PhabricatorMapping } from '../browser/types'
 import { isEqual } from 'lodash'
+import { getConfig } from '../../../shared/src/e2e/config'
 
 // By default, these tests run against a local Phabricator instance and a local Sourcegraph instance.
 // To run them against phabricator.sgdev.org and umami.sgdev.org, set the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -11,6 +16,10 @@ import { isEqual } from 'lodash'
 const PHABRICATOR_BASE_URL = process.env.PHABRICATOR_BASE_URL || 'http://127.0.0.1'
 const PHABRICATOR_USERNAME = process.env.PHABRICATOR_USERNAME || 'admin'
 const PHABRICATOR_PASSWORD = process.env.PHABRICATOR_PASSWORD || 'sourcegraph'
+const TEST_NATIVE_INTEGRATION = Boolean(
+    process.env.TEST_NATIVE_INTEGRATION && JSON.parse(process.env.TEST_NATIVE_INTEGRATION)
+)
+const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -104,7 +113,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
     const callSignConfigStr = await driver.page.evaluate(() =>
         document.querySelector<HTMLTextAreaElement>('textarea[name="value"]')!.value.trim()
     )
-    const callSignConfig: PhabricatorMapping[] = callSignConfigStr && JSON.parse(callSignConfigStr)
+    const callSignConfig: PhabricatorMapping[] = (callSignConfigStr && JSON.parse(callSignConfigStr)) || []
     const jsonRpc2Mapping: PhabricatorMapping = {
         path: 'github.com/sourcegraph/jsonrpc2',
         callsign: 'JRPC',
@@ -127,11 +136,11 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  * Runs initial setup for the Phabricator instance.
  */
 async function init(driver: Driver): Promise<void> {
-    await driver.ensureLoggedIn()
+    await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({
         kind: ExternalServiceKind.GITHUB,
-        displayName: 'Github (phabricator)',
+        displayName: 'GitHub (phabricator)',
         config: JSON.stringify({
             url: 'https://github.com',
             token: gitHubToken,
@@ -143,7 +152,11 @@ async function init(driver: Driver): Promise<void> {
     await driver.ensureHasCORSOrigin({ corsOriginURL: PHABRICATOR_BASE_URL })
     await phabricatorLogin(driver)
     await addPhabricatorRepo(driver)
-    await configureSourcegraphIntegration(driver)
+    if (TEST_NATIVE_INTEGRATION) {
+        await configureSourcegraphIntegration(driver)
+    } else {
+        await driver.setExtensionSourcegraphUrl()
+    }
 }
 
 describe('Sourcegraph Phabricator extension', () => {
@@ -151,7 +164,7 @@ describe('Sourcegraph Phabricator extension', () => {
 
     beforeAll(async () => {
         try {
-            driver = await createDriverForTest()
+            driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
             await init(driver)
         } catch (err) {
             console.error(err)

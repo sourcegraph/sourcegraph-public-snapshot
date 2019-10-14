@@ -1,11 +1,11 @@
 import { Observable, of, throwError } from 'rxjs'
 import { FileInfo } from '../code_intelligence'
 import { getCommitIDFromPermalink } from './scrape'
-import { getDeltaFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
+import { getDiffFileName, getDiffResolvedRev, getFilePath, parseURL } from './util'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> => {
     const { rawRepoName } = parseURL()
-    const { headFilePath, baseFilePath } = getDeltaFileName(codeView)
+    const { headFilePath, baseFilePath } = getDiffFileName(codeView)
     if (!headFilePath) {
         throw new Error('cannot determine file path')
     }
@@ -35,16 +35,17 @@ export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> => 
         const { revAndFilePath, rawRepoName } = parsedURL
 
         const filePath = getFilePath()
-        if (!revAndFilePath.endsWith(filePath)) {
+        const filePathWithLeadingSlash = filePath.startsWith('/') ? filePath : `/${filePath}`
+        if (!revAndFilePath.endsWith(filePathWithLeadingSlash)) {
             throw new Error(
-                `The file path ${filePath} should always be a suffix of revAndFilePath ${revAndFilePath}, but isn't in this case.`
+                `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revAndFilePath}, but isn't in this case.`
             )
         }
         return of({
             rawRepoName,
             filePath,
             commitID: getCommitIDFromPermalink(),
-            rev: revAndFilePath.slice(0, -filePath.length),
+            rev: revAndFilePath.slice(0, -filePathWithLeadingSlash.length),
         })
     } catch (error) {
         return throwError(error)

@@ -13,13 +13,13 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -45,6 +45,91 @@ func TestFakeStore(t *testing.T) {
 			repos.NewStoreMetrics(),
 			trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		)))
+	}
+}
+
+func testStoreListExternalServicesByRepos(store repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Helper()
+
+		ctx := context.Background()
+		clock := repos.NewFakeClock(time.Now(), 0)
+		now := clock.Now()
+
+		t.Run("", transact(ctx, store, func(t testing.TB, tx repos.Store) {
+			github := repos.ExternalService{
+				Kind:        "GITHUB",
+				DisplayName: "Github - Test",
+				Config:      `{"url": "https://github.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			gitlab := repos.ExternalService{
+				Kind:        "GITLAB",
+				DisplayName: "GitLab - Test",
+				Config:      `{"url": "https://gitlab.com"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			svcs := repos.ExternalServices{&github, &gitlab}
+
+			if err := tx.UpsertExternalServices(ctx, svcs...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			repositories := repos.Repos{
+				{
+					Name: "github.com/foo/bar",
+					Sources: map[string]*repos.SourceInfo{
+						fmt.Sprintf("extsvc:github:%d", github.ID): {},
+					},
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          "bar",
+						ServiceType: "github",
+						ServiceID:   "http://github.com",
+					},
+				},
+				{
+					Name: "github.com/foo/baz",
+					Sources: map[string]*repos.SourceInfo{
+						fmt.Sprintf("extsvc:github:%d", github.ID): {},
+					},
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          "baz",
+						ServiceType: "github",
+						ServiceID:   "http://github.com",
+					},
+				},
+				{
+					Name: "gitlab.com/foo/bar",
+					Sources: map[string]*repos.SourceInfo{
+						fmt.Sprintf("extsvc:gitlab:%d", gitlab.ID): {},
+					},
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          "bar",
+						ServiceType: "gitlab",
+						ServiceID:   "http://gitlab.com",
+					},
+				},
+			}
+
+			if err := tx.UpsertRepos(ctx, repositories...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			opts := repos.StoreListExternalServicesArgs{
+				RepoIDs: repositories.IDs(),
+			}
+
+			have, err := tx.ListExternalServices(ctx, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos.Assert.ExternalServicesEqual(svcs...)(t, have)
+		}))
 	}
 }
 

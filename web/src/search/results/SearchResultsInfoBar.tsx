@@ -52,7 +52,7 @@ interface SearchResultsInfoBarProps
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
-    <div className="search-results-info-bar px-2" data-testid="results-info-bar">
+    <div className="search-results-info-bar" data-testid="results-info-bar">
         {(props.results.timedout.length > 0 ||
             props.results.cloning.length > 0 ||
             props.results.results.length > 0 ||
@@ -165,7 +165,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     </>
                                 ) : (
                                     <>
-                                        <DownloadIcon className="icon-inline" /> Save this search query
+                                        <DownloadIcon className="icon-inline e2e-save-search-link" /> Save this search
+                                        query
                                     </>
                                 )}
                             </button>

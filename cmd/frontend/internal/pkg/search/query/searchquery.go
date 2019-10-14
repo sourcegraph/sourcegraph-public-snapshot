@@ -3,6 +3,8 @@
 package query
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
@@ -20,6 +22,7 @@ const (
 	FieldType               = "type"
 	FieldRepoHasFile        = "repohasfile"
 	FieldRepoHasCommitAfter = "repohascommitafter"
+	FieldPatternType        = "patterntype"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -42,15 +45,16 @@ var (
 
 	conf = types.Config{
 		FieldTypes: map[string]types.FieldType{
-			FieldDefault:   {Literal: types.RegexpType, Quoted: types.StringType},
-			FieldCase:      {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
-			FieldRepo:      regexpNegatableFieldType,
-			FieldRepoGroup: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldFile:      regexpNegatableFieldType,
-			FieldFork:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
-			FieldType:      stringFieldType,
+			FieldDefault:     {Literal: types.RegexpType, Quoted: types.StringType},
+			FieldCase:        {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+			FieldRepo:        regexpNegatableFieldType,
+			FieldRepoGroup:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldFile:        regexpNegatableFieldType,
+			FieldFork:        {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldArchived:    {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldLang:        {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
+			FieldType:        stringFieldType,
+			FieldPatternType: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldRepoHasFile:        regexpNegatableFieldType,
 			FieldRepoHasCommitAfter: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
@@ -100,6 +104,12 @@ func parseAndCheck(conf *types.Config, input string) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// We want to make query fields case insensitive
+	for _, expr := range syntaxQuery.Expr {
+		expr.Field = strings.ToLower(expr.Field)
+	}
+
 	checkedQuery, err := conf.Check(syntaxQuery)
 	if err != nil {
 		return nil, err

@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -47,7 +47,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	case gitCloneURL != nil:
 		repositoryName, err := cloneURLToRepoName(ctx, *gitCloneURL)
 		if err != nil {
@@ -57,7 +57,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	default:
 		panic("invalid state")
 	}
@@ -402,7 +402,7 @@ type discussionThreadTargetRepoResolver struct {
 }
 
 func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
-	return repositoryByIDInt32(ctx, r.t.RepoID)
+	return RepositoryByIDInt32(ctx, r.t.RepoID)
 }
 
 func (r *discussionThreadTargetRepoResolver) Path() *string { return r.t.Path }
@@ -419,7 +419,7 @@ func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Contex
 	if rev == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +439,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	if r.t.Path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +579,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 	if path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}

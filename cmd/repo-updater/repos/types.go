@@ -12,16 +12,23 @@ import (
 	"github.com/goware/urlx"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
+
+// A Changeset of an existing Repo.
+type Changeset struct {
+	*a8n.Changeset
+	*Repo
+}
 
 // An ExternalService is defines a Source that yields Repos.
 type ExternalService struct {
@@ -738,6 +745,15 @@ func pick(a *Repo, b *Repo) (keep, discard *Repo) {
 
 // Repos is an utility type with convenience methods for operating on lists of Repos.
 type Repos []*Repo
+
+// IDs returns the list of ids from all Repos.
+func (rs Repos) IDs() []uint32 {
+	ids := make([]uint32, len(rs))
+	for i := range rs {
+		ids[i] = rs[i].ID
+	}
+	return ids
+}
 
 // Names returns the list of names from all Repos.
 func (rs Repos) Names() []string {

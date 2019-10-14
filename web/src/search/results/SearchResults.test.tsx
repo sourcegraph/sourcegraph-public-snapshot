@@ -1,7 +1,7 @@
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from 'react-testing-library'
+import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from '@testing-library/react'
 import { noop } from 'rxjs'
 import sinon from 'sinon'
 import { setLinkComponent } from '../../../../shared/src/components/Link'
@@ -12,6 +12,7 @@ import {
     OBSERVABLE_SEARCH_REQUEST,
 } from '../testHelpers'
 import { SearchResults, SearchResultsProps } from './SearchResults'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 describe('SearchResults', () => {
     setLinkComponent((props: any) => <a {...props} />)
@@ -22,7 +23,7 @@ describe('SearchResults', () => {
     })
 
     const history = createBrowserHistory()
-    history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
     const defaultProps: SearchResultsProps = {
         authenticatedUser: null,
@@ -38,6 +39,8 @@ describe('SearchResults', () => {
         platformContext: { forceUpdateTooltip: sinon.spy() },
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
+        patternType: SearchPatternType.regexp,
+        togglePatternType: sinon.spy(),
     }
 
     it('calls the search request once', () => {

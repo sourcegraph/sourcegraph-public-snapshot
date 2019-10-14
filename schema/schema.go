@@ -237,8 +237,9 @@ type ExcludedGitoliteRepo struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	Discussions     string `json:"discussions,omitempty"`
-	StatusIndicator string `json:"statusIndicator,omitempty"`
+	Automation   string `json:"automation,omitempty"`
+	Discussions  string `json:"discussions,omitempty"`
+	EventLogging string `json:"eventLogging,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -282,6 +283,11 @@ type GitHubConnection struct {
 	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
+	Webhooks                    []*GitHubWebhook      `json:"webhooks,omitempty"`
+}
+type GitHubWebhook struct {
+	Org    string `json:"org"`
+	Secret string `json:"secret"`
 }
 
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
@@ -301,16 +307,21 @@ type GitLabAuthorization struct {
 
 // GitLabConnection description: Configuration for a connection to GitLab (GitLab.com or GitLab self-managed).
 type GitLabConnection struct {
-	Authorization               *GitLabAuthorization     `json:"authorization,omitempty"`
-	Certificate                 string                   `json:"certificate,omitempty"`
-	Exclude                     []*ExcludedGitLabProject `json:"exclude,omitempty"`
-	GitURLType                  string                   `json:"gitURLType,omitempty"`
-	InitialRepositoryEnablement bool                     `json:"initialRepositoryEnablement,omitempty"`
-	ProjectQuery                []string                 `json:"projectQuery"`
-	Projects                    []*GitLabProject         `json:"projects,omitempty"`
-	RepositoryPathPattern       string                   `json:"repositoryPathPattern,omitempty"`
-	Token                       string                   `json:"token"`
-	Url                         string                   `json:"url"`
+	Authorization               *GitLabAuthorization        `json:"authorization,omitempty"`
+	Certificate                 string                      `json:"certificate,omitempty"`
+	Exclude                     []*ExcludedGitLabProject    `json:"exclude,omitempty"`
+	GitURLType                  string                      `json:"gitURLType,omitempty"`
+	InitialRepositoryEnablement bool                        `json:"initialRepositoryEnablement,omitempty"`
+	NameTransformations         []*GitLabNameTransformation `json:"nameTransformations,omitempty"`
+	ProjectQuery                []string                    `json:"projectQuery"`
+	Projects                    []*GitLabProject            `json:"projects,omitempty"`
+	RepositoryPathPattern       string                      `json:"repositoryPathPattern,omitempty"`
+	Token                       string                      `json:"token"`
+	Url                         string                      `json:"url"`
+}
+type GitLabNameTransformation struct {
+	Regex       string `json:"regex,omitempty"`
+	Replacement string `json:"replacement,omitempty"`
 }
 type GitLabProject struct {
 	Id   int    `json:"id,omitempty"`
@@ -492,6 +503,7 @@ type Settings struct {
 	Notices                   []*Notice             `json:"notices,omitempty"`
 	Quicklinks                []*QuickLink          `json:"quicklinks,omitempty"`
 	SearchContextLines        int                   `json:"search.contextLines,omitempty"`
+	SearchDefaultPatternType  string                `json:"search.defaultPatternType,omitempty"`
 	SearchRepositoryGroups    map[string][]string   `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries        []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	SearchScopes              []*SearchScope        `json:"search.scopes,omitempty"`
@@ -517,6 +529,7 @@ type SiteConfiguration struct {
 	GitMaxConcurrentClones            int                         `json:"gitMaxConcurrentClones,omitempty"`
 	GithubClientID                    string                      `json:"githubClientID,omitempty"`
 	GithubClientSecret                string                      `json:"githubClientSecret,omitempty"`
+	LsifEnforceAuth                   bool                        `json:"lsifEnforceAuth,omitempty"`
 	LsifUploadSecret                  string                      `json:"lsifUploadSecret,omitempty"`
 	LsifVerificationGithubToken       string                      `json:"lsifVerificationGithubToken,omitempty"`
 	MaxReposToSearch                  int                         `json:"maxReposToSearch,omitempty"`

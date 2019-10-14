@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
 
 func marshalDiscussionCommentID(dbID int64) graphql.ID {
@@ -88,7 +88,7 @@ func (r *discussionCommentResolver) HTML(ctx context.Context, args *struct{ Opti
 	if err != nil {
 		return "", err
 	}
-	return markdown.Render(contents, nil), nil
+	return markdown.Render(contents), nil
 }
 
 func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, error) {

@@ -15,7 +15,7 @@ import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors
 import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { searchQueryForRepoRev } from '../search'
+import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -38,7 +38,8 @@ export interface RepoContainerContext
         PlatformContextProps,
         ThemeProps,
         EventLoggerProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
 
@@ -63,7 +64,8 @@ interface RepoContainerProps
         EventLoggerProps,
         ExtensionsControllerProps,
         ActivationProps,
-        ThemeProps {
+        ThemeProps,
+        PatternTypeProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -237,6 +239,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             ...this.state.repoHeaderContributionsLifecycleProps,
             onDidUpdateExternalLinks: this.onDidUpdateExternalLinks,
             onDidUpdateRepository: this.onDidUpdateRepository,
+            patternType: this.props.patternType,
+            togglePatternType: this.props.togglePatternType,
         }
 
         return (

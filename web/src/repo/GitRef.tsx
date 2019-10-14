@@ -85,6 +85,9 @@ export const gitRefFragment = gql`
     fragment SignatureFields on Signature {
         person {
             displayName
+            user {
+                username
+            }
         }
         date
     }

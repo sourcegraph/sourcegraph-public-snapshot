@@ -5,7 +5,7 @@ package ci
 import (
 	"time"
 
-	bk "github.com/sourcegraph/sourcegraph/pkg/buildkite"
+	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
 
 func init() {
@@ -77,6 +77,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addWebApp,
+			addLSIFServer,
 			addSharedTests,
 			addPostgresBackcompat,
 			addGoTests,

@@ -1,6 +1,5 @@
 import { isEqual } from 'lodash'
 import { combineLatest, from, Observable, ObservableInput, of, Subscribable } from 'rxjs'
-import { ajax } from 'rxjs/ajax'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import {
     ConfiguredExtension,
@@ -13,8 +12,10 @@ import { isErrorLike } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoizeObservable'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { isDefined } from '../../../util/types'
-import { CodeEditorWithPartialModel, EditorService } from './editorService'
 import { SettingsService } from './settings'
+import { ModelService } from './modelService'
+import { fromFetch } from 'rxjs/fetch'
+import { checkOk } from '../../../backend/fetch'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -25,14 +26,11 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
 }
 
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
-    ajax({
-        url: `${baseUrl}/package.json`,
-        responseType: 'json',
-        crossDomain: true,
-        async: true,
-    }).pipe(
+    fromFetch(`${baseUrl}/package.json`).pipe(
+        map(checkOk),
+        switchMap(response => response.json()),
         map(
-            ({ response }): ConfiguredExtension => ({
+            (response): ConfiguredExtension => ({
                 id: response.name,
                 manifest: {
                     url: `${baseUrl}/${response.main.replace('dist/', '')}`,
@@ -56,7 +54,7 @@ interface PartialContext extends Pick<PlatformContext, 'requestGraphQL' | 'getSc
 export class ExtensionsService {
     constructor(
         private platformContext: PartialContext,
-        private editorService: Pick<EditorService, 'editorsAndModels'>,
+        private modelService: Pick<ModelService, 'activeLanguages'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private extensionActivationFilter = extensionsWithMatchedActivationEvent,
         private fetchSideloadedExtension: (
@@ -120,9 +118,9 @@ export class ExtensionsService {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()
-        return combineLatest(from(this.editorService.editorsAndModels), this.enabledExtensions).pipe(
-            tap(([editors, enabledExtensions]) => {
-                const activeExtensions = this.extensionActivationFilter(enabledExtensions, editors)
+        return combineLatest(from(this.modelService.activeLanguages), this.enabledExtensions).pipe(
+            tap(([activeLanguages, enabledExtensions]) => {
+                const activeExtensions = this.extensionActivationFilter(enabledExtensions, activeLanguages)
                 for (const x of activeExtensions) {
                     if (!activatedExtensionIDs.has(x.id)) {
                         activatedExtensionIDs.add(x.id)
@@ -171,8 +169,9 @@ function asObservable(input: string | ObservableInput<string>): Observable<strin
 
 function extensionsWithMatchedActivationEvent(
     enabledExtensions: ConfiguredExtension[],
-    editors: readonly CodeEditorWithPartialModel[]
+    visibleTextDocumentLanguages: ReadonlySet<string>
 ): ConfiguredExtension[] {
+    const languageActivationEvents = new Set([...visibleTextDocumentLanguages].map(l => `onLanguage:${l}`))
     return enabledExtensions.filter(x => {
         try {
             if (!x.manifest) {
@@ -194,10 +193,7 @@ function extensionsWithMatchedActivationEvent(
                 console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                 return false
             }
-            const visibleTextDocumentLanguages = editors.map(({ model: { languageId } }) => languageId)
-            return x.manifest.activationEvents.some(
-                e => e === '*' || visibleTextDocumentLanguages.some(l => e === `onLanguage:${l}`)
-            )
+            return x.manifest.activationEvents.some(e => e === '*' || languageActivationEvents.has(e))
         } catch (err) {
             console.error(err)
         }

@@ -2,12 +2,13 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { LaunchOptions, PageEventObj, Page, Serializable } from 'puppeteer'
+import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery } from '../graphql/schema'
-import { readEnvBoolean, readEnvString, retry } from './e2e-test-utils'
+import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
+import { readEnvBoolean, retry } from './e2e-test-utils'
+import * as path from 'path'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -19,15 +20,7 @@ export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue
     ? realPercySnapshot
     : () => Promise.resolve()
 
-/**
- * Used in the external service configuration.
- */
-export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
-
-export const sourcegraphBaseUrl = readEnvString({
-    variable: 'SOURCEGRAPH_BASE_URL',
-    defaultValue: 'http://localhost:3080',
-})
+export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
 /**
  * Specifies how to select the content of the element. No
@@ -46,10 +39,23 @@ type SelectTextMethod = 'selectall' | 'keyboard'
 type EnterTextMethod = 'type' | 'paste'
 
 export class Driver {
-    constructor(public browser: puppeteer.Browser, public page: puppeteer.Page) {}
+    constructor(
+        public browser: puppeteer.Browser,
+        public page: puppeteer.Page,
+        public sourcegraphBaseUrl: string,
+        public keepBrowser?: boolean
+    ) {}
 
-    public async ensureLoggedIn(): Promise<void> {
-        await this.page.goto(sourcegraphBaseUrl)
+    public async ensureLoggedIn({
+        username,
+        password,
+        email,
+    }: {
+        username: string
+        password: string
+        email?: string
+    }): Promise<void> {
+        await this.page.goto(this.sourcegraphBaseUrl)
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
@@ -57,21 +63,44 @@ export class Driver {
         })
         const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
-            await this.page.type('input[name=email]', 'test@test.com')
-            await this.page.type('input[name=username]', 'test')
-            await this.page.type('input[name=password]', 'test')
+            await this.page.waitForSelector('.e2e-signup-form')
+            if (email) {
+                await this.page.type('input[name=email]', email)
+            }
+            await this.page.type('input[name=username]', username)
+            await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation()
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         } else if (url.pathname === '/sign-in') {
-            await this.page.type('input', 'test')
-            await this.page.type('input[name=password]', 'test')
+            await this.page.waitForSelector('.e2e-signin-form')
+            await this.page.type('input', username)
+            await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation()
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         }
     }
 
+    /**
+     * Navigates to the Sourcegraph browser extension options page and sets the sourcegraph URL.
+     */
+    public async setExtensionSourcegraphUrl(): Promise<void> {
+        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
+        await this.page.waitForSelector('.e2e-sourcegraph-url')
+        await this.replaceText({ selector: '.e2e-sourcegraph-url', newText: this.sourcegraphBaseUrl })
+        await this.page.keyboard.press(Key.Enter)
+        await this.page.waitForFunction(
+            () => {
+                const element = document.querySelector('.e2e-connection-status')
+                return element && element.textContent && element.textContent.includes('Connected')
+            },
+            { timeout: 5000 }
+        )
+    }
+
     public async close(): Promise<void> {
-        await this.browser.close()
+        if (!this.keepBrowser) {
+            await this.browser.close()
+        }
     }
 
     public async newPage(): Promise<void> {
@@ -140,12 +169,12 @@ export class Driver {
         config,
         ensureRepos,
     }: {
-        kind: string
+        kind: ExternalServiceKind
         displayName: string
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
-        await this.page.goto(sourcegraphBaseUrl + '/site-admin/external-services')
+        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
         await this.page.waitFor('.e2e-filtered-connection')
         await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
@@ -172,16 +201,17 @@ export class Driver {
             newText: config,
             selectMethod: 'keyboard',
         })
-        await this.page.click('.e2e-add-external-service-button')
-        await this.page.waitForNavigation()
+        await Promise.all([this.page.waitForNavigation(), this.page.click('.e2e-add-external-service-button')])
 
         if (ensureRepos) {
             // Clone the repositories
             for (const slug of ensureRepos) {
-                await this.page.goto(sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
-                    visible: true,
-                })
+                await this.page.goto(
+                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
+                )
+                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
+                await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
         }
     }
@@ -200,14 +230,14 @@ export class Driver {
     }
 
     public async assertWindowLocation(location: string, isAbsolute = false): Promise<any> {
-        const url = isAbsolute ? location : sourcegraphBaseUrl + location
+        const url = isAbsolute ? location : this.sourcegraphBaseUrl + location
         await retry(async () => {
             expect(await this.page.evaluate(() => window.location.href)).toEqual(url)
         })
     }
 
     public async assertWindowLocationPrefix(locationPrefix: string, isAbsolute = false): Promise<any> {
-        const prefix = isAbsolute ? locationPrefix : sourcegraphBaseUrl + locationPrefix
+        const prefix = isAbsolute ? locationPrefix : this.sourcegraphBaseUrl + locationPrefix
         await retry(async () => {
             const loc: string = await this.page.evaluate(() => window.location.href)
             expect(loc.startsWith(prefix)).toBeTruthy()
@@ -261,9 +291,14 @@ export class Driver {
         variables: {}
     }): Promise<GraphQLResult<T>> {
         const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-        const xhrHeaders = await this.page.evaluate(() => (window as any).context.xhrHeaders)
+        const xhrHeaders =
+            (await this.page.evaluate(
+                sourcegraphBaseUrl =>
+                    location.href.startsWith(sourcegraphBaseUrl) && (window as any).context.xhrHeaders,
+                this.sourcegraphBaseUrl
+            )) || {}
         const response = await this.makeRequest<GraphQLResult<T>>({
-            url: `${sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+            url: `${this.sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
             init: {
                 method: 'POST',
                 body: JSON.stringify({ query: request, variables }),
@@ -359,6 +394,69 @@ export class Driver {
             }
         }
     }
+
+    /**
+     * Finds the "best" element containing the text, where "best" is roughly defined as "what the
+     * user would click on if you told them to click on the text".
+     *
+     * Returns a list of elements when it is unsure how to pick among candidates. It generally tries
+     * to prefer elements that more tightly wrap the text. Throws an error when no elements could be
+     * found.
+     *
+     * The caller should call `dispose` on the returned JSHandles when done.
+     */
+    public async findElementWithText(
+        text: string,
+        {
+            tagName: selector,
+            log,
+        }: {
+            /**
+             * Filter candidate elements to those with the specified tag name
+             */
+            tagName?: keyof HTMLElementTagNameMap
+
+            /**
+             * Log the XPath quer(y|ies) used to find the element.
+             */
+            log?: boolean
+        } = {}
+    ): Promise<puppeteer.ElementHandle<Element>[]> {
+        const tag = selector || '*'
+        const queries = [
+            `//${tag}[text() = ${JSON.stringify(text)}]`,
+            `//${tag}[starts-with(text(), ${JSON.stringify(text)})]`,
+            `//${tag}[contains(text(), ${JSON.stringify(text)})]`,
+        ]
+
+        for (const query of queries) {
+            if (log) {
+                console.log(`locating xpath ${query}`)
+            }
+            const handles = await this.page.$x(query)
+            if (handles.length > 0) {
+                return handles
+            }
+        }
+        throw new Error(`Could not find element with text ${JSON.stringify(text)}${tag ? ' and tag ' + tag : ''}`)
+    }
+
+    /**
+     * Click the element containing the text. The element is discovered using the
+     * `findElementWithText` method.
+     */
+    public async clickElementWithText(
+        text: string,
+        { tagName, log }: { tagName?: keyof HTMLElementTagNameMap; log?: boolean } = {}
+    ): Promise<void> {
+        const handles = await this.findElementWithText(text, { tagName, log })
+        await handles[0].click()
+        await Promise.all(handles.map(handle => handle.dispose()))
+    }
+
+    public async waitUntilURL(url: string): Promise<void> {
+        await this.page.waitForFunction(url => document.location.href === url, {}, url)
+    }
 }
 
 function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
@@ -373,32 +471,49 @@ function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Nod
     )
 }
 
-export async function createDriverForTest(): Promise<Driver> {
-    let args: string[] = []
+interface DriverOptions extends LaunchOptions {
+    /** If true, load the Sourcegraph browser extension. */
+    loadExtension?: boolean
+
+    sourcegraphBaseUrl: string
+
+    /** If true, print browser console messages to stdout. */
+    logBrowserConsole?: boolean
+
+    /** If true, keep browser open when driver is closed */
+    keepBrowser?: boolean
+}
+
+export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
+    const args = ['--window-size=1280,1024']
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
         console.warn('Running as root, disabling sandbox')
-        args = ['--no-sandbox', '--disable-setuid-sandbox']
+        args.push('--no-sandbox', '--disable-setuid-sandbox')
+    }
+    if (loadExtension) {
+        const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+        args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
     }
 
-    const launchOpt: LaunchOptions = {
-        args: [...args, '--window-size=1280,1024'],
+    const browser = await puppeteer.launch({
+        ...options,
+        args,
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
-    }
-    const browser = await puppeteer.launch(launchOpt)
-    const page = await browser.newPage()
-    page.on('console', message => {
-        if (message.text().includes('Download the React DevTools')) {
-            return
-        }
-        if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
-            return
-        }
-        console.log(
-            'Browser console message:',
-            util.inspect(message, { colors: true, depth: 2, breakLength: Infinity })
-        )
     })
-    return new Driver(browser, page)
+    const page = await browser.newPage()
+    if (logBrowserConsole) {
+        page.on('console', message => {
+            if (message.text().includes('Download the React DevTools')) {
+                return
+            }
+            if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
+                return
+            }
+            console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
+        })
+    }
+    return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)
 }

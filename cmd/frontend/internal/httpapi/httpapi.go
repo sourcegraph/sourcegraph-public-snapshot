@@ -11,14 +11,15 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/graph-gophers/graphql-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -30,7 +31,7 @@ var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186",
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handler) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -43,11 +44,15 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 
+	if githubWebhook != nil {
+		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
+	}
+
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
-	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
+	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
 	lsifServerURL, err := url.Parse(lsifServerURLFromEnv)
 	if err != nil {
@@ -76,7 +81,7 @@ func NewHandler(m *mux.Router) http.Handler {
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router) http.Handler {
+func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -105,7 +110,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
-	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
+	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
 	m.Get(apirouter.SearchConfiguration).Handler(trace.TraceRoute(handler(serveSearchConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)

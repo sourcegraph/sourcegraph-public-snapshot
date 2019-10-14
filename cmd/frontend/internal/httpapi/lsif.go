@@ -17,10 +17,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 var apiURL = url.URL{Scheme: "https", Host: "api.github.com"}
@@ -171,15 +171,17 @@ func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, 
 			return
 		}
 
-		lsifUploadSecret, err := getLSIFUploadSecret()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		if conf.Get().LsifEnforceAuth {
+			lsifUploadSecret, err := getLSIFUploadSecret()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-		if !isValidUploadToken(repo.ExternalRepo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
-			http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
-			return
+			if !isValidUploadToken(repo.ExternalRepo.ID, r.URL.Query().Get("upload_token"), lsifUploadSecret) {
+				http.Error(w, "Invalid LSIF upload token.", http.StatusUnauthorized)
+				return
+			}
 		}
 
 		r.URL.Path = "upload"

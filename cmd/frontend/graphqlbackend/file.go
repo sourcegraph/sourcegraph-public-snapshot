@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/highlight"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
@@ -23,7 +23,7 @@ func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	contents, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.path)
+	contents, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
 	if err != nil {
 		return "", err
 	}
@@ -32,7 +32,7 @@ func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 }
 
 func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
-	switch path.Ext(r.path) {
+	switch path.Ext(r.Path()) {
 	case ".md", ".mdown", ".markdown", ".markdn":
 		break
 	default:
@@ -42,7 +42,7 @@ func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return markdown.Render(content, nil), nil
+	return markdown.Render(content), nil
 }
 
 type markdownOptions struct {
@@ -53,7 +53,7 @@ func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
 }) string {
-	return markdown.Render(args.Markdown, nil)
+	return markdown.Render(args.Markdown)
 }
 
 func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
@@ -105,7 +105,7 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	content, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.path)
+	content, err := git.ReadFile(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), 0)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	simulateTimeout := r.commit.repo.repo.Name == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	html, result.aborted, err = highlight.Code(ctx, highlight.Params{
 		Content:         content,
-		Filepath:        r.path,
+		Filepath:        r.Path(),
 		DisableTimeout:  args.DisableTimeout,
 		IsLightTheme:    args.IsLightTheme,
 		SimulateTimeout: simulateTimeout,

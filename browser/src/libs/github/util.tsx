@@ -15,18 +15,31 @@ export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
 }
 
 /**
- * getDeltaFileName returns the path of the file container. It assumes
+ * Returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
-export function getDeltaFileName(container: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
-    const info = container.querySelector('.file-info') as HTMLElement
-
-    if (info.title) {
-        // for PR conversation snippets
-        return getPathNamesFromElement(info)
+export function getDiffFileName(container: HTMLElement): { headFilePath: string; baseFilePath?: string } {
+    const fileInfoElement = container.querySelector<HTMLElement>('.file-info')
+    if (fileInfoElement) {
+        if (fileInfoElement.tagName === 'A') {
+            // for PR conversation snippets on GHE, where the .file-info element
+            // is the link containing the file paths.
+            return getPathNamesFromElement(fileInfoElement)
+        }
+        // On commit code views, or code views on a PR's files tab,
+        // find the link contained in the .file-info element.
+        const link = fileInfoElement.querySelector<HTMLElement>('a')
+        if (link) {
+            return getPathNamesFromElement(link)
+        }
     }
-    const link = info.querySelector('a') as HTMLElement
-    return getPathNamesFromElement(link)
+    // If no file info element is present, the code view is probably a PR conversation snippet
+    // on github.com, where a link containing the file path can be found in the .file-header element.
+    const fileHeaderLink = container.querySelector<HTMLLinkElement>('.file-header a')
+    if (fileHeaderLink) {
+        return getPathNamesFromElement(fileHeaderLink)
+    }
+    throw new Error('Could not determine diff file name')
 }
 
 function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {

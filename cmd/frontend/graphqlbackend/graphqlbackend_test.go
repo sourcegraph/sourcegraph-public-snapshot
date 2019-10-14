@@ -1,6 +1,8 @@
 package graphqlbackend
 
 import (
+	"flag"
+	"os"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -14,7 +16,7 @@ func TestRepository(t *testing.T) {
 	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: GraphQLSchema,
+			Schema: mustParseGraphQLSchema(t, nil),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
@@ -57,6 +59,15 @@ func TestNodeResolverTo(t *testing.T) {
 	for _, n := range nodes {
 		r := &NodeResolver{n}
 		if _, b := r.ToAccessToken(); b {
+			continue
+		}
+		if _, b := r.ToCampaign(); b {
+			continue
+		}
+		if _, b := r.ToChangeset(); b {
+			continue
+		}
+		if _, b := r.ToChangesetEvent(); b {
 			continue
 		}
 		if _, b := r.ToDiscussionComment(); b {
@@ -108,8 +119,10 @@ func TestNodeResolverTo(t *testing.T) {
 	}
 }
 
-func init() {
+func TestMain(m *testing.M) {
+	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 	}
+	os.Exit(m.Run())
 }

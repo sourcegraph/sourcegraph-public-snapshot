@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../backend/graphql'
@@ -90,6 +90,8 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  * to see a count of unique users on a daily, weekly, and monthly basis).
  *
  * Not used at all for public/sourcegraph.com usage.
+ *
+ * @deprecated Use logEvent
  */
 export function logUserEvent(event: GQL.UserEvent): void {
     if (window.context && window.context.sourcegraphDotComMode) {
@@ -113,5 +115,26 @@ export function logUserEvent(event: GQL.UserEvent): void {
                 return
             })
         )
+        .subscribe()
+}
+
+/**
+ * Log a raw user action (used to allow site admins on a Sourcegraph instance
+ * to see a count of unique users on a daily, weekly, and monthly basis).
+ *
+ * Not used at all for public/sourcegraph.com usage.
+ */
+export function logEvent(event: string): void {
+    mutateGraphQL(
+        gql`
+            mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
+                logEvent(event: $event, userCookieID: $userCookieID, url: $url, source: $source) {
+                    alwaysNil
+                }
+            }
+        `,
+        { event, userCookieID: eventLogger.getAnonUserID(), url: window.location.href, source: GQL.EventSource.WEB }
+    )
+        .pipe(map(dataOrThrowErrors))
         .subscribe()
 }

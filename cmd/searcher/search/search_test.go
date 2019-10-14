@@ -21,9 +21,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
 func TestSearch(t *testing.T) {
@@ -97,7 +97,7 @@ main.go:6:	fmt.Println("Hello world")
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.md"}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -109,7 +109,7 @@ abc.txt:1:w
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "\\.md", PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -119,10 +119,10 @@ README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.{MD,go}", PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: `\.(MD|go)`, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
 
@@ -283,8 +283,8 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:        "test",
-				IncludePattern: "[c-a]",
+				Pattern:         "test",
+				IncludePatterns: []string{"[c-a]"},
 			},
 		},
 
@@ -306,7 +306,7 @@ func TestSearch_badrequest(t *testing.T) {
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:                "test",
-				IncludePattern:         "**",
+				IncludePatterns:        []string{"**"},
 				PathPatternsAreRegExps: true,
 			},
 		},
@@ -351,7 +351,6 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
 		"IncludePatterns": p.IncludePatterns,
-		"IncludePattern":  []string{p.IncludePattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
 	}
 	if p.IsRegExp {
@@ -491,8 +490,12 @@ func diff(b1, b2 string) (string, error) {
 	defer os.Remove(f2.Name())
 	defer f2.Close()
 
-	f1.WriteString(b1)
-	f2.WriteString(b2)
+	if _, err := f1.WriteString(b1); err != nil {
+		return "", err
+	}
+	if _, err := f2.WriteString(b2); err != nil {
+		return "", err
+	}
 
 	data, err := exec.Command("diff", "-u", "--label=want", f1.Name(), "--label=got", f2.Name()).CombinedOutput()
 	if len(data) > 0 {

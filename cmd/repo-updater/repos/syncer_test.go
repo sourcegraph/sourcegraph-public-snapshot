@@ -12,13 +12,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 )
 
 func TestSyncer_Sync(t *testing.T) {
@@ -54,7 +54,7 @@ func TestSyncer_Sync(t *testing.T) {
 			name:    "store list error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
 			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
-			err:     "syncer.sync.store.list-repos: boom",
+			err:     "syncer.sync.streaming: syncer.storedExternalIDs: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
@@ -69,8 +69,12 @@ func TestSyncer_Sync(t *testing.T) {
 			now := clock.Now
 			ctx := context.Background()
 
-			syncer := repos.NewSyncer(tc.store, tc.sourcer, nil, now)
-			_, err := syncer.Sync(ctx)
+			syncer := &repos.Syncer{
+				Store:   tc.store,
+				Sourcer: tc.sourcer,
+				Now:     now,
+			}
+			err := syncer.Sync(ctx)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have error %q, want %q", have, want)
@@ -584,8 +588,12 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					}
 				}
 
-				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
-				diff, err := syncer.Sync(ctx)
+				syncer := &repos.Syncer{
+					Store:   st,
+					Sourcer: tc.sourcer,
+					Now:     now,
+				}
+				err := syncer.Sync(ctx)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -595,25 +603,16 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					return
 				}
 
-				for _, d := range []struct {
-					name       string
-					have, want repos.Repos
-				}{
-					{"added", diff.Added, tc.diff.Added},
-					{"deleted", diff.Deleted, tc.diff.Deleted},
-					{"modified", diff.Modified, tc.diff.Modified},
-					{"unmodified", diff.Unmodified, tc.diff.Unmodified},
-				} {
-					t.Logf("diff.%s", d.name)
-					repos.Assert.ReposEqual(d.want...)(t, d.have)
-				}
-
 				if st != nil {
-					var want repos.Repos
-					want.Concat(diff.Added, diff.Modified, diff.Unmodified)
-					sort.Sort(want)
+					var want, have repos.Repos
+					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
+					have, _ = st.ListRepos(ctx, repos.StoreListReposArgs{})
 
-					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
+					want = want.With(repos.Opt.RepoID(0))
+					have = have.With(repos.Opt.RepoID(0))
+					sort.Sort(want)
+					sort.Sort(have)
+
 					repos.Assert.ReposEqual(want...)(t, have)
 				}
 			}))
@@ -735,8 +734,11 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 				}
 
 				clock := clock
-				syncer := repos.NewSyncer(st, nil, nil, clock.Now)
-				_, err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
+				syncer := &repos.Syncer{
+					Store: st,
+					Now:   clock.Now,
+				}
+				err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
 				if err != nil {
 					t.Fatal(err)
 				}

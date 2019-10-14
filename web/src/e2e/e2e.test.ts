@@ -1,17 +1,19 @@
+/**
+ * @jest-environment node
+ */
+
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import {
-    sourcegraphBaseUrl,
-    createDriverForTest,
-    Driver,
-    gitHubToken,
-    percySnapshot,
-} from '../../../shared/src/e2e/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
 import MockDate from 'mockdate'
+import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { getConfig } from '../../../shared/src/e2e/config'
+
+const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
 // 1 minute test timeout. This must be greater than the default Puppeteer
 // command timeout of 30s in order to get the stack trace to point to the
@@ -32,7 +34,7 @@ describe('e2e test suite', () => {
 
     async function init(): Promise<void> {
         const repoSlugs = [
-            'gitblit/gitblit',
+            'sourcegraph/java-langserver',
             'gorilla/mux',
             'gorilla/securecookie',
             'sourcegraphtest/AlwaysCloningTest',
@@ -45,16 +47,15 @@ describe('e2e test suite', () => {
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
         ]
-        await driver.ensureLoggedIn()
+        await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
-            kind: 'github',
+            kind: ExternalServiceKind.GITHUB,
             displayName: 'e2e-test-github',
             config: JSON.stringify({
                 url: 'https://github.com',
                 token: gitHubToken,
                 repos: repoSlugs,
-                repositoryQuery: ['none'],
             }),
             ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
         })
@@ -66,7 +67,7 @@ describe('e2e test suite', () => {
             MockDate.reset()
 
             // Start browser.
-            driver = await createDriverForTest()
+            driver = await createDriverForTest({ sourcegraphBaseUrl, logBrowserConsole: true })
             await init()
         },
         // Cloning the repositories takes ~1 minute, so give initialization 2
@@ -120,11 +121,11 @@ describe('e2e test suite', () => {
                 selectMethod: 'keyboard',
             })
             await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
-            await driver.page.waitForSelector('.e2e-global-alert .global-alerts__alert', { visible: true })
+            await driver.page.waitForSelector('.e2e-global-alert .notices .global-alerts__alert', { visible: true })
             await driver.page.evaluate(message => {
-                const elem = document.querySelector('.e2e-global-alert .global-alerts__alert')
+                const elem = document.querySelector('.e2e-global-alert .notices .global-alerts__alert')
                 if (!elem) {
-                    throw new Error('No .e2e-global-alert .global-alerts__alert element found')
+                    throw new Error('No .e2e-global-alert .notices .global-alerts__alert element found')
                 }
                 if (!(elem as HTMLElement).innerText.includes(message)) {
                     throw new Error('Expected "' + message + '" message, but didn\'t find it')
@@ -185,13 +186,39 @@ describe('e2e test suite', () => {
                 name
             )
         })
+
+        test('Check allowed usernames', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings/profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-username')
+
+            const name = 'alice.bob-chris-'
+
+            await driver.replaceText({
+                selector: '.e2e-user-settings-profile-page-username',
+                newText: name,
+                selectMethod: 'selectall',
+            })
+
+            await driver.page.click('.e2e-user-settings-profile-page-update-profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-alert-success', { visible: true })
+
+            await driver.page.goto(sourcegraphBaseUrl + `/users/${name}/settings/profile`)
+            await driver.replaceText({
+                selector: '.e2e-user-settings-profile-page-username',
+                newText: 'test',
+                selectMethod: 'selectall',
+            })
+
+            await driver.page.click('.e2e-user-settings-profile-page-update-profile')
+            await driver.page.waitForSelector('.e2e-user-settings-profile-page-alert-success', { visible: true })
+        })
     })
 
     describe('External services', () => {
         test('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
             await driver.ensureHasExternalService({
-                kind: 'github',
+                kind: ExternalServiceKind.GITHUB,
                 displayName,
                 config:
                     '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}',
@@ -236,7 +263,7 @@ describe('e2e test suite', () => {
             const pathPatternSlug = `foobar/github.com/${repo}`
 
             const config = {
-                kind: 'github',
+                kind: ExternalServiceKind.GITHUB,
                 displayName: 'e2e-test-github-repoPathPattern',
                 config: JSON.stringify({
                     url: 'https://github.com',
@@ -266,7 +293,7 @@ describe('e2e test suite', () => {
 
         testIfAwsCredentialsSet('AWS CodeCommit', async () => {
             await driver.ensureHasExternalService({
-                kind: 'awscodecommit',
+                kind: ExternalServiceKind.AWSCODECOMMIT,
                 displayName: 'e2e-aws-code-commit',
                 config: JSON.stringify({
                     region: 'us-west-1',
@@ -278,6 +305,7 @@ describe('e2e test suite', () => {
                         password: awsCodeCommitPassword,
                     },
                 }),
+                ensureRepos: ['aws/test'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
             const blob: string = await (await driver.page.waitFor(() => {
@@ -286,6 +314,34 @@ describe('e2e test suite', () => {
             })).jsonValue()
 
             expect(blob).toBe('README\n\nchange')
+        })
+
+        const bbsURL = process.env.BITBUCKET_SERVER_URL
+        const bbsToken = process.env.BITBUCKET_SERVER_TOKEN
+        const bbsUsername = process.env.BITBUCKET_SERVER_USERNAME
+
+        const testIfBBSCredentialsSet = bbsURL && bbsToken && bbsUsername ? test : test.skip.bind(test)
+
+        testIfBBSCredentialsSet('Bitbucket Server', async () => {
+            await driver.ensureHasExternalService({
+                kind: ExternalServiceKind.BITBUCKETSERVER,
+                displayName: 'e2e-bitbucket-server',
+                config: JSON.stringify({
+                    url: bbsURL,
+                    token: bbsToken,
+                    username: bbsUsername,
+                    repos: ['SOURCEGRAPH/jsonrpc2'],
+                    repositoryPathPattern: 'bbs/{projectKey}/{repositorySlug}',
+                }),
+                ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
+            })
+            await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
+            const blob: string = await (await driver.page.waitFor(() => {
+                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                return elem && elem.textContent
+            })).jsonValue()
+
+            expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
         })
     })
 
@@ -297,14 +353,18 @@ describe('e2e test suite', () => {
         })
 
         test('Search results repo', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24&patternType=regexp'
+            )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results repo')
         })
 
         test('Search results file', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24&patternType=regexp'
+            )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results file')
@@ -312,7 +372,8 @@ describe('e2e test suite', () => {
 
         test('Search results code', async () => {
             await driver.page.goto(
-                sourcegraphBaseUrl + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"'
+                sourcegraphBaseUrl +
+                    '/search?q=repo:^github.com/gorilla/mux$&patternType=regexp file:mux.go "func NewRouter"'
             )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
@@ -323,24 +384,24 @@ describe('e2e test suite', () => {
     describe('Theme switcher', () => {
         test('changes the theme', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
-            await driver.page.waitForSelector('.theme', { visible: true })
-            const currentThemes = await driver.page.evaluate(() =>
-                Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-            )
-            expect(currentThemes).toHaveLength(1)
+            await driver.page.waitForSelector('.theme.theme-dark, .theme.theme-light', { visible: true })
+
+            const getActiveThemeClasses = (): Promise<string[]> =>
+                driver.page.evaluate(() =>
+                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
+                )
+
+            expect(await getActiveThemeClasses()).toHaveLength(1)
+            await driver.page.waitForSelector('.e2e-user-nav-item-toggle')
             await driver.page.click('.e2e-user-nav-item-toggle')
+
+            // Switch to dark
             await driver.page.select('.e2e-theme-toggle', 'dark')
-            expect(
-                await driver.page.evaluate(() =>
-                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-                )
-            ).toEqual(['theme-dark'])
+            expect(await getActiveThemeClasses()).toEqual(['theme-dark'])
+
+            // Switch to light
             await driver.page.select('.e2e-theme-toggle', 'light')
-            expect(
-                await driver.page.evaluate(() =>
-                    Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))
-                )
-            ).toEqual(['theme-light'])
+            expect(await getActiveThemeClasses()).toEqual(['theme-light'])
         })
     })
 
@@ -566,39 +627,38 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
                     symbolNames: [
                         'createAbortError',
-                        'Object',
                         'isAbortError',
                         'throwIfCancelled',
                         'tryCancel',
                         'toAxiosCancelToken',
                         'source',
                     ],
-                    symbolTypes: ['constant', 'constant', 'constant', 'function', 'function', 'function', 'constant'],
+                    symbolTypes: ['constant', 'constant', 'function', 'function', 'function', 'constant'],
                 },
                 {
                     name: 'lists symbols in file for Java',
                     filePath:
-                        '/github.com/gitblit/gitblit@41e6a701953c6f3ec0c4b2375426e4205a1c6a00/-/blob/src/main/java/com/gitblit/models/Activity.java',
+                        '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc/-/blob/src/main/java/com/sourcegraph/common/Config.java',
                     symbolNames: [
-                        'com.gitblit.models',
-                        'Activity',
-                        'serialVersionUID',
-                        'startDate',
-                        'endDate',
-                        'commits',
-                        'authorMetrics',
-                        'repositoryMetrics',
-                        'authorExclusions',
-                        'Activity',
-                        'Activity',
-                        'excludeAuthors',
-                        'addCommit',
-                        'addCommit',
-                        'getCommitCount',
-                        'getCommits',
-                        'getAuthorMetrics',
-                        'getRepositoryMetrics',
-                        'compareTo',
+                        'com.sourcegraph.common',
+                        'Config',
+                        'LIGHTSTEP_INCLUDE_SENSITIVE',
+                        'LIGHTSTEP_PROJECT',
+                        'LIGHTSTEP_TOKEN',
+                        'ANDROID_JAR_PATH',
+                        'IGNORE_DEPENDENCY_RESOLUTION_CACHE',
+                        'LSP_TIMEOUT',
+                        'LANGSERVER_ROOT',
+                        'LOCAL_REPOSITORY',
+                        'EXECUTE_GRADLE_ORIGINAL_ROOT_PATHS',
+                        'shouldExecuteGradle',
+                        'PRIVATE_REPO_ID',
+                        'PRIVATE_REPO_URL',
+                        'PRIVATE_REPO_USERNAME',
+                        'PRIVATE_REPO_PASSWORD',
+                        'log',
+                        'checkEnv',
+                        'ConfigException',
                     ],
                     symbolTypes: [
                         'package',
@@ -610,16 +670,16 @@ describe('e2e test suite', () => {
                         'field',
                         'field',
                         'field',
+                        'field',
+                        'field',
                         'method',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
+                        'field',
                         'method',
-                        'method',
-                        'method',
-                        'method',
-                        'method',
-                        'method',
-                        'method',
-                        'method',
-                        'method',
+                        'class',
                     ],
                 },
             ]
@@ -655,21 +715,22 @@ describe('e2e test suite', () => {
                 },
                 {
                     name: 'navigates to file on symbol click for Java',
-                    repoPath: '/github.com/gitblit/gitblit@41e6a701953c6f3ec0c4b2375426e4205a1c6a00',
-                    filePath: '/tree/src/main/java/com/gitblit/models',
-                    symbolPath: '/blob/src/main/java/com/gitblit/models/Activity.java#L140:13-140:27',
+                    repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
+                    filePath: '/tree/src/main/java/com/sourcegraph/common',
+                    symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
                 },
                 {
-                    name: 'displays valid symbols at different file depths for Go (./router.go)',
+                    name:
+                        'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
-                    filePath: '/tree/traceapp',
-                    symbolPath: '/blob/traceapp/router.go#L31:6-31:15',
+                    filePath: '/tree/examples',
+                    symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
                 },
                 {
-                    name: 'displays valid symbols at different file depths for Go (./tmpl/data.go)',
+                    name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
-                    filePath: '/tree/traceapp',
-                    symbolPath: '/blob/traceapp/tmpl/data.go#L11:6-11:21',
+                    filePath: '/tree/sqltrace',
+                    symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
                 },
             ]
 
@@ -702,7 +763,7 @@ describe('e2e test suite', () => {
                     name: 'highlights correct line for Typescript',
                     filePath:
                         '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
-                    index: 3,
+                    index: 2,
                     line: 17,
                 },
             ]
@@ -1042,7 +1103,7 @@ describe('e2e test suite', () => {
                 .map(op => `${op}:${operators[op]}`)
                 .join('+')
 
-            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=diff+${operatorsQuery}`)
+            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=diff+${operatorsQuery}&patternType=regexp`)
             await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
                 const label = await driver.page.evaluate(
@@ -1057,7 +1118,7 @@ describe('e2e test suite', () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff')
             await driver.page.goto(
                 sourcegraphBaseUrl +
-                    '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
+                    '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file&patternType=regexp'
             )
             await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
@@ -1106,6 +1167,188 @@ describe('e2e test suite', () => {
                 const numberOfResults = parseInt(match[1], 10)
                 expect(numberOfResults).toBeGreaterThan(0)
             })
+        })
+
+        test('redirects to a URL with &patternType=regexp if no patternType in URL', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
+            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
+        })
+
+        test('regexp toggle appears and updates patternType query parameter when clicked', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
+            await driver.page.waitForSelector('.e2e-query-input')
+            await driver.page.waitForSelector('.e2e-regexp-toggle')
+            await driver.page.click('.e2e-regexp-toggle')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.e2e-regexp-toggle')
+            await driver.page.click('.e2e-regexp-toggle')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
+        })
+    })
+
+    describe('Search pattern type setting', () => {
+        test('Search pattern type setting correctly sets default pattern type', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
+            await driver.replaceText({
+                selector: '.e2e-settings-file .monaco-editor',
+                newText: JSON.stringify({
+                    'search.defaultPatternType': 'regexp',
+                }),
+                selectMethod: 'keyboard',
+            })
+            await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
+
+            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-regexp-toggle', { visible: true })
+
+            const activeToggle = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-regexp-toggle--active').length
+            )
+            expect(activeToggle).toEqual(1)
+            await driver.page.keyboard.type('test')
+            await driver.page.click('.search-button')
+            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
+        })
+    })
+
+    describe('Search result type tabs', () => {
+        test('Search results type tabs appear', async () => {
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24&patternType=regexp'
+            )
+            await driver.page.waitForSelector('.e2e-search-result-type-tabs', { visible: true })
+            await driver.page.waitForSelector('.e2e-search-result-tab--active', { visible: true })
+            const tabs = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result-tab'), tab => tab.textContent)
+            )
+
+            expect(tabs.length).toEqual(5)
+            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos'])
+
+            const activeTab = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-search-result-tab--active').length
+            )
+            expect(activeTab).toEqual(1)
+
+            const label = await driver.page.evaluate(
+                () => document.querySelector('.e2e-search-result-tab--active')!.textContent || ''
+            )
+            expect(label).toEqual('Code')
+        })
+
+        test.skip('Clicking search results tabs updates query and URL', async () => {
+            for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
+                await driver.page.waitForSelector(`.e2e-search-result-tab-${searchType}`)
+                await driver.page.click(`.e2e-search-result-tab-${searchType}`)
+                await driver.assertWindowLocation(
+                    `/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}&patternType=regexp`
+                )
+            }
+        })
+    })
+
+    describe('Saved searches', () => {
+        test('Save search from search results page', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
+            await driver.page.waitForSelector('.e2e-save-search-link', { visible: true })
+            await driver.page.click('.e2e-save-search-link')
+            await driver.page.waitForSelector('.e2e-saved-search-modal')
+            await driver.page.waitForSelector('.e2e-saved-search-modal-save-button')
+            await driver.page.click('.e2e-saved-search-modal-save-button')
+            await driver.assertWindowLocation('/users/test/searches/add?query=test&patternType=regexp')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-description')
+            await driver.page.keyboard.type('test query')
+            await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-submit-button')
+            await driver.assertWindowLocation('/users/test/searches')
+
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
+            )
+            expect(nodes).toEqual(1)
+
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
+                )
+            ).toEqual('test query')
+        })
+        test('Delete saved search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-delete-saved-search-button', { visible: true })
+            driver.page.on('dialog', async dialog => {
+                await dialog.accept()
+            })
+            await driver.page.click('.e2e-delete-saved-search-button')
+            await driver.page.waitFor(() => !document.querySelector('.e2e-saved-search-list-page-row'))
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
+            )
+            expect(nodes).toEqual(0)
+        })
+        test('Save search from saved searches page', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-add-saved-search-button', { visible: true })
+            await driver.page.click('.e2e-add-saved-search-button')
+            await driver.assertWindowLocation('/users/test/searches/add')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-description')
+            await driver.page.keyboard.type('test query 2')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-query', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-query')
+            await driver.page.keyboard.type('test patternType:literal')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-submit-button')
+            await driver.assertWindowLocation('/users/test/searches')
+
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-saved-search-list-page-row').length
+            )
+            expect(nodes).toEqual(1)
+
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
+                )
+            ).toEqual('test query 2')
+        })
+        test('Edit saved search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-edit-saved-search-button', { visible: true })
+            await driver.page.click('.e2e-edit-saved-search-button')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-input-description')
+            await driver.page.keyboard.type(' edited')
+
+            await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
+            await driver.page.click('.e2e-saved-search-form-submit-button')
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('.e2e-saved-search-list-page-row-title')
+
+            expect(
+                await driver.page.evaluate(
+                    () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
+                )
+            ).toEqual('test query 2 edited')
+        })
+    })
+
+    describe('Literal search by default toast', () => {
+        test('Dismiss literal search toast', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-literal-search-toast')
+            await driver.page.click('.e2e-close-toast')
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-literal-search-toast').length
+            )
+            expect(nodes).toEqual(0)
         })
     })
 })

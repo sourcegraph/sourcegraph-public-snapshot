@@ -9,13 +9,12 @@ import (
 	"strings"
 	"sync"
 
-	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -100,12 +99,32 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 
 // ListRepos returns all BitbucketServer repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
-func (s BitbucketServerSource) ListRepos(ctx context.Context) (repos []*Repo, err error) {
-	rs, err := s.listAllRepos(ctx)
-	for _, r := range rs {
-		repos = append(repos, s.makeRepo(r))
+func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	s.listAllRepos(ctx, results)
+}
+
+// LoadChangesets loads the latest state of the given Changesets from the codehost.
+func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	for i := range cs {
+		repo := cs[i].Repo.Metadata.(*bitbucketserver.Repo)
+		number, err := strconv.Atoi(cs[i].ExternalID)
+		if err != nil {
+			return err
+		}
+
+		pr := &bitbucketserver.PullRequest{ID: number}
+		pr.ToRef.Repository.Slug = repo.Slug
+		pr.ToRef.Repository.Project.Key = repo.Project.Key
+
+		err = s.client.LoadPullRequest(ctx, pr)
+		if err != nil {
+			return err
+		}
+
+		cs[i].Changeset.Metadata = pr
 	}
-	return repos, err
+
+	return nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.
@@ -213,7 +232,7 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 	return false
 }
 
-func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbucketserver.Repo, error) {
+func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
 	type batch struct {
 		repos []*bitbucketserver.Repo
 		err   error
@@ -227,14 +246,13 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 	go func() {
 		defer wg.Done()
 
-		repos := make([]*bitbucketserver.Repo, 0, len(s.config.Repos))
-		errs := new(multierror.Error)
-
-		for _, name := range s.config.Repos {
+		// Admins normally add to end of lists, so end of list most likely has
+		// new repos => stream them first.
+		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			name := s.config.Repos[i]
 			ps := strings.SplitN(name, "/", 2)
 			if len(ps) != 2 {
-				errs = multierror.Append(errs,
-					errors.Errorf("bitbucketserver.repos: name=%q", name))
+				ch <- batch{err: errors.Errorf("bitbucketserver.repos: name=%q", name)}
 				continue
 			}
 
@@ -247,14 +265,11 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
 					continue
 				}
-				errs = multierror.Append(errs,
-					errors.Wrapf(err, "bitbucketserver.repos: name: %q", name))
+				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repos: name: %q", name)}
 			} else {
-				repos = append(repos, repo)
+				ch <- batch{repos: []*bitbucketserver.Repo{repo}}
 			}
 		}
-
-		ch <- batch{repos: repos, err: errs.ErrorOrNil()}
 	}()
 
 	for _, q := range s.config.RepositoryQuery {
@@ -289,22 +304,18 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context) ([]*bitbuckets
 	}()
 
 	seen := make(map[int]bool)
-	errs := new(multierror.Error)
-	var repos []*bitbucketserver.Repo
-
 	for r := range ch {
 		if r.err != nil {
-			errs = multierror.Append(errs, r.err)
+			results <- SourceResult{Source: s, Err: r.err}
+			continue
 		}
 
 		for _, repo := range r.repos {
 			if !seen[repo.ID] && !s.excludes(repo) {
-				repos = append(repos, repo)
+				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
 				seen[repo.ID] = true
 			}
 		}
 
 	}
-
-	return repos, errs.ErrorOrNil()
 }
