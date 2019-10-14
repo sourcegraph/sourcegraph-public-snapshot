@@ -11,6 +11,7 @@ done
 go generate github.com/sourcegraph/sourcegraph/migrations
 env \
   PATH="/usr/local/opt/postgresql@9.6/bin:$PATH" \
+  LOG_MIGRATE=true \
   PGPORT=5433 \
   PGDATABASE=postgres \
   PGUSER=postgres \
