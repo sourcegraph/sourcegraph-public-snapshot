@@ -82,10 +82,9 @@ func (es Events) Less(i, j int) bool {
 }
 
 // CalcCounts calculates ChangesetCounts for the given Changesets and their
-// Events in the timeframe specified by the start and end parameters.
-// The number of ChangesetCounts returns is the number of 1 day intervals
-// between start and end, with each ChangesetCounts representing a point in
-// time.
+// Events in the timeframe specified by the start and end parameters. The
+// number of ChangesetCounts returned is the number of 1 day intervals between
+// start and end, with each ChangesetCounts representing a point in time.
 func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*ChangesetCounts, error) {
 	ts := generateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
@@ -109,10 +108,10 @@ func CalcCounts(start, end time.Time, cs []*a8n.Changeset, es ...Event) ([]*Chan
 		byChangeset[c] = group
 	}
 
-	for c, csEvents := range byChangeset {
+	for changeset, csEvents := range byChangeset {
 		// We don't have an event for "open", so we check when it was
 		// created on codehost
-		openedAt := c.ExternalCreatedAt()
+		openedAt := changeset.ExternalCreatedAt()
 		if openedAt.IsZero() {
 			continue
 		}
@@ -153,10 +152,13 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 	c.OpenPending++
 
 	for _, e := range csEvents {
+		et := e.Timestamp()
+		if et.IsZero() {
+			continue
+		}
 		// Event happened after point in time we're looking at, no need to look
 		// at the events in future
-		et := e.Timestamp()
-		if et.IsZero() || et.After(c.Time) {
+		if et.After(c.Time) {
 			return nil
 		}
 
