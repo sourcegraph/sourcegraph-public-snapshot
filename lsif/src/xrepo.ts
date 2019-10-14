@@ -114,32 +114,36 @@ export class XrepoDatabase {
             await discoverAndUpdateCommit({ xrepoDatabase: this, repository, commit, gitserverUrls, ctx })
         }
 
+        const query = `
+            WITH RECURSIVE lineage(repository, "commit", parent_commit, has_lsif_data, direction) AS (
+                -- seed result set with the target repository and commit marked by traversal direction
+                SELECT l.* FROM (
+                    SELECT c.*, 'A' FROM lsif_commits_with_lsif_data c WHERE c.repository = $1 AND c."commit" = $2
+                    UNION
+                    SELECT c.*, 'D' FROM lsif_commits_with_lsif_data c WHERE c.repository = $1 AND c."commit" = $2
+                ) l
+
+                UNION
+
+                -- get the next commit in the ancestor or descendant direction
+                SELECT * FROM (
+                    WITH l_inner AS (SELECT * FROM lineage)
+
+                    SELECT c.*, l.direction FROM l_inner l
+                        JOIN lsif_commits_with_lsif_data c
+                        ON l.direction = 'A' and c.repository = l.repository AND c.parent_commit = l."commit"
+                    UNION
+                    SELECT c.*, l.direction FROM l_inner l
+                        JOIN lsif_commits_with_lsif_data c
+                        ON l.direction = 'D' AND c.repository = l.repository AND c."commit" = l.parent_commit
+                ) subquery
+            )
+
+            -- lineage is ordered by distance to the target commit by construction; get first commit with data
+            SELECT l.commit FROM (SELECT * FROM lineage LIMIT $3) l WHERE l.has_lsif_data LIMIT 1;
+        `
+
         return this.withConnection(async connection => {
-            const query = `
-                with recursive lineage(repository, "commit", parent_commit, has_lsif_data, direction) as (
-                    -- seed result set with the target repository and commit marked
-                    -- with both ancestor and descendant directions
-                    select l.* from (
-                        select c.*, 'A' from lsif_commits_with_lsif_data c union
-                        select c.*, 'D' from lsif_commits_with_lsif_data c
-                    ) l
-                    where l.repository = $1 and l."commit" = $2
-
-                    union
-
-                    -- get the next commit in the ancestor or descendant direction
-                    select c.*, l.direction from lineage l
-                    join lsif_commits_with_lsif_data c on (
-                        (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parent_commit) or
-                        (l.direction = 'D' and c.repository = l.repository and c.parent_commit = l."commit")
-                    )
-                )
-
-                -- lineage is ordered by distance to the target commit by
-                -- construction; get the nearest commit that has LSIF data
-                select l."commit" from (select * from lineage limit $3) l where l.has_lsif_data limit 1
-            `
-
             const results = (await connection.query(query, [repository, commit, MAX_TRAVERSAL_LIMIT])) as {
                 commit: string
             }[]
