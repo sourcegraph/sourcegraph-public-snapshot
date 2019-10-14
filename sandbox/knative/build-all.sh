@@ -9,8 +9,9 @@ wait
 (cd ruby-bundler-exec && docker build --build-arg RUBY_VERSION=2.6.4 -t sourcegraph/a8n-ruby-bundler-exec:ruby2.6.4 .) &
 (cd npm-exec && docker build --build-arg NPM_VERSION=6.9.0 -t sourcegraph/a8n-npm-exec:npm6.9.0 .) &
 (cd yarn-exec && docker build --build-arg YARN_VERSION=1.19.0 -t sourcegraph/a8n-yarn-exec:yarn1.19.0 .) &
+(cd java-gradle-exec && docker build --build-arg GRADLE_VERSION=4.8.1 -t sourcegraph/a8n-java-gradle-exec:openjdk8-gradle4.8.1 .) &
 
-echo sourcegraph/a8n-ruby-bundler-exec:ruby2.6.4 sourcegraph/a8n-npm-exec:npm6.9.0 sourcegraph/a8n-yarn-exec:yarn1.19.0 | xargs -n 1 -P 8 docker push
+echo sourcegraph/a8n-ruby-bundler-exec:ruby2.6.4 sourcegraph/a8n-npm-exec:npm6.9.0 sourcegraph/a8n-yarn-exec:yarn1.19.0 sourcegraph/a8n-java-gradle-exec:openjdk8-gradle4.8.1 | xargs -n 1 -P 8 docker push
 
 wait
 
