@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import semver from 'semver'
 import { from, merge, Observable, combineLatest, of } from 'rxjs'
 import { toArray, switchMap, filter, map } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
@@ -40,6 +41,17 @@ const provideDependencySpecification = (
             const lockedDeps = parseDependenciesLock(dependenciesLock.text!)
             for (const [, deps] of Object.entries(lockedDeps)) {
                 for (const [id, { locked, requested }] of Object.entries(deps)) {
+                    // TODO!(sqs): handle semver satisfies for both requested and locked?
+                    if (id !== query.name) {
+                        continue
+                    }
+                    if (
+                        !semver.satisfies(semver.coerce(requested) || requested, query.parsedVersionRange) &&
+                        requested !== query.versionRange
+                    ) {
+                        continue
+                    }
+
                     if (seenDeps.has(id)) {
                         continue
                     }

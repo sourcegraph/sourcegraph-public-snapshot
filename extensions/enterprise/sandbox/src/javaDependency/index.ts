@@ -1,10 +1,10 @@
 import { Unsubscribable } from 'rxjs'
-import { javaDependencyManagementProviderRegistry } from './providers'
 import { DependencyManagementCampaignContextCommon } from '../dependencyManagement/common'
 import { registerDependencyManagementProviders } from '../dependencyManagement/register'
 import { DependencyQuery, DependencyManagementProvider } from '../dependencyManagement'
 import semver from 'semver'
 import { combinedProvider } from '../dependencyManagement/combinedProvider'
+import { gradleDependencyManagementProvider } from './gradle/provider'
 
 // TODO!(sqs): https://github.com/kevcodez/gradle-upgrade-interactive/blob/master/ReplaceVersion.js
 
