@@ -7,6 +7,7 @@ import { ErrorLike } from '../../../util/errors'
 import { TextDocumentIdentifier } from '../types/textDocument'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
+import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 
 export interface CodeActionsParams {
     textDocument: TextDocumentIdentifier
@@ -58,7 +59,7 @@ export function getCodeActions(
     return providers.pipe(
         filter(providers => providers.length > 0),
         switchMap(providers =>
-            combineLatest(
+            combineLatestOrDefault(
                 providers.map(provider =>
                     from(
                         provider(params).pipe(

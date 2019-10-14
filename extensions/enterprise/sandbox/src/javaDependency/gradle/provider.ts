@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import semver from 'semver'
-import { from, merge, Observable, combineLatest, of } from 'rxjs'
-import { toArray, switchMap, filter, map } from 'rxjs/operators'
+import { from, merge, Observable, combineLatest, of, throwError } from 'rxjs'
+import { toArray, switchMap, filter, map, tap, share, catchError, first } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
@@ -10,7 +10,7 @@ import { DependencySpecification, DependencyDeclaration, DependencyResolution } 
 import { editForCommands } from '../../execServer/editsForCommands'
 import { openTextDocument, findMatchRange } from '../../dependencyManagement/util'
 import { parseDependenciesLock } from './dependenciesLock'
-import { Location } from 'sourcegraph'
+import { Location, Range, Position, WorkspaceEdit } from 'sourcegraph'
 import { parseDependencyNotation } from './util'
 import { replaceVersion } from './replaceDependencyVersion'
 
@@ -116,11 +116,9 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                             query
                         )
                     )
-                ).pipe(
-                    filter(isDefined),
-                    toArray()
-                )
-            )
+                ).pipe(filter(isDefined))
+            ),
+            toArray()
         ),
     resolveDependencyUpgradeAction: (dep, version) => {
         // TODO!(sqs): this is not correct w.r.t. indirect deps
@@ -133,10 +131,19 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
         if (!res.location) {
             throw new Error('invalid lockfile with no match location')
         }
-        const newBuildGradle = openTextDocument(decl.location.uri).pipe(
+        const existingBuildGradle = openTextDocument(decl.location.uri).pipe(
+            switchMap(doc => {
+                if (!doc) {
+                    return throwError('no build.gradle')
+                }
+                return of(doc)
+            }),
+            share()
+        )
+        const newBuildGradle = existingBuildGradle.pipe(
             map(buildGradle => {
                 const dependencyNotation = parseDependencyNotation(decl.name)
-                return replaceVersion(buildGradle!.text!, {
+                return replaceVersion(buildGradle.text!, {
                     group: dependencyNotation.group,
                     name: dependencyNotation.name,
                     oldVersion: decl.requestedVersion!,
@@ -144,7 +151,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                 })
             })
         )
-        return newBuildGradle.pipe(
+        const lockfileDiff = newBuildGradle.pipe(
             switchMap(newBuildGradle =>
                 editForCommands(
                     [
@@ -161,8 +168,27 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                         ],
                     ],
                     gradleExecClient
+                ).pipe(
+                    catchError(err => {
+                        // eslint-disable-next-line no-constant-condition
+                        if (false) {
+                            console.error(`Error diffing dependencies.lock: ${err}`)
+                        }
+                        return [new WorkspaceEdit()] // TODO!(sqs): ignore
+                    })
                 )
             )
+        )
+        return combineLatest([existingBuildGradle, newBuildGradle, lockfileDiff]).pipe(
+            map(([existingBuildGradle, newBuildGradle, edit]) => {
+                // Also add build.gradle edit.
+                edit.replace(
+                    new URL(existingBuildGradle.uri),
+                    new Range(new Position(0, 0), existingBuildGradle.positionAt(existingBuildGradle.text!.length)),
+                    newBuildGradle
+                )
+                return edit
+            })
         )
     },
     resolveDependencyBanAction: () => {

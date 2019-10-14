@@ -1,5 +1,5 @@
 import { from, merge } from 'rxjs'
-import { toArray, switchMap, filter } from 'rxjs/operators'
+import { toArray, switchMap, filter, tap, first } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
@@ -62,11 +62,9 @@ export const yarnDependencyManagementProvider: PackageJsonDependencyManagementPr
                             getYarnLockDependency
                         )
                     )
-                ).pipe(
-                    filter(isDefined),
-                    toArray()
-                )
-            )
+                ).pipe(filter(isDefined))
+            ),
+            toArray()
         ),
     resolveDependencyUpgradeAction: (dep, version) => {
         // TODO!(sqs): this is not correct w.r.t. indirect deps

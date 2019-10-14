@@ -2,7 +2,7 @@
 import * as sourcegraph from 'sourcegraph'
 import { ExecServerClient } from './client'
 import { Observable, combineLatest, from, of } from 'rxjs'
-import { switchMap, map } from 'rxjs/operators'
+import { switchMap, map, first } from 'rxjs/operators'
 import { parseRepoURI } from '../../../../../shared/src/util/url'
 import path from 'path'
 
@@ -38,7 +38,10 @@ export const editForCommands = (
                     const edit = new sourcegraph.WorkspaceEdit()
                     for (const file of files) {
                         const name = path.basename(parseRepoURI(file.uri).filePath!)
-                        edit.set(new URL(file.uri), [sourcegraph.TextEdit.patch(result.fileDiffs![name])])
+                        const patch = result.fileDiffs![name]
+                        if (patch) {
+                            edit.set(new URL(file.uri), [sourcegraph.TextEdit.patch(patch)])
+                        }
                     }
                     return edit
                 })

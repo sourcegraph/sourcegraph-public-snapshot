@@ -77,7 +77,7 @@ export const provideDependencyManagementDiagnostics = <
                             const data: DependencyManagementDiagnosticData<Q> = { ...spec, action, createChangesets }
                             const diagnostic: sourcegraph.Diagnostic = {
                                 resource: specMain.location.uri,
-                                message: `${specMain.direct ? '' : 'Indirect '}npm dependency ${specMain.name}${
+                                message: `${specMain.direct ? 'Dependency' : 'Indirect dependency'} ${specMain.name}${
                                     query.versionRange === '*' ? '' : `@${query.versionRange}`
                                 } ${action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`}`,
                                 range: specMain.location.range || new sourcegraph.Range(0, 0, 0, 0),

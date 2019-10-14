@@ -1,6 +1,6 @@
 import { Observable, from, throwError, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { catchError } from 'rxjs/operators'
+import { catchError, tap } from 'rxjs/operators'
 
 export const openTextDocument = (uri: URL): Observable<sourcegraph.TextDocument | null> =>
     from(sourcegraph.workspace.openTextDocument(uri)).pipe(

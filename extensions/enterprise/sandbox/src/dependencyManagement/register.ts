@@ -7,7 +7,7 @@ import {
     parseDependencyManagementDiagnostic,
     DependencyManagementDiagnostic,
 } from './diagnostics'
-import { filter, map } from 'rxjs/operators'
+import { filter, map, first } from 'rxjs/operators'
 import { LOADING, DependencyManagementCampaignContextCommon } from './common'
 import { DependencySpecificationWithType, WithoutType } from './combinedProvider'
 import { isDefined } from '../../../../../shared/src/util/types'
@@ -47,7 +47,7 @@ export function registerDependencyManagementProviders<
                             editForDependencyAction(provider, diagnostic).pipe(
                                 map(edit => {
                                     const action: sourcegraph.Action = {
-                                        title: 'Upgrade dependency in package.json',
+                                        title: 'Upgrade dependency',
                                         edit,
                                         computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
                                         diagnostics: [diagnostic],

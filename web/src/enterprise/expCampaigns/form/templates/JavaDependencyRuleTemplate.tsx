@@ -22,8 +22,7 @@ const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
     const updateContext = useCallback(
         (update: Partial<JavaDependencyCampaignContext>): void => {
             const newContext = { ...context, ...update }
-            const diagnosticQuery = (query: string): ParsedDiagnosticQuery =>
-                parseDiagnosticQuery(`${newContext.filters || ''}${newContext.filters ? ' ' : ''}${query}`)
+            const diagnosticQuery = (query: string): ParsedDiagnosticQuery => parseDiagnosticQuery(query)
             const packageNameAndVersion = `${newContext.packageName || '<package>'}${
                 newContext.matchVersion ? `@${newContext.matchVersion}` : ''
             }`

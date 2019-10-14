@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import { combineLatest, Observable, of } from 'rxjs'
-import { catchError, distinctUntilChanged, first, map, startWith, switchMap, throttleTime } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, first, map, startWith, switchMap, throttleTime, tap } from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../shared/src/api/types/action'
