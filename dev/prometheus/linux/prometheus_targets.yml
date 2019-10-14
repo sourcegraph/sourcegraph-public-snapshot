@@ -1,22 +1,46 @@
 ---
 - labels:
-    job: node
+    job: frontend
   targets:
     # frontend
     - 127.0.0.1:6063
+- labels:
+    job: gitserver
+  targets:
     # gitserver
     - 127.0.0.1:6068
+- labels:
+    job: searcher
+  targets:
     # searcher
     - 127.0.0.1:6069
+- labels:
+    job: symbols
+  targets:
     # symbols
     - 127.0.0.1:6071
+- labels:
+    job: repo-updater
+  targets:
     # repo-updater
     - 127.0.0.1:6074
+- labels:
+    job: query-runner
+  targets:
     # query-runner
     - 127.0.0.1:6067
+- labels:
+    job: zoekt-indexserver
+  targets:
     # zoekt-indexserver
-    # - 127.0.0.1:6072
+    - 127.0.0.1:6072
+- labels:
+    job: lsif-server
+  targets:
     # lsif-server
     - 127.0.0.1:3186
+- labels:
+    job: lsif-worker
+  targets:
     # lsif-worker
     - 127.0.0.1:3187

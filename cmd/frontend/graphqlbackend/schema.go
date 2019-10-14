@@ -419,9 +419,9 @@ type Campaign implements Node {
     # The changesets in this campaign.
     changesets(first: Int): ChangesetConnection!
 
-    # The changeset counts over time, in 1 day intervals.
-    changesetCounts(
-        # Only include changeset counts from this point in time (inclusive).
+    # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
+    changesetCountsOverTime(
+        # Only include changeset counts up to this point in time (inclusive).
         # Defaults to createdAt.
         from: DateTime
         # Only include changeset counts up to this point in time (inclusive).

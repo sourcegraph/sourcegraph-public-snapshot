@@ -10,14 +10,14 @@ local timeRange = '1m';
 // The duration percentiles to display
 local percentiles = ['0.5', '0.9', '0.99'];
 
-// Colors to pair to percentiles above (red, yellow, green)
+// Colors to pair to percentiles above (green, yellow, red)
 local percentileColors = ['#7eb26d', '#cca300', '#bf1b00'];
 
 // The histogram buckets for db queries and insertions
 local buckets = ['0.2', '0.5', '1', '2', '5', '10', '30', '+Inf'];
 
-// The histogram bucket sfor HTTP requests
-local httpBuckets = ['0.03', '0.1', '0.3', '1.5', '10', '+Inf'];
+// The histogram buckets for HTTP requests
+local httpBuckets = ['0.2', '0.5', '1', '2', '5', '10', '30', '+Inf'];
 
 // Colors to pair to buckets defined above (green to red)
 local bucketColors = ['#96d98d', '#56a64b', '#37872d', '#e0b400', '#f2cc0c', '#ffee52', '#fa6400', '#c4162a'];
@@ -26,35 +26,97 @@ local bucketColors = ['#96d98d', '#56a64b', '#37872d', '#e0b400', '#f2cc0c', '#f
 local httpPatterns = ['5..', '4..'];
 
 // Colors to pair to the patterns above (red, yellow)
-local errorColors = ['#7eb26d', '#cca300'];
+local errorColors = ['#bf1b00', '#cca300'];
+
+// The classes of jobs performed by the LSIF worker
+local jobClasses = ['convert'];
+
+//
+// Utils
+
+// Title-case a single word.
+local titleCase(val) = '%s%s' % [std.asciiUpper(std.substr(val, 0, 1)), std.substr(val, 1, std.length(val) - 1)];
 
 //
 // Standard Panels
 
 // Apply defaults defined above to panel constructors
-local makeHttpRequestsPanel(titleValue, metricValue) = common.makeHttpRequestsPanel(titleValue, metricValue, timeRange=timeRange, buckets=httpBuckets, colors=bucketColors);
-local makeHttpErrorRatePanel(titleValue, metricValue) = common.makeHttpErrorRatePanel(titleValue, metricValue, timeRange=timeRange, patterns=httpPatterns, colors=errorColors);
-local makeHttpDurationPercentilesPanel(titleValue, metricValue) = common.makeHttpDurationPercentilesPanel(titleValue, metricValue, timeRange=timeRange, percentiles=percentiles, colors=percentileColors);
-local makeRequestsPanel(titleValue, metricValue) = common.makeRequestsPanel(titleValue, metricValue, timeRange=timeRange, buckets=buckets, colors=bucketColors);
-local makeErrorRatePanel(titleValue, metricValue) = common.makeErrorRatePanel(titleValue, metricValue, timeRange=timeRange);
-local makeDurationPercentilesPanel(titleValue, metricValue) = common.makeDurationPercentilesPanel(titleValue, metricValue, timeRange=timeRange, percentiles=percentiles, colors=percentileColors);
+local makeHttpTotalRequestsPanel(titleValue, metricValue, metricFilter='') = common.makeHttpTotalRequestsPanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange);
+local makeHttpRequestsPanel(titleValue, metricValue, metricFilter='') = common.makeHttpRequestsPanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange, buckets=httpBuckets, colors=bucketColors);
+local makeHttpErrorRatePanel(titleValue, metricValue, metricFilter='') = common.makeHttpErrorRatePanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange, patterns=httpPatterns, colors=errorColors);
+local makeHttpDurationPercentilesPanel(titleValue, metricValue, metricFilter='') = common.makeHttpDurationPercentilesPanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange, percentiles=percentiles, colors=percentileColors);
+local makeRequestsPanel(titleValue, metricValue, metricFilter='') = common.makeRequestsPanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange, buckets=buckets, colors=bucketColors);
+local makeErrorRatePanel(titleValue, metricValue, metricFilter='') = common.makeErrorRatePanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange);
+local makeDurationPercentilesPanel(titleValue, metricValue, metricFilter='') = common.makeDurationPercentilesPanel(titleValue, metricValue, metricFilter=metricFilter, timeRange=timeRange, percentiles=percentiles, colors=percentileColors);
 
 // Make panels
-local httpRequestsPanel = makeHttpRequestsPanel(titleValue='server requests', metricValue='http_request');
-local httpErrorRatePanel = makeHttpErrorRatePanel(titleValue='Server', metricValue='http_request');
-local httpDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Server request', metricValue='http_request');
+local httpUploadTotalRequestsPanel = makeHttpTotalRequestsPanel(titleValue='upload requests', metricValue='lsif_http_upload_request');
+local httpUploadRequestsPanel = makeHttpRequestsPanel(titleValue='upload requests', metricValue='lsif_http_upload_request');
+local httpUploadErrorRatePanel = makeHttpErrorRatePanel(titleValue='Upload', metricValue='lsif_http_upload_request');
+local httpUploadDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Upload request', metricValue='lsif_http_upload_request');
+local httpQueryTotalRequestsPanel = makeHttpTotalRequestsPanel(titleValue='query requests', metricValue='lsif_http_query_request');
+local httpQueryRequestsPanel = makeHttpRequestsPanel(titleValue='query requests', metricValue='lsif_http_query_request');
+local httpQueryErrorRatePanel = makeHttpErrorRatePanel(titleValue='Query', metricValue='lsif_http_query_request');
+local httpQueryDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Query request', metricValue='lsif_http_query_request');
 local databaseQueryRequestsPanel = makeRequestsPanel(titleValue='database queries', metricValue='lsif_database_query');
 local databaseQueryErrorRatePanel = makeErrorRatePanel(titleValue='Database query', metricValue='lsif_database_query');
 local databaseQueryDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Database query', metricValue='lsif_database_query');
-local xrepoQueryRequestsPanel = makeRequestsPanel(titleValue='xrepo queries', metricValue='lsif_xrepo_query');
-local xrepoQueryErrorRatePanel = makeErrorRatePanel(titleValue='Xrepo query', metricValue='lsif_xrepo_query');
-local xrepoQueryDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Xrepo query', metricValue='lsif_xrepo_query');
+local xrepoQueryRequestsPanel = makeRequestsPanel(titleValue='cross-repository queries', metricValue='lsif_xrepo_query');
+local xrepoQueryErrorRatePanel = makeErrorRatePanel(titleValue='Cross-repository query', metricValue='lsif_xrepo_query');
+local xrepoQueryDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Cross-repository query', metricValue='lsif_xrepo_query');
 local databaseInsertionRequestsPanel = makeRequestsPanel(titleValue='database insertions', metricValue='lsif_database_insertion');
 local databaseInsertionErrorRatePanel = makeErrorRatePanel(titleValue='Database insertion', metricValue='lsif_database_insertion');
 local databaseInsertionDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Database query', metricValue='lsif_database_insertion');
-local xrepoInsertionRequestsPanel = makeRequestsPanel(titleValue='xrepo insertions', metricValue='lsif_xrepo_insertion');
-local xrepoInsertionErrorRatePanel = makeErrorRatePanel(titleValue='Xrepo insertion', metricValue='lsif_xrepo_insertion');
-local xrepoInsertionDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Xrepo insertion', metricValue='lsif_xrepo_insertion');
+local xrepoInsertionRequestsPanel = makeRequestsPanel(titleValue='cross-repository insertions', metricValue='lsif_xrepo_insertion');
+local xrepoInsertionErrorRatePanel = makeErrorRatePanel(titleValue='Cross-repository insertion', metricValue='lsif_xrepo_insertion');
+local xrepoInsertionDurationPercentilesPanel = makeDurationPercentilesPanel(titleValue='Cross-repository insertion', metricValue='lsif_xrepo_insertion');
+
+//
+// Process Metrics
+
+local cpuPanel = common.makePanel(
+  title='CPU utilization',
+  targets=[
+    prometheus.target('sum(rate(lsif_process_cpu_user_seconds_total[1m])) by (instance)', legendFormat='user, {{instance}}'),
+    prometheus.target('sum(rate(lsif_process_cpu_system_seconds_total[1m])) by (instance)', legendFormat='system, {{instance}}'),
+    prometheus.target('sum(rate(lsif_process_cpu_seconds_total[1m])) by (instance)', legendFormat='combined, {{instance}}'),
+  ],
+);
+
+local memoryPanel = common.makePanel(
+  title='Average memory usage',
+  extra={
+    yaxes: common.makeYAxes({
+      format: 'decmbytes',
+    }),
+  },
+  targets=[
+    prometheus.target('avg(lsif_nodejs_external_memory_bytes / 1024 / 1024) by (instance)', legendFormat='memory usage of {{instance}}'),
+  ],
+);
+
+//
+// Queue and Jobs Panels
+
+local queueSizePanel = common.makePanel(
+  title='Queue size',
+  targets=[
+    prometheus.target('lsif_queue_size', legendFormat='queue size'),
+  ],
+);
+
+local jobEventsPanel = common.makePanel(
+  title='Job events',
+  targets=[
+    prometheus.target('sum(rate(lsif_job_events_total{type="success"}[%s])) by (class)' % [timeRange], legendFormat='{{class}} success'),
+    prometheus.target('sum(rate(lsif_job_events_total{type="failure"}[%s])) by (class)' % [timeRange], legendFormat='{{class}} failure'),
+  ],
+);
+
+local durationPanelsByJob = std.flattenArrays(std.map(function(class) [
+  makeRequestsPanel(titleValue='%s jobs' % class, metricValue='lsif_job', metricFilter='class="%s"' % class),
+  makeDurationPercentilesPanel(titleValue='%s jobs' % titleCase(class), metricValue='lsif_job', metricFilter='class="%s"' % class),
+], jobClasses));
 
 //
 // Cache Panels
@@ -112,9 +174,12 @@ local bloomFilterEventsPanel = common.makePanel(
 // Dashboard Construction
 
 common.makeDashboard(title='LSIF')
-.addRow(title='HTTP requests', panels=[httpRequestsPanel, httpErrorRatePanel, httpDurationPercentilesPanel])
+.addRow(title='Process metrics', panels=[cpuPanel, memoryPanel])
+.addRow(title='Upload requests', panels=[httpUploadTotalRequestsPanel, httpUploadRequestsPanel, httpUploadErrorRatePanel, httpUploadDurationPercentilesPanel])
+.addRow(title='Query requests', panels=[httpQueryTotalRequestsPanel, httpQueryRequestsPanel, httpQueryErrorRatePanel, httpQueryDurationPercentilesPanel])
+.addRow(title='Queue and job stats', panels=[queueSizePanel, jobEventsPanel] + durationPanelsByJob)
 .addRow(title='Database queries', panels=[databaseQueryRequestsPanel, databaseQueryErrorRatePanel, databaseQueryDurationPercentilesPanel])
-.addRow(title='Xrepo queries', panels=[xrepoQueryRequestsPanel, xrepoQueryErrorRatePanel, xrepoQueryDurationPercentilesPanel])
+.addRow(title='Cross-repository queries', panels=[xrepoQueryRequestsPanel, xrepoQueryErrorRatePanel, xrepoQueryDurationPercentilesPanel])
 .addRow(title='Database insertions', panels=[databaseInsertionRequestsPanel, databaseInsertionErrorRatePanel, databaseInsertionDurationPercentilesPanel])
-.addRow(title='Xrepo insertions', panels=[xrepoInsertionRequestsPanel, xrepoInsertionErrorRatePanel, xrepoInsertionDurationPercentilesPanel])
+.addRow(title='Cross-repository insertions', panels=[xrepoInsertionRequestsPanel, xrepoInsertionErrorRatePanel, xrepoInsertionDurationPercentilesPanel])
 .addRow(title='Caches and Filters', panels=[cacheUtilizationPanel, connectionCacheEventsPanel, documentCacheEventsPanel, resultChunkCacheEventsPanel, bloomFilterEventsPanel])

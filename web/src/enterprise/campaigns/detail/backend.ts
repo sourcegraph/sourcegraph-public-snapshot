@@ -37,6 +37,15 @@ const campaignFragment = gql`
                 createdAt
             }
         }
+        # TODO move to separate query and configure from/to
+        changesetCountsOverTime {
+            date
+            merged
+            closed
+            openApproved
+            openChangesRequested
+            openPending
+        }
     }
 `
 

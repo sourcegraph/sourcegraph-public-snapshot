@@ -110,17 +110,20 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 	return db, nil
 }
 
+func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
+	return bindata.Resource(migrations.AssetNames(), migrations.Asset)
+}
+
 // MigrateDB runs all migrations from github.com/sourcegraph/sourcegraph/migrations
 // against the given sql.DB
-func MigrateDB(db *sql.DB) error {
+func MigrateDB(db *sql.DB, dataSource string) error {
 	var cfg postgres.Config
 	driver, err := postgres.WithInstance(db, &cfg)
 	if err != nil {
 		return err
 	}
 
-	s := bindata.Resource(migrations.AssetNames(), migrations.Asset)
-	d, err := bindata.WithInstance(s)
+	d, err := bindata.WithInstance(NewMigrationSourceLoader(dataSource))
 	if err != nil {
 		return err
 	}

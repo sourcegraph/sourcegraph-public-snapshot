@@ -3,7 +3,9 @@ FROM alpine:3.10@sha256:72c42ed48c3a2db31b7dafe17d275b634664a708d901ec9fd57b1529
 RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.16.3-r0
 RUN npm install -g yarn@1.17.3
 
-COPY . /lsif/
+COPY package.json tsconfig.json yarn.lock /lsif/
+COPY src /lsif/src
+
 RUN yarn --cwd /lsif
 RUN yarn --cwd /lsif run build
 
@@ -25,7 +27,8 @@ ENV PGDATABASE=sg PGHOST=pgsql PGPORT=5432 PGSSLMODE=disable PGUSER=sg
 RUN apk add --no-cache tini supervisor=3.3.5-r0 nodejs-current=12.4.0-r0
 
 COPY --from=builder /lsif /lsif
-COPY supervisord.conf /etc/supervisord.conf
+COPY supervisord.conf /supervisord.conf
+COPY kill_supervisor.sh /kill_supervisor.sh
 
 EXPOSE 3186 3187
-CMD ["/sbin/tini", "--", "/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/sbin/tini", "--", "/usr/bin/supervisord", "-c", "/supervisord.conf"]

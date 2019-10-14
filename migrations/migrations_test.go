@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
+const FirstMigration = 1528395582
+
 func TestIDConstraints(t *testing.T) {
 	ups, err := filepath.Glob("*.up.sql")
 	if err != nil {
@@ -28,7 +30,7 @@ func TestIDConstraints(t *testing.T) {
 
 	for id, names := range byID {
 		// Check if we are using sequential migrations from a certain point.
-		if _, hasPrev := byID[id-1]; id > 1528395544 && !hasPrev {
+		if _, hasPrev := byID[id-1]; id > FirstMigration && !hasPrev {
 			t.Errorf("migration with ID %d exists, but previous one (%d) does not", id, id-1)
 		}
 		if len(names) > 1 {

@@ -1,6 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import { DefinitionReferenceResultId } from './models.database'
+import { DefinitionReferenceResultId } from './database.models'
 import { Id } from 'lsif-protocol'
 
 /**
@@ -107,8 +107,18 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
  * @param repository The repository name.
  * @param commit The repository commit.
  */
-export function createDatabaseFilename(storageRoot: string, repository: string, commit: string): string {
+export function dbFilenameOld(storageRoot: string, repository: string, commit: string): string {
     return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+}
+
+/**
+ * Construct the path of the SQLite database file for the given dump.
+ *
+ * @param storageRoot The path where SQLite databases are stored.
+ * @param id The ID of the dump.
+ */
+export function dbFilename(storageRoot: string, id: number, repository: string, commit: string): string {
+    return path.join(storageRoot, `${id}-${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
 /**
@@ -124,17 +134,6 @@ export async function ensureDirectory(path: string): Promise<void> {
             throw e
         }
     }
-}
-
-/**
- * Log an error value to standard error and exit the process after a short
- * timeout to allow outstanding logs to flush.
- *
- * @param e The error value.
- */
-export function logErrorAndExit(e: any): void {
-    console.error(e)
-    setTimeout(() => process.exit(1), 100)
 }
 
 /**

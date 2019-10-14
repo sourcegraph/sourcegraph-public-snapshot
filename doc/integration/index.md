@@ -3,6 +3,7 @@
 Sourcegraph integrates with your other tools to help you search, navigate, and review your code.
 
 - [Browser extension](browser_extension.md): go-to-definitions and hovers in your code host and code reviews
+  - [Google G Suite and Chrome Enterprise](google_gsuite.md)
 - Code hosts
   - [GitHub](github.md)
   - [GitLab](gitlab.md)

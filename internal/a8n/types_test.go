@@ -75,3 +75,80 @@ func TestChangesetMetadata(t *testing.T) {
 		t.Errorf("changeset url wrong. want=%q, have=%q", want, have)
 	}
 }
+
+func TestChangesetEventsReviewState(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
+	ghReview := func(t time.Time, login, state string) *ChangesetEvent {
+		return &ChangesetEvent{
+			Kind: ChangesetEventKindGitHubReviewed,
+			Metadata: &github.PullRequestReview{
+				UpdatedAt: t,
+				State:     state,
+				Author: github.Actor{
+					Login: login,
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		events ChangesetEvents
+		want   ChangesetReviewState
+	}{
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(0), "user1", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "APPROVED"),
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(1), "user1", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(0), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(0), "user2", "APPROVED"),
+				ghReview(daysAgo(0), "user3", "APPROVED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(3), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(2), "user2", "APPROVED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(3), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(2), "user2", "APPROVED"),
+				ghReview(daysAgo(0), "user1", "APPROVED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+	}
+
+	for _, tc := range tests {
+		have, err := tc.events.ReviewState()
+		if err != nil {
+			t.Fatalf("got error: %s", err)
+		}
+
+		if have, want := have, tc.want; have != want {
+			t.Errorf("wrong reviewstate. have=%s, want=%s", have, want)
+		}
+	}
+}

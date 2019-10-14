@@ -143,10 +143,10 @@ func (w *lineCountWriter) Close() error {
 	return nil
 }
 
-// Snapshot creates a commit of Dir into the bare git repo Destination.
-type Snapshot struct {
-	// PreCommand if non-empty is run before taking the snapshot.
-	PreCommand string `yaml:",omitempty"`
+// SyncDir creates a commit of Dir into the bare git repo Destination.
+type SyncDir struct {
+	// Before if non-empty is a command run before syncing.
+	Before string `yaml:",omitempty"`
 
 	// Dir is the directory to treat as the git working directory.
 	Dir string `yaml:",omitempty"`
@@ -154,30 +154,30 @@ type Snapshot struct {
 	// Destination is the directory containing the bare git repo.
 	Destination string `yaml:",omitempty"`
 
-	// MinDuration defines the minimum wait between snapshots for Dir.
+	// MinDuration defines the minimum wait between syncs for Dir.
 	MinDuration time.Duration `yaml:",omitempty"`
 
-	// last stores the time of the last snapshot. Compared against MinDuration
-	// to determine if we should run.
+	// last stores the time of the last sync. Compared against MinDuration to
+	// determine if we should run.
 	last time.Time
 }
 
-// Snapshotter manages the running over several Snapshots.
+// Snapshotter manages the running over several syncs.
 type Snapshotter struct {
-	// Dir is the directory PreCommand is run from. If a Snapshot's Dir is
+	// Root is the directory Before is run from. If a SyncDir's Dir is
 	// relative, it will be resolved relative to this directory. Defaults to
 	// PWD.
-	Dir string
+	Root string
 
-	// If a Snapshot's Destination is relative, it will be resolved relative
-	// to Destination. Defaults to ~/.sourcegraph/snapshots
+	// If a SyncDir's Destination is relative, it will be resolved relative to
+	// Destination. Defaults to ~/.sourcegraph/src-expose-repos
 	Destination string
 
-	// PreCommand before any snapshots are taken, PreCommand is run from Dir.
-	PreCommand string
+	// Before is a command run before sync. Before is run from Dir.
+	Before string
 
-	// Snapshots is a list of Snapshosts to take.
-	Snapshots []*Snapshot
+	// Dirs is a list of directories to sync.
+	Dirs []*SyncDir
 
 	// DirMode defines what behaviour to use if Dir is missing.
 	//
@@ -186,17 +186,17 @@ type Snapshotter struct {
 	//  - remove_dest
 	DirMode string
 
-	// Duration defines how often snapshots should be taken.
+	// Duration defines how often sync should run.
 	Duration time.Duration
 }
 
 func (o *Snapshotter) SetDefaults() error {
-	if o.Dir == "" {
+	if o.Root == "" {
 		d, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		o.Dir = d
+		o.Root = d
 	}
 
 	if o.Destination == "" {
@@ -204,7 +204,7 @@ func (o *Snapshotter) SetDefaults() error {
 		if err != nil {
 			return err
 		}
-		o.Destination = filepath.Join(h, ".sourcegraph", "snapshots")
+		o.Destination = filepath.Join(h, ".sourcegraph", "src-expose-repos")
 	}
 
 	if o.DirMode == "" {
@@ -215,12 +215,12 @@ func (o *Snapshotter) SetDefaults() error {
 		o.Duration = 10 * time.Second
 	}
 
-	for i, s := range o.Snapshots {
+	for i, s := range o.Dirs {
 		if s.Destination == "" && !filepath.IsAbs(s.Dir) {
 			s.Destination = s.Dir
 		}
 
-		d, err := abs(o.Dir, s.Dir)
+		d, err := abs(o.Root, s.Dir)
 		if err != nil {
 			return err
 		}
@@ -232,7 +232,7 @@ func (o *Snapshotter) SetDefaults() error {
 		}
 		s.Destination = d
 
-		o.Snapshots[i] = s
+		o.Dirs[i] = s
 	}
 
 	return nil
@@ -246,28 +246,28 @@ func abs(root, dir string) (string, error) {
 }
 
 func (o *Snapshotter) Run() error {
-	logger := log.New(os.Stderr, "snapshot: ", log.LstdFlags)
+	logger := log.New(os.Stderr, "sync: ", log.LstdFlags)
 
 	if err := o.SetDefaults(); err != nil {
 		return err
 	}
 
-	if o.PreCommand != "" {
-		cmd := exec.Command("sh", "-c", o.PreCommand)
-		cmd.Dir = o.Dir
+	if o.Before != "" {
+		cmd := exec.Command("sh", "-c", o.Before)
+		cmd.Dir = o.Root
 		if _, err := run(logger, "root", cmd); err != nil {
 			return err
 		}
 	}
 
-	for _, s := range o.Snapshots {
+	for _, s := range o.Dirs {
 		if time.Since(s.last) < s.MinDuration {
 			continue
 		}
 		s.last = time.Now()
 
-		if s.PreCommand != "" {
-			cmd := exec.Command("sh", "-c", s.PreCommand)
+		if s.Before != "" {
+			cmd := exec.Command("sh", "-c", s.Before)
 			cmd.Dir = s.Dir
 			if _, err := run(logger, filepath.Base(s.Dir), cmd); err != nil {
 				return err
@@ -277,14 +277,14 @@ func (o *Snapshotter) Run() error {
 		if _, err := os.Stat(s.Dir); err != nil {
 			switch o.DirMode {
 			case "fail":
-				return errors.Wrapf(err, "snapshot source dir missing: %v", s.Dir)
+				return errors.Wrapf(err, "sync source dir missing: %v", s.Dir)
 			case "ignore":
 				logger.Printf("dir %s missing, ignoring", s.Dir)
 				continue
 			case "remove_dest":
 				logger.Printf("dir %s missing, removing %s", s.Dir, s.Destination)
 				if err := os.RemoveAll(s.Destination); err != nil {
-					return errors.Wrapf(err, "failed to remove snapshot destination %s", s.Destination)
+					return errors.Wrapf(err, "failed to remove sync destination %s", s.Destination)
 				}
 
 			}

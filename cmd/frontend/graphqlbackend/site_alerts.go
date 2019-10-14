@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -60,6 +61,19 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	return alerts, nil
 }
 
+// getConfigWarnings identifies problems with the configuration that a site
+// admin should address, but do not prevent Sourcegraph from running.
+func getConfigWarnings() (problems conf.Problems, err error) {
+	var c conf.Unified
+	if err := jsonc.Unmarshal(globals.ConfigurationServerFrontendOnly.Raw().Critical, &c.Critical); err != nil {
+		return nil, err
+	}
+	if c.Critical.ExternalURL == "" {
+		problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is required to be configured for Sourcegraph to work correctly."))
+	}
+	return problems, nil
+}
+
 func init() {
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
@@ -79,6 +93,18 @@ func init() {
 				},
 			}
 		}
+
+		configWarnings, err := getConfigWarnings()
+		if err != nil {
+			return []*Alert{
+				{
+					TypeValue:    AlertTypeError,
+					MessageValue: `Update [**critical configuration**](/help/admin/management_console) to resolve problems: ` + err.Error(),
+				},
+			}
+		}
+		problems = append(problems, configWarnings...)
+
 		if len(problems) == 0 {
 			return nil
 		}
@@ -89,7 +115,7 @@ func init() {
 		if len(criticalProblems) > 0 {
 			alerts = append(alerts, &Alert{
 				TypeValue: AlertTypeWarning,
-				MessageValue: `[**Update critical configuration**](/help/admin/management_console) to resolve problems.` +
+				MessageValue: `[**Update critical configuration**](/help/admin/management_console) to resolve problems:` +
 					"\n* " + strings.Join(criticalProblems.Messages(), "\n* "),
 			})
 		}
@@ -98,7 +124,7 @@ func init() {
 		if len(siteProblems) > 0 {
 			alerts = append(alerts, &Alert{
 				TypeValue: AlertTypeWarning,
-				MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems.` +
+				MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems:` +
 					"\n* " + strings.Join(siteProblems.Messages(), "\n* "),
 			})
 		}

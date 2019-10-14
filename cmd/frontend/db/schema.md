@@ -58,10 +58,10 @@ Triggers:
  id           | bigint                   | not null default nextval('changeset_events_id_seq'::regclass)
  changeset_id | bigint                   | not null
  kind         | text                     | not null
- source       | text                     | not null
  key          | text                     | not null
  created_at   | timestamp with time zone | not null default now()
  metadata     | jsonb                    | not null default '{}'::jsonb
+ updated_at   | timestamp with time zone | not null default now()
 Indexes:
     "changeset_events_pkey" PRIMARY KEY, btree (id)
     "changeset_events_changeset_id_kind_key_unique" UNIQUE CONSTRAINT, btree (changeset_id, kind, key)
@@ -69,7 +69,6 @@ Check constraints:
     "changeset_events_key_check" CHECK (key <> ''::text)
     "changeset_events_kind_check" CHECK (kind <> ''::text)
     "changeset_events_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
-    "changeset_events_source_check" CHECK (source <> ''::text)
 Foreign-key constraints:
     "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
 
@@ -281,6 +280,78 @@ Check constraints:
  mgmt_password_bcrypt    | text    | not null default ''::text
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
+
+```
+
+# Table "public.lsif_commits"
+```
+    Column     |  Type   |                         Modifiers                         
+---------------+---------+-----------------------------------------------------------
+ id            | integer | not null default nextval('lsif_commits_id_seq'::regclass)
+ repository    | text    | not null
+ commit        | text    | not null
+ parent_commit | text    | not null
+Indexes:
+    "lsif_commits_pkey" PRIMARY KEY, btree (id)
+    "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
+    "lsif_commits_commit" btree (repository, commit)
+    "lsif_commits_parent_commit" btree (repository, parent_commit)
+    "lsif_commits_repo_commit" btree (repository, commit)
+    "lsif_commits_repo_parent_commit" btree (repository, parent_commit)
+
+```
+
+# Table "public.lsif_dumps"
+```
+   Column   |  Type   |                        Modifiers                        
+------------+---------+---------------------------------------------------------
+ id         | integer | not null default nextval('lsif_dumps_id_seq'::regclass)
+ repository | text    | not null
+ commit     | text    | not null
+Indexes:
+    "lsif_dumps_pkey" PRIMARY KEY, btree (id)
+    "lsif_dumps_repository_commit_key" UNIQUE CONSTRAINT, btree (repository, commit)
+Check constraints:
+    "lsif_dumps_commit_check" CHECK (length(commit) = 40)
+    "lsif_dumps_repository_check" CHECK (repository <> ''::text)
+Referenced by:
+    TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+    TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+
+```
+
+# Table "public.lsif_packages"
+```
+ Column  |  Type   |                         Modifiers                          
+---------+---------+------------------------------------------------------------
+ id      | integer | not null default nextval('lsif_packages_id_seq'::regclass)
+ scheme  | text    | not null
+ name    | text    | not null
+ version | text    | 
+ dump_id | integer | not null
+Indexes:
+    "lsif_packages_pkey" PRIMARY KEY, btree (id)
+    "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
+Foreign-key constraints:
+    "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+
+```
+
+# Table "public.lsif_references"
+```
+ Column  |  Type   |                          Modifiers                           
+---------+---------+--------------------------------------------------------------
+ id      | integer | not null default nextval('lsif_references_id_seq'::regclass)
+ scheme  | text    | not null
+ name    | text    | not null
+ version | text    | 
+ filter  | bytea   | not null
+ dump_id | integer | not null
+Indexes:
+    "lsif_references_pkey" PRIMARY KEY, btree (id)
+    "lsif_references_package" btree (scheme, name, version)
+Foreign-key constraints:
+    "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
 
 ```
 

@@ -127,7 +127,7 @@ func (s *Store) WaitUntilInitialized() {
 	if mode == modeServer {
 		deadlockTimeout := 5 * time.Minute
 		if IsDev(DeployType()) {
-			deadlockTimeout = 30 * time.Second
+			deadlockTimeout = 60 * time.Second
 			disable, _ := strconv.ParseBool(os.Getenv("DISABLE_CONF_DEADLOCK_DETECTOR"))
 			if disable {
 				deadlockTimeout = 24 * 365 * time.Hour
@@ -144,7 +144,7 @@ func (s *Store) WaitUntilInitialized() {
 			// deadlock, so ask Go to dump all goroutine stack traces.
 			debug.SetTraceback("all")
 			if IsDev(DeployType()) {
-				panic("potential deadlock detected: the frontend's configuration server hasn't started after 30s indicating a deadlock may be happening. A common cause of this is calling conf.Get or conf.Watch before the frontend has started fully (e.g. inside an init function) and if that is the case you may need to invoke those functions in a separate goroutine.")
+				panic("potential deadlock detected: the frontend's configuration server hasn't started after 60s indicating a deadlock may be happening. A common cause of this is calling conf.Get or conf.Watch before the frontend has started fully (e.g. inside an init function) and if that is the case you may need to invoke those functions in a separate goroutine.")
 			}
 			panic(fmt.Sprintf("(bug) frontend configuration server failed to start after %v, this may indicate the DB is inaccessible", deadlockTimeout))
 		}
