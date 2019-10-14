@@ -1,22 +1,46 @@
 ---
 - labels:
-    job: node
+    job: frontend
   targets:
     # frontend
     - host.docker.internal:6063
+- labels:
+    job: gitserver
+  targets:
     # gitserver
     - host.docker.internal:6068
+- labels:
+    job: searcher
+  targets:
     # searcher
     - host.docker.internal:6069
+- labels:
+    job: symbols
+  targets:
     # symbols
     - host.docker.internal:6071
+- labels:
+    job: repo-updater
+  targets:
     # repo-updater
     - host.docker.internal:6074
+- labels:
+    job: query-runner
+  targets:
     # query-runner
     - host.docker.internal:6067
+- labels:
+    job: zoekt-indexserver
+  targets:
     # zoekt-indexserver
-    # - host.docker.internal:6072
+    - host.docker.internal:6072
+- labels:
+    job: lsif-server
+  targets:
     # lsif-server
     - host.docker.internal:3186
+- labels:
+    job: lsif-worker
+  targets:
     # lsif-worker
     - host.docker.internal:3187

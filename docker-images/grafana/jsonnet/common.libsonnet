@@ -362,4 +362,5 @@ local makeHttpDurationPercentilesPanel(titleValue, metricValue, timeRange, perce
   makeHttpErrorRatePanel:: makeHttpErrorRatePanel,
   makeDurationPercentilesPanel:: makeDurationPercentilesPanel,
   makeHttpDurationPercentilesPanel:: makeHttpDurationPercentilesPanel,
+  makeBucketSeriesOverrides:: makeBucketSeriesOverrides,
 }
