@@ -58,6 +58,7 @@ const (
 	ChangesetReviewStateApproved         ChangesetReviewState = "APPROVED"
 	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
 	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
+	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
 )
 
 // Valid returns true if the given Changeset is valid.
@@ -65,7 +66,8 @@ func (s ChangesetReviewState) Valid() bool {
 	switch s {
 	case ChangesetReviewStateApproved,
 		ChangesetReviewStateChangesRequested,
-		ChangesetReviewStatePending:
+		ChangesetReviewStatePending,
+		ChangesetReviewStateCommented:
 		return true
 	default:
 		return false
@@ -101,6 +103,20 @@ func (t *Changeset) Title() (string, error) {
 		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
+	}
+}
+
+// ExternalCreatedAt is when the Changeset was created on the codehost. When it
+// cannot be determined when the changeset was created, a zero-value timestamp
+// is returned.
+func (t *Changeset) ExternalCreatedAt() time.Time {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return m.CreatedAt
+	case *bitbucketserver.PullRequest:
+		return unixMilliToTime(int64(m.CreatedDate))
+	default:
+		return time.Time{}
 	}
 }
 
@@ -176,7 +192,7 @@ func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 		return "", errors.New("unknown changeset type")
 	}
 
-	return selectReviewState(states), nil
+	return SelectReviewState(states), nil
 }
 
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
@@ -207,7 +223,11 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 	return events
 }
 
-func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
+// SelectReviewState computes the single review state for a given set of
+// ChangesetReviewStates. Since a pull request, for example, can have multiple
+// reviews with different states, we need a function to determine what the
+// state for the pull request is.
+func SelectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
 	// If any review requested changes, that state takes precedence over all
 	// other review states, followed by explicit approval. Everything else is
 	// considered pending.
@@ -239,6 +259,51 @@ type ChangesetEvent struct {
 func (e *ChangesetEvent) Clone() *ChangesetEvent {
 	ee := *e
 	return &ee
+}
+
+// Type returns the ChangesetEventKind of the ChangesetEvent.
+func (e *ChangesetEvent) Type() ChangesetEventKind {
+	return e.Kind
+}
+
+// Changeset returns the changeset ID of the ChangesetEvent.
+func (e *ChangesetEvent) Changeset() int64 {
+	return e.ChangesetID
+}
+
+// Timestamp returns the time when the ChangesetEvent happened (or was updated)
+// on the codehost, not when it was created in Sourcegraph's database.
+func (e *ChangesetEvent) Timestamp() time.Time {
+	var t time.Time
+
+	switch e := e.Metadata.(type) {
+	case *github.AssignedEvent:
+		t = e.CreatedAt
+	case *github.ClosedEvent:
+		t = e.CreatedAt
+	case *github.IssueComment:
+		t = e.UpdatedAt
+	case *github.RenamedTitleEvent:
+		t = e.CreatedAt
+	case *github.MergedEvent:
+		t = e.CreatedAt
+	case *github.PullRequestReview:
+		t = e.UpdatedAt
+	case *github.PullRequestReviewComment:
+		t = e.UpdatedAt
+	case *github.ReopenedEvent:
+		t = e.CreatedAt
+	case *github.ReviewDismissedEvent:
+		t = e.CreatedAt
+	case *github.ReviewRequestRemovedEvent:
+		t = e.CreatedAt
+	case *github.ReviewRequestedEvent:
+		t = e.CreatedAt
+	case *github.UnassignedEvent:
+		t = e.CreatedAt
+	}
+
+	return t
 }
 
 // Update updates the metadata of e with new metadata in o.
@@ -621,3 +686,7 @@ const (
 	//   - UNAPPROVED
 	//   - UPDATED
 )
+
+func unixMilliToTime(ms int64) time.Time {
+	return time.Unix(0, ms*int64(time.Millisecond))
+}

@@ -682,58 +682,84 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("List", func(t *testing.T) {
-				for i := 1; i <= len(events); i++ {
-					opts := ListChangesetEventsOpts{ChangesetID: int64(i)}
+				t.Run("ByChangesetIDs", func(t *testing.T) {
+					for i := 1; i <= len(events); i++ {
+						opts := ListChangesetEventsOpts{ChangesetIDs: []int64{int64(i)}}
 
-					ts, next, err := s.ListChangesetEvents(ctx, opts)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					if have, want := next, int64(0); have != want {
-						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
-					}
-
-					have, want := ts, events[i-1:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d events, want: %d", len(have), len(want))
-					}
-
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-				}
-
-				for i := 1; i <= len(events); i++ {
-					cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: i})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					{
-						have, want := next, int64(0)
-						if i < len(events) {
-							want = events[i].ID
+						ts, next, err := s.ListChangesetEvents(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
 						}
 
-						if have != want {
-							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 						}
-					}
 
-					{
-						have, want := cs, events[:i]
+						have, want := ts, events[i-1:i]
 						if len(have) != len(want) {
 							t.Fatalf("listed %d events, want: %d", len(have), len(want))
 						}
 
 						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatal(diff)
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
-				}
 
-				{
+					{
+						opts := ListChangesetEventsOpts{ChangesetIDs: []int64{}}
+
+						for i := 1; i <= len(events); i++ {
+							opts.ChangesetIDs = append(opts.ChangesetIDs, int64(i))
+						}
+
+						ts, next, err := s.ListChangesetEvents(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, events
+						if len(have) != len(want) {
+							t.Fatalf("listed %d events, want: %d", len(have), len(want))
+						}
+					}
+				})
+
+				t.Run("WithLimit", func(t *testing.T) {
+					for i := 1; i <= len(events); i++ {
+						cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: i})
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						{
+							have, want := next, int64(0)
+							if i < len(events) {
+								want = events[i].ID
+							}
+
+							if have != want {
+								t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+							}
+						}
+
+						{
+							have, want := cs, events[:i]
+							if len(have) != len(want) {
+								t.Fatalf("listed %d events, want: %d", len(have), len(want))
+							}
+
+							if diff := cmp.Diff(have, want); diff != "" {
+								t.Fatal(diff)
+							}
+						}
+					}
+				})
+
+				t.Run("WithCursor", func(t *testing.T) {
 					var cursor int64
 					for i := 1; i <= len(events); i++ {
 						opts := ListChangesetEventsOpts{Cursor: cursor, Limit: 1}
@@ -749,7 +775,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 						cursor = next
 					}
-				}
+				})
 			})
 		})
 	}

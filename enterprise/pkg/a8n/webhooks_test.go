@@ -241,7 +241,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 				}
 
 				req.Header.Set("X-Github-Event", tc.event.name)
-				req.Header.Set("X-Hub-Signature", sign(body, []byte(tc.secret)))
+				req.Header.Set("X-Hub-Signature", sign(t, body, []byte(tc.secret)))
 
 				rec := httptest.NewRecorder()
 				hook.ServeHTTP(rec, req)
@@ -309,9 +309,16 @@ func loadFixtures(t testing.TB) map[string]event {
 	return fs
 }
 
-func sign(message, secret []byte) string {
+func sign(t *testing.T, message, secret []byte) string {
+	t.Helper()
+
 	mac := hmac.New(sha256.New, secret)
-	mac.Write(message)
+
+	_, err := mac.Write(message)
+	if err != nil {
+		t.Fatalf("writing hmac message failed: %s", err)
+	}
+
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
 }
 

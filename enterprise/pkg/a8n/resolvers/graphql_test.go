@@ -19,9 +19,11 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
+	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -57,7 +59,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	sr := &Resolver{
-		store:       a8n.NewStoreWithClock(dbconn.Global, clock),
+		store:       ee.NewStoreWithClock(dbconn.Global, clock),
 		httpFactory: cf,
 	}
 
@@ -433,15 +435,27 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
+	type ChangesetCounts struct {
+		Date                 graphqlbackend.DateTime
+		Total                int32
+		Merged               int32
+		Closed               int32
+		Open                 int32
+		OpenApproved         int32
+		OpenChangesRequested int32
+		OpenPending          int32
+	}
+
 	type CampaignWithChangesets struct {
-		ID          string
-		Name        string
-		Description string
-		Author      User
-		CreatedAt   string
-		UpdatedAt   string
-		Namespace   UserOrg
-		Changesets  ChangesetConnection
+		ID                      string
+		Name                    string
+		Description             string
+		Author                  User
+		CreatedAt               string
+		UpdatedAt               string
+		Namespace               UserOrg
+		Changesets              ChangesetConnection
+		ChangesetCountsOverTime []ChangesetCounts
 	}
 
 	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
@@ -450,6 +464,11 @@ func TestCampaigns(t *testing.T) {
 	for _, c := range result.Changesets {
 		changesetIDs = append(changesetIDs, c.ID)
 	}
+
+	// Date when PR #999 from above was created
+	countsFrom := parseJSONTime(t, "2018-11-14T22:07:45Z")
+	// Date when PR #999 from above was merged
+	countsTo := parseJSONTime(t, "2018-12-04T08:10:07Z")
 
 	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
@@ -483,13 +502,28 @@ func TestCampaigns(t *testing.T) {
 				totalCount
 				pageInfo { hasNextPage }
 			}
+			changesetCountsOverTime(from: %s, to: %s) {
+			    date
+				total
+				merged
+				closed
+				open
+				openApproved
+				openChangesRequested
+				openPending
+			}
 		}
 		mutation() {
 			campaign: addChangesetsToCampaign(campaign: %q, changesets: %s) {
 				...c
 			}
 		}
-	`, campaigns.Admin.ID, marshalJSON(t, changesetIDs)))
+	`,
+		marshalDateTime(t, countsFrom),
+		marshalDateTime(t, countsTo),
+		campaigns.Admin.ID,
+		marshalJSON(t, changesetIDs),
+	))
 
 	{
 		have := addChangesetsResult.Campaign.Changesets.TotalCount
@@ -527,6 +561,21 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
+	{
+		counts := addChangesetsResult.Campaign.ChangesetCountsOverTime
+
+		// There's 20 1-day intervals between countsFrom and including countsTo
+		if have, want := len(counts), 20; have != want {
+			t.Errorf("wrong changeset counts length %d, have=%d", want, have)
+		}
+
+		for _, c := range counts {
+			if have, want := c.Total, int32(1); have != want {
+				t.Errorf("wrong changeset counts total %d, have=%d", want, have)
+			}
+		}
+	}
+
 	deleteInput := map[string]interface{}{"id": campaigns.Admin.ID}
 	mustExec(ctx, t, s, deleteInput, &struct{}{}, `
 		mutation($id: ID!){
@@ -548,6 +597,157 @@ func TestCampaigns(t *testing.T) {
 	wantCount := listed.All.TotalCount - 1
 	if haveCount != wantCount {
 		t.Errorf("wrong campaigns totalcount after delete. want=%d, have=%d", wantCount, haveCount)
+	}
+}
+
+func TestChangesetCountsOverTime(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+	rcache.SetupForTest(t)
+
+	cf, save := newGithubClientFactory(t, "test-changeset-counts-over-time")
+	defer save()
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	u, err := db.Users.Create(ctx, db.NewUser{
+		Email:                 "thorsten@sourcegraph.com",
+		Username:              "thorsten",
+		DisplayName:           "thorsten",
+		Password:              "1234",
+		EmailVerificationCode: "foobar",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	githubExtSvc := &repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repos: []string{"sourcegraph/sourcegraph"},
+		}),
+	}
+
+	err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
+	if err != nil {
+		t.Fatal(t)
+	}
+
+	githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = repoStore.UpsertRepos(ctx, githubRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
+
+	campaign := &a8n.Campaign{
+		Name:            "Test campaign",
+		Description:     "Testing changeset counts",
+		AuthorID:        u.ID,
+		NamespaceUserID: u.ID,
+	}
+
+	err = store.CreateCampaign(ctx, campaign)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	changesets := []*a8n.Changeset{
+		{
+			RepoID:              int32(githubRepo.ID),
+			ExternalID:          "5834",
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			CampaignIDs:         []int64{campaign.ID},
+		},
+		{
+			RepoID:              int32(githubRepo.ID),
+			ExternalID:          "5849",
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			CampaignIDs:         []int64{campaign.ID},
+		},
+	}
+
+	err = store.CreateChangesets(ctx, changesets...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	syncer := ee.ChangesetSyncer{
+		ReposStore:  repoStore,
+		Store:       store,
+		HTTPFactory: cf,
+	}
+	err = syncer.SyncChangesets(ctx, changesets...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, c := range changesets {
+		campaign.ChangesetIDs = append(campaign.ChangesetIDs, c.ID)
+	}
+	err = store.UpdateCampaign(ctx, campaign)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Date when PR #5834 was created: "2019-10-02T14:49:31Z"
+	// We start exactly one day earlier
+	// Date when PR #5849 was created: "2019-10-03T15:03:21Z"
+	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
+	// Date when PR #5834 was merged:  "2019-10-07T13:13:45Z"
+	// Date when PR #5849 was merged:  "2019-10-04T08:55:21Z"
+	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
+	daysBeforeEnd := func(days int) time.Time {
+		return end.AddDate(0, 0, -days)
+	}
+
+	r := &campaignResolver{store: store, Campaign: campaign}
+	rs, err := r.ChangesetCountsOverTime(ctx, &graphqlbackend.ChangesetCountsArgs{
+		From: &graphqlbackend.DateTime{Time: start},
+		To:   &graphqlbackend.DateTime{Time: end},
+	})
+	if err != nil {
+		t.Fatalf("ChangsetCountsOverTime failed with error: %s", err)
+	}
+
+	have := make([]*ee.ChangesetCounts, 0, len(rs))
+	for _, cr := range rs {
+		r := cr.(*changesetCountsResolver)
+		have = append(have, r.counts)
+	}
+
+	want := []*ee.ChangesetCounts{
+		{Time: daysBeforeEnd(5), Total: 0, Open: 0},
+		{Time: daysBeforeEnd(4), Total: 1, Open: 1, OpenPending: 1},
+		{Time: daysBeforeEnd(3), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: daysBeforeEnd(2), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: daysBeforeEnd(1), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: end, Total: 2, Merged: 2},
+	}
+
+	if !reflect.DeepEqual(have, want) {
+		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(have, want))
 	}
 }
 
@@ -649,6 +849,30 @@ func marshalJSON(t testing.TB, v interface{}) string {
 	}
 
 	return string(bs)
+}
+
+func marshalDateTime(t testing.TB, ts time.Time) string {
+	t.Helper()
+
+	dt := graphqlbackend.DateTime{Time: ts}
+
+	bs, err := dt.MarshalJSON()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return string(bs)
+}
+
+func parseJSONTime(t testing.TB, ts string) time.Time {
+	t.Helper()
+
+	timestamp, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return timestamp
 }
 
 func getBitbucketServerRepos(t testing.TB, ctx context.Context, src *repos.BitbucketServerSource) []*repos.Repo {
