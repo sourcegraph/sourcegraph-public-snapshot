@@ -16,7 +16,7 @@ import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter, toggleSearchFilterAndReplaceSampleRepogroup } from '../helpers'
 import { PatternTypeProps } from '..'
 
-interface Props extends SettingsCascadeProps, PatternTypeProps {
+interface Props extends SettingsCascadeProps, Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null

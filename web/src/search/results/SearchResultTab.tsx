@@ -5,13 +5,12 @@ import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { PatternTypeProps } from '..'
 
-interface Props {
+interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     type: SearchType
     query: string
-    patternType: SearchPatternType
 }
 
 const typeToProse: Record<Exclude<SearchType, null>, string> = {

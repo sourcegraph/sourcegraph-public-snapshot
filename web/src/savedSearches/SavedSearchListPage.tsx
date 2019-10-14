@@ -14,7 +14,7 @@ import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { PatternTypeProps } from '../search'
 
-interface NodeProps extends RouteComponentProps, PatternTypeProps {
+interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'togglePatternType'> {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
 }
@@ -96,7 +96,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps, PatternTypeProps {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'togglePatternType'> {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()

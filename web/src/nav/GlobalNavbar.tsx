@@ -9,7 +9,7 @@ import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { parseSearchURLQuery } from '../search'
+import { parseSearchURLQuery, PatternTypeProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
@@ -24,7 +24,8 @@ interface Props
         EventLoggerProps,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps {
     history: H.History
     location: H.Location
     authenticatedUser: GQL.IUser | null
@@ -38,8 +39,6 @@ interface Props
      * homepage.
      */
     lowProfile: boolean
-    patternType: GQL.SearchPatternType
-    togglePatternType: () => void
 }
 
 interface State {

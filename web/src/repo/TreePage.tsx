@@ -139,7 +139,6 @@ interface Props
     rev: string
     location: H.Location
     history: H.History
-    togglePatternType: () => void
 }
 
 interface State {

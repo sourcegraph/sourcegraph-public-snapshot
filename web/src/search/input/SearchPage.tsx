@@ -23,7 +23,6 @@ interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, 
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    togglePatternType: () => void
 }
 
 interface State {

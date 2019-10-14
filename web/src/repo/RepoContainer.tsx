@@ -48,7 +48,6 @@ export interface RepoContainerContext
 
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
-    togglePatternType: () => void
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -71,7 +70,6 @@ interface RepoContainerProps
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     authenticatedUser: GQL.IUser | null
-    togglePatternType: () => void
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {

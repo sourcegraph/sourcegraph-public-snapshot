@@ -43,4 +43,5 @@ export function quoteIfNeeded(s: string): string {
 
 export interface PatternTypeProps {
     patternType: SearchPatternType
+    togglePatternType: () => void
 }

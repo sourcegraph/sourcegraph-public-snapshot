@@ -76,7 +76,7 @@ interface UserAreaProps
         SettingsCascadeProps,
         ThemeProps,
         ActivationProps,
-        PatternTypeProps {
+        Omit<PatternTypeProps, 'togglePatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -107,7 +107,7 @@ export interface UserAreaRouteContext
         ThemeProps,
         ActivationProps,
         NamespaceProps,
-        PatternTypeProps {
+        Omit<PatternTypeProps, 'togglePatternType'> {
     /** The user area main URL. */
     url: string
 

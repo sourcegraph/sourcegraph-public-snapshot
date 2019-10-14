@@ -1,13 +1,12 @@
 import * as React from 'react'
 import * as H from 'history'
 import { SearchResultTabHeader } from './SearchResultTab'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { PatternTypeProps } from '..'
 
-interface Props {
+interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     history: H.History
     query: string
-    patternType: SearchPatternType
 }
 
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (

@@ -26,7 +26,7 @@ interface Props
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        PatternTypeProps {
+        Omit<PatternTypeProps, 'togglePatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 

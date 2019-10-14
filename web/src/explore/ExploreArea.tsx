@@ -11,7 +11,10 @@ import { PatternTypeProps } from '../search'
 /**
  * Properties passed to all section components in the explore area.
  */
-export interface ExploreAreaSectionContext extends ExtensionsControllerProps, ThemeProps, PatternTypeProps {
+export interface ExploreAreaSectionContext
+    extends ExtensionsControllerProps,
+        ThemeProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 

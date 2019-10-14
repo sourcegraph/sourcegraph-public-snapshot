@@ -62,8 +62,6 @@ export interface SearchResultsListProps
     didSave: boolean
 
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
-
-    togglePatternType: () => void
 }
 
 interface State {

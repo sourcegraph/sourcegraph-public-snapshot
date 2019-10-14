@@ -7,7 +7,10 @@ import { PatternTypeProps } from '../search'
 /**
  * Properties passed to all page components in the namespace area.
  */
-export interface NamespaceAreaContext extends ExtensionsControllerProps, ThemeProps, PatternTypeProps {
+export interface NamespaceAreaContext
+    extends ExtensionsControllerProps,
+        ThemeProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
 
     authenticatedUser: GQL.IUser | null

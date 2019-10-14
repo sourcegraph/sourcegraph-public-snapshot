@@ -96,7 +96,6 @@ export interface LayoutProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
-    togglePatternType: () => void
     children?: never
 }
 

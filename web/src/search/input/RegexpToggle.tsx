@@ -5,11 +5,10 @@ import { submitSearch } from '../helpers'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { Subscription, fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import { PatternTypeProps } from '..'
 
-interface RegexpToggleProps {
+interface RegexpToggleProps extends PatternTypeProps {
     toggled: boolean
-    togglePatternType: () => void
-    patternType: SearchPatternType
     navbarSearchQuery: string
     history: H.History
 }
@@ -37,6 +36,10 @@ export default class RegexpToggle extends React.Component<RegexpToggleProps> {
                     this.toggle()
                 })
         )
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

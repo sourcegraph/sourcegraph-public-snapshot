@@ -60,7 +60,6 @@ interface Props extends PatternTypeProps {
      * At most one query input per page should have this behavior.
      */
     hasGlobalQueryBehavior?: boolean
-    togglePatternType: () => void
 }
 
 interface State {

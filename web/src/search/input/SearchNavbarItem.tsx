@@ -5,15 +5,13 @@ import { Form } from '../../components/Form'
 import { submitSearch } from '../helpers'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { PatternTypeProps } from '..'
 
-interface Props extends ActivationProps {
+interface Props extends ActivationProps, PatternTypeProps {
     location: H.Location
     history: H.History
     navbarSearchQuery: string
     onChange: (newValue: string) => void
-    patternType: SearchPatternType
-    togglePatternType: () => void
 }
 
 /**

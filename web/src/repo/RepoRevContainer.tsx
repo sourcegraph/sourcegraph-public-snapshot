@@ -51,7 +51,6 @@ export interface RepoRevContainerContext
 
     /** The URL route match for {@link RepoRevContainer}. */
     routePrefix: string
-    togglePatternType: () => void
 }
 
 /** A sub-route of {@link RepoRevContainer}. */
@@ -81,7 +80,6 @@ interface RepoRevContainerProps
 
     /** Called when the resolvedRevOrError state in this component's parent should be updated. */
     onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
-    togglePatternType: () => void
 }
 
 interface RepoRevContainerState {}

@@ -36,7 +36,6 @@ const ScopeNotFound: React.FunctionComponent = () => (
 
 interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCascadeProps, PatternTypeProps {
     authenticatedUser: GQL.IUser | null
-    togglePatternType: () => void
 }
 
 interface State {

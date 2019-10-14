@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery, parseSearchURLPatternType } from '..'
+import { parseSearchURLQuery, parseSearchURLPatternType, PatternTypeProps } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -34,7 +34,8 @@ export interface SearchResultsProps
         PlatformContextProps<'forceUpdateTooltip'>,
         SettingsCascadeProps,
         TelemetryProps,
-        ThemeProps {
+        ThemeProps,
+        PatternTypeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -49,8 +50,6 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    patternType: GQL.SearchPatternType
-    togglePatternType: () => void
 }
 
 interface SearchResultsState {

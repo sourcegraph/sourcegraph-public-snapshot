@@ -19,7 +19,10 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps, PatternTypeProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        RepoHeaderContributionsLifecycleProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     repo: GQL.IRepository
 }
 
