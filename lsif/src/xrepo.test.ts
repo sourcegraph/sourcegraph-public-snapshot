@@ -25,7 +25,11 @@ describe('XrepoDatabase', () => {
         }
     })
 
-    beforeEach(() => truncatePostgresTables(connection))
+    beforeEach(async () => {
+        if (connection) {
+            await truncatePostgresTables(connection)
+        }
+    })
 
     it('should find closest commits with LSIF data', async () => {
         if (!xrepoDatabase) {
