@@ -28,13 +28,6 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     const password = process.env.PGPASSWORD || ''
     const database = `sourcegraph-test-lsif-xrepo-${suffix}`
 
-    // Determine the path of the migrate binary. Throws if it doesn't exist.
-    const [stdout] = await child_process.exec('which migrate')
-    const migratePath = stdout.toString().trim()
-    if (migratePath === '') {
-        throw new Error('migrate command not found')
-    }
-
     // Determine the path of the migrate script. This will cover the case
     // where `yarn test` is run from within the root or from the lsif directory.
     // const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
@@ -42,6 +35,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
     // Ensure environment gets passed to child commands
     const env = {
+        ...process.env,
         PGHOST: host,
         PGPORT: `${port}`,
         PGUSER: username,
@@ -60,7 +54,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     // Define command text
     const createCommand = `createdb ${database}`
     const dropCommand = `dropdb --if-exists ${database}`
-    const migrateCommand = `${migratePath} -database "${connectionString}" -path  ${migrationsPath} up`
+    const migrateCommand = `migrate -database "${connectionString}" -path  ${migrationsPath} up`
 
     // Create cleanup function to run after test. This will close the connection
     // created below (if successful), then destroy the database that was created
