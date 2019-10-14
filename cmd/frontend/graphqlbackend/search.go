@@ -56,7 +56,9 @@ func maxReposToSearch() int {
 
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
-	Query string
+	Version     string
+	PatternType *string
+	Query       string
 }) (interface {
 	Results(context.Context) (*searchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
@@ -65,15 +67,49 @@ func (r *schemaResolver) Search(args *struct {
 }, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
-	q, err := query.ParseAndCheck(args.Query)
+
+	defaultIsRegexp, err := defaultToRegexp(args.Version, args.PatternType)
+	if err != nil {
+		return nil, err
+	}
+
+	qs := query.HandlePatternType(args.Query, defaultIsRegexp)
+	q, err := query.ParseAndCheck(qs)
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
+
 	return &searchResolver{
 		query:        q,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
+}
+
+// defaultToRegexp determines whether to default to using regexp search based on the version and patternType
+// parameters passed to the search endpoint. It does not account for any `patternType:` filters in the query.
+func defaultToRegexp(version string, patternType *string) (bool, error) {
+	var defaultToRegexp bool
+	switch version {
+	case "V1":
+		defaultToRegexp = true
+	case "V2":
+		defaultToRegexp = false
+	default:
+		return false, fmt.Errorf("unrecognized version: %v", version)
+	}
+
+	if patternType != nil {
+		switch *patternType {
+		case "regexp":
+			defaultToRegexp = true
+		case "literal":
+			defaultToRegexp = false
+		default:
+			return false, fmt.Errorf("unrecognized patternType: %v", patternType)
+		}
+	}
+	return defaultToRegexp, nil
 }
 
 func asString(v *searchquerytypes.Value) string {

@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, PatternTypeProps } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -18,7 +18,7 @@ import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
 
-interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, ActivationProps {
+interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, ActivationProps, PatternTypeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -79,6 +79,8 @@ export class SearchPage extends React.Component<Props, State> {
                             onChange={this.onUserQueryChange}
                             autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
+                            patternType={this.props.patternType}
+                            togglePatternType={this.props.togglePatternType}
                         />
                         <SearchButton />
                     </div>
@@ -92,6 +94,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                    patternType={this.props.patternType}
                                 />
                             </div>
                             <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
@@ -115,6 +118,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                    patternType={this.props.patternType}
                                 />
                             </div>
                         </>
@@ -136,7 +140,7 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
-        submitSearch(this.props.history, query, 'home', this.props.activation)
+        submitSearch(this.props.history, query, 'home', this.props.patternType, this.props.activation)
     }
 
     private getPageTitle(): string | undefined {

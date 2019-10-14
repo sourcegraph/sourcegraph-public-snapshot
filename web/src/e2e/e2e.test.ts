@@ -353,14 +353,18 @@ describe('e2e test suite', () => {
         })
 
         test('Search results repo', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24&patternType=regexp'
+            )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results repo')
         })
 
         test('Search results file', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24')
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24+file:%5Emux.go%24&patternType=regexp'
+            )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results file')
@@ -368,7 +372,8 @@ describe('e2e test suite', () => {
 
         test('Search results code', async () => {
             await driver.page.goto(
-                sourcegraphBaseUrl + '/search?q=repo:^github.com/gorilla/mux$ file:mux.go "func NewRouter"'
+                sourcegraphBaseUrl +
+                    '/search?q=repo:^github.com/gorilla/mux$&patternType=regexp file:mux.go "func NewRouter"'
             )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
@@ -1098,7 +1103,7 @@ describe('e2e test suite', () => {
                 .map(op => `${op}:${operators[op]}`)
                 .join('+')
 
-            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=diff+${operatorsQuery}`)
+            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=diff+${operatorsQuery}&patternType=regexp`)
             await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
                 const label = await driver.page.evaluate(
@@ -1113,7 +1118,7 @@ describe('e2e test suite', () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/go-diff')
             await driver.page.goto(
                 sourcegraphBaseUrl +
-                    '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file'
+                    '/search?q=diff+repo:sourcegraph/go-diff%403f415a150aec0685cb81b73cc201e762e075006d+type:file&patternType=regexp'
             )
             await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
             await retry(async () => {
@@ -1163,11 +1168,55 @@ describe('e2e test suite', () => {
                 expect(numberOfResults).toBeGreaterThan(0)
             })
         })
+
+        test('redirects to a URL with &patternType=regexp if no patternType in URL', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test')
+            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
+        })
+
+        test('regexp toggle appears and updates patternType query parameter when clicked', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
+            await driver.page.waitForSelector('.e2e-query-input')
+            await driver.page.waitForSelector('.e2e-regexp-toggle')
+            await driver.page.click('.e2e-regexp-toggle')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.e2e-regexp-toggle')
+            await driver.page.click('.e2e-regexp-toggle')
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
+        })
+    })
+
+    describe('Search pattern type setting', () => {
+        test('Search pattern type setting correctly sets default pattern type', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
+            await driver.replaceText({
+                selector: '.e2e-settings-file .monaco-editor',
+                newText: JSON.stringify({
+                    'search.defaultPatternType': 'regexp',
+                }),
+                selectMethod: 'keyboard',
+            })
+            await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
+
+            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-regexp-toggle', { visible: true })
+
+            const activeToggle = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-regexp-toggle--active').length
+            )
+            expect(activeToggle).toEqual(1)
+            await driver.page.keyboard.type('test')
+            await driver.page.click('.search-button')
+            await driver.assertWindowLocation('/search?q=test&patternType=regexp')
+        })
     })
 
     describe('Search result type tabs', () => {
         test('Search results type tabs appear', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24')
+            await driver.page.goto(
+                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24&patternType=regexp'
+            )
             await driver.page.waitForSelector('.e2e-search-result-type-tabs', { visible: true })
             await driver.page.waitForSelector('.e2e-search-result-tab--active', { visible: true })
             const tabs = await driver.page.evaluate(() =>
@@ -1192,7 +1241,9 @@ describe('e2e test suite', () => {
             for (const searchType of ['diff', 'commit', 'symbol', 'repo']) {
                 await driver.page.waitForSelector(`.e2e-search-result-tab-${searchType}`)
                 await driver.page.click(`.e2e-search-result-tab-${searchType}`)
-                await driver.assertWindowLocation(`/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}`)
+                await driver.assertWindowLocation(
+                    `/search?q=repo:%5Egithub.com/gorilla/mux%24+type:${searchType}&patternType=regexp`
+                )
             }
         })
     })
@@ -1205,7 +1256,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-saved-search-modal')
             await driver.page.waitForSelector('.e2e-saved-search-modal-save-button')
             await driver.page.click('.e2e-saved-search-modal-save-button')
-            await driver.assertWindowLocation('/users/test/searches/add?query=test')
+            await driver.assertWindowLocation('/users/test/searches/add?query=test&patternType=regexp')
 
             await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
             await driver.page.click('.e2e-saved-search-form-input-description')
@@ -1250,7 +1301,7 @@ describe('e2e test suite', () => {
 
             await driver.page.waitForSelector('.e2e-saved-search-form-input-query', { visible: true })
             await driver.page.click('.e2e-saved-search-form-input-query')
-            await driver.page.keyboard.type('test')
+            await driver.page.keyboard.type('test patternType:literal')
 
             await driver.page.waitForSelector('.e2e-saved-search-form-submit-button', { visible: true })
             await driver.page.click('.e2e-saved-search-form-submit-button')
@@ -1286,6 +1337,18 @@ describe('e2e test suite', () => {
                     () => document.querySelector('.e2e-saved-search-list-page-row-title')!.textContent
                 )
             ).toEqual('test query 2 edited')
+        })
+    })
+
+    describe('Literal search by default toast', () => {
+        test('Dismiss literal search toast', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-literal-search-toast')
+            await driver.page.click('.e2e-close-toast')
+            const nodes = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-literal-search-toast').length
+            )
+            expect(nodes).toEqual(0)
         })
     })
 })

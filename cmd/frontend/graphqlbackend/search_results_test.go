@@ -27,8 +27,12 @@ import (
 func TestSearchResults(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	getResults := func(t *testing.T, query string) []string {
-		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
+	getResults := func(t *testing.T, query, version string) []string {
+		r, err := (&schemaResolver{}).Search(&struct {
+			Version     string
+			PatternType *string
+			Query       string
+		}{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -51,12 +55,14 @@ func TestSearchResults(t *testing.T) {
 		}
 		return resultDescriptions
 	}
-	testCallResults := func(t *testing.T, query string, want []string) {
-		results := getResults(t, query)
+	testCallResults := func(t *testing.T, query, version string, want []string) {
+		results := getResults(t, query, version)
 		if !reflect.DeepEqual(results, want) {
 			t.Errorf("got %v, want %v", results, want)
 		}
 	}
+
+	searchVersions := []string{"V1", "V2"}
 
 	t.Run("repo: only", func(t *testing.T) {
 		var calledReposList bool
@@ -83,13 +89,16 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
-		testCallResults(t, `repo:r repo:p`, []string{"repo:repo"})
-		if !calledReposList {
-			t.Error("!calledReposList")
+		for _, v := range searchVersions {
+			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
+			if !calledReposList {
+				t.Error("!calledReposList")
+			}
 		}
+
 	})
 
-	t.Run("multiple terms", func(t *testing.T) {
+	t.Run("multiple terms regexp", func(t *testing.T) {
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -145,7 +154,78 @@ func TestSearchResults(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
-		testCallResults(t, `foo\d "bar*"`, []string{"dir/file:123"})
+		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
+		if !calledReposList {
+			t.Error("!calledReposList")
+		}
+		if !calledSearchRepositories {
+			t.Error("!calledSearchRepositories")
+		}
+		if !calledSearchFilesInRepos {
+			t.Error("!calledSearchFilesInRepos")
+		}
+		if calledSearchSymbols {
+			t.Error("calledSearchSymbols")
+		}
+	})
+
+	t.Run("multiple terms literal", func(t *testing.T) {
+		var calledReposList bool
+		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+			calledReposList = true
+
+			want := db.ReposListOptions{
+				OnlyRepoIDs: true,
+				Enabled:     true,
+				LimitOffset: limitOffset,
+			}
+
+			if !reflect.DeepEqual(op, want) {
+				t.Fatalf("got %+v, want %+v", op, want)
+			}
+
+			return []*types.Repo{{ID: 1, Name: "repo"}}, nil
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+		db.Mocks.Repos.MockGetByName(t, "repo", 1)
+		db.Mocks.Repos.MockGet(t, 1)
+
+		calledSearchRepositories := false
+		mockSearchRepositories = func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
+			calledSearchRepositories = true
+			return nil, &searchResultsCommon{}, nil
+		}
+		defer func() { mockSearchRepositories = nil }()
+
+		calledSearchSymbols := false
+		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+			calledSearchSymbols = true
+			if want := `"foo\\d \"bar*\""`; args.Pattern.Pattern != want {
+				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
+			}
+			// TODO return mock results here and assert that they are output as results
+			return nil, nil, nil
+		}
+		defer func() { mockSearchSymbols = nil }()
+
+		calledSearchFilesInRepos := false
+		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+			calledSearchFilesInRepos = true
+			if want := `foo\\d "bar\*"`; args.Pattern.Pattern != want {
+				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
+			}
+			return []*fileMatchResolver{
+				{
+					uri:          "git://repo?rev#dir/file",
+					JPath:        "dir/file",
+					JLineMatches: []*lineMatch{{JLineNumber: 123}},
+					repo:         &types.Repo{ID: 1},
+				},
+			}, &searchResultsCommon{}, nil
+		}
+		defer func() { mockSearchFilesInRepos = nil }()
+
+		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
 		if !calledReposList {
 			t.Error("!calledReposList")
 		}

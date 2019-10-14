@@ -15,6 +15,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Our external service syncing model will stream in new repositories to Sourcegraph. Previously we could only add a repository to our database and clone it once we had synced all information from all external services (to detect deletions and renames). Now adding a repository to an external service configuration should be reflected much sooner, even on large instances. [#5145](https://github.com/sourcegraph/sourcegraph/issues/5145)
 - There is now an easy way for site admins to view and export settings and configuration when reporting a bug. The page for doing so is at /site-admin/report-bug, linked to from the site admin side panel under "Report a bug".
+- Search queries can now be interpreted literally.
+  - There is now a dot-star icon in the search input bar to toggle the pattern type of a query between regexp and literal.
+  - There is a new `search.defaultPatternType` setting to configure the default pattern type, regexp or literal, for searches.
+  - There is a new `patternType:` search token which overrides the `search.defaultPatternType` setting, and the active state of the dot-star icon in determining the pattern type of the query.
 - Added support for GitHub organization webhooks to enable faster updates of metadata used by [Automation](https://about.sourcegraph.com/product/automation/), such as pull requests or issue comments. See the [GitHub webhook documentation](https://docs.sourcegraph.com/admin/external_service/github#webhooks) for instructions on how to enable webhooks.
 
 ### Changed
@@ -23,6 +27,9 @@ All notable changes to Sourcegraph are documented in this file.
 - Allow single trailing hyphen in usernames and org names [#5680](https://github.com/sourcegraph/sourcegraph/pull/5680)
 - Indexed search won't spam the logs on startup if the frontend API is not yet available. [zoekt#30](https://github.com/sourcegraph/zoekt/pull/30), [#5866](https://github.com/sourcegraph/sourcegraph/pull/5866)
 - Search query fields are now case insensitive. For example `repoHasFile:` will now be recognized, not just `repohasfile:`. [#5168](https://github.com/sourcegraph/sourcegraph/issues/5168)
+- Search queries are now interpreted literally by default, rather than as regular expressions. [#5899](https://github.com/sourcegraph/sourcegraph/pull/5899)
+- The `search` GraphQL API field now takes a two new optional parameters: `version` and `patternType`. `version` determines the search syntax version to use, and `patternType` determines the pattern type to use for the query. `version` defaults to "V1", which is regular expression searches by default, if not explicitly passed in. `patternType` overrides the pattern type determined by version.
+- Saved searches have been updated to support the new patternType filter. All existing saved searches have been updated to append `patternType:regexp` to the end of queries to ensure deterministic results regardless of the patternType configurations on an instance. All new saved searches are required to have a `patternType:` field in the query.
 
 ### Fixed
 

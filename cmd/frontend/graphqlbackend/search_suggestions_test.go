@@ -17,9 +17,13 @@ import (
 func TestSearchSuggestions(t *testing.T) {
 	limitOffset := &db.LimitOffset{Limit: maxReposToSearch() + 1}
 
-	getSuggestions := func(t *testing.T, query string) []string {
+	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: query})
+		r, err := (&schemaResolver{}).Search(&struct {
+			Version     string
+			PatternType *string
+			Query       string
+		}{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -33,9 +37,9 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		return resultDescriptions
 	}
-	testSuggestions := func(t *testing.T, query string, want []string) {
+	testSuggestions := func(t *testing.T, query, version string, want []string) {
 		t.Helper()
-		got := getSuggestions(t, query)
+		got := getSuggestions(t, query, version)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got != want\ngot:  %v\nwant: %v", got, want)
 		}
@@ -47,12 +51,19 @@ func TestSearchSuggestions(t *testing.T) {
 	}
 	defer func() { mockSearchSymbols = nil }()
 
+	searchVersions := []string{"V1", "V2"}
+
 	t.Run("empty", func(t *testing.T) {
-		testSuggestions(t, "", []string{})
+		for _, v := range searchVersions {
+			testSuggestions(t, "", v, []string{})
+		}
+
 	})
 
 	t.Run("whitespace", func(t *testing.T) {
-		testSuggestions(t, " ", []string{})
+		for _, v := range searchVersions {
+			testSuggestions(t, " ", v, []string{})
+		}
 	})
 
 	t.Run("single term", func(t *testing.T) {
@@ -90,21 +101,28 @@ func TestSearchSuggestions(t *testing.T) {
 			}, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
+		for _, v := range searchVersions {
+			testSuggestions(t, "foo", v, []string{"repo:foo-repo", "file:dir/file"})
+			if !calledReposListAll {
+				t.Error("!calledReposListAll")
+			}
+			if !calledReposListFoo {
+				t.Error("!calledReposListFoo")
+			}
+			if !calledSearchFilesInRepos {
+				t.Error("!calledSearchFilesInRepos")
+			}
+		}
 
-		testSuggestions(t, "foo", []string{"repo:foo-repo", "file:dir/file"})
-		if !calledReposListAll {
-			t.Error("!calledReposListAll")
-		}
-		if !calledReposListFoo {
-			t.Error("!calledReposListFoo")
-		}
-		if !calledSearchFilesInRepos {
-			t.Error("!calledSearchFilesInRepos")
-		}
 	})
 
+	// This test is only valid for Regexp searches. Literal searches won't return suggestions for an invalid regexp.
 	t.Run("single term invalid regex", func(t *testing.T) {
-		sr, err := (&schemaResolver{}).Search(&struct{ Query string }{Query: "[foo"})
+		sr, err := (&schemaResolver{}).Search(&struct {
+			Version     string
+			PatternType *string
+			Query       string
+		}{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -172,19 +190,21 @@ func TestSearchSuggestions(t *testing.T) {
 			}, nil
 		}
 		defer func() { mockResolveRepoGroups = nil }()
+		for _, v := range searchVersions {
+			testSuggestions(t, "repogroup:sample foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
+			if !calledReposListReposInGroup {
+				t.Error("!calledReposListReposInGroup")
+			}
+			if !calledReposListFooRepo3 {
+				t.Error("!calledReposListFooRepo3")
+			}
+			if !calledSearchFilesInRepos {
+				t.Error("!calledSearchFilesInRepos")
+			}
+			if !calledResolveRepoGroups {
+				t.Error("!calledResolveRepoGroups")
+			}
 
-		testSuggestions(t, "repogroup:sample foo", []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
-		if !calledReposListReposInGroup {
-			t.Error("!calledReposListReposInGroup")
-		}
-		if !calledReposListFooRepo3 {
-			t.Error("!calledReposListFooRepo3")
-		}
-		if !calledSearchFilesInRepos {
-			t.Error("!calledSearchFilesInRepos")
-		}
-		if !calledResolveRepoGroups {
-			t.Error("!calledResolveRepoGroups")
 		}
 	})
 
@@ -222,13 +242,16 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
-		testSuggestions(t, "repo:foo", []string{"repo:foo-repo", "file:dir/file"})
-		if !calledReposList {
-			t.Error("!calledReposList")
+		for _, v := range searchVersions {
+			testSuggestions(t, "repo:foo", v, []string{"repo:foo-repo", "file:dir/file"})
+			if !calledReposList {
+				t.Error("!calledReposList")
+			}
+			if !calledSearchFilesInRepos {
+				t.Error("!calledSearchFilesInRepos")
+			}
 		}
-		if !calledSearchFilesInRepos {
-			t.Error("!calledSearchFilesInRepos")
-		}
+
 	})
 
 	t.Run("repo: and file: field", func(t *testing.T) {
@@ -267,12 +290,14 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
-		testSuggestions(t, "repo:foo file:bar", []string{"file:dir/bar-file"})
-		if !calledReposList {
-			t.Error("!calledReposList")
-		}
-		if !calledSearchFilesInRepos {
-			t.Error("!calledSearchFilesInRepos")
+		for _, v := range searchVersions {
+			testSuggestions(t, "repo:foo file:bar", v, []string{"file:dir/bar-file"})
+			if !calledReposList {
+				t.Error("!calledReposList")
+			}
+			if !calledSearchFilesInRepos {
+				t.Error("!calledSearchFilesInRepos")
+			}
 		}
 	})
 }

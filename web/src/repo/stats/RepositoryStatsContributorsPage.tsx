@@ -14,7 +14,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { quoteIfNeeded, searchQueryForRepoRev } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRev, PatternTypeProps } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -26,7 +26,7 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec {
+interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'togglePatternType'> {
     node: GQL.IRepositoryContributor
     repoName: string
 }
@@ -37,6 +37,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     revisionRange,
     after,
     path,
+    patternType,
 }) => {
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
 
@@ -73,7 +74,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className="repository-contributor-node__count">
                     <Link
-                        to={`/search?${buildSearchURLQuery(query)}`}
+                        to={`/search?${buildSearchURLQuery(query, patternType)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange &&
@@ -154,11 +155,14 @@ const queryRepositoryContributors = memoizeObservable(
     args => `${args.repo}:${args.first}:${args.revisionRange}:${args.after}:${args.path}`
 )
 
-interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {}
+interface Props
+    extends RepositoryStatsAreaPageProps,
+        RouteComponentProps<{}>,
+        Omit<PatternTypeProps, 'togglePatternType'> {}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType'>
 > {}
 
 interface State extends QuerySpec {}
@@ -348,6 +352,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         revisionRange,
                         after,
                         path,
+                        patternType: this.props.patternType,
                     }}
                     defaultFirst={20}
                     hideSearch={true}
