@@ -214,7 +214,6 @@ export class Database {
     public async monikerResults(
         model: typeof DefinitionModel | typeof ReferenceModel,
         moniker: MonikerData,
-        pathTransformer: (path: string) => string,
         ctx: TracingContext
     ): Promise<lsp.Location[]> {
         const results = await this.withConnection(connection =>
@@ -227,7 +226,7 @@ export class Database {
         )
 
         this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
-        return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), createRange(result)))
+        return results.map(result => lsp.Location.create(result.documentPath, createRange(result)))
     }
 
     /**

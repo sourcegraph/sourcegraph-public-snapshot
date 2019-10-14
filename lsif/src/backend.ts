@@ -104,7 +104,9 @@ export class Backend {
                     // table of our own database in case there was a definition that wasn't properly
                     // attached to a result set but did have the correct monikers attached.
 
-                    const localDefinitions = await database.monikerResults(DefinitionModel, moniker, path => path, ctx)
+                    const localDefinitions = (await database.monikerResults(DefinitionModel, moniker, ctx)).map(loc =>
+                        this.locationFromDatabase(dump.root, loc)
+                    )
                     if (localDefinitions) {
                         return localDefinitions
                     }
@@ -173,8 +175,12 @@ export class Backend {
                 packageEntity.dump.commit
             )
         )
-        const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
-        return await db.monikerResults(model, moniker, pathTransformer, ctx)
+        return (await db.monikerResults(model, moniker, ctx)).map(loc =>
+            mapLocation(
+                uri => createRemoteUri(packageEntity, uri),
+                this.locationFromDatabase(packageEntity.dump.root, loc)
+            )
+        )
     }
 
     /**
@@ -236,8 +242,9 @@ export class Backend {
                 dbFilename(this.storageRoot, reference.dump.id, reference.dump.repository, reference.dump.commit)
             )
 
-            const pathTransformer = (path: string): string => createRemoteUri(reference, path)
-            const references = await db.monikerResults(ReferenceModel, moniker, pathTransformer, ctx)
+            const references = (await db.monikerResults(ReferenceModel, moniker, ctx)).map(loc =>
+                mapLocation(uri => createRemoteUri(reference, uri), this.locationFromDatabase(reference.dump.root, loc))
+            )
             allReferences = allReferences.concat(references)
         }
 
@@ -288,7 +295,11 @@ export class Backend {
             // in the LSIF data.
 
             for (const moniker of monikers) {
-                locations = locations.concat(await database.monikerResults(ReferenceModel, moniker, path => path, ctx))
+                locations = locations.concat(
+                    (await database.monikerResults(ReferenceModel, moniker, ctx)).map(loc =>
+                        this.locationFromDatabase(dump.root, loc)
+                    )
+                )
             }
 
             // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
@@ -403,4 +414,8 @@ export class Backend {
 
 function stripPrefix(prefix: string, s: string): string {
     return s.startsWith(prefix) ? s.slice(prefix.length) : s
+}
+
+function mapLocation(map: (uri: string) => string, { uri, range }: lsp.Location): lsp.Location {
+    return lsp.Location.create(map(uri), range)
 }
