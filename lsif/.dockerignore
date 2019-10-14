@@ -1,4 +1,14 @@
-node_modules
 Dockerfile
 .dockerignore
+
+# Build artifacts
+node_modules
 out
+
+# Test data
+test-data
+
+# Run/test artifacts
+lsif-storage
+typescript-*
+cpp-*
