@@ -4,10 +4,6 @@
 
 You can install and preconfigure the Sourcegraph Chrome extension for all members of a G Suite organization or organizational unit, so that they can get code intelligence on files and diffs.
 
-Users can disable Sourcegraph at any time by using the toggle in the extension settings:
-
-<img src="img/disable_extension.png" width="400">
-
 By default, the browser extension only has access to github.com. Access to additional sites is granted by the user, on a site-by-site basis.
 
 The Sourcegraph browser extension is open source and never sends any logs, pings, usage statistics or telemetry to Sourcegraph.com. Read more about browser extension privacy [here](browser_extension.md#privacy).
@@ -40,3 +36,6 @@ Users may also need to grant additional permissions to the Sourcegraph browser e
 ![](img/permissions.png)
 
 
+Users can disable Sourcegraph at any time by using the toggle in the extension settings:
+
+<img src="img/disable_extension.png" width="400">
