@@ -194,11 +194,18 @@ async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
 
 /**
  * Used to filter out this noisy and quite alarm message. This is really just
- * a warning from node resque that comes on a somehwat misnamed event. See
+ * a warning from node resque that comes on a (somewhat) misnamed event. See
  * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
+ *
+ * Additionally, the value we're trying to catch is thrown as a string, not
+ * an error object, so we need to catch the case where there's no message
+ * attribute.
+ *
+ * See https://github.com/taskrabbit/node-resque/blob/9a1f5d86dd1725322fb09d40454de5dbea7d7910/lib/queue.js#L251
+ * for the source of the error:
  */
-function isSpuriousSchedulerError(error: Error): boolean {
-    return /force-cleaning worker .* but cannot find queues/.test(error.message)
+function isSpuriousSchedulerError(error: Error | string): boolean {
+    return /force-cleaning worker .* but cannot find queues/.test(typeof error === 'string' ? error : error.message)
 }
 
 /**
