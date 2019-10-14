@@ -275,8 +275,9 @@ export class XrepoDatabase {
         root: string,
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<DumpID> {
-        // Remove all previous package data for this repo/commit (this
-        // cascades to packages and references)
+        // Delete existing dumps from the same repo@commit that overlap with the
+        // current root (where the existing root is a prefix of the current
+        // root, or vice versa). This cascades to packages and references.
         await entityManager.query(
             `
             DELETE FROM lsif_dumps
