@@ -58,8 +58,21 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     const dropCommand = `dropdb --if-exists ${database}`
     const migrateCommand = `${migratePath} -database "${connectionString}" -path  ${migrationsPath} up`
 
-    // Create cleanup function to run after test
-    const cleanup = (): Promise<void> => child_process.exec(dropCommand, { env }).then(() => {})
+    // Create cleanup function to run after test. This will close the connection
+    // created below (if successful), then destroy the database that was created
+    // for the test. It is necessary to close teh database first, otherwise we
+    // get failures during the after hooks:
+    //
+    // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-xrepo-5033c9e8" is being accessed by other users
+
+    let connection: Connection
+    const cleanup = async (): Promise<void> => {
+        if (connection) {
+            await connection.close()
+        }
+
+        await child_process.exec(dropCommand, { env }).then(() => {})
+    }
 
     // Try to create database
     await child_process.exec(createCommand, { env })
@@ -67,7 +80,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     try {
         // Run migrations then connect to database
         await child_process.exec(migrateCommand, { env })
-        const connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
+        connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
         return { connection, cleanup }
     } catch (error) {
         // We made a database but can't use it - try to clean up
