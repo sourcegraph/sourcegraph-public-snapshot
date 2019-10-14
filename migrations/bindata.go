@@ -40,8 +40,13 @@
 // 1528395600_lsif_commits_indexes.up.sql (253B)
 // 1528395601_lsif_dumps.down.sql (1.708kB)
 // 1528395601_lsif_dumps.up.sql (2.075kB)
+<<<<<<< HEAD
 // 1528395602_add_patterntype_to_saved_searches.down.sql (99B)
 // 1528395602_add_patterntype_to_saved_searches.up.sql (87B)
+=======
+// 1528395602_add_updated_at_and_drop_source_from_changeset_events.down.sql (153B)
+// 1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql (153B)
+>>>>>>> master
 
 package migrations
 
@@ -910,43 +915,43 @@ func _1528395601_lsif_dumpsUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395602_add_patterntype_to_saved_searchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x28\x4e\x2c\x4b\x4d\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\x56\x08\x76\x0d\x51\x28\x2c\x4d\x2d\xaa\xb4\x55\x08\x09\xf2\xf4\xd5\x08\x09\x72\xf4\xf4\xf1\xf4\x73\x57\x50\x57\x28\x48\x2c\x29\x49\x2d\xca\x0b\xa9\x2c\x48\xb5\x2a\x4a\x4d\x4f\xad\x28\x50\x57\x70\x0b\xf2\xf7\x85\xa8\xd7\xb4\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb2\x1a\x3a\xa1\x63\x00\x00\x00")
+var __1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xcb\x31\x0e\xc2\x20\x14\x06\xe0\x9d\x53\xfc\x4e\xd5\x33\x10\x07\x0a\x44\x1b\x1f\x60\x9a\xd7\xc4\xad\x21\xed\x8b\x4e\xd5\x08\xf5\xfc\x2e\xba\x76\xfe\xf2\xb5\xfe\xd4\x45\xad\x94\x21\xf6\x3d\xd8\xb4\xe4\x31\x3d\xf2\x72\x97\x22\x75\x94\x8f\x2c\xb5\xc0\xf5\xe9\x0a\x9b\x68\x08\x11\xeb\x6b\xce\x55\xe6\x31\x57\xbd\x9d\x8c\x73\xff\x53\x9e\xeb\x7b\x12\xb0\xbf\x31\x62\x62\xc4\x81\x08\xf6\xec\xed\x05\xfb\x9f\xed\x8e\x68\x9a\x83\x56\xca\xa6\x10\x3a\xd6\xea\x1b\x00\x00\xff\xff\x2f\xc2\xbc\x03\x99\x00\x00\x00")
 
-func _1528395602_add_patterntype_to_saved_searchesDownSqlBytes() ([]byte, error) {
+func _1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395602_add_patterntype_to_saved_searchesDownSql,
-		"1528395602_add_patterntype_to_saved_searches.down.sql",
+		__1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSql,
+		"1528395602_add_updated_at_and_drop_source_from_changeset_events.down.sql",
 	)
 }
 
-func _1528395602_add_patterntype_to_saved_searchesDownSql() (*asset, error) {
-	bytes, err := _1528395602_add_patterntype_to_saved_searchesDownSqlBytes()
+func _1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSql() (*asset, error) {
+	bytes, err := _1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395602_add_patterntype_to_saved_searches.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa4, 0x12, 0x6, 0xf5, 0x4, 0xdd, 0x61, 0x9f, 0x62, 0x7d, 0x10, 0x80, 0x33, 0xc0, 0x88, 0x6, 0x6b, 0x55, 0x1d, 0x67, 0x60, 0xe7, 0x82, 0xb2, 0x1b, 0x40, 0x4c, 0x4b, 0xb6, 0xb0, 0x7f, 0x2}}
+	info := bindataFileInfo{name: "1528395602_add_updated_at_and_drop_source_from_changeset_events.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd8, 0x9f, 0xff, 0xe4, 0x5, 0xec, 0xac, 0x28, 0x58, 0x81, 0x4a, 0xb5, 0x29, 0x2e, 0xde, 0x50, 0xc2, 0x57, 0xa9, 0x8e, 0x6d, 0xfb, 0xf5, 0xea, 0x22, 0xc3, 0x58, 0x3f, 0x24, 0x7d, 0xf4, 0x84}}
 	return a, nil
 }
 
-var __1528395602_add_patterntype_to_saved_searchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x28\x4e\x2c\x4b\x4d\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\x56\x08\x76\x0d\x51\x28\x2c\x4d\x2d\xaa\xb4\x75\xf6\xf7\x73\x76\x0c\xd1\x00\x73\x74\x14\xd4\x15\x0a\x12\x4b\x4a\x52\x8b\xf2\x42\x2a\x0b\x52\xad\x8a\x52\xd3\x53\x2b\x0a\xd4\x35\xad\xb9\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\xaf\xf7\xc0\x0c\x57\x00\x00\x00")
+var __1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xcb\xb1\xae\xc2\x20\x14\x06\xe0\x9d\xa7\xf8\xc7\x7b\x9f\x81\x89\x16\x34\x4d\x0e\x60\x1a\x98\x1b\xd2\x9e\xa8\x43\x69\x23\xa7\x9a\xf8\xf4\x4e\xae\xee\xdf\xd7\xb9\xf3\x10\xb4\x52\x86\x92\x1b\x91\x4c\x47\x0e\xf3\xad\xd4\x2b\x37\x96\x89\x9f\x5c\xa5\xc1\x8e\xf1\x82\x3e\x52\xf6\x01\x6d\x3b\x1e\x33\xeb\xdf\xc1\x58\xfb\xf5\xc7\xbe\x14\xe1\x65\x2a\x02\xb9\xaf\xdc\xa4\xac\xbb\xbc\x11\x62\x42\xc8\x44\xb0\xee\x64\x32\x25\xd4\xed\xf5\xf7\xaf\x95\xea\xa3\xf7\x43\xd2\xea\x13\x00\x00\xff\xff\x8e\x1e\xe5\xd7\x99\x00\x00\x00")
 
-func _1528395602_add_patterntype_to_saved_searchesUpSqlBytes() ([]byte, error) {
+func _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSqlBytes() ([]byte, error) {
 	return bindataRead(
-		__1528395602_add_patterntype_to_saved_searchesUpSql,
-		"1528395602_add_patterntype_to_saved_searches.up.sql",
+		__1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql,
+		"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql",
 	)
 }
 
-func _1528395602_add_patterntype_to_saved_searchesUpSql() (*asset, error) {
-	bytes, err := _1528395602_add_patterntype_to_saved_searchesUpSqlBytes()
+func _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql() (*asset, error) {
+	bytes, err := _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSqlBytes()
 	if err != nil {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "1528395602_add_patterntype_to_saved_searches.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3d, 0x81, 0xe8, 0x5, 0x3e, 0xfa, 0xf4, 0xe0, 0xcb, 0xbc, 0xad, 0x38, 0x95, 0x94, 0x2f, 0x38, 0xb9, 0xe7, 0xce, 0x6e, 0xda, 0x3f, 0x54, 0xca, 0x86, 0x89, 0x75, 0xd, 0x3c, 0xce, 0xd0, 0xa1}}
+	info := bindataFileInfo{name: "1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc7, 0x87, 0xa0, 0x23, 0x1b, 0xa2, 0x4f, 0xba, 0xe0, 0xd4, 0x69, 0xf1, 0x75, 0xa3, 0x2, 0x93, 0xa2, 0x4, 0x71, 0x37, 0x3b, 0x8e, 0x8d, 0x20, 0x78, 0xac, 0x66, 0x65, 0x3b, 0x65, 0x73, 0x8d}}
 	return a, nil
 }
 
@@ -1121,9 +1126,9 @@ var _bindata = map[string]func() (*asset, error){
 
 	"1528395601_lsif_dumps.up.sql": _1528395601_lsif_dumpsUpSql,
 
-	"1528395602_add_patterntype_to_saved_searches.down.sql": _1528395602_add_patterntype_to_saved_searchesDownSql,
+	"1528395602_add_updated_at_and_drop_source_from_changeset_events.down.sql": _1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSql,
 
-	"1528395602_add_patterntype_to_saved_searches.up.sql": _1528395602_add_patterntype_to_saved_searchesUpSql,
+	"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql": _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1167,48 +1172,48 @@ type bintree struct {
 }
 
 var _bintree = &bintree{nil, map[string]*bintree{
-	"1528395582_squashed_migrations.down.sql":                               {_1528395582_squashed_migrationsDownSql, map[string]*bintree{}},
-	"1528395582_squashed_migrations.up.sql":                                 {_1528395582_squashed_migrationsUpSql, map[string]*bintree{}},
-	"1528395583_add_default_repos_primary_key.down.sql":                     {_1528395583_add_default_repos_primary_keyDownSql, map[string]*bintree{}},
-	"1528395583_add_default_repos_primary_key.up.sql":                       {_1528395583_add_default_repos_primary_keyUpSql, map[string]*bintree{}},
-	"1528395584_add_campaigns_table.down.sql":                               {_1528395584_add_campaigns_tableDownSql, map[string]*bintree{}},
-	"1528395584_add_campaigns_table.up.sql":                                 {_1528395584_add_campaigns_tableUpSql, map[string]*bintree{}},
-	"1528395585_go-1.13-dummy-migration.down.sql":                           {_1528395585_go113DummyMigrationDownSql, map[string]*bintree{}},
-	"1528395585_go-1.13-dummy-migration.up.sql":                             {_1528395585_go113DummyMigrationUpSql, map[string]*bintree{}},
-	"1528395586_add_threads_table.down.sql":                                 {_1528395586_add_threads_tableDownSql, map[string]*bintree{}},
-	"1528395586_add_threads_table.up.sql":                                   {_1528395586_add_threads_tableUpSql, map[string]*bintree{}},
-	"1528395587_campaigns_threads_many_to_many_relation.down.sql":           {_1528395587_campaigns_threads_many_to_many_relationDownSql, map[string]*bintree{}},
-	"1528395587_campaigns_threads_many_to_many_relation.up.sql":             {_1528395587_campaigns_threads_many_to_many_relationUpSql, map[string]*bintree{}},
-	"1528395588_rename_threads_to_changesets.down.sql":                      {_1528395588_rename_threads_to_changesetsDownSql, map[string]*bintree{}},
-	"1528395588_rename_threads_to_changesets.up.sql":                        {_1528395588_rename_threads_to_changesetsUpSql, map[string]*bintree{}},
-	"1528395589_add_external_id_to_schema.down.sql":                         {_1528395589_add_external_id_to_schemaDownSql, map[string]*bintree{}},
-	"1528395589_add_external_id_to_schema.up.sql":                           {_1528395589_add_external_id_to_schemaUpSql, map[string]*bintree{}},
-	"1528395590_add_external_service_type_to_changesets.down.sql":           {_1528395590_add_external_service_type_to_changesetsDownSql, map[string]*bintree{}},
-	"1528395590_add_external_service_type_to_changesets.up.sql":             {_1528395590_add_external_service_type_to_changesetsUpSql, map[string]*bintree{}},
-	"1528395591_create_events_logging_table.down.sql":                       {_1528395591_create_events_logging_tableDownSql, map[string]*bintree{}},
-	"1528395591_create_events_logging_table.up.sql":                         {_1528395591_create_events_logging_tableUpSql, map[string]*bintree{}},
-	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql": {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql, map[string]*bintree{}},
-	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql":   {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql, map[string]*bintree{}},
-	"1528395593_allows_trailing_hyphen_in_usernames.down.sql":               {_1528395593_allows_trailing_hyphen_in_usernamesDownSql, map[string]*bintree{}},
-	"1528395593_allows_trailing_hyphen_in_usernames.up.sql":                 {_1528395593_allows_trailing_hyphen_in_usernamesUpSql, map[string]*bintree{}},
-	"1528395594_create_changeset_events_table.down.sql":                     {_1528395594_create_changeset_events_tableDownSql, map[string]*bintree{}},
-	"1528395594_create_changeset_events_table.up.sql":                       {_1528395594_create_changeset_events_tableUpSql, map[string]*bintree{}},
-	"1528395595_create_lsif_database.down.sql":                              {_1528395595_create_lsif_databaseDownSql, map[string]*bintree{}},
-	"1528395595_create_lsif_database.up.sql":                                {_1528395595_create_lsif_databaseUpSql, map[string]*bintree{}},
-	"1528395596_lsif_xrepo_init.down.sql":                                   {_1528395596_lsif_xrepo_initDownSql, map[string]*bintree{}},
-	"1528395596_lsif_xrepo_init.up.sql":                                     {_1528395596_lsif_xrepo_initUpSql, map[string]*bintree{}},
-	"1528395597_lsif_commits.down.sql":                                      {_1528395597_lsif_commitsDownSql, map[string]*bintree{}},
-	"1528395597_lsif_commits.up.sql":                                        {_1528395597_lsif_commitsUpSql, map[string]*bintree{}},
-	"1528395598_destroy_separate_lsif_db.down.sql":                          {_1528395598_destroy_separate_lsif_dbDownSql, map[string]*bintree{}},
-	"1528395598_destroy_separate_lsif_db.up.sql":                            {_1528395598_destroy_separate_lsif_dbUpSql, map[string]*bintree{}},
-	"1528395599_create_lsif_tables.down.sql":                                {_1528395599_create_lsif_tablesDownSql, map[string]*bintree{}},
-	"1528395599_create_lsif_tables.up.sql":                                  {_1528395599_create_lsif_tablesUpSql, map[string]*bintree{}},
-	"1528395600_lsif_commits_indexes.down.sql":                              {_1528395600_lsif_commits_indexesDownSql, map[string]*bintree{}},
-	"1528395600_lsif_commits_indexes.up.sql":                                {_1528395600_lsif_commits_indexesUpSql, map[string]*bintree{}},
-	"1528395601_lsif_dumps.down.sql":                                        {_1528395601_lsif_dumpsDownSql, map[string]*bintree{}},
-	"1528395601_lsif_dumps.up.sql":                                          {_1528395601_lsif_dumpsUpSql, map[string]*bintree{}},
-	"1528395602_add_patterntype_to_saved_searches.down.sql":                 {_1528395602_add_patterntype_to_saved_searchesDownSql, map[string]*bintree{}},
-	"1528395602_add_patterntype_to_saved_searches.up.sql":                   {_1528395602_add_patterntype_to_saved_searchesUpSql, map[string]*bintree{}},
+	"1528395582_squashed_migrations.down.sql":                                  {_1528395582_squashed_migrationsDownSql, map[string]*bintree{}},
+	"1528395582_squashed_migrations.up.sql":                                    {_1528395582_squashed_migrationsUpSql, map[string]*bintree{}},
+	"1528395583_add_default_repos_primary_key.down.sql":                        {_1528395583_add_default_repos_primary_keyDownSql, map[string]*bintree{}},
+	"1528395583_add_default_repos_primary_key.up.sql":                          {_1528395583_add_default_repos_primary_keyUpSql, map[string]*bintree{}},
+	"1528395584_add_campaigns_table.down.sql":                                  {_1528395584_add_campaigns_tableDownSql, map[string]*bintree{}},
+	"1528395584_add_campaigns_table.up.sql":                                    {_1528395584_add_campaigns_tableUpSql, map[string]*bintree{}},
+	"1528395585_go-1.13-dummy-migration.down.sql":                              {_1528395585_go113DummyMigrationDownSql, map[string]*bintree{}},
+	"1528395585_go-1.13-dummy-migration.up.sql":                                {_1528395585_go113DummyMigrationUpSql, map[string]*bintree{}},
+	"1528395586_add_threads_table.down.sql":                                    {_1528395586_add_threads_tableDownSql, map[string]*bintree{}},
+	"1528395586_add_threads_table.up.sql":                                      {_1528395586_add_threads_tableUpSql, map[string]*bintree{}},
+	"1528395587_campaigns_threads_many_to_many_relation.down.sql":              {_1528395587_campaigns_threads_many_to_many_relationDownSql, map[string]*bintree{}},
+	"1528395587_campaigns_threads_many_to_many_relation.up.sql":                {_1528395587_campaigns_threads_many_to_many_relationUpSql, map[string]*bintree{}},
+	"1528395588_rename_threads_to_changesets.down.sql":                         {_1528395588_rename_threads_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395588_rename_threads_to_changesets.up.sql":                           {_1528395588_rename_threads_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395589_add_external_id_to_schema.down.sql":                            {_1528395589_add_external_id_to_schemaDownSql, map[string]*bintree{}},
+	"1528395589_add_external_id_to_schema.up.sql":                              {_1528395589_add_external_id_to_schemaUpSql, map[string]*bintree{}},
+	"1528395590_add_external_service_type_to_changesets.down.sql":              {_1528395590_add_external_service_type_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395590_add_external_service_type_to_changesets.up.sql":                {_1528395590_add_external_service_type_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395591_create_events_logging_table.down.sql":                          {_1528395591_create_events_logging_tableDownSql, map[string]*bintree{}},
+	"1528395591_create_events_logging_table.up.sql":                            {_1528395591_create_events_logging_tableUpSql, map[string]*bintree{}},
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql":    {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql, map[string]*bintree{}},
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql":      {_1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql, map[string]*bintree{}},
+	"1528395593_allows_trailing_hyphen_in_usernames.down.sql":                  {_1528395593_allows_trailing_hyphen_in_usernamesDownSql, map[string]*bintree{}},
+	"1528395593_allows_trailing_hyphen_in_usernames.up.sql":                    {_1528395593_allows_trailing_hyphen_in_usernamesUpSql, map[string]*bintree{}},
+	"1528395594_create_changeset_events_table.down.sql":                        {_1528395594_create_changeset_events_tableDownSql, map[string]*bintree{}},
+	"1528395594_create_changeset_events_table.up.sql":                          {_1528395594_create_changeset_events_tableUpSql, map[string]*bintree{}},
+	"1528395595_create_lsif_database.down.sql":                                 {_1528395595_create_lsif_databaseDownSql, map[string]*bintree{}},
+	"1528395595_create_lsif_database.up.sql":                                   {_1528395595_create_lsif_databaseUpSql, map[string]*bintree{}},
+	"1528395596_lsif_xrepo_init.down.sql":                                      {_1528395596_lsif_xrepo_initDownSql, map[string]*bintree{}},
+	"1528395596_lsif_xrepo_init.up.sql":                                        {_1528395596_lsif_xrepo_initUpSql, map[string]*bintree{}},
+	"1528395597_lsif_commits.down.sql":                                         {_1528395597_lsif_commitsDownSql, map[string]*bintree{}},
+	"1528395597_lsif_commits.up.sql":                                           {_1528395597_lsif_commitsUpSql, map[string]*bintree{}},
+	"1528395598_destroy_separate_lsif_db.down.sql":                             {_1528395598_destroy_separate_lsif_dbDownSql, map[string]*bintree{}},
+	"1528395598_destroy_separate_lsif_db.up.sql":                               {_1528395598_destroy_separate_lsif_dbUpSql, map[string]*bintree{}},
+	"1528395599_create_lsif_tables.down.sql":                                   {_1528395599_create_lsif_tablesDownSql, map[string]*bintree{}},
+	"1528395599_create_lsif_tables.up.sql":                                     {_1528395599_create_lsif_tablesUpSql, map[string]*bintree{}},
+	"1528395600_lsif_commits_indexes.down.sql":                                 {_1528395600_lsif_commits_indexesDownSql, map[string]*bintree{}},
+	"1528395600_lsif_commits_indexes.up.sql":                                   {_1528395600_lsif_commits_indexesUpSql, map[string]*bintree{}},
+	"1528395601_lsif_dumps.down.sql":                                           {_1528395601_lsif_dumpsDownSql, map[string]*bintree{}},
+	"1528395601_lsif_dumps.up.sql":                                             {_1528395601_lsif_dumpsUpSql, map[string]*bintree{}},
+	"1528395602_add_updated_at_and_drop_source_from_changeset_events.down.sql": {_1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSql, map[string]*bintree{}},
+	"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql":   {_1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

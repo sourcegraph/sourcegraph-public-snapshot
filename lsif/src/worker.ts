@@ -5,7 +5,7 @@ import express from 'express'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { convertLsif } from './importer'
-import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { dbFilename, ensureDirectory, readEnvInt } from './util'
 import { createLogger } from './logging'
 import { createPostgresConnection } from './connection'
 import { JobsHash, Worker } from 'node-resque'
@@ -124,13 +124,13 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: Conf
             // Create database in a temp path
             const { packages, references } = await convertLsif(input, tempFile, ctx)
 
-            // Move the temp file where it can be found by the server
-            await fs.rename(tempFile, createDatabaseFilename(STORAGE_ROOT, repository, commit))
-
-            // Add the new database to the xrepo db
-            await logAndTraceCall(ctx, 'populating cross-repo database', () =>
+            // Add packages and references to the xrepo db
+            const dumpID = await logAndTraceCall(ctx, 'populating cross-repo database', () =>
                 xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
             )
+
+            // Move the temp file where it can be found by the server
+            await fs.rename(tempFile, dbFilename(STORAGE_ROOT, dumpID, repository, commit))
         } catch (e) {
             // Don't leave busted artifacts
             await fs.unlink(tempFile)

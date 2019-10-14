@@ -107,8 +107,18 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
  * @param repository The repository name.
  * @param commit The repository commit.
  */
-export function createDatabaseFilename(storageRoot: string, repository: string, commit: string): string {
+export function dbFilenameOld(storageRoot: string, repository: string, commit: string): string {
     return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+}
+
+/**
+ * Construct the path of the SQLite database file for the given dump.
+ *
+ * @param storageRoot The path where SQLite databases are stored.
+ * @param id The ID of the dump.
+ */
+export function dbFilename(storageRoot: string, id: number, repository: string, commit: string): string {
+    return path.join(storageRoot, `${id}-${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
 /**

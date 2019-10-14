@@ -4,7 +4,7 @@ import * as crypto from 'crypto'
 import { TracingContext, logAndTraceCall } from './tracing'
 
 /**
- * THe number of commits to ask gitserver for when updating commit data for
+ * The number of commits to ask gitserver for when updating commit data for
  * a particular repository.
  */
 const MAX_COMMITS_PER_UPDATE = 5000

@@ -31,7 +31,7 @@ var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186",
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handler) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -43,6 +43,10 @@ func NewHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
+
+	if githubWebhook != nil {
+		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
+	}
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))

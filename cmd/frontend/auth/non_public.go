@@ -101,6 +101,11 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	// Authentication is performed in the webhook handler itself.
+	if strings.HasPrefix(req.URL.Path, "/.api/github-webhooks") {
+		return true
+	}
+
 	apiRouteName := matchedRouteName(req, router.Router())
 	if apiRouteName == router.UI {
 		// Test against UI router. (Some of its handlers inject private data into the title or meta tags.)

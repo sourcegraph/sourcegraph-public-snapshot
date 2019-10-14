@@ -22,7 +22,7 @@ To set this up, add GitHub as an external service to Sourcegraph:
 There are four fields for configuring which repositories are mirrored/synchronized:
 
 - [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
-- [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned). 
+- [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned).
 - [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires GitHub advanced search queries to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
@@ -30,7 +30,7 @@ There are four fields for configuring which repositories are mirrored/synchroniz
 
 The GitHub service requires a `token` in order to access their API. There are two different types of tokens you can supply:
 
-- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of acccess to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add  an entry to the `exclude` array, or you can use a machine user token.
+- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of acccess to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
 ## GitHub.com rate limits
@@ -46,6 +46,35 @@ GitHub's per-user repository permissions, see "[Repository permissions](../repo/
 
 To configure GitHub as an authentication provider (which will enable sign-in via GitHub), see the
 [authentication documentation](../auth.md#github).
+
+## Webhooks
+
+The `webhooks` setting allows specifying the org webhook secrets necessary to authenticate incoming webhook requests to `/.api/github-webhooks`.
+
+```json
+"webhooks": [
+  {"org": "your_org", "secret": "verylongrandomsecret"}
+]
+```
+
+These organization webhooks are optional, but if configured on GitHub, they allow faster metadata updates than the background syncing (i.e. polling) with `repo-updater` permits.
+
+The following [webhook events](https://developer.github.com/webhooks/) are currently used:
+
+- Issue comments
+- Pull requests
+- Pull request reviews
+- Pull request review comments
+
+To set up a organization webhook on GitHub, go to the settings page of your organization. From there, click **Webhooks**, then **Add webhook**.
+
+Fill in your Sourcegraph external URL with `/.api/github-webhooks` as the path and make sure it is publicly available.
+
+The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the external service config.
+
+Click on **Enable SSL verification** if you have configured SSL with a valid certificate in your Sourcegraph instance.
+
+Select **the events mentioned above** on the events section, ensure **Active** is checked and finally create the webhook.
 
 ## Configuration
 

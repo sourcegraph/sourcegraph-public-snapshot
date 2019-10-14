@@ -26,7 +26,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Subsystem: subsystem,
 		Name:      "requests_total",
 		Help:      help,
-	}, []string{"category", "code"})
+	}, []string{"category", "code", "host"})
 	prometheus.MustRegister(requestCounter)
 
 	// TODO(uwedeportivo):
@@ -39,7 +39,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Name:      "request_duration_seconds",
 		Help:      "Time (in seconds) spent on request.",
 		Buckets:   prometheus.DefBuckets,
-	}, []string{"category", "code"})
+	}, []string{"category", "code", "host"})
 	prometheus.MustRegister(requestDuration)
 
 	return &RequestMeter{counter: requestCounter, duration: requestDuration, subsystem: subsystem}
@@ -90,8 +90,8 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 	}
 
 	d := time.Since(start)
-	t.meter.counter.WithLabelValues(category, code).Inc()
-	t.meter.duration.WithLabelValues(category, code).Observe(d.Seconds())
+	t.meter.counter.WithLabelValues(category, code, r.URL.Host).Inc()
+	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())
 	log15.Debug("TRACE "+t.meter.subsystem, "host", r.URL.Host, "path", r.URL.Path, "code", code, "duration", d)
 	return
 }

@@ -283,6 +283,11 @@ type GitHubConnection struct {
 	RepositoryQuery             []string              `json:"repositoryQuery,omitempty"`
 	Token                       string                `json:"token"`
 	Url                         string                `json:"url"`
+	Webhooks                    []*GitHubWebhook      `json:"webhooks,omitempty"`
+}
+type GitHubWebhook struct {
+	Org    string `json:"org"`
+	Secret string `json:"secret"`
 }
 
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".

@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"path"
+	"sort"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -19,7 +21,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -31,7 +33,7 @@ type Resolver struct {
 
 // NewResolver returns a new Resolver whose store uses the given db
 func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
-	return &Resolver{store: ee.NewStore(dbconn.Global)}
+	return &Resolver{store: ee.NewStore(db)}
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
@@ -354,6 +356,64 @@ func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	}
 }
 
+func (r *campaignResolver) ChangesetCountsOverTime(
+	ctx context.Context,
+	args *graphqlbackend.ChangesetCountsArgs,
+) ([]graphqlbackend.ChangesetCountsResolver, error) {
+	// 🚨 SECURITY: Only site admins may access the counts for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	resolvers := []graphqlbackend.ChangesetCountsResolver{}
+
+	opts := ee.ListChangesetsOpts{CampaignID: r.Campaign.ID}
+	cs, _, err := r.store.ListChangesets(ctx, opts)
+	if err != nil {
+		return resolvers, err
+	}
+
+	start := r.Campaign.CreatedAt.UTC()
+	if args.From != nil {
+		start = args.From.Time.UTC()
+	}
+
+	end := time.Now().UTC()
+	if args.To != nil && args.To.Time.Before(end) {
+		end = args.To.Time.UTC()
+	}
+
+	changesetIDs := make([]int64, len(cs))
+	for i, c := range cs {
+		changesetIDs[i] = c.ID
+	}
+
+	eventsOpts := ee.ListChangesetEventsOpts{
+		ChangesetIDs: changesetIDs,
+		Limit:        -1,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
+	if err != nil {
+		return resolvers, err
+	}
+
+	events := make([]ee.Event, len(es))
+	for i, e := range es {
+		events[i] = e
+	}
+
+	counts, err := ee.CalcCounts(start, end, cs, events...)
+	if err != nil {
+		return resolvers, err
+	}
+
+	for _, c := range counts {
+		resolvers = append(resolvers, &changesetCountsResolver{counts: c})
+	}
+
+	return resolvers, nil
+}
+
 func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ChangesetResolver, err error) {
 	// 🚨 SECURITY: Only site admins may create changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -577,8 +637,31 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState() (a8n.ChangesetReviewState, error) {
-	return r.Changeset.ReviewState()
+func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {
+	// ChangesetEvents are currently only implemented for GitHub. For other
+	// codehosts we compute the ReviewState from the Metadata field of a
+	// Changeset.
+	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
+		return r.Changeset.ReviewState()
+	}
+
+	opts := ee.ListChangesetEventsOpts{
+		ChangesetIDs: []int64{r.Changeset.ID},
+		Limit:        -1,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	if err != nil {
+		return a8n.ChangesetReviewStatePending, err
+	}
+
+	events := make(a8n.ChangesetEvents, len(es))
+	for i, e := range es {
+		events[i] = e
+	}
+
+	sort.Sort(events)
+
+	return events.ReviewState()
 }
 
 func (r *changesetResolver) Events(ctx context.Context, args *struct {
@@ -588,8 +671,8 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 		store:     r.store,
 		changeset: r.Changeset,
 		opts: ee.ListChangesetEventsOpts{
-			ChangesetID: r.Changeset.ID,
-			Limit:       int(args.ConnectionArgs.GetFirst()),
+			ChangesetIDs: []int64{r.Changeset.ID},
+			Limit:        int(args.ConnectionArgs.GetFirst()),
 		},
 	}, nil
 }
@@ -619,7 +702,7 @@ func (r *changesetEventsConnectionResolver) Nodes(ctx context.Context) ([]graphq
 }
 
 func (r *changesetEventsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetEventsOpts{ChangesetID: r.opts.ChangesetID}
+	opts := ee.CountChangesetEventsOpts{ChangesetID: r.opts.ChangesetIDs[0]}
 	count, err := r.store.CountChangesetEvents(ctx, opts)
 	return int32(count), err
 }
@@ -668,3 +751,18 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
+
+type changesetCountsResolver struct {
+	counts *ee.ChangesetCounts
+}
+
+func (r *changesetCountsResolver) Date() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.counts.Time}
+}
+func (r *changesetCountsResolver) Total() int32                { return r.counts.Total }
+func (r *changesetCountsResolver) Merged() int32               { return r.counts.Merged }
+func (r *changesetCountsResolver) Closed() int32               { return r.counts.Closed }
+func (r *changesetCountsResolver) Open() int32                 { return r.counts.Open }
+func (r *changesetCountsResolver) OpenApproved() int32         { return r.counts.OpenApproved }
+func (r *changesetCountsResolver) OpenChangesRequested() int32 { return r.counts.OpenChangesRequested }
+func (r *changesetCountsResolver) OpenPending() int32          { return r.counts.OpenPending }

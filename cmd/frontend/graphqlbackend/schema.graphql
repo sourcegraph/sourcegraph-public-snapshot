@@ -425,6 +425,36 @@ type Campaign implements Node {
 
     # The changesets in this campaign.
     changesets(first: Int): ChangesetConnection!
+
+    # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
+    changesetCountsOverTime(
+        # Only include changeset counts up to this point in time (inclusive).
+        # Defaults to createdAt.
+        from: DateTime
+        # Only include changeset counts up to this point in time (inclusive).
+        # Defaults to now.
+        to: DateTime
+    ): [ChangesetCounts!]!
+}
+
+# The counts of changesets in certain states at a specific point in time.
+type ChangesetCounts {
+    # The point in time these counts were recorded.
+    date: DateTime!
+    # The total number of changesets.
+    total: Int!
+    # The number of merged changesets.
+    merged: Int!
+    # The number of closed changesets.
+    closed: Int!
+    # The number of open changesets (independent of review state).
+    open: Int!
+    # The number of changesets that are both open and approved.
+    openApproved: Int!
+    # The number of changesets that are both open and have requested changes.
+    openChangesRequested: Int!
+    # The number of changesets that are both open and are pending review.
+    openPending: Int!
 }
 
 # A list of campaigns.
