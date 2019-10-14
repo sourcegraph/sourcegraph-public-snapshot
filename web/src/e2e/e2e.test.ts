@@ -1256,7 +1256,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-saved-search-modal')
             await driver.page.waitForSelector('.e2e-saved-search-modal-save-button')
             await driver.page.click('.e2e-saved-search-modal-save-button')
-            await driver.assertWindowLocation('/users/test/searches/add?query=test&patternType=literal')
+            await driver.assertWindowLocation('/users/test/searches/add?query=test&patternType=regexp')
 
             await driver.page.waitForSelector('.e2e-saved-search-form-input-description', { visible: true })
             await driver.page.click('.e2e-saved-search-form-input-description')
