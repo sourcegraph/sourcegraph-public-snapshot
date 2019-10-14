@@ -65,7 +65,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({ campaignID, hi
 
     useEffect(() => {
         if (campaignID) {
-            // Namespace cannot be edited
+            // The namespace of a campaign can only be set on creation.
             return
         }
         const subscription = queryNamespaces().subscribe({ next: setNamespaces, error: triggerError })
