@@ -32,34 +32,30 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     // where `yarn test` is run from within the root or from the lsif directory.
     const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
 
+    const createCommand = `createdb ${database}`
+    const dropCommand = `dropdb --if-exists ${database}`
+    const migrateCommand = ` ${migrateScriptPath} up`
+
     // Ensure environment gets passed to child commands
-    const env = `PGHOST=${host} PGPORT=${port} PGSSLMODE=disable`
-    const createCommand = `${env} createdb ${database}`
-    const dropCommand = `${env} dropdb --if-exists ${database}`
-    const migrateCommand = `${env} PGDATABASE=${database} ${migrateScriptPath} up`
+    const env = {
+        PGHOST: host,
+        PGPORT: `${port}`,
+        PGUSER: username,
+        PGPASSWORD: password,
+        PGSSLMODE: 'disable',
+        PGDATABASE: database,
+    }
 
     // Create cleanup function to run after test
-    const cleanup = (): Promise<void> => child_process.exec(dropCommand).then(() => {})
+    const cleanup = (): Promise<void> => child_process.exec(dropCommand, { env }).then(() => {})
 
     // Try to create database
-    await child_process.exec(createCommand)
+    await child_process.exec(createCommand, { env })
 
     try {
-        // Run migrations on new database
-        await child_process.exec(migrateCommand)
-
-        const connection = await connectPostgres(
-            {
-                host,
-                port,
-                username,
-                password,
-                database,
-                ssl: false,
-            },
-            suffix
-        )
-
+        // Run migrations then connect to database
+        await child_process.exec(migrateCommand, { env })
+        const connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
         return { connection, cleanup }
     } catch (error) {
         // We made a database but can't use it - try to clean up
