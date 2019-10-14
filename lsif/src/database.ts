@@ -1,14 +1,13 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { dbFilename, hashKey, mustGet } from './util'
+import { hashKey, mustGet } from './util'
 import { instrument } from './metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './database.metrics'
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
 import { PackageModel, DumpID } from './xrepo.models'
-import { XrepoDatabase } from './xrepo'
 import {
     DefinitionModel,
     DocumentData,
@@ -40,24 +39,18 @@ export class Database {
      * Create a new `Database` with the given cross-repo database instance and the
      * filename of the database that contains data for a particular repository/commit.
      *
-     * @param storageRoot The path where SQLite databases are stored.
-     * @param xrepoDatabase The cross-repo database.
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded documents.
      * @param resultChunkCache The cache of loaded result chunks.
      * @param dumpID The ID of the dump for which this database answers queries.
      * @param databasePath The path to the database file.
-     * @param root The path into the repository at which this database is mounted.
      */
     constructor(
-        private storageRoot: string,
-        private xrepoDatabase: XrepoDatabase,
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
         private resultChunkCache: ResultChunkCache,
         private dumpID: DumpID,
-        private databasePath: string,
-        private root: string
+        private databasePath: string
     ) {}
 
     /**
@@ -100,38 +93,6 @@ export class Database {
             }
         }
 
-        // No definition result in this repo; fall back to a moniker search. First, we find
-        // the monikers for each range, from innermost to outermost, such that the set of
-        // monikers for reach range is sorted by priority. Then, we perform a search for
-        // each moniker, in sequence, until valid results are found.
-
-        for (const range of ranges) {
-            const monikers = sortMonikers(
-                Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'moniker'))
-            )
-
-            for (const moniker of monikers) {
-                if (moniker.kind === 'import') {
-                    // This symbol was imported from another database. See if we have xrepo
-                    // definition for it.
-
-                    const remoteDefinitions = await this.remoteDefinitions(document, moniker, ctx)
-                    if (remoteDefinitions) {
-                        return remoteDefinitions
-                    }
-                } else {
-                    // This symbol was not imported from another database. We search the definitions
-                    // table of our own database in case there was a definition that wasn't properly
-                    // attached to a result set but did have the correct monikers attached.
-
-                    const localDefinitions = await this.monikerResults(DefinitionModel, moniker, path => path, ctx)
-                    if (localDefinitions) {
-                        return localDefinitions
-                    }
-                }
-            }
-        }
-
         return []
     }
 
@@ -159,43 +120,6 @@ export class Database {
                 const referenceResults = await this.getResultById(range.referenceResultId)
                 this.logSpan(ctx, 'reference_results', { referenceResultId: range.referenceResultId, referenceResults })
                 locations = locations.concat(await this.convertRangesToLspLocations(path, document, referenceResults))
-            }
-        }
-
-        // Next, we do a moniker search in two stages, described below. We process the
-        // monikers for each range sequentially in order of priority for each stage, such
-        // that import monikers, if any exist, will be processed first.
-
-        for (const range of ranges) {
-            const monikers = sortMonikers(
-                Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'monikers'))
-            )
-
-            // Next, we search the references table of our own database - this search is necessary,
-            // but may be un-intuitive, but remember that a 'Find References' operation on a reference
-            // should also return references to the definition. These are not necessarily fully linked
-            // in the LSIF data.
-
-            for (const moniker of monikers) {
-                locations = locations.concat(await this.monikerResults(ReferenceModel, moniker, path => path, ctx))
-            }
-
-            // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
-            // the first moniker for which we received results. As we process monikers in an order that
-            // considers moniker schemes, the first one to get results should be the most desirable.
-
-            for (const moniker of monikers) {
-                if (moniker.kind === 'import') {
-                    // Get locations in the defining package
-                    locations = locations.concat(await this.remoteMoniker(document, moniker, ctx))
-                }
-
-                // Get locations in all packages
-                const remoteResults = await this.remoteReferences(document, moniker, ctx)
-                if (remoteResults) {
-                    // TODO - determine source of duplication (and below)
-                    return uniqWith(locations.concat(remoteResults), isEqual)
-                }
             }
         }
 
@@ -287,7 +211,7 @@ export class Database {
      * @param pathTransformer The function used to alter location paths.
      * @param ctx The tracing context.
      */
-    private async monikerResults(
+    public async monikerResults(
         model: typeof DefinitionModel | typeof ReferenceModel,
         moniker: MonikerData,
         pathTransformer: (path: string) => string,
@@ -304,156 +228,6 @@ export class Database {
 
         this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
         return results.map(result => lsp.Location.create(pathTransformer(result.documentPath), createRange(result)))
-    }
-
-    /**
-     * Find the definition of the target moniker outside of the current database.
-     *
-     * @param document The document containing the reference.
-     * @param moniker The target moniker.
-     * @param ctx The tracing context.
-     */
-    private remoteDefinitions(
-        document: DocumentData,
-        moniker: MonikerData,
-        ctx: TracingContext
-    ): Promise<lsp.Location[] | null> {
-        return this.lookupMoniker(document, moniker, DefinitionModel, ctx)
-    }
-
-    /**
-     * Find the references of the target moniker inside the database where that moniker is defined.
-     *
-     * @param document The document containing the definition.
-     * @param moniker The target moniker.
-     * @param ctx The tracing context.
-     */
-    private remoteMoniker(document: DocumentData, moniker: MonikerData, ctx: TracingContext): Promise<lsp.Location[]> {
-        return this.lookupMoniker(document, moniker, ReferenceModel, ctx)
-    }
-
-    /**
-     * Find the locations attached to the target moniker outside of the current database. If
-     * the moniker has attached package information, then the cross-repo database is queried
-     * for the target package. That database is opened, and its definitions table is queried
-     * for the target moniker.
-     *
-     * @param document The document containing the definition.
-     * @param moniker The target moniker.
-     * @param model The target model.
-     * @param ctx The tracing context.
-     */
-    private async lookupMoniker(
-        document: DocumentData,
-        moniker: MonikerData,
-        model: typeof DefinitionModel | typeof ReferenceModel,
-        ctx: TracingContext
-    ): Promise<lsp.Location[]> {
-        if (!moniker.packageInformationId) {
-            return []
-        }
-
-        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
-        if (!packageInformation) {
-            return []
-        }
-
-        this.logSpan(ctx, 'package_information', {
-            moniker,
-            packageInformation,
-        })
-
-        const packageEntity = await this.xrepoDatabase.getPackage(
-            moniker.scheme,
-            packageInformation.name,
-            packageInformation.version
-        )
-        if (!packageEntity) {
-            return []
-        }
-
-        this.logSpan(ctx, 'package_entity', {
-            moniker,
-            packageInformation,
-            packageRepository: packageEntity.dump.repository,
-            packageCommit: packageEntity.dump.commit,
-        })
-
-        const db = this.createNewDatabase(
-            packageEntity.dump.id,
-            dbFilename(
-                this.storageRoot,
-                packageEntity.dump.id,
-                packageEntity.dump.repository,
-                packageEntity.dump.commit
-            )
-        )
-
-        const pathTransformer = (path: string): string => createRemoteUri(packageEntity, path)
-        return await db.monikerResults(model, moniker, pathTransformer, ctx)
-    }
-
-    /**
-     * Find the references of the target moniker outside of the current database. If the moniker
-     * has attached package information, then the cross-repo database is queried for the packages
-     * that require this particular moniker identifier. These databases are opened, and their
-     * references tables are queried for the target moniker.
-     *
-     * @param document The document containing the definition.
-     * @param moniker The target moniker.
-     * @param ctx The tracing context.
-     */
-    private async remoteReferences(
-        document: DocumentData,
-        moniker: MonikerData,
-        ctx: TracingContext
-    ): Promise<lsp.Location[]> {
-        if (!moniker.packageInformationId) {
-            return []
-        }
-
-        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
-        if (!packageInformation) {
-            return []
-        }
-
-        this.logSpan(ctx, 'package_information', {
-            moniker,
-            packageInformation,
-        })
-
-        const references = await this.xrepoDatabase.getReferences({
-            scheme: moniker.scheme,
-            name: packageInformation.name,
-            version: packageInformation.version,
-            value: moniker.identifier,
-        })
-
-        this.logSpan(ctx, 'package_references', {
-            moniker,
-            packageInformation,
-            references: references.map(r => ({ repository: r.dump.repository, commit: r.dump.commit })),
-        })
-
-        let allReferences: lsp.Location[] = []
-        for (const reference of references) {
-            // Skip the remote reference that show up for ourselves - we've already gathered
-            // these in the previous step of the references query.
-            if (reference.dump.id === this.dumpID) {
-                continue
-            }
-
-            const db = this.createNewDatabase(
-                reference.dump.id,
-                dbFilename(this.storageRoot, reference.dump.id, reference.dump.repository, reference.dump.commit)
-            )
-
-            const pathTransformer = (path: string): string => createRemoteUri(reference, path)
-            const references = await db.monikerResults(ReferenceModel, moniker, pathTransformer, ctx)
-            allReferences = allReferences.concat(references)
-        }
-
-        return allReferences
     }
 
     /**
@@ -496,7 +270,7 @@ export class Database {
      * @param position The user's hover position.
      * @param ctx The tracing context.
      */
-    private async getRangeByPosition(
+    public async getRangeByPosition(
         path: string,
         position: lsp.Position,
         ctx: TracingContext
@@ -566,26 +340,6 @@ export class Database {
         const meta = await this.withConnection(connection => connection.getRepository(MetaModel).findOneOrFail(1))
         Database.numResultChunks.set(this.databasePath, meta.numResultChunks)
         return meta.numResultChunks
-    }
-
-    /**
-     * Create a new database with the same configuration but a different repository,
-     * commit, and databasePath.
-     *
-     * @param dumpID The ID of the dump for which this database answers queries.
-     * @param databasePath The path to the database file.
-     */
-    private createNewDatabase(dumpID: DumpID, databasePath: string): Database {
-        return new Database(
-            this.storageRoot,
-            this.xrepoDatabase,
-            this.connectionCache,
-            this.documentCache,
-            this.resultChunkCache,
-            dumpID,
-            databasePath,
-            this.root
-        )
     }
 
     /**

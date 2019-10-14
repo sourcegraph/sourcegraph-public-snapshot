@@ -48,14 +48,11 @@ describe('Database', () => {
         }
 
         return new Database(
-            storageRoot,
-            xrepoDatabase,
             connectionCache,
             documentCache,
             resultChunkCache,
             dump.id,
-            dbFilename(storageRoot, dump.id, dump.repository, dump.commit),
-            ''
+            dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
         )
     }
 
