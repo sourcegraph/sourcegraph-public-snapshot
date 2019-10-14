@@ -34,25 +34,6 @@ type searchCursor struct {
 	// Finished tells if there are more results for the query or if we've
 	// consumed them all.
 	Finished bool
-
-	// UserID is the ID of the user that created this cursor. This is useful
-	// for two reasons:
-	//
-	// 1. It tells us if the user making the request is different than the user
-	//    that created the cursor, in which case their result set may differ
-	//    because they have access to a different set of repositories (and we
-	//    could e.g. warn them of this or handle it more fancily).
-	//
-	// 2. When we pre-emptively fetch more results for this search query so
-	//    that our next response to user A is super fast, we _cannot_ give
-	//    the pre-emptively fetched results for user A to a different user B
-	//    making a request for the same cursor. This is because user A and
-	//    user B may have access to a different set of repositories.
-	//
-	// Note that _when a user is providing a cursor_, they can forge any field
-	// they like and as such this user ID cannot be trusted in that case. When
-	// we are certain we have created it, it can be trusted.
-	UserID int32
 }
 
 const searchCursorKind = "SearchCursor"
@@ -117,14 +98,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		tr.LogFields(
 			otlog.Int("Cursor.RepositoryOffset", int(r.pagination.cursor.RepositoryOffset)),
 			otlog.Int("Cursor.ResultOffset", int(r.pagination.cursor.ResultOffset)),
-			otlog.Int("Cursor.UserID", int(r.pagination.cursor.UserID)),
 			otlog.Bool("Cursor.Finished", r.pagination.cursor.Finished),
 		)
 		log15.Info("paginated search continue request",
 			"query", fmt.Sprintf("%q", r.rawQuery()),
 			"RepositoryOffset", int(r.pagination.cursor.RepositoryOffset),
 			"ResultOffset", int(r.pagination.cursor.ResultOffset),
-			"UserID", int(r.pagination.cursor.UserID),
 			"Finished", r.pagination.cursor.Finished,
 		)
 	} else {
@@ -215,7 +194,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		"query", fmt.Sprintf("%q", r.rawQuery()),
 		"RepositoryOffset", int(cursor.RepositoryOffset),
 		"ResultOffset", int(cursor.ResultOffset),
-		"UserID", int(cursor.UserID),
 		"Finished", cursor.Finished,
 	)
 
