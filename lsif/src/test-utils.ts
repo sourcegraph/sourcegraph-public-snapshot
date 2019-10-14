@@ -32,14 +32,9 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     // where `yarn test` is run from within the root or from the lsif directory.
     const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
 
-    console.log('PERFORMING SANITY CHECK')
-    console.log(await child_process.exec('which migrate'))
-    console.log(await child_process.exec('migrate --version'))
-    console.log('DONE WITH SANITY CHECK')
-
     const createCommand = `createdb ${database}`
     const dropCommand = `dropdb --if-exists ${database}`
-    const migrateCommand = ` ${migrateScriptPath} up`
+    const migrateCommand = `${migrateScriptPath} up`
 
     // Ensure environment gets passed to child commands
     const env = {
@@ -51,6 +46,13 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
         PGDATABASE: database,
     }
 
+    console.log('PERFORMING SANITY CHECK')
+    console.log(await child_process.exec('which migrate'))
+    console.log(await child_process.exec('hash migrate'))
+    console.log(await child_process.exec('migrate --version'))
+    console.log(await child_process.exec('echo "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}"', { env }))
+    console.log('DONE WITH SANITY CHECK')
+
     // Create cleanup function to run after test
     const cleanup = (): Promise<void> => child_process.exec(dropCommand, { env }).then(() => {})
 
@@ -59,7 +61,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
     try {
         // Run migrations then connect to database
-        console.log(await child_process.exec(migrateCommand, { env }))
+        await child_process.exec(migrateCommand, { env })
         const connection = await connectPostgres({ host, port, username, password, database, ssl: false }, suffix)
         return { connection, cleanup }
     } catch (error) {
