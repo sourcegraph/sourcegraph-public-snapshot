@@ -32,6 +32,11 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     // where `yarn test` is run from within the root or from the lsif directory.
     const migrateScriptPath = path.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
 
+    console.log('PERFORMING SANITY CHECK')
+    console.log(await child_process.exec('which migrate'))
+    console.log(await child_process.exec('migrate --version'))
+    console.log('DONE WITH SANITY CHECK')
+
     const createCommand = `createdb ${database}`
     const dropCommand = `dropdb --if-exists ${database}`
     const migrateCommand = ` ${migrateScriptPath} up`
