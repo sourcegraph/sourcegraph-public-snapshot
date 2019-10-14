@@ -151,7 +151,7 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	prs := make([]*github.PullRequest, len(cs))
 	for i := range cs {
 		repo := cs[i].Repo.Metadata.(*github.Repository)
-		number, err := strconv.Atoi(cs[i].ExternalID)
+		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
 		if err != nil {
 			return err
 		}

@@ -185,13 +185,23 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 	case *github.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
 		for _, ti := range m.TimelineItems {
-			events = append(events, &ChangesetEvent{
-				ChangesetID: t.ID,
-				Source:      ChangesetEventSourceGitHubAPI,
-				Kind:        ChangesetEventKind(ti.Item),
-				Key:         ti.Item.(interface{ Key() string }).Key(),
-				Metadata:    ti.Item,
-			})
+			ev := ChangesetEvent{ChangesetID: t.ID}
+
+			switch e := ev.Metadata.(type) {
+			case *github.PullRequestReviewThread:
+				for _, c := range e.Comments {
+					ev := ev
+					ev.Key = c.Key()
+					ev.Kind = ChangesetEventKindFor(c)
+					ev.Metadata = c
+					events = append(events, &ev)
+				}
+			default:
+				ev.Key = ti.Item.(interface{ Key() string }).Key()
+				ev.Kind = ChangesetEventKindFor(ti.Item)
+				ev.Metadata = ti.Item
+				events = append(events, &ev)
+			}
 		}
 	}
 	return events
@@ -218,10 +228,10 @@ func selectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewStat
 type ChangesetEvent struct {
 	ID          int64
 	ChangesetID int64
-	Kind        changesetEventKind
-	Source      changesetEventSource
+	Kind        ChangesetEventKind
 	Key         string // Deduplication key
 	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	Metadata    interface{}
 }
 
@@ -231,9 +241,325 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 	return &ee
 }
 
-// ChangesetEventKind returns the changesetEventKind for the given
+// Update updates the metadata of e with new metadata in o.
+func (e *ChangesetEvent) Update(o *ChangesetEvent) {
+	if e.ChangesetID != o.ChangesetID || e.Kind != o.Kind || e.Key != o.Key {
+		return
+	}
+
+	switch e := e.Metadata.(type) {
+	case *github.AssignedEvent:
+		o := o.Metadata.(*github.AssignedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.Assignee == (github.Actor{}) {
+			e.Assignee = o.Assignee
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+	case *github.ClosedEvent:
+		o := o.Metadata.(*github.ClosedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if o.URL != "" && e.URL != o.URL {
+			e.URL = o.URL
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+	case *github.IssueComment:
+		o := o.Metadata.(*github.IssueComment)
+
+		if e.DatabaseID == 0 {
+			e.DatabaseID = o.DatabaseID
+		}
+
+		if e.Author == (github.Actor{}) {
+			e.Author = o.Author
+		}
+
+		if e.Editor == nil {
+			e.Editor = o.Editor
+		}
+
+		if o.AuthorAssociation != "" && e.AuthorAssociation != o.AuthorAssociation {
+			e.AuthorAssociation = o.AuthorAssociation
+		}
+
+		if o.Body != "" && e.Body != o.Body {
+			e.Body = o.Body
+		}
+
+		if o.URL != "" && e.URL != o.URL {
+			e.URL = o.URL
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+		if e.UpdatedAt.Before(o.UpdatedAt) {
+			e.UpdatedAt = o.UpdatedAt
+		}
+
+		if o.IncludesCreatedEdit {
+			e.IncludesCreatedEdit = true
+		}
+
+	case *github.RenamedTitleEvent:
+		o := o.Metadata.(*github.RenamedTitleEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if o.PreviousTitle != "" && e.PreviousTitle != o.PreviousTitle {
+			e.PreviousTitle = o.PreviousTitle
+		}
+
+		if o.CurrentTitle != "" && e.CurrentTitle != o.CurrentTitle {
+			e.CurrentTitle = o.CurrentTitle
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+	case *github.MergedEvent:
+		o := o.Metadata.(*github.MergedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if o.MergeRefName != "" && e.MergeRefName != o.MergeRefName {
+			e.MergeRefName = o.MergeRefName
+		}
+
+		if o.URL != "" && e.URL != o.URL {
+			e.URL = o.URL
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+		updateGitHubCommit(&e.Commit, &o.Commit)
+
+	case *github.PullRequestReview:
+		o := o.Metadata.(*github.PullRequestReview)
+
+		updateGitHubPullRequestReview(e, o)
+
+	case *github.PullRequestReviewComment:
+		o := o.Metadata.(*github.PullRequestReviewComment)
+
+		if e.DatabaseID == 0 {
+			e.DatabaseID = o.DatabaseID
+		}
+
+		if e.Author == (github.Actor{}) {
+			e.Author = o.Author
+		}
+
+		if o.AuthorAssociation != "" && e.AuthorAssociation != o.AuthorAssociation {
+			e.AuthorAssociation = o.AuthorAssociation
+		}
+
+		if e.Editor == (github.Actor{}) {
+			e.Editor = o.Editor
+		}
+
+		if o.Body != "" && e.Body != o.Body {
+			e.Body = o.Body
+		}
+
+		if o.State != "" && e.State != o.State {
+			e.State = o.State
+		}
+
+		if o.URL != "" && e.URL != o.URL {
+			e.URL = o.URL
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+		if e.UpdatedAt.Before(o.UpdatedAt) {
+			e.UpdatedAt = o.UpdatedAt
+		}
+
+		if e, o := e.Commit, o.Commit; e != o {
+			updateGitHubCommit(&e, &o)
+		}
+
+		if o.IncludesCreatedEdit {
+			e.IncludesCreatedEdit = true
+		}
+
+	case *github.ReopenedEvent:
+		o := o.Metadata.(*github.ReopenedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+	case *github.ReviewDismissedEvent:
+		o := o.Metadata.(*github.ReviewDismissedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if o.DismissalMessage != "" && e.DismissalMessage != o.DismissalMessage {
+			e.DismissalMessage = o.DismissalMessage
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+		updateGitHubPullRequestReview(&e.Review, &o.Review)
+
+	case *github.ReviewRequestRemovedEvent:
+		o := o.Metadata.(*github.ReviewRequestRemovedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.RequestedReviewer == (github.Actor{}) {
+			e.RequestedReviewer = o.RequestedReviewer
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+	case *github.ReviewRequestedEvent:
+		o := o.Metadata.(*github.ReviewRequestedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.RequestedReviewer == (github.Actor{}) {
+			e.RequestedReviewer = o.RequestedReviewer
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+
+	case *github.UnassignedEvent:
+		o := o.Metadata.(*github.UnassignedEvent)
+
+		if e.Actor == (github.Actor{}) {
+			e.Actor = o.Actor
+		}
+
+		if e.Assignee == (github.Actor{}) {
+			e.Assignee = o.Assignee
+		}
+
+		if e.CreatedAt.IsZero() {
+			e.CreatedAt = o.CreatedAt
+		}
+	default:
+		panic(errors.Errorf("unknown changeset event metadata %T", e))
+	}
+}
+
+func updateGitHubPullRequestReview(e, o *github.PullRequestReview) {
+	if e.DatabaseID == 0 {
+		e.DatabaseID = o.DatabaseID
+	}
+
+	if e.Author == (github.Actor{}) {
+		e.Author = o.Author
+	}
+
+	if o.AuthorAssociation != "" && e.AuthorAssociation != o.AuthorAssociation {
+		e.AuthorAssociation = o.AuthorAssociation
+	}
+
+	if o.Body != "" && e.Body != o.Body {
+		e.Body = o.Body
+	}
+
+	if o.State != "" && e.State != o.State {
+		e.State = o.State
+	}
+
+	if o.URL != "" && e.URL != o.URL {
+		e.URL = o.URL
+	}
+
+	if e.CreatedAt.IsZero() {
+		e.CreatedAt = o.CreatedAt
+	}
+
+	if e.UpdatedAt.Before(o.UpdatedAt) {
+		e.UpdatedAt = o.UpdatedAt
+	}
+
+	if e, o := e.Commit, o.Commit; e != o {
+		updateGitHubCommit(&e, &o)
+	}
+
+	if o.IncludesCreatedEdit {
+		e.IncludesCreatedEdit = true
+	}
+}
+
+func updateGitHubCommit(e, o *github.Commit) {
+	if o.OID != "" && e.OID != o.OID {
+		e.OID = o.OID
+	}
+
+	if o.Message != "" && e.Message != o.Message {
+		e.Message = o.Message
+	}
+
+	if o.MessageHeadline != "" && e.MessageHeadline != o.MessageHeadline {
+		e.MessageHeadline = o.MessageHeadline
+	}
+
+	if o.URL != "" && e.URL != o.URL {
+		e.URL = o.URL
+	}
+
+	if e.Committer != (github.GitActor{}) && e.Committer != o.Committer {
+		e.Committer = o.Committer
+	}
+
+	if e.CommittedDate.IsZero() {
+		e.CommittedDate = o.CommittedDate
+	}
+
+	if e.PushedDate.IsZero() {
+		e.PushedDate = o.PushedDate
+	}
+}
+
+// ChangesetEventKindFor returns the ChangesetEventKind for the given
 // specific code host event.
-func ChangesetEventKind(e interface{}) changesetEventKind {
+func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 	switch e := e.(type) {
 	case *github.AssignedEvent:
 		return ChangesetEventKindGitHubAssigned
@@ -247,6 +573,8 @@ func ChangesetEventKind(e interface{}) changesetEventKind {
 		return ChangesetEventKindGitHubMerged
 	case *github.PullRequestReview:
 		return ChangesetEventKindGitHubReviewed
+	case *github.PullRequestReviewComment:
+		return ChangesetEventKindGitHubReviewCommented
 	case *github.ReopenedEvent:
 		return ChangesetEventKindGitHubReopened
 	case *github.ReviewDismissedEvent:
@@ -262,37 +590,25 @@ func ChangesetEventKind(e interface{}) changesetEventKind {
 	}
 }
 
-// changesetEventSource defines the source of a ChangesetEvent. This type is unexported
-// so that users of ChangesetEvent can't instantiate it with a Source being an arbitrary
-// string.
-type changesetEventSource string
-
-// Valid ChangesetEvent sources
-const (
-	ChangesetEventSourceGitHubAPI              changesetEventSource = "github:api"
-	ChangesetEventSourceGitHubWebhook          changesetEventSource = "github:webhook"
-	ChangesetEventSourceBitbucketServerAPI     changesetEventSource = "bitbucketserver:api"
-	ChangesetEventSourceBitbucketServerWebhook changesetEventSource = "bitbucketserver:webhook"
-)
-
-// changesetEventKind defines the kind of a ChangesetEvent. This type is unexported
+// ChangesetEventKind defines the kind of a ChangesetEvent. This type is unexported
 // so that users of ChangesetEvent can't instantiate it with a Kind being an arbitrary
 // string.
-type changesetEventKind string
+type ChangesetEventKind string
 
 // Valid ChangesetEvent kinds
 const (
-	ChangesetEventKindGitHubAssigned             changesetEventKind = "github:assigned"
-	ChangesetEventKindGitHubClosed               changesetEventKind = "github:closed"
-	ChangesetEventKindGitHubCommented            changesetEventKind = "github:commented"
-	ChangesetEventKindGitHubRenamedTitle         changesetEventKind = "github:renamed"
-	ChangesetEventKindGitHubMerged               changesetEventKind = "github:merged"
-	ChangesetEventKindGitHubReviewed             changesetEventKind = "github:reviewed"
-	ChangesetEventKindGitHubReopened             changesetEventKind = "github:reopened"
-	ChangesetEventKindGitHubReviewDismissed      changesetEventKind = "github:review_dismissed"
-	ChangesetEventKindGitHubReviewRequestRemoved changesetEventKind = "github:review_request_removed"
-	ChangesetEventKindGitHubReviewRequested      changesetEventKind = "github:review_requested"
-	ChangesetEventKindGitHubUnassigned           changesetEventKind = "github:unassigned"
+	ChangesetEventKindGitHubAssigned             ChangesetEventKind = "github:assigned"
+	ChangesetEventKindGitHubClosed               ChangesetEventKind = "github:closed"
+	ChangesetEventKindGitHubCommented            ChangesetEventKind = "github:commented"
+	ChangesetEventKindGitHubRenamedTitle         ChangesetEventKind = "github:renamed"
+	ChangesetEventKindGitHubMerged               ChangesetEventKind = "github:merged"
+	ChangesetEventKindGitHubReviewed             ChangesetEventKind = "github:reviewed"
+	ChangesetEventKindGitHubReopened             ChangesetEventKind = "github:reopened"
+	ChangesetEventKindGitHubReviewDismissed      ChangesetEventKind = "github:review_dismissed"
+	ChangesetEventKindGitHubReviewRequestRemoved ChangesetEventKind = "github:review_request_removed"
+	ChangesetEventKindGitHubReviewRequested      ChangesetEventKind = "github:review_requested"
+	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
+	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
 
 	// TODO: Full set of Bitbucket Server pull request actions:
 	//   - APPROVED

@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,15 +21,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -37,31 +40,39 @@ func main() {
 	initAuthz()
 	initResolvers()
 
-	hooks.AfterDBInit = func() {
-		dsn := conf.Get().ServiceConnections.PostgresDSN
-		authzDB, err := dbutil.NewDB(dsn, "frontend-authz")
-		if err != nil {
-			log.Fatalf("failed to initialize db: %v", err)
-		}
-
-		ctx := context.Background()
-		go func() {
-			t := time.NewTicker(5 * time.Second)
-			for range t.C {
-				allowAccessByDefault, authzProviders, _, _ :=
-					iauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, authzDB)
-				authz.SetProviders(allowAccessByDefault, authzProviders)
-			}
-		}()
-		go licensing.StartMaxUserCount(&usersStore{})
+	// Connect to the database.
+	if err := dbconn.ConnectToDB(""); err != nil {
+		log.Fatal(err)
 	}
+
+	ctx := context.Background()
+	go func() {
+		t := time.NewTicker(5 * time.Second)
+		for range t.C {
+			allowAccessByDefault, authzProviders, _, _ :=
+				iauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+			authz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
+
+	go licensing.StartMaxUserCount(&usersStore{})
 
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")
 	}
 
-	shared.Main()
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+
+	githubWebhook := &a8n.GitHubWebhook{
+		Store: a8n.NewStoreWithClock(dbconn.Global, clock),
+		Repos: repos.NewDBStore(dbconn.Global, sql.TxOptions{}),
+		Now:   clock,
+	}
+
+	shared.Main(githubWebhook)
 }
 
 func initLicensing() {

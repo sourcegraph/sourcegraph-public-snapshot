@@ -70,6 +70,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.3.1
 	github.com/google/go-github v17.0.0+incompatible
+	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/google/zoekt v0.0.0-20190910091447-b1730d8e0cc4

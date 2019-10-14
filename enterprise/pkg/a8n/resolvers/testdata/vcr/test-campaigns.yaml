@@ -13,7 +13,7 @@ interactions:
     method: GET
   response:
     body: '{"id":41288708,"node_id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","full_name":"sourcegraph/sourcegraph","private":false,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/sourcegraph","description":"Code
-      search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2019-10-07T07:56:59Z","pushed_at":"2019-10-07T08:08:29Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":320848,"stargazers_count":2674,"watchers_count":2674,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":223,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1005,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"topics":["code-intelligence","code-search","open-source","repo-type-main","sourcegraph"],"forks":223,"open_issues":1005,"watchers":2674,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"allow_squash_merge":true,"allow_merge_commit":false,"allow_rebase_merge":true,"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":223,"subscribers_count":66}'
+      search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2019-10-08T07:50:34Z","pushed_at":"2019-10-08T12:57:11Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":322087,"stargazers_count":2677,"watchers_count":2677,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":223,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1004,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"topics":["code-intelligence","code-search","open-source","repo-type-main","sourcegraph"],"forks":223,"open_issues":1004,"watchers":2677,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"allow_squash_merge":true,"allow_merge_commit":false,"allow_rebase_merge":true,"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":223,"subscribers_count":66}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -28,11 +28,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 07 Oct 2019 08:41:02 GMT
+      - Tue, 08 Oct 2019 12:58:01 GMT
       Etag:
-      - W/"3ca5438cf316785b0f9de678609c7739"
+      - W/"56da270a8839d883091b70ff24558fa1"
       Last-Modified:
-      - Mon, 07 Oct 2019 07:56:59 GMT
+      - Tue, 08 Oct 2019 07:50:34 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -53,15 +53,15 @@ interactions:
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json
       X-Github-Request-Id:
-      - 2711:181F6:465407C:555AF6B:5D9AFA1D
+      - 3A36:202DC:9293312:B207EFE:5D9C87D8
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4942"
+      - "4985"
       X-Ratelimit-Reset:
-      - "1570439370"
+      - "1570542541"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -84,7 +84,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 07 Oct 2019 08:41:02 GMT
+      - Tue, 08 Oct 2019 12:58:01 GMT
       Pragma:
       - no-cache
       Server:
@@ -92,11 +92,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx521x1240945x0'
+      - '@1IK17DGx778x1253985x0'
       X-Asen:
       - SEN-L13789548
       X-Asessionid:
-      - 1s320q3
+      - 1r703pb
       X-Auserid:
       - "1"
       X-Ausername:
@@ -115,7 +115,7 @@ interactions:
       { ...commit }\n      includesCreatedEdit\n    }\n    fragment pr on PullRequest
       {\n      id, title, body, state, url, number, createdAt, updatedAt\n      author
       { ...actor }\n      participants(first: 100) { nodes { ...actor } }\n      timelineItems(\n        first:
-      250\n        itemTypes: [\n          ASSIGNED_EVENT\n          CLOSED_EVENT\n          ISSUE_COMMENT\n          RENAMED_TITLE_EVENT\n          MERGED_EVENT\n          PULL_REQUEST_REVIEW\n          REOPENED_EVENT\n          REVIEW_DISMISSED_EVENT\n          REVIEW_REQUEST_REMOVED_EVENT\n          REVIEW_REQUESTED_EVENT\n          UNASSIGNED_EVENT\n        ]\n      )
+      250\n        itemTypes: [\n          ASSIGNED_EVENT\n          CLOSED_EVENT\n          ISSUE_COMMENT\n          RENAMED_TITLE_EVENT\n          MERGED_EVENT\n          PULL_REQUEST_REVIEW\n          PULL_REQUEST_REVIEW_THREAD\n          REOPENED_EVENT\n          REVIEW_DISMISSED_EVENT\n          REVIEW_REQUEST_REMOVED_EVENT\n          REVIEW_REQUESTED_EVENT\n          UNASSIGNED_EVENT\n        ]\n      )
       {\n        nodes {\n          __typename\n          ... on AssignedEvent {\n            actor
       { ...actor }\n            assignee { ...actor }\n            createdAt\n          }\n          ...
       on ClosedEvent {\n            actor { ...actor }\n            createdAt\n            url\n          }\n          ...
@@ -124,9 +124,13 @@ interactions:
       on RenamedTitleEvent {\n            actor { ...actor }\n            previousTitle\n            currentTitle\n            createdAt\n          }\n          ...
       on MergedEvent {\n            actor { ...actor }\n            mergeRefName\n            url\n            commit
       { ...commit }\n            createdAt\n          }\n          ... on PullRequestReview
-      {\n            ...review\n          }\n          ... on ReopenedEvent {\n            actor
-      { ...actor }\n            createdAt\n          }\n          ... on ReviewDismissedEvent
-      {\n            actor { ...actor }\n            review { ...review }\n            dismissalMessage\n            createdAt\n          }\n          ...
+      {\n            ...review\n          }\n          ... on PullRequestReviewThread
+      {\n            comments(last: 100) {\n              nodes {\n                databaseId\n                author
+      { ...actor }\n                authorAssociation\n                editor { ...actor
+      }\n                commit { ...commit }\n                body\n                state\n                url\n                createdAt\n                updatedAt\n                includesCreatedEdit\n              }\n            }\n          }\n          ...
+      on ReopenedEvent {\n            actor { ...actor }\n            createdAt\n          }\n          ...
+      on ReviewDismissedEvent {\n            actor { ...actor }\n            review
+      { ...review }\n            dismissalMessage\n            createdAt\n          }\n          ...
       on ReviewRequestRemovedEvent {\n            actor { ...actor }\n            requestedReviewer
       { ...actor }\n            createdAt\n          }\n          ... on ReviewRequestedEvent
       {\n            actor { ...actor }\n            requestedReviewer { ...actor
@@ -228,7 +232,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 07 Oct 2019 08:41:03 GMT
+      - Tue, 08 Oct 2019 12:58:02 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -248,15 +252,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 9AFA:2C79D:96986D0:B6A1028:5D9AFA1E
+      - E7D1:202DC:92934B8:B20810F:5D9C87D9
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4991"
+      - "4997"
       X-Ratelimit-Reset:
-      - "1570441263"
+      - "1570543082"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -283,7 +287,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 07 Oct 2019 08:41:02 GMT
+      - Tue, 08 Oct 2019 12:58:02 GMT
       Pragma:
       - no-cache
       Server:
@@ -291,11 +295,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx521x1240946x0'
+      - '@1IK17DGx778x1253986x0'
       X-Asen:
       - SEN-L13789548
       X-Asessionid:
-      - 1xuqfyw
+      - 9atz6g
       X-Auserid:
       - "1"
       X-Ausername:

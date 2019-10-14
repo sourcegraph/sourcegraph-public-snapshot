@@ -39,13 +39,13 @@ type Review struct {
 
 // A Commit in a Repository.
 type Commit struct {
-	OID           string
-	Message       string
-	URL           string
-	Committer     GitActor
-	Status        *Status `json:"Status,omitempty"`
-	CommittedDate time.Time
-	PushedDate    time.Time
+	OID             string
+	Message         string
+	MessageHeadline string
+	URL             string
+	Committer       GitActor
+	CommittedDate   time.Time
+	PushedDate      time.Time
 }
 
 // A Status represents a Commit status.
@@ -73,7 +73,7 @@ type PullRequest struct {
 	Body          string
 	State         string
 	URL           string
-	Number        int
+	Number        int64
 	Author        Actor
 	Participants  []Actor
 	TimelineItems []TimelineItem
@@ -167,6 +167,35 @@ type PullRequestReview struct {
 
 // Key is a unique key identifying this event in the context of its pull request.
 func (e PullRequestReview) Key() string {
+	return strconv.FormatInt(e.DatabaseID, 10)
+}
+
+// PullRequestReviewThread represents a thread of review comments on a given pull request.
+// Since webhooks only send pull request review comment payloads, we normalize
+// each thread we receive via GraphQL, and don't store this event as the metadata
+// of a ChangesetEvent, instead storing each contained comment as a separate ChangesetEvent.
+// That's why this type doesn't have a Key method like the others.
+type PullRequestReviewThread struct {
+	Comments []*PullRequestReviewComment
+}
+
+// PullRequestReviewComment represents a review comment on a given pull request.
+type PullRequestReviewComment struct {
+	DatabaseID          int64
+	Author              Actor
+	AuthorAssociation   string
+	Editor              Actor
+	Commit              Commit
+	Body                string
+	State               string
+	URL                 string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	IncludesCreatedEdit bool
+}
+
+// Key is a unique key identifying this event in the context of its pull request.
+func (e PullRequestReviewComment) Key() string {
 	return strconv.FormatInt(e.DatabaseID, 10)
 }
 
@@ -282,6 +311,10 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 		i.Item = new(MergedEvent)
 	case "PullRequestReview":
 		i.Item = new(PullRequestReview)
+	case "PullRequestReviewComment":
+		i.Item = new(PullRequestReviewComment)
+	case "PullRequestReviewThread":
+		i.Item = new(PullRequestReviewThread)
 	case "ReopenedEvent":
 		i.Item = new(ReopenedEvent)
 	case "ReviewDismissedEvent":
@@ -329,7 +362,7 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 			labeled[repoLabel] = r
 		}
 
-		prLabel := repoLabel + "_" + strconv.Itoa(pr.Number)
+		prLabel := repoLabel + "_" + strconv.FormatInt(pr.Number, 10)
 		r.PRs[prLabel] = pr
 	}
 
@@ -368,6 +401,7 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
           RENAMED_TITLE_EVENT
           MERGED_EVENT
           PULL_REQUEST_REVIEW
+          PULL_REQUEST_REVIEW_THREAD
           REOPENED_EVENT
           REVIEW_DISMISSED_EVENT
           REVIEW_REQUEST_REMOVED_EVENT
@@ -414,6 +448,23 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
           }
           ... on PullRequestReview {
             ...review
+          }
+          ... on PullRequestReviewThread {
+            comments(last: 100) {
+              nodes {
+                databaseId
+                author { ...actor }
+                authorAssociation
+                editor { ...actor }
+                commit { ...commit }
+                body
+                state
+                url
+                createdAt
+                updatedAt
+                includesCreatedEdit
+              }
+            }
           }
           ... on ReopenedEvent {
             actor { ...actor }

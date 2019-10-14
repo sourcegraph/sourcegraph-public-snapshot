@@ -12,7 +12,7 @@ import (
 )
 
 // NewA8NResolver will be set by enterprise
-var NewA8NResolver func(db *sql.DB) A8NResolver
+var NewA8NResolver func(*sql.DB) A8NResolver
 
 type AddChangesetsToCampaignArgs struct {
 	Campaign   graphql.ID

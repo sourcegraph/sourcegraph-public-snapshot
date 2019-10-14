@@ -40,7 +40,7 @@ func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
 // to a TxBeginner.
 func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	if _, ok := s.db.(dbutil.Tx); ok { // Already in a Tx.
-		return nil, errors.New("store: already in a transaction")
+		return s, nil
 	}
 
 	tb, ok := s.db.(dbutil.TxBeginner)
@@ -235,7 +235,9 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 
 // GetChangesetOpts captures the query options needed for getting a Changeset
 type GetChangesetOpts struct {
-	ID int64
+	ID                  int64
+	ExternalID          string
+	ExternalServiceType string
 }
 
 // ErrNoResults is returned by Store method calls that found no results.
@@ -263,14 +265,14 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*a8n.C
 var getChangesetsQueryFmtstr = `
 -- source: pkg/a8n/store.go:GetChangeset
 SELECT
-	id,
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
+  id,
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type
 FROM changesets
 WHERE %s
 LIMIT 1
@@ -280,6 +282,13 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.ExternalID != "" && opts.ExternalServiceType != "" {
+		preds = append(preds,
+			sqlf.Sprintf("external_id = %s", opts.ExternalID),
+			sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType),
+		)
 	}
 
 	if len(preds) == 0 {
@@ -323,14 +332,14 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 var listChangesetsQueryFmtstr = `
 -- source: pkg/a8n/store.go:ListChangesets
 SELECT
-	id,
-	repo_id,
-	created_at,
-	updated_at,
-	metadata,
-	campaign_ids,
-	external_id,
-	external_service_type
+  id,
+  repo_id,
+  created_at,
+  updated_at,
+  metadata,
+  campaign_ids,
+  external_id,
+  external_service_type
 FROM changesets
 WHERE %s
 ORDER BY id ASC
@@ -427,6 +436,69 @@ func (s *Store) updateChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 	return batchChangesetsQuery(updateChangesetsQueryFmtstr, cs)
 }
 
+// GetChangesetEventOpts captures the query options needed for getting a ChangesetEvent
+type GetChangesetEventOpts struct {
+	ID          int64
+	ChangesetID int64
+	Kind        a8n.ChangesetEventKind
+	Key         string
+}
+
+// GetChangesetEvent gets a changeset matching the given options.
+func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (*a8n.ChangesetEvent, error) {
+	q := getChangesetEventQuery(&opts)
+
+	var c a8n.ChangesetEvent
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanChangesetEvent(&c, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+var getChangesetEventsQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetChangesetEvent
+SELECT
+    id,
+    changeset_id,
+    kind,
+    key,
+    created_at,
+    updated_at,
+    metadata
+FROM changeset_events
+WHERE %s
+LIMIT 1
+`
+
+func getChangesetEventQuery(opts *GetChangesetEventOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.ChangesetID != 0 && opts.Kind != "" && opts.Key != "" {
+		preds = append(preds,
+			sqlf.Sprintf("changeset_id = %s", opts.ChangesetID),
+			sqlf.Sprintf("kind = %s", opts.Kind),
+			sqlf.Sprintf("key = %s", opts.Key),
+		)
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(getChangesetEventsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
 // ListChangesetEventsOpts captures the query options needed for
 // listing changeset events.
 type ListChangesetEventsOpts struct {
@@ -463,9 +535,9 @@ SELECT
     id,
     changeset_id,
     kind,
-    source,
     key,
     created_at,
+    updated_at,
     metadata
 FROM changeset_events
 WHERE %s
@@ -530,7 +602,7 @@ func countChangesetEventsQuery(opts *CountChangesetEventsOpts) *sqlf.Query {
 }
 
 // UpsertChangesetEvents creates or updates the given ChangesetEvents.
-func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) error {
+func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*a8n.ChangesetEvent) (err error) {
 	q, err := s.upsertChangesetEventsQuery(cs)
 	if err != nil {
 		return err
@@ -552,9 +624,9 @@ WITH batch AS (
       id           bigint,
       changeset_id integer,
       kind         text,
-      source       text,
       key          text,
       created_at   timestamptz,
+      updated_at   timestamptz,
       metadata     jsonb
     )
   )
@@ -567,9 +639,9 @@ SELECT
   changed.id,
   changed.changeset_id,
   changed.kind,
-  changed.source,
   changed.key,
   changed.created_at,
+  changed.updated_at,
   changed.metadata
 FROM changed
 LEFT JOIN batch
@@ -585,26 +657,25 @@ changed AS (
   INSERT INTO changeset_events (
     changeset_id,
     kind,
-    source,
     key,
     created_at,
+    updated_at,
     metadata
   )
   SELECT
     changeset_id,
     kind,
-    source,
     key,
     created_at,
+    updated_at,
     metadata
   FROM batch
   ON CONFLICT ON CONSTRAINT
     changeset_events_changeset_id_kind_key_unique
   DO UPDATE
   SET
-    source   = excluded.source,
-    metadata = excluded.metadata
-    -- TODO: Set updated_at column
+    metadata   = excluded.metadata,
+    updated_at = excluded.updated_at
   RETURNING changeset_events.*
 )
 ` + batchChangesetEventsQuerySuffix
@@ -615,6 +686,10 @@ func (s *Store) upsertChangesetEventsQuery(es []*a8n.ChangesetEvent) (*sqlf.Quer
 		if e.CreatedAt.IsZero() {
 			e.CreatedAt = now
 		}
+
+		if !e.UpdatedAt.After(e.CreatedAt) {
+			e.UpdatedAt = now
+		}
 	}
 	return batchChangesetEventsQuery(upsertChangesetEventsQueryFmtstr, es)
 }
@@ -624,9 +699,9 @@ func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Q
 		ID          int64           `json:"id"`
 		ChangesetID int64           `json:"changeset_id"`
 		Kind        string          `json:"kind"`
-		Source      string          `json:"source"`
 		Key         string          `json:"key"`
 		CreatedAt   time.Time       `json:"created_at"`
+		UpdatedAt   time.Time       `json:"updated_at"`
 		Metadata    json.RawMessage `json:"metadata"`
 	}
 
@@ -642,9 +717,9 @@ func batchChangesetEventsQuery(fmtstr string, es []*a8n.ChangesetEvent) (*sqlf.Q
 			ID:          e.ID,
 			ChangesetID: e.ChangesetID,
 			Kind:        string(e.Kind),
-			Source:      string(e.Source),
 			Key:         e.Key,
 			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
 			Metadata:    metadata,
 		})
 	}
@@ -673,26 +748,26 @@ func (s *Store) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 var createCampaignQueryFmtstr = `
 -- source: pkg/a8n/store.go:CreateCampaign
 INSERT INTO campaigns (
-	name,
-	description,
-	author_id,
-	namespace_user_id,
-	namespace_org_id,
-	created_at,
-	updated_at,
-	changeset_ids
+  name,
+  description,
+  author_id,
+  namespace_user_id,
+  namespace_org_id,
+  created_at,
+  updated_at,
+  changeset_ids
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
-	id,
-	name,
-	description,
-	author_id,
-	namespace_user_id,
-	namespace_org_id,
-	created_at,
-	updated_at,
-	changeset_ids
+  id,
+  name,
+  description,
+  author_id,
+  namespace_user_id,
+  namespace_org_id,
+  created_at,
+  updated_at,
+  changeset_ids
 `
 
 func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -746,25 +821,25 @@ var updateCampaignQueryFmtstr = `
 -- source: pkg/a8n/store.go:UpdateCampaign
 UPDATE campaigns
 SET (
-	name,
-	description,
-	author_id,
-	namespace_user_id,
-	namespace_org_id,
-	updated_at,
-	changeset_ids
+  name,
+  description,
+  author_id,
+  namespace_user_id,
+  namespace_org_id,
+  updated_at,
+  changeset_ids
 ) = (%s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
-	id,
-	name,
-	description,
-	author_id,
-	namespace_user_id,
-	namespace_org_id,
-	created_at,
-	updated_at,
-	changeset_ids
+  id,
+  name,
+  description,
+  author_id,
+  namespace_user_id,
+  namespace_org_id,
+  created_at,
+  updated_at,
+  changeset_ids
 `
 
 func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -866,15 +941,15 @@ func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*a8n.Cam
 var getCampaignsQueryFmtstr = `
 -- source: pkg/a8n/store.go:GetCampaign
 SELECT
-	id,
-	name,
-	description,
-	author_id,
-	namespace_user_id,
-	namespace_org_id,
-	created_at,
-	updated_at,
-	changeset_ids
+  id,
+  name,
+  description,
+  author_id,
+  namespace_user_id,
+  namespace_org_id,
+  created_at,
+  updated_at,
+  changeset_ids
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -926,15 +1001,15 @@ func (s *Store) ListCampaigns(ctx context.Context, opts ListCampaignsOpts) (cs [
 var listCampaignsQueryFmtstr = `
 -- source: pkg/a8n/store.go:ListCampaigns
 SELECT
-	id,
-	name,
-	description,
-	author_id,
-	namespace_user_id,
-	namespace_org_id,
-	created_at,
-	updated_at,
-	changeset_ids
+  id,
+  name,
+  description,
+  author_id,
+  namespace_user_id,
+  namespace_org_id,
+  created_at,
+  updated_at,
+  changeset_ids
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -1045,9 +1120,9 @@ func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
 		&e.ID,
 		&e.ChangesetID,
 		&e.Kind,
-		&e.Source,
 		&e.Key,
 		&e.CreatedAt,
+		&e.UpdatedAt,
 		&metadata,
 	)
 	if err != nil {
@@ -1067,6 +1142,8 @@ func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
 		e.Metadata = new(github.MergedEvent)
 	case a8n.ChangesetEventKindGitHubReviewed:
 		e.Metadata = new(github.PullRequestReview)
+	case a8n.ChangesetEventKindGitHubReviewCommented:
+		e.Metadata = new(github.PullRequestReviewComment)
 	case a8n.ChangesetEventKindGitHubReopened:
 		e.Metadata = new(github.ReopenedEvent)
 	case a8n.ChangesetEventKindGitHubReviewDismissed:
@@ -1082,7 +1159,7 @@ func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
 	}
 
 	if err = json.Unmarshal(metadata, e.Metadata); err != nil {
-		return errors.Wrapf(err, "scanChangesetEvent: failed to unmarshal %q metadata", e.Source)
+		return errors.Wrapf(err, "scanChangesetEvent: failed to unmarshal %q metadata", e.Kind)
 	}
 
 	return nil

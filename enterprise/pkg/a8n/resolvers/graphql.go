@@ -19,7 +19,6 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -31,7 +30,7 @@ type Resolver struct {
 
 // NewResolver returns a new Resolver whose store uses the given db
 func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
-	return &Resolver{store: ee.NewStore(dbconn.Global)}
+	return &Resolver{store: ee.NewStore(db)}
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
