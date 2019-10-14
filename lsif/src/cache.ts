@@ -75,13 +75,6 @@ interface CacheMetrics {
 }
 
 /**
- * Return the current timestamp in milliseconds.
- */
-function defaultNowMs(): number {
-    return new Date().getTime()
-}
-
-/**
  * A generic LRU cache. We use this instead of the `lru-cache` package
  * available in NPM so that we can handle async payloads in a more
  * first-class way as well as shedding some of the cruft around evictions.
@@ -124,7 +117,7 @@ export class GenericCache<K, V> {
         private disposeFunction: (value: V) => Promise<void> | void,
         private validityInterval: number,
         private metrics: CacheMetrics,
-        private nowMs: () => number = defaultNowMs
+        private nowMs: () => number = () => new Date().getTime()
     ) {}
 
     /**
