@@ -136,15 +136,18 @@ describe('XrepoDatabase', () => {
         // This repository has the following commit graph (ancestors to the right):
         //
         // 0 -- 1 -- 2 -- ... -- MAX_TRAVERSAL_LIMIT
+        //
+        // Note: we use '.' as a suffix for commit numbers on construction so that
+        // we can distinguish `1` and `11` (`1.1.1...` and `11.11.11...`).
 
-        const c0 = createCommit('0')
-        const c1 = createCommit('1')
-        const c49 = createCommit('49')
-        const c50 = createCommit('50')
+        const c0 = createCommit('0.')
+        const c1 = createCommit('1.')
+        const cpen = createCommit(`${MAX_TRAVERSAL_LIMIT / 2 - 1}.`)
+        const cmax = createCommit(`${MAX_TRAVERSAL_LIMIT / 2}.`)
 
         const commits: [string, string][] = Array.from({ length: MAX_TRAVERSAL_LIMIT }, (_, i) => [
-            createCommit(`${i}`),
-            createCommit(`${i + 1}`),
+            createCommit(`${i}.`),
+            createCommit(`${i + 1}.`),
         ])
 
         await xrepoDatabase.updateCommits('foo', commits)
@@ -155,24 +158,30 @@ describe('XrepoDatabase', () => {
         // Test closest commit
         expect(await xrepoDatabase.findClosestCommitWithData('foo', c0)).toEqual(c0)
         expect(await xrepoDatabase.findClosestCommitWithData('foo', c1)).toEqual(c0)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', c49)).toEqual(c0)
+        expect(await xrepoDatabase.findClosestCommitWithData('foo', cpen)).toEqual(c0)
 
-        // At commit 50, the traversal limit will be reached before visiting commit 0 because commits are visited in this order:
-        // - 1: 50 (with direction 'A')
-        // - 2: 50 (with direction 'D')
-        // - 3: 51
-        // - 4: 49
-        // - 5: 52
-        // - 6: 48
-        // - ...
-        // - 99: 99
-        // - 100: 1 (limit reached)
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', c50)).toBeUndefined()
+        // (Assuming MAX_TRAVERSAL_LIMIT = 100)
+        // At commit `50`, the traversal limit will be reached before visiting commit `0`
+        // because commits are visited in this order:
+        //
+        // | depth | commit |
+        // | ----- | ------ |
+        // | 1     | 50     | (with direction 'A')
+        // | 2     | 50     | (with direction 'D')
+        // | 3     | 51     |
+        // | 4     | 49     |
+        // | 5     | 52     |
+        // | 6     | 48     |
+        // | ...   |        |
+        // | 99    | 99     |
+        // | 100   | 1      | (limit reached)
+
+        expect(await xrepoDatabase.findClosestCommitWithData('foo', cmax)).toBeUndefined()
 
         // Mark commit 1
         await xrepoDatabase.insertDump('foo', c1)
 
         // Now commit 1 should be found
-        expect(await xrepoDatabase.findClosestCommitWithData('foo', c50)).toEqual(c1)
+        expect(await xrepoDatabase.findClosestCommitWithData('foo', cmax)).toEqual(c1)
     })
 })
