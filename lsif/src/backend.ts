@@ -43,7 +43,10 @@ export class Backend {
             const { database, dump } = await this.loadClosestDatabase(repository, commit, path, ctx)
             return await database.exists(this.pathToDatabase(dump.root, path))
         } catch (e) {
-            return false
+            if (e instanceof NoLSIFDumpError) {
+                return false
+            }
+            throw e
         }
     }
 
@@ -370,7 +373,7 @@ export class Backend {
                 this.xrepoDatabase.findClosestDump(repository, commit, file, ctx, this.fetchConfiguration().gitServers)
             )
             if (!dump) {
-                throw new Error('No LSIF data available.')
+                throw new NoLSIFDumpError()
             }
 
             return {
@@ -419,3 +422,16 @@ function stripPrefix(prefix: string, s: string): string {
 function mapLocation(map: (uri: string) => string, { uri, range }: lsp.Location): lsp.Location {
     return lsp.Location.create(map(uri), range)
 }
+
+/**
+ * No matching LSIF dump was found. This could be because:
+ *
+ * - You're currently browsing while on a commit that is too far away from the
+ *   last uploaded LSIF dump
+ * - You're currently viewing a file that is under a different root from what
+ *   the LSIF dump is associated with (i.e. the current file is not contained in
+ *   the dump)
+ * - You're currently viewing a file that is not part of the LSIF dump (e.g. due
+ *   to tsconfig.json exclude rules)
+ */
+export class NoLSIFDumpError extends Error {}
