@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"path"
+	"sort"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -385,28 +387,19 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	for i, c := range cs {
 		changesetIDs[i] = c.ID
 	}
-	var (
-		events     []ee.Event
-		eventsOpts = ee.ListChangesetEventsOpts{
-			ChangesetIDs: changesetIDs,
-			Limit:        1000,
-		}
-	)
 
-	for {
-		es, next, err := r.store.ListChangesetEvents(ctx, eventsOpts)
-		if err != nil {
-			return resolvers, err
-		}
+	eventsOpts := ee.ListChangesetEventsOpts{
+		ChangesetIDs: changesetIDs,
+		Limit:        -1,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, eventsOpts)
+	if err != nil {
+		return resolvers, err
+	}
 
-		for _, e := range es {
-			events = append(events, e)
-		}
-
-		if next == 0 {
-			break
-		}
-		eventsOpts.Cursor = next
+	events := make([]ee.Event, len(es))
+	for i, e := range es {
+		events[i] = e
 	}
 
 	counts, err := ee.CalcCounts(start, end, cs, events...)
@@ -644,8 +637,31 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState() (a8n.ChangesetReviewState, error) {
-	return r.Changeset.ReviewState()
+func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {
+	// ChangesetEvents are currently only implemented for GitHub. For other
+	// codehosts we compute the ReviewState from the Metadata field of a
+	// Changeset.
+	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
+		return r.Changeset.ReviewState()
+	}
+
+	opts := ee.ListChangesetEventsOpts{
+		ChangesetIDs: []int64{r.Changeset.ID},
+		Limit:        -1,
+	}
+	es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	if err != nil {
+		return a8n.ChangesetReviewStatePending, err
+	}
+
+	events := make(a8n.ChangesetEvents, len(es))
+	for i, e := range es {
+		events[i] = e
+	}
+
+	sort.Sort(events)
+
+	return events.ReviewState()
 }
 
 func (r *changesetResolver) Events(ctx context.Context, args *struct {
