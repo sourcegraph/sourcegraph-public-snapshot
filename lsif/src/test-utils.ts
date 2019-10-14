@@ -44,7 +44,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     }
 
     // Construct postgres connection string using environment above
-    const connectionString = 'postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable'
+    const connectionString = `postgres://${username}:${password}@${host}:${port}/${database}?sslmode=disable`
 
     // Define command text
     const createCommand = `createdb ${database}`
@@ -63,7 +63,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
         console.log('which migrate', await child_process.exec('which migrate'))
         console.log('hash migrate', await child_process.exec('hash migrate'))
         console.log('migrate --version', await child_process.exec('migrate --version'))
-        console.log('echo "connectionString}"', await child_process.exec(`echo "connectionString}"`, { env }))
+        console.log(`echo "${connectionString}"`, await child_process.exec(`echo "${connectionString}"`, { env }))
         // Run migrations then connect to database
         console.log(migrateCommand, await child_process.exec(migrateCommand, { env }))
         console.log('DONE WITH SANITY CHECK')
