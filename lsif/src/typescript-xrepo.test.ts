@@ -18,10 +18,9 @@ describe('Database', () => {
     let cleanup!: () => Promise<void>
     let storageRoot!: string
     let xrepoDatabase!: XrepoDatabase
-
-    const connectionCache = new ConnectionCache(10)
-    const documentCache = new DocumentCache(10)
-    const resultChunkCache = new ResultChunkCache(10)
+    const connectionCache = new ConnectionCache(10, 1000)
+    const documentCache = new DocumentCache(10, 1000)
+    const resultChunkCache = new ResultChunkCache(10, 1000)
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())

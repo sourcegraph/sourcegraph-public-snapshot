@@ -73,6 +73,21 @@ const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 102
 const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
+ * The maximum time (in milliseconds) a stale connection can be cached.
+ */
+const CONNECTION_CACHE_TTL = readEnvInt('CONNECTION_CACHE_TTL', 5 * 60 * 1000)
+
+/**
+ * The maximum time (in milliseconds) a stale document can be cached.
+ */
+const DOCUMENT_CACHE_TTL = readEnvInt('DOCUMENT_CACHE_TTL', 5 * 60 * 1000)
+
+/**
+ * The maximum time (in milliseconds) a stale result chunk can be cached.
+ */
+const RESULT_CHUNK_CACHE_TTL = readEnvInt('RESULT_CHUNK_CACHE_TTL', 5 * 60 * 1000)
+
+/**
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
@@ -328,9 +343,9 @@ async function lsifEndpoints(
     const router = express.Router()
 
     // Create cross-repo database
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
+    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY, CONNECTION_CACHE_TTL)
+    const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY, DOCUMENT_CACHE_TTL)
+    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY, RESULT_CHUNK_CACHE_TTL)
 
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)

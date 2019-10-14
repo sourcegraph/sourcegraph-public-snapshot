@@ -1,5 +1,6 @@
 import promClient from 'prom-client'
 import Yallist from 'yallist'
+import * as fs from 'mz/fs'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from './connection'
 import { DocumentData, ResultChunkData } from './database.models'
@@ -32,6 +33,13 @@ interface CacheEntry<K, V> {
      * determined from the result of `promise`.
      */
     size: number
+
+    /**
+     * The timestamp in milliseconds that the most recent validity check
+     * has occurred. This is set once on construction, and then after
+     * each passing validity check.
+     */
+    lastUpdateMs: number
 
     /**
      * The number of active withValue calls referencing this entry. If
@@ -67,6 +75,13 @@ interface CacheMetrics {
 }
 
 /**
+ * Return the current timestamp in milliseconds.
+ */
+function defaultNowMs(): number {
+    return new Date().getTime()
+}
+
+/**
  * A generic LRU cache. We use this instead of the `lru-cache` package
  * available in NPM so that we can handle async payloads in a more
  * first-class way as well as shedding some of the cruft around evictions.
@@ -99,13 +114,17 @@ export class GenericCache<K, V> {
      * @param max The maximum size of the cache before an eviction.
      * @param sizeFunction A function that determines the size of a cache item.
      * @param disposeFunction A function that disposes of evicted cache items.
+     * @param validityInterval How long (in milliseconds) to wait between validity checks.
      * @param metrics The bag of metrics to use for this instance of the cache.
+     * @param nowMs A function used to get the current time in milliseconds. Used only for testing.
      */
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
         private disposeFunction: (value: V) => Promise<void> | void,
-        private metrics: CacheMetrics
+        private validityInterval: number,
+        private metrics: CacheMetrics,
+        private nowMs: () => number = defaultNowMs
     ) {}
 
     /**
@@ -117,11 +136,19 @@ export class GenericCache<K, V> {
      *
      * @param key The cache key.
      * @param factory The function used to create a new value.
+     * @param validityFunction The function used to determine if an entry
+     *     remains valid. This function receives a timestamp (in milliseconds)
+     *     for the last time the entry was checked f or validity.
      * @param callback The function to invoke with the resolved cache value.
      */
-    public async withValue<T>(key: K, factory: () => Promise<V>, callback: (value: V) => Promise<T>): Promise<T> {
+    protected async internalWithValue<T>(
+        key: K,
+        factory: () => Promise<V>,
+        validityFunction: (lastUpdatedMs: number) => Promise<boolean> | boolean,
+        callback: (value: V) => Promise<T>
+    ): Promise<T> {
         // Find or create the entry
-        const entry = await this.getEntry(key, factory)
+        const entry = await this.getEntry(key, factory, validityFunction)
 
         try {
             // Re-resolve the promise. If this is already resolved it's a fast
@@ -198,10 +225,45 @@ export class GenericCache<K, V> {
      *
      * @param key The cache key.
      * @param factory The function used to create a new value.
+     * @param validityFunction The function used to determine if an entry
+     *     remains valid.
      */
-    private async getEntry(key: K, factory: () => Promise<V>): Promise<CacheEntry<K, V>> {
+    private async getEntry(
+        key: K,
+        factory: () => Promise<V>,
+        validityFunction: (lastUpdatedMs: number) => Promise<boolean> | boolean
+    ): Promise<CacheEntry<K, V>> {
         const node = this.cache.get(key)
         if (node) {
+            const entry = node.value
+
+            const now = this.nowMs()
+            if (now - entry.lastUpdateMs > this.validityInterval) {
+                // Stash this for validity call
+                const lastUpdatedMs = entry.lastUpdateMs
+
+                // Set this now so we don't check validity multiple times
+                // from concurrent getEntry calls. It is possible between
+                // now and the bustKey call that others may acquire this
+                // value. This is a small enough window that it's not much
+                // of a concern (anyway, TTL invalidation is best-effort).
+                entry.lastUpdateMs = now
+
+                // Check if the cache value is still valid. If it is, just
+                // fall through. If not, remove the key and reconstruct it.
+                const isValid = await validityFunction(lastUpdatedMs)
+                if (!isValid) {
+                    // Log cache event
+                    this.metrics.eventsCounter.labels('invalid').inc()
+
+                    // Remove invalid key
+                    await this.bustKey(key)
+
+                    // Try again
+                    return this.getEntry(key, factory, validityFunction)
+                }
+            }
+
             // Move to head of list
             this.lruList.unshiftNode(node)
 
@@ -209,7 +271,6 @@ export class GenericCache<K, V> {
             this.metrics.eventsCounter.labels('hit').inc()
 
             // Ensure entry is locked before returning
-            const entry = node.value
             entry.readers++
             return entry
         }
@@ -225,7 +286,14 @@ export class GenericCache<K, V> {
         // the same key will create a duplicate cache entry.
 
         const promise = factory()
-        const newEntry = { key, promise, size: 0, readers: 1, waiter: undefined }
+        const newEntry = {
+            key,
+            promise,
+            size: 0,
+            lastUpdateMs: this.nowMs(),
+            readers: 1,
+            waiter: undefined,
+        }
 
         // Add to head of list
         this.lruList.unshift(newEntry)
@@ -303,20 +371,47 @@ export class GenericCache<K, V> {
 }
 
 /**
+ * A simple cache used for testing. This makes the function directly callable.
+ */
+export class Cache<K, V> extends GenericCache<K, V> {
+    /**
+     * Get the cached value or construct a new entry. Call the given function
+     * with the entry.
+     *
+     * @param key The cache key.
+     * @param factory The function used to create a new value.
+     * @param validityFunction The function used to determine if an entry remains valid.
+     * @param callback The function to invoke with the resolved cache value.
+     */
+    public withValue<T>(
+        key: K,
+        factory: () => Promise<V>,
+        validityFunction: (lastUpdatedMs: number) => Promise<boolean> | boolean,
+        callback: (value: V) => Promise<T>
+    ): Promise<T> {
+        return super.internalWithValue(key, factory, validityFunction, callback)
+    }
+}
+
+/**
  * A cache of SQLite database connections indexed by database filenames.
  */
 export class ConnectionCache extends GenericCache<string, Connection> {
     /**
      * Create a new `ConnectionCache` with the given maximum (soft) size for
      * all items in the cache.
+     *
+     * @param max The maximum number of connections in the cache.
+     * @param validityInterval How often to check (in milliseconds) if the db file has changed.
      */
-    constructor(max: number) {
+    constructor(max: number, validityInterval: number) {
         super(
             max,
             // Each handle is roughly the same size.
             () => 1,
             // Close the underlying file handle on cache eviction.
             connection => connection.close(),
+            validityInterval,
             {
                 sizeGauge: connectionCacheSizeGauge,
                 eventsCounter: connectionCacheEventsCounter,
@@ -340,7 +435,13 @@ export class ConnectionCache extends GenericCache<string, Connection> {
         entities: Function[],
         callback: (connection: Connection) => Promise<T>
     ): Promise<T> {
-        return this.withValue(database, () => createSqliteConnection(database, entities), callback)
+        return this.internalWithValue(
+            database,
+            () => createSqliteConnection(database, entities),
+            // See if database file changed on disk
+            async (lastUpdatedMs: number): Promise<boolean> => (await fs.stat(database)).mtimeMs <= lastUpdatedMs,
+            callback
+        )
     }
 
     /**
@@ -389,16 +490,34 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
      * all items in the cache.
      *
      * @param max The maximum size of the cache before an eviction.
+     * @param validityInterval How long (in milliseconds) to keep the cached value.
      * @param metrics The bag of metrics to use for this instance of the cache.
      */
-    constructor(max: number, metrics: CacheMetrics) {
+    constructor(max: number, validityInterval: number, metrics: CacheMetrics) {
         super(
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
             () => {},
+            validityInterval,
             metrics
         )
+    }
+
+    /**
+     * Get the cached value or construct a new entry. Call the given function
+     * with the entry.
+     *
+     * @param key The cache key.
+     * @param factory The function used to create a new value.
+     * @param callback The function to invoke with the resolved cache value.
+     */
+    public withValue<T>(
+        key: K,
+        factory: () => Promise<EncodedJsonCacheValue<V>>,
+        callback: (value: EncodedJsonCacheValue<V>) => Promise<T>
+    ): Promise<T> {
+        return super.internalWithValue(key, factory, () => false, callback)
     }
 }
 
@@ -412,9 +531,10 @@ export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
      * all items in the cache.
      *
      * @param max The maximum size of the cache before an eviction.
+     * @param validityInterval How long (in milliseconds) to keep the cached value.
      */
-    constructor(max: number) {
-        super(max, {
+    constructor(max: number, validityInterval: number) {
+        super(max, validityInterval, {
             sizeGauge: documentCacheSizeGauge,
             eventsCounter: documentCacheEventsCounter,
         })
@@ -431,9 +551,10 @@ export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> 
      * all items in the cache.
      *
      * @param max The maximum size of the cache before an eviction.
+     * @param validityInterval How long (in milliseconds) to keep the cached value.
      */
-    constructor(max: number) {
-        super(max, {
+    constructor(max: number, validityInterval: number) {
+        super(max, validityInterval, {
             sizeGauge: resultChunkCacheSizeGauge,
             eventsCounter: resultChunkCacheEventsCounter,
         })
