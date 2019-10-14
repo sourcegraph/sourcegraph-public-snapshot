@@ -44,6 +44,8 @@
 // 1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql (153B)
 // 1528395603_add_patterntype_to_saved_searches.down.sql (99B)
 // 1528395603_add_patterntype_to_saved_searches.up.sql (87B)
+// 1528395604_lsif_multi_project.down.sql (459B)
+// 1528395604_lsif_multi_project.up.sql (265B)
 
 package migrations
 
@@ -992,6 +994,46 @@ func _1528395603_add_patterntype_to_saved_searchesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395604_lsif_multi_projectDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x90\xc1\x6e\xf3\x20\x10\x84\xef\x3c\xc5\x28\xa7\x44\xfa\xf5\x4b\x3d\x5b\x3d\x10\x7b\xdb\x5a\x22\x38\x05\xdc\xf4\x66\x59\x6e\xaa\x58\xaa\x8b\x65\xa8\xaa\xbe\x7d\x15\x93\xc4\x70\x28\x07\x04\xc3\xc7\xec\xec\x6e\xe9\xb1\x94\x19\x63\x5c\x18\x52\x30\x7c\x2b\x08\x1f\xae\x7f\x6f\xde\xbe\x86\xd1\xa1\x50\xd5\x1e\x79\x25\xea\x9d\xc4\x64\xad\xcf\xfe\x02\x79\x51\xa0\x96\xe5\x73\x4d\x58\x4f\xc7\xd1\xba\xde\xdb\xe9\xe7\x1f\x3a\x3b\x0c\xbd\xdf\x64\x8c\xe5\x8a\xb8\x21\x54\x0a\x8a\xf6\x82\xe7\x84\x97\x92\x0e\xc1\x23\x50\xae\xf9\xee\xfd\xa9\x09\xae\xad\x6f\xc1\x35\x03\x00\x4d\x82\x72\x33\x1f\xcf\xab\xfb\x1f\x15\x88\xd4\x55\x70\x59\xc5\xda\xd8\x4e\xc7\x4f\x7f\xf1\x5f\x1e\xe8\xb5\xd4\x46\x63\x7d\x13\x96\x32\xb8\x4b\xc4\x07\x55\xed\xe2\x3e\xcf\x7b\x02\x1c\x9e\x48\xd1\x2c\x47\xb1\x70\x9f\xa4\x4c\x3e\x70\x59\x04\xfc\x9a\x77\x86\xaf\x97\x1b\xba\x01\xd7\x38\xb5\x6e\x19\x07\x4b\xf3\x5c\x66\x86\x2e\x63\x8c\x64\x91\xb1\xdf\x00\x00\x00\xff\xff\xf1\xd6\x05\x24\xcb\x01\x00\x00")
+
+func _1528395604_lsif_multi_projectDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395604_lsif_multi_projectDownSql,
+		"1528395604_lsif_multi_project.down.sql",
+	)
+}
+
+func _1528395604_lsif_multi_projectDownSql() (*asset, error) {
+	bytes, err := _1528395604_lsif_multi_projectDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395604_lsif_multi_project.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x71, 0x3, 0x35, 0x48, 0x6d, 0x7b, 0x2e, 0x76, 0x6c, 0x7b, 0x2c, 0xd, 0x28, 0x96, 0xa5, 0xee, 0x76, 0x1e, 0xce, 0x2b, 0x12, 0x1c, 0x95, 0x73, 0xb2, 0x90, 0x5, 0xe3, 0x52, 0x5e, 0xd9, 0x79}}
+	return a, nil
+}
+
+var __1528395604_lsif_multi_projectUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8e\xb1\x6a\xc3\x30\x18\x84\x77\x3d\xc5\x6d\x99\xd2\x17\xd0\x52\x25\xfa\x5d\x04\xaa\x5c\xec\xdf\x6d\x36\xe1\x26\x2a\x11\xb5\x23\x23\x2b\x84\xbc\x7d\xc1\x2e\xb4\x4b\xd6\xbb\xe3\xbb\x6f\x47\x2f\xc6\x49\x21\x74\x53\xbf\xe1\xdd\xd0\x07\x4c\x05\x3a\x98\x96\x5b\x0c\x73\xfc\xf2\xc7\x34\x8e\xb1\xcc\xfe\x16\xcb\xd9\x2f\xc9\xa9\x2f\xbd\x14\x62\xbb\xc5\x25\xdd\x50\xce\x21\x07\x1c\xfb\x0b\x3e\x03\xc6\xeb\x50\xe2\x34\x04\xd8\xd6\x54\x38\x5d\xc7\x69\xc6\x14\x32\x72\x98\xd2\x1c\x4b\xca\xf7\xe7\x95\xf7\x24\x94\x65\x6a\xc0\x6a\x67\x69\x3d\x5a\xd7\x8b\xc7\xbe\x76\x2d\x37\xca\x38\xfe\x57\xf9\x3f\xc8\xaf\x94\xff\x0e\x77\xf9\x08\xa4\xb4\xc6\xbe\xb6\xdd\xab\x43\x4e\xa9\x80\xe9\xc0\x70\x35\xc3\x75\xd6\x42\x53\xa5\x3a\xcb\xd8\x6c\xa4\x10\xe4\xb4\x14\x3f\x01\x00\x00\xff\xff\x0d\x47\x39\x62\x09\x01\x00\x00")
+
+func _1528395604_lsif_multi_projectUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395604_lsif_multi_projectUpSql,
+		"1528395604_lsif_multi_project.up.sql",
+	)
+}
+
+func _1528395604_lsif_multi_projectUpSql() (*asset, error) {
+	bytes, err := _1528395604_lsif_multi_projectUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395604_lsif_multi_project.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x4, 0x4e, 0xd5, 0xe6, 0x71, 0xb6, 0x4, 0x61, 0xf7, 0x77, 0xf1, 0x99, 0x1b, 0xb9, 0x67, 0xca, 0xc6, 0xb, 0x6e, 0x2e, 0x1a, 0xa7, 0x3d, 0xda, 0x47, 0xaa, 0xd9, 0xb6, 0x9c, 0xda, 0x7a, 0xf7}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1170,6 +1212,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395603_add_patterntype_to_saved_searches.down.sql": _1528395603_add_patterntype_to_saved_searchesDownSql,
 
 	"1528395603_add_patterntype_to_saved_searches.up.sql": _1528395603_add_patterntype_to_saved_searchesUpSql,
+
+	"1528395604_lsif_multi_project.down.sql": _1528395604_lsif_multi_projectDownSql,
+
+	"1528395604_lsif_multi_project.up.sql": _1528395604_lsif_multi_projectUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1257,6 +1303,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql":   {_1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql, map[string]*bintree{}},
 	"1528395603_add_patterntype_to_saved_searches.down.sql":                    {_1528395603_add_patterntype_to_saved_searchesDownSql, map[string]*bintree{}},
 	"1528395603_add_patterntype_to_saved_searches.up.sql":                      {_1528395603_add_patterntype_to_saved_searchesUpSql, map[string]*bintree{}},
+	"1528395604_lsif_multi_project.down.sql":                                   {_1528395604_lsif_multi_projectDownSql, map[string]*bintree{}},
+	"1528395604_lsif_multi_project.up.sql":                                     {_1528395604_lsif_multi_projectUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
