@@ -15,7 +15,7 @@ the sole providers, we publish this information on an independent website.
 
 First step is to request @beyang get a domain and add the site to Sourcegraph's Cloudflare account. 
     
-💡 Make sure `www` redirects to `https`.
+> 💡 Make sure `www` redirects to `https`.
 
 ### Create the website content
 
