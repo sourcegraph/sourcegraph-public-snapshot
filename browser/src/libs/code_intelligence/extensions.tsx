@@ -97,7 +97,7 @@ export const renderGlobalDebug = ({
 const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
-    codeElement.style.backgroundColor = null
+    codeElement.style.backgroundColor = ''
     const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${part}]`)
     for (const attachment of previousAttachments) {
         attachment.remove()
@@ -105,7 +105,7 @@ const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPa
 }
 
 const cleanupDecorationsForLineElement = (lineElement: HTMLElement): void => {
-    lineElement.style.backgroundColor = null
+    lineElement.style.backgroundColor = ''
 }
 
 /**
@@ -191,14 +191,14 @@ export const applyDecorations = (
                     // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
                     link.setAttribute('rel', 'noreferrer noopener')
 
-                    link.style.color = style.color || null
+                    link.style.color = style.color || ''
                     link.appendChild(e)
                     return link
                 }
 
                 const after = document.createElement('span')
-                after.style.color = style.color || null
-                after.style.backgroundColor = style.backgroundColor || null
+                after.style.color = style.color || ''
+                after.style.backgroundColor = style.backgroundColor || ''
                 after.textContent = decoration.after.contentText || null
                 if (decoration.after.hoverMessage) {
                     after.title = decoration.after.hoverMessage
