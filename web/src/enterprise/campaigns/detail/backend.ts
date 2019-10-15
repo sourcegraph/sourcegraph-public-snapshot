@@ -1,8 +1,15 @@
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
-import { Observable, of } from 'rxjs'
-import { ID, ICampaign, IUpdateCampaignInput, ICreateCampaignInput } from '../../../../../shared/src/graphql/schema'
+import { Observable } from 'rxjs'
+import {
+    ID,
+    ICampaign,
+    IUpdateCampaignInput,
+    ICreateCampaignInput,
+    IChangesetConnection,
+} from '../../../../../shared/src/graphql/schema'
+import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -21,21 +28,7 @@ const campaignFragment = gql`
         updatedAt
         url
         changesets {
-            nodes {
-                id
-                title
-                body
-                state
-                reviewState
-                repository {
-                    name
-                    url
-                }
-                externalURL {
-                    url
-                }
-                createdAt
-            }
+            totalCount
         }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {
@@ -93,43 +86,74 @@ export async function deleteCampaign(campaign: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
-const mockData = false
 export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
-    mockData
-        ? of(({
-              __typename: 'Campaign',
-              id: 'Q2FtcGFpZ246MQ==',
-              namespace: { id: 'VXNlcjox', namespaceName: 'felix' },
-              author: { username: 'felix', avatarURL: null },
-              name: 'test camp',
-              description: 'asdasd',
-              createdAt: '2019-09-12T20:18:10Z',
-              updatedAt: '2019-10-08T16:39:48Z',
-              url: '/users/felix/campaigns/Q2FtcGFpZ246MQ==',
-              changesets: { nodes: [] },
-          } as unknown) as ICampaign)
-        : queryGraphQL(
-              gql`
-                  query CampaignByID($campaign: ID!) {
-                      node(id: $campaign) {
-                          __typename
-                          ... on Campaign {
-                              ...CampaignFields
-                          }
-                      }
-                  }
-                  ${campaignFragment}
-              `,
-              { campaign }
-          ).pipe(
-              map(dataOrThrowErrors),
-              map(({ node }) => {
-                  if (!node) {
-                      return null
-                  }
-                  if (node.__typename !== 'Campaign') {
-                      throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
-                  }
-                  return node
-              })
-          )
+    queryGraphQL(
+        gql`
+            query CampaignByID($campaign: ID!) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        ...CampaignFields
+                    }
+                }
+            }
+            ${campaignFragment}
+        `,
+        { campaign }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node
+        })
+    )
+export const queryChangesets = (
+    campaign: ID,
+    { first }: Pick<FilteredConnectionQueryArgs, 'first'>
+): Observable<IChangesetConnection> =>
+    queryGraphQL(
+        gql`
+            query CampaignByID($campaign: ID!, $first: Int) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        changesets(first: $first) {
+                            totalCount
+                            nodes {
+                                id
+                                title
+                                body
+                                state
+                                reviewState
+                                repository {
+                                    name
+                                    url
+                                }
+                                externalURL {
+                                    url
+                                }
+                                createdAt
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        { campaign, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesets
+        })
+    )
