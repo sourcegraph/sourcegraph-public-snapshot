@@ -1,6 +1,6 @@
 # How to setup a separate website maintained by Sourcegraph
 
-  > 💡 Use this template to describe the steps engineers should follow to setup a separate website maintained by Sourcegraph. 
+  > 💡 Use this template to describe the steps engineers should follow to set up a separate website maintained by Sourcegraph. 
 
 ## 1. When do we need a separate website?
 
