@@ -8,8 +8,8 @@ import {
     IUpdateCampaignInput,
     ICreateCampaignInput,
     IChangesetConnection,
+    IChangesetsOnCampaignArguments,
 } from '../../../../../shared/src/graphql/schema'
-import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -38,21 +38,6 @@ const campaignFragment = gql`
             openApproved
             openChangesRequested
             openPending
-            nodes {
-                id
-                title
-                body
-                state
-                reviewState
-                repository {
-                    name
-                    url
-                }
-                externalURL {
-                    url
-                }
-                createdAt
-            }
         }
     }
 `
@@ -130,11 +115,11 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
 
 export const queryChangesets = (
     campaign: ID,
-    { first }: Pick<FilteredConnectionQueryArgs, 'first'>
+    { first }: IChangesetsOnCampaignArguments
 ): Observable<IChangesetConnection> =>
     queryGraphQL(
         gql`
-            query CampaignByID($campaign: ID!, $first: Int) {
+            query CampaignChangesets($campaign: ID!, $first: Int) {
                 node(id: $campaign) {
                     __typename
                     ... on Campaign {
