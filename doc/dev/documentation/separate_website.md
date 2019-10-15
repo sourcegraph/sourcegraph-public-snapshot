@@ -15,13 +15,14 @@ the sole providers, we publish this information on an independent website.
 
 First step is to request @beyang get a domain and add the site to Sourcegraph's Cloudflare account. 
     
-    💡 Make sure `www` redirects to `https`.
+💡 Make sure `www` redirects to `https`.
 
 ### Create the website content
 
 Once the domain is secured, we need to setup the GitHub page, where the static page will be hosted as: `[projectname].github.io`.
 
 We clone the repository locally, create a branch from master (make sure master is up-to-date!) and add the following files:
+
     - CNAME
     Containing:
 
@@ -33,19 +34,20 @@ We clone the repository locally, create a branch from master (make sure master i
 
 When all the content is created, we `push` our branch, create a **PR** and ask for reviews and merge to master.
 
-Examples: [Langserver](http://github.com/langserver), [LSIF](http://github.com/lsif)
+Examples: [Langserver](https://github.com/langserver/langserver.github.io), [LSIF](https://github.com/lsif/lsif.github.io)
 
 # 3. Update the DNS to point to the server
 
-We use terraform to manage our DNS records. To update DNS, follow the [DNS guide](../../../../../../infrastructure/blob/master/dns/README.md), but push to a non-`master` branch and get it reviewed before merging.
+We use terraform to manage our DNS records. 
 
-If you don't have terraform installed and install via ```brew install terraform```:
+💡 If you don't have terraform installed and install via ```brew install terraform```. Ensure that your local `terraform` version is the same as the `CI` version to **avoid file locks**.  
 
-    💡 Ensure that your local `terraform` version is the same as the `CI` version to **avoid file locks**.
+To update DNS, follow the [DNS guide](../../../../../../infrastructure/blob/master/dns/README.md), but push to a non-`master` branch and get it reviewed before merging.
 
-    💡 Make sure to pull the **latest version** of the infrastructure `master` before creating your branch.
+💡 Important:
 
-    💡 Check that all of the domain's `A records` are also referenced in the terraform file.
+  - Make sure to pull the **latest version** of the infrastructure `master` before creating your branch.
+  - Check that all of the domain's `A records` are also referenced in the terraform file.
 
 From the `infrastructure` repository, with your branch checked out:
 
@@ -54,10 +56,3 @@ From the `infrastructure` repository, with your branch checked out:
     $ git push origin branch
 
 Get the branch reviewed and merge to `master`.
-
-
-Other Sourcegraph docs:
-
-- [Contributing to Sourcegraph documentation](index.md#contributing-to-docs)
-- [Documentation directory structure](index.md#documentation-directory-structure)
-- [Documentation style guidelines](style_guide.md)
