@@ -33,6 +33,7 @@ The commands are:
 	config          manages global, org, and user settings
 	extsvc          manages external services
 	extensions,ext  manages extensions (experimental)
+	campaigns       manages campaigns (experimental)
 	lsif            manages LSIF data
 
 Use "src [command] -h" for more information about a command.
