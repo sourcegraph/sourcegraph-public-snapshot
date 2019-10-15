@@ -177,6 +177,6 @@ describe('Auth regression test suite', () => {
                 throw new Error('unsuccessful login')
             }
         },
-        10 * 1000
+        20 * 1000
     )
 })
