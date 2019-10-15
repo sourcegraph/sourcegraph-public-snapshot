@@ -13,7 +13,7 @@ the sole providers, we publish this information on an independent website.
 
 ### Secure the domain
 
-First step is to request @beyang get a domain and add the site to Sourcegraph's Cloudflare account. 
+First step is to request [@beyang](https://github.com/beyang) get a domain and add the site to Sourcegraph's Cloudflare account. 
     
 > 💡 Make sure `www` redirects to `https`.
 
