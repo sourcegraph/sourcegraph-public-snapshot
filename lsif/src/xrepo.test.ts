@@ -4,6 +4,7 @@ import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
 import { createCleanPostgresDatabase, createCommit, truncatePostgresTables } from './test-utils'
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
+import { omit } from 'lodash'
 
 describe('XrepoDatabase', () => {
     let connection!: Connection
@@ -126,6 +127,59 @@ describe('XrepoDatabase', () => {
         expect(await xrepoDatabase.findClosestDump('foo', cf, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', cg, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', ch, 'file')).toBeUndefined()
+    })
+
+    it.only('should return empty string as closest commit with no reachable lsif data', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
+        // This database has the following commit graph:
+        //
+        // a --+-- [b]
+        //
+        // Where LSIF dumps exist at b at roots: root1/ and root2/.
+
+        const ca = createCommit('a')
+        const cb = createCommit('b')
+
+        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca]])
+
+        // Add markers
+        await xrepoDatabase.insertDump('foo', cb, 'root1/')
+        await xrepoDatabase.insertDump('foo', cb, 'root2/')
+
+        // Test closest commit
+        expect(await xrepoDatabase.findClosestDump('foo', ca, 'blah')).toBeUndefined()
+        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root1/file.ts'), 'id')).toEqual({
+            repository: 'foo',
+            commit: cb,
+            root: 'root1/',
+        })
+        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root2/file.ts'), 'id')).toEqual({
+            repository: 'foo',
+            commit: cb,
+            root: 'root2/',
+        })
+        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id')).toEqual({
+            repository: 'foo',
+            commit: cb,
+            root: 'root2/',
+        })
+
+        expect(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts')).toBeUndefined()
+
+        await xrepoDatabase.insertDump('foo', cb, '')
+        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id')).toEqual({
+            repository: 'foo',
+            commit: cb,
+            root: '',
+        })
+        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts'), 'id')).toEqual({
+            repository: 'foo',
+            commit: cb,
+            root: '',
+        })
     })
 
     it('should not return elements farther than MAX_TRAVERSAL_LIMIT', async () => {
