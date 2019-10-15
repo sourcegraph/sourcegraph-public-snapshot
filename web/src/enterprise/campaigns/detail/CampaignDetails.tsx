@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -8,7 +8,6 @@ import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
 import { ChangesetNode } from './changesets/ChangesetNode'
-import { Link } from '../../../../../shared/src/components/Link'
 import { noop, upperFirst } from 'lodash'
 import { Form } from '../../../components/Form'
 import { fetchCampaignById, updateCampaign, deleteCampaign, createCampaign, queryChangesets } from './backend'
@@ -18,6 +17,8 @@ import * as H from 'history'
 import { queryNamespaces } from '../../namespaces/backend'
 import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+import { AddChangesetForm } from './AddChangesetForm'
+import { Subject } from 'rxjs'
 
 interface Props {
     /**
@@ -91,6 +92,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
         return unblockHistoryRef.current
     }, [campaignID, history])
+
+    const changesetUpdates = useMemo(() => new Subject<void>(), [])
+    const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -270,7 +274,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         Changesets{' '}
                         <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
                     </h3>
+
+                    <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
+
                     <FilteredConnection<GQL.IChangeset>
+                        className="mt-2"
+                        updates={changesetUpdates}
                         nodeComponent={ChangesetNode}
                         queryConnection={queryChangesetsConnection}
                         hideSearch={true}
@@ -280,11 +289,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         history={history}
                         location={location}
                     />
-
-                    <p className="mt-2">
-                        Use the <Link to="/api/console">GraphQL API</Link> to add changesets to this campaign (
-                        <code>createChangesets</code> and <code>addChangesetsToCampaign</code>)
-                    </p>
                 </>
             )}
         </>
