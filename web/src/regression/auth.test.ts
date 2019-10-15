@@ -76,7 +76,7 @@ describe('Auth regression test suite', () => {
                 allowSignup: true,
             }
 
-            const managementConsolePassword = (await getManagementConsoleState(gqlClient)).plaintextPassword
+            const { plainTextPassword: managementConsolePassword } = await getManagementConsoleState(gqlClient)
             if (!managementConsolePassword) {
                 throw new Error('empty management console password')
             }
