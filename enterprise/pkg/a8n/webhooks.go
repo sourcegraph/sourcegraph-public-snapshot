@@ -57,9 +57,11 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 		return nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	// Try to authenticate the request with any of the stored secrets
+	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
 	// in GitHub external services config. Since n is usually small here,
 	// it's ok for this to be have linear complexity.
+	// If there are no secrets or no secret managed to authenticate the request,
+	// we return a 401 to the client.
 
 	var secrets [][]byte
 	for _, e := range es {
@@ -136,7 +138,6 @@ func (h *GitHubWebhook) upsertChangesetEvent(
 	pr int64,
 	ev interface{ Key() string },
 ) (err error) {
-
 	var tx *Store
 	if tx, err = h.Store.Transact(ctx); err != nil {
 		return err
@@ -148,7 +149,6 @@ func (h *GitHubWebhook) upsertChangesetEvent(
 		ExternalID:          strconv.FormatInt(pr, 10),
 		ExternalServiceType: github.ServiceType,
 	})
-
 	if err != nil {
 		if err == ErrNoResults {
 			err = nil // Nothing to do
@@ -369,7 +369,12 @@ type httpError struct {
 	err  error
 }
 
-func (e httpError) Error() string { return e.err.Error() }
+func (e httpError) Error() string {
+	if e.err != nil {
+		return fmt.Sprintf("HTTP %d: %v", e.code, e.err)
+	}
+	return fmt.Sprintf("HTTP %d: %s", e.code, http.StatusText(e.code))
+}
 
 func respond(w http.ResponseWriter, code int, v interface{}) {
 	switch val := v.(type) {
