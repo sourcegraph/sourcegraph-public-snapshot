@@ -21,8 +21,7 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 
-	// Ignore users configuration in tests (this should probably also apply to
-	// our dev environment)
+	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
 
