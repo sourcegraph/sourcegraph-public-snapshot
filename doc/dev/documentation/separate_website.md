@@ -2,14 +2,14 @@
 
   > 💡 Use this template to describe the steps engineers should follow to setup a separate website maintained by Sourcegraph. 
 
-# 1. When do we need a separate website?
+## 1. When do we need a separate website?
 
 For projects like [langserver.org](http://langserver.org) or [lsif.dev](http://lsif.dev), we prefer to create separate websites from 
 [Sourcegraph.com](http://sourcegraph.com). In these two examples, we provide a list of LSPs or LSIF indexers offered by us or other parties 
 that can be used for Sourcegraph or other static analysis applications. Since the usage isn't strictly tied to Sourcegraph and we are not 
 the sole providers, we publish this information on an independent website.
 
-# 2. Set up domain and create content
+## 2. Set up domain and create content
 
 ### Secure the domain
 
@@ -36,7 +36,7 @@ When all the content is created, we `push` our branch, create a **PR** and ask f
 
 Examples: [Langserver](https://github.com/langserver/langserver.github.io), [LSIF](https://github.com/lsif/lsif.github.io)
 
-# 3. Update the DNS to point to the server
+## 3. Update the DNS to point to the server
 
 We use terraform to manage our DNS records. 
 
