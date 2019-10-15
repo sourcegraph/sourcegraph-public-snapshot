@@ -152,30 +152,25 @@ describe('Search regression test suite', () => {
         beforeAll(
             async () => {
                 ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
-                await resourceManager.create({
-                    type: 'User',
-                    name: testUsername,
-                    create: () =>
-                        ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config }),
-                })
-                await resourceManager.create({
-                    type: 'External service',
-                    name: testExternalServiceInfo.uniqueDisplayName,
-                    create: async () => {
-                        await ensureTestExternalService(gqlClient, {
-                            ...testExternalServiceInfo,
-                            config: {
-                                url: 'https://github.com',
-                                token: config.gitHubToken,
-                                repos: testRepoSlugs,
-                                repositoryQuery: ['none'],
-                            },
-                        })
-                        await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
-                        return () =>
-                            ensureNoTestExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true })
-                    },
-                })
+                resourceManager.add(
+                    'User',
+                    testUsername,
+                    await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
+                )
+                resourceManager.add(
+                    'External service',
+                    testExternalServiceInfo.uniqueDisplayName,
+                    await ensureTestExternalService(gqlClient, {
+                        ...testExternalServiceInfo,
+                        config: {
+                            url: 'https://github.com',
+                            token: config.gitHubToken,
+                            repos: testRepoSlugs,
+                            repositoryQuery: ['none'],
+                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+                        },
+                    })
+                )
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
             2 * 60 * 1000

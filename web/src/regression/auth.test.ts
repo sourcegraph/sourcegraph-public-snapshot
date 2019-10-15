@@ -37,16 +37,15 @@ describe('Auth regression test suite', () => {
     let resourceManager: TestResourceManager
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
-        await resourceManager.create({
-            type: 'User',
-            name: testUsername,
-            create: () =>
-                ensureLoggedInOrCreateTestUser(driver, gqlClient, {
-                    username: testUsername,
-                    deleteIfExists: true,
-                    ...config,
-                }),
-        })
+        resourceManager.add(
+            'User',
+            testUsername,
+            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                username: testUsername,
+                deleteIfExists: true,
+                ...config,
+            })
+        )
         const user = await getUser(gqlClient, testUsername)
         if (!user) {
             throw new Error(`test user ${testUsername} does not exist`)
@@ -74,7 +73,7 @@ describe('Auth regression test suite', () => {
                 allowSignup: true,
             }
 
-            const { plainTextPassword: managementConsolePassword } = await getManagementConsoleState(gqlClient)
+            const { plaintextPassword: managementConsolePassword } = await getManagementConsoleState(gqlClient)
             if (!managementConsolePassword) {
                 throw new Error('empty management console password')
             }
@@ -95,10 +94,10 @@ describe('Auth regression test suite', () => {
                 await driver.page.waitForSelector('.monaco-editor')
             }
 
-            await resourceManager.create({
-                type: 'Authentication provider',
-                name: '[TEST] GitHub',
-                create: async () => {
+            resourceManager.add(
+                'Authentication provider',
+                '[TEST] GitHub',
+                await (async () => {
                     await driver.page.setExtraHTTPHeaders(authHeaders)
                     await gotoManagementConsole()
 
@@ -150,8 +149,8 @@ describe('Auth regression test suite', () => {
 
                         await driver.page.setExtraHTTPHeaders({})
                     }
-                },
-            })
+                })()
+            )
 
             await driver.page.goto(config.sourcegraphBaseUrl + '/-/sign-out')
 

@@ -10,9 +10,9 @@ interface Resource {
     name: string
 
     /**
-     * Creates the resource and returns the destructor for the resource.
+     * Destroys the resource.
      */
-    create: () => Promise<() => Promise<void>>
+    destroy: () => Promise<void>
 }
 
 /**
@@ -21,17 +21,19 @@ interface Resource {
  * and destroyed in case tests are aborted midway through and manual cleanup is required.
  */
 export class TestResourceManager {
-    private resources: [Resource, () => Promise<void>][] = []
+    private resources: Resource[] = []
 
-    public async create(resource: Resource): Promise<void> {
-        const destroy = await resource.create()
-        this.resources.push([resource, destroy])
-        console.log(`Test resource created: ${resource.type} ${JSON.stringify(resource.name)}`)
+    public add(
+        type: 'User' | 'External service' | 'Authentication provider',
+        name: string,
+        destroy: () => Promise<void>
+    ): void {
+        this.resources.push({ type, name, destroy })
     }
 
     public async destroyAll(): Promise<void> {
-        for (const [resource, destroy] of this.resources) {
-            await destroy()
+        for (const resource of this.resources) {
+            await resource.destroy()
             console.log(`Test resource destroyed: ${resource.type} ${JSON.stringify(resource.name)}`)
         }
     }

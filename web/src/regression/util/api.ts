@@ -145,17 +145,20 @@ export async function ensureTestExternalService(
         kind: GQL.ExternalServiceKind
         uniqueDisplayName: string
         config: Record<string, any>
+        waitForRepos?: string[]
     }
-): Promise<void> {
+): Promise<() => Promise<void>> {
     if (!options.uniqueDisplayName.startsWith('[TEST]')) {
         throw new Error(
             `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
         )
     }
 
+    const destroy = (): Promise<void> => ensureNoTestExternalServices(gqlClient, { ...options, deleteIfExist: true })
+
     const externalServices = await getExternalServices(gqlClient, options)
     if (externalServices.length > 0) {
-        return
+        return destroy
     }
 
     // Add a new external service if one doesn't already exist.
@@ -178,6 +181,12 @@ export async function ensureTestExternalService(
             { input }
         )
         .toPromise()
+
+    if (options.waitForRepos && options.waitForRepos.length > 0) {
+        await waitForRepos(gqlClient, options.waitForRepos)
+    }
+
+    return destroy
 }
 
 export async function getUser(gqlClient: GraphQLClient, username: string): Promise<GQL.IUser | null> {

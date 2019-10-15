@@ -8,7 +8,6 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestFixtures } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
-import { deleteUser } from './util/api'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -30,16 +29,15 @@ describe('Core functionality regression test suite', () => {
     let resourceManager: TestResourceManager
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
-        await resourceManager.create({
-            type: 'User',
-            name: testUsername,
-            create: () =>
-                ensureLoggedInOrCreateTestUser(driver, gqlClient, {
-                    username: testUsername,
-                    deleteIfExists: true,
-                    ...config,
-                }),
-        })
+        resourceManager.add(
+            'User',
+            testUsername,
+            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                username: testUsername,
+                deleteIfExists: true,
+                ...config,
+            })
+        )
     })
 
     afterAll(async () => {

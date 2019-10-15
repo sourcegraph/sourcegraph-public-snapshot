@@ -11,6 +11,7 @@ import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { deleteUser, setUserSiteAdmin, getUser, ensureNoTestExternalServices } from './util/api'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { async } from 'q'
 
 describe('External services regression test suite', () => {
     const testUsername = 'test-extsvc'
@@ -32,16 +33,15 @@ describe('External services regression test suite', () => {
     let resourceManager: TestResourceManager
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
-        await resourceManager.create({
-            type: 'User',
-            name: testUsername,
-            create: () =>
-                ensureLoggedInOrCreateTestUser(driver, gqlClient, {
-                    username: testUsername,
-                    deleteIfExists: true,
-                    ...config,
-                }),
-        })
+        resourceManager.add(
+            'User',
+            testUsername,
+            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                username: testUsername,
+                deleteIfExists: true,
+                ...config,
+            })
+        )
         const user = await getUser(gqlClient, testUsername)
         if (!user) {
             throw new Error(`test user ${testUsername} does not exist`)
@@ -66,47 +66,49 @@ describe('External services regression test suite', () => {
             deleteIfExist: true,
         })
 
-        await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/external-services')
-        await retry(() => driver.clickElementWithText('Add external service'), { retries: 3, maxRetryTime: 500 })
-        await retry(() => driver.clickElementWithText('Add GitHub.com repositories.'), {
-            retries: 3,
-            maxRetryTime: 500,
-        })
-        const repoSlugs = ['gorilla/mux']
-        const githubConfig = `{
-            "url": "https://github.com",
-            "token": ${JSON.stringify(config.gitHubToken)},
-            "repos": ${JSON.stringify(repoSlugs)},
-            "repositoryQuery": ["none"],
-        }`
-        await driver.replaceText({
-            selector: '#e2e-external-service-form-display-name',
-            newText: externalServiceName,
-            selectMethod: 'selectall',
-            enterTextMethod: 'paste',
-        })
-        await driver.replaceText({
-            selector: '.monaco-editor',
-            newText: githubConfig,
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
-        await retry(() => driver.clickElementWithText('Add external service', { tagName: 'button' }), {
-            retries: 3,
-            maxRetryTime: 500,
-        })
-        await resourceManager.create({
-            type: 'External service',
-            name: externalServiceName,
-            create: () =>
-                // already created above
-                Promise.resolve(() =>
+        resourceManager.add(
+            'External service',
+            externalServiceName,
+            await (async () => {
+                await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/external-services')
+                await retry(() => driver.clickElementWithText('Add external service'), {
+                    retries: 3,
+                    maxRetryTime: 500,
+                })
+                await retry(() => driver.clickElementWithText('Add GitHub.com repositories.'), {
+                    retries: 3,
+                    maxRetryTime: 500,
+                })
+                const repoSlugs = ['gorilla/mux']
+                const githubConfig = `{
+                    "url": "https://github.com",
+                    "token": ${JSON.stringify(config.gitHubToken)},
+                    "repos": ${JSON.stringify(repoSlugs)},
+                    "repositoryQuery": ["none"],
+                }`
+                await driver.replaceText({
+                    selector: '#e2e-external-service-form-display-name',
+                    newText: externalServiceName,
+                    selectMethod: 'selectall',
+                    enterTextMethod: 'paste',
+                })
+                await driver.replaceText({
+                    selector: '.monaco-editor',
+                    newText: githubConfig,
+                    selectMethod: 'keyboard',
+                    enterTextMethod: 'paste',
+                })
+                await retry(() => driver.clickElementWithText('Add external service', { tagName: 'button' }), {
+                    retries: 3,
+                    maxRetryTime: 500,
+                })
+                return () =>
                     ensureNoTestExternalServices(gqlClient, {
                         kind: GQL.ExternalServiceKind.GITHUB,
                         uniqueDisplayName: externalServiceName,
                         deleteIfExist: true,
                     })
-                ),
-        })
+            })()
+        )
     })
 })
