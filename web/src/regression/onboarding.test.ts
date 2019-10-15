@@ -13,7 +13,6 @@ import {
     waitForRepos,
     setUserSiteAdmin,
     getUser,
-    deleteUser,
     ensureNoTestExternalServices,
     getExternalServices,
 } from './util/api'
@@ -83,17 +82,15 @@ describe('Onboarding', () => {
             ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
             screenshots = new ScreenshotVerifier(driver)
 
-            await resourceManager.create({
-                type: 'User',
-                name: testUsername,
-                create: () =>
-                    ensureLoggedInOrCreateTestUser(driver, gqlClient, {
-                        ...config,
-                        username: testUsername,
-                        deleteIfExists: true,
-                    }),
-                destroy: () => deleteUser(gqlClient, testUsername, false),
-            })
+            resourceManager.add(
+                'User',
+                testUsername,
+                await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                    ...config,
+                    username: testUsername,
+                    deleteIfExists: true,
+                })
+            )
         },
         20 * 1000 // wait 20s for cloning
     )
@@ -118,6 +115,7 @@ describe('Onboarding', () => {
     testAdminOnboarding(
         'Site-admin onboarding',
         async () => {
+            // TODO: need to destroy?
             await ensureNoTestExternalServices(gqlClient, {
                 ...testExternalServiceConfig,
                 deleteIfExist: true,
