@@ -42,5 +42,4 @@
       "autoFix": true,
     },
   ],
-  "go.inferGopath": false,
 }
