@@ -8,16 +8,16 @@ ALTER TABLE lsif_dumps ADD COLUMN root TEXT NOT NULL DEFAULT '';
 ALTER TABLE lsif_dumps ADD CONSTRAINT lsif_dumps_repository_commit_root UNIQUE (repository, commit, root);
 
 -- Find the dump associated with the commit closest to the given commit for which we have
--- LSIF data. This allows us to answer queries for commits sthat we do not have LSIF data
+-- LSIF data. This allows us to answer queries for commits that we do not have LSIF data
 -- uploaded for, but do have LSIF data for a near ancestor or descendant. It is likely that
--- we can still use this data to provide (motly) precise code intelligence.
+-- we can still use this data to provide (mostly) precise code intelligence.
 CREATE OR REPLACE FUNCTION closest_dump(repository text, "commit" text, path text, traversal_limit integer) RETURNS SETOF lsif_dumps AS $$
     DECLARE
-        r record;             -- lineage rows
-        i float4 := 0;        -- traversal counter
-        d lsif_dumps%ROWTYPE; -- lsif dump row (returned)
+        lineage_row record;            -- lineage rows
+        i float4 := 0;                 -- traversal counter
+        found_dump lsif_dumps%ROWTYPE; -- lsif dump row (returned)
     BEGIN
-        FOR r IN
+        FOR lineage_row IN
             -- lineage is a recursively defined CTE that returns all ancestor an descendants
             -- of the given commit for the given repository. This happens to evaluate in
             -- Postgres as a lazy generator, which allows us to pull the "next" closest commit
@@ -59,10 +59,10 @@ CREATE OR REPLACE FUNCTION closest_dump(repository text, "commit" text, path tex
             -- lineage in order of distance from the source commit, it is necessarily
             -- the closest commit with LISF data.
 
-            SELECT t.* INTO d FROM lsif_dumps t WHERE t.repository = r.repository AND t.commit = r.commit AND $3 LIKE (t.root || '%');
-            IF d.id IS NOT NULL THEN
-                RETURN NEXT d; -- return row
-                RETURN;        -- exit function
+            SELECT dump.* INTO found_dump FROM lsif_dumps dump WHERE dump.repository = lineage_row.repository AND dump.commit = lineage_row.commit AND $3 LIKE (dump.root || '%');
+            IF found_dump.id IS NOT NULL THEN
+                RETURN NEXT found_dump; -- return row
+                RETURN;                 -- exit function
             END IF;
         END LOOP;
     END;
