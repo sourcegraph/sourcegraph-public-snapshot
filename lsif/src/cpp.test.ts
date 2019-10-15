@@ -26,7 +26,7 @@ describe('Database', () => {
         xrepoDatabase = new XrepoDatabase(connection)
 
         // Prepare test data
-        await convertTestData(xrepoDatabase, storageRoot, repository, commit, 'cpp/data/data.lsif.gz')
+        await convertTestData(xrepoDatabase, storageRoot, repository, commit, '', 'cpp/data/data.lsif.gz')
     })
 
     afterAll(async () => {
@@ -42,14 +42,12 @@ describe('Database', () => {
             fail('failed beforeAll')
         }
 
-        const dump = await xrepoDatabase.getDump(repository, commit)
+        const dump = await xrepoDatabase.getDump(repository, commit, '')
         if (!dump) {
             throw new Error(`Unknown repository@commit ${repository}@${commit}`)
         }
 
         return new Database(
-            storageRoot,
-            xrepoDatabase,
             connectionCache,
             documentCache,
             resultChunkCache,

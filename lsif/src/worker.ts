@@ -114,7 +114,12 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: Conf
     ctx: TracingContext
 ): Promise<void> => {
     // Destructure job arguments
-    const { repository, commit, filename } = args
+    const { repository, commit, root, filename } = args as {
+        repository: string
+        commit: string
+        root: string
+        filename: string
+    }
 
     await logAndTraceCall(ctx, 'converting LSIF data', async (ctx: TracingContext) => {
         const input = fs.createReadStream(filename)
@@ -126,7 +131,7 @@ const createConvertJob = (xrepoDatabase: XrepoDatabase, fetchConfiguration: Conf
 
             // Add packages and references to the xrepo db
             const dumpID = await logAndTraceCall(ctx, 'populating cross-repo database', () =>
-                xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+                xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
             )
 
             // Move the temp file where it can be found by the server

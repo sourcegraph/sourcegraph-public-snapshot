@@ -125,6 +125,7 @@ export async function convertTestData(
     storageRoot: string,
     repository: string,
     commit: string,
+    root: string,
     filename: string
 ): Promise<void> {
     // Create a filesystem read stream for the given test file. This will cover
@@ -133,8 +134,9 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, 'tmp')
     const { packages, references } = await convertLsif(input, tmp)
-    const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+    const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dumpID, repository, commit))
+    await xrepoDatabase.updateCommits(repository, [[commit, '0'.repeat(40)]])
 }
 
 /**
