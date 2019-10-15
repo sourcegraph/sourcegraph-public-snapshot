@@ -38,21 +38,6 @@ const campaignFragment = gql`
             openApproved
             openChangesRequested
             openPending
-            nodes {
-                id
-                title
-                body
-                state
-                reviewState
-                repository {
-                    name
-                    url
-                }
-                externalURL {
-                    url
-                }
-                createdAt
-            }
         }
     }
 `
