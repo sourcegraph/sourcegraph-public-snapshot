@@ -28,10 +28,10 @@ To enable better programmatic consumption of search results, Sourcegraph 3.9 int
 Sourcegraph's paginated search API is cursor-based. Each response contains a new cursor indicating where we left off when searching. It tells Sourcegraph where to continue when a future request with that cursor is made. The typical request flow looks something like:
 
 - Fetch results 0-100: `search(query:"some query", first:100, cursor:null)`
-- Fetch results 100-200: `search(query:"some query", first:100, cursor:"<.results.pageInfo.endCursor>")`
-- Fetch results 200-300: `search(query:"some query", first:100, cursor:"<.results.pageInfo.endCursor>")`
+- Fetch results 100-200: `search(query:"some query", first:100, cursor:$cursor)`
+- Fetch results 200-300: `search(query:"some query", first:100, cursor:$cursor)`
 
-Until `SearchResults.finished` is `true` - indicating no more results are available.
+Until `SearchResults.finished` is `true` - indicating no more results are available and with `$cursor` being the value from the previous requests `results.pageInfo.endCursor` field.
 
 #### Choosing the right per-page value
 
