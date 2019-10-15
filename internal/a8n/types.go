@@ -280,14 +280,11 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	for _, e := range ce {
 		switch e.Type() {
 		case ChangesetEventKindGitHubReviewed:
-			s, ok := e.ReviewState()
-			if !ok {
-				continue
+			switch s, _ := e.ReviewState(); s {
+			case ChangesetReviewStateApproved,
+				ChangesetReviewStateChangesRequested:
+				reviewsByActor[e.Actor()] = s
 			}
-
-			actor := e.Actor()
-
-			reviewsByActor[actor] = s
 		}
 	}
 
