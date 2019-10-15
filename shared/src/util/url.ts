@@ -153,7 +153,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     let position: Position | undefined
     let range: Range | undefined
     if (fragmentSplit.length === 1) {
-        filePath = fragmentSplit[0]
+        filePath = decodeURIComponent(fragmentSplit[0])
     }
     if (fragmentSplit.length === 2) {
         filePath = fragmentSplit[0]
