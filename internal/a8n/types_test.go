@@ -104,6 +104,34 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		},
 		{
 			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "APPROVED"),
+				ghReview(daysAgo(0), "user1", "COMMENTED"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(0), "user1", "COMMENTED"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "APPROVED"),
+				ghReview(daysAgo(0), "user1", "PENDING"),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(daysAgo(0), "user1", "PENDING"),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
 				ghReview(daysAgo(2), "user1", "APPROVED"),
 				ghReview(daysAgo(1), "user1", "CHANGES_REQUESTED"),
 			},
