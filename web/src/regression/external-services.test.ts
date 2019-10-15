@@ -8,10 +8,9 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestFixtures } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
-import { deleteUser, setUserSiteAdmin, getUser, ensureNoTestExternalServices } from './util/api'
+import { setUserSiteAdmin, getUser, ensureNoTestExternalServices } from './util/api'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { async } from 'q'
 
 describe('External services regression test suite', () => {
     const testUsername = 'test-extsvc'
