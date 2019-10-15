@@ -10,7 +10,7 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestFixtures } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
-import { deleteUser, setUserSiteAdmin, getUser, getManagementConsoleState } from './util/api'
+import { setUserSiteAdmin, getUser, getManagementConsoleState } from './util/api'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
 describe('Auth regression test suite', () => {
