@@ -26,7 +26,7 @@ describe('Database', () => {
         xrepoDatabase = new XrepoDatabase(connection)
 
         // Prepare test data
-        await convertTestData(xrepoDatabase, storageRoot, repository, '', commit, 'cpp/data/data.lsif.gz')
+        await convertTestData(xrepoDatabase, storageRoot, repository, commit, '', 'cpp/data/data.lsif.gz')
     })
 
     afterAll(async () => {
