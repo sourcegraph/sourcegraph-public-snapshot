@@ -119,7 +119,7 @@ export const queryChangesets = (
 ): Observable<IChangesetConnection> =>
     queryGraphQL(
         gql`
-            query CampaignByID($campaign: ID!, $first: Int) {
+            query CampaignChangesets($campaign: ID!, $first: Int) {
                 node(id: $campaign) {
                     __typename
                     ... on Campaign {
