@@ -14,12 +14,20 @@ const dateTickFormatter = (timestamp: number): string => dateTickFormat.format(t
 const tooltipLabelFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 const tooltipLabelFormatter = (date: number): string => tooltipLabelFormat.format(date)
 
-const STYLE: React.CSSProperties = {
+const toLocaleString = (value: number): string => value.toLocaleString()
+
+const tooltipStyle: React.CSSProperties = {
     color: 'var(--body-color)',
-    backgroundColor: 'var(--body-bg)',
+    border: 'none',
+    background: 'var(--body-bg)',
 }
 
-const toLocaleString = (value: number): string => value.toLocaleString()
+const commonAreaProps = {
+    isAnimationActive: false,
+    strokeWidth: 0,
+    stackId: 'stack',
+    type: 'step',
+} as const
 
 /**
  * A burndown chart showing progress of the campaigns changesets.
@@ -38,7 +46,6 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                         changesetCountsOverTime[0].date,
                         changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
                     ]}
-                    // TODO!(sqs): delete? domain={[startDate, startDate + openThreads.length * 24 * 60 * 60 * 1000]}
                     name="Time"
                     tickFormatter={dateTickFormatter}
                     type="number"
@@ -52,40 +59,24 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                     domain={[0, 'dataMax']}
                 />
                 <Tooltip
-                    // formatter={tooltipFormatter}
                     labelFormatter={tooltipLabelFormatter as LabelFormatter}
                     isAnimationActive={false}
-                    wrapperStyle={STYLE}
-                    itemStyle={STYLE}
-                    labelStyle={STYLE}
+                    wrapperStyle={{ border: '1px solid var(--color-border)' }}
+                    contentStyle={tooltipStyle}
+                    labelStyle={{ fontWeight: 'bold' }}
+                    itemStyle={tooltipStyle}
                 />
 
+                <Area dataKey="openPending" name="Open & awaiting review" fill="var(--warning)" {...commonAreaProps} />
                 <Area
-                    type="step"
-                    dataKey="openApproved"
-                    name="Open & approved"
-                    fill="var(--success)"
-                    strokeWidth={0}
-                    isAnimationActive={false}
+                    dataKey="openChangesRequested"
+                    name="Open & changes requested"
+                    fill="var(--danger)"
+                    {...commonAreaProps}
                 />
-                <Area
-                    stackId="threadState"
-                    type="step"
-                    dataKey="mergedThreads"
-                    name="Merged"
-                    fill="var(--merged)"
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                />
-                <Area
-                    stackId="threadState"
-                    type="step"
-                    dataKey="closedThreads"
-                    name="Closed"
-                    fill="var(--secondary)"
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                />
+                <Area dataKey="openApproved" name="Open & approved" fill="var(--success)" {...commonAreaProps} />
+                <Area dataKey="closed" name="Closed" fill="var(--secondary)" {...commonAreaProps} />
+                <Area dataKey="merged" name="Merged" fill="var(--merged)" {...commonAreaProps} />
             </ComposedChart>
         </ResponsiveContainer>
     )

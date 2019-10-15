@@ -8,19 +8,15 @@ import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
 import { ChangesetList } from './changesets/ChangesetList'
-import {
-    changesetStatusColorClasses,
-    changesetReviewStateColors,
-    changesetStageLabels,
-} from './changesets/presentation'
 import { Link } from '../../../../../shared/src/components/Link'
-import { groupBy, noop, upperFirst } from 'lodash'
+import { noop, upperFirst } from 'lodash'
 import { Form } from '../../../components/Form'
 import { fetchCampaignById, updateCampaign, deleteCampaign, createCampaign } from './backend'
 import { useError } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { queryNamespaces } from '../../namespaces/backend'
+import { CampaignBurndownChart } from './BurndownChart'
 
 interface Props {
     /**
@@ -31,18 +27,6 @@ interface Props {
 
     authenticatedUser: GQL.IUser
     history: H.History
-}
-
-const changesetStages: (GQL.ChangesetState | GQL.ChangesetReviewState)[] = [
-    GQL.ChangesetState.MERGED,
-    GQL.ChangesetState.CLOSED,
-    GQL.ChangesetReviewState.APPROVED,
-    GQL.ChangesetReviewState.CHANGES_REQUESTED,
-    GQL.ChangesetReviewState.PENDING,
-]
-const changesetStageColors: Record<GQL.ChangesetReviewState | GQL.ChangesetState, string> = {
-    ...changesetReviewStateColors,
-    ...changesetStatusColorClasses,
 }
 
 /**
@@ -103,13 +87,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({ campaignID, hi
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
-
-    // Calculate campaign progress
-    const changeSetCount = campaign ? campaign.changesets.nodes.length : 0
-    const changesetsByStage = groupBy(campaign ? campaign.changesets.nodes : [], changeset =>
-        // For open changesets, group by review state
-        changeset.state !== GQL.ChangesetState.OPEN ? changeset.state : changeset.reviewState
-    )
 
     const onSubmit: React.FormEventHandler = async event => {
         event.preventDefault()
@@ -174,7 +151,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({ campaignID, hi
             <PageTitle title={campaign ? campaign.name : 'New Campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel}>
                 <h2 className="d-flex">
-                    <CampaignsIcon className="icon-inline" />
+                    <CampaignsIcon className="icon-inline mr-2" />
                     {/* The namespace of a campaign can only be set on creation */}
                     {campaign ? (
                         <span>{campaign.namespace.namespaceName}</span>
@@ -272,38 +249,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({ campaignID, hi
             </Form>
             {campaign && (
                 <>
+                    <h3>Progress</h3>
+                    <CampaignBurndownChart
+                        changesetCountsOverTime={campaign.changesetCountsOverTime}
+                        history={history}
+                    />
+
                     <h3>
                         Changesets{' '}
                         <span className="badge badge-secondary badge-pill">{campaign.changesets.nodes.length}</span>
                     </h3>
-                    {changeSetCount > 0 && (
-                        <div>
-                            <div className="progress rounded mb-2">
-                                {changesetStages.map(stage => {
-                                    const changesetsInStage = changesetsByStage[stage] || []
-                                    const count = changesetsInStage.length
-                                    return (
-                                        count > 0 && (
-                                            <div
-                                                // Needed for dynamic width
-                                                // eslint-disable-next-line react/forbid-dom-props
-                                                style={{ width: (count / changeSetCount) * 100 + '%' }}
-                                                className={`progress-bar bg-${changesetStageColors[stage]}`}
-                                                role="progressbar"
-                                                aria-valuemin={0}
-                                                aria-valuenow={count}
-                                                aria-valuemax={changeSetCount}
-                                                key={stage}
-                                            >
-                                                {count} {changesetStageLabels[stage]}
-                                            </div>
-                                        )
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
                     <ChangesetList changesets={campaign.changesets.nodes} />
+
                     <p className="mt-2">
                         Use the <Link to="/api/console">GraphQL API</Link> to add changesets to this campaign (
                         <code>createChangesets</code> and <code>addChangesetsToCampaign</code>)

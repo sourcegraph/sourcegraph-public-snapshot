@@ -1,7 +1,7 @@
 import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { ID, ICampaign, IUpdateCampaignInput, ICreateCampaignInput } from '../../../../../shared/src/graphql/schema'
 
 const campaignFragment = gql`
@@ -93,29 +93,43 @@ export async function deleteCampaign(campaign: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
+const mockData = false
 export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
-    queryGraphQL(
-        gql`
-            query CampaignByID($campaign: ID!) {
-                node(id: $campaign) {
-                    __typename
-                    ... on Campaign {
-                        ...CampaignFields
-                    }
-                }
-            }
-            ${campaignFragment}
-        `,
-        { campaign }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'Campaign') {
-                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
-            }
-            return node
-        })
-    )
+    mockData
+        ? of(({
+              __typename: 'Campaign',
+              id: 'Q2FtcGFpZ246MQ==',
+              namespace: { id: 'VXNlcjox', namespaceName: 'felix' },
+              author: { username: 'felix', avatarURL: null },
+              name: 'test camp',
+              description: 'asdasd',
+              createdAt: '2019-09-12T20:18:10Z',
+              updatedAt: '2019-10-08T16:39:48Z',
+              url: '/users/felix/campaigns/Q2FtcGFpZ246MQ==',
+              changesets: { nodes: [] },
+          } as unknown) as ICampaign)
+        : queryGraphQL(
+              gql`
+                  query CampaignByID($campaign: ID!) {
+                      node(id: $campaign) {
+                          __typename
+                          ... on Campaign {
+                              ...CampaignFields
+                          }
+                      }
+                  }
+                  ${campaignFragment}
+              `,
+              { campaign }
+          ).pipe(
+              map(dataOrThrowErrors),
+              map(({ node }) => {
+                  if (!node) {
+                      return null
+                  }
+                  if (node.__typename !== 'Campaign') {
+                      throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+                  }
+                  return node
+              })
+          )
