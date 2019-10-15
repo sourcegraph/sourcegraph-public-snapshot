@@ -1,6 +1,15 @@
 import H from 'history'
 import React from 'react'
-import { Area, ComposedChart, LabelFormatter, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+    Area,
+    ComposedChart,
+    LabelFormatter,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+    TooltipPayload,
+} from 'recharts'
 import { ICampaign } from '../../../../../shared/src/graphql/schema'
 
 interface Props extends Pick<ICampaign, 'changesetCountsOverTime'> {
@@ -28,6 +37,16 @@ const commonAreaProps = {
     stackId: 'stack',
     type: 'step',
 } as const
+
+const tooltipItemOrder: Record<string, number> = {
+    'Open & awaiting review': 4,
+    'Open & changes requested': 3,
+    'Open & approved': 2,
+    Closed: 1,
+    Merged: 0,
+}
+
+const tooltipItemSorter = (item: TooltipPayload): number => tooltipItemOrder[item.name]
 
 /**
  * A burndown chart showing progress of the campaigns changesets.
@@ -65,6 +84,7 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ changese
                     contentStyle={tooltipStyle}
                     labelStyle={{ fontWeight: 'bold' }}
                     itemStyle={tooltipStyle}
+                    itemSorter={tooltipItemSorter}
                 />
 
                 <Area dataKey="openPending" name="Open & awaiting review" fill="var(--warning)" {...commonAreaProps} />
