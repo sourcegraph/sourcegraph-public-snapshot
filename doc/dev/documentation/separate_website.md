@@ -42,7 +42,7 @@ We use terraform to manage our DNS records.
 
 💡 If you don't have terraform installed and install via ```brew install terraform```. Ensure that your local `terraform` version is the same as the `CI` version to **avoid file locks**.  
 
-To update DNS, follow the [DNS guide](../../../../../../infrastructure/blob/master/dns/README.md), but push to a non-`master` branch and get it reviewed before merging.
+To update DNS, follow the [DNS guide](https://github.com/sourcegraph/infrastructure/blob/master/dns/README.md), but push to a non-`master` branch and get it reviewed before merging.
 
 💡 Important:
 
