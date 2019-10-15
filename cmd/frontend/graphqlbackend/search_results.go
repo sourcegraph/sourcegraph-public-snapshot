@@ -144,6 +144,10 @@ type searchResultsResolver struct {
 	searchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
+
+	// cursor to return for paginated search requests, or nil if the request
+	// wasn't paginated.
+	cursor *searchCursor
 }
 
 func (sr *searchResultsResolver) Results() []searchResultResolver {
@@ -450,6 +454,12 @@ loop:
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
+	// If the request is a paginated one, we handle it separately. See
+	// paginatedResults for more details.
+	if r.pagination != nil {
+		return r.paginatedResults(ctx)
+	}
+
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
 	if err != nil {
 		return nil, err

@@ -103,7 +103,7 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
                   __typename: 'ProductLicenseConnection' as const,
                   nodes: [],
                   totalCount: 0,
-                  pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false },
+                  pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false, endCursor: null },
               })
 
     private onDidUpdateProductLicense = () => this.updates.next()

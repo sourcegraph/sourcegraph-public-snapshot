@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -23,6 +24,8 @@ func TestSearchSuggestions(t *testing.T) {
 			Version     string
 			PatternType *string
 			Query       string
+			After       *graphql.ID
+			First       *int32
 		}{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
@@ -122,6 +125,8 @@ func TestSearchSuggestions(t *testing.T) {
 			Version     string
 			PatternType *string
 			Query       string
+			After       *graphql.ID
+			First       *int32
 		}{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {
 			t.Fatal(err)

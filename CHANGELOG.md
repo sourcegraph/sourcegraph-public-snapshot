@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Our external service syncing model will stream in new repositories to Sourcegraph. Previously we could only add a repository to our database and clone it once we had synced all information from all external services (to detect deletions and renames). Now adding a repository to an external service configuration should be reflected much sooner, even on large instances. [#5145](https://github.com/sourcegraph/sourcegraph/issues/5145)
 - There is now an easy way for site admins to view and export settings and configuration when reporting a bug. The page for doing so is at /site-admin/report-bug, linked to from the site admin side panel under "Report a bug".
+- An experimental search pagination API to enable better programmatic consumption of search results is now available to try. For more details and known limitations see [the documentation](https://docs.sourcegraph.com/api/graphql/search).
 - Search queries can now be interpreted literally.
   - There is now a dot-star icon in the search input bar to toggle the pattern type of a query between regexp and literal.
   - There is a new `search.defaultPatternType` setting to configure the default pattern type, regexp or literal, for searches.
