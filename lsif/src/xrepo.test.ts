@@ -121,11 +121,11 @@ describe('XrepoDatabase', () => {
         expect((await xrepoDatabase.findClosestDump('foo', ca, 'file'))!.commit).toEqual(cb)
         expect((await xrepoDatabase.findClosestDump('foo', cb, 'file'))!.commit).toEqual(cb)
         expect((await xrepoDatabase.findClosestDump('foo', cc, 'file'))!.commit).toEqual(cb)
-        expect((await xrepoDatabase.findClosestDump('foo', cd, 'file'))!.commit).toBeUndefined()
-        expect((await xrepoDatabase.findClosestDump('foo', ce, 'file'))!.commit).toBeUndefined()
-        expect((await xrepoDatabase.findClosestDump('foo', cf, 'file'))!.commit).toBeUndefined()
-        expect((await xrepoDatabase.findClosestDump('foo', cg, 'file'))!.commit).toBeUndefined()
-        expect((await xrepoDatabase.findClosestDump('foo', ch, 'file'))!.commit).toBeUndefined()
+        expect(await xrepoDatabase.findClosestDump('foo', cd, 'file')).toBeUndefined()
+        expect(await xrepoDatabase.findClosestDump('foo', ce, 'file')).toBeUndefined()
+        expect(await xrepoDatabase.findClosestDump('foo', cf, 'file')).toBeUndefined()
+        expect(await xrepoDatabase.findClosestDump('foo', cg, 'file')).toBeUndefined()
+        expect(await xrepoDatabase.findClosestDump('foo', ch, 'file')).toBeUndefined()
     })
 
     it('should not return elements farther than MAX_TRAVERSAL_LIMIT', async () => {
@@ -176,7 +176,7 @@ describe('XrepoDatabase', () => {
         // | 99    | 99     |
         // | 100   | 1      | (limit reached)
 
-        expect((await xrepoDatabase.findClosestDump('foo', cmax, 'file'))!.commit).toBeUndefined()
+        expect(await xrepoDatabase.findClosestDump('foo', cmax, 'file')).toBeUndefined()
 
         // Mark commit 1
         await xrepoDatabase.insertDump('foo', c1, '')
