@@ -6,22 +6,22 @@
 
 For projects like [langserver.org](http://langserver.org) or [lsif.dev](http://lsif.dev), we prefer to create separate websites from 
 [Sourcegraph.com](http://sourcegraph.com). In these two examples, we provide a list of LSPs or LSIF indexers offered by us or other parties 
-that can be used for Sourcegraph or other static analysis applications. Since the usage isn't strictly tide to Sourcegraph and we are not 
+that can be used for Sourcegraph or other static analysis applications. Since the usage isn't strictly tied to Sourcegraph and we are not 
 the sole providers, we publish this information on an independent website.
 
-# 2. Setup domain and create content
+# 2. Set up domain and create content
 
 ### Secure the domain
 
-First step is to request @beyang or @sqs get a domain and add the site to Sourcegraph's Cloudflare account. 
+First step is to request @beyang get a domain and add the site to Sourcegraph's Cloudflare account. 
     
-    💡 Make sure `www` is redirecting to `https`.
+    💡 Make sure `www` redirects to `https`.
 
 ### Create the website content
 
 Once the domain is secured, we need to setup the GitHub page, where the static page will be hosted as: `[projectname].github.io`.
 
-We clone the repo locally, create a branch from master (make sure master is up-to-date!) and add the following files:
+We clone the repository locally, create a branch from master (make sure master is up-to-date!) and add the following files:
     - CNAME
     Containing:
 
@@ -37,17 +37,17 @@ Examples: [Langserver](http://github.com/langserver), [LSIF](http://github.com/l
 
 # 3. Update the DNS to point to the server
 
-We use terraform to manage our DNS records. To update DNS, follow the [DNS guide](../../../../../../infrastructure/blob/master/dns/README.md), but push to `branch` not `master` and get it reviewed before merging.
+We use terraform to manage our DNS records. To update DNS, follow the [DNS guide](../../../../../../infrastructure/blob/master/dns/README.md), but push to a non-`master` branch and get it reviewed before merging.
 
 If you don't have terraform installed and install via ```brew install terraform```:
 
-    💡 Ensure that your local `terrraform` version is the same as the `CI` version to **avoid file locks**.
+    💡 Ensure that your local `terraform` version is the same as the `CI` version to **avoid file locks**.
 
     💡 Make sure to pull the **latest version** of the infrastructure `master` before creating your branch.
 
     💡 Check that all of the domain's `A records` are also referenced in the terraform file.
 
-Inside your branch:
+From the `infrastructure` repository, with your branch checked out:
 
     $ terraform apply
     $ git commit -m 'dns: Updated terraform.tfstate' terraform.tfstate
