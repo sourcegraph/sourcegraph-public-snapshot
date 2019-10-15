@@ -2,7 +2,14 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { queryGraphQL, mutateGraphQL } from '../../../backend/graphql'
 import { Observable } from 'rxjs'
-import { ID, ICampaign, IUpdateCampaignInput, ICreateCampaignInput } from '../../../../../shared/src/graphql/schema'
+import {
+    ID,
+    ICampaign,
+    IUpdateCampaignInput,
+    ICreateCampaignInput,
+    IChangesetConnection,
+} from '../../../../../shared/src/graphql/schema'
+import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -21,6 +28,16 @@ const campaignFragment = gql`
         updatedAt
         url
         changesets {
+            totalCount
+        }
+        # TODO move to separate query and configure from/to
+        changesetCountsOverTime {
+            date
+            merged
+            closed
+            openApproved
+            openChangesRequested
+            openPending
             nodes {
                 id
                 title
@@ -108,5 +125,51 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
             return node
+        })
+    )
+
+export const queryChangesets = (
+    campaign: ID,
+    { first }: Pick<FilteredConnectionQueryArgs, 'first'>
+): Observable<IChangesetConnection> =>
+    queryGraphQL(
+        gql`
+            query CampaignByID($campaign: ID!, $first: Int) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
+                        changesets(first: $first) {
+                            totalCount
+                            nodes {
+                                id
+                                title
+                                body
+                                state
+                                reviewState
+                                repository {
+                                    name
+                                    url
+                                }
+                                externalURL {
+                                    url
+                                }
+                                createdAt
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        { campaign, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesets
         })
     )
