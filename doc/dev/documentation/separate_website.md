@@ -39,7 +39,7 @@ If you don't have terraform installed and install via ```brew install terraform`
 
     💡 Ensure that your local `terrraform` version is the same as the `CI` version to **avoid file locks**.
 
-[DNS guide](../../../../../infrastructure/blob/master/dns/README.md)
+[DNS guide](../../../../../../infrastructure/blob/master/dns/README.md)
 
     💡 Make sure to pull the **latest version** of the infrastructure `master` before creating your branch.
 
