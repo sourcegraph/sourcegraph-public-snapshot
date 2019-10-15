@@ -13,12 +13,15 @@ the sole providers, we publish this information on an independent website.
 
 ### Secure the domain
 
-    💡 First step is to get a domain at Namecheap and add the site to our Cloudflare account (Beyang or Quinn would do this). Make sure `www` is redirecting to `https`.
+First step is to request @beyang or @sqs get a domain and add the site to Sourcegraph's Cloudflare account. 
+    
+    💡 Make sure `www` is redirecting to `https`.
 
 ### Create the website content
 
-- Once the domain is secured, we need to setup the Github page, where the static page will be hosted as: `[projectname].github.io`.
-- We clone the repo locally, create a branch from master (make sure master is up-to-date!) and add the following files:
+Once the domain is secured, we need to setup the GitHub page, where the static page will be hosted as: `[projectname].github.io`.
+
+We clone the repo locally, create a branch from master (make sure master is up-to-date!) and add the following files:
     - CNAME
     Containing:
 
@@ -27,19 +30,18 @@ the sole providers, we publish this information on an independent website.
     - README.md
     - index.html
     - style-addition.css
-- Once all content is created, we `push` our branch, create a **PR** and ask for reviews and merge to master.
+
+When all the content is created, we `push` our branch, create a **PR** and ask for reviews and merge to master.
 
 Examples: [Langserver](http://github.com/langserver), [LSIF](http://github.com/lsif)
 
 # 3. Update the DNS to point to the server
 
-We use terraform to manage our DNS records. To update DNS, follow this guide, but push to `branch` not `master` and get it reviewed before merging. 
+We use terraform to manage our DNS records. To update DNS, follow the [DNS guide](../../../../../../infrastructure/blob/master/dns/README.md), but push to `branch` not `master` and get it reviewed before merging.
 
 If you don't have terraform installed and install via ```brew install terraform```:
 
     💡 Ensure that your local `terrraform` version is the same as the `CI` version to **avoid file locks**.
-
-[DNS guide](../../../../../../infrastructure/blob/master/dns/README.md)
 
     💡 Make sure to pull the **latest version** of the infrastructure `master` before creating your branch.
 
