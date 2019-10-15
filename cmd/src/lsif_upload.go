@@ -23,6 +23,10 @@ Examples:
 
     	$ src lsif upload -repo=FOO -commit=BAR -upload-token=BAZ -file=data.lsif
 
+  Upload an LSIF dump for a subproject:
+
+    	$ src lsif upload -repo=FOO -commit=BAR -upload-token=BAZ -file=data.lsif -root=cmd/
+
 `
 
 	flagSet := flag.NewFlagSet("upload", flag.ExitOnError)
@@ -36,6 +40,7 @@ Examples:
 		commitFlag      = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
 		fileFlag        = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
 		uploadTokenFlag = flagSet.String("upload-token", "", `The LSIF upload token for the given repository. (required if lsifEnforceAuth setting is enabled)`)
+		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/)`)
 		apiFlags        = newAPIFlags(flagSet)
 	)
 
@@ -64,6 +69,9 @@ Examples:
 		qs.Add("commit", *commitFlag)
 		if *uploadTokenFlag != "" {
 			qs.Add("upload_token", *uploadTokenFlag)
+		}
+		if *rootFlag != "" {
+			qs.Add("root", *rootFlag)
 		}
 
 		url, err := url.Parse(cfg.Endpoint + "/.api/lsif/upload")
