@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search queries are now interpreted literally by default, rather than as regular expressions. [#5899](https://github.com/sourcegraph/sourcegraph/pull/5899)
 - The `search` GraphQL API field now takes a two new optional parameters: `version` and `patternType`. `version` determines the search syntax version to use, and `patternType` determines the pattern type to use for the query. `version` defaults to "V1", which is regular expression searches by default, if not explicitly passed in. `patternType` overrides the pattern type determined by version.
 - Saved searches have been updated to support the new patternType filter. All existing saved searches have been updated to append `patternType:regexp` to the end of queries to ensure deterministic results regardless of the patternType configurations on an instance. All new saved searches are required to have a `patternType:` field in the query.
+- Allow text selection in search result headers (to allow for e.g. copying filenames)
 
 ### Fixed
 
