@@ -14,7 +14,6 @@ func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
 	want := &searchCursor{
 		RepositoryOffset: 1,
 		ResultOffset:     2,
-		UserID:           3,
 	}
 	enc := marshalSearchCursor(want)
 	if enc == "" {

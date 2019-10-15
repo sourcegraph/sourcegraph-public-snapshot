@@ -60,7 +60,7 @@ func (r *schemaResolver) Search(args *struct {
 	Version     string
 	PatternType *string
 	Query       string
-	Cursor      *graphql.ID
+	After       *graphql.ID
 	First       *int32
 }) (interface {
 	Results(context.Context) (*searchResultsResolver, error)
@@ -85,7 +85,7 @@ func (r *schemaResolver) Search(args *struct {
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
-		cursor, err := unmarshalSearchCursor(args.Cursor)
+		cursor, err := unmarshalSearchCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
@@ -96,8 +96,8 @@ func (r *schemaResolver) Search(args *struct {
 			cursor: cursor,
 			limit:  *args.First,
 		}
-	} else if args.Cursor != nil {
-		return nil, errors.New("Search: paginated requests providing a 'cursor' but no 'first' is forbidden")
+	} else if args.After != nil {
+		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
 
 	return &searchResolver{

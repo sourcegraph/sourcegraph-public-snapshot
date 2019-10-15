@@ -33,7 +33,7 @@ func TestSearchResults(t *testing.T) {
 			Version     string
 			PatternType *string
 			Query       string
-			Cursor      *graphql.ID
+			After       *graphql.ID
 			First       *int32
 		}{Query: query, Version: version})
 		if err != nil {

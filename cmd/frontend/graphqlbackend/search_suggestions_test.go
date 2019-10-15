@@ -24,7 +24,7 @@ func TestSearchSuggestions(t *testing.T) {
 			Version     string
 			PatternType *string
 			Query       string
-			Cursor      *graphql.ID
+			After       *graphql.ID
 			First       *int32
 		}{Query: query, Version: version})
 		if err != nil {
@@ -125,7 +125,7 @@ func TestSearchSuggestions(t *testing.T) {
 			Version     string
 			PatternType *string
 			Query       string
-			Cursor      *graphql.ID
+			After       *graphql.ID
 			First       *int32
 		}{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {

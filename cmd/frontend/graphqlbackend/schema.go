@@ -1046,7 +1046,7 @@ type Query {
         #
         # A future request can be made for more results by passing in the
         # 'SearchResults.pageInfo.endCursor' that is returned.
-        cursor: ID
+        after: ID
 
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
@@ -1202,7 +1202,7 @@ type SearchResults {
     approximateResultCount: String!
     # Whether or not the results limit was hit.
     #
-    # In paginated requests, this field is always false. Use 'finished' instead.
+    # In paginated requests, this field is always false. Use 'pageInfo.hasNextPage' instead.
     limitHit: Boolean!
     # Integers representing the sparkline for the search results.
     sparkline: [Int!]!
