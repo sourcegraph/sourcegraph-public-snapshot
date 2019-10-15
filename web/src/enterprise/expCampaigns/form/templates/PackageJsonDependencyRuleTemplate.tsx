@@ -148,7 +148,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
         <>
             <div className="form-group">
                 <div className="form-row">
-                    <div className="col col-md-4">
+                    <div className="col">
                         <label htmlFor="campaign-template-form__packageName">Dependency package name</label>
                         <input
                             type="text"
@@ -167,7 +167,7 @@ const PackageJsonDependencyCampaignTemplateForm: React.FunctionComponent<Props> 
                             <code className="border-bottom small mr-2">@babel/core</code>
                         </p>
                     </div>
-                    <div className="col col-md-3">
+                    <div className="col">
                         <label htmlFor="campaign-template-form__matchVersion">Version range</label>
                         <div className="input-group">
                             <div className="input-group-prepend">

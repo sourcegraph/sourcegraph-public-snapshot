@@ -146,7 +146,7 @@ const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
         <>
             <div className="form-group">
                 <div className="form-row">
-                    <div className="col col-xl-4">
+                    <div className="col">
                         <label htmlFor="campaign-template-form__packageName">Dependency group and name</label>
                         <input
                             type="text"
@@ -164,7 +164,7 @@ const JavaDependencyCampaignTemplateForm: React.FunctionComponent<Props> = ({
                             Examples: <code className="border-bottom small mr-2">com.google.guava:guava</code>{' '}
                         </p>
                     </div>
-                    <div className="col col-xl-3">
+                    <div className="col">
                         <label htmlFor="campaign-template-form__matchVersion">Version range</label>
                         <div className="input-group">
                             <div className="input-group-prepend">
