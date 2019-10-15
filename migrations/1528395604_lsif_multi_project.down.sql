@@ -1,5 +1,6 @@
 BEGIN;
 
+ALTER TABLE lsif_dumps DROP CONSTRAINT lsif_dumps_repository_commit_root;
 ALTER TABLE lsif_dumps DROP COLUMN root;
 ALTER TABLE lsif_dumps ADD UNIQUE (repository, commit);
 
