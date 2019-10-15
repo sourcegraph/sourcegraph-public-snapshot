@@ -54,3 +54,10 @@ Inside your branch:
     $ git push origin branch
 
 Get the branch reviewed and merge to `master`.
+
+
+Other Sourcegraph docs:
+
+- [Contributing to Sourcegraph documentation](index.md#contributing-to-docs)
+- [Documentation directory structure](index.md#documentation-directory-structure)
+- [Documentation style guidelines](style_guide.md)
