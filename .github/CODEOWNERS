@@ -76,6 +76,7 @@
 /packages @beyang
 /cmd/frontend @beyang
 /dev @beyang
+/dev/release-ping.sh @sourcegraph/distribution
 /dev/grafana.sh  @sourcegraph/distribution
 /dev/grafana  @sourcegraph/distribution
 /dev/prometheus.sh  @sourcegraph/distribution
