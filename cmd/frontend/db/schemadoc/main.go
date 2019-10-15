@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -29,7 +29,8 @@ func generate(log *log.Logger) (string, error) {
 		run        func(cmd ...string) (string, error)
 	)
 	// If we are using pg9.6 use it locally since it is faster (CI \o/)
-	if out, _ := exec.Command("pg_config", "--version").CombinedOutput(); bytes.Contains(out, []byte("PostgreSQL 9.6")) {
+	versionRe := regexp.MustCompile(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
+	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
 		dataSource = "dbname=" + dbname
 		run = func(cmd ...string) (string, error) {
 			c := exec.Command(cmd[0], cmd[1:]...)
