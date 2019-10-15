@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 
@@ -19,21 +21,71 @@ import (
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
-func main() {
+func generate(log *log.Logger) (string, error) {
 	const dbname = "schemadoc-gen-temp"
-	_ = exec.Command("dropdb", dbname).Run()
-	if out, err := exec.Command("createdb", dbname).CombinedOutput(); err != nil {
-		log.Fatalf("createdb: %s, %v", out, err)
-	}
-	defer exec.Command("dropdb", dbname).Run()
 
-	if err := dbconn.ConnectToDB("dbname=" + dbname); err != nil {
-		log.Fatal(err)
+	var (
+		dataSource string
+		run        func(cmd ...string) (string, error)
+	)
+	// If we are using pg9.6 use it locally since it is faster (CI \o/)
+	if out, _ := exec.Command("pg_config", "--version").CombinedOutput(); bytes.Contains(out, []byte("PostgreSQL 9.6")) {
+		dataSource = "dbname=" + dbname
+		run = func(cmd ...string) (string, error) {
+			c := exec.Command(cmd[0], cmd[1:]...)
+			c.Stderr = log.Writer()
+			out, err := c.Output()
+			return string(out), err
+		}
+		_ = exec.Command("dropdb", dbname).Run()
+		defer exec.Command("dropdb", dbname).Run()
+	} else {
+		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
+		_ = exec.Command("docker", "rm", "--force", dbname).Run()
+		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-p", "5433:5432", "postgres:9.6")
+		if err := server.Start(); err != nil {
+			return "", err
+		}
+
+		defer func() {
+			_ = server.Process.Kill()
+			_ = exec.Command("docker", "kill", dbname).Run()
+			_ = server.Wait()
+		}()
+
+		time.Sleep(1 * time.Second)
+		dataSource = "postgres://postgres@localhost:5433/postgres?dbname=" + dbname
+		run = func(cmd ...string) (string, error) {
+			cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
+			c := exec.Command("docker", cmd...)
+			c.Stderr = log.Writer()
+			out, err := c.Output()
+			return string(out), err
+		}
+
+		attempts := 0
+		for {
+			attempts++
+			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "localhost", "-p", "5433").Run(); err == nil {
+				break
+			} else if attempts > 30 {
+				return "", fmt.Errorf("gave up waiting for pg_isready: %w", err)
+			}
+			time.Sleep(time.Second)
+		}
 	}
 
-	db, err := dbconn.Open("dbname=" + dbname)
+	if out, err := run("createdb", dbname); err != nil {
+		return "", fmt.Errorf("createdb: %s: %w", out, err)
+	}
+
+	if err := dbconn.ConnectToDB(dataSource); err != nil {
+		return "", fmt.Errorf("ConnectToDB: %w", err)
+	}
+
+	db, err := dbconn.Open(dataSource)
 	if err != nil {
-		log.Fatal("db.Open", err)
+		return "", fmt.Errorf("Open: %w", err)
 	}
 
 	// Query names of all public tables.
@@ -43,7 +95,7 @@ FROM information_schema.tables
 WHERE table_schema='public' AND table_type='BASE TABLE';
 	`)
 	if err != nil {
-		log.Fatal("db.Query", err)
+		return "", fmt.Errorf("Query: %w", err)
 	}
 	tables := []string{}
 	defer rows.Close()
@@ -51,51 +103,38 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		var name string
 		err := rows.Scan(&name)
 		if err != nil {
-			log.Fatal("rows.Scan", err)
+			return "", fmt.Errorf("rows.Scan: %w", err)
 		}
 		tables = append(tables, name)
 	}
 	if err = rows.Err(); err != nil {
-		log.Fatal("rows.Err", err)
+		return "", fmt.Errorf("rows.Err: %w", err)
 	}
-
-	tmpfile, err := ioutil.TempFile("", "psql*.env")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name())
-
-	env := []string{"PGHOST=host.docker.internal"}
-	for _, e := range os.Environ() {
-		if strings.HasPrefix(e, "PG") && !strings.HasPrefix(e, "PGHOST=") {
-			env = append(env, e)
-		}
-	}
-	if _, err := tmpfile.Write([]byte(strings.Join(env, "\n"))); err != nil {
-		log.Fatal(err)
-	}
-	tmpfile.Close()
 
 	docs := []string{}
 	for _, table := range tables {
 		// Get postgres "describe table" output.
-		//cmd := exec.Command("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-		cmd := exec.Command("docker", "run", "--rm", "--env-file", tmpfile.Name(), "postgres:9.6", "psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-		fmt.Println(cmd.Args)
-		out, err := cmd.CombinedOutput()
+		log.Println("describe", table)
+		out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
 		if err != nil {
-			log.Fatal("cmd.CombinedOutput", string(out), err)
+			return "", fmt.Errorf("describe %s failed: %w", table, err)
 		}
 
 		lines := strings.Split(string(out), "\n")
 		doc := "# " + strings.TrimSpace(lines[0]) + "\n"
 		doc += "```\n" + strings.Join(lines[1:], "\n") + "```\n"
 		docs = append(docs, doc)
-		fmt.Println(doc)
 	}
 	sort.Strings(docs)
 
-	out := strings.Join(docs, "\n")
+	return strings.Join(docs, "\n"), nil
+}
+
+func main() {
+	out, err := generate(log.New(os.Stderr, "", log.LstdFlags))
+	if err != nil {
+		log.Fatal(err)
+	}
 	if len(os.Args) > 1 {
 		ioutil.WriteFile(os.Args[1], []byte(out), 0644)
 	} else {
