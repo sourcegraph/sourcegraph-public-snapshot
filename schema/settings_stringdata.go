@@ -67,6 +67,11 @@ const SettingsSchemaJSON = `{
       "minimum": 0,
       "default": 1
     },
+    "search.defaultPatternType": {
+      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as.",
+      "type": "string",
+      "pattern": "literal|regexp"
+    },
     "quicklinks": {
       "description": "Links that should be accessible quickly from the home and search pages.",
       "type": "array",

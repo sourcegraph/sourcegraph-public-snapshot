@@ -38,6 +38,21 @@ const campaignFragment = gql`
             openApproved
             openChangesRequested
             openPending
+            nodes {
+                id
+                title
+                body
+                state
+                reviewState
+                repository {
+                    name
+                    url
+                }
+                externalURL {
+                    url
+                }
+                createdAt
+            }
         }
     }
 `
@@ -112,6 +127,7 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
             return node
         })
     )
+
 export const queryChangesets = (
     campaign: ID,
     { first }: Pick<FilteredConnectionQueryArgs, 'first'>

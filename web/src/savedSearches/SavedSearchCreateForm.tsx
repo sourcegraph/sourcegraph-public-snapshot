@@ -63,7 +63,11 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         const q = new URLSearchParams(this.props.location.search)
         let defaultValue: Partial<SavedQueryFields> = {}
         const query = q.get('query')
-        if (query) {
+        const patternType = q.get('patternType')
+
+        if (query && patternType) {
+            defaultValue = { query: query + ` patternType:${patternType}` }
+        } else if (query) {
             defaultValue = { query }
         }
 

@@ -308,9 +308,10 @@ Indexes:
  id         | integer | not null default nextval('lsif_dumps_id_seq'::regclass)
  repository | text    | not null
  commit     | text    | not null
+ root       | text    | not null default ''::text
 Indexes:
     "lsif_dumps_pkey" PRIMARY KEY, btree (id)
-    "lsif_dumps_repository_commit_key" UNIQUE CONSTRAINT, btree (repository, commit)
+    "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)
 Check constraints:
     "lsif_dumps_commit_check" CHECK (length(commit) = 40)
     "lsif_dumps_repository_check" CHECK (repository <> ''::text)

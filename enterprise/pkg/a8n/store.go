@@ -522,7 +522,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 		return int64(c.ID), 1, err
 	})
 
-	if len(cs) == opts.Limit {
+	if opts.Limit != 0 && len(cs) == opts.Limit {
 		next = cs[len(cs)-1].ID
 		cs = cs[:len(cs)-1]
 	}

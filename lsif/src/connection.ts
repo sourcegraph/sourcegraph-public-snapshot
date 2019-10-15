@@ -13,7 +13,7 @@ import pRetry from 'p-retry'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395601
+const MINIMUM_MIGRATION_VERSION = 1528395604
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -106,15 +106,7 @@ export async function createPostgresConnection(configuration: Configuration, log
 function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
     const connect = (): Promise<Connection> => {
         logger.debug('connecting to cross-repository database')
-
-        return _createConnection({
-            type: 'postgres',
-            name: 'xrepo',
-            entities,
-            logging: ['error', 'warn'],
-            maxQueryExecutionTime: 1000,
-            ...connectionOptions,
-        })
+        return connectPostgres(connectionOptions, '')
     }
 
     return pRetry(connect, {
@@ -122,6 +114,26 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
         retries: MAX_CONNECTION_RETRIES,
         minTimeout: CONNECTION_RETRY_INTERVAL * 1000,
         maxTimeout: CONNECTION_RETRY_INTERVAL * 1000,
+    })
+}
+
+/**
+ * Create a connection to the cross-repository database.
+ *
+ * @param connectionOptions The connection options.
+ * @param suffix The database suffix (used for testing).
+ */
+export function connectPostgres(
+    connectionOptions: PostgresConnectionCredentialsOptions,
+    suffix: string
+): Promise<Connection> {
+    return _createConnection({
+        type: 'postgres',
+        name: `xrepo${suffix}`,
+        entities,
+        logging: ['error', 'warn'],
+        maxQueryExecutionTime: 1000,
+        ...connectionOptions,
     })
 }
 

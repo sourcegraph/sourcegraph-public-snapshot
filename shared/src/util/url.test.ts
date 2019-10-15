@@ -7,6 +7,7 @@ import {
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
 } from './url'
+import { SearchPatternType } from '../graphql/schema'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -276,11 +277,20 @@ describe('withWorkspaceRootInputRevision', () => {
 })
 
 describe('buildSearchURLQuery', () => {
-    it('builds the URL query for a search', () => expect(buildSearchURLQuery('foo')).toBe('q=foo'))
-    it('handles an empty query', () => expect(buildSearchURLQuery('')).toBe('q='))
+    it('builds the URL query for a regular expression search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp)).toBe('q=foo&patternType=regexp'))
+    it('builds the URL query for a literal search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal)).toBe('q=foo&patternType=literal'))
+    it('handles an empty query', () =>
+        expect(buildSearchURLQuery('', SearchPatternType.regexp)).toBe('q=&patternType=regexp'))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz')).toBe('q=foo+bar%25baz'))
-    it('preserves / and : for readability', () => expect(buildSearchURLQuery('repo:foo/bar')).toBe('q=repo:foo/bar'))
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp)).toBe('q=foo+bar%25baz&patternType=regexp'))
+    it('preserves / and : for readability', () =>
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp)).toBe('q=repo:foo/bar&patternType=regexp'))
+    it('overrides the patternType parameter if a patternType field exists in the query', () =>
+        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp)).toBe(
+            'q=foo+&patternType=literal'
+        ))
 })
 
 describe('lprToSelectionsZeroIndexed', () => {

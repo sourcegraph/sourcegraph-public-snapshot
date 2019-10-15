@@ -28,7 +28,7 @@
 
     &__contents {
         flex: 1 1 auto;
-        margin: 0 1rem;
+        margin: 0 0.5rem;
         display: flex;
         flex-direction: column;
         max-width: 400px;
@@ -39,7 +39,7 @@
     }
 
     &__contents-cta {
-        margin-top: 0.5rem;
+        margin-top: 1rem;
     }
 
     &__rating-btn {

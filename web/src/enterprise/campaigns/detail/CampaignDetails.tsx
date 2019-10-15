@@ -25,7 +25,6 @@ interface Props {
      * If not given, will display a creation form.
      */
     campaignID?: GQL.ID
-
     authenticatedUser: GQL.IUser
     history: H.History
     location: H.Location

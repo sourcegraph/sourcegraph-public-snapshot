@@ -19,6 +19,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+import RegexpToggle from './RegexpToggle'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { PatternTypeProps } from '..'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -26,7 +29,7 @@ import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props {
+interface Props extends PatternTypeProps {
     location: H.Location
     history: H.History
 
@@ -291,6 +294,11 @@ export class QueryInput extends React.Component<Props, State> {
                         })}
                     </ul>
                 )}
+                <RegexpToggle
+                    {...this.props}
+                    toggled={this.props.patternType === SearchPatternType.regexp}
+                    navbarSearchQuery={this.props.value}
+                />
             </div>
         )
     }

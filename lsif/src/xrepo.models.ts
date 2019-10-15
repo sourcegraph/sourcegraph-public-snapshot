@@ -1,4 +1,4 @@
-import { PrimaryGeneratedColumn, Column, Entity, ViewEntity, ViewColumn, OneToOne, JoinColumn } from 'typeorm'
+import { PrimaryGeneratedColumn, Column, Entity, OneToOne, JoinColumn } from 'typeorm'
 import { getBatchSize } from './util'
 import { EncodedBloomFilter } from './encoding'
 
@@ -68,6 +68,15 @@ export class LsifDump {
      */
     @Column('text')
     public commit!: string
+
+    /**
+     * The path at which this LSIF dump is mounted. Roots for two different LSIF
+     * dumps at the same repo@commit must not overlap (they are not allowed be
+     * prefixes of one another). Defaults to the empty string, which indicates
+     * this is the only LSIF dump for the repo@commit.
+     */
+    @Column('text')
+    public root!: string
 
     /**
      * The number of model instances that can be inserted at once.
@@ -147,49 +156,12 @@ export class ReferenceModel extends Package {
      * and commit imports from the given package. Testing this filter will prevent
      * the backend from opening databases that will yield no results for a particular
      * symbol.
-     *
-     * The type of the column is determined by the database backend: we use Postgres
-     * with type `bytea` in production, but use SQLite in unit tests with type `blob`.
      */
-    @Column(process.env.JEST_WORKER_ID !== undefined ? 'blob' : 'bytea')
+    @Column('bytea')
     public filter!: EncodedBloomFilter
-}
-
-/**
- * A view that adds a `hasLsifData` column to the `lsif_commits` table. We define the
- * view in a migration as well as inline so that when we run unit tests (via a SQLite db)
- * we will also have access to the view.
- */
-@ViewEntity({
-    name: 'lsif_commits_with_lsif_data',
-    expression: `
-        select
-            c.repository,
-            c."commit",
-            c.parent_commit,
-            exists (
-                select 1
-                from lsif_dumps dump
-                where dump.repository = c.repository and dump."commit" = c."commit"
-            ) as has_lsif_data
-        from lsif_commits c
-    `,
-})
-export class CommitWithLsifMarkers {
-    @ViewColumn()
-    public repository!: string
-
-    @ViewColumn()
-    public commit!: string
-
-    @ViewColumn()
-    public parentCommit!: string
-
-    @ViewColumn()
-    public hasLsifData!: boolean
 }
 
 /**
  * The entities composing the cross-repository database models.
  */
-export const entities = [Commit, CommitWithLsifMarkers, LsifDump, PackageModel, ReferenceModel]
+export const entities = [Commit, LsifDump, PackageModel, ReferenceModel]

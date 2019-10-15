@@ -503,6 +503,7 @@ type Settings struct {
 	Notices                   []*Notice             `json:"notices,omitempty"`
 	Quicklinks                []*QuickLink          `json:"quicklinks,omitempty"`
 	SearchContextLines        int                   `json:"search.contextLines,omitempty"`
+	SearchDefaultPatternType  string                `json:"search.defaultPatternType,omitempty"`
 	SearchRepositoryGroups    map[string][]string   `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries        []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	SearchScopes              []*SearchScope        `json:"search.scopes,omitempty"`

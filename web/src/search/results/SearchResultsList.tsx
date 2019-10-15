@@ -9,7 +9,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, PatternTypeProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
@@ -38,7 +38,8 @@ export interface SearchResultsListProps
         PlatformContextProps<'forceUpdateTooltip'>,
         TelemetryProps,
         SettingsCascadeProps,
-        ThemeProps {
+        ThemeProps,
+        PatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -409,7 +410,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                     className="btn btn-secondary btn-sm"
                                                                     to={
                                                                         '/search?' +
-                                                                        buildSearchURLQuery(proposedQuery.query)
+                                                                        buildSearchURLQuery(
+                                                                            proposedQuery.query,
+                                                                            this.props.patternType
+                                                                        )
                                                                     }
                                                                 >
                                                                     {proposedQuery.query || proposedQuery.description}

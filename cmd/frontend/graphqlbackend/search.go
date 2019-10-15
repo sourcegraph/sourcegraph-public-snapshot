@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	graphql "github.com/graph-gophers/graphql-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/neelance/parallel"
@@ -56,7 +57,11 @@ func maxReposToSearch() int {
 
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *struct {
-	Query string
+	Version     string
+	PatternType *string
+	Query       string
+	After       *graphql.ID
+	First       *int32
 }) (interface {
 	Results(context.Context) (*searchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
@@ -65,15 +70,68 @@ func (r *schemaResolver) Search(args *struct {
 }, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
-	q, err := query.ParseAndCheck(args.Query)
+
+	defaultIsRegexp, err := defaultToRegexp(args.Version, args.PatternType)
+	if err != nil {
+		return nil, err
+	}
+
+	qs := query.HandlePatternType(args.Query, defaultIsRegexp)
+	q, err := query.ParseAndCheck(qs)
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
+
+	// If the request is a paginated one, decode those arguments now.
+	var pagination *searchPaginationInfo
+	if args.First != nil {
+		cursor, err := unmarshalSearchCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		if *args.First < 0 || *args.First > 5000 {
+			return nil, errors.New("search: requested pagination 'first' value outside allowed range (0 - 5000)")
+		}
+		pagination = &searchPaginationInfo{
+			cursor: cursor,
+			limit:  *args.First,
+		}
+	} else if args.After != nil {
+		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
+	}
+
 	return &searchResolver{
 		query:        q,
+		pagination:   pagination,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
+}
+
+// defaultToRegexp determines whether to default to using regexp search based on the version and patternType
+// parameters passed to the search endpoint. It does not account for any `patternType:` filters in the query.
+func defaultToRegexp(version string, patternType *string) (bool, error) {
+	var defaultToRegexp bool
+	switch version {
+	case "V1":
+		defaultToRegexp = true
+	case "V2":
+		defaultToRegexp = false
+	default:
+		return false, fmt.Errorf("unrecognized version: %v", version)
+	}
+
+	if patternType != nil {
+		switch *patternType {
+		case "regexp":
+			defaultToRegexp = true
+		case "literal":
+			defaultToRegexp = false
+		default:
+			return false, fmt.Errorf("unrecognized patternType: %v", patternType)
+		}
+	}
+	return defaultToRegexp, nil
 }
 
 func asString(v *searchquerytypes.Value) string {
@@ -89,7 +147,8 @@ func asString(v *searchquerytypes.Value) string {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query *query.Query // the parsed search query
+	query      *query.Query          // the parsed search query
+	pagination *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -115,6 +174,12 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 
 func (r *searchResolver) maxResults() int32 {
+	if r.pagination != nil {
+		// Paginated search requests always consume an entire result set for a
+		// given repository, so we do not want any limit here. See
+		// search_pagination.go for details on why this is necessary .
+		return math.MaxInt32
+	}
 	count, _ := r.query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])

@@ -76,11 +76,14 @@
 /packages @beyang
 /cmd/frontend @beyang
 /dev @beyang
+/dev/release-ping.sh @sourcegraph/distribution
 /dev/grafana.sh  @sourcegraph/distribution
 /dev/grafana  @sourcegraph/distribution
 /dev/prometheus.sh  @sourcegraph/distribution
 /dev/prometheus  @sourcegraph/distribution
 /dev/src-expose @keegancsmith
+/dev/drop-test-databases.sh @efritz
+/dev/squash-migrations.sh @efritz
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag

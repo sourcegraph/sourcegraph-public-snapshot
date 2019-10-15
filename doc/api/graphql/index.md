@@ -47,6 +47,10 @@ If you have not yet set up a Sourcegraph server, you can also test out the API o
 
 Sourcegraph's GraphQL API documentation is available directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
 
+### Search
+
+See [additional documentation about search GraphQL API](search.md).
+
 ### Sudo access tokens
 
 Site admins may create access tokens with the special `site-admin:sudo` scope, which allows the holder to perform any action as any other user.

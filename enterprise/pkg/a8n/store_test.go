@@ -776,6 +776,23 @@ func testStore(db *sql.DB) func(*testing.T) {
 						cursor = next
 					}
 				})
+
+				t.Run("EmptyResultListingAll", func(t *testing.T) {
+					opts := ListChangesetEventsOpts{ChangesetIDs: []int64{99999}, Limit: -1}
+
+					ts, next, err := s.ListChangesetEvents(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+					}
+
+					if len(ts) != 0 {
+						t.Fatalf("listed %d events, want: %d", len(ts), 0)
+					}
+				})
 			})
 		})
 	}

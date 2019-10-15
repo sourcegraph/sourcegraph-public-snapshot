@@ -96,15 +96,17 @@ export class XrepoDatabase {
      *
      * @param repository The name of the repository.
      * @param commit The target commit.
+     * @param file One of the files in the dump.
      * @param ctx The tracing context.
      * @param gitserverUrls The set of ordered gitserver urls.
      */
-    public async findClosestCommitWithData(
+    public async findClosestDump(
         repository: string,
         commit: string,
+        file: string,
         ctx: TracingContext = {},
         gitserverUrls?: string[]
-    ): Promise<string | undefined> {
+    ): Promise<LsifDump | undefined> {
         // Request updated commit data from gitserver if this commit isn't
         // already tracked. This will pull back ancestors for this commit
         // up to a certain (configurable) depth and insert them into the
@@ -115,40 +117,18 @@ export class XrepoDatabase {
         }
 
         return this.withConnection(async connection => {
-            const query = `
-                with recursive lineage(repository, "commit", parent_commit, has_lsif_data, direction) as (
-                    -- seed result set with the target repository and commit marked
-                    -- with both ancestor and descendant directions
-                    select l.* from (
-                        select c.*, 'A' from lsif_commits_with_lsif_data c union
-                        select c.*, 'D' from lsif_commits_with_lsif_data c
-                    ) l
-                    where l.repository = $1 and l."commit" = $2
-
-                    union
-
-                    -- get the next commit in the ancestor or descendant direction
-                    select c.*, l.direction from lineage l
-                    join lsif_commits_with_lsif_data c on (
-                        (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parent_commit) or
-                        (l.direction = 'D' and c.repository = l.repository and c.parent_commit = l."commit")
-                    )
-                )
-
-                -- lineage is ordered by distance to the target commit by
-                -- construction; get the nearest commit that has LSIF data
-                select l."commit" from (select * from lineage limit $3) l where l.has_lsif_data limit 1
-            `
-
-            const results = (await connection.query(query, [repository, commit, MAX_TRAVERSAL_LIMIT])) as {
-                commit: string
-            }[]
+            const results = (await connection.query('select * from closest_dump($1, $2, $3, $4)', [
+                repository,
+                commit,
+                file,
+                MAX_TRAVERSAL_LIMIT,
+            ])) as LsifDump[]
 
             if (results.length === 0) {
                 return undefined
             }
 
-            return results[0].commit
+            return results[0]
         })
     }
 
@@ -202,18 +182,20 @@ export class XrepoDatabase {
      * with  the the names referenced from a particular dependent package.
      *
      * @param repository The repository being updated.
-     * @param commit The commit of the being updated.
+     * @param commit The commit being updated.
+     * @param root The root of all files in this dump.
      * @param packages The list of packages that this repository defines (scheme, name, and version).
      * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      */
     public addPackagesAndReferences(
         repository: string,
         commit: string,
+        root: string,
         packages: Package[],
         references: SymbolReferences[]
     ): Promise<DumpID> {
         return this.withTransactionalEntityManager(async entityManager => {
-            const dumpID = await this.insertDump(repository, commit, entityManager)
+            const dumpID = await this.insertDump(repository, commit, root, entityManager)
 
             const packageInserter = new TableInserter<PackageModel, new () => PackageModel>(
                 entityManager,
@@ -254,29 +236,38 @@ export class XrepoDatabase {
      *
      * @param repository The repository.
      * @param commit The commit.
+     * @param root The root of all files that are in this dump.
      * @param entityManager The EntityManager for the connection to the xrepo database.
      */
     public async insertDump(
         repository: string,
         commit: string,
+        root: string,
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<DumpID> {
-        // Remove all previous package data for this repo/commit (this
-        // cascades to packages and references)
-        await entityManager
-            .createQueryBuilder()
-            .delete()
-            .from(LsifDump)
-            .where({ repository, commit })
-            .execute()
+        // Delete existing dumps from the same repo@commit that overlap with the
+        // current root (where the existing root is a prefix of the current
+        // root, or vice versa). This cascades to packages and references.
+        await entityManager.query(
+            `
+            DELETE FROM lsif_dumps
+            WHERE
+                repository = $1 AND
+                commit = $2 AND
+                (
+                    $3   LIKE (root || '%') OR
+                    root LIKE ($3   || '%')
+                )
+        `,
+            [repository, commit, root]
+        )
 
         // Mark that we have data available for this commit
         const result = await entityManager
             .createQueryBuilder()
             .insert()
-            .onConflict('DO NOTHING')
             .into(LsifDump)
-            .values({ repository, commit })
+            .values({ repository, commit, root })
             .execute()
 
         if (result.identifiers.length === 0) {
@@ -293,10 +284,15 @@ export class XrepoDatabase {
      * @param commit The commit.
      * @param entityManager The EntityManager for the connection to the xrepo database.
      */
-    public async getDump(repository: string, commit: string): Promise<LsifDump | undefined> {
-        return await this.withConnection(connection =>
-            connection.getRepository(LsifDump).findOne({ where: { repository, commit } })
-        )
+    public async getDump(repository: string, commit: string, file: string): Promise<LsifDump | undefined> {
+        return await this.withConnection(async connection => {
+            const results: LsifDump[] = await connection.query(
+                "SELECT id, repository, commit FROM lsif_dumps WHERE repository = $1 AND commit = $2 AND $3 LIKE (root || '%')",
+                [repository, commit, file]
+            )
+
+            return results.length === 0 ? undefined : results[0]
+        })
     }
 
     /**
