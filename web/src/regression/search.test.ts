@@ -155,10 +155,8 @@ describe('Search regression test suite', () => {
                 await resourceManager.create({
                     type: 'User',
                     name: testUsername,
-                    create: async () => {
-                        await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
-                        return () => deleteUser(gqlClient, testUsername, false)
-                    },
+                    create: () =>
+                        ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config }),
                 })
                 await resourceManager.create({
                     type: 'External service',

@@ -40,14 +40,12 @@ describe('Auth regression test suite', () => {
         await resourceManager.create({
             type: 'User',
             name: testUsername,
-            create: async () => {
-                await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            create: () =>
+                ensureLoggedInOrCreateTestUser(driver, gqlClient, {
                     username: testUsername,
                     deleteIfExists: true,
                     ...config,
-                })
-                return () => deleteUser(gqlClient, testUsername, false)
-            },
+                }),
         })
         const user = await getUser(gqlClient, testUsername)
         if (!user) {
