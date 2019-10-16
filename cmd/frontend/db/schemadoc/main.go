@@ -70,7 +70,7 @@ func generate(log *log.Logger) (string, error) {
 			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "localhost", "-p", "5433").Run(); err == nil {
 				break
 			} else if attempts > 30 {
-				return "", fmt.Errorf("gave up waiting for pg_isready: %w", err)
+				return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
 			}
 			time.Sleep(time.Second)
 		}
