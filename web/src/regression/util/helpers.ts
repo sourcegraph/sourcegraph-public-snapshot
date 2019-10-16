@@ -6,6 +6,7 @@ import { throwError } from 'rxjs'
 import { Key } from 'ts-key-enum'
 import { deleteUser } from './api'
 import { Config } from '../../../../shared/src/e2e/config'
+import { ResourceDestructor } from './TestResourceManager'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user.
@@ -21,7 +22,7 @@ export async function ensureLoggedInOrCreateTestUser(
         username: string
         deleteIfExists?: boolean
     } & Pick<Config, 'testUserPassword'>
-): Promise<() => Promise<void>> {
+): Promise<ResourceDestructor> {
     const userDestructor = (): Promise<void> => deleteUser(gqlClient, username, false)
 
     if (!username.startsWith('test-')) {

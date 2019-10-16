@@ -9,6 +9,7 @@ import { map, tap, retryWhen, delayWhen, take } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
 import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
+import { ResourceDestructor } from './TestResourceManager'
 
 /**
  * Wait until all repositories in the list exist.
@@ -147,7 +148,7 @@ export async function ensureTestExternalService(
         config: Record<string, any>
         waitForRepos?: string[]
     }
-): Promise<() => Promise<void>> {
+): Promise<ResourceDestructor> {
     if (!options.uniqueDisplayName.startsWith('[TEST]')) {
         throw new Error(
             `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
