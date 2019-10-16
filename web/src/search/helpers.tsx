@@ -13,10 +13,11 @@ export function submitSearch(
     history: H.History,
     query: string,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
+    patternType: GQL.SearchPatternType,
     activation?: ActivationProps['activation']
 ): void {
     // Go to search results page
-    const path = '/search?' + buildSearchURLQuery(query)
+    const path = '/search?' + buildSearchURLQuery(query, patternType)
     eventLogger.log('SearchSubmitted', {
         code_search: {
             pattern: query,
@@ -100,6 +101,7 @@ export function getSearchTypeFromQuery(query: string): SearchType {
  * Adds the given search type (as a `type:` filter) into a query. This function replaces an existing `type:` filter,
  * appends a `type:` filter, or returns the initial query, in order to apply the correct type
  * to the query.
+ *
  * @param query The search query to be mutated.
  * @param searchType The search type to be applied.
  */

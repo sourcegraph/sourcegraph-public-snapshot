@@ -1,6 +1,7 @@
 import got from 'got'
 import { readEnvInt } from './util'
 import * as json5 from 'json5'
+import { Logger } from 'winston'
 import { isEqual, pick } from 'lodash'
 
 /**
@@ -36,11 +37,6 @@ export interface Configuration {
     gitServers: string[]
 
     /**
-     * The project name for lightstep tracing.
-     */
-    lightstepProject: string
-
-    /**
      * The access token for lightstep tracing.
      */
     lightstepAccessToken: string
@@ -62,14 +58,16 @@ export type ConfigurationFetcher = () => Configuration
  * frontend in the background. If one of the fields that cannot be updated while
  * the process remains up changes, it will forcibly exit the process to allow
  * whatever orchestrator is running this process restart it.
+ *
+ * @param logger The logger instance.
  */
-export async function waitForConfiguration(): Promise<ConfigurationFetcher> {
+export async function waitForConfiguration(logger: Logger): Promise<ConfigurationFetcher> {
     let oldConfiguration: Configuration | undefined
 
     await new Promise<void>(resolve => {
-        updateConfiguration(configuration => {
+        updateConfiguration(logger, configuration => {
             if (oldConfiguration !== undefined && requireRestart(oldConfiguration, configuration)) {
-                console.error('Detected configuration change, restarting to take effect')
+                logger.error('Detected configuration change, restarting to take effect')
                 process.exit(1)
             }
 
@@ -91,7 +89,6 @@ export async function waitForConfiguration(): Promise<ConfigurationFetcher> {
  */
 function requireRestart(oldConfiguration: Configuration, newConfiguration: Configuration): boolean {
     const fields = ['postgresDSN', 'lightstepProject', 'lightstepAccessToken', 'useJaeger']
-
     return !isEqual(pick(oldConfiguration, fields), pick(newConfiguration, fields))
 }
 
@@ -99,9 +96,10 @@ function requireRestart(oldConfiguration: Configuration, newConfiguration: Confi
  * Read the configuration from the frontend on a loop. This function is async but does not
  * return any meaningful value (the returned promise neither resolves nor rejects).
  *
+ * @param logger The logger instance.
  * @param onChange The callback to invoke each time the configuration is read.
  */
-async function updateConfiguration(onChange: (configuration: Configuration) => void): Promise<never> {
+async function updateConfiguration(logger: Logger, onChange: (configuration: Configuration) => void): Promise<never> {
     const start = Date.now()
     while (true) {
         try {
@@ -111,7 +109,7 @@ async function updateConfiguration(onChange: (configuration: Configuration) => v
             // given the frontend enough time to initialize (in case other services start up before
             // the frontend), to reduce log spam.
             if (Date.now() - start > DELAY_BEFORE_UNREACHABLE_LOG * 1000 || error.code !== 'ECONNREFUSED') {
-                console.error(error)
+                logger.error('failed to retrieve configuration from frontend', { error })
             }
         }
 
@@ -137,7 +135,6 @@ async function loadConfiguration(): Promise<Configuration> {
     return {
         gitServers: serviceConnections.gitServers,
         postgresDSN: serviceConnections.postgresDSN,
-        lightstepProject: critical.lightstepProject,
         lightstepAccessToken: critical.lightstepAccessToken,
         useJaeger: critical.useJaeger || false,
     }

@@ -10,6 +10,7 @@ Before getting started, read through the following docs:
 - [Contributing to Sourcegraph documentation](index.md#contributing-to-docs)
 - [Documentation directory structure](index.md#documentation-directory-structure)
 - [Documentation style guidelines](style_guide.md)
+- Example Documentation: [How to setup a separate website maintained by Sourcegraph](separate_website.md)
 
 ## Documentation blurb
 

@@ -8,7 +8,7 @@ import { deleteUser } from './api'
 import { Config } from '../../../../shared/src/e2e/config'
 
 /**
- * Create the user with the specified password
+ * Create the user with the specified password. Returns a destructor that destroys the test user.
  */
 export async function ensureLoggedInOrCreateTestUser(
     driver: Driver,
@@ -21,7 +21,9 @@ export async function ensureLoggedInOrCreateTestUser(
         username: string
         deleteIfExists?: boolean
     } & Pick<Config, 'testUserPassword'>
-): Promise<void> {
+): Promise<() => Promise<void>> {
+    const userDestructor = (): Promise<void> => deleteUser(gqlClient, username, false)
+
     if (!username.startsWith('test-')) {
         throw new Error(`Test username must start with "test-" (was ${JSON.stringify(username)})`)
     }
@@ -32,7 +34,7 @@ export async function ensureLoggedInOrCreateTestUser(
         // Attempt to log in first
         try {
             await driver.ensureLoggedIn({ username, password: testUserPassword })
-            return
+            return userDestructor
         } catch (err) {
             console.log(`Login failed (error: ${err.message}), will attempt to create user ${JSON.stringify(username)}`)
         }
@@ -40,6 +42,7 @@ export async function ensureLoggedInOrCreateTestUser(
 
     await createTestUser(driver, gqlClient, { username, testUserPassword })
     await driver.ensureLoggedIn({ username, password: testUserPassword })
+    return userDestructor
 }
 
 async function createTestUser(

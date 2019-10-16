@@ -144,6 +144,10 @@ type searchResultsResolver struct {
 	searchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
+
+	// cursor to return for paginated search requests, or nil if the request
+	// wasn't paginated.
+	cursor *searchCursor
 }
 
 func (sr *searchResultsResolver) Results() []searchResultResolver {
@@ -450,6 +454,12 @@ loop:
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
+	// If the request is a paginated one, we handle it separately. See
+	// paginatedResults for more details.
+	if r.pagination != nil {
+		return r.paginatedResults(ctx)
+	}
+
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
 	if err != nil {
 		return nil, err
@@ -734,6 +744,52 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
+func (r *searchResolver) determineResultTypes(args search.Args, forceOnlyResultType string) (resultTypes []string, seenResultTypes map[string]struct{}) {
+	// Determine which types of results to return.
+	if forceOnlyResultType != "" {
+		resultTypes = []string{forceOnlyResultType}
+	} else if len(r.query.Values(query.FieldReplace)) > 0 {
+		resultTypes = []string{"codemod"}
+	} else {
+		resultTypes, _ = r.query.StringValues(query.FieldType)
+		if len(resultTypes) == 0 {
+			resultTypes = []string{"file", "path", "repo", "ref"}
+		}
+	}
+	seenResultTypes = make(map[string]struct{}, len(resultTypes))
+	for _, resultType := range resultTypes {
+		if resultType == "file" {
+			args.Pattern.PatternMatchesContent = true
+		} else if resultType == "path" {
+			args.Pattern.PatternMatchesPath = true
+		}
+	}
+	return resultTypes, seenResultTypes
+}
+
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *searchResultsResolver, err error) {
+	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
+	if len(repos) == 0 {
+		alert, err := r.alertForNoResolvedRepos(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return nil, nil, &searchResultsResolver{alert: alert, start: start}, nil
+	}
+	if overLimit {
+		alert, err := r.alertForOverRepoLimit(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return nil, nil, &searchResultsResolver{alert: alert, start: start}, nil
+	}
+	return repos, missingRepoRevs, nil, nil
+}
+
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
@@ -749,24 +805,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 	defer cancel()
 
-	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
+	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		return nil, err
 	}
-	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
-	if len(repos) == 0 {
-		alert, err := r.alertForNoResolvedRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
-	}
-	if overLimit {
-		alert, err := r.alertForOverRepoLimit(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &searchResultsResolver{alert: alert, start: start}, nil
+	if alertResult != nil {
+		return alertResult, nil
 	}
 
 	p, err := r.getPatternInfo(nil)
@@ -790,26 +834,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 
-	// Determine which types of results to return.
-	var resultTypes []string
-	if forceOnlyResultType != "" {
-		resultTypes = []string{forceOnlyResultType}
-	} else if len(r.query.Values(query.FieldReplace)) > 0 {
-		resultTypes = []string{"codemod"}
-	} else {
-		resultTypes, _ = r.query.StringValues(query.FieldType)
-		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo", "ref"}
-		}
-	}
-	seenResultTypes := make(map[string]struct{}, len(resultTypes))
-	for _, resultType := range resultTypes {
-		if resultType == "file" {
-			args.Pattern.PatternMatchesContent = true
-		} else if resultType == "path" {
-			args.Pattern.PatternMatchesPath = true
-		}
-	}
+	resultTypes, seenResultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	var (

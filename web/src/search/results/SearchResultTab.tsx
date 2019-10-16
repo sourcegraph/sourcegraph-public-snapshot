@@ -5,8 +5,9 @@ import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
+import { PatternTypeProps } from '..'
 
-interface Props {
+interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     type: SearchType
     query: string
@@ -19,9 +20,9 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
     repo: 'Repos',
 }
 
-export const SearchResultTabHeader: React.FunctionComponent<Props> = ({ location, type, query }) => {
+export const SearchResultTabHeader: React.FunctionComponent<Props> = ({ location, type, query, patternType }) => {
     const q = toggleSearchType(query, type)
-    const builtURLQuery = buildSearchURLQuery(q)
+    const builtURLQuery = buildSearchURLQuery(q, patternType)
 
     const isActiveFunc = constant(location.search === `?${builtURLQuery}`)
     return (

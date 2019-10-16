@@ -216,7 +216,7 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 
 	defer resp.Body.Close()
 	c.RateLimit.Update(resp.Header)
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if decErr := json.NewDecoder(resp.Body).Decode(&err); decErr != nil {
 			log15.Warn("Failed to decode error response from github API", "error", decErr)
@@ -384,7 +384,7 @@ func IsRateLimitExceeded(err error) bool {
 }
 
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
-// requestGraphQL. See https://facebook.github.io/graphql/#sec-Errors.
+// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
 type graphqlErrors []struct {
 	Message   string        `json:"message"`
 	Type      string        `json:"type"`

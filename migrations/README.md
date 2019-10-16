@@ -32,8 +32,16 @@ explicit transaction blocks added to the migration script template.
 
 After adding SQL statements to those files, embed them into the Go code and update the schema doc:
 
+- If you're running Postgres 9.6:
+
 ```
 ./dev/generate.sh
+```
+
+- If you're not running Postgres 9.6:
+
+```
+./dev/update-schema-and-bindata.sh
 ```
 
 or, to only run the DB generate scripts (subset of the command above):
@@ -53,7 +61,7 @@ dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so
 
 Up migrations happen automatically on server start-up after running the
 generate scripts. They can also be run manually using the migrate CLI:
-`run dev/migrate.sh up` to move forward to the latest migration. Run
+run `./dev/migrate.sh up` to move forward to the latest migration. Run
 `./dev/migrate.sh` for a full list of options.
 
 You can run `./dev/migrate.sh down 1` to rollback the previous migration. If a migration fails and

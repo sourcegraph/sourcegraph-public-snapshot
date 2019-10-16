@@ -1,7 +1,6 @@
 FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 as builder
 
-RUN apk update && \
-    apk add --no-cache bash=4.4.19-r1 git=2.20.1-r0 openssh=7.9_p1-r5 build-base=0.5-r1
+RUN apk add --no-cache bash=4.4.19-r1 git=2.20.1-r0 openssh=7.9_p1-r6 build-base=0.5-r1
 
 WORKDIR /opt
 RUN git clone --branch v0.14.0 https://github.com/google/jsonnet.git

@@ -90,8 +90,7 @@ breaks are shown as a full line Sourcegraph markdown 80-100. <!-- TODO(ryan): Li
   you can use `[Text][identifier]` and at the bottom of the section or the
   document add: `[identifier]: https://example.com`, in which case, we do
   encourage you to also add an alternative text: `[identifier]: https://example.com "Alternative text"` that appears when hovering your mouse on a link.
-- To link to internal documentation, use relative links, not full URLs. Use `../` to
-  navigate to higher-level directories, and always add the file name `file.md` at the
+- To link to internal documentation within the same repository, use relative links, not full URLs. Use `../` to navigate to higher-level directories, and always add the file name `file.md` at the
   end of the link with the `.md` extension, not `.html`.
   Example: instead of `[text](../../merge_requests/)`, use
   `[text](../../merge_requests/index.md)` or, `[text](../../ci/README.md)`, or,

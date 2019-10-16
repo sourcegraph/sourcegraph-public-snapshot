@@ -1,18 +1,20 @@
 import {
     bloomFilterEventsCounter,
-    instrument,
     xrepoInsertionDurationHistogram,
     xrepoQueryDurationHistogram,
     xrepoQueryErrorsCounter,
-} from './metrics'
+} from './xrepo.metrics'
+import { instrument } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, LsifDataMarker } from './models.xrepo'
+import { PackageModel, ReferenceModel, Commit, DumpID, LsifDump } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
+import { TracingContext } from './tracing'
 
 /**
- * The maximum traversal distance when finding the closest commit.
+ * The maximum number of commits to visit breadth-first style when when finding
+ * the closest commit.
  */
 export const MAX_TRAVERSAL_LIMIT = 100
 
@@ -94,59 +96,39 @@ export class XrepoDatabase {
      *
      * @param repository The name of the repository.
      * @param commit The target commit.
+     * @param file One of the files in the dump.
+     * @param ctx The tracing context.
      * @param gitserverUrls The set of ordered gitserver urls.
      */
-    public async findClosestCommitWithData(
+    public async findClosestDump(
         repository: string,
         commit: string,
+        file: string,
+        ctx: TracingContext = {},
         gitserverUrls?: string[]
-    ): Promise<string | undefined> {
+    ): Promise<LsifDump | undefined> {
         // Request updated commit data from gitserver if this commit isn't
         // already tracked. This will pull back ancestors for this commit
         // up to a certain (configurable) depth and insert them into the
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (gitserverUrls) {
-            await discoverAndUpdateCommit(this, repository, commit, gitserverUrls)
+            await discoverAndUpdateCommit({ xrepoDatabase: this, repository, commit, gitserverUrls, ctx })
         }
 
         return this.withConnection(async connection => {
-            const query = `
-                with recursive lineage(repository, "commit", parent_commit, has_lsif_data, distance, direction) as (
-                    -- seed result set with the target repository and commit marked
-                    -- with both ancestor and descendant directions
-                    select l.* from (
-                        select c.*, 0, 'A' from commits_with_lsif_data_markers c union
-                        select c.*, 0, 'D' from commits_with_lsif_data_markers c
-                    ) l
-                    where l.repository = $1 and l."commit" = $2
-
-                    union
-
-                    -- get the next commit in the ancestor or descendant direction
-                    select c.*, l.distance + 1, l.direction from lineage l
-                    join commits_with_lsif_data_markers c on (
-                        (l.direction = 'A' and c.repository = l.repository and c."commit" = l.parent_commit) or
-                        (l.direction = 'D' and c.repository = l.repository and c.parent_commit = l."commit")
-                    )
-                    -- limit traversal distance
-                    where l.distance < $3
-                )
-
-                -- lineage is ordered by distance to the target commit by
-                -- construction; get the nearest commit that has LSIF data
-                select l."commit" from lineage l where l.has_lsif_data limit 1
-            `
-
-            const results = (await connection.query(query, [repository, commit, MAX_TRAVERSAL_LIMIT])) as {
-                commit: string
-            }[]
+            const results = (await connection.query('select * from closest_dump($1, $2, $3, $4)', [
+                repository,
+                commit,
+                file,
+                MAX_TRAVERSAL_LIMIT,
+            ])) as LsifDump[]
 
             if (results.length === 0) {
                 return undefined
             }
 
-            return results[0].commit
+            return results[0]
         })
     }
 
@@ -200,18 +182,22 @@ export class XrepoDatabase {
      * with  the the names referenced from a particular dependent package.
      *
      * @param repository The repository being updated.
-     * @param commit The commit of the being updated.
+     * @param commit The commit being updated.
+     * @param root The root of all files in this dump.
      * @param packages The list of packages that this repository defines (scheme, name, and version).
      * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      */
     public addPackagesAndReferences(
         repository: string,
         commit: string,
+        root: string,
         packages: Package[],
         references: SymbolReferences[]
-    ): Promise<void> {
+    ): Promise<DumpID> {
         return this.withTransactionalEntityManager(async entityManager => {
-            const packageInserter = new TableInserter(
+            const dumpID = await this.insertDump(repository, commit, root, entityManager)
+
+            const packageInserter = new TableInserter<PackageModel, new () => PackageModel>(
                 entityManager,
                 PackageModel,
                 PackageModel.BatchSize,
@@ -219,56 +205,93 @@ export class XrepoDatabase {
                 true // Do nothing on conflict
             )
 
-            const referenceInserter = new TableInserter(
+            const referenceInserter = new TableInserter<ReferenceModel, new () => ReferenceModel>(
                 entityManager,
                 ReferenceModel,
                 ReferenceModel.BatchSize,
                 insertionMetrics
             )
 
-            const lsifDataMarkerInserter = new TableInserter(
-                entityManager,
-                LsifDataMarker,
-                LsifDataMarker.BatchSize,
-                insertionMetrics,
-                true // Do nothing on conflict
-            )
-
-            // Remove all previous package data for this repo/commit
-            await entityManager
-                .createQueryBuilder()
-                .delete()
-                .from(PackageModel)
-                .where({ repository, commit })
-                .execute()
-
-            // Remove all previous reference data for this repo/commit
-            await entityManager
-                .createQueryBuilder()
-                .delete()
-                .from(ReferenceModel)
-                .where({ repository, commit })
-                .execute()
-
             for (const pkg of packages) {
-                await packageInserter.insert({ repository, commit, ...pkg })
+                await packageInserter.insert({ dump_id: dumpID, ...pkg })
             }
 
             for (const reference of references) {
                 await referenceInserter.insert({
-                    repository,
-                    commit,
+                    dump_id: dumpID,
                     filter: await createFilter(reference.identifiers),
                     ...reference.package,
                 })
             }
 
-            // Mark that we have data available for this commit
-            await lsifDataMarkerInserter.insert({ repository, commit })
-
             await packageInserter.flush()
             await referenceInserter.flush()
-            await lsifDataMarkerInserter.flush()
+
+            return dumpID
+        })
+    }
+
+    /**
+     * Inserts the given repository and commit into the `lsif_dumps` table.
+     *
+     * @param repository The repository.
+     * @param commit The commit.
+     * @param root The root of all files that are in this dump.
+     * @param entityManager The EntityManager for the connection to the xrepo database.
+     */
+    public async insertDump(
+        repository: string,
+        commit: string,
+        root: string,
+        entityManager: EntityManager = this.connection.createEntityManager()
+    ): Promise<DumpID> {
+        // Delete existing dumps from the same repo@commit that overlap with the
+        // current root (where the existing root is a prefix of the current
+        // root, or vice versa). This cascades to packages and references.
+        await entityManager.query(
+            `
+            DELETE FROM lsif_dumps
+            WHERE
+                repository = $1 AND
+                commit = $2 AND
+                (
+                    $3   LIKE (root || '%') OR
+                    root LIKE ($3   || '%')
+                )
+        `,
+            [repository, commit, root]
+        )
+
+        // Mark that we have data available for this commit
+        const result = await entityManager
+            .createQueryBuilder()
+            .insert()
+            .into(LsifDump)
+            .values({ repository, commit, root })
+            .execute()
+
+        if (result.identifiers.length === 0) {
+            throw new Error(`Unable to insert row into lsif_dumps table for repository ${repository} commit ${commit}.`)
+        }
+
+        return result.identifiers[0].id
+    }
+
+    /**
+     * Find the dump for the given repository and commit.
+     *
+     * @param repository The repository.
+     * @param commit The commit.
+     * @param entityManager The EntityManager for the connection to the xrepo database.
+     */
+    public async getDump(repository: string, commit: string, file: string): Promise<LsifDump | undefined> {
+        return await this.withConnection(async connection => {
+            const results: LsifDump[] = await connection.query(
+                "SELECT id, repository, commit FROM lsif_dumps WHERE repository = $1 AND commit = $2 AND $3 LIKE (root || '%')",
+                [repository, commit, file]
+            )
+
+            return results.length === 0 ? undefined : results[0]
         })
     }
 
@@ -279,10 +302,7 @@ export class XrepoDatabase {
      * pair that does not reference `value`. See cache.ts for configuration values that tune
      * the bloom filter false positive rates.
      *
-     * @param scheme The package manager scheme (e.g. npm, pip).
-     * @param name The package name.
-     * @param version The package version.
-     * @param value The value to test.
+     * @param args Parameter bag.
      */
     public async getReferences({
         scheme,
@@ -290,9 +310,13 @@ export class XrepoDatabase {
         version,
         value,
     }: {
+        /** The package manager scheme (e.g. npm, pip).  */
         scheme: string
+        /** The package name.  */
         name: string
+        /** The package version.  */
         version: string | null
+        /** The value to test.  */
         value: string
     }): Promise<ReferenceModel[]> {
         const results = await this.withConnection(connection =>

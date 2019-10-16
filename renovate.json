@@ -4,6 +4,15 @@
   "semanticCommits": false,
   "packageRules": [
     {
+      "packageNames": ["typescript"],
+      "ignoreUnstable": false,
+      "followTag": "next",
+      "schedule": null,
+      "reviewers": [],
+      "automerge": false,
+      "labels": ["bot", "npm", "nightly"]
+    },
+    {
       "paths": ["lsif/**"],
       "reviewers": ["team:code-intel"]
     }

@@ -10,8 +10,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { pluralize } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-
-interface Props {}
+import { PatternTypeProps } from '../../search'
 
 const LOADING: 'loading' = 'loading'
 
@@ -23,7 +22,10 @@ interface State {
 /**
  * An explore section that shows a few repositories and a link to all.
  */
-export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
+export class RepositoriesExploreSection extends React.PureComponent<
+    Omit<PatternTypeProps, 'togglePatternType'>,
+    State
+> {
     private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode
@@ -104,7 +106,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                 </div>
                 {typeof totalCount === 'number' && totalCount > 0 && (
                     <div className="card-footer">
-                        <Link to={`/search?${buildSearchURLQuery('repo:')}`}>
+                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType)}`}>
                             View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
                             <ChevronRightIcon className="icon-inline" />
                         </Link>

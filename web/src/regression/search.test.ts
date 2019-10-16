@@ -7,7 +7,7 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestFixtures } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
-import { ensureTestExternalService, waitForRepos, deleteUser, ensureNoTestExternalServices } from './util/api'
+import { ensureTestExternalService } from './util/api'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
@@ -152,31 +152,25 @@ describe('Search regression test suite', () => {
         beforeAll(
             async () => {
                 ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
-                await resourceManager.create({
-                    type: 'User',
-                    name: testUsername,
-                    create: () =>
-                        ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config }),
-                    destroy: () => deleteUser(gqlClient, testUsername, false),
-                })
-                await resourceManager.create({
-                    type: 'External service',
-                    name: testExternalServiceInfo.uniqueDisplayName,
-                    create: async () => {
-                        await ensureTestExternalService(gqlClient, {
-                            ...testExternalServiceInfo,
-                            config: {
-                                url: 'https://github.com',
-                                token: config.gitHubToken,
-                                repos: testRepoSlugs,
-                                repositoryQuery: ['none'],
-                            },
-                        })
-                        await waitForRepos(gqlClient, testRepoSlugs.map(slug => 'github.com/' + slug))
-                    },
-                    destroy: () =>
-                        ensureNoTestExternalServices(gqlClient, { ...testExternalServiceInfo, deleteIfExist: true }),
-                })
+                resourceManager.add(
+                    'User',
+                    testUsername,
+                    await ensureLoggedInOrCreateTestUser(driver, gqlClient, { username: testUsername, ...config })
+                )
+                resourceManager.add(
+                    'External service',
+                    testExternalServiceInfo.uniqueDisplayName,
+                    await ensureTestExternalService(gqlClient, {
+                        ...testExternalServiceInfo,
+                        config: {
+                            url: 'https://github.com',
+                            token: config.gitHubToken,
+                            repos: testRepoSlugs,
+                            repositoryQuery: ['none'],
+                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+                        },
+                    })
+                )
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
             2 * 60 * 1000
@@ -337,28 +331,32 @@ describe('Search regression test suite', () => {
         })
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this'
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Non-indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this index:no'
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this index:no',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
         })
         test('Indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\('
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\(',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
         test('Non-indexed multiline search, 0 results', async () => {
             const urlQuery = buildSearchURLQuery(
-                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no'
+                'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no',
+                GQL.SearchPatternType.regexp
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)

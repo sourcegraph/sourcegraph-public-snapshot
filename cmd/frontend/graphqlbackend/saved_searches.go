@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"regexp"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -173,6 +174,10 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		return nil, errors.New("failed to create saved search: no Org ID or User ID associated with saved search")
 	}
 
+	if !queryHasPatternType(args.Query) {
+		return nil, errMissingPatternType
+	}
+
 	ss, err := db.SavedSearches.Create(ctx, &types.SavedSearch{
 		Description: args.Description,
 		Query:       args.Query,
@@ -226,6 +231,10 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	if !queryHasPatternType(args.Query) {
+		return nil, errMissingPatternType
+	}
+
 	ss, err := db.SavedSearches.Update(ctx, &types.SavedSearch{
 		ID:          id,
 		Description: args.Description,
@@ -271,3 +280,11 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	}
 	return &EmptyResponse{}, nil
 }
+
+var patternTypeRegexp *regexp.Regexp = regexp.MustCompile(`(?i)\bpatternType:(literal|regexp)\b`)
+
+func queryHasPatternType(query string) bool {
+	return patternTypeRegexp.Match([]byte(query))
+}
+
+var errMissingPatternType error = errors.New("a `patternType:` filter is required in the query for all saved searches. `patternType` can be \"literal\" or \"regexp\"")

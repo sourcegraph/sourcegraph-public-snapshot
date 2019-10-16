@@ -12,7 +12,7 @@ import (
 )
 
 // NewA8NResolver will be set by enterprise
-var NewA8NResolver func(db *sql.DB) A8NResolver
+var NewA8NResolver func(*sql.DB) A8NResolver
 
 type AddChangesetsToCampaignArgs struct {
 	Campaign   graphql.ID
@@ -111,6 +111,11 @@ func (r *schemaResolver) Changesets(ctx context.Context, args *graphqlutil.Conne
 	return r.a8nResolver.Changesets(ctx, args)
 }
 
+type ChangesetCountsArgs struct {
+	From *DateTime
+	To   *DateTime
+}
+
 type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
@@ -121,6 +126,7 @@ type CampaignResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Changesets(ctx context.Context, args struct{ graphqlutil.ConnectionArgs }) ChangesetsConnectionResolver
+	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
 }
 
 type CampaignsConnectionResolver interface {
@@ -143,7 +149,7 @@ type ChangesetResolver interface {
 	Body() (string, error)
 	State() (a8n.ChangesetState, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState() (a8n.ChangesetReviewState, error)
+	ReviewState(context.Context) (a8n.ChangesetReviewState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
@@ -159,4 +165,15 @@ type ChangesetEventResolver interface {
 	ID() graphql.ID
 	Changeset(ctx context.Context) (ChangesetResolver, error)
 	CreatedAt() DateTime
+}
+
+type ChangesetCountsResolver interface {
+	Date() DateTime
+	Total() int32
+	Merged() int32
+	Closed() int32
+	Open() int32
+	OpenApproved() int32
+	OpenChangesRequested() int32
+	OpenPending() int32
 }

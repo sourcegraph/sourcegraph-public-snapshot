@@ -15,5 +15,6 @@ export const CampaignsNavItem: React.FunctionComponent<Props> = ({ className = '
         text="Campaigns"
         icon={CampaignsIcon}
         className={`nav-link btn btn-link px-1 text-decoration-none ${className}`}
+        activeClassName="active"
     />
 )

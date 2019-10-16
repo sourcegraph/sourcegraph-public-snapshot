@@ -7,8 +7,13 @@ import { pick } from 'lodash'
 export interface Config {
     sudoToken: string
     sudoUsername: string
+    gitHubClientID: string
+    gitHubClientSecret: string
     gitHubToken: string
+    gitHubUserBobPassword: string
+    gitHubUserAmyPassword: string
     sourcegraphBaseUrl: string
+    managementConsoleUrl: string
     includeAdminOnboarding: boolean
     testUserPassword: string
     noCleanup: boolean
@@ -52,16 +57,38 @@ const configFields: ConfigFields = {
         envVar: 'SOURCEGRAPH_SUDO_USER',
         description: 'The site-admin-level username that will be impersonated with the sudo access token.',
     },
+    gitHubClientID: {
+        envVar: 'GITHUB_CLIENT_ID',
+        description: 'Client ID of the GitHub app to use to authenticate to Sourcegraph.',
+        defaultValue: 'cf9491b706c4c3b1f956', // "Local dev sign-in via GitHub" OAuth app from github.com/sourcegraph
+    },
+    gitHubClientSecret: {
+        envVar: 'GITHUB_CLIENT_SECRET',
+        description: 'Cilent secret of the GitHub app to use to authenticate to Sourcegraph.',
+    },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
         description:
             'A GitHub personal access token that will be used to authenticate a GitHub external service. It does not need to have any scopes.',
+    },
+    gitHubUserBobPassword: {
+        envVar: 'GITHUB_USER_BOB_PASSWORD',
+        description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log into Sourcegraph.',
+    },
+    gitHubUserAmyPassword: {
+        envVar: 'GITHUB_USER_AMY_PASSWORD',
+        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log into Sourcegraph.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
         defaultValue: 'http://localhost:3080',
         description:
             'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
+    },
+    managementConsoleUrl: {
+        envVar: 'MANAGEMENT_CONSOLE_URL',
+        defaultValue: 'https://localhost:2633',
+        description: 'URL at which the management console is accessible.',
     },
     includeAdminOnboarding: {
         envVar: 'INCLUDE_ADMIN_ONBOARDING',

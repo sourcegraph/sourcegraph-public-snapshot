@@ -1,16 +1,18 @@
 import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './importer'
-import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
-import { createDatabaseFilename } from './util'
+import { createCommit, createLocation, convertTestData, createCleanPostgresDatabase } from './test-utils'
+import { dbFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
-import { entities } from './models.xrepo'
+import { Connection } from 'typeorm'
 
 describe('Database', () => {
+    let connection!: Connection
+    let cleanup!: () => Promise<void>
     let storageRoot!: string
     let xrepoDatabase!: XrepoDatabase
+
     const repository = 'five'
     const commit = createCommit('five')
 
@@ -19,45 +21,57 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
+        ;({ connection, cleanup } = await createCleanPostgresDatabase())
         storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, entities))
+        xrepoDatabase = new XrepoDatabase(connection)
 
-        const input = await getTestData('cpp/data/data.lsif.gz')
-        const database = createDatabaseFilename(storageRoot, repository, commit)
-        const { packages, references } = await convertLsif(input, database)
-        await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+        // Prepare test data
+        await convertTestData(xrepoDatabase, storageRoot, repository, commit, '', 'cpp/data/data.lsif.gz')
     })
 
-    afterAll(async () => await rmfr(storageRoot))
+    afterAll(async () => {
+        await rmfr(storageRoot)
 
-    const loadDatabase = (repository: string, commit: string): Database =>
-        new Database(
-            storageRoot,
-            xrepoDatabase,
+        if (cleanup) {
+            await cleanup()
+        }
+    })
+
+    const loadDatabase = async (repository: string, commit: string): Promise<Database> => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
+        const dump = await xrepoDatabase.getDump(repository, commit, '')
+        if (!dump) {
+            throw new Error(`Unknown repository@commit ${repository}@${commit}`)
+        }
+
+        return new Database(
             connectionCache,
             documentCache,
             resultChunkCache,
-            repository,
-            commit,
-            createDatabaseFilename(storageRoot, repository, commit)
+            dump.id,
+            dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
         )
+    }
 
     it('should find all defs of `four` from main.cpp', async () => {
-        const db = loadDatabase(repository, commit)
+        const db = await loadDatabase(repository, commit)
         const definitions = await db.definitions('main.cpp', { line: 12, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('main.cpp', 6, 4, 6, 4)])
     })
 
     it('should find all defs of `five` from main.cpp', async () => {
-        const db = loadDatabase(repository, commit)
+        const db = await loadDatabase(repository, commit)
         const definitions = await db.definitions('main.cpp', { line: 11, character: 3 })
         // TODO - (FIXME) currently the dxr indexer returns zero-width ranges
         expect(definitions).toEqual([createLocation('five.cpp', 2, 4, 2, 4)])
     })
 
     it('should find all refs of `five` from main.cpp', async () => {
-        const db = loadDatabase(repository, commit)
+        const db = await loadDatabase(repository, commit)
         const references = await db.references('main.cpp', { line: 11, character: 3 })
 
         // TODO - should the definition be in this result set?

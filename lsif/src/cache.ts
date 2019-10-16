@@ -2,7 +2,7 @@ import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from './connection'
-import { DocumentData, ResultChunkData } from './models.database'
+import { DocumentData, ResultChunkData } from './database.models'
 import {
     connectionCacheEventsCounter,
     connectionCacheSizeGauge,
@@ -10,7 +10,7 @@ import {
     documentCacheSizeGauge,
     resultChunkCacheEventsCounter,
     resultChunkCacheSizeGauge,
-} from './metrics'
+} from './cache.metrics'
 
 /**
  * A wrapper around a cache value promise.

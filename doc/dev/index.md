@@ -21,6 +21,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Testing](testing.md)
 - [Go style guide](go_style_guide.md)
 - [Code reviews](code_reviews.md)
+- [Renovate updates](renovate.md)
 - [Telemetry](telemetry.md)
 - [Phabricator/Gitolite documentation](phabricator_gitolite.md)
 
