@@ -1,7 +1,7 @@
+import { Queue } from 'bull'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import bodyParser from 'body-parser'
-import exitHook from 'async-exit-hook'
 import express from 'express'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
@@ -22,7 +22,6 @@ import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { pipeline as _pipeline, Readable } from 'stream'
 import { promisify } from 'util'
-import { Queue, Scheduler } from 'node-resque'
 import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
@@ -31,7 +30,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue } from './queue'
+import { enqueue, createQueue } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -121,8 +120,11 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
-    // Create queue to publish jobs for worker
-    const queue = await setupQueue(logger)
+    // Create queue to publish convert
+    const queue = createQueue('convert', REDIS_ENDPOINT, logger)
+
+    // Update queue size metric on a timer
+    setInterval(async () => queueSizeGauge.set(await queue.count()), 1000)
 
     const app = express()
 
@@ -173,79 +175,6 @@ async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
 
     // Create an empty done file to record that all files have been renamed.
     await fs.close(await fs.open(doneFile, 'w'))
-}
-
-/**
- * Used to filter out this noisy and quite alarm message. This is really just
- * a warning from node resque that comes on a (somewhat) misnamed event. See
- * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
- *
- * Additionally, the value we're trying to catch is thrown as a string, not
- * an error object, so we need to catch the case where there's no message
- * attribute.
- *
- * See https://github.com/taskrabbit/node-resque/blob/9a1f5d86dd1725322fb09d40454de5dbea7d7910/lib/queue.js#L251
- * for the source of the error:
- */
-function isSpuriousSchedulerError(error: Error | string): boolean {
-    return /force-cleaning worker .* but cannot find queues/.test(typeof error === 'string' ? error : error.message)
-}
-
-/**
- * Connect and start an active connection to the worker queue. We also run a
- * node-resque scheduler on each server instance, as these are guaranteed to
- * always be up with a responsive system. The schedulers will do their own
- * master election via a redis key and will check for dead workers attached
- * to the queue.
- *
- * @param logger The logger instance.
- */
-async function setupQueue(logger: Logger): Promise<Queue> {
-    const [host, port] = REDIS_ENDPOINT.split(':', 2)
-
-    const connectionOptions = {
-        host,
-        port: parseInt(port, 10),
-        namespace: 'lsif',
-    }
-
-    // Create queue and log the interesting events
-    const queue = new Queue({ connection: connectionOptions })
-    queue.on('error', error => logger.error('queue error', { error }))
-    await queue.connect()
-    exitHook(() => queue.end())
-
-    const emitQueueSizeMetric = (): void => {
-        queue
-            .length('lsif')
-            .then(size => queueSizeGauge.set(size))
-            .catch(error => logger.error('failed to get length of queue', { error }))
-    }
-
-    // Update queue size metric on a timer
-    setInterval(emitQueueSizeMetric, 1000)
-
-    // Create scheduler log the interesting events
-    const scheduler = new Scheduler({ connection: connectionOptions })
-    scheduler.on('start', () => logger.debug('scheduler started'))
-    scheduler.on('end', () => logger.debug('scheduler ended'))
-    scheduler.on('poll', () => logger.debug('scheduler checking for stuck workers'))
-    scheduler.on('master', () => logger.debug('scheduler became master'))
-    scheduler.on('cleanStuckWorker', worker => logger.debug('scheduler cleaning stuck worker', { worker }))
-    scheduler.on('transferredJob', (_, job) => logger.debug('scheduler transferring job', { job }))
-    scheduler.on('error', error => {
-        if (isSpuriousSchedulerError(error)) {
-            logger.debug('scheduler warning', { error })
-        } else {
-            logger.error('scheduler error', { error })
-        }
-    })
-
-    await scheduler.connect()
-    exitHook(() => scheduler.end())
-    await scheduler.start()
-
-    return queue
 }
 
 /**
@@ -323,7 +252,7 @@ async function lsifEndpoints(
      * tagged with the given values.
      *
      * @param req The express request.
-     * @param tags The tags to apply to the logger.
+     * @param tags The tags to apply to the logger and span.
      */
     const createTracingContext = (req: express.Request & { span?: Span }, tags: { [K: string]: any }): TracingContext =>
         addTags({ logger, span: req.span }, tags)
@@ -357,7 +286,7 @@ async function lsifEndpoints(
 
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
-                await enqueue(queue, 'convert', { repository, commit, root: root || '', filename }, tracer, ctx.span)
+                await enqueue(queue, { repository, commit, root: root || '', filename }, tracer, ctx.span)
                 res.send('Upload successful, queued for processing.\n')
             }
         )
