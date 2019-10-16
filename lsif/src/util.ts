@@ -1,6 +1,6 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import { DefinitionReferenceResultId } from './models.database'
+import { DefinitionReferenceResultId } from './database.models'
 import { Id } from 'lsif-protocol'
 
 /**
@@ -107,8 +107,18 @@ export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): numb
  * @param repository The repository name.
  * @param commit The repository commit.
  */
-export function createDatabaseFilename(storageRoot: string, repository: string, commit: string): string {
+export function dbFilenameOld(storageRoot: string, repository: string, commit: string): string {
     return path.join(storageRoot, `${encodeURIComponent(repository)}@${commit}.lsif.db`)
+}
+
+/**
+ * Construct the path of the SQLite database file for the given dump.
+ *
+ * @param storageRoot The path where SQLite databases are stored.
+ * @param id The ID of the dump.
+ */
+export function dbFilename(storageRoot: string, id: number, repository: string, commit: string): string {
+    return path.join(storageRoot, `${id}-${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
 /**
@@ -138,3 +148,16 @@ export async function ensureDirectory(path: string): Promise<void> {
 export function getBatchSize(numFields: number): number {
     return Math.floor(999 / numFields)
 }
+
+/**
+ * No matching LSIF dump was found. This could be because:
+ *
+ * - You're currently browsing while on a commit that is too far away from the
+ *   last uploaded LSIF dump
+ * - You're currently viewing a file that is under a different root from what
+ *   the LSIF dump is associated with (i.e. the current file is not contained in
+ *   the dump)
+ * - You're currently viewing a file that is not part of the LSIF dump (e.g. due
+ *   to tsconfig.json exclude rules)
+ */
+export class NoLSIFDumpError extends Error {}

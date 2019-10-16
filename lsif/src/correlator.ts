@@ -12,7 +12,7 @@ import {
     DefinitionResultId,
     DocumentId,
     PackageInformationId,
-} from './models.database'
+} from './database.models'
 import {
     Id,
     VertexLabels,

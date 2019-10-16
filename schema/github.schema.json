@@ -48,6 +48,28 @@
       "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
     },
+    "webhooks": {
+      "description": "An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "GitHubWebhook",
+        "required": ["org", "secret"],
+        "properties": {
+          "org": {
+            "description": "The name of the GitHub organization to which the webhook belongs",
+            "type": "string",
+            "minLength": 1
+          },
+          "secret": {
+            "description": "The secret used when creating the webhook",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "examples": [[{ "org": "yourorgname", "secret": "webhook-secret" }]]
+    },
     "exclude": {
       "description": "A list of repositories to never mirror from this GitHub instance. Takes precedence over \"orgs\", \"repos\", and \"repositoryQuery\" configuration.\n\nSupports excluding by name ({\"name\": \"owner/name\"}) or by ID ({\"id\": \"MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==\"}).\n\nNote: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: \"curl https://api.github.com/repos/vuejs/vue | jq .node_id\"",
       "type": "array",

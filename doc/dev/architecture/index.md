@@ -23,7 +23,7 @@ Our backend is composed of multiple services:
 
 - Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) folder.
 - [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
-- [LSIF server](https://github.com/sourcegraph/sourcegraph/tree/master/lsif/server) provide precise code intelligence based on the LISF data format. It is written in TypeScript.
+- [LSIF server](https://github.com/sourcegraph/sourcegraph/tree/master/lsif) provide precise code intelligence based on the LISF data format. It is written in TypeScript.
 - [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) and [zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver) provide indexed search. It is written in Go.
 
 ## Infrastructure
@@ -38,6 +38,7 @@ Our backend is composed of multiple services:
 Here are some guides to help you understand how multiple systems fit together:
 
 - [Life of a search query](life-of-a-search-query.md)
+- [Search pagination](search-pagination.md)
 - Future topics we will cover here:
   - Life of a repository (i.e. how does code end up on gitserver?)
   - Sourcegraph extension architecture

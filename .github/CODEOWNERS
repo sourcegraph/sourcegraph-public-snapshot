@@ -76,11 +76,14 @@
 /packages @beyang
 /cmd/frontend @beyang
 /dev @beyang
+/dev/release-ping.sh @sourcegraph/distribution
 /dev/grafana.sh  @sourcegraph/distribution
 /dev/grafana  @sourcegraph/distribution
 /dev/prometheus.sh  @sourcegraph/distribution
 /dev/prometheus  @sourcegraph/distribution
 /dev/src-expose @keegancsmith
+/dev/drop-test-databases.sh @efritz
+/dev/squash-migrations.sh @efritz
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
@@ -128,6 +131,7 @@ tslint.config.js @felixfbecker
 /enterprise/pkg/a8n @sourcegraph/automation
 /internal/a8n @sourcegraph/automation
 **/campaigns/** @sourcegraph/automation
+web/**/campaigns/** @sourcegraph/automation @sourcegraph/web
 
 # Auth
 /cmd/frontend/auth/ @beyang

@@ -10,6 +10,7 @@ import { ThemeProps } from '../theme'
 import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
+import { PatternTypeProps } from '../search'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -24,7 +25,8 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps {
+        ThemeProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 

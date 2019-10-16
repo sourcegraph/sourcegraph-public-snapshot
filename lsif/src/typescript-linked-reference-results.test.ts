@@ -1,16 +1,18 @@
 import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { convertLsif } from './importer'
-import { createCommit, createLocation, getTestData, getCleanSqliteDatabase } from './test-utils'
-import { createDatabaseFilename } from './util'
+import { createCommit, createLocation, createCleanPostgresDatabase, convertTestData } from './test-utils'
+import { dbFilename } from './util'
 import { Database } from './database'
-import { entities } from './models.xrepo'
 import { XrepoDatabase } from './xrepo'
+import { Connection } from 'typeorm'
 
 describe('Database', () => {
+    let connection!: Connection
+    let cleanup!: () => Promise<void>
     let storageRoot!: string
     let xrepoDatabase!: XrepoDatabase
+
     const repository = 'test'
     const commit = createCommit('test')
 
@@ -19,31 +21,50 @@ describe('Database', () => {
     const resultChunkCache = new ResultChunkCache(10)
 
     beforeAll(async () => {
+        ;({ connection, cleanup } = await createCleanPostgresDatabase())
         storageRoot = await fs.promises.mkdtemp('typescript-')
-        xrepoDatabase = new XrepoDatabase(await getCleanSqliteDatabase(storageRoot, entities))
+        xrepoDatabase = new XrepoDatabase(connection)
 
-        const input = await getTestData('typescript/linked-reference-results/data/data.lsif.gz')
-        const database = createDatabaseFilename(storageRoot, repository, commit)
-        const { packages, references } = await convertLsif(input, database, {})
-        await xrepoDatabase.addPackagesAndReferences(repository, commit, packages, references)
+        // Prepare test data
+        await convertTestData(
+            xrepoDatabase,
+            storageRoot,
+            repository,
+            commit,
+            '',
+            'typescript/linked-reference-results/data/data.lsif.gz'
+        )
     })
 
-    afterAll(async () => await rmfr(storageRoot))
+    afterAll(async () => {
+        await rmfr(storageRoot)
 
-    const loadDatabase = (repository: string, commit: string): Database =>
-        new Database(
-            storageRoot,
-            xrepoDatabase,
+        if (cleanup) {
+            await cleanup()
+        }
+    })
+
+    const loadDatabase = async (repository: string, commit: string): Promise<Database> => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
+        const dump = await xrepoDatabase.getDump(repository, commit, '')
+        if (!dump) {
+            throw new Error(`Unknown repository@commit ${repository}@${commit}`)
+        }
+
+        return new Database(
             connectionCache,
             documentCache,
             resultChunkCache,
-            repository,
-            commit,
-            createDatabaseFilename(storageRoot, repository, commit)
+            dump.id,
+            dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
         )
+    }
 
     it('should find all refs of `foo`', async () => {
-        const db = loadDatabase(repository, commit)
+        const db = await loadDatabase(repository, commit)
 
         const positions = [
             { line: 1, character: 5 },

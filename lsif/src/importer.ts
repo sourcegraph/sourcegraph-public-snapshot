@@ -1,7 +1,7 @@
 import { assertId, hashKey, mustGet, readEnvInt } from './util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { createSqliteConnection } from './connection'
-import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './metrics'
+import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './importer.metrics'
 import { DefaultMap } from './default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
@@ -30,7 +30,7 @@ import {
     PackageInformationId,
     HoverResultId,
     entities,
-} from './models.database'
+} from './database.models'
 import { TracingContext, logAndTraceCall } from './tracing'
 
 /**

@@ -209,18 +209,22 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetConnMaxLifetime(time.Minute)
 }
 
+type stdoutLogger struct{}
+
+func (logger stdoutLogger) Printf(format string, v ...interface{}) {
+	fmt.Printf(format, v...)
+}
+func (logger stdoutLogger) Verbose() bool {
+	return true
+}
+
 func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s, err := dbutil.NewMigrationSourceLoader(dataSource)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	d, err := bindata.WithInstance(s)
+	d, err := bindata.WithInstance(dbutil.NewMigrationSourceLoader(dataSource))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -232,6 +236,9 @@ func NewMigrate(db *sql.DB, dataSource string) *migrate.Migrate {
 	// In case another process was faster and runs migrations, we will wait
 	// this long
 	m.LockTimeout = 5 * time.Minute
+	if os.Getenv("LOG_MIGRATE_TO_STDOUT") != "" {
+		m.Log = stdoutLogger{}
+	}
 
 	return m
 }

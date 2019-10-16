@@ -3,14 +3,19 @@ import * as path from 'path'
 import bodyParser from 'body-parser'
 import exitHook from 'async-exit-hook'
 import express from 'express'
-import promBundle from 'express-prom-bundle'
+import onFinished from 'on-finished'
+import promClient from 'prom-client'
 import uuid from 'uuid'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
-import { createDatabaseFilename, ensureDirectory, readEnvInt } from './util'
+import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
+import {
+    connectionCacheCapacityGauge,
+    documentCacheCapacityGauge,
+    resultChunkCacheCapacityGauge,
+} from './cache.metrics'
+import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
-import { Database, tryCreateDatabase } from './database.js'
+import { Backend } from './backend'
 import { Edge, Vertex } from 'lsif-protocol'
 import { identity } from 'lodash'
 import { logger as loggingMiddleware } from 'express-winston'
@@ -25,8 +30,11 @@ import { createTracer, logAndTraceCall, TracingContext, addTags } from './tracin
 import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
-import { createLogger, createSilentLogger } from './logging'
+import { createLogger } from './logging'
 import { enqueue } from './queue'
+import { Connection } from 'typeorm'
+import { LsifDump } from './xrepo.models'
+import * as constants from './constants'
 
 const pipeline = promisify(_pipeline)
 
@@ -46,23 +54,6 @@ const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
  *  Additionally keep this logic in sync with pkg/redispool/redispool.go and cmd/server/redis.go
  */
 const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_ENDPOINT || 'redis-store:6379'
-
-/**
- * The number of SQLite connections that can be opened at once. This
- * value may be exceeded for a short period if many handles are held
- * at once.
- */
-const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
-
-/**
- * The maximum number of documents that can be held in memory at once.
- */
-const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
-
-/**
- * The maximum number of result chunks that can be held in memory at once.
- */
-const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
  * Where on the file system to store LSIF files.
@@ -111,6 +102,9 @@ const errorHandler = (
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    // Collect process metrics
+    promClient.collectDefaultMetrics({ prefix: 'lsif_' })
+
     // Read configuration from frontend
     const fetchConfiguration = await waitForConfiguration(logger)
 
@@ -118,9 +112,9 @@ async function main(logger: Logger): Promise<void> {
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
     // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(CONNECTION_CACHE_CAPACITY)
-    documentCacheCapacityGauge.set(DOCUMENT_CACHE_CAPACITY)
-    resultChunkCacheCapacityGauge.set(RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(constants.CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(constants.DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(constants.RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
@@ -145,7 +139,7 @@ async function main(logger: Logger): Promise<void> {
             msg: 'request',
         })
     )
-    app.use(promBundle({}))
+    app.use(metricsMiddleware)
 
     // Register endpoints
     app.use(metaEndpoints())
@@ -158,12 +152,43 @@ async function main(logger: Logger): Promise<void> {
 }
 
 /**
- * Used to filter out this noisy and quite alarm message. This is really just
- * a warning from node resque that comes on a somehwat misnamed event. See
- * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
+ * If it hasn't been done already, migrate from the old pre-3.9 filename format
+ * `$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
  */
-function isSpuriousSchedulerError(error: Error): boolean {
-    return /force-cleaning worker .* but cannot find queues/.test(error.message)
+async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
+    const doneFile = path.join(STORAGE_ROOT, 'id-based-filenames')
+    if (await fs.exists(doneFile)) {
+        // Already migrated.
+        return
+    }
+
+    for (const dump of await db.getRepository(LsifDump).find()) {
+        const oldFile = dbFilenameOld(STORAGE_ROOT, dump.repository, dump.commit)
+        const newFile = dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
+        if (!(await fs.exists(oldFile))) {
+            continue
+        }
+        await fs.rename(oldFile, newFile)
+    }
+
+    // Create an empty done file to record that all files have been renamed.
+    await fs.close(await fs.open(doneFile, 'w'))
+}
+
+/**
+ * Used to filter out this noisy and quite alarm message. This is really just
+ * a warning from node resque that comes on a (somewhat) misnamed event. See
+ * https://github.com/sourcegraph/sourcegraph/issues/5917 for more context.
+ *
+ * Additionally, the value we're trying to catch is thrown as a string, not
+ * an error object, so we need to catch the case where there's no message
+ * attribute.
+ *
+ * See https://github.com/taskrabbit/node-resque/blob/9a1f5d86dd1725322fb09d40454de5dbea7d7910/lib/queue.js#L251
+ * for the source of the error:
+ */
+function isSpuriousSchedulerError(error: Error | string): boolean {
+    return /force-cleaning worker .* but cannot find queues/.test(typeof error === 'string' ? error : error.message)
 }
 
 /**
@@ -190,6 +215,16 @@ async function setupQueue(logger: Logger): Promise<Queue> {
     await queue.connect()
     exitHook(() => queue.end())
 
+    const emitQueueSizeMetric = (): void => {
+        queue
+            .length('lsif')
+            .then(size => queueSizeGauge.set(size))
+            .catch(error => logger.error('failed to get length of queue', { error }))
+    }
+
+    // Update queue size metric on a timer
+    setInterval(emitQueueSizeMetric, 1000)
+
     // Create scheduler log the interesting events
     const scheduler = new Scheduler({ connection: connectionOptions })
     scheduler.on('start', () => logger.debug('scheduler started'))
@@ -214,12 +249,48 @@ async function setupQueue(logger: Logger): Promise<Queue> {
 }
 
 /**
+ * Middleware function used to emit HTTP durations for LSIF functions. Originally
+ * we used an express bundle, but that did not allow us to have different histogram
+ * bucket for different endpoints, which makes half of the metrics useless in the
+ * presence of large uploads.
+ */
+function metricsMiddleware(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    let histogram: promClient.Histogram | undefined
+    switch (req.path) {
+        case '/upload':
+            histogram = httpUploadDurationHistogram
+            break
+
+        case '/exists':
+        case '/request':
+            histogram = httpQueryDurationHistogram
+    }
+
+    if (histogram !== undefined) {
+        const labels = { code: 0 }
+        const end = histogram.startTimer(labels)
+
+        onFinished(res, () => {
+            labels.code = res.statusCode
+            end()
+        })
+    }
+
+    next()
+}
+
+/**
  * Create a router containing health endpoint.
  */
 function metaEndpoints(): express.Router {
     const router = express.Router()
     router.get('/ping', (_, res) => res.send('ok'))
     router.get('/healthz', (_, res) => res.send('ok'))
+    router.get('/metrics', (_, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        res.end(promClient.register.metrics())
+    })
+
     return router
 }
 
@@ -240,74 +311,12 @@ async function lsifEndpoints(
     const router = express.Router()
 
     // Create cross-repo database
-    const connectionCache = new ConnectionCache(CONNECTION_CACHE_CAPACITY)
-    const documentCache = new DocumentCache(DOCUMENT_CACHE_CAPACITY)
-    const resultChunkCache = new ResultChunkCache(RESULT_CHUNK_CACHE_CAPACITY)
-
-    // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
 
-    /**
-     * Create a database instance for the given repository at the commit
-     * closest to the target commit for which we have LSIF data. Returns
-     * undefined if no such database can be created. Will also return a
-     * tracing context tagged with the closest commit found. This new
-     * tracing context should be used in all downstream requests so that
-     * the original commit and the effective commit are both known.
-     *
-     * @param repository The repository name.
-     * @param commit The target commit.
-     * @param ctx The tracing context.
-     * @param gitserverUrls The set of ordered gitserver urls.
-     */
-    const loadDatabase = async (
-        repository: string,
-        commit: string,
-        { logger = createSilentLogger(), span = new Span() }: TracingContext,
-        gitserverUrls: string[]
-    ): Promise<{ database: Database | undefined; ctx: TracingContext }> => {
-        // Try to construct database for the exact commit
-        const database = await tryCreateDatabase(
-            STORAGE_ROOT,
-            xrepoDatabase,
-            connectionCache,
-            documentCache,
-            resultChunkCache,
-            repository,
-            commit,
-            createDatabaseFilename(STORAGE_ROOT, repository, commit)
-        )
-        if (database) {
-            return { database, ctx: { logger, span } }
-        }
+    await ensureFilenamesAreIDs(connection)
 
-        // Determine the closest commit that we actually have LSIF data for. If the commit is
-        // not tracked, then commit data is requested from gitserver and insert the ancestors
-        // data for this commit.
-        const commitWithData = await logAndTraceCall(
-            { logger, span },
-            'determining closest commit',
-            (ctx: TracingContext) => xrepoDatabase.findClosestCommitWithData(repository, commit, ctx, gitserverUrls)
-        )
-        if (!commitWithData) {
-            return { database: undefined, ctx: { logger, span } }
-        }
-
-        // Try to construct a database for the approximate commit
-        const approximateDatabase = await tryCreateDatabase(
-            STORAGE_ROOT,
-            xrepoDatabase,
-            connectionCache,
-            documentCache,
-            resultChunkCache,
-            repository,
-            commitWithData,
-            createDatabaseFilename(STORAGE_ROOT, repository, commitWithData)
-        )
-
-        return { database: approximateDatabase, ctx: addTags({ logger, span }, { closestCommit: commitWithData }) }
-    }
+    const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
 
     /**
      * Create a tracing context from the request logger and tracing span
@@ -327,11 +336,11 @@ async function lsifEndpoints(
                 res: express.Response,
                 next: express.NextFunction
             ): Promise<void> => {
-                const { repository, commit } = req.query
+                const { repository, commit, root } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const ctx = createTracingContext(req, { repository, commit })
+                const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
                 const output = fs.createWriteStream(filename)
 
@@ -347,8 +356,8 @@ async function lsifEndpoints(
                 }
 
                 // Enqueue convert job
-                logger.debug('enqueueing convert job', { repository, commit })
-                await enqueue(queue, 'convert', { repository, commit, filename }, tracer, ctx.span)
+                logger.debug('enqueueing convert job', { repository, commit, root })
+                await enqueue(queue, 'convert', { repository, commit, root: root || '', filename }, tracer, ctx.span)
                 res.send('Upload successful, queued for processing.\n')
             }
         )
@@ -361,19 +370,10 @@ async function lsifEndpoints(
                 const { repository, commit, file } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
+                checkFile(file)
 
                 const ctx = createTracingContext(req, { repository, commit })
-                const { database } = await logAndTraceCall(ctx, 'creating database', ctx =>
-                    loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
-                )
-                if (!database) {
-                    res.json(false)
-                    return
-                }
-
-                // If filename supplied, ensure we have data for it
-                const result = file ? await database.exists(file) : true
-                res.json(result)
+                res.json(await backend.exists(repository, commit, file, ctx))
             }
         )
     )
@@ -391,16 +391,7 @@ async function lsifEndpoints(
                 const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 const ctx = createTracingContext(req, { repository, commit })
-                const { database, ctx: newCtx } = await logAndTraceCall(ctx, 'creating database', ctx =>
-                    loadDatabase(repository, commit, ctx, fetchConfiguration().gitServers)
-                )
-                if (!database) {
-                    throw Object.assign(new Error(`No LSIF data available for ${repository}@${commit}.`), {
-                        status: 404,
-                    })
-                }
-
-                res.json(await database[cleanMethod](path, position, newCtx))
+                res.json(await backend[cleanMethod](repository, commit, path, position, ctx))
             }
         )
     )
@@ -425,6 +416,15 @@ export function checkRepository(repository: any): void {
 export function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
+    }
+}
+
+/**
+ * Throws an error with status 400 if the file is not present.
+ */
+export function checkFile(file: any): void {
+    if (typeof file !== 'string') {
+        throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
     }
 }
 
