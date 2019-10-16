@@ -6,34 +6,90 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 
 	_ "github.com/lib/pq"
 )
 
+func runIgnoreError(cmd string, args ...string) {
+	_ = exec.Command(cmd, args...).Run()
+}
+
 // This script generates markdown formatted output containing descriptions of
 // the current dabase schema, obtained from postgres. The correct PGHOST,
 // PGPORT, PGUSER etc. env variables must be set to run this script.
 //
 // First CLI argument is an optional filename to write the output to.
-func main() {
+func generate(log *log.Logger) (string, error) {
 	const dbname = "schemadoc-gen-temp"
-	_ = exec.Command("dropdb", dbname).Run()
-	if out, err := exec.Command("createdb", dbname).CombinedOutput(); err != nil {
-		log.Fatalf("createdb: %s, %v", out, err)
-	}
-	defer exec.Command("dropdb", dbname).Run()
 
-	if err := dbconn.ConnectToDB("dbname=" + dbname); err != nil {
-		log.Fatal(err)
+	var (
+		dataSource string
+		run        func(cmd ...string) (string, error)
+	)
+	// If we are using pg9.6 use it locally since it is faster (CI \o/)
+	versionRe := regexp.MustCompile(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
+	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
+		dataSource = "dbname=" + dbname
+		run = func(cmd ...string) (string, error) {
+			c := exec.Command(cmd[0], cmd[1:]...)
+			c.Stderr = log.Writer()
+			out, err := c.Output()
+			return string(out), err
+		}
+		runIgnoreError("dropdb", dbname)
+		defer runIgnoreError("dropdb", dbname)
+	} else {
+		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
+		runIgnoreError("docker", "rm", "--force", dbname)
+		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-p", "5433:5432", "postgres:9.6")
+		if err := server.Start(); err != nil {
+			return "", err
+		}
+
+		defer func() {
+			_ = server.Process.Kill()
+			runIgnoreError("docker", "kill", dbname)
+			_ = server.Wait()
+		}()
+
+		dataSource = "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + dbname
+		run = func(cmd ...string) (string, error) {
+			cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
+			c := exec.Command("docker", cmd...)
+			c.Stderr = log.Writer()
+			out, err := c.Output()
+			return string(out), err
+		}
+
+		attempts := 0
+		for {
+			attempts++
+			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
+				break
+			} else if attempts > 30 {
+				return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
+			}
+			time.Sleep(time.Second)
+		}
 	}
 
-	db, err := dbconn.Open("dbname=" + dbname)
+	if out, err := run("createdb", dbname); err != nil {
+		return "", fmt.Errorf("createdb: %s: %w", out, err)
+	}
+
+	if err := dbconn.ConnectToDB(dataSource); err != nil {
+		return "", fmt.Errorf("ConnectToDB: %w", err)
+	}
+
+	db, err := dbconn.Open(dataSource)
 	if err != nil {
-		log.Fatal("db.Open", err)
+		return "", fmt.Errorf("Open: %w", err)
 	}
 
 	// Query names of all public tables.
@@ -43,7 +99,7 @@ FROM information_schema.tables
 WHERE table_schema='public' AND table_type='BASE TABLE';
 	`)
 	if err != nil {
-		log.Fatal("db.Query", err)
+		return "", fmt.Errorf("Query: %w", err)
 	}
 	tables := []string{}
 	defer rows.Close()
@@ -51,21 +107,21 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 		var name string
 		err := rows.Scan(&name)
 		if err != nil {
-			log.Fatal("rows.Scan", err)
+			return "", fmt.Errorf("rows.Scan: %w", err)
 		}
 		tables = append(tables, name)
 	}
 	if err = rows.Err(); err != nil {
-		log.Fatal("rows.Err", err)
+		return "", fmt.Errorf("rows.Err: %w", err)
 	}
 
 	docs := []string{}
 	for _, table := range tables {
 		// Get postgres "describe table" output.
-		cmd := exec.Command("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
-		out, err := cmd.CombinedOutput()
+		log.Println("describe", table)
+		out, err := run("psql", "-X", "--quiet", "--dbname", dbname, "-c", fmt.Sprintf("\\d %s", table))
 		if err != nil {
-			log.Fatal("cmd.CombinedOutput", out, err)
+			return "", fmt.Errorf("describe %s failed: %w", table, err)
 		}
 
 		lines := strings.Split(string(out), "\n")
@@ -75,7 +131,14 @@ WHERE table_schema='public' AND table_type='BASE TABLE';
 	}
 	sort.Strings(docs)
 
-	out := strings.Join(docs, "\n")
+	return strings.Join(docs, "\n"), nil
+}
+
+func main() {
+	out, err := generate(log.New(os.Stderr, "", log.LstdFlags))
+	if err != nil {
+		log.Fatal(err)
+	}
 	if len(os.Args) > 1 {
 		ioutil.WriteFile(os.Args[1], []byte(out), 0644)
 	} else {

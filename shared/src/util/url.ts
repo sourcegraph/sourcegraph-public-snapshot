@@ -148,7 +148,10 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.hash.substr('#'.length).split(':')
+    const fragmentSplit = parsed.hash
+        .substr('#'.length)
+        .split(':')
+        .map(decodeURIComponent)
     let filePath: string | undefined
     let position: Position | undefined
     let range: Range | undefined

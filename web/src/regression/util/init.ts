@@ -26,7 +26,10 @@ const supportedSourcegraphVersionConstraint = '>=3.8'
  */
 export async function setTestDefaults(driver: Driver, gqlClient: GraphQLClient): Promise<void> {
     const version = await currentProductVersion(gqlClient)
-    if (version !== 'dev' && !semver.satisfies(version, supportedSourcegraphVersionConstraint)) {
+    if (
+        version !== 'dev' &&
+        !semver.satisfies(version, supportedSourcegraphVersionConstraint, { includePrerelease: true })
+    ) {
         throw new Error(
             `Sourcegraph version ${JSON.stringify(
                 version

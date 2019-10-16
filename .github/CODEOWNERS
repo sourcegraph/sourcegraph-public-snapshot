@@ -131,6 +131,7 @@ tslint.config.js @felixfbecker
 /enterprise/pkg/a8n @sourcegraph/automation
 /internal/a8n @sourcegraph/automation
 **/campaigns/** @sourcegraph/automation
+web/**/campaigns/** @sourcegraph/automation @sourcegraph/web
 
 # Auth
 /cmd/frontend/auth/ @beyang
