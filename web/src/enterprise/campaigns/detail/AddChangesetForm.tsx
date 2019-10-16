@@ -107,7 +107,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                 onChange={event => setExternalID(event.target.value)}
             />
             <button type="submit" className="btn btn-primary mr-1">
-                Add Changeset
+                Add changeset
             </button>
             {isLoading && <LoadingSpinner className="icon-inline" />}
         </Form>
