@@ -51,7 +51,7 @@ class MyComponent extends React.Component {
 
 ## Making invalid states impossible through union types
 
-TypeScript has a very powerful type system, including support for union types.
+TypeScript has a very powerful type system, including support for [union types](https://www.typescriptlang.org/docs/handbook/advanced-types.html#union-types).
 A union type `A | B | C` declares that the value can be either of type `A`, `B` or `C`.
 Often times when thinking from the perspective of the state consumer, you end up with several different state slots that need to be represented.
 For example, in a UI that fetches user data from the network, you need to show a loader when the data is loading, the contents if the result arrived, or an error if the fetch failed.
@@ -66,14 +66,14 @@ A naive approach to model this would look like this:
 ```
 
 These three properties create a matrix with a total of 2<sup>3</sup> = 8 different possible states.
-However, in reality, only 3 states of these are _valid_ states:
+However, only 3 of these states are _valid_:
 You want to either show the loader, the error **or** the contents, never any of them at the same time.
 But by using three properties, it is possible that e.g. `isLoading` is `true`, while `user` is defined too.
 The application needs to ensure that for any change of one of the properties, the other two are reset, e.g. `isLoading` is reset to `false` as soon as the contents are loaded, as well as `errorMessage`.
 
 There are two bad effects of this:
-- If the code changes, becomes more complicated and some reference does not do this, the application could e.g. show a loader and the contents at the same time.
-- TypeScript has no have no way to know that `contents` is always defined when `isLoading` is not, so you'll have to either cast in multiple places or duplicate checks. The cast could then become invalid in the future and cause errors.
+- As the code evolves and grows more complex, these checks could easily be omitted, and the application could end up showing a loader and the contents at the same time.
+- TypeScript has no way to know that `contents` is always defined when `isLoading` is not, so you'll have to either cast in multiple places or duplicate checks. The cast could then become invalid in the future and cause errors.
 
 This can be easily avoided by expressing the mutually exclusive nature of the state slots in the type system through a union type:
 
@@ -88,8 +88,8 @@ To find out which state is active, you can use type checking features:
 - comparing to `undefined`, `null` or a defined constant with `===`
 - using `typeof` if one of the states is a primitive type
 - using `instanceof` if one of the states is a class
-- checking a discriminator property like `type` or `kind` if available
-- using a custom type guard function if you need to distinguish between completely different object interfaces
+- checking a [discriminator property](https://www.typescriptlang.org/docs/handbook/advanced-types.html#discriminated-unions) like `type` or `kind` if available
+- using a [custom type guard function](https://www.typescriptlang.org/docs/handbook/advanced-types.html#type-guards-and-differentiating-types) if you need to distinguish between completely different object interfaces
 
 TypeScript is then able to narrow the type correctly in the conditional branches defined by `if`/`else`, the ternary operator, or `return`:
 
@@ -103,7 +103,7 @@ if (userOrError instanceof Error) {
 return <div>Username: {userOrError.username}</div>
 ```
 
-It is now impossible to ever have a loader and an error shown at the same time, enforced at compile time.
+We are now relying on the type system to enforce at compile time that it is impossible to have a loader and an error shown at the same time.
 
 **Caveat**: If you are using the `Error` type, make sure that the exception you are saving is actually an Error with our `asError()` utility.
 Exceptions in TypeScript are of type `any`, i.e. if a function deep down exhibits the bad practice of throwing e.g. a string, it could mess up the type checking logic.
