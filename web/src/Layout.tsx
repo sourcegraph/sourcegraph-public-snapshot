@@ -124,7 +124,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
-            <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />
+            {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
