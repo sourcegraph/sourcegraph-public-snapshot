@@ -8,7 +8,7 @@ import { GraphQLClient } from './GraphQLClient'
 import { map, tap, retryWhen, delayWhen, take } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
 
 /**
  * Wait until all repositories in the list exist.
@@ -167,7 +167,7 @@ export async function ensureTestExternalService(
         displayName: options.uniqueDisplayName,
         config: JSON.stringify(options.config),
     }
-    await gqlClient
+    const { errors } = await gqlClient
         .mutateGraphQL(
             gql`
                 mutation addExternalService($input: AddExternalServiceInput!) {
@@ -181,6 +181,9 @@ export async function ensureTestExternalService(
             { input }
         )
         .toPromise()
+    if (errors) {
+        throw createAggregateError(errors)
+    }
 
     if (options.waitForRepos && options.waitForRepos.length > 0) {
         await waitForRepos(gqlClient, options.waitForRepos)
