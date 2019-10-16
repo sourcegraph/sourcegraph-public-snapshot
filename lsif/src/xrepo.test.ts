@@ -129,7 +129,7 @@ describe('XrepoDatabase', () => {
         expect(await xrepoDatabase.findClosestDump('foo', ch, 'file')).toBeUndefined()
     })
 
-    it.only('should return empty string as closest commit with no reachable lsif data', async () => {
+    it('should return empty string as closest commit with no reachable lsif data', async () => {
         if (!xrepoDatabase) {
             fail('failed beforeAll')
         }
