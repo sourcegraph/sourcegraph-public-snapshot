@@ -292,9 +292,11 @@ func TestSearchSuggestions(t *testing.T) {
 		mockShowSymbolMatches = func() ([]*searchSuggestionResolver, error) { return nil, nil }
 		defer func() { mockShowSymbolMatches = nil }()
 
-		testSuggestions(t, "repo:foo", []string{"lang:go", "lang:java", "lang:typescript"})
-		if !calledReposGetInventory {
-			t.Error("!calledReposGetInventory")
+		for _, v := range searchVersions {
+			testSuggestions(t, "repo:foo", v, []string{"lang:go", "lang:java", "lang:typescript"})
+			if !calledReposGetInventory {
+				t.Error("!calledReposGetInventory")
+			}
 		}
 	})
 
