@@ -238,7 +238,7 @@ type ReposListOptions struct {
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
 
-	// OnlyRepoIDs fetches only the RepoIDs fields in each Repo.
+	// OnlyRepoIDs skips fetching of RepoFields in each Repo.
 	OnlyRepoIDs bool
 
 	// Index when set will only include repositories which should be indexed

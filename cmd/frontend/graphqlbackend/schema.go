@@ -1026,6 +1026,8 @@ type Query {
     viewerConfiguration: ConfigurationCascade! @deprecated(reason: "use viewerSettings instead")
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
+    # Fetch search filter suggestions for autocompletion.
+    searchFilterSuggestions: SearchFilterSuggestions
     # Runs a search.
     search(
         # The version of the search syntax being used.
@@ -1136,6 +1138,14 @@ type Search {
     # cached and thus quicker to query. Useful for e.g. querying sparkline
     # data.
     stats: SearchResultsStats!
+}
+
+# Predefined suggestions for search filters when backfill.
+type SearchFilterSuggestions {
+    # The suggestions for search filter "repogroup:".
+    repogroup: [String!]!
+    # The suggestions for search filter "repo:".
+    repo: [String!]!
 }
 
 # A search result.
@@ -1257,8 +1267,14 @@ type SearchFilter {
     kind: String!
 }
 
+# A programming language.
+type Language {
+    # Name of the programming language.
+    name: String!
+}
+
 # A search suggestion.
-union SearchSuggestion = Repository | File | Symbol
+union SearchSuggestion = Repository | File | Symbol | Language
 
 # A search-related alert message.
 type SearchAlert {

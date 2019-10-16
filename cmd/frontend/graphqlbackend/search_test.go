@@ -232,6 +232,8 @@ func testStringResult(result *searchSuggestionResolver) string {
 		name = "repo:" + string(r.repo.Name)
 	case *gitTreeEntryResolver:
 		name = "file:" + r.Path()
+	case *languageResolver:
+		name = "lang:" + r.name
 	default:
 		panic("never here")
 	}

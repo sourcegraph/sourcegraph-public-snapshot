@@ -805,11 +805,16 @@ func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
 	return toSymbolResolver(s.symbol, s.baseURI, s.lang, s.commit), true
 }
 
+func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
+	res, ok := r.result.(*languageResolver)
+	return res, ok
+}
+
 // newSearchResultResolver returns a new searchResultResolver wrapping the
 // given result.
 //
-// A panic occurs if the type of result is not a *RepositoryResolver or
-// *gitTreeEntryResolver.
+// A panic occurs if the type of result is not a *RepositoryResolver, *gitTreeEntryResolver,
+// *searchSymbolResult or *languageResolver.
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
@@ -820,6 +825,9 @@ func newSearchResultResolver(result interface{}, score int) *searchSuggestionRes
 
 	case *searchSymbolResult:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
+
+	case *languageResolver:
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
 
 	default:
 		panic("never here")

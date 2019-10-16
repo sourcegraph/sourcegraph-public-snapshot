@@ -9,6 +9,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -232,6 +233,11 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
+		// Mock to bypass language suggestions.
+		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
@@ -259,6 +265,41 @@ func TestSearchSuggestions(t *testing.T) {
 
 	})
 
+	t.Run("repo: field for language suggestions", func(t *testing.T) {
+		db.Mocks.Repos.List = func(_ context.Context, _ db.ReposListOptions) ([]*types.Repo, error) {
+			return []*types.Repo{{Name: "foo-repo"}}, nil
+		}
+		defer func() { db.Mocks.Repos.List = nil }()
+
+		calledReposGetInventory := false
+		backend.Mocks.Repos.GetInventory = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*inventory.Inventory, error) {
+			calledReposGetInventory = true
+			return &inventory.Inventory{
+				Languages: []inventory.Lang{
+					{Name: "Go"},
+					{Name: "Typescript"},
+					{Name: "Java"},
+				},
+			}, nil
+		}
+		defer func() { backend.Mocks.Repos.GetInventory = nil }()
+
+		// Mock to bypass other suggestions.
+		mockShowRepoSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		defer func() { mockShowRepoSuggestions = nil }()
+		mockShowFileSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		defer func() { mockShowFileSuggestions = nil }()
+		mockShowSymbolMatches = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		defer func() { mockShowSymbolMatches = nil }()
+
+		for _, v := range searchVersions {
+			testSuggestions(t, "repo:foo", v, []string{"lang:go", "lang:java", "lang:typescript"})
+			if !calledReposGetInventory {
+				t.Error("!calledReposGetInventory")
+			}
+		}
+	})
+
 	t.Run("repo: and file: field", func(t *testing.T) {
 		var mu sync.Mutex
 
@@ -279,7 +320,11 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
-		defer func() { db.Mocks = db.MockStores{} }()
+		defer func() { db.Mocks.Repos.List = nil }()
+
+		// Mock to bypass language suggestions.
+		mockShowLangSuggestions = func() ([]*searchSuggestionResolver, error) { return nil, nil }
+		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
