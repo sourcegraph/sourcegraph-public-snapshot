@@ -58,7 +58,7 @@ func generate(log *log.Logger) (string, error) {
 			_ = server.Wait()
 		}()
 
-		dataSource = "postgres://postgres@localhost:5433/postgres?dbname=" + dbname
+		dataSource = "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + dbname
 		run = func(cmd ...string) (string, error) {
 			cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
 			c := exec.Command("docker", cmd...)
@@ -70,7 +70,7 @@ func generate(log *log.Logger) (string, error) {
 		attempts := 0
 		for {
 			attempts++
-			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "localhost", "-p", "5433").Run(); err == nil {
+			if err := exec.Command("pg_isready", "-U", "postgres", "-d", dbname, "-h", "127.0.0.1", "-p", "5433").Run(); err == nil {
 				break
 			} else if attempts > 30 {
 				return "", fmt.Errorf("gave up waiting after 30s attempt for pg_isready: %w", err)
