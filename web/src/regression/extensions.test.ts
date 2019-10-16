@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import { TestResourceManager, ResourceDestructor } from './util/TestResourceManager'
+import { TestResourceManager } from './util/TestResourceManager'
 import { GraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
@@ -24,7 +24,7 @@ async function activateAndConfigureExtension(
         extensionConfig = {},
     }: { username: string; extensionID: string; extensionConfig?: { [key: string]: any } },
     graphQLClient: GraphQLClient
-): Promise<ResourceDestructor> {
+) {
     await editUserSettings(
         username,
         { keyPath: [{ property: 'extensions' }, { property: extensionID }], value: true },
@@ -33,8 +33,6 @@ async function activateAndConfigureExtension(
     for (const [property, value] of Object.entries(extensionConfig)) {
         await editUserSettings(username, { keyPath: [{ property }], value }, graphQLClient)
     }
-    // No need to clean up: the test user will be destroyed.
-    return () => Promise.resolve()
 }
 
 describe('Sourcegraph extensions regression test suite', () => {
@@ -55,7 +53,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         kind: ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] Github (extensions.test.ts)',
     }
-    const repos = ['theupdateframework/notary', 'GetStream/Winds']
+    const repos = ['theupdateframework/notary', 'GetStream/Winds', 'codecov/sourcegraph-codecov']
 
     let driver: Driver
     let graphQLClient: GraphQLClient
@@ -99,16 +97,12 @@ describe('Sourcegraph extensions regression test suite', () => {
     test(
         'Codecov extension',
         async () => {
-            resourceManager.add(
-                'Extension',
-                'sourcegraph/codecov',
-                await activateAndConfigureExtension(
-                    {
-                        username: testUsername,
-                        extensionID: 'sourcegraph/codecov',
-                    },
-                    graphQLClient
-                )
+            await activateAndConfigureExtension(
+                {
+                    username: testUsername,
+                    extensionID: 'sourcegraph/codecov',
+                },
+                graphQLClient
             )
             await driver.page.goto(
                 new URL(
@@ -152,16 +146,12 @@ describe('Sourcegraph extensions regression test suite', () => {
     test(
         'Datadog extension',
         async () => {
-            resourceManager.add(
-                'Extension',
-                'sourcegraph/datadog-metrics',
-                await activateAndConfigureExtension(
-                    {
-                        username: testUsername,
-                        extensionID: 'sourcegraph/datadog-metrics',
-                    },
-                    graphQLClient
-                )
+            await activateAndConfigureExtension(
+                {
+                    username: testUsername,
+                    extensionID: 'sourcegraph/datadog-metrics',
+                },
+                graphQLClient
             )
 
             // Visit a file that contains statsd calls
@@ -174,6 +164,42 @@ describe('Sourcegraph extensions regression test suite', () => {
             // Verify datadog decorations appear
             await retry(async () =>
                 expect(await driver.page.$$('[data-contents=" View metric (Datadog) » "]')).toHaveLength(9)
+            )
+        },
+        10 * 1000
+    )
+
+    test(
+        'Sentry extension',
+        async () => {
+            await activateAndConfigureExtension(
+                {
+                    username: testUsername,
+                    extensionID: 'sourcegraph/sentry',
+                    extensionConfig: {
+                        'sentry.decorations.inline': true,
+                        'sentry.organization': 'sourcegraph',
+                        'sentry.projects': [
+                            {
+                                projectId: '1334031',
+                            },
+                        ],
+                    },
+                },
+                graphQLClient
+            )
+
+            // Visit a file containing throw statements that should be matched by the Sentry extension
+            await driver.page.goto(
+                new URL(
+                    'github.com/codecov/sourcegraph-codecov@f398e73d3e8f49834c09050d1898369762b2c51e/-/blob/src/uri.ts#L19-33',
+                    config.sourcegraphBaseUrl
+                ).href
+            )
+
+            // Verify Sentry decorations appear
+            await retry(async () =>
+                expect(await driver.page.$$('[data-contents=" View logs in Sentry » "]')).toHaveLength(1)
             )
         },
         10 * 1000
