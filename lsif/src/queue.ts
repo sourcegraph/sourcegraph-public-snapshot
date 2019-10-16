@@ -1,4 +1,4 @@
-import Bull, { Queue } from 'bull'
+import Bull, { Queue, Job } from 'bull'
 import { Span, Tracer, FORMAT_TEXT_MAP } from 'opentracing'
 import { Logger } from 'winston'
 
@@ -33,11 +33,11 @@ export function createQueue(name: string, endpoint: string, logger: Logger): Que
  * @param tracer The tracer instance.
  * @param span The parent span.
  */
-export const enqueue = async (queue: Queue, args: object, tracer?: Tracer, span?: Span): Promise<void> => {
+export const enqueue = (queue: Queue, args: object, tracer?: Tracer, span?: Span): Promise<Job> => {
     const tracing = {}
     if (tracer && span) {
         tracer.inject(span, FORMAT_TEXT_MAP, tracing)
     }
 
-    await queue.add({ args, tracing })
+    return queue.add({ args, tracing })
 }
