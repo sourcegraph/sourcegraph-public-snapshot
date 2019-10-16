@@ -151,7 +151,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const fragmentSplit = parsed.hash
         .substr('#'.length)
         .split(':')
-        .map(piece => decodeURIComponent(piece))
+        .map(decodeURIComponent)
     let filePath: string | undefined
     let position: Position | undefined
     let range: Range | undefined
