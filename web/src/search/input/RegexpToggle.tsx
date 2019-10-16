@@ -11,6 +11,7 @@ interface RegexpToggleProps extends PatternTypeProps {
     toggled: boolean
     navbarSearchQuery: string
     history: H.History
+    hasGlobalQueryBehavior?: boolean
 }
 
 export default class RegexpToggle extends React.Component<RegexpToggleProps> {
@@ -64,6 +65,12 @@ export default class RegexpToggle extends React.Component<RegexpToggleProps> {
     private toggle = (): void => {
         const newPatternType = this.props.toggled ? SearchPatternType.literal : SearchPatternType.regexp
         this.props.togglePatternType()
-        submitSearch(this.props.history, this.props.navbarSearchQuery, 'filter', newPatternType)
+        if (this.props.hasGlobalQueryBehavior) {
+            // We only want the regexp toggle to submit searches if the query input it is in
+            // has global behavior (i.e. query inputs on the main search page or global navbar). Non-global inputs
+            // don't have the canonical query, and are dependent on the page it's on for context, which makes the
+            // submit on-toggle behavior undesirable.
+            submitSearch(this.props.history, this.props.navbarSearchQuery, 'filter', newPatternType)
+        }
     }
 }
