@@ -98,6 +98,15 @@ describe('parseRepoURI', () => {
             },
         })
     })
+
+    test('should parse a file with special characters', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#space%20here.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            rev: 'branch',
+            filePath: 'space here.go',
+        })
+    })
 })
 
 describe('makeRepoURI', () => {
