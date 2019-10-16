@@ -35,7 +35,7 @@ func ProvidersFromConfig(
 	allowAccessByDefault = true
 	defer func() {
 		if len(seriousProblems) > 0 {
-			log15.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.")
+			log15.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.", "seriousProblems", seriousProblems)
 			allowAccessByDefault = false
 		}
 	}()
