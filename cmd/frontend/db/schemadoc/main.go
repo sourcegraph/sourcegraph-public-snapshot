@@ -16,6 +16,10 @@ import (
 	_ "github.com/lib/pq"
 )
 
+func runIgnoreError(cmd string, args ...string) {
+	_ = exec.Command(cmd, args...).Run()
+}
+
 // This script generates markdown formatted output containing descriptions of
 // the current dabase schema, obtained from postgres. The correct PGHOST,
 // PGPORT, PGUSER etc. env variables must be set to run this script.
@@ -38,11 +42,11 @@ func generate(log *log.Logger) (string, error) {
 			out, err := c.Output()
 			return string(out), err
 		}
-		_ = exec.Command("dropdb", dbname).Run()
-		defer exec.Command("dropdb", dbname).Run()
+		runIgnoreError("dropdb", dbname)
+		defer runIgnoreError("dropdb", dbname)
 	} else {
 		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
-		_ = exec.Command("docker", "rm", "--force", dbname).Run()
+		runIgnoreError("docker", "rm", "--force", dbname)
 		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-p", "5433:5432", "postgres:9.6")
 		if err := server.Start(); err != nil {
 			return "", err
@@ -50,7 +54,7 @@ func generate(log *log.Logger) (string, error) {
 
 		defer func() {
 			_ = server.Process.Kill()
-			_ = exec.Command("docker", "kill", dbname).Run()
+			runIgnoreError("docker", "kill", dbname)
 			_ = server.Wait()
 		}()
 
