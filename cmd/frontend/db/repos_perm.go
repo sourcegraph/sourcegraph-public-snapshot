@@ -87,6 +87,10 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	}
 
 	authzAllowByDefault, authzProviders := authz.GetProviders()
+	tr.LogFields(
+		otlog.Bool("authzAllowByDefault", authzAllowByDefault),
+		otlog.Int("authzProviders.count", len(authzProviders)),
+	)
 	if authzAllowByDefault && len(authzProviders) == 0 {
 		return repos, nil
 	}
@@ -136,6 +140,12 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 					}
 				}
 			} else {
+				tr.LogFields(
+					otlog.String("event", "authz provider account failed"),
+					otlog.String("username", currentUser.Username),
+					otlog.String("authzProvider", authzProvider.ServiceID()),
+					otlog.Error(err),
+				)
 				log15.Warn("Could not fetch authz provider account for user", "username", currentUser.Username, "authzProvider", authzProvider.ServiceID(), "error", err)
 			}
 		}
