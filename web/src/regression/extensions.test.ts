@@ -55,7 +55,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         kind: ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] Github (extensions.test.ts)',
     }
-    const repos = ['theupdateframework/notary']
+    const repos = ['theupdateframework/notary', 'GetStream/Winds']
 
     let driver: Driver
     let graphQLClient: GraphQLClient
@@ -82,10 +82,10 @@ describe('Sourcegraph extensions regression test suite', () => {
                     repos,
                     repositoryQuery: ['none'],
                 },
-                waitForRepos: ['github.com/theupdateframework/notary'],
+                waitForRepos: repos.map(s => `github.com/${s}`),
             })
         )
-    })
+    }, 60 * 1000)
 
     afterAll(async () => {
         if (!config.noCleanup) {
@@ -96,58 +96,86 @@ describe('Sourcegraph extensions regression test suite', () => {
         }
     })
 
-    describe('Codecov extension', () => {
-        test(
-            'it works',
-            async () => {
-                resourceManager.add(
-                    'Extension',
-                    'sourcegraph/codecov',
-                    await activateAndConfigureExtension(
-                        {
-                            username: testUsername,
-                            extensionID: 'sourcegraph/codecov',
-                        },
-                        graphQLClient
-                    )
+    test(
+        'Codecov extension',
+        async () => {
+            resourceManager.add(
+                'Extension',
+                'sourcegraph/codecov',
+                await activateAndConfigureExtension(
+                    {
+                        username: testUsername,
+                        extensionID: 'sourcegraph/codecov',
+                    },
+                    graphQLClient
                 )
-                await driver.page.goto(
-                    new URL(
-                        'github.com/theupdateframework/notary@62258bc0beb3bdc41de1e927a57acaee06bebe4b/-/blob/cmd/notary/delegations.go#L60',
-                        config.sourcegraphBaseUrl
-                    ).href
+            )
+            await driver.page.goto(
+                new URL(
+                    'github.com/theupdateframework/notary@62258bc0beb3bdc41de1e927a57acaee06bebe4b/-/blob/cmd/notary/delegations.go#L60',
+                    config.sourcegraphBaseUrl
+                ).href
+            )
+            // No lines should be decorated upon page load
+            expect(await driver.page.$$('tr[style]')).toHaveLength(0)
+            expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
+
+            // Wait for the "Coverage: X%" button to appear and click it
+            await retry(() => driver.findElementWithText('Coverage: 80%'))
+            await driver.clickElementWithText('Coverage: 80%')
+
+            // Lines should get decorated, but without line/hit branch counts
+            await retry(async () => expect(await driver.page.$$('tr[style]')).toHaveLength(264))
+            expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
+
+            // Open the command palette and click "Show line/hit branch counts"
+            await driver.page.click('.command-list-popover-button')
+            await driver.clickElementWithText('Codecov: Show line hit/branch counts')
+
+            // Line/hit branch counts should now show up
+            await retry(async () => expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(264))
+
+            // Check that the the "View commit report" button links to the correct location
+            await driver.page.click('.command-list-popover-button')
+            await driver.clickElementWithText('Codecov: View commit report')
+            const codecovCommitURL =
+                'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
+            if (driver.page.url() === codecovCommitURL) {
+                return
+            }
+            await driver.page.waitForNavigation()
+            expect(driver.page.url()).toEqual(codecovCommitURL)
+        },
+        30 * 1000
+    )
+
+    test(
+        'Datadog extension',
+        async () => {
+            resourceManager.add(
+                'Extension',
+                'sourcegraph/datadog-metrics',
+                await activateAndConfigureExtension(
+                    {
+                        username: testUsername,
+                        extensionID: 'sourcegraph/datadog-metrics',
+                    },
+                    graphQLClient
                 )
-                // No lines should be decorated upon page load
-                expect(await driver.page.$$('tr[style]')).toHaveLength(0)
-                expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
+            )
 
-                // Wait for the "Coverage: X%" button to appear and click it
-                await retry(() => driver.findElementWithText('Coverage: 80%'))
-                await driver.clickElementWithText('Coverage: 80%')
-
-                // Lines should get decorated, but without line/hit branch counts
-                await retry(async () => expect(await driver.page.$$('tr[style]')).toHaveLength(264))
-                expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
-
-                // Open the command palette and click "Show line/hit branch counts"
-                await driver.page.click('.command-list-popover-button')
-                await driver.clickElementWithText('Codecov: Show line hit/branch counts')
-
-                // Line/hit branch counts should now show up
-                await retry(async () => expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(264))
-
-                // Check that the the "View commit report" button links to the correct location
-                await driver.page.click('.command-list-popover-button')
-                await driver.clickElementWithText('Codecov: View commit report')
-                const codecovCommitURL =
-                    'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
-                if (driver.page.url() === codecovCommitURL) {
-                    return
-                }
-                await driver.page.waitForNavigation()
-                expect(driver.page.url()).toEqual(codecovCommitURL)
-            },
-            30 * 1000
-        )
-    })
+            // Visit a file that contains statsd calls
+            await driver.page.goto(
+                new URL(
+                    'github.com/GetStream/Winds@acd1f5661aae461d33a28c55b54015c20ff49ed7/-/blob/api/src/workers/podcast.js#L97',
+                    config.sourcegraphBaseUrl
+                ).href
+            )
+            // Verify datadog decorations appear
+            await retry(async () =>
+                expect(await driver.page.$$('[data-contents=" View metric (Datadog) » "]')).toHaveLength(9)
+            )
+        },
+        10 * 1000
+    )
 })
