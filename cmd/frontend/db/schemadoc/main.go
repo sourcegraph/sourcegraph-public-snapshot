@@ -58,7 +58,6 @@ func generate(log *log.Logger) (string, error) {
 			_ = server.Wait()
 		}()
 
-		time.Sleep(1 * time.Second)
 		dataSource = "postgres://postgres@localhost:5433/postgres?dbname=" + dbname
 		run = func(cmd ...string) (string, error) {
 			cmd = append([]string{"exec", "-u", "postgres", dbname}, cmd...)
