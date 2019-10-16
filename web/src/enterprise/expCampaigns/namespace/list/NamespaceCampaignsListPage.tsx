@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ExtensionsControllerNotificationProps } from '../../../../../../shared/src/extensions/controller'
 import { NamespaceAreaContext } from '../../../../namespaces/NamespaceArea'
 import { CampaignList } from '../../list/CampaignList'
-import { useCampaigns } from '../../list/useCampaigns'
+import { useCampaigns } from '../../../campaigns/list/useCampaigns'
 
 interface Props extends Pick<NamespaceAreaContext, 'namespace'>, ExtensionsControllerNotificationProps {
     newCampaignURL: string | null

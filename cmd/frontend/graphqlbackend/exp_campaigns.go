@@ -48,30 +48,7 @@ func CampaignByDBID(ctx context.Context, id int64) (Campaign, error) {
 	return Campaigns.CampaignByDBID(ctx, id)
 }
 
-// CampaignsInNamespace returns an instance of the GraphQL CampaignConnection type with the list of
-// campaigns defined in a namespace.
-func CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
-	if Campaigns == nil {
-		return nil, errCampaignsNotImplemented
-	}
-	return Campaigns.CampaignsInNamespace(ctx, namespace, arg)
-}
 
-// CampaignsWithObject returns an instance of the GraphQL CampaignConnection type with the list of
-// campaigns that contain the object.
-func CampaignsWithObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
-	if Campaigns == nil {
-		return nil, errCampaignsNotImplemented
-	}
-	return Campaigns.CampaignsWithObject(ctx, object, arg)
-}
-
-func (schemaResolver) ExpCampaigns(ctx context.Context, arg *CampaignsArgs) (CampaignConnection, error) {
-	if Campaigns == nil {
-		return nil, errCampaignsNotImplemented
-	}
-	return Campaigns.Campaigns(ctx, arg)
-}
 
 func (r schemaResolver) ExpCampaignPreview(ctx context.Context, arg *CampaignPreviewArgs) (CampaignPreview, error) {
 	if Campaigns == nil {
@@ -139,7 +116,6 @@ func (r schemaResolver) RemoveThreadsFromCampaign(ctx context.Context, arg *AddR
 // CampaignsResolver is the interface for the GraphQL campaigns queries and mutations.
 type CampaignsResolver interface {
 	// Queries
-	Campaigns(context.Context, *CampaignsArgs) (CampaignConnection, error)
 	CampaignPreview(context.Context, *CampaignPreviewArgs) (CampaignPreview, error)
 	CampaignUpdatePreview(context.Context, *CampaignUpdatePreviewArgs) (CampaignUpdatePreview, error)
 
@@ -157,13 +133,6 @@ type CampaignsResolver interface {
 
 	// CampaignByDBID is called by the CampaignByDBID func but is not in the GraphQL API.
 	CampaignByDBID(context.Context, int64) (Campaign, error)
-
-	// CampaignsInNamespace is called by the CampaignsInNamespace func but is not in the GraphQL
-	// API.
-	CampaignsInNamespace(ctx context.Context, namespace graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error)
-
-	// CampaignsWithObject is called by the CampaignsWithObject func but is not in the GraphQL API.
-	CampaignsWithObject(ctx context.Context, object graphql.ID, arg *graphqlutil.ConnectionArgs) (CampaignConnection, error)
 }
 
 type CampaignsArgs struct {
@@ -266,10 +235,6 @@ type Campaign interface {
 	PartialComment
 }
 
-// CampaignNode is the interface for the GraphQL interface CampaignNode.
-type CampaignNode interface {
-	ExpCampaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
-}
 
 // CampaignConnection is the interface for the GraphQL type CampaignConnection.
 type CampaignConnection interface {

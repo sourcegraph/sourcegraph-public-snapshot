@@ -1212,14 +1212,6 @@ type Query {
         campaign: ID
     ): ThreadDiagnosticConnection!
 
-    # A list of campaigns.
-    expCampaigns(
-        # Returns the first n campaigns from the list.
-        first: Int
-        # Returns campaigns that contain this object (such as a thread).
-        object: ID
-    ): ExpCampaignConnection!
-
     # A preview of a campaign. The campaign is not created, only previewed.
     expCampaignPreview(input: ExpCampaignPreviewInput!): ExpCampaignPreview!
 
@@ -2629,12 +2621,6 @@ interface Namespace {
 
     # The URL to this namespace.
     url: String!
-
-    # The campaigns in this namespace.
-    expCampaigns(
-        # Return the first n campaigns from the list.
-        first: Int
-    ): ExpCampaignConnection!
 }
 
 # A list of users.
@@ -2745,12 +2731,6 @@ type User implements Node & SettingsSubject & Namespace {
 
     # The name of this user namespace's component. For users, this is the username.
     namespaceName: String!
-
-    # The campaigns owned by this user.
-    expCampaigns(
-        # Return the first n campaigns from the list.
-        first: Int
-    ): ExpCampaignConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2943,12 +2923,6 @@ type Org implements Node & SettingsSubject & Namespace {
 
     # The name of this user namespace's component. For organizations, this is the organization's name.
     namespaceName: String!
-
-    # The campaigns owned by this organization.
-    expCampaigns(
-        # Return the first n campaigns from the list.
-        first: Int
-    ): ExpCampaignConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -4346,15 +4320,6 @@ interface RepositoryAndNumberAddressable {
     number: String!
 }
 
-# An object that can be a member of a campaign.
-interface ExpCampaignNode {
-    # A list of campaigns that contain this object.
-    expCampaigns(
-        # Return the first n campaigns from the list.
-        first: Int
-    ): ExpCampaignConnection!
-}
-
 # The states of threads.
 enum ThreadState {
     # Open.
@@ -4506,7 +4471,7 @@ interface Assignable {
 }
 
 # A thread is collection of diagnostics and changes.
-type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & ExpCampaignNode & Assignable & Labelable & RuleContainer {
+type Thread implements Node & RepositoryNode & RepositoryAndNumberAddressable & Updatable & Assignable & Labelable & RuleContainer {
     # The unique ID for the thread.
     id: ID!
 
@@ -5517,5 +5482,4 @@ type RemoveDiagnosticFromThreadEvent implements EventCommon {
     # The diagnostic that was removed.
     diagnostic: Diagnostic!
 }
-
 `

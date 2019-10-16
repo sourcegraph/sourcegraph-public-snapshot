@@ -232,7 +232,7 @@ func (v *gqlThread) RepositoryComparison(ctx context.Context) (graphqlbackend.Re
 }
 
 func (v *gqlThread) ExpCampaigns(ctx context.Context, arg *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignConnection, error) {
-	return graphqlbackend.CampaignsWithObject(ctx, v.ID(), arg)
+	panic("TODO!(sqs)")
 }
 
 func (v *gqlThread) TimelineItems(ctx context.Context, arg *graphqlbackend.EventConnectionCommonArgs) (graphqlbackend.EventConnection, error) {

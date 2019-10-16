@@ -197,9 +197,9 @@ type Thread interface {
 	Kind(context.Context) (ThreadKind, error)
 	URL(context.Context) (string, error)
 	ExternalURLs(context.Context) ([]*externallink.Resolver, error)
+	ExpCampaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	RepositoryComparison(context.Context) (RepositoryComparison, error)
-	CampaignNode
 	Assignable
 	Labelable
 }

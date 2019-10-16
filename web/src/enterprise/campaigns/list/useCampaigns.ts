@@ -8,9 +8,9 @@ import { useMemo } from 'react'
 /**
  * A React hook that observes campaigns queried from the GraphQL API.
  *
- * @param namespace The (optional) namespace in which to observe the campaigns defined.
+ * @param _namespace The (optional) namespace in which to observe the campaigns defined. TODO(sqs): This is not yet implemented.
  */
-export const useCampaigns = (): undefined | GQL.ICampaignConnection =>
+export const useCampaigns = (_namespace?: unknown): undefined | GQL.ICampaignConnection =>
     useObservable(
         useMemo(
             () =>

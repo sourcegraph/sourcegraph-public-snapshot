@@ -8,7 +8,6 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 // Namespace is the interface for the GraphQL Namespace interface.
@@ -16,7 +15,6 @@ type Namespace interface {
 	ID() graphql.ID
 	URL() string
 	NamespaceName() string
-	ExpCampaigns(context.Context, *graphqlutil.ConnectionArgs) (CampaignConnection, error)
 }
 
 func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql.ID }) (*NamespaceResolver, error) {

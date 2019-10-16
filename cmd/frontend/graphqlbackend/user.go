@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -278,9 +277,6 @@ func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, err
 
 func (r *UserResolver) NamespaceName() string { return r.user.Username }
 
-func (r *UserResolver) ExpCampaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignConnection, error) {
-	return CampaignsInNamespace(ctx, r.ID(), args)
-}
 
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string

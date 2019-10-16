@@ -9,12 +9,9 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { LinkWithIconOnlyTooltip } from '../components/LinkWithIconOnlyTooltip'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
-import { CampaignsNavItem as ExpCampaignsNavItem } from '../enterprise/expCampaigns/global/nav/CampaignsNavItem'
-import { ThreadsIcon } from '../enterprise/threads/icons'
 import { GlobalDebugModalButton, SHOW_DEBUG } from '../global/GlobalDebugModalButton'
 import {
     KeyboardShortcutsProps,
@@ -44,8 +41,6 @@ interface Props
     className?: string
 }
 
-const EXP_CAMPAIGNS = true
-
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
@@ -70,26 +65,10 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
-                {!EXP_CAMPAIGNS && this.props.showCampaigns && (
+                {this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />
                     </li>
-                )}
-                {this.props.showCampaigns && (
-                    // TODO!(sqs): only show these on enterprise
-                    <>
-                        <li className="nav-item">
-                            <ExpCampaignsNavItem className="px-3" />
-                        </li>
-                        <li className="nav-item d-none">
-                            <LinkWithIconOnlyTooltip
-                                to="/threads"
-                                text="Threads"
-                                icon={ThreadsIcon}
-                                className="nav-link btn btn-link px-3 text-decoration-none"
-                            />
-                        </li>
-                    </>
                 )}
                 {!this.props.authenticatedUser && (
                     <>

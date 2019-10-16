@@ -1180,7 +1180,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
-		&c.Description,
+		&c.Description, // TODO(sqs): db col is nullable
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
