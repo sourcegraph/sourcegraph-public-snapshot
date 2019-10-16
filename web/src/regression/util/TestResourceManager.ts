@@ -4,7 +4,7 @@ interface Resource {
     /**
      * Resource type, printed on creation and destruction.
      */
-    type: 'Extension' | 'User' | 'External service' | 'Authentication provider'
+    type: 'User' | 'External service' | 'Authentication provider'
 
     /**
      * Name of the resource, printed upon creation and destruction.
