@@ -118,7 +118,7 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
         case 'symbol':
             return <SymbolIcon kind={suggestion.kind} {...passThru} />
         case 'lang':
-            return <FolderIcon /> // TODO:
+            return null // TODO: handle lang suggestions in RFC 14 frontend PR.
     }
 }
 
@@ -139,13 +139,19 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     isSelected,
     onClick,
     liRef,
-}) => (
-    <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
-        <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
-        <div className="suggestion__title">{suggestion.title}</div>
-        <div className="suggestion__description">{suggestion.description}</div>
-        <div className="suggestion__action" hidden={!isSelected}>
-            <kbd>enter</kbd> {suggestion.urlLabel}
-        </div>
-    </li>
-)
+}) => {
+    if (suggestion.type === 'lang') {
+        // TODO: handle lang suggestions in RFC 14 frontend PR.
+        return null
+    }
+    return (
+        <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
+            <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
+            <div className="suggestion__title">{suggestion.title}</div>
+            <div className="suggestion__description">{suggestion.description}</div>
+            <div className="suggestion__action" hidden={!isSelected}>
+                <kbd>enter</kbd> {suggestion.urlLabel}
+            </div>
+        </li>
+    )
+}
