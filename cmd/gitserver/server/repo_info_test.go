@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -17,7 +18,7 @@ import (
 func TestServer_handleRepoInfo(t *testing.T) {
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
-	_, ok := s.locker.TryAcquire("/testroot/a", "test status")
+	_, ok := s.locker.TryAcquire("/testroot/a/.git", "test status")
 	if !ok {
 		t.Fatal("could not acquire lock")
 	}
@@ -41,7 +42,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 
 	t.Run("not cloned", func(t *testing.T) {
 		origRepoCloned := repoCloned
-		repoCloned = func(dir string) bool { return false }
+		repoCloned = func(dir GitDir) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()
 
 		want := protocol.RepoInfoResponse{
@@ -56,7 +57,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 
 	t.Run("cloning", func(t *testing.T) {
 		origRepoCloned := repoCloned
-		repoCloned = func(dir string) bool { return false }
+		repoCloned = func(dir GitDir) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()
 
 		want := protocol.RepoInfoResponse{
@@ -67,28 +68,28 @@ func TestServer_handleRepoInfo(t *testing.T) {
 				},
 			},
 		}
-		if got := getRepoInfo(t, "a"); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %+v, want %+v", got, want)
+		if got := getRepoInfo(t, "a"); !cmp.Equal(want, got) {
+			t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 	})
 
 	t.Run("cloned", func(t *testing.T) {
 		origRepoCloned := repoCloned
-		repoCloned = func(dir string) bool { return true }
+		repoCloned = func(dir GitDir) bool { return true }
 		defer func() { repoCloned = origRepoCloned }()
 
 		lastFetched := time.Date(1988, 1, 2, 3, 4, 5, 6, time.UTC)
 		origRepoLastFetched := repoLastFetched
-		repoLastFetched = func(dir string) (time.Time, error) { return lastFetched, nil }
+		repoLastFetched = func(dir GitDir) (time.Time, error) { return lastFetched, nil }
 		defer func() { repoLastFetched = origRepoLastFetched }()
 
 		lastChanged := time.Date(1987, 1, 2, 3, 4, 5, 6, time.UTC)
 		origRepoLastChanged := repoLastChanged
-		repoLastChanged = func(dir string) (time.Time, error) { return lastChanged, nil }
+		repoLastChanged = func(dir GitDir) (time.Time, error) { return lastChanged, nil }
 		defer func() { repoLastChanged = origRepoLastChanged }()
 
 		origRepoRemoteURL := repoRemoteURL
-		repoRemoteURL = func(context.Context, string) (string, error) { return "u", nil }
+		repoRemoteURL = func(context.Context, GitDir) (string, error) { return "u", nil }
 		defer func() { repoRemoteURL = origRepoRemoteURL }()
 
 		want := protocol.RepoInfoResponse{
@@ -108,7 +109,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 
 	t.Run("mutliple", func(t *testing.T) {
 		origRepoCloned := repoCloned
-		repoCloned = func(dir string) bool { return false }
+		repoCloned = func(dir GitDir) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()
 
 		want := protocol.RepoInfoResponse{

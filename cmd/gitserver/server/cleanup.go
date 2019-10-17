@@ -17,8 +17,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -62,28 +60,28 @@ func (s *Server) cleanupRepos() {
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
-	maybeRemoveCorrupt := func(gitDir string) (done bool, err error) {
+	maybeRemoveCorrupt := func(dir GitDir) (done bool, err error) {
 		// We treat repositories missing HEAD to be corrupt. Both our cloning
 		// and fetching ensure there is a HEAD file.
-		_, err = os.Stat(filepath.Join(gitDir, "HEAD"))
+		_, err = os.Stat(dir.Path("HEAD"))
 		if !os.IsNotExist(err) {
 			return false, err
 		}
 
-		log15.Info("removing corrupt repo", "repo", gitDir)
-		if err := s.removeRepoDirectory(gitDir); err != nil {
+		log15.Info("removing corrupt repo", "repo", dir)
+		if err := s.removeRepoDirectory(dir); err != nil {
 			return true, err
 		}
 		reposRemoved.Inc()
 		return true, nil
 	}
 
-	ensureGitAttributes := func(gitDir string) (done bool, err error) {
-		return false, setGitAttributes(gitDir)
+	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
+		return false, setGitAttributes(dir)
 	}
 
-	maybeReclone := func(gitDir string) (done bool, err error) {
-		recloneTime, err := getRecloneTime(gitDir)
+	maybeReclone := func(dir GitDir) (done bool, err error) {
+		recloneTime, err := getRecloneTime(dir)
 		if err != nil {
 			return false, err
 		}
@@ -95,7 +93,7 @@ func (s *Server) cleanupRepos() {
 			reason = "old"
 		}
 		if time.Since(recloneTime) > repoTTLGC+randDuration(repoTTLGC/4) {
-			if gclog, err := ioutil.ReadFile(filepath.Join(gitDir, "gc.log")); err == nil && len(gclog) > 0 {
+			if gclog, err := ioutil.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
@@ -107,10 +105,10 @@ func (s *Server) cleanupRepos() {
 		defer cancel()
 
 		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := protocol.NormalizeRepo(api.RepoName(strings.TrimPrefix(filepath.Dir(gitDir), s.ReposDir+"/")))
+		repo := s.name(dir)
 		log15.Info("recloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
 
-		remoteURL, err := repoRemoteURL(ctx, gitDir)
+		remoteURL, err := repoRemoteURL(ctx, dir)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to get remote URL")
 		}
@@ -122,7 +120,9 @@ func (s *Server) cleanupRepos() {
 		return true, nil
 	}
 
-	removeStaleLocks := func(gitDir string) (done bool, err error) {
+	removeStaleLocks := func(dir GitDir) (done bool, err error) {
+		gitDir := string(dir)
+
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
@@ -160,7 +160,7 @@ func (s *Server) cleanupRepos() {
 
 	type cleanupFn struct {
 		Name string
-		Do   func(string) (bool, error)
+		Do   func(GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
 		// Do some sanity checks on the repository.
@@ -178,12 +178,12 @@ func (s *Server) cleanupRepos() {
 	// cheaper and faster to just reclone the repository.
 	cleanups = append(cleanups, cleanupFn{"maybe reclone", maybeReclone})
 
-	err := filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
+	err := filepath.Walk(s.ReposDir, func(dir string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return nil
 		}
 
-		if s.ignorePath(gitDir) {
+		if s.ignorePath(dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
@@ -194,6 +194,9 @@ func (s *Server) cleanupRepos() {
 		if !fi.IsDir() || fi.Name() != ".git" {
 			return nil
 		}
+
+		// We are sure this is a GIT_DIR after the above check
+		gitDir := GitDir(dir)
 
 		for _, cfn := range cleanups {
 			done, err := cfn.Do(gitDir)
@@ -336,11 +339,11 @@ func device(f string) (int64, error) {
 // recently to most recently used, until it has freed howManyBytesToFree.
 func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	// Get the git directories and their mod times.
-	gitDirs, err := s.findGitDirs(s.ReposDir)
+	gitDirs, err := s.findGitDirs()
 	if err != nil {
 		return errors.Wrap(err, "finding git dirs")
 	}
-	dirModTimes := make(map[string]time.Time, len(gitDirs))
+	dirModTimes := make(map[GitDir]time.Time, len(gitDirs))
 	for _, d := range gitDirs {
 		mt, err := gitDirModTime(d)
 		if err != nil {
@@ -368,7 +371,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		if spaceFreed >= howManyBytesToFree {
 			return nil
 		}
-		delta, err := dirSize(d)
+		delta, err := dirSize(string(d))
 		if err != nil {
 			return errors.Wrapf(err, "computing size of directory %s", d)
 		}
@@ -400,18 +403,17 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 	return nil
 }
 
-func gitDirModTime(d string) (time.Time, error) {
-	head, err := os.Stat(filepath.Join(d, "HEAD"))
+func gitDirModTime(d GitDir) (time.Time, error) {
+	head, err := os.Stat(d.Path("HEAD"))
 	if err != nil {
 		return time.Time{}, errors.Wrap(err, "getting repository modification time")
 	}
 	return head.ModTime(), nil
 }
 
-// findGitDirs returns the .git directories below d.
-func (s *Server) findGitDirs(d string) ([]string, error) {
-	var dirs []string
-	err := filepath.Walk(d, func(path string, fi os.FileInfo, fileErr error) error {
+func (s *Server) findGitDirs() ([]GitDir, error) {
+	var dirs []GitDir
+	err := filepath.Walk(s.ReposDir, func(path string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return nil
 		}
@@ -424,11 +426,11 @@ func (s *Server) findGitDirs(d string) ([]string, error) {
 		if !fi.IsDir() || fi.Name() != ".git" {
 			return nil
 		}
-		dirs = append(dirs, path)
-		return nil
+		dirs = append(dirs, GitDir(path))
+		return filepath.SkipDir
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "walking dir tree from %s to find git dirs", d)
+		return nil, errors.Wrap(err, "findGitDirs")
 	}
 	return dirs, nil
 }
@@ -459,7 +461,9 @@ func dirSize(d string) (int64, error) {
 // the directory.
 //
 // Additionally it removes parent empty directories up until s.ReposDir.
-func (s *Server) removeRepoDirectory(dir string) error {
+func (s *Server) removeRepoDirectory(gitDir GitDir) error {
+	dir := string(gitDir)
+
 	// Rename out of the location so we can atomically stop using the repo.
 	tmp, err := s.tempDir("delete-repo")
 	if err != nil {
@@ -525,9 +529,9 @@ func (s *Server) removeRepoDirectory(dir string) error {
 // and would be purged by `git gc --prune=now`, but `git gc` is
 // very slow. Removing these files while they're in use will cause
 // an operation to fail, but not damage the repository.
-func (s *Server) cleanTmpFiles(dir string) {
+func (s *Server) cleanTmpFiles(dir GitDir) {
 	now := time.Now()
-	packdir := filepath.Join(dir, ".git", "objects", "pack")
+	packdir := dir.Path("objects", "pack")
 	err := filepath.Walk(packdir, func(path string, info os.FileInfo, err error) error {
 		if path != packdir && info.IsDir() {
 			return filepath.SkipDir
@@ -601,14 +605,14 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 // getRecloneTime returns an approximate time a repository is cloned. If the
 // value is not stored in the repository, the reclone time for the repository
 // is set to now.
-func getRecloneTime(gitDir string) (time.Time, error) {
+func getRecloneTime(dir GitDir) (time.Time, error) {
 	// We store the time we recloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
 	// different ways a clone can appear in gitserver.
 	update := func() (time.Time, error) {
 		now := time.Now()
 		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Unix(), 10))
-		cmd.Dir = gitDir
+		cmd.Dir = string(dir)
 		if _, err := cmd.Output(); err != nil {
 			return now, errors.Wrap(wrapCmdError(cmd, err), "failed to update recloneTimestamp")
 		}
@@ -616,7 +620,7 @@ func getRecloneTime(gitDir string) (time.Time, error) {
 	}
 
 	cmd := exec.Command("git", "config", "--get", "sourcegraph.recloneTimestamp")
-	cmd.Dir = gitDir
+	cmd.Dir = string(dir)
 	out, err := cmd.Output()
 	if err != nil {
 		// Exit code 1 means the key is not set.

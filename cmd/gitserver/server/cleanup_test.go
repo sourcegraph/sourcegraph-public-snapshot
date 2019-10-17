@@ -73,7 +73,7 @@ func TestCleanupExpired(t *testing.T) {
 	}
 
 	origRepoRemoteURL := repoRemoteURL
-	repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
+	repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 		return remote, nil
 	}
 	defer func() { repoRemoteURL = origRepoRemoteURL }()
@@ -296,7 +296,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(filepath.Join(root, d)); err != nil {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -318,7 +318,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		ReposDir: root,
 	}
 
-	if err := s.removeRepoDirectory(filepath.Join(root, "github.com/foo/baz/.git")); err != nil {
+	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git"))); err != nil {
 		t.Fatal(err)
 	}
 
