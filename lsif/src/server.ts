@@ -121,7 +121,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create queue to publish convert
-    const queue = createQueue('convert', REDIS_ENDPOINT, logger)
+    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
     // Update queue size metric on a timer
     setInterval(async () => queueSizeGauge.set(await queue.count()), 1000)
@@ -286,7 +286,8 @@ async function lsifEndpoints(
 
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
-                await enqueue(queue, { repository, commit, root: root || '', filename }, tracer, ctx.span)
+                const args = { repository, commit, root: root || '', filename }
+                await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
                 res.send('Upload successful, queued for processing.\n')
             }
         )
