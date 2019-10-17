@@ -220,6 +220,14 @@ export async function getUser(gqlClient: GraphQLClient, username: string): Promi
                                 name
                             }
                         }
+                        settingsCascade {
+                            subjects {
+                                latestSettings {
+                                    id
+                                    contents
+                                }
+                            }
+                        }
                     }
                 }
             `,
