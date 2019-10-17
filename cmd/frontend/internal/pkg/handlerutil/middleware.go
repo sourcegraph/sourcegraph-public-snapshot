@@ -2,6 +2,7 @@ package handlerutil
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -35,6 +36,10 @@ func CSRFMiddleware(next http.Handler, isSecure func() bool) http.Handler {
 	v.Store(newHandler(isSecure()))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if i := strings.Index(r.URL.Path, "/-/debug/grafana"); i >= 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
 		h, secure := v.Load().(handler), isSecure()
 		if secure != h.secure {
 			mu.Lock()
