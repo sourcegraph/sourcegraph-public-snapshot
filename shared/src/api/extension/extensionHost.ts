@@ -64,7 +64,6 @@ export function startExtensionHost(
             return extensionHostAPI
         }
         comlink.expose(factory, endpoints.expose)
-        console.log('extension host API exposed')
     })
 
     return { unsubscribe: () => subscription.unsubscribe(), extensionAPI }
