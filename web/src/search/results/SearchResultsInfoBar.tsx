@@ -132,7 +132,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     */}
                     {console.log(props.patternType)}
                     {console.log(props.query)}
-                    {props.patternType == 'literal' && props.query && props.query.includes('"') && (
+                    {props.patternType === 'literal' && props.query && props.query.includes('"') && (
                         <div
                             className="search-results-info-bar__notice"
                             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
