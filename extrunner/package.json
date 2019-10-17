@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "tsc -p .",
+    "build-ext-host": "parcel build --out-file out/extensionHost.bundle.js src/extensionHost.ts",
+    "watch-ext-host": "parcel watch --no-hmr --out-file out/extensionHost.bundle.js src/extensionHost.ts"
+  }
+}
