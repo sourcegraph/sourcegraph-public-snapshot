@@ -286,8 +286,13 @@ async function lsifEndpoints(
                         )
                     })
 
-                    await convert({ repository, commit, root: root || '', filename }, ctx)
-                    res.send('Upload successful, finished processing.\n')
+                    if (skipValidation === 'true') {
+                        res.send('Upload successful, processing asynchronously.\n')
+                        await convert({ repository, commit, root: root || '', filename }, ctx)
+                    } else {
+                        await convert({ repository, commit, root: root || '', filename }, ctx)
+                        res.send('Upload successful, finished processing.\n')
+                    }
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }
