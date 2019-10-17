@@ -49,7 +49,7 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 
 func (r *searchResolver) alertForQuotesInQueryInLiteralMode(ctx context.Context) (*searchAlert, error) {
 	return &searchAlert{
-		title:       "No results. Did you mean to use regexp search?",
+		title:       "No results. Did you mean to use quotes?",
 		description: "Your search is in literal mode and contains quotes. Did you want to remove the quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
