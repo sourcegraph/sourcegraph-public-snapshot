@@ -368,6 +368,8 @@ func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
 func omitQuotes(query *query.Query) []*syntax.Expr {
 	result := make([]*syntax.Expr, 0, len(query.Syntax.Expr))
 	for _, e := range query.Syntax.Expr {
+		cpy := *e
+		e = &cpy
 		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
 			e.Value = strings.TrimSuffix(strings.TrimPrefix(e.Value, `"\"`), `\""`)
 		}
