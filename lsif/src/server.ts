@@ -250,10 +250,10 @@ async function lsifEndpoints(
                 res: express.Response,
                 next: express.NextFunction
             ): Promise<void> => {
-                const { repository, commit, root, skipValidation } = req.query
+                const { repository, commit, root, skipValidation: skipValidationRaw } = req.query
+                const skipValidation = skipValidationRaw === 'true'
                 checkRepository(repository)
                 checkCommit(commit)
-                checkSkipValidation(skipValidation)
 
                 const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
@@ -262,7 +262,7 @@ async function lsifEndpoints(
                 try {
                     await logAndTraceCall(ctx, 'uploading dump', async () => {
                         await pipeline(
-                            skipValidation === 'true'
+                            skipValidation
                                 ? req
                                 : Readable.from(
                                       stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
@@ -335,17 +335,6 @@ export function checkRepository(repository: any): void {
 export function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
-    }
-}
-
-/**
- * Throws an error with status 400 if the commit string is invalid.
- */
-export function checkSkipValidation(skipValidation: any): void {
-    if (skipValidation !== undefined && !['true', 'false'].includes(skipValidation)) {
-        throw Object.assign(new Error(`Must specify true/false for skipValidation, given ${skipValidation}`), {
-            status: 400,
-        })
     }
 }
 
