@@ -38,7 +38,7 @@ fi
 docker inspect $CONTAINER > /dev/null 2>&1 && docker rm -f $CONTAINER
 docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     --name=prometheus \
-    --cpus=4 \
+    --cpus=1 \
     --memory=4g \
     --user=$UID \
     -p 0.0.0.0:9090:9090 \
