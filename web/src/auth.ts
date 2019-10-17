@@ -44,6 +44,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
                     canSignOut
                 }
                 viewerCanAdminister
+                createdAt
             }
         }
     `).pipe(

@@ -105,6 +105,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
+    const showLiteralSearchToast = props.isSourcegraphDotCom
+        ? true
+        : props.authenticatedUser &&
+          props.authenticatedUser.createdAt &&
+          userWasCreatedBeforeSourcegraph39Release(props.authenticatedUser.createdAt)
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -124,7 +130,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
-            {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
+            {!isSiteInit && showLiteralSearchToast && (
+                <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />
+            )}
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
@@ -175,4 +183,15 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <GlobalDebug {...props} />
         </div>
     )
+}
+
+// Whether an authenticated user account was created before our 3.9 release date.
+// Used to determine whether we display the literal search toast. We don't want to show
+// it to users created after the release date.
+function userWasCreatedBeforeSourcegraph39Release(createdAtDate: string): boolean {
+    // One day before the release.
+    const SOURCEGRAPH_39_RELEASE = Date.parse('2019-10-19')
+    const parsedCreatedAt = Date.parse(createdAtDate)
+
+    return parsedCreatedAt < SOURCEGRAPH_39_RELEASE
 }
