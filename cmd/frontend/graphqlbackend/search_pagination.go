@@ -372,7 +372,8 @@ type slicedSearchResults struct {
 	resultOffset int32
 
 	// lastRepoConsumed indicates the last repo whose results were consumed
-	// within the input result set.
+	// within the input result set, or nil if there were no results after
+	// slicing.
 	lastRepoConsumed *types.Repo
 
 	// limitHit indicates if the limit was hit and results were truncated.
@@ -386,12 +387,15 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// First we handle the case of having few enough results that we do not
 	// need to slice anything.
 	if len(results[offset:]) < limit {
-		final.results = results[offset:]
+		results = results[offset:]
+		final.results = results
 		final.common = common
-		lastRepoConsumedName, _ := results[len(results)-1].searchResultURIs()
-		for _, repo := range common.repos {
-			if string(repo.Name) == lastRepoConsumedName {
-				final.lastRepoConsumed = repo
+		if len(results) > 0 {
+			lastRepoConsumedName, _ := results[len(results)-1].searchResultURIs()
+			for _, repo := range common.repos {
+				if string(repo.Name) == lastRepoConsumedName {
+					final.lastRepoConsumed = repo
+				}
 			}
 		}
 		return
