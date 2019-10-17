@@ -81,19 +81,58 @@ func (s *Store) Done(errs ...*error) {
 // instantiated with.
 func (s *Store) DB() dbutil.DB { return s.db }
 
-// CreateChangesets creates the given Changesets.
+// AlreadyExistError is returned by CreateChangesets in case a subset of the
+// given changesets already existed in the database and were not inserted but
+// returned
+type AlreadyExistError struct {
+	ChangesetIDs []int64
+}
+
+func (e AlreadyExistError) Error() string {
+	return fmt.Sprintf("Changesets already exist: %v", e.ChangesetIDs)
+}
+
+// CreateChangesets creates the given Changesets. If a subset of the given
+// Changesets with the same RepoID and ExternalID already exists in the
+// database, it overwrites the fields of the affected changeset pointers with
+// the values contained in the database and returns an AlreadyExistError.
 func (s *Store) CreateChangesets(ctx context.Context, cs ...*a8n.Changeset) error {
 	q, err := s.createChangesetsQuery(cs)
 	if err != nil {
 		return err
 	}
 
+	exist := []int64{}
 	i := -1
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+	err = s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
 		i++
+
+		createdAt := cs[i].CreatedAt
+
 		err = scanChangeset(cs[i], sc)
+		if err != nil {
+			return 0, 0, err
+		}
+
+		// Check whether the Changeset already existed in the database or not.
+		// We use CreatedAt for this, which `createChangesetsQuery` sets to
+		// now() if it wasn't set. If that value is not returned from the
+		// database we know that an already existing one is returned.
+		if cs[i].CreatedAt != createdAt {
+			exist = append(exist, cs[i].ID)
+		}
+
 		return int64(cs[i].ID), 1, err
 	})
+	if err != nil {
+		return err
+	}
+
+	if len(exist) != 0 {
+		return AlreadyExistError{ChangesetIDs: exist}
+	}
+
+	return nil
 }
 
 const changesetBatchQueryPrefix = `
@@ -136,9 +175,30 @@ changed AS (
     external_id,
     external_service_type
   FROM batch
+  ON CONFLICT ON CONSTRAINT
+    changesets_repo_external_id_unique
+  DO NOTHING
   RETURNING changesets.*
 )
-` + batchChangesetsQuerySuffix
+` + batchCreateChangesetsQuerySuffix
+
+const batchCreateChangesetsQuerySuffix = `
+SELECT
+  COALESCE(changed.id, existing.id) AS id,
+  COALESCE(changed.repo_id, existing.repo_id) AS repo_id,
+  COALESCE(changed.created_at, existing.created_at) AS created_at,
+  COALESCE(changed.updated_at, existing.updated_at) AS updated_at,
+  COALESCE(changed.metadata, existing.metadata) AS metadata,
+  COALESCE(changed.campaign_ids, existing.campaign_ids) AS campaign_ids,
+  COALESCE(changed.external_id, existing.external_id) AS external_id,
+  COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type
+FROM changed
+RIGHT JOIN batch ON batch.repo_id = changed.repo_id
+AND batch.external_id = changed.external_id
+LEFT JOIN changesets existing ON existing.repo_id = batch.repo_id
+AND existing.external_id = batch.external_id
+ORDER BY batch.ordinality
+`
 
 func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) {
 	now := s.now()

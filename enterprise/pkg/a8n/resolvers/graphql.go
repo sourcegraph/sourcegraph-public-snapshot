@@ -470,8 +470,11 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		c.ExternalServiceType = repoSet[uint32(c.RepoID)].ExternalRepo.ServiceType
 	}
 
-	if err = tx.CreateChangesets(ctx, cs...); err != nil {
-		return nil, err
+	err = tx.CreateChangesets(ctx, cs...)
+	if err != nil {
+		if _, ok := err.(ee.AlreadyExistError); !ok {
+			return nil, err
+		}
 	}
 
 	tx.Done()
