@@ -158,10 +158,10 @@ async function main(logger: Logger): Promise<void> {
     )
 
     // Create queue to poll for jobs
-    const queue = createQueue('convert', REDIS_ENDPOINT, logger)
+    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
     // Start processing work
-    queue.process(convertJobProcessor).catch(() => {})
+    queue.process('convert', convertJobProcessor).catch(() => {})
 }
 
 /**
