@@ -37,6 +37,7 @@ export default class LiteralSearchToast extends React.Component<Props, State> {
                     title="New regular expression toggle!"
                     subtitle="Search queries are no longer interpreted as regular expressions by default. Click the .* icon in the search bar to toggle regular expression search."
                     onDismiss={this.onDismiss}
+                    useDarkTheme={true}
                     cta={
                         <Link
                             to={`${docsURLPrefix}/user/search/queries`}

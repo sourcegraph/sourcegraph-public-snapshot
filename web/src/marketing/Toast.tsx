@@ -6,11 +6,13 @@ interface Props {
     title: string
     subtitle?: string
     cta?: JSX.Element
+    // Whether you want this toast to be properly themed in dark mode. Toast are always light-themed by default.
+    useDarkTheme?: boolean
     onDismiss: () => void
 }
 
 export const Toast: React.FunctionComponent<Props> = props => (
-    <div className="toast light">
+    <div className={`toast ${props.useDarkTheme ? 'toast--dark' : ''}`}>
         <div className="toast__contents">
             <div className="d-flex">
                 <span className="toast__logo icon-inline">{props.icon}</span>
