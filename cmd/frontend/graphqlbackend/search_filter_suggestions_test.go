@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -33,9 +34,11 @@ func TestSearchFilterSuggestions(t *testing.T) {
 
 	want := &searchFilterSuggestions{
 		repogroups: []string{"repogroup1", "repogroup2"},
-		repos:      []string{`^github\.com/foo/repo$`, "^bar-repo$"},
+		repos:      []string{"^bar-repo$", `^github\.com/foo/repo$`},
 	}
 
+	sort.Strings(r.repogroups)
+	sort.Strings(r.repos)
 	if !reflect.DeepEqual(r, want) {
 		t.Errorf("got != want\ngot:  %v\nwant: %v", r, want)
 	}
