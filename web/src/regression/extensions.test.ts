@@ -7,7 +7,7 @@ import { GraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestFixtures } from './util/init'
-import { ensureLoggedInOrCreateTestUser } from './util/helpers'
+import { ensureLoggedInOrCreateTestUser, clickAndWaitForNavigation } from './util/helpers'
 import { editUserSettings } from './util/settings'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService } from './util/api'
@@ -131,14 +131,13 @@ describe('Sourcegraph extensions regression test suite', () => {
 
             // Check that the the "View commit report" button links to the correct location
             await driver.page.click('.command-list-popover-button')
-            await driver.clickElementWithText('Codecov: View commit report')
-            const codecovCommitURL =
+            await clickAndWaitForNavigation(
+                (await driver.findElementWithText('Codecov: View commit report'))[0],
+                driver.page
+            )
+            expect(driver.page.url()).toEqual(
                 'https://codecov.io/gh/theupdateframework/notary/commit/62258bc0beb3bdc41de1e927a57acaee06bebe4b'
-            if (driver.page.url() === codecovCommitURL) {
-                return
-            }
-            await driver.page.waitForNavigation()
-            expect(driver.page.url()).toEqual(codecovCommitURL)
+            )
         },
         30 * 1000
     )
