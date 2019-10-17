@@ -52,11 +52,44 @@ interface SearchResultsInfoBarProps
 }
 
 /**
+ * A notice for when the user is searching literally and has quotes in thier
+ * query, in which case it is possible that they think their query `"foobar"`
+ * will be searching literally for `foobar` (without quotes). This notice
+ * informs them that this may be the case to avoid confusion.
+ */
+const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
+    props.patternType === GQL.SearchPatternType.literal && props.query && props.query.includes('"') ? (
+        <div
+            className={`search-results-info-bar__notice${
+                props.results.results.length === 0 ? ' search-results-info-bar__notice--no-results' : ''
+            }`}
+            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
+        >
+            <span>
+                <FormatQuoteOpenIcon className="icon-inline" />
+                Searching literally <strong>(including quotes)</strong>
+            </span>
+        </div>
+    ) : null
+
+/**
  * The info bar shown over the search results list that displays metadata
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
     <div className="search-results-info-bar" data-testid="results-info-bar">
+        {/*
+            If there were no results, still show the "quotes are interpreted literally"
+            notice as this is the most common case where a user will make this mistake.
+        */}
+        {props.results.results.length === 0 && (
+            <small className="search-results-info-bar__row">
+                <div className="search-results-info-bar__row-left">
+                    <QuotesInterpretedLiterallyNotice {...props} />
+                </div>
+                <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end"></ul>
+            </small>
+        )}
         {(props.results.timedout.length > 0 ||
             props.results.cloning.length > 0 ||
             props.results.results.length > 0 ||
@@ -124,23 +157,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             </span>
                         </div>
                     )}
-                    {/*
-                        If the user is searching literally and has quotes in their query,
-                        it is possible that they think their query `"foobar"` will be
-                        searching literally for `foobar` (without quotes). Inform them
-                        that this may be the case to avoid confusion.
-                    */}
-                    {props.patternType === GQL.SearchPatternType.literal && props.query && props.query.includes('"') && (
-                        <div
-                            className="search-results-info-bar__notice"
-                            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
-                        >
-                            <span>
-                                <FormatQuoteOpenIcon className="icon-inline" />
-                                Searching literally <strong>(including quotes)</strong>
-                            </span>
-                        </div>
-                    )}
+                    <QuotesInterpretedLiterallyNotice {...props} />
                 </div>
                 <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
                     <ActionsNavItems
