@@ -36,7 +36,7 @@ func CSRFMiddleware(next http.Handler, isSecure func() bool) http.Handler {
 	v.Store(newHandler(isSecure()))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i := strings.Index(r.URL.Path, "/-/debug/grafana"); i >= 0 {
+		if strings.HasPrefix(r.URL.Path, "/-/debug/grafana") {
 			next.ServeHTTP(w, r)
 			return
 		}
