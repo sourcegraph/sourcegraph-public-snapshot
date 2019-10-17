@@ -36,6 +36,12 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	if len(a.proposedQueries) == 0 {
 		return nil
 	}
+	// TODO: we need to append patternType:regexp to all proposed queries to avoid
+	// invalid suggestions. There are many where places we assume the original query is regexp,
+	// so more work is required to create a nice solution for this.
+	for _, proposedQuery := range a.proposedQueries {
+		proposedQuery.query = proposedQuery.query + " patternType:regexp"
+	}
 	return &a.proposedQueries
 }
 
