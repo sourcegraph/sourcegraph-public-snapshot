@@ -113,6 +113,6 @@ export function logAndTraceCall<T>(
     { logger = createSilentLogger(), span = new Span() }: TracingContext,
     name: string,
     f: (ctx: TracingContext) => Promise<T> | T
-): Promise<T> | T {
+): Promise<T> {
     return logCall(name, logger, () => traceCall(name, span, span => f({ logger, span })))
 }
