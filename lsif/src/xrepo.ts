@@ -77,9 +77,22 @@ export class XrepoDatabase {
     constructor(private connection: Connection) {}
 
     /**
+     * Determine if we have any LSIf data for this repository.
+     *
+     * @param repository The repository name.
+     */
+    public isRepositoryTracked(repository: string): Promise<boolean> {
+        return this.withConnection(
+            async connection =>
+                (await connection.getRepository(LsifDump).findOne({ where: { repository } })) !== undefined
+        )
+    }
+
+    /**
+     *
      * Determine if we have commit parent data for this commit.
      *
-     * @param repository The name of the repository.
+     * @param repository The repository name.
      * @param commit The target commit.
      */
     public isCommitTracked(repository: string, commit: string): Promise<boolean> {
@@ -94,7 +107,7 @@ export class XrepoDatabase {
      * or ancestor of the target commit). If no closest commit can be determined, this method returns
      * undefined.s
      *
-     * @param repository The name of the repository.
+     * @param repository The repository name.
      * @param commit The target commit.
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
@@ -137,7 +150,7 @@ export class XrepoDatabase {
      * [`a`, `b`] indicates that one parent of `b` is `a`. If a commit has no parents, then there
      * should be a pair of the form [`a`, ``] (where the parent is an empty string).
      *
-     * @param repository The name of the repository.
+     * @param repository The repository name.
      * @param commits The commit parentage data.
      */
     public async updateCommits(repository: string, commits: [string, string][]): Promise<void> {
