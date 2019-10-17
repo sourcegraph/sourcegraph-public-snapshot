@@ -29,7 +29,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue, scheduleRepeatedJob } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -126,7 +126,7 @@ async function main(logger: Logger): Promise<void> {
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
     // Schedule clean-old-jobs to run on a timer
-    await scheduleRepeatedJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
 
     // Update queue size metric on a timer
     setInterval(async () => queueSizeGauge.set(await queue.count()), 1000)
