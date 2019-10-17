@@ -59,7 +59,7 @@ export const enqueue = (
  * @param args The job arguments.
  * @param intervalMs How frequently to run the job.
  */
-export const scheduleRepeatedJob = async (
+export const ensureOnlyRepeatableJob = async (
     queue: Queue,
     name: string,
     args: object,
