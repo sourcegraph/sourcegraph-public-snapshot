@@ -16,8 +16,6 @@ import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
 import { Backend } from './backend'
-import { Edge, Vertex } from 'lsif-protocol'
-import { identity } from 'lodash'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { pipeline as _pipeline, Readable } from 'stream'
@@ -58,19 +56,6 @@ const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_END
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
-
-/**
- * Whether or not to disable input validation. Validation is enabled by default.
- */
-const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
-
-/**
- * The JSON schema validation function to use. If validation is disabled, then
- * this method has no observable behavior.
- */
-const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex | Edge> = DISABLE_VALIDATION
-    ? identity
-    : validateLsifElements
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
@@ -265,9 +250,10 @@ async function lsifEndpoints(
                 res: express.Response,
                 next: express.NextFunction
             ): Promise<void> => {
-                const { repository, commit, root } = req.query
+                const { repository, commit, root, skipValidation } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
+                checkSkipValidation(skipValidation)
 
                 const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
@@ -275,10 +261,14 @@ async function lsifEndpoints(
 
                 try {
                     await logAndTraceCall(ctx, 'uploading dump', async () => {
-                        const elements = readGzippedJsonElements(req)
-                        const lsifElements = validateIfEnabled(elements)
-                        const stringifiedLines = stringifyJsonLines(lsifElements)
-                        await pipeline(Readable.from(stringifiedLines), createGzip(), output)
+                        await pipeline(
+                            skipValidation === 'true'
+                                ? req
+                                : Readable.from(
+                                      stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
+                                  ).pipe(createGzip()),
+                            output
+                        )
                     })
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
@@ -345,6 +335,17 @@ export function checkRepository(repository: any): void {
 export function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
+    }
+}
+
+/**
+ * Throws an error with status 400 if the commit string is invalid.
+ */
+export function checkSkipValidation(skipValidation: any): void {
+    if (skipValidation !== undefined && !['true', 'false'].includes(skipValidation)) {
+        throw Object.assign(new Error(`Must specify true/false for skipValidation, given ${skipValidation}`), {
+            status: 400,
+        })
     }
 }
 
