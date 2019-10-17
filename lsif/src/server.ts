@@ -1,8 +1,9 @@
-import { Queue } from 'bull'
+import { Queue, Job } from 'bull'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import bodyParser from 'body-parser'
 import express from 'express'
+import paginate from 'express-paginate'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
 import uuid from 'uuid'
@@ -28,10 +29,11 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue } from './queue'
+import { enqueue, createQueue, scheduleRepeatedJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
+import delay from 'delay'
 
 const pipeline = promisify(_pipeline)
 
@@ -39,6 +41,21 @@ const pipeline = promisify(_pipeline)
  * Which port to run the LSIF server on. Defaults to 3186.
  */
 const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
+
+/**
+ * The default number of jobs to return per page from queue endpoints.
+ */
+const JOB_PAGE_LIMIT = readEnvInt('JOB_PAGE_LIMIT', 25)
+
+/**
+ * The maximum number of jobs to return per page from queue endpoints.
+ */
+const JOB_PAGE_MAX_LIMIT = readEnvInt('JOB_PAGE_MAX_LIMIT', 100)
+
+/**
+ * The interval (in seconds) to schedule the clean-old-jobs job.
+ */
+const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
 
 /**
  * The host and port running the redis instance containing work queues.
@@ -108,6 +125,9 @@ async function main(logger: Logger): Promise<void> {
     // Create queue to publish convert
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
+    // Schedule clean-old-jobs to run on a timer
+    await scheduleRepeatedJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
+
     // Update queue size metric on a timer
     setInterval(async () => queueSizeGauge.set(await queue.count()), 1000)
 
@@ -131,6 +151,7 @@ async function main(logger: Logger): Promise<void> {
     // Register endpoints
     app.use(metaEndpoints())
     app.use(await lsifEndpoints(queue, fetchConfiguration, logger, tracer))
+    app.use(queueEndpoints(queue))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -250,10 +271,16 @@ async function lsifEndpoints(
                 res: express.Response,
                 next: express.NextFunction
             ): Promise<void> => {
-                const { repository, commit, root, skipValidation: skipValidationRaw } = req.query
-                const skipValidation = skipValidationRaw === 'true'
+                const { repository, commit, root, validate, blocking, maxWait } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
+
+                // Parse maxWait parameter. Set to a negative number (no timeout)
+                // if the supplied value is empty or not parseable as an integer.
+                let timeout = parseInt(maxWait || '', 10)
+                if (isNaN(timeout) || timeout < 0) {
+                    timeout = -1
+                }
 
                 const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
@@ -262,7 +289,7 @@ async function lsifEndpoints(
                 try {
                     await logAndTraceCall(ctx, 'uploading dump', async () => {
                         await pipeline(
-                            skipValidation
+                            validate
                                 ? req
                                 : Readable.from(
                                       stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
@@ -277,8 +304,31 @@ async function lsifEndpoints(
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
                 const args = { repository, commit, root: root || '', filename }
-                await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
-                res.send('Upload successful, queued for processing.\n')
+                const job = await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
+
+                if (blocking) {
+                    logger.debug('blocking on conversion')
+
+                    // If a valid timeout is supplied, create a promise that will resolve
+                    // after that time. Otherwise, create a promise that never resolves.
+                    const timeoutPromise = timeout > 0 ? delay(timeout * 1000) : new Promise(() => {})
+
+                    // Wait for the job to finish, or wait for the timeout period to elapse.
+                    // This promise will resolve to true if the job finishes before the timeout
+                    // promise resolves, and will resolve to false otherwise.
+                    const finished = await Promise.race([
+                        job.finished().then(() => true),
+                        timeoutPromise.then(() => false),
+                    ])
+
+                    if (finished) {
+                        res.send('Processed.\n')
+                    } else {
+                        res.send('Conversion did not complete within timeout.\n')
+                    }
+                }
+
+                res.send({ jobId: job.id })
             }
         )
     )
@@ -315,6 +365,108 @@ async function lsifEndpoints(
             }
         )
     )
+
+    return router
+}
+
+/**
+ * Format a job to return from the API.
+ *
+ * @param job The job to format.
+ */
+const formatJob = (job: Job): object => {
+    const { id, data, progress, timestamp, failedReason, stacktrace, finishedOn, processedOn } = job.toJSON()
+
+    return {
+        jobId: id,
+        name: job.name,
+        args: data.args,
+        progress,
+        failedReason,
+        stacktrace,
+        timestamp: new Date(timestamp).toISOString(),
+        finishedOn: finishedOn ? new Date(finishedOn).toISOString() : '',
+        processedOn: processedOn ? new Date(processedOn).toISOString() : '',
+    }
+}
+
+/**
+ * Create a router containing the queue endpoints.
+ *
+ * @param queue The queue instance.
+ */
+function queueEndpoints(queue: Queue): express.Router {
+    const router = express.Router()
+
+    router.get(
+        '/queue/stats',
+        wrap(
+            async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+                res.send(await queue.getJobCounts())
+            }
+        )
+    )
+
+    router.get(
+        '/queue/jobs/:jobId',
+        wrap(
+            async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+                const job = await queue.getJob(req.params.jobId)
+                if (!job) {
+                    throw Object.assign(new Error('Job not found'), {
+                        status: 400,
+                    })
+                }
+
+                res.send({ ...formatJob(job), status: await job.getState() })
+            }
+        )
+    )
+
+    const listEndpoints: {
+        name: string
+        getTotal: () => Promise<number>
+        getJobs: (start: number, end: number) => Promise<Job[]>
+    }[] = [
+        {
+            name: 'active',
+            getTotal: () => queue.getActiveCount(),
+            getJobs: (start, end) => queue.getActive(start, end),
+        },
+        {
+            name: 'queued',
+            getTotal: () => queue.getWaitingCount(),
+            getJobs: (start, end) => queue.getWaiting(start, end),
+        },
+        {
+            name: 'completed',
+            getTotal: () => queue.getCompletedCount(),
+            getJobs: (start, end) => queue.getCompleted(start, end),
+        },
+
+        {
+            name: 'failed',
+            getTotal: () => queue.getFailedCount(),
+            getJobs: (start, end) => queue.getFailed(start, end),
+        },
+    ]
+
+    // The remaining routes are paginated
+    router.use(paginate.middleware(JOB_PAGE_LIMIT, JOB_PAGE_MAX_LIMIT))
+
+    for (const { name, getTotal, getJobs } of listEndpoints) {
+        router.get(
+            `/queue/${name}`,
+            wrap(
+                async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+                    res.send({
+                        jobs: (await getJobs(req.offset || 0, (req.offset || 0) + req.query.limit)).map(formatJob),
+                        hasMore: paginate.hasNextPages(req)(Math.ceil((await getTotal()) / req.query.limit)),
+                    })
+                }
+            )
+        )
+    }
 
     return router
 }

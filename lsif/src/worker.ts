@@ -14,7 +14,7 @@ import { createTracer, TracingContext, logAndTraceCall, addTags } from './tracin
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { discoverAndUpdateCommit } from './commits'
 import { jobDurationHistogram, jobDurationErrorsCounter } from './worker.metrics'
-import { Job } from 'bull'
+import { Job, JobStatusClean, Queue } from 'bull'
 import { createQueue } from './queue'
 import { instrument } from './metrics'
 
@@ -39,6 +39,11 @@ const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_END
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
+
+/**
+ * The maximum age (in seconds) that a job (competed or queued) will remain in redis.
+ */
+const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 7 * 24 * 60 * 60)
 
 /**
  * Wrap a job processor with instrumentation.
@@ -123,6 +128,36 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
     await fs.unlink(filename)
 }
 
+const cleanStatuses: JobStatusClean[] = ['completed', 'wait', 'active', 'delayed', 'failed']
+
+/**
+ * Create a job that removes all job data older than `JOB_MAX_AGE`.
+ *
+ * @param queue The queue.
+ * @param logger The logger instance.
+ */
+const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => async (
+    _: {},
+    ctx: TracingContext
+): Promise<void> => {
+    const removedJobs = await logAndTraceCall(ctx, 'cleaning old jobs', async (ctx: TracingContext) => {
+        const promises = []
+        for (const status of cleanStatuses) {
+            promises.push(queue.clean(JOB_MAX_AGE * 1000, status))
+        }
+
+        return await Promise.all(promises)
+    })
+
+    const { logger: jobLogger = logger } = ctx
+
+    for (const [status, count] of removedJobs.map((jobs, i) => [cleanStatuses[i], jobs.length])) {
+        if (count > 0) {
+            jobLogger.debug('cleaned old jobs', { status, count })
+        }
+    }
+}
+
 /**
  * Runs the worker which accepts LSIF conversion jobs from node-resque.
  *
@@ -150,6 +185,9 @@ async function main(logger: Logger): Promise<void> {
     // Start metrics server
     startMetricsServer(logger)
 
+    // Create queue to poll for jobs
+    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
+
     const convertJobProcessor = wrapJobProcessor(
         'convert',
         createConvertJobProcessor(xrepoDatabase, fetchConfiguration),
@@ -157,11 +195,16 @@ async function main(logger: Logger): Promise<void> {
         tracer
     )
 
-    // Create queue to poll for jobs
-    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
+    const cleanOldJobsProcessor = wrapJobProcessor(
+        'clean-old-jobs',
+        createCleanOldJobsProcessor(queue, logger),
+        logger,
+        tracer
+    )
 
     // Start processing work
     queue.process('convert', convertJobProcessor).catch(() => {})
+    queue.process('clean-old-jobs', cleanOldJobsProcessor).catch(() => {})
 }
 
 /**
