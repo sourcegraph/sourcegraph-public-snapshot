@@ -168,23 +168,22 @@ export async function ensureTestExternalService(
         displayName: options.uniqueDisplayName,
         config: JSON.stringify(options.config),
     }
-    const { errors } = await gqlClient
-        .mutateGraphQL(
-            gql`
-                mutation addExternalService($input: AddExternalServiceInput!) {
-                    addExternalService(input: $input) {
-                        kind
-                        displayName
-                        config
+    dataOrThrowErrors(
+        await gqlClient
+            .mutateGraphQL(
+                gql`
+                    mutation addExternalService($input: AddExternalServiceInput!) {
+                        addExternalService(input: $input) {
+                            kind
+                            displayName
+                            config
+                        }
                     }
-                }
-            `,
-            { input }
-        )
-        .toPromise()
-    if (errors) {
-        throw createAggregateError(errors)
-    }
+                `,
+                { input }
+            )
+            .toPromise()
+    )
 
     if (options.waitForRepos && options.waitForRepos.length > 0) {
         await waitForRepos(gqlClient, options.waitForRepos)
