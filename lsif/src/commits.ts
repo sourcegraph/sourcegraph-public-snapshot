@@ -35,7 +35,13 @@ export async function discoverAndUpdateCommit({
     /** The tracing context. */
     ctx: TracingContext
 }): Promise<void> {
+    // No need to update if we already know about this commit
     if (await xrepoDatabase.isCommitTracked(repository, commit)) {
+        return
+    }
+
+    // No need to pull commits for repos we don't have data for
+    if (!(await xrepoDatabase.isRepositoryTracked(repository))) {
         return
     }
 
