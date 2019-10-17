@@ -8,7 +8,7 @@ import { GraphQLClient } from './GraphQLClient'
 import { map, tap, retryWhen, delayWhen, take } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
-import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
+import { isErrorLike } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
 
 /**
