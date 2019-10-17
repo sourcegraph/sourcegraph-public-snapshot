@@ -84,7 +84,10 @@ const wrapJobProcessor = <T>(
  * @param xrepoDatabase The cross-repo database.
  * @param fetchConfiguration A function that returns the current configuration.
  */
-const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfiguration: ConfigurationFetcher) => async (
+export const createConvertJobProcessor = (
+    xrepoDatabase: XrepoDatabase,
+    fetchConfiguration: ConfigurationFetcher
+) => async (
     { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
     ctx: TracingContext
 ): Promise<void> => {
@@ -181,11 +184,11 @@ function startMetricsServer(logger: Logger): void {
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-worker')
+// const appLogger = createLogger('lsif-worker')
 
 // Launch!
-main(appLogger).catch(error => {
-    appLogger.error('failed to start process', { error })
-    appLogger.on('finish', () => process.exit(1))
-    appLogger.end()
-})
+// main(appLogger).catch(error => {
+//     appLogger.error('failed to start process', { error })
+//     appLogger.on('finish', () => process.exit(1))
+//     appLogger.end()
+// })

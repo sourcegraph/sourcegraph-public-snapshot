@@ -32,6 +32,7 @@ import { enqueue, createQueue } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
+import * as worker from './worker'
 
 const pipeline = promisify(_pipeline)
 
@@ -227,6 +228,7 @@ async function lsifEndpoints(
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
+    const convert = worker.createConvertJobProcessor(xrepoDatabase, fetchConfiguration)
 
     await ensureFilenamesAreIDs(connection)
 
@@ -270,14 +272,12 @@ async function lsifEndpoints(
                             output
                         )
                     })
+
+                    await convert({ repository, commit, root: root || '', filename }, ctx)
+                    res.send('Upload successful, finished processing.\n')
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }
-
-                // Enqueue convert job
-                logger.debug('enqueueing convert job', { repository, commit, root })
-                await enqueue(queue, { repository, commit, root: root || '', filename }, tracer, ctx.span)
-                res.send('Upload successful, queued for processing.\n')
             }
         )
     )
