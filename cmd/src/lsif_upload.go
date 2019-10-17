@@ -90,9 +90,6 @@ Examples:
 		if *apiFlags.getCurl {
 			curl := fmt.Sprintf("gzip -c %s | curl \\\n", shellquote.Join(*fileFlag))
 			curl += fmt.Sprintf("   -X POST \\\n")
-			if cfg.AccessToken != "" {
-				curl += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+cfg.AccessToken))
-			}
 
 			curl += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Content-Type: application/x-ndjson+lsif"))
 			curl += fmt.Sprintf("   %s \\\n", shellquote.Join(url.String()))
@@ -118,9 +115,6 @@ Examples:
 		}
 
 		req.Header.Set("Content-Type", "application/x-ndjson+lsif")
-		if cfg.AccessToken != "" {
-			req.Header.Set("Authorization", "token "+cfg.AccessToken)
-		}
 
 		// Perform the request.
 		resp, err := http.DefaultClient.Do(req)
