@@ -1,3 +1,5 @@
+import cluster from 'cluster'
+import * as os from 'os'
 import { Queue } from 'bull'
 import * as fs from 'mz/fs'
 import * as path from 'path'
@@ -87,6 +89,17 @@ const errorHandler = (
  * @param logger The logger instance.
  */
 async function main(logger: Logger): Promise<void> {
+    if (cluster.isMaster) {
+        cluster.setupMaster()
+        for (var i = 0; i < os.cpus().length; i++) {
+            cluster.fork()
+        }
+        cluster.on('exit', function(worker, code, signal) {
+            console.log('Worker %d died with code/signal %s. Restarting worker...', worker.process.pid, signal || code)
+            cluster.fork()
+        })
+        return
+    }
     // Collect process metrics
     promClient.collectDefaultMetrics({ prefix: 'lsif_' })
 
