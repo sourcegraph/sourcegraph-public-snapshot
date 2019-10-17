@@ -7,6 +7,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import * as React from 'react'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -17,15 +18,18 @@ import { pluralize } from '../../../../shared/src/util/strings'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
+import { PatternTypeProps } from '..'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
         PlatformContextProps<'forceUpdateTooltip'>,
-        TelemetryProps {
+        TelemetryProps,
+        PatternTypeProps {
     /** The currently authenticated user or null */
     authenticatedUser: GQL.IUser | null
 
     /** The loaded search results and metadata */
+    query?: string
     results: GQL.ISearchResults
     onShowMoreResultsClick: () => void
 
@@ -117,6 +121,25 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 <CloudDownloadIcon className="icon-inline" /> {props.results.cloning.length}{' '}
                                 {pluralize('repository', props.results.cloning.length, 'repositories')} cloning (reload
                                 to try again)
+                            </span>
+                        </div>
+                    )}
+                    {/*
+                        If the user is searching literally and has quotes in their query,
+                        it is possible that they think their query `"foobar"` will be
+                        searching literally for `foobar` (without quotes). Inform them
+                        that this may be the case to avoid confusion.
+                    */}
+                    {console.log(props.patternType)}
+                    {console.log(props.query)}
+                    {props.patternType == 'literal' && props.query && props.query.includes('"') && (
+                        <div
+                            className="search-results-info-bar__notice"
+                            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
+                        >
+                            <span>
+                                <FormatQuoteOpenIcon className="icon-inline" />
+                                Searching literally <strong>(including quotes)</strong>
                             </span>
                         </div>
                     )}
