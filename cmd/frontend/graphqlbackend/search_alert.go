@@ -375,7 +375,6 @@ func omitQuotes(query *query.Query) []*syntax.Expr {
 		}
 		result = append(result, e)
 	}
-
 	return result
 }
 
