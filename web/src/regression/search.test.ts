@@ -167,8 +167,8 @@ describe('Search regression test suite', () => {
                             token: config.gitHubToken,
                             repos: testRepoSlugs,
                             repositoryQuery: ['none'],
-                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                         },
+                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                     })
                 )
             },
