@@ -108,11 +108,12 @@ func (r *schemaResolver) Search(args *struct {
 	}
 
 	return &searchResolver{
-		query:        q,
-		pagination:   pagination,
-		patternType:  finalPatternType,
-		zoekt:        search.Indexed(),
-		searcherURLs: search.SearcherURLs(),
+		query:         q,
+		originalQuery: args.Query,
+		pagination:    pagination,
+		patternType:   finalPatternType,
+		zoekt:         search.Indexed(),
+		searcherURLs:  search.SearcherURLs(),
 	}, nil
 }
 
@@ -155,9 +156,10 @@ func asString(v *searchquerytypes.Value) string {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query       *query.Query          // the parsed search query
-	pagination  *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType string
+	query         *query.Query          // the parsed search query
+	originalQuery string                // the raw string of the original search query
+	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType   string
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
