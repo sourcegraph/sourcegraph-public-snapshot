@@ -211,7 +211,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				result(repo("org/repo2"), "c.go"),
 			},
 			common: &searchResultsCommon{
-				repos: []*types.Repo{repo("org/repo1"), repo("org/repo2")},
+				repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
+				resultCount: 3,
 			},
 			offset: 3,
 			limit:  3,
@@ -224,7 +225,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				common: &searchResultsCommon{
 					resultCount: 3,
 					repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
-					partial:     make(map[api.RepoName]struct{}),
+					partial:     nil,
 				},
 				resultOffset:              0,
 				lastRepoConsumed:          repo("org/repo2"),

@@ -393,7 +393,7 @@ type slicedSearchResults struct {
 func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
 	// First we handle the case of having few enough results that we do not
 	// need to slice anything.
-	if len(results[offset:]) < limit {
+	if len(results[offset:]) <= limit {
 		results = results[offset:]
 		final.results = results
 		final.common = common
