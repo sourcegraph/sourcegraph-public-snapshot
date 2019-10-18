@@ -336,7 +336,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 
 	if req.URL == "" {
 		if req.Repo == "" {
-			http.Error(w, "no URL or Repo", http.StatusBadRequest)
+			http.Error(w, "no URL and Repo", http.StatusBadRequest)
 			return
 		}
 
