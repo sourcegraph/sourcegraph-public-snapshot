@@ -351,6 +351,9 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 			nextCursor.RepositoryOffset = int32(globalOffset)
 		}
 	}
+	if !sliced.lastRepoConsumedPartially {
+		nextCursor.RepositoryOffset++
+	}
 	nextCursor.Finished = !sliced.limitHit || int(nextCursor.RepositoryOffset) == len(p.repositories) // Finished if we searched the last repository
 	return nextCursor, sliced.results, sliced.common, nil
 }
@@ -372,8 +375,13 @@ type slicedSearchResults struct {
 	resultOffset int32
 
 	// lastRepoConsumed indicates the last repo whose results were consumed
-	// within the input result set.
+	// within the input result set, or nil if there were no results after
+	// slicing.
 	lastRepoConsumed *types.Repo
+
+	// lastRepoConsumedPartially tells if the repository was consumed partially or
+	// fully.
+	lastRepoConsumedPartially bool
 
 	// limitHit indicates if the limit was hit and results were truncated.
 	limitHit bool
@@ -385,13 +393,16 @@ type slicedSearchResults struct {
 func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
 	// First we handle the case of having few enough results that we do not
 	// need to slice anything.
-	if len(results[offset:]) < limit {
-		final.results = results[offset:]
+	if len(results[offset:]) <= limit {
+		results = results[offset:]
+		final.results = results
 		final.common = common
-		lastRepoConsumedName, _ := results[len(results)-1].searchResultURIs()
-		for _, repo := range common.repos {
-			if string(repo.Name) == lastRepoConsumedName {
-				final.lastRepoConsumed = repo
+		if len(results) > 0 {
+			lastRepoConsumedName, _ := results[len(results)-1].searchResultURIs()
+			for _, repo := range common.repos {
+				if string(repo.Name) == lastRepoConsumedName {
+					final.lastRepoConsumed = repo
+				}
 			}
 		}
 		return
@@ -423,22 +434,23 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
 	lastResultRepo, _ := results[len(results)-1].searchResultURIs()
-	resultsInRepoConsumed := int32(0)
-	for i, r := range results[:limit] {
+	for _, r := range results[:limit] {
 		repo, _ := r.searchResultURIs()
-		if i == limit-1 && repo == lastResultRepo {
-			// resultsInRepoConsumed is the last result we consumed, so add one
-			// so the next query starts on a new result.
-			final.resultOffset = resultsInRepoConsumed + 1
-			break
-		}
 		if repo != lastResultRepo {
-			resultsInRepoConsumed = 1
+			final.resultOffset = 0
 			final.lastRepoConsumed = reposByName[repo]
 		} else {
-			resultsInRepoConsumed++
+			final.resultOffset++
 		}
 		lastResultRepo = repo
+	}
+	nextRepo, _ := results[limit].searchResultURIs()
+	if nextRepo != lastResultRepo {
+		final.resultOffset = 0
+		final.lastRepoConsumedPartially = false
+	} else {
+		final.resultOffset++
+		final.lastRepoConsumedPartially = true
 	}
 
 	// Construct the new searchResultsCommon structure for just the results
@@ -457,8 +469,15 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 			}
 		}
 	}
-	for _, r := range common.repos {
-		repo := reposByName[string(r.Name)]
+	seenRepos := map[string]struct{}{}
+	for _, r := range results[:limit] {
+		repoName, _ := r.searchResultURIs()
+		if _, ok := seenRepos[repoName]; ok {
+			continue
+		}
+		seenRepos[repoName] = struct{}{}
+
+		repo := reposByName[repoName]
 		results := resultsByRepo[repo]
 
 		// Include the results and copy over metadata from the common structure.
