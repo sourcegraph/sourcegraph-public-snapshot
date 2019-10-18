@@ -2,7 +2,7 @@ This directory contains database migrations for the frontend Postgres DB.
 
 ## Usage
 
-Migrations are handled by the [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
+Migrations are handled by the [migrate](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
 
 ### Add a new migration
 
@@ -32,16 +32,8 @@ explicit transaction blocks added to the migration script template.
 
 After adding SQL statements to those files, embed them into the Go code and update the schema doc:
 
-- If you're running Postgres 9.6:
-
 ```
 ./dev/generate.sh
-```
-
-- If you're not running Postgres 9.6:
-
-```
-./dev/update-schema-and-bindata.sh
 ```
 
 or, to only run the DB generate scripts (subset of the command above):
