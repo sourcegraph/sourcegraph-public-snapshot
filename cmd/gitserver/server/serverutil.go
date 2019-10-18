@@ -17,8 +17,39 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// GitDir is an absolute path to a GIT_DIR.
+// They will all follow the form:
+//
+//    ${s.ReposDir}/${name}/.git
+type GitDir string
+
+// Path is a helper which returns filepath.Join(dir, elem...)
+func (dir GitDir) Path(elem ...string) string {
+	return filepath.Join(append([]string{string(dir)}, elem...)...)
+}
+
+func (s *Server) dir(name api.RepoName) GitDir {
+	path := string(protocol.NormalizeRepo(name))
+	return GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(path), ".git"))
+}
+
+func (s *Server) name(dir GitDir) api.RepoName {
+	// dir == ${s.ReposDir}/${name}/.git
+	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"
+	name := strings.TrimPrefix(parent, s.ReposDir)        // remove prefix "${s.ReposDir}"
+	name = strings.Trim(name, string(filepath.Separator)) // remove /
+	name = filepath.ToSlash(name)                         // filepath -> path
+	return protocol.NormalizeRepo(api.RepoName(name))
+}
+
+func isAlwaysCloningTest(name api.RepoName) bool {
+	return protocol.NormalizeRepo(name) == "github.com/sourcegraphtest/alwayscloningtest"
+}
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
 // cause it to be interpreted as a git command line argument.
@@ -90,14 +121,9 @@ func configureGitCommand(cmd *exec.Cmd) {
 }
 
 // repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
-var repoCloned = func(dir string) bool {
-	if _, err := os.Stat(filepath.Join(dir, "HEAD")); !os.IsNotExist(err) {
-		return true
-	}
-	if _, err := os.Stat(filepath.Join(dir, ".git", "HEAD")); !os.IsNotExist(err) {
-		return true
-	}
-	return false
+var repoCloned = func(dir GitDir) bool {
+	_, err := os.Stat(dir.Path("HEAD"))
+	return !os.IsNotExist(err)
 }
 
 // repoLastFetched returns the mtime of the repo's FETCH_HEAD, which is the date of the last successful `git remote
@@ -105,16 +131,10 @@ var repoCloned = func(dir string) bool {
 // none of those other two operations have been run (and so FETCH_HEAD does not exist), it will return the mtime of HEAD.
 //
 // This breaks on file systems that do not record mtime and if Git ever changes this undocumented behavior.
-var repoLastFetched = func(dir string) (time.Time, error) {
-	fi, err := os.Stat(filepath.Join(dir, "FETCH_HEAD"))
+var repoLastFetched = func(dir GitDir) (time.Time, error) {
+	fi, err := os.Stat(dir.Path("FETCH_HEAD"))
 	if os.IsNotExist(err) {
-		fi, err = os.Stat(filepath.Join(dir, ".git", "FETCH_HEAD"))
-	}
-	if os.IsNotExist(err) {
-		fi, err = os.Stat(filepath.Join(dir, "HEAD"))
-	}
-	if os.IsNotExist(err) {
-		fi, err = os.Stat(filepath.Join(dir, ".git", "HEAD"))
+		fi, err = os.Stat(dir.Path("HEAD"))
 	}
 	if err != nil {
 		return time.Time{}, err
@@ -132,11 +152,8 @@ var repoLastFetched = func(dir string) (time.Time, error) {
 //
 // As a special case, tries both the directory given, and the .git subdirectory,
 // because we're a bit inconsistent about which name to use.
-var repoLastChanged = func(dir string) (time.Time, error) {
-	fi, err := os.Stat(filepath.Join(dir, "sg_refhash"))
-	if os.IsNotExist(err) {
-		fi, err = os.Stat(filepath.Join(dir, ".git", "sg_refhash"))
-	}
+var repoLastChanged = func(dir GitDir) (time.Time, error) {
+	fi, err := os.Stat(dir.Path("sg_refhash"))
 	if os.IsNotExist(err) {
 		return repoLastFetched(dir)
 	}
@@ -149,12 +166,12 @@ var repoLastChanged = func(dir string) (time.Time, error) {
 // repoRemoteURL returns the "origin" remote fetch URL for the Git repository in dir. If the repository
 // doesn't exist or the remote doesn't exist and have a fetch URL, an error is returned. If there are
 // multiple fetch URLs, only the first is returned.
-var repoRemoteURL = func(ctx context.Context, dir string) (string, error) {
+var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 	// We do not pass in context since this command is quick. We do a lot of
 	// logging around what this function does, so having to handle context
 	// failures in each case is verbose. Rather just prevent that.
 	cmd := exec.Command("git", "remote", "get-url", "origin")
-	cmd.Dir = dir
+	cmd.Dir = string(dir)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

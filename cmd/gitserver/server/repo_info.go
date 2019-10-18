@@ -4,10 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -15,8 +11,7 @@ import (
 )
 
 func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
-	repo = protocol.NormalizeRepo(repo)
-	dir := path.Join(s.ReposDir, string(repo))
+	dir := s.dir(repo)
 	resp := protocol.RepoInfo{
 		Cloned: repoCloned(dir),
 	}
@@ -29,7 +24,7 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	}
 	{
 		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
-		if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+		if isAlwaysCloningTest(repo) {
 			resp.CloneInProgress = true
 			resp.CloneProgress = "This will never finish cloning"
 		}
@@ -97,21 +92,5 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteRepo(repo api.RepoName) error {
-	repo = protocol.NormalizeRepo(repo)
-	dir := filepath.Join(s.ReposDir, string(repo))
-
-	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil && !os.IsNotExist(err) {
-		return err
-	} else if err == nil {
-		// New style, so we just delete the .git dir
-		dir = filepath.Join(dir, ".git")
-	} else {
-		// Old style, ensure it actually is a git dir so we don't delete
-		// multiple repos. We do not need to change dir.
-		if _, err := os.Stat(filepath.Join(dir, "HEAD")); err != nil {
-			return err
-		}
-	}
-
-	return s.removeRepoDirectory(dir)
+	return s.removeRepoDirectory(s.dir(repo))
 }
