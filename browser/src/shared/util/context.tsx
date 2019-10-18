@@ -32,7 +32,7 @@ export function isSourcegraphDotCom(url: string): boolean {
     return url === DEFAULT_SOURCEGRAPH_URL
 }
 
-type PlatformName = 'phabricator-integration' | 'bitbucket-integration' | 'firefox-extension' | 'chrome-extension'
+type PlatformName = typeof globalThis.SOURCEGRAPH_INTEGRATION | 'firefox-extension' | 'chrome-extension'
 
 export function getPlatformName(): PlatformName {
     if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {

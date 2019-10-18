@@ -29,8 +29,6 @@ interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevSpec {}
  * Gets information about the page.
  */
 export function getPageInfo(): GitLabInfo {
-    const host = window.location.hostname
-
     const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
     if (!projectLink) {
         throw new Error('Unable to determine project name')
@@ -55,7 +53,7 @@ export function getPageInfo(): GitLabInfo {
     return {
         owner,
         projectName,
-        rawRepoName: [host, owner, projectName].join('/'),
+        rawRepoName: [gon.gitlab_url, owner, projectName].join('/'),
         pageKind,
     }
 }
