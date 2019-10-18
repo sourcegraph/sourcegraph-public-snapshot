@@ -36,12 +36,13 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		repoFlag        = flagSet.String("repo", "", `The name of the repository. (required)`)
-		commitFlag      = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
-		fileFlag        = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
-		uploadTokenFlag = flagSet.String("upload-token", "", `The LSIF upload token for the given repository. (required if lsifEnforceAuth setting is enabled)`)
-		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/)`)
-		apiFlags        = newAPIFlags(flagSet)
+		repoFlag           = flagSet.String("repo", "", `The name of the repository. (required)`)
+		commitFlag         = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
+		fileFlag           = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
+		uploadTokenFlag    = flagSet.String("upload-token", "", `The LSIF upload token for the given repository. (required if lsifEnforceAuth setting is enabled)`)
+		rootFlag           = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/)`)
+		skipValidationFlag = flagSet.Bool("skip-validation", false, `Whether or not to perform input validation on the server (much faster)`)
+		apiFlags           = newAPIFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -72,6 +73,9 @@ Examples:
 		}
 		if *rootFlag != "" {
 			qs.Add("root", *rootFlag)
+		}
+		if *skipValidationFlag == true {
+			qs.Add("skipValidation", "true")
 		}
 
 		url, err := url.Parse(cfg.Endpoint + "/.api/lsif/upload")
