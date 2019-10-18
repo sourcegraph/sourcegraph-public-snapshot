@@ -40,9 +40,22 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	// invalid suggestions. There are many where places we assume the original query is regexp,
 	// so more work is required to create a nice solution for this.
 	for _, proposedQuery := range a.proposedQueries {
-		proposedQuery.query = proposedQuery.query + " patternType:regexp"
+		if proposedQuery.description != "Remove quotes" {
+			proposedQuery.query = proposedQuery.query + " patternType:regexp"
+		}
 	}
 	return &a.proposedQueries
+}
+
+func (r *searchResolver) alertForQuotesInQueryInLiteralMode(ctx context.Context) (*searchAlert, error) {
+	return &searchAlert{
+		title:       "No results. Did you mean to use quotes?",
+		description: "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
+		proposedQueries: []*searchQueryDescription{{
+			description: "Remove quotes",
+			query:       syntax.ExprString(omitQuotes(r.query)),
+		}},
+	}, nil
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
@@ -350,6 +363,19 @@ func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
 		expr2 = append(expr2, e)
 	}
 	return expr2
+}
+
+func omitQuotes(query *query.Query) []*syntax.Expr {
+	result := make([]*syntax.Expr, 0, len(query.Syntax.Expr))
+	for _, e := range query.Syntax.Expr {
+		cpy := *e
+		e = &cpy
+		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
+			e.Value = strings.TrimSuffix(strings.TrimPrefix(e.Value, `"\"`), `\""`)
+		}
+		result = append(result, e)
+	}
+	return result
 }
 
 // pathParentsByFrequency returns the most common path parents of the given paths.

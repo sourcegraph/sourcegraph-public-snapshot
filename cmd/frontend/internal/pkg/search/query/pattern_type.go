@@ -12,7 +12,7 @@ var fieldRx = regexp.MustCompile(`^-?[a-zA-Z]+:`)
 // been either quoted because it has patternType:literal, not quoted because it
 // has patternType:regex, or been possibly quoted in the default case according
 // to the defaultToRegexp parameter.
-func HandlePatternType(input string, defaultToRegexp bool) string {
+func HandlePatternType(input string, defaultToRegexp bool) (string, bool) {
 	tokens := tokenize(input)
 	isRegex := defaultToRegexp
 	var tokens2 []string
@@ -60,7 +60,7 @@ func HandlePatternType(input string, defaultToRegexp bool) string {
 		}
 		input = strings.Join(pieces, " ")
 	}
-	return input
+	return input, isRegex
 }
 
 var tokenRx = regexp.MustCompile(`("([^"\\]|[\\].)*"|\s+|\S+)`)

@@ -76,7 +76,7 @@ func (r *schemaResolver) Search(args *struct {
 		return nil, err
 	}
 
-	qs := query.HandlePatternType(args.Query, defaultIsRegexp)
+	qs, isRegexp := query.HandlePatternType(args.Query, defaultIsRegexp)
 	q, err := query.ParseAndCheck(qs)
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
@@ -100,9 +100,17 @@ func (r *schemaResolver) Search(args *struct {
 		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
 
+	var finalPatternType string
+	if isRegexp {
+		finalPatternType = "regexp"
+	} else {
+		finalPatternType = "literal"
+	}
+
 	return &searchResolver{
 		query:        q,
 		pagination:   pagination,
+		patternType:  finalPatternType,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
@@ -147,8 +155,9 @@ func asString(v *searchquerytypes.Value) string {
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query      *query.Query          // the parsed search query
-	pagination *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	query       *query.Query          // the parsed search query
+	pagination  *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType string
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
