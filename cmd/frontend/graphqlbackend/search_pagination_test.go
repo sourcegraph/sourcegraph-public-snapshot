@@ -121,9 +121,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					// BUG: repo2 and repo3 should not be included
-					repos:   []*types.Repo{repo("org/repo1"), repo("org/repo2"), repo("org/repo3")},
-					partial: make(map[api.RepoName]struct{}),
+					repos:       []*types.Repo{repo("org/repo1")},
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset:     0,
 				lastRepoConsumed: repo("org/repo1"),
@@ -143,9 +142,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 2,
-					// BUG: repo2 and repo3 should not be included
-					repos:   []*types.Repo{repo("org/repo1"), repo("org/repo2"), repo("org/repo3")},
-					partial: make(map[api.RepoName]struct{}),
+					repos:       []*types.Repo{repo("org/repo1")},
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset:     2,
 				lastRepoConsumed: repo("org/repo1"),
@@ -166,9 +164,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					// BUG: repo1 should not be included
-					repos:   []*types.Repo{repo("org/repo1"), repo("org/repo2"), repo("org/repo3")},
-					partial: make(map[api.RepoName]struct{}),
+					repos:       []*types.Repo{repo("org/repo2"), repo("org/repo3")},
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset:     0,
 				lastRepoConsumed: repo("org/repo3"),
@@ -189,9 +186,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					// BUG: repo3 should not be included
-					repos:   []*types.Repo{repo("org/repo1"), repo("org/repo2")},
-					partial: make(map[api.RepoName]struct{}),
+					repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset:     0,
 				lastRepoConsumed: repo("org/repo2"),

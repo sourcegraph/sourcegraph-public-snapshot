@@ -460,8 +460,15 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 			}
 		}
 	}
-	for _, r := range common.repos {
-		repo := reposByName[string(r.Name)]
+	seenRepos := map[string]struct{}{}
+	for _, r := range results[:limit] {
+		repoName, _ := r.searchResultURIs()
+		if _, ok := seenRepos[repoName]; ok {
+			continue
+		}
+		seenRepos[repoName] = struct{}{}
+
+		repo := reposByName[repoName]
 		results := resultsByRepo[repo]
 
 		// Include the results and copy over metadata from the common structure.
