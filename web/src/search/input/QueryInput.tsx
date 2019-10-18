@@ -74,6 +74,8 @@ interface State {
 // TODO: check outside click listener to hide suggestions
 // TODO: check something that was removed, compare code
 export class QueryInput extends React.Component<Props, State> {
+    private static FILTER_SEPARATOR = ':'
+
     private componentUpdates = new Subject<Props>()
 
     /** Subscriptions to unsubscribe from on component unmount */
@@ -333,15 +335,19 @@ export class QueryInput extends React.Component<Props, State> {
             },
         }) */
 
+        console.log(this.state.onChangeCursorPosition)
+
         // divides input text, adds suggestion, joins new text and sets new cursor position
         const firstPart = this.props.value.substring(0, this.state.onChangeCursorPosition)
         const lastPart = this.props.value.substring(firstPart.length)
         const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
+        const separatorIndex = firstPart.lastIndexOf(isValueSuggestion ? QueryInput.FILTER_SEPARATOR : ' ')
 
-        const separator = !isValueSuggestion ? ':' : ' '
-        const separatorIndex = firstPart.lastIndexOf(separator)
+        const newFirstPart =
+            firstPart.substring(0, separatorIndex + 1) +
+            suggestion.title +
+            (!isValueSuggestion ? QueryInput.FILTER_SEPARATOR : '')
 
-        const newFirstPart = firstPart.substring(0, separatorIndex + 1) + suggestion.title + separator
         const newValue = newFirstPart + lastPart
         const newCursorPosition = newFirstPart.length
 
