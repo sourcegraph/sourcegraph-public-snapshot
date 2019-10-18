@@ -3,7 +3,6 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import bodyParser from 'body-parser'
 import express from 'express'
-import paginate from 'express-paginate'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
 import uuid from 'uuid'
@@ -41,16 +40,6 @@ const pipeline = promisify(_pipeline)
  * Which port to run the LSIF server on. Defaults to 3186.
  */
 const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
-
-/**
- * The default number of jobs to return per page from queue endpoints.
- */
-const JOB_PAGE_LIMIT = readEnvInt('JOB_PAGE_LIMIT', 25)
-
-/**
- * The maximum number of jobs to return per page from queue endpoints.
- */
-const JOB_PAGE_MAX_LIMIT = readEnvInt('JOB_PAGE_MAX_LIMIT', 100)
 
 /**
  * The interval (in seconds) to schedule the clean-old-jobs job.
@@ -374,13 +363,14 @@ async function lsifEndpoints(
  *
  * @param job The job to format.
  */
-const formatJob = (job: Job): object => {
+const formatJob = (job: Job, status: string): object => {
     const { id, data, progress, timestamp, failedReason, stacktrace, finishedOn, processedOn } = job.toJSON()
 
     return {
         jobId: id,
         name: job.name,
         args: data.args,
+        status,
         progress,
         failedReason,
         stacktrace,
@@ -399,16 +389,55 @@ function queueEndpoints(queue: Queue): express.Router {
     const router = express.Router()
 
     router.get(
-        '/queue/stats',
+        '/job-stats',
         wrap(
             async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
-                res.send(await queue.getJobCounts())
+                const counts = await queue.getJobCounts()
+
+                res.send({
+                    active: counts.active,
+                    queued: counts.waiting,
+                    completed: counts.completed,
+                    failed: counts.failed,
+                })
             }
         )
     )
 
     router.get(
-        '/queue/jobs/:jobId',
+        `/jobs`,
+        wrap(
+            async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+                const { status } = req.query
+                const queues = translateJobStatus(status)
+                const limit = Math.floor((req.query.limit || 20) / queues.length)
+
+                const promises = []
+                for (const internalQueueType of queues) {
+                    promises.push(queue.getJobs([internalQueueType], 0, limit - 1))
+                }
+
+                // Get jobs in each requested queue
+                const resolvedJobs = await Promise.all(promises)
+
+                const jobs = []
+                for (const [index, internalQueueType] of queues.entries()) {
+                    for (const job of resolvedJobs[index]) {
+                        const status = jobStatuses.get(internalQueueType)
+                        if (status) {
+                            jobs.push(formatJob(job, status))
+                        }
+                    }
+                }
+
+                // TODO - loosely order jobs by date?
+                res.send({ jobs, count: await queue.getJobCountByTypes(queues) })
+            }
+        )
+    )
+
+    router.get(
+        '/jobs/:jobId',
         wrap(
             async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
                 const job = await queue.getJob(req.params.jobId)
@@ -418,57 +447,49 @@ function queueEndpoints(queue: Queue): express.Router {
                     })
                 }
 
-                res.send({ ...formatJob(job), status: await job.getState() })
+                res.send(formatJob(job, await job.getState()))
             }
         )
     )
 
-    const listEndpoints: {
-        name: string
-        getTotal: () => Promise<number>
-        getJobs: (start: number, end: number) => Promise<Job[]>
-    }[] = [
-        {
-            name: 'active',
-            getTotal: () => queue.getActiveCount(),
-            getJobs: (start, end) => queue.getActive(start, end),
-        },
-        {
-            name: 'queued',
-            getTotal: () => queue.getWaitingCount(),
-            getJobs: (start, end) => queue.getWaiting(start, end),
-        },
-        {
-            name: 'completed',
-            getTotal: () => queue.getCompletedCount(),
-            getJobs: (start, end) => queue.getCompleted(start, end),
-        },
+    return router
+}
 
-        {
-            name: 'failed',
-            getTotal: () => queue.getFailedCount(),
-            getJobs: (start, end) => queue.getFailed(start, end),
-        },
-    ]
+type JobStatus = 'active' | 'waiting' | 'completed' | 'failed'
 
-    // The remaining routes are paginated
-    router.use(paginate.middleware(JOB_PAGE_LIMIT, JOB_PAGE_MAX_LIMIT))
+const queueTypes = new Map<string, JobStatus>([
+    ['active', 'active'],
+    ['queued', 'waiting'],
+    ['completed', 'completed'],
+    ['failed', 'failed'],
+])
 
-    for (const { name, getTotal, getJobs } of listEndpoints) {
-        router.get(
-            `/queue/${name}`,
-            wrap(
-                async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
-                    res.send({
-                        jobs: (await getJobs(req.offset || 0, (req.offset || 0) + req.query.limit)).map(formatJob),
-                        hasMore: paginate.hasNextPages(req)(Math.ceil((await getTotal()) / req.query.limit)),
-                    })
-                }
-            )
-        )
+const jobStatuses = new Map([...queueTypes].reverse()) as Map<JobStatus, string>
+
+export function translateJobStatus(queueType: any): JobStatus[] {
+    if (queueType === undefined) {
+        return Array.from(queueTypes.values())
     }
 
-    return router
+    if (typeof queueType !== 'string') {
+        throw Object.assign(new Error('Must specify the repository (usually of the form github.com/user/repo)'), {
+            status: 400,
+        })
+    }
+
+    const statuses: JobStatus[] = []
+    for (const status of queueType.split(',')) {
+        const bullType = queueTypes.get(status)
+        if (!bullType) {
+            throw Object.assign(new Error(`Queue type must be one of ${Array.from(queueTypes.keys()).join(', ')}`), {
+                status: 400,
+            })
+        }
+
+        statuses.push(bullType)
+    }
+
+    return statuses
 }
 
 /**
