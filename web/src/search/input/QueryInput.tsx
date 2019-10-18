@@ -338,7 +338,7 @@ export class QueryInput extends React.Component<Props, State> {
         const lastPart = this.props.value.substring(firstPart.length)
         const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
 
-        const separator = isValueSuggestion ? ':' : ' '
+        const separator = !isValueSuggestion ? ':' : ' '
         const separatorIndex = firstPart.lastIndexOf(separator)
 
         const newFirstPart = firstPart.substring(0, separatorIndex + 1) + suggestion.title + separator
