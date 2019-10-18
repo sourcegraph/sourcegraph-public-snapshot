@@ -1065,7 +1065,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.query.String(), `"`) && r.patternType == "literal" {
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == "literal" {
 		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
 	}
 
