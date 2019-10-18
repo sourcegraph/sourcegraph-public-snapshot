@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const Toast: React.FunctionComponent<Props> = props => (
-    <div className="toast light">
+    <div className="toast">
         <div className="toast__contents">
             <div className="d-flex">
                 <span className="toast__logo icon-inline">{props.icon}</span>
