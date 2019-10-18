@@ -83,13 +83,6 @@ var NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
 // temporary directory (returned as dir).
 func InitGitRepository(t testing.TB, cmds ...string) string {
 	t.Helper()
-	dir := InitGitRepositoryWorkingCopy(t, cmds...)
-	MakeGitRepositoryBare(t, dir)
-	return dir
-}
-
-func InitGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
-	t.Helper()
 	remotes := filepath.Join(root, "remotes")
 	if err := os.MkdirAll(remotes, 0700); err != nil {
 		t.Fatal(err)
@@ -106,24 +99,6 @@ func InitGitRepositoryWorkingCopy(t testing.TB, cmds ...string) (dir string) {
 		}
 	}
 	return dir
-}
-
-func MakeGitRepositoryBare(t testing.TB, dir string) {
-	out, err :=
-		GitCommand(dir, "git", "config", "--bool", "core.bare", "true").
-			CombinedOutput()
-	if err != nil {
-		t.Fatalf("Failed to convert to bare repo: %s\nOut: %s", err, out)
-	}
-	wc := dir + "-workingcopy"
-	err = os.Rename(dir, wc)
-	if err != nil {
-		t.Fatalf("Failed to convert to bare repo: %s", err)
-	}
-	err = os.Rename(filepath.Join(wc, ".git"), dir)
-	if err != nil {
-		t.Fatalf("Failed to convert to bare repo: %s", err)
-	}
 }
 
 func GitCommand(dir, name string, args ...string) *exec.Cmd {
