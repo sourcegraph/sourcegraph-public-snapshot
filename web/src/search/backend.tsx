@@ -209,6 +209,22 @@ export function fetchSuggestions(query: string): Observable<GQL.SearchSuggestion
     )
 }
 
+export function searchFilterSuggestions(): Observable<GQL.ISearchFilterSuggestions> {
+    return queryGraphQL(
+        gql`
+            query searchFilterSuggestions() {
+                searchFilterSuggestions() {
+                    repogroup
+                    repo
+                }
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.searchFilterSuggestions as GQL.ISearchFilterSuggestions)
+    )
+}
+
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
     return queryGraphQL(
         gql`

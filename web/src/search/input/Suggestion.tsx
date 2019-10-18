@@ -1,106 +1,83 @@
-import FolderIcon from 'mdi-react/FolderIcon'
 import * as React from 'react'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-import { basename, dirname } from '../../util/path'
 
 interface BaseSuggestion {
     title: string
     description?: string
-
-    /**
-     * The URL that is navigated to when the user selects this
-     * suggestion.
-     */
-    url: string
-
-    /**
-     * A label describing the action taken when navigating to
-     * the URL (e.g., "go to repository").
-     */
-    urlLabel: string
 }
 
-interface SymbolSuggestion extends BaseSuggestion {
-    type: 'symbol'
-    kind: GQL.SymbolKind
+export enum SuggestionTypes {
+    filters = 'filters',
+    repo = 'repo',
+    repogroup = 'repogroup',
+    repohasfile = 'repohasfile',
+    repohascommitafter = 'repohascommitafter',
+    file = 'file',
+    type = 'type',
+    case = 'case',
+    lang = 'lang',
+    fork = 'fork',
+    archived = 'archived',
+    count = 'count',
+    timeout = 'timeout',
 }
 
-interface RepoSuggestion extends BaseSuggestion {
-    type: 'repo'
+interface Filters extends BaseSuggestion {
+    type: SuggestionTypes.filters
+}
+interface Repo extends BaseSuggestion {
+    type: SuggestionTypes.repo
+}
+interface Repogroup extends BaseSuggestion {
+    type: SuggestionTypes.repogroup
+}
+interface Repohasfile extends BaseSuggestion {
+    type: SuggestionTypes.repohasfile
+}
+interface Repohascommitafter extends BaseSuggestion {
+    type: SuggestionTypes.repohascommitafter
+}
+interface File extends BaseSuggestion {
+    type: SuggestionTypes.file
+}
+interface Type extends BaseSuggestion {
+    type: SuggestionTypes.type
+}
+interface Case extends BaseSuggestion {
+    type: SuggestionTypes.case
+}
+interface Lang extends BaseSuggestion {
+    type: SuggestionTypes.lang
+}
+interface Fork extends BaseSuggestion {
+    type: SuggestionTypes.fork
+}
+interface Archived extends BaseSuggestion {
+    type: SuggestionTypes.archived
+}
+interface Count extends BaseSuggestion {
+    type: SuggestionTypes.count
+}
+interface Timeout extends BaseSuggestion {
+    type: SuggestionTypes.timeout
 }
 
-interface FileSuggestion extends BaseSuggestion {
-    type: 'file'
-}
-
-interface DirSuggestion extends BaseSuggestion {
-    type: 'dir'
-}
-
-interface LangSuggestion extends BaseSuggestion {
-    type: 'lang'
-}
-
-export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion | LangSuggestion
-
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
-    switch (item.__typename) {
-        case 'Repository': {
-            return {
-                type: 'repo',
-                title: item.name,
-                url: `/${item.name}`,
-                urlLabel: 'go to repository',
-            }
-        }
-        case 'File': {
-            const descriptionParts = []
-            const dir = dirname(item.path)
-            if (dir !== '.') {
-                descriptionParts.push(`${dir}/`)
-            }
-            descriptionParts.push(basename(item.repository.name))
-            if (item.isDirectory) {
-                return {
-                    type: 'dir',
-                    title: item.name,
-                    description: descriptionParts.join(' — '),
-                    url: `${item.url}?suggestion`,
-                    urlLabel: 'go to dir',
-                }
-            }
-            return {
-                type: 'file',
-                title: item.name,
-                description: descriptionParts.join(' — '),
-                url: `${item.url}?suggestion`,
-                urlLabel: 'go to file',
-            }
-        }
-        case 'Symbol': {
-            return {
-                type: 'symbol',
-                kind: item.kind,
-                title: item.name,
-                description: `${item.containerName || item.location.resource.path} — ${basename(
-                    item.location.resource.repository.name
-                )}`,
-                url: item.url,
-                urlLabel: 'go to definition',
-            }
-        }
-        case 'Language': {
-            return {
-                type: 'lang',
-                title: item.name,
-                url: '', // TODO:
-                urlLabel: '', // TODO:
-            }
-        }
-    }
-}
+export type Suggestion =
+    | Filters
+    | Repo
+    | Repogroup
+    | Repohasfile
+    | Repohascommitafter
+    | File
+    | Type
+    | Case
+    | Lang
+    | Fork
+    | Archived
+    | Count
+    | Timeout
 
 interface SuggestionIconProps {
     suggestion: Suggestion
@@ -109,15 +86,11 @@ interface SuggestionIconProps {
 
 const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, ...passThru }) => {
     switch (suggestion.type) {
-        case 'repo':
+        case SuggestionTypes.repo:
             return <RepositoryIcon {...passThru} />
-        case 'dir':
-            return <FolderIcon />
-        case 'file':
+        case SuggestionTypes.file:
             return <SymbolIcon kind={GQL.SymbolKind.FILE} {...passThru} />
-        case 'symbol':
-            return <SymbolIcon kind={suggestion.kind} {...passThru} />
-        case 'lang':
+        default:
             return null // TODO: handle lang suggestions in RFC 14 frontend PR.
     }
 }
@@ -131,27 +104,13 @@ interface SuggestionProps {
     onClick?: () => void
 
     /** Get a reference to the HTML element for scroll management */
-    liRef?: (ref: HTMLLIElement | null) => void
+    ref?: (ref: HTMLLIElement | null) => void
 }
 
-export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
-    suggestion,
-    isSelected,
-    onClick,
-    liRef,
-}) => {
-    if (suggestion.type === 'lang') {
-        // TODO: handle lang suggestions in RFC 14 frontend PR.
-        return null
-    }
-    return (
-        <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
-            <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
-            <div className="suggestion__title">{suggestion.title}</div>
-            <div className="suggestion__description">{suggestion.description}</div>
-            <div className="suggestion__action" hidden={!isSelected}>
-                <kbd>enter</kbd> {suggestion.urlLabel}
-            </div>
-        </li>
-    )
-}
+export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({ suggestion, isSelected, ...props }) => (
+    <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
+        <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
+        <div className="suggestion__title">{suggestion.title}</div>
+        <div className="suggestion__description">{suggestion.description}</div>
+    </li>
+)
