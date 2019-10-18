@@ -53,7 +53,7 @@ export function getPageInfo(): GitLabInfo {
     return {
         owner,
         projectName,
-        rawRepoName: [gon.gitlab_url, owner, projectName].join('/'),
+        rawRepoName: [new URL(gon.gitlab_url).hostname, owner, projectName].join('/'),
         pageKind,
     }
 }
