@@ -38,8 +38,6 @@ func addDebugHandlers(r *mux.Router) {
 				grafanaURLFromEnv, err)
 			addNoGrafanaHandler(r)
 		} else {
-			// 🚨 SECURITY: see cmd/frontend/internal/pkg/handlerutil/middleware.go: CSRFMiddleware if you intend to make
-			// changes to the path under which this reverse proxy is run
 			addReverseProxyForService(debugserver.Service{
 				Name:        "grafana",
 				Host:        grafanaURL.Host,
