@@ -278,7 +278,7 @@ async function lsifEndpoints(
                 try {
                     await logAndTraceCall(ctx, 'uploading dump', async () => {
                         await pipeline(
-                            validate
+                            !validate
                                 ? req
                                 : Readable.from(
                                       stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
