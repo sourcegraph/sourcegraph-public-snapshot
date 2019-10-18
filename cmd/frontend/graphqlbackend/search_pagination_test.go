@@ -200,6 +200,38 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				limitHit:                  true,
 			},
 		},
+		{
+			name: "offset repo boundary fully consumed",
+			results: []searchResultResolver{
+				result(repo("org/repo1"), "a.go"),
+				result(repo("org/repo1"), "b.go"),
+				result(repo("org/repo1"), "c.go"),
+				result(repo("org/repo2"), "a.go"),
+				result(repo("org/repo2"), "b.go"),
+				result(repo("org/repo2"), "c.go"),
+			},
+			common: &searchResultsCommon{
+				repos: []*types.Repo{repo("org/repo1"), repo("org/repo2")},
+			},
+			offset: 3,
+			limit:  3,
+			want: slicedSearchResults{
+				results: []searchResultResolver{
+					result(repo("org/repo2"), "a.go"),
+					result(repo("org/repo2"), "b.go"),
+					result(repo("org/repo2"), "c.go"),
+				},
+				common: &searchResultsCommon{
+					resultCount: 3,
+					repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
+					partial:     make(map[api.RepoName]struct{}),
+				},
+				resultOffset:              0,
+				lastRepoConsumed:          repo("org/repo2"),
+				lastRepoConsumedPartially: false,
+				limitHit:                  false,
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
