@@ -427,22 +427,21 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
 	lastResultRepo, _ := results[len(results)-1].searchResultURIs()
-	resultsInRepoConsumed := int32(0)
-	for i, r := range results[:limit] {
+	for _, r := range results[:limit] {
 		repo, _ := r.searchResultURIs()
-		if i == limit-1 && repo == lastResultRepo {
-			// resultsInRepoConsumed is the last result we consumed, so add one
-			// so the next query starts on a new result.
-			final.resultOffset = resultsInRepoConsumed + 1
-			break
-		}
 		if repo != lastResultRepo {
-			resultsInRepoConsumed = 1
+			final.resultOffset = 0
 			final.lastRepoConsumed = reposByName[repo]
 		} else {
-			resultsInRepoConsumed++
+			final.resultOffset++
 		}
 		lastResultRepo = repo
+	}
+	nextRepo, _ := results[limit].searchResultURIs()
+	if nextRepo != lastResultRepo {
+		final.resultOffset = 0
+	} else {
+		final.resultOffset++
 	}
 
 	// Construct the new searchResultsCommon structure for just the results

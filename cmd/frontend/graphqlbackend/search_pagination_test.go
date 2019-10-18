@@ -125,7 +125,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:   []*types.Repo{repo("org/repo1"), repo("org/repo2"), repo("org/repo3")},
 					partial: make(map[api.RepoName]struct{}),
 				},
-				resultOffset:     3, // BUG: repo1 only has 3 results so this should be 0
+				resultOffset:     0,
 				lastRepoConsumed: repo("org/repo1"),
 				limitHit:         true,
 			},
@@ -193,7 +193,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:   []*types.Repo{repo("org/repo1"), repo("org/repo2"), repo("org/repo3")},
 					partial: make(map[api.RepoName]struct{}),
 				},
-				resultOffset:     2, // BUG: repo2 only has 2 results, so this should be 0
+				resultOffset:     0,
 				lastRepoConsumed: repo("org/repo2"),
 				limitHit:         true,
 			},
