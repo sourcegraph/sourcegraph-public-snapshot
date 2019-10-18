@@ -3,9 +3,11 @@ import { Observable, Subject } from 'rxjs'
 import { map, mergeMap, startWith, tap } from 'rxjs/operators'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
+import * as LSIF from '../../../shared/src/lsif/schema'
 import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { Settings } from '../../../shared/src/settings/settings'
+import { backendRequest } from '../backend/backend'
 
 /**
  * Fetches all users.
@@ -584,4 +586,63 @@ export function fetchSiteUpdateCheck(): Observable<{
         map(dataOrThrowErrors),
         map(data => data.site)
     )
+}
+
+/**
+ * Fetch counts of LSIF jobs by status.
+ */
+export function fetchLsifJobStatistics(): Observable<LSIF.LsifJobStats> {
+    return backendRequest<LSIF.LsifJobStats>(lsifUrl('job-stats'))
+}
+
+/**
+ * Fetch LSIF jobs with the given status.
+ *
+ * @param status The status.
+ * @param limit The maximum number of results to return.
+ */
+export function fetchLsifJobs(status: string, limit?: number): Observable<LSIF.ILsifJobConnection> {
+    const defaultStatus = 'active,queued,completed,failed'
+    const defaultLimit = 2
+
+    return backendRequest<{
+        jobs: LSIF.ILsifJob[]
+        count: number
+        hasMore: boolean
+    }>(
+        lsifUrl('jobs', new Map<string, any>([['status', status || defaultStatus], ['limit', limit || defaultLimit]]))
+    ).pipe(
+        map(
+            ({ jobs, count, hasMore }) =>
+                ({
+                    nodes: jobs,
+                    totalCount: count,
+                    pageInfo: { hasNextPage: hasMore } as GQL.IPageInfo,
+                } as LSIF.ILsifJobConnection)
+        )
+    )
+}
+
+/**
+ * Fetch a single LSIF job by id.
+ *
+ * @param id The job id.
+ */
+export function fetchLsifJob(id: string): Observable<LSIF.ILsifJob> {
+    return backendRequest<LSIF.ILsifJob>(lsifUrl(`jobs/${id}`))
+}
+
+/**
+ * Construct a url to the proxied LSIF API.
+ *
+ * @param route The relative route path.
+ * @param searchParams Search parameters.
+ */
+function lsifUrl(route: string, searchParams: Map<string, any> = new Map()): string {
+    const url = new URL(`/.api/lsif/${route}`, window.location.href)
+    for (const [key, value] of searchParams.entries()) {
+        url.searchParams.set(key, `${value}`)
+    }
+
+    return url.href
 }
