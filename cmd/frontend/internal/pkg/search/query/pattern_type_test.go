@@ -72,7 +72,7 @@ func TestHandlePatternType_Literal(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			out := HandlePatternType(test.input, test.defaultToRegexp)
+			out, _ := HandlePatternType(test.input, test.defaultToRegexp)
 			if out != test.want {
 				t.Errorf("handlePatternType (%q), with defaultToRegexp %t = %q, want %q", test.input, test.defaultToRegexp, out, test.want)
 			}

@@ -1065,6 +1065,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
+	if len(results) == 0 && strings.Contains(r.query.String(), `"`) && r.patternType == "literal" {
+		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
+	}
+
 	// If we have some results, only log the error instead of returning it,
 	// because otherwise the client would not receive the partial results
 	if len(results) > 0 && multiErr != nil {
