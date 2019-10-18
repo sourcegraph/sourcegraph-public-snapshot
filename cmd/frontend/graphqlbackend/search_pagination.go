@@ -351,6 +351,9 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 			nextCursor.RepositoryOffset = int32(globalOffset)
 		}
 	}
+	if !sliced.lastRepoConsumedPartially {
+		nextCursor.RepositoryOffset++
+	}
 	nextCursor.Finished = !sliced.limitHit || int(nextCursor.RepositoryOffset) == len(p.repositories) // Finished if we searched the last repository
 	return nextCursor, sliced.results, sliced.common, nil
 }
@@ -375,6 +378,10 @@ type slicedSearchResults struct {
 	// within the input result set, or nil if there were no results after
 	// slicing.
 	lastRepoConsumed *types.Repo
+
+	// lastRepoConsumedPartially tells if the repository was consumed partially or
+	// fully.
+	lastRepoConsumedPartially bool
 
 	// limitHit indicates if the limit was hit and results were truncated.
 	limitHit bool
@@ -440,8 +447,10 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	nextRepo, _ := results[limit].searchResultURIs()
 	if nextRepo != lastResultRepo {
 		final.resultOffset = 0
+		final.lastRepoConsumedPartially = false
 	} else {
 		final.resultOffset++
+		final.lastRepoConsumedPartially = true
 	}
 
 	// Construct the new searchResultsCommon structure for just the results

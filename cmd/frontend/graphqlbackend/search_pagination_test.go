@@ -60,6 +60,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		} else {
 			fmt.Fprintf(&b, "lastRepoConsumed: %s\n", r.lastRepoConsumed.Name)
 		}
+		fmt.Fprintf(&b, "lastRepoConsumedPartially: %v\n", r.lastRepoConsumedPartially)
 		fmt.Fprintf(&b, "limitHit: %v\n", r.limitHit)
 		return b.String()
 	}
@@ -102,9 +103,10 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:       nil,
 					partial:     nil,
 				},
-				resultOffset:     0,
-				lastRepoConsumed: nil,
-				limitHit:         false,
+				resultOffset:              0,
+				lastRepoConsumed:          nil,
+				lastRepoConsumedPartially: false,
+				limitHit:                  false,
 			},
 		},
 		{
@@ -124,9 +126,10 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:       []*types.Repo{repo("org/repo1")},
 					partial:     make(map[api.RepoName]struct{}),
 				},
-				resultOffset:     0,
-				lastRepoConsumed: repo("org/repo1"),
-				limitHit:         true,
+				resultOffset:              0,
+				lastRepoConsumed:          repo("org/repo1"),
+				lastRepoConsumedPartially: false,
+				limitHit:                  true,
 			},
 		},
 		{
@@ -145,9 +148,10 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:       []*types.Repo{repo("org/repo1")},
 					partial:     make(map[api.RepoName]struct{}),
 				},
-				resultOffset:     2,
-				lastRepoConsumed: repo("org/repo1"),
-				limitHit:         true,
+				resultOffset:              2,
+				lastRepoConsumed:          repo("org/repo1"),
+				lastRepoConsumedPartially: true,
+				limitHit:                  true,
 			},
 		},
 		{
@@ -167,9 +171,10 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:       []*types.Repo{repo("org/repo2"), repo("org/repo3")},
 					partial:     make(map[api.RepoName]struct{}),
 				},
-				resultOffset:     0,
-				lastRepoConsumed: repo("org/repo3"),
-				limitHit:         true,
+				resultOffset:              0,
+				lastRepoConsumed:          repo("org/repo3"),
+				lastRepoConsumedPartially: false,
+				limitHit:                  true,
 			},
 		},
 		{
@@ -189,9 +194,10 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
 					partial:     make(map[api.RepoName]struct{}),
 				},
-				resultOffset:     0,
-				lastRepoConsumed: repo("org/repo2"),
-				limitHit:         true,
+				resultOffset:              0,
+				lastRepoConsumed:          repo("org/repo2"),
+				lastRepoConsumedPartially: false,
+				limitHit:                  true,
 			},
 		},
 	}
