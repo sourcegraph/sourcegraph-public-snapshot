@@ -4,8 +4,8 @@ import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import { ID } from '../../../../../shared/src/graphql/schema'
 import { RepoNotFoundError } from '../../../../../shared/src/backend/errors'
-import { useError } from '../../../util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError } from '../../../../../shared/src/util/errors'
 
 async function addChangeset({
     campaignID,
@@ -66,7 +66,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
     campaignID,
     onAdd,
 }) => {
-    const triggerError = useError()
+    const [error, setError] = useState<Error>()
     const [repoName, setRepoName] = useState('')
     const [externalID, setExternalID] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -75,41 +75,45 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
             event.preventDefault()
             try {
                 setIsLoading(true)
+                setError(undefined)
                 await addChangeset({ campaignID, repoName, externalID })
                 setExternalID('')
                 onAdd()
             } catch (err) {
-                triggerError(err)
+                setError(asError(err))
             } finally {
                 setIsLoading(false)
             }
         },
-        [campaignID, externalID, onAdd, repoName, triggerError]
+        [campaignID, externalID, onAdd, repoName, setError]
     )
     return (
-        <Form className="form-inline" onSubmit={submit}>
-            <input
-                required={true}
-                type="text"
-                size={35}
-                className="form-control mr-1"
-                placeholder="Repository name"
-                value={repoName}
-                onChange={event => setRepoName(event.target.value)}
-            />
-            <input
-                required={true}
-                type="text"
-                size={16}
-                className="form-control mr-1"
-                placeholder="Changeset number"
-                value={externalID}
-                onChange={event => setExternalID(event.target.value)}
-            />
-            <button type="submit" className="btn btn-primary mr-1">
-                Add changeset
-            </button>
-            {isLoading && <LoadingSpinner className="icon-inline" />}
-        </Form>
+        <>
+            <Form className="form-inline" onSubmit={submit}>
+                <input
+                    required={true}
+                    type="text"
+                    size={35}
+                    className="form-control mr-1"
+                    placeholder="Repository name"
+                    value={repoName}
+                    onChange={event => setRepoName(event.target.value)}
+                />
+                <input
+                    required={true}
+                    type="text"
+                    size={16}
+                    className="form-control mr-1"
+                    placeholder="Changeset number"
+                    value={externalID}
+                    onChange={event => setExternalID(event.target.value)}
+                />
+                <button type="submit" className="btn btn-primary mr-1">
+                    Add changeset
+                </button>
+                {isLoading && <LoadingSpinner className="icon-inline" />}
+            </Form>
+            {error && <div className="alert alert-danger">{error.message}</div>}
+        </>
     )
 }
