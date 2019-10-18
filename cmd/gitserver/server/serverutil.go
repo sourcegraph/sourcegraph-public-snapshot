@@ -122,7 +122,7 @@ func configureGitCommand(cmd *exec.Cmd) {
 
 // repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
 var repoCloned = func(dir GitDir) bool {
-	err := os.Stat(dir.Path("HEAD"))
+	_, err := os.Stat(dir.Path("HEAD"))
 	return !os.IsNotExist(err)
 }
 
