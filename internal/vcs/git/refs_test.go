@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gittest"
 )
 
 func TestRepository_ListBranches(t *testing.T) {
@@ -25,7 +24,7 @@ func TestRepository_ListBranches(t *testing.T) {
 		wantBranches []*git.Branch
 	}{
 		"git cmd": {
-			repo:         gittest.MakeGitRepository(t, gitCommands...),
+			repo:         MakeGitRepository(t, gitCommands...),
 			wantBranches: []*git.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}},
 		},
 	}
@@ -40,7 +39,7 @@ func TestRepository_ListBranches(t *testing.T) {
 		sort.Sort(git.Branches(test.wantBranches))
 
 		if !reflect.DeepEqual(branches, test.wantBranches) {
-			t.Errorf("%s: got branches == %v, want %v", label, gittest.AsJSON(branches), gittest.AsJSON(test.wantBranches))
+			t.Errorf("%s: got branches == %v, want %v", label, AsJSON(branches), AsJSON(test.wantBranches))
 		}
 	}
 }
@@ -79,7 +78,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		wantBranches map[string][]*git.Branch
 	}{
 		"git cmd": {
-			repo:         gittest.MakeGitRepository(t, gitCommands...),
+			repo:         MakeGitRepository(t, gitCommands...),
 			wantBranches: gitBranches,
 		},
 	} {
@@ -90,7 +89,6 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 				continue
 			}
 			if !reflect.DeepEqual(branches, mergedInto) {
-				t.Errorf("%s: MergedInto %q: got branches == %v, want %v", label, branch, gittest.AsJSON(branches), gittest.AsJSON(mergedInto))
 			}
 		}
 	}
@@ -118,7 +116,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 		commitToWantBranches map[string][]*git.Branch
 	}{
 		"git cmd": {
-			repo:                 gittest.MakeGitRepository(t, gitCommands...),
+			repo:                 MakeGitRepository(t, gitCommands...),
 			commitToWantBranches: gitWantBranches,
 		},
 	}
@@ -133,7 +131,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 
 			sort.Sort(git.Branches(branches))
 			if !reflect.DeepEqual(branches, wantBranches) {
-				t.Errorf("%s: ContainsCommit %q: got branches == %v, want %v", label, commit, gittest.AsJSON(branches), gittest.AsJSON(wantBranches))
+				t.Errorf("%s: ContainsCommit %q: got branches == %v, want %v", label, commit, AsJSON(branches), AsJSON(wantBranches))
 			}
 		}
 	}
@@ -169,7 +167,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 		wantBranches []*git.Branch
 	}{
 		"git cmd": {
-			repo:         gittest.MakeGitRepository(t, gitCommands...),
+			repo:         MakeGitRepository(t, gitCommands...),
 			wantBranches: gitBranches,
 		},
 	}
@@ -183,7 +181,7 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 		sort.Sort(git.Branches(branches))
 
 		if !reflect.DeepEqual(branches, test.wantBranches) {
-			t.Errorf("%s: got branches == %v, want %v", label, gittest.AsJSON(branches), gittest.AsJSON(test.wantBranches))
+			t.Errorf("%s: got branches == %v, want %v", label, AsJSON(branches), AsJSON(test.wantBranches))
 		}
 	}
 }
@@ -201,8 +199,8 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 			Name: "b0", Head: "c4a53701494d1d788b1ceeb8bf32e90224962473",
 			Commit: &git.Commit{
 				ID:        "c4a53701494d1d788b1ceeb8bf32e90224962473",
-				Author:    git.Signature{Name: "b", Email: "b@b.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &git.Signature{Name: "b", Email: "b@b.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Author:    git.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &git.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "foo1",
 				Parents:   []api.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
 			},
@@ -211,8 +209,8 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
 			Commit: &git.Commit{
 				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-				Author:    git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    git.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "foo0",
 				Parents:   nil,
 			},
@@ -224,7 +222,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 		wantBranches []*git.Branch
 	}{
 		"git cmd": {
-			repo:         gittest.MakeGitRepository(t, gitCommands...),
+			repo:         MakeGitRepository(t, gitCommands...),
 			wantBranches: wantBranchesGit,
 		},
 	}
@@ -238,7 +236,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 		sort.Sort(git.Branches(branches))
 
 		if !reflect.DeepEqual(branches, test.wantBranches) {
-			t.Errorf("%s: got branches == %v, want %v", label, gittest.AsJSON(branches), gittest.AsJSON(test.wantBranches))
+			t.Errorf("%s: got branches == %v, want %v", label, AsJSON(branches), AsJSON(test.wantBranches))
 		}
 	}
 }
@@ -258,11 +256,11 @@ func TestRepository_ListTags(t *testing.T) {
 		wantTags []*git.Tag
 	}{
 		"git cmd": {
-			repo: gittest.MakeGitRepository(t, gitCommands...),
+			repo: MakeGitRepository(t, gitCommands...),
 			wantTags: []*git.Tag{
-				{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: gittest.MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			},
 		},
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gittest"
 )
 
 func TestIsAbsoluteRevision(t *testing.T) {
@@ -36,7 +35,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 		wantCommitID api.CommitID
 	}{
 		"git cmd": {
-			repo:         gittest.MakeGitRepository(t, gitCommands...),
+			repo:         MakeGitRepository(t, gitCommands...),
 			branch:       "master",
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
@@ -67,7 +66,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		wantErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    gittest.MakeGitRepository(t, gitCommands...),
+			repo:    MakeGitRepository(t, gitCommands...),
 			branch:  "doesntexist",
 			wantErr: gitserver.IsRevisionNotFound,
 		},
@@ -99,7 +98,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 		wantCommitID api.CommitID
 	}{
 		"git cmd": {
-			repo:         gittest.MakeGitRepository(t, gitCommands...),
+			repo:         MakeGitRepository(t, gitCommands...),
 			tag:          "t",
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
@@ -130,7 +129,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		wantErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    gittest.MakeGitRepository(t, gitCommands...),
+			repo:    MakeGitRepository(t, gitCommands...),
 			tag:     "doesntexist",
 			wantErr: gitserver.IsRevisionNotFound,
 		},

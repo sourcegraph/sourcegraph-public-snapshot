@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gittest"
 )
 
 func TestGetObject(t *testing.T) {
@@ -23,7 +22,7 @@ func TestGetObject(t *testing.T) {
 		wantObjectType git.ObjectType
 	}{
 		"basic": {
-			repo:           gittest.MakeGitRepository(t, gitCommands...),
+			repo:           MakeGitRepository(t, gitCommands...),
 			objectName:     "e86b31b62399cfc86199e8b6e21a35e76d0e8b5e^{tree}",
 			wantOID:        "a1dffc7a64c0b2d395484bf452e9aeb1da3a18f2",
 			wantObjectType: git.ObjectTypeTree,
