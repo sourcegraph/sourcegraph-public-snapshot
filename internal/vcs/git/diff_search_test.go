@@ -43,6 +43,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 		want: []*git.LogCommitSearchResult{{
 			Commit: git.Commit{
 				ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
+				Author:    git.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "branch1",
 				Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
