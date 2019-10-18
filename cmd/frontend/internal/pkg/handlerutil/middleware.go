@@ -2,7 +2,6 @@ package handlerutil
 
 import (
 	"net/http"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -36,14 +35,6 @@ func CSRFMiddleware(next http.Handler, isSecure func() bool) http.Handler {
 	v.Store(newHandler(isSecure()))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 🚨 SECURITY: this is to let POST and PUT requests through that are intended for the grafana instance
-		// running behind a reverse proxy (see cmd/frontend/internal/app/debug.go).
-		// this is ok because it is contained to grafana and grafana itself uses CSRF cookies
-		// with SameSite=lax attribute
-		if strings.HasPrefix(r.URL.Path, "/-/debug/grafana") {
-			next.ServeHTTP(w, r)
-			return
-		}
 		h, secure := v.Load().(handler), isSecure()
 		if secure != h.secure {
 			mu.Lock()
