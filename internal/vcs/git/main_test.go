@@ -57,7 +57,11 @@ func TestMain(m *testing.M) {
 		return []string{l.Addr().String()}
 	}
 
-	os.Exit(m.Run())
+	code := m.Run()
+
+	_ = os.RemoveAll(root)
+
+	os.Exit(code)
 }
 
 func AsJSON(v interface{}) string {
