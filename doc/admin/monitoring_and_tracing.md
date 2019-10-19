@@ -9,7 +9,7 @@ Site admins can view the monitoring dashboards on a Sourcegraph instance:
 1. Go to **User menu > Site admin**.
 1. Open the **Monitoring** page (last menu item in the left sidebar). (The URL is `https://sourcegraph.example.com/-/debug/grafana/?orgId=1`.)
 
-We are in the process of finalizing the set of provisioned dashboards and [documenting](monitoring_dashboards/index.md) them. 
+See [descriptions of the Grafana dashboards provisioned by Sourcegraph](monitoring_dashboards/index.md). 
 
 > NOTE: We are running Grafana behind a reverse proxy. Grafana is not fully integrated with our CSRF protection so there is a known issue: when the Grafana
 > web app in the browser makes POST or PUT requests Sourcegraph's CSRF protection gets triggered and responds with a "invalid CSRF token" 403 response.
