@@ -1,5 +1,25 @@
 # Monitoring and tracing
 
+## Builtin monitoring
+
+A Sourcegraph instance includes [Prometheus](https://prometheus.io/) for monitoring and [Grafana](https://grafana.com) for monitoring dashboards.
+ 
+Site admins can view the monitoring dashboards on a Sourcegraph instance:
+
+1. Go to **User menu > Site admin**.
+1. Open the **Monitoring** page (last menu item in the left sidebar). (The URL is `https://sourcegraph.example.com/-/debug/grafana/?orgId=1`.)
+
+See [descriptions of the Grafana dashboards provisioned by Sourcegraph](monitoring_dashboards/index.md). 
+
+> NOTE: We are running Grafana behind a reverse proxy. Grafana is not fully integrated with our CSRF protection so there is a known issue: when the Grafana
+> web app in the browser makes POST or PUT requests Sourcegraph's CSRF protection gets triggered and responds with a "invalid CSRF token" 403 response.
+> We are working to solve [this issue](https://github.com/sourcegraph/sourcegraph/issues/6075). As a workaround, site admins can connect to Grafana directly to make changes to the dashboards. 
+>If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), 
+>see "[Kubernetes cluster administrator guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/admin-guide.md)" and
+> "[Grafana README](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/grafana/README.md)" for more information.
+
+## Additional monitoring and tracing systems
+
 Sourcegraph supports forwarding internal performance and debugging information to many monitoring and tracing systems.
 
 - [Jaeger](https://github.com/jaegertracing/jaeger#readme) tracing, configured via the `useJaeger` properties in [critical configuration](config/critical_config.md)
@@ -7,7 +27,6 @@ Sourcegraph supports forwarding internal performance and debugging information t
 - [Sentry](https://sentry.io) logging, configured via the `sentry` property in [critical configuration](config/critical_config.md)
 - [Go net/trace](#viewing-go-net-trace-information)
 - [Honeycomb](https://honeycomb.io/)
-- [Prometheus](https://prometheus.io/) and alerting systems that integrate with it
 
 If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), see "[Kubernetes cluster administrator guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/admin-guide.md)" and "[Prometheus README](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/prometheus/README.md)" for more information.
 
