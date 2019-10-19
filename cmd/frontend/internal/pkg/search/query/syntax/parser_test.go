@@ -7,7 +7,7 @@ import (
 
 func TestParser(t *testing.T) {
 	tests := map[string]struct {
-		wantExpr   []*Expr
+		wantExpr   ParseTree
 		wantString string
 		wantErr    *ParseError
 	}{
@@ -93,19 +93,19 @@ func TestParser(t *testing.T) {
 			if err != nil {
 				return
 			}
-			if len(query.Expr) == 0 {
-				query.Expr = []*Expr{}
+			if len(query) == 0 {
+				query = []*Expr{}
 			}
-			for _, expr := range query.Expr {
+			for _, expr := range query {
 				expr.Pos = 0
 			}
-			if !reflect.DeepEqual(query.Expr, test.wantExpr) {
-				t.Errorf("expr: %s\ngot  %v\nwant %v", input, query.Expr, test.wantExpr)
+			if !reflect.DeepEqual(query, test.wantExpr) {
+				t.Errorf("expr: %s\ngot  %v\nwant %v", input, query, test.wantExpr)
 			}
-			if test.wantString == "" && len(query.Expr) > 0 {
+			if test.wantString == "" && len(query) > 0 {
 				test.wantString = input
 			}
-			if exprString := ExprString(query.Expr); exprString != test.wantString {
+			if exprString := ExprString(query); exprString != test.wantString {
 				t.Errorf("expr string: %s\ngot  %s\nwant %s", input, exprString, test.wantString)
 			}
 		})
@@ -119,34 +119,30 @@ func TestParseAllowingErrors(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *ParseTree
+		want ParseTree
 	}{
 		{
 			name: "empty",
 			args: args{input: ""},
-			want: &ParseTree{Expr: nil},
+			want: nil,
 		},
 		{
 			name: "a",
 			args: args{input: "a"},
-			want: &ParseTree{
-				Expr: []*Expr{
-					{
-						Value:     "a",
-						ValueType: TokenLiteral,
-					},
+			want: []*Expr{
+				{
+					Value:     "a",
+					ValueType: TokenLiteral,
 				},
 			},
 		},
 		{
 			name: ":=",
 			args: args{input: ":="},
-			want: &ParseTree{
-				Expr: []*Expr{
-					{
-						Value:     ":=",
-						ValueType: TokenError,
-					},
+			want: []*Expr{
+				{
+					Value:     ":=",
+					ValueType: TokenError,
 				},
 			},
 		},

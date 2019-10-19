@@ -100,17 +100,17 @@ func ParseAndCheck(input string) (*Query, error) {
 }
 
 func parseAndCheck(conf *types.Config, input string) (*Query, error) {
-	syntaxQuery, err := syntax.Parse(input)
+	parseTree, err := syntax.Parse(input)
 	if err != nil {
 		return nil, err
 	}
 
 	// We want to make query fields case insensitive
-	for _, expr := range syntaxQuery.Expr {
+	for _, expr := range parseTree {
 		expr.Field = strings.ToLower(expr.Field)
 	}
 
-	checkedQuery, err := conf.Check(syntaxQuery)
+	checkedQuery, err := conf.Check(parseTree)
 	if err != nil {
 		return nil, err
 	}
