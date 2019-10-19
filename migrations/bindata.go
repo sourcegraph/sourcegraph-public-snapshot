@@ -46,6 +46,8 @@
 // 1528395603_add_patterntype_to_saved_searches.up.sql (87B)
 // 1528395604_lsif_multi_project.down.sql (598B)
 // 1528395604_lsif_multi_project.up.sql (3.798kB)
+// 1528395605_drop_recent_searches.down.sql (107B)
+// 1528395605_drop_recent_searches.up.sql (103B)
 
 package migrations
 
@@ -1034,6 +1036,46 @@ func _1528395604_lsif_multi_projectUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395605_drop_recent_searchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xc7\xb1\x0a\x02\x31\x0c\x06\xe0\xbd\x4f\xf1\x8f\x0a\x56\x70\x76\x94\xdb\xdc\xbc\x17\x48\x73\xbf\x9c\x58\x52\x48\x52\x9f\x5f\xb8\xf1\xab\x15\xeb\x4e\x38\x95\x96\x08\x8a\xeb\xce\xc0\x9b\x92\xd3\x89\x4f\xc0\xf8\xa3\xa3\x91\x86\x19\xdc\x2e\xa5\x56\xd8\x80\x91\x1b\x72\xc0\x47\xef\x68\xa2\xdf\x03\x54\xa7\x24\x91\xd2\x3a\x4f\x71\xbe\x96\xd7\xf2\x5c\x1e\x2b\x6e\xf7\xf2\x0f\x00\x00\xff\xff\x8f\x18\xdf\xf4\x6b\x00\x00\x00")
+
+func _1528395605_drop_recent_searchesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395605_drop_recent_searchesDownSql,
+		"1528395605_drop_recent_searches.down.sql",
+	)
+}
+
+func _1528395605_drop_recent_searchesDownSql() (*asset, error) {
+	bytes, err := _1528395605_drop_recent_searchesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395605_drop_recent_searches.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfd, 0xc8, 0x10, 0x6f, 0xc4, 0x8, 0xf5, 0x86, 0x4a, 0x29, 0x5e, 0x2b, 0x56, 0x4f, 0x36, 0x1a, 0x5e, 0xd2, 0x37, 0x40, 0x59, 0x73, 0x47, 0x9c, 0xd9, 0x9, 0xb0, 0xed, 0x6, 0x12, 0xee, 0x24}}
+	return a, nil
+}
+
+var __1528395605_drop_recent_searchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x4d\x4e\xcd\x2b\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\xb6\x86\xa8\x0a\x76\x0d\x0c\x75\xf5\x73\xc6\xa3\x30\x3e\x33\x25\xbe\x38\xb5\xd0\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x91\xba\x4b\x2c\x67\x00\x00\x00")
+
+func _1528395605_drop_recent_searchesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395605_drop_recent_searchesUpSql,
+		"1528395605_drop_recent_searches.up.sql",
+	)
+}
+
+func _1528395605_drop_recent_searchesUpSql() (*asset, error) {
+	bytes, err := _1528395605_drop_recent_searchesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395605_drop_recent_searches.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0x89, 0xd2, 0xea, 0x1e, 0xd3, 0xa, 0x44, 0xf1, 0x2d, 0x35, 0x54, 0x38, 0x6d, 0x3c, 0x0, 0x1e, 0xe0, 0xb3, 0x50, 0xbc, 0x8, 0xe8, 0x67, 0xc9, 0x8c, 0xcd, 0x2a, 0x45, 0xba, 0x5d, 0xad}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1216,6 +1258,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395604_lsif_multi_project.down.sql": _1528395604_lsif_multi_projectDownSql,
 
 	"1528395604_lsif_multi_project.up.sql": _1528395604_lsif_multi_projectUpSql,
+
+	"1528395605_drop_recent_searches.down.sql": _1528395605_drop_recent_searchesDownSql,
+
+	"1528395605_drop_recent_searches.up.sql": _1528395605_drop_recent_searchesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1305,6 +1351,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395603_add_patterntype_to_saved_searches.up.sql":                      {_1528395603_add_patterntype_to_saved_searchesUpSql, map[string]*bintree{}},
 	"1528395604_lsif_multi_project.down.sql":                                   {_1528395604_lsif_multi_projectDownSql, map[string]*bintree{}},
 	"1528395604_lsif_multi_project.up.sql":                                     {_1528395604_lsif_multi_projectUpSql, map[string]*bintree{}},
+	"1528395605_drop_recent_searches.down.sql":                                 {_1528395605_drop_recent_searchesDownSql, map[string]*bintree{}},
+	"1528395605_drop_recent_searches.up.sql":                                   {_1528395605_drop_recent_searchesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
