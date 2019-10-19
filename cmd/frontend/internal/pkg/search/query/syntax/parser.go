@@ -33,7 +33,7 @@ type context struct {
 //   expr      := fieldExpr | lit | quoted | pattern
 //   fieldExpr := lit ":" value
 //   value     := lit | quoted
-func Parse(input string) (*ParseTree, error) {
+func Parse(input string) (ParseTree, error) {
 	tokens := Scan(input)
 	p := parser{tokens: tokens}
 	ctx := context{field: ""}
@@ -41,12 +41,12 @@ func Parse(input string) (*ParseTree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ParseTree{Expr: exprs}, nil
+	return exprs, nil
 }
 
 // ParseAllowingErrors works like Parse except that any errors are
 // returned as TokenError within the Expr slice of the returned parse tree.
-func ParseAllowingErrors(input string) *ParseTree {
+func ParseAllowingErrors(input string) ParseTree {
 	tokens := Scan(input)
 	p := parser{tokens: tokens, allowErrors: true}
 	ctx := context{field: ""}
@@ -54,7 +54,7 @@ func ParseAllowingErrors(input string) *ParseTree {
 	if err != nil {
 		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
 	}
-	return &ParseTree{Expr: exprs}
+	return exprs
 }
 
 // peek returns the next token without consuming it. Peeking beyond the end of
