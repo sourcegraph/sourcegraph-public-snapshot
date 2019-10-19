@@ -34,7 +34,7 @@ type Repository struct {
 	IsPrivate        bool   // whether the repository is private
 	IsFork           bool   // whether the repository is a fork of another repository
 	IsArchived       bool   // whether the repository is archived on the code host
-	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this.
+	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 }
 
 // repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
@@ -236,6 +236,12 @@ func (c *Client) addRepositoriesToCache(token string, repos []*Repository) {
 	}
 }
 
+type restRepositoryPermissions struct {
+	Admin bool `json:"admin"`
+	Push  bool `json:"push"`
+	Pull  bool `json:"pull"`
+}
+
 type restRepository struct {
 	ID          string `json:"node_id"` // GraphQL ID
 	DatabaseID  int64  `json:"id"`
@@ -245,6 +251,7 @@ type restRepository struct {
 	Private     bool
 	Fork        bool
 	Archived    bool
+	Permissions restRepositoryPermissions `json:"permissions"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -267,15 +274,31 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
 	return &Repository{
-		ID:            restRepo.ID,
-		DatabaseID:    restRepo.DatabaseID,
-		NameWithOwner: restRepo.FullName,
-		Description:   restRepo.Description,
-		URL:           restRepo.HTMLURL,
-		IsPrivate:     restRepo.Private,
-		IsFork:        restRepo.Fork,
-		IsArchived:    restRepo.Archived,
+		ID:               restRepo.ID,
+		DatabaseID:       restRepo.DatabaseID,
+		NameWithOwner:    restRepo.FullName,
+		Description:      restRepo.Description,
+		URL:              restRepo.HTMLURL,
+		IsPrivate:        restRepo.Private,
+		IsFork:           restRepo.Fork,
+		IsArchived:       restRepo.Archived,
+		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 	}
+}
+
+// convertRestRepoPermissions converts repo information returned by the rest API
+// to a standard format.
+func convertRestRepoPermissions(restRepoPermissions restRepositoryPermissions) string {
+	if restRepoPermissions.Admin {
+		return "ADMIN"
+	}
+	if restRepoPermissions.Push {
+		return "WRITE"
+	}
+	if restRepoPermissions.Pull {
+		return "READ"
+	}
+	return ""
 }
 
 // getPublicRepositories returns a page of public repositories that were created

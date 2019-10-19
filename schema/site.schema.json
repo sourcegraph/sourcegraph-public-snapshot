@@ -78,16 +78,6 @@
       "pattern": "^((https?:\\/\\/[\\w-\\.]+)( https?:\\/\\/[\\w-\\.]+)*)|\\*$",
       "group": "Security"
     },
-    "lsifVerificationGithubToken": {
-      "description": "The GitHub token that is used to verify that a user owns a repository.",
-      "type": "string",
-      "group": "Security"
-    },
-    "lsifUploadSecret": {
-      "description": "Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.",
-      "type": "string",
-      "group": "Security"
-    },
     "lsifEnforceAuth": {
       "description": "Whether or not LSIF uploads will be blocked unless a valid LSIF upload token is provided.",
       "type": "boolean",

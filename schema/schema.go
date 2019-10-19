@@ -884,10 +884,6 @@ type SiteConfiguration struct {
 	GithubClientSecret string `json:"githubClientSecret,omitempty"`
 	// LsifEnforceAuth description: Whether or not LSIF uploads will be blocked unless a valid LSIF upload token is provided.
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
-	// LsifUploadSecret description: Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.
-	LsifUploadSecret string `json:"lsifUploadSecret,omitempty"`
-	// LsifVerificationGithubToken description: The GitHub token that is used to verify that a user owns a repository.
-	LsifVerificationGithubToken string `json:"lsifVerificationGithubToken,omitempty"`
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
