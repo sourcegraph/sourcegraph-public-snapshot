@@ -2,14 +2,12 @@
 
 When you click on **Site admin > Monitoring** you will see the Grafana Home Dashboard.
 
-![Home Dashboard](img/homeDashboard.png)
+![Home Dashboard](https://storage.googleapis.com/sourcegraph-assets/GrafanaHomeDashboard.png)
 
 > NOTE: We are working on changing the default Home Dashboard to show useful summary metrics panels.
 
 Click on the grid symbol in the upper left side bar (marked by the red arrow in the image above) and choose "Manage" to
 get to the list of available dashboards.
-
-> NOTE: We are working on finalizing a set of dashboards and documentation on how to interpret them.
 
 Here are some of the dashboards in more detail:
 
