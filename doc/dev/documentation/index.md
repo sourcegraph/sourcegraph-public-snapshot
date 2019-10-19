@@ -46,8 +46,7 @@ There is no global index or nav, so all docs should be linked from their parent 
 
 - When you create a new directory, always start with an `index.md` file. Do not use another file name and **do not** create `README.md` files
 - **Do not** use special chars and spaces, or capital letters in file names, directory names, branch names, and anything that generates a path.
-- Max screenshot size: 100KB
-- We do not support videos (yet)
+- See [documentation style guide](style_guide.md#images) for images.
 
 #### General rules & best practices
 
