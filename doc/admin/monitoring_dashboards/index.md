@@ -27,7 +27,7 @@ and how long each command takes. It also has stats on the set of repositories pr
 
 Panels for CPU, memory, open file descriptors, number of goroutines and garbage collector stats.
 
-### Repoupdater to external services
+### repo-updater to external services
 
 Shows traffic to configured external services (code hosts). Dashboard has panels for Github, Gitlab and Bitbucket.
 
