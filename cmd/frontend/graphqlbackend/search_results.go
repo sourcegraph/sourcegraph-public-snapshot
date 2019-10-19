@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
@@ -463,12 +462,6 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	// Log the query if not too many have piled up to be logged.
-	select {
-	case bg.QueryLogChan <- bg.QueryLogItem{Query: r.rawQuery(), Err: err}:
-	default:
 	}
 
 	return rr, nil
