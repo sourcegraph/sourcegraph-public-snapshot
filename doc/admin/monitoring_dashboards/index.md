@@ -1,4 +1,4 @@
-# Grafana Dashboards
+# Grafana dashboards
 
 When you click on **Site admin > Monitoring** you will see the Grafana Home Dashboard.
 
