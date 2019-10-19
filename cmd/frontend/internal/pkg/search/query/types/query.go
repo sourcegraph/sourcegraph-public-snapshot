@@ -11,7 +11,7 @@ import (
 
 // A Query is the typechecked representation of a search query.
 type Query struct {
-	Syntax *syntax.Query       // the query syntax
+	Syntax *syntax.ParseTree   // the query parse tree
 	Fields map[string][]*Value // map of field name -> values
 }
 

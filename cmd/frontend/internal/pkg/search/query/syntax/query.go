@@ -7,29 +7,29 @@ import (
 	"strings"
 )
 
-// A Query contains the parse tree of a query.
-type Query struct {
-	Input string  // the original input query string
-	Expr  []*Expr // expressions in this query
+// The parse tree for search input.
+type ParseTree struct {
+	Input string  // the original input search string
+	Expr  []*Expr // expressions in this tree
 }
 
-func (q *Query) String() string {
-	return ExprString(q.Expr)
+func (p *ParseTree) String() string {
+	return ExprString(p.Expr)
 }
 
-// WithErrorsQuoted converts a query like `f:foo b(ar` to `f:foo "b(ar"`.
-func (q *Query) WithErrorsQuoted() *Query {
-	q2 := &Query{}
-	for _, e := range q.Expr {
+// WithErrorsQuoted converts a search input like `f:foo b(ar` to `f:foo "b(ar"`.
+func (p *ParseTree) WithErrorsQuoted() *ParseTree {
+	p2 := &ParseTree{}
+	for _, e := range p.Expr {
 		e2 := e.WithErrorsQuoted()
-		q2.Expr = append(q2.Expr, &e2)
+		p2.Expr = append(p2.Expr, &e2)
 	}
-	return q2
+	return p2
 }
 
-// An Expr describes an expression in a query.
+// An Expr describes an expression in the parse tree.
 type Expr struct {
-	Pos       int       // the starting character position of the query expression
+	Pos       int       // the starting character position of the expression
 	Not       bool      // the expression is negated (e.g., -term or -field:term)
 	Field     string    // the field that this expression applies to
 	Value     string    // the raw field value
@@ -78,7 +78,7 @@ func (e Expr) WithErrorsQuoted() Expr {
 	return e2
 }
 
-// ExprString returns the query string that parses to expr.
+// ExprString returns the string that parses to expr.
 func ExprString(expr []*Expr) string {
 	s := make([]string, len(expr))
 	for i, e := range expr {

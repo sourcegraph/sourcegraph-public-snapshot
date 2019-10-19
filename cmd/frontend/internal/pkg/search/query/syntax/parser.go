@@ -23,7 +23,7 @@ type context struct {
 	field string // name of the field currently in scope (or "")
 }
 
-// Parse parses the query and returns its parse tree. Returned errors are of
+// Parse parses the input string and returns its parse tree. Returned errors are of
 // type *ParseError, which includes the error position and message.
 //
 // BNF-ish query syntax:
@@ -33,7 +33,7 @@ type context struct {
 //   expr      := fieldExpr | lit | quoted | pattern
 //   fieldExpr := lit ":" value
 //   value     := lit | quoted
-func Parse(input string) (*Query, error) {
+func Parse(input string) (*ParseTree, error) {
 	tokens := Scan(input)
 	p := parser{tokens: tokens}
 	ctx := context{field: ""}
@@ -41,12 +41,12 @@ func Parse(input string) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Query{Expr: exprs, Input: input}, nil
+	return &ParseTree{Expr: exprs, Input: input}, nil
 }
 
 // ParseAllowingErrors works like Parse except that any errors are
-// returned as TokenError within the Expr slice of the returned Query.
-func ParseAllowingErrors(input string) *Query {
+// returned as TokenError within the Expr slice of the returned parse tree.
+func ParseAllowingErrors(input string) *ParseTree {
 	tokens := Scan(input)
 	p := parser{tokens: tokens, allowErrors: true}
 	ctx := context{field: ""}
@@ -54,7 +54,7 @@ func ParseAllowingErrors(input string) *Query {
 	if err != nil {
 		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
 	}
-	return &Query{Expr: exprs, Input: input}
+	return &ParseTree{Expr: exprs, Input: input}
 }
 
 // peek returns the next token without consuming it. Peeking beyond the end of
