@@ -13,7 +13,7 @@ We are in the process of finalizing the set of provisioned dashboards and [docum
 
 > NOTE: We are running Grafana behind a reverse proxy. Grafana is not fully integrated with our CSRF protection so there is a known issue: when the Grafana
 > web app in the browser makes POST or PUT requests Sourcegraph's CSRF protection gets triggered and responds with a "invalid CSRF token" 403 response.
-> We are working to solve [this issue](https://github.com/sourcegraph/sourcegraph/issues/6075). As a workaround site admins can connect to Grafana directly to make changes to the dashboards. 
+> We are working to solve [this issue](https://github.com/sourcegraph/sourcegraph/issues/6075). As a workaround, site admins can connect to Grafana directly to make changes to the dashboards. 
 >If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), 
 >see "[Kubernetes cluster administrator guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/admin-guide.md)" and
 > "[Grafana README](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/grafana/README.md)" for more information.
