@@ -355,8 +355,8 @@ func omitQueryFields(r *searchResolver, field string) string {
 }
 
 func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
-	expr2 := make([]*syntax.Expr, 0, len(query.Syntax.Expr))
-	for _, e := range query.Syntax.Expr {
+	expr2 := make([]*syntax.Expr, 0, len(query.ParseTree.Expr))
+	for _, e := range query.ParseTree.Expr {
 		if e.Field == field {
 			continue
 		}
@@ -366,8 +366,8 @@ func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
 }
 
 func omitQuotes(query *query.Query) []*syntax.Expr {
-	result := make([]*syntax.Expr, 0, len(query.Syntax.Expr))
-	for _, e := range query.Syntax.Expr {
+	result := make([]*syntax.Expr, 0, len(query.ParseTree.Expr))
+	for _, e := range query.ParseTree.Expr {
 		cpy := *e
 		e = &cpy
 		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
@@ -409,8 +409,8 @@ func pathParentsByFrequency(paths []string) []string {
 // guaranteed to always return the simplest query.
 func addQueryRegexpField(query *query.Query, field, pattern string) []*syntax.Expr {
 	// Copy query expressions.
-	expr := make([]*syntax.Expr, len(query.Syntax.Expr))
-	for i, e := range query.Syntax.Expr {
+	expr := make([]*syntax.Expr, len(query.ParseTree.Expr))
+	for i, e := range query.ParseTree.Expr {
 		tmp := *e
 		expr[i] = &tmp
 	}

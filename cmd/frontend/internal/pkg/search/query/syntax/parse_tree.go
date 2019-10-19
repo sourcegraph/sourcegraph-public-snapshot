@@ -9,8 +9,7 @@ import (
 
 // The parse tree for search input.
 type ParseTree struct {
-	Input string  // the original input search string
-	Expr  []*Expr // expressions in this tree
+	Expr []*Expr // expressions in this tree
 }
 
 func (p *ParseTree) String() string {
