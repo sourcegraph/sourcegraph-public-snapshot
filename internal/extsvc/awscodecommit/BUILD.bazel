@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "codehost.go",
+        "doc.go",
+        "repos.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/rcache:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws/awserr:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//aws/endpoints:go_default_library",
+        "@com_github_aws_aws_sdk_go_v2//service/codecommit:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+    ],
+)

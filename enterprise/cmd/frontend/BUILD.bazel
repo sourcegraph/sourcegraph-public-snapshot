@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/frontend/authz:go_default_library",
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/graphqlbackend:go_default_library",
+        "//cmd/frontend/hooks:go_default_library",
+        "//cmd/frontend/shared:go_default_library",
+        "//cmd/repo-updater/repos:go_default_library",
+        "//enterprise/cmd/frontend/auth:go_default_library",
+        "//enterprise/cmd/frontend/db:go_default_library",
+        "//enterprise/cmd/frontend/internal/authz:go_default_library",
+        "//enterprise/cmd/frontend/internal/graphqlbackend:go_default_library",
+        "//enterprise/cmd/frontend/internal/licensing:go_default_library",
+        "//enterprise/cmd/frontend/internal/registry:go_default_library",
+        "//enterprise/pkg/a8n:go_default_library",
+        "//enterprise/pkg/a8n/resolvers:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/db/dbconn:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "frontend",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

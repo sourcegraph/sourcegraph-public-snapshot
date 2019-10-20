@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["pubsubutil.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env:go_default_library",
+        "@com_google_cloud_go//pubsub:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)

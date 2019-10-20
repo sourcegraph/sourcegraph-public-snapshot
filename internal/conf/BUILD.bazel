@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "auth.go",
+        "client.go",
+        "computed.go",
+        "conf.go",
+        "diff.go",
+        "helpers.go",
+        "parse.go",
+        "platform.go",
+        "server.go",
+        "store.go",
+        "validate.go",
+        "validate_custom.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/conf",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/conf/confdefaults:go_default_library",
+        "//internal/conf/conftypes:go_default_library",
+        "//internal/jsonc:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_sourcegraph_jsonx//:go_default_library",
+        "@com_github_xeipuuv_gojsonschema//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "auth_test.go",
+        "client_test.go",
+        "computed_test.go",
+        "diff_test.go",
+        "platform_test.go",
+        "validate_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/envvar:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/conf/confdefaults:go_default_library",
+        "//internal/conf/conftypes:go_default_library",
+        "//schema:go_default_library",
+    ],
+)

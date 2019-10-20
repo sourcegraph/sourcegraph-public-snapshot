@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "conf_parse.go",
+        "globals.go",
+        "netrc.go",
+        "nginx.go",
+        "postgres.go",
+        "redis.go",
+        "shared.go",
+        "ssh.go",
+        "zoekt.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/server/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/server/internal/goreman:go_default_library",
+        "//cmd/server/shared/assets:go_default_library",
+        "@com_github_docker_docker//api/types:go_default_library",
+        "@com_github_docker_docker//api/types/container:go_default_library",
+        "@com_github_docker_docker//client:go_default_library",
+        "@com_github_docker_docker//pkg/stdcopy:go_default_library",
+        "@com_github_joho_godotenv//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["nginx_test.go"],
+    embed = [":go_default_library"],
+)

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "inventory.go",
+        "tree.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_src_d_enry_v2//:go_default_library",
+        "@com_github_src_d_enry_v2//data:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "inventory_test.go",
+        "tree_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/vcs/util:go_default_library",
+        "@com_github_src_d_enry_v2//:go_default_library",
+    ],
+)

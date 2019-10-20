@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["hubspotutil.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env:go_default_library",
+        "//internal/hubspot:go_default_library",
+    ],
+)

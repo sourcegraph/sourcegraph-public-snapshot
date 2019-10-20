@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["tracer.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/tracer",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/trace:go_default_library",
+        "@com_github_fatih_color//:go_default_library",
+        "@com_github_lightstep_lightstep_tracer_go//:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_uber_jaeger_client_go//:go_default_library",
+        "@com_github_uber_jaeger_client_go//config:go_default_library",
+        "@com_github_uber_jaeger_client_go//log:go_default_library",
+        "@com_github_uber_jaeger_lib//metrics:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+        "@org_uber_go_automaxprocs//maxprocs:go_default_library",
+    ],
+)

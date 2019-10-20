@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repoupdater",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/gitserver:go_default_library",
+        "//internal/metrics:go_default_library",
+        "//internal/repoupdater/protocol:go_default_library",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_opentracing_opentracing_go//ext:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

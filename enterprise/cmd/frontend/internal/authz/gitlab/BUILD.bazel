@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cache.go",
+        "gitlab_oauth.go",
+        "gitlab_sudo.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth/providers:go_default_library",
+        "//cmd/frontend/authz:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//internal/extsvc/gitlab:go_default_library",
+        "//internal/rcache:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "common_test.go",
+        "gitlab_oauth_test.go",
+        "gitlab_sudo_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/auth/providers:go_default_library",
+        "//cmd/frontend/authz:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//internal/extsvc/gitlab:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_davecgh_go_spew//spew:go_default_library",
+        "@com_github_sergi_go_diff//diffmatchpatch:go_default_library",
+        "@org_golang_x_oauth2//:go_default_library",
+    ],
+)

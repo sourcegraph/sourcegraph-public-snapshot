@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["searchquery.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery",
+    visibility = ["//cmd/frontend:__subpackages__"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["searchquery_test.go"],
+    embed = [":go_default_library"],
+)

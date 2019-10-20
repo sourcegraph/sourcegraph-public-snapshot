@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/endpoint:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/symbols/protocol:go_default_library",
+        "@com_github_neelance_parallel//:go_default_library",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_opentracing_opentracing_go//ext:go_default_library",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_golang_x_net//context/ctxhttp:go_default_library",
+    ],
+)

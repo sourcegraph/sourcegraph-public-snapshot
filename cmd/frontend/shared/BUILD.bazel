@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["frontend.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/internal/cli:go_default_library",
+        "//cmd/frontend/registry:go_default_library",
+        "//internal/env:go_default_library",
+    ],
+)

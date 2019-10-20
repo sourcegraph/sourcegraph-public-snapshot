@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["text.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/backend",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@com_github_google_zoekt//:go_default_library",
+        "@com_github_google_zoekt//query:go_default_library",
+    ],
+)

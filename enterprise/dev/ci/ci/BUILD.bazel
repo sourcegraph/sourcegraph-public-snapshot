@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "helpers.go",
+        "pipeline.go",
+        "pipeline-steps.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/ci",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/buildkite:go_default_library",
+        "@com_github_hashicorp_go_multierror//:go_default_library",
+    ],
+)

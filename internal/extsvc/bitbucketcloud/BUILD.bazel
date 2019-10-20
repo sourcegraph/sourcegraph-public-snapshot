@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "codehost.go",
+        "testing.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/httpcli:go_default_library",
+        "//internal/httptestutil:go_default_library",
+        "//internal/metrics:go_default_library",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+        "@org_golang_x_time//rate:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["client_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = ["@com_github_google_go_cmp//cmp:go_default_library"],
+)

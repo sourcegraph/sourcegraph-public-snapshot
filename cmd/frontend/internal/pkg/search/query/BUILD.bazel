@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "pattern_type.go",
+        "searchquery.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/internal/pkg/search/query/syntax:go_default_library",
+        "//cmd/frontend/internal/pkg/search/query/types:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "pattern_type_test.go",
+        "searchquery_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["//cmd/frontend/internal/pkg/search/query/types:go_default_library"],
+)

@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "retry.go",
+        "store.go",
+        "zipcache.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/diskcache:go_default_library",
+        "//internal/gitserver:go_default_library",
+        "//internal/mutablelimiter:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_opentracing_opentracing_go//ext:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@org_golang_x_sys//unix:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "retry_test.go",
+        "store_test.go",
+        "zipcache_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/gitserver:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

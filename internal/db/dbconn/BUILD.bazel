@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["dbconn.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/db/dbconn",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/db/dbutil:go_default_library",
+        "//internal/env:go_default_library",
+        "@com_github_gchaincl_sqlhooks//:go_default_library",
+        "@com_github_golang_migrate_migrate_v4//:go_default_library",
+        "@com_github_golang_migrate_migrate_v4//database/postgres:go_default_library",
+        "@com_github_golang_migrate_migrate_v4//source/go_bindata:go_default_library",
+        "@com_github_lib_pq//:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_opentracing_opentracing_go//ext:go_default_library",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)

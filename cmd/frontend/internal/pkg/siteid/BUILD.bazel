@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["siteid.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = ["//internal/db/globalstatedb:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["siteid_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/db/globalstatedb:go_default_library",
+    ],
+)

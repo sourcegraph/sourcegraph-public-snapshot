@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "config_watch.go",
+        "doc.go",
+        "middleware.go",
+        "provider.go",
+        "session.go",
+        "user.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/saml",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/auth:go_default_library",
+        "//cmd/frontend/auth/providers:go_default_library",
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/external/session:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_beevik_etree//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_russellhaering_gosaml2//:go_default_library",
+        "@com_github_russellhaering_gosaml2//types:go_default_library",
+        "@com_github_russellhaering_goxmldsig//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+        "@org_golang_x_net//context/ctxhttp:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "config_test.go",
+        "middleware_test.go",
+        "provider_test.go",
+        "user_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/auth:go_default_library",
+        "//cmd/frontend/auth/providers:go_default_library",
+        "//cmd/frontend/external/session:go_default_library",
+        "//enterprise/cmd/frontend/internal/licensing:go_default_library",
+        "//enterprise/pkg/license:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_beevik_etree//:go_default_library",
+        "@com_github_crewjam_saml//:go_default_library",
+        "@com_github_crewjam_saml//samlidp:go_default_library",
+        "@com_github_russellhaering_gosaml2//:go_default_library",
+        "@com_github_russellhaering_goxmldsig//:go_default_library",
+    ],
+)

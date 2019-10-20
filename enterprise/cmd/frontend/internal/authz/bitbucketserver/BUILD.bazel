@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "provider.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/authz:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/db/dbutil:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//internal/extsvc/bitbucketserver:go_default_library",
+        "//internal/trace:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_roaringbitmap_roaring//:go_default_library",
+        "@com_github_segmentio_fasthash//fnv1:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "integration_test.go",
+        "main_test.go",
+        "provider_test.go",
+        "store_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/authz:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//cmd/repo-updater/repos:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/db/dbtest:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//internal/extsvc/bitbucketserver:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_roaringbitmap_roaring//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)

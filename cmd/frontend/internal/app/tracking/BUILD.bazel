@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["tracking.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar:go_default_library",
+        "//internal/hubspot:go_default_library",
+        "//internal/hubspot/hubspotutil:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)

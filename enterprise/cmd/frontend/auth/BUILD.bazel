@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/auth:go_default_library",
+        "//cmd/frontend/external/app:go_default_library",
+        "//enterprise/cmd/frontend/auth/githuboauth:go_default_library",
+        "//enterprise/cmd/frontend/auth/gitlaboauth:go_default_library",
+        "//enterprise/cmd/frontend/auth/httpheader:go_default_library",
+        "//enterprise/cmd/frontend/auth/openidconnect:go_default_library",
+        "//enterprise/cmd/frontend/auth/saml:go_default_library",
+        "//internal/conf:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)

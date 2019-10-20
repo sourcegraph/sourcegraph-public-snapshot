@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "codehost.go",
+        "doc.go",
+        "mock.go",
+        "projects.go",
+        "repositories.go",
+        "user.go",
+        "users.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//internal/httpcli:go_default_library",
+        "//internal/metrics:go_default_library",
+        "//internal/ratelimit:go_default_library",
+        "//internal/rcache:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_peterhellberg_link//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@org_golang_x_oauth2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "projects_test.go",
+        "repositories_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/ratelimit:go_default_library",
+        "//internal/rcache:go_default_library",
+    ],
+)

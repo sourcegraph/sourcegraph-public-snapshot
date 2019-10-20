@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "graphql.go",
+        "invoices_graphql.go",
+        "licenses_db.go",
+        "licenses_graphql.go",
+        "mock_db.go",
+        "subscription_invoice_item_graphql.go",
+        "subscriptions_db.go",
+        "subscriptions_graphql.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/backend:go_default_library",
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/graphqlbackend:go_default_library",
+        "//cmd/frontend/graphqlbackend/graphqlutil:go_default_library",
+        "//enterprise/cmd/frontend/internal/dotcom/billing:go_default_library",
+        "//enterprise/cmd/frontend/internal/licensing:go_default_library",
+        "//enterprise/pkg/license:go_default_library",
+        "//internal/db/dbconn:go_default_library",
+        "@com_github_google_uuid//:go_default_library",
+        "@com_github_graph_gophers_graphql_go//:go_default_library",
+        "@com_github_graph_gophers_graphql_go//relay:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stripe_stripe_go//:go_default_library",
+        "@com_github_stripe_stripe_go//customer:go_default_library",
+        "@com_github_stripe_stripe_go//event:go_default_library",
+        "@com_github_stripe_stripe_go//invoice:go_default_library",
+        "@com_github_stripe_stripe_go//plan:go_default_library",
+        "@com_github_stripe_stripe_go//sub:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "db_test.go",
+        "licenses_db_test.go",
+        "subscriptions_db_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "//internal/db/dbtesting:go_default_library",
+    ],
+)

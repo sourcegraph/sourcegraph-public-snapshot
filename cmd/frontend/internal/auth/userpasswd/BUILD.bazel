@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "config_watch.go",
+        "doc.go",
+        "handlers.go",
+        "provider.go",
+        "reset_password.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth/providers:go_default_library",
+        "//cmd/frontend/backend:go_default_library",
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/globals:go_default_library",
+        "//cmd/frontend/internal/app/tracking:go_default_library",
+        "//cmd/frontend/internal/pkg/suspiciousnames:go_default_library",
+        "//cmd/frontend/internal/session:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/errcode:go_default_library",
+        "//internal/hubspot/hubspotutil:go_default_library",
+        "//internal/txemail:go_default_library",
+        "//internal/txemail/txtypes:go_default_library",
+        "//schema:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["config_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/conf:go_default_library",
+        "//schema:go_default_library",
+    ],
+)

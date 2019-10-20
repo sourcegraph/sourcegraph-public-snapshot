@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["replace.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/replacer/replace",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/replacer/protocol:go_default_library",
+        "//internal/store:go_default_library",
+        "@com_github_gorilla_schema//:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_opentracing_opentracing_go//ext:go_default_library",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+        "@org_golang_x_net//trace:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["replace_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/replacer/protocol:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/gitserver:go_default_library",
+        "//internal/store:go_default_library",
+    ],
+)

@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "awscodecommit.go",
+        "bitbucketcloud.go",
+        "bitbucketserver.go",
+        "common.go",
+        "custom.go",
+        "github.go",
+        "gitlab.go",
+        "gitolite.go",
+        "other.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/conf/reposource",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/conf:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "awscodecommit_test.go",
+        "bitbucketcloud_test.go",
+        "bitbucketserver_test.go",
+        "common_test.go",
+        "custom_test.go",
+        "github_test.go",
+        "gitlab_test.go",
+        "gitolite_test.go",
+        "other_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//schema:go_default_library",
+    ],
+)

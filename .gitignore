@@ -134,3 +134,5 @@ libsqlite3-pcre.so
 .envrc
 
 comment.txt
+
+bazel-*

@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["repouri.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/repotrackutil",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/api:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["repouri_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//internal/api:go_default_library"],
+)

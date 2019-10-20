@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "buckets.go",
+        "httptrace.go",
+        "traceutil.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/trace",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/repotrackutil:go_default_library",
+        "//internal/version:go_default_library",
+        "@com_github_felixge_httpsnoop//:go_default_library",
+        "@com_github_getsentry_raven_go//:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_opentracing_opentracing_go//ext:go_default_library",
+        "@com_github_opentracing_opentracing_go//log:go_default_library",
+        "@com_github_prometheus_client_golang//prometheus:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+        "@org_golang_x_net//trace:go_default_library",
+    ],
+)

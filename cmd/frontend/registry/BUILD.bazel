@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "extension_bundle.go",
+        "extension_connection_graphql.go",
+        "extension_graphql.go",
+        "extension_manifest.go",
+        "extension_remote_graphql.go",
+        "extensions.go",
+        "extensions_helpers.go",
+        "http_api.go",
+        "registry_graphql.go",
+        "urls.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/registry",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/envvar:go_default_library",
+        "//cmd/frontend/globals:go_default_library",
+        "//cmd/frontend/graphqlbackend:go_default_library",
+        "//cmd/frontend/graphqlbackend/graphqlutil:go_default_library",
+        "//cmd/frontend/internal/app/ui/router:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/httputil:go_default_library",
+        "//internal/jsonc:go_default_library",
+        "//internal/registry:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_graph_gophers_graphql_go//:go_default_library",
+        "@com_github_graph_gophers_graphql_go//relay:go_default_library",
+        "@com_github_gregjones_httpcache//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["extensions_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/graphqlbackend:go_default_library",
+        "//internal/registry:go_default_library",
+    ],
+)

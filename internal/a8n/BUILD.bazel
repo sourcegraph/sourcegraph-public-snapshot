@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["types.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/a8n",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/extsvc/bitbucketserver:go_default_library",
+        "//internal/extsvc/github:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["types_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//internal/extsvc/github:go_default_library"],
+)

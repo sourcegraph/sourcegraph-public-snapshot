@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["jscontext.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth/providers:go_default_library",
+        "//cmd/frontend/envvar:go_default_library",
+        "//cmd/frontend/globals:go_default_library",
+        "//cmd/frontend/graphqlbackend:go_default_library",
+        "//cmd/frontend/internal/app/assetsutil:go_default_library",
+        "//cmd/frontend/internal/auth/userpasswd:go_default_library",
+        "//cmd/frontend/internal/pkg/siteid:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/db/globalstatedb:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/version:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_gorilla_csrf//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["jscontext_test.go"],
+    embed = [":go_default_library"],
+)

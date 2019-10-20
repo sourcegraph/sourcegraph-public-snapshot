@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "auth.go",
+        "non_public.go",
+        "redirect.go",
+        "user.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/auth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/internal/app/router:go_default_library",
+        "//cmd/frontend/internal/app/ui/router:go_default_library",
+        "//cmd/frontend/internal/pkg/suspiciousnames:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/errcode:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "auth_test.go",
+        "non_public_test.go",
+        "redirect_test.go",
+        "user_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/internal/app/ui:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/errcode:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_davecgh_go_spew//spew:go_default_library",
+        "@com_github_sergi_go_diff//diffmatchpatch:go_default_library",
+    ],
+)

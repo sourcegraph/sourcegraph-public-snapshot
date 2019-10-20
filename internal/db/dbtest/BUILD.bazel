@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["dbtest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/db/dbtest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/db/dbutil:go_default_library",
+        "@com_github_lib_pq//:go_default_library",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "parser.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags",
+    visibility = ["//cmd/symbols:__subpackages__"],
+    deps = [
+        "//internal/env:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["parser_test.go"],
+    embed = [":go_default_library"],
+)

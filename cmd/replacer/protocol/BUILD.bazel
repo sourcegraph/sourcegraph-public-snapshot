@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["replacer.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/replacer/protocol",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/gitserver:go_default_library",
+    ],
+)

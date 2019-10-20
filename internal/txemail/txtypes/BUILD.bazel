@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["types.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/txemail/txtypes",
+    visibility = ["//:__subpackages__"],
+    deps = ["@in_gopkg_jpoehls_gophermail_v0//:go_default_library"],
+)

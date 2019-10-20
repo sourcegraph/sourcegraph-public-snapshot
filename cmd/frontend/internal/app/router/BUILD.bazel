@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "helpers.go",
+        "old_tree_redirects.go",
+        "router.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/routevar:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["old_tree_redirects_test.go"],
+    embed = [":go_default_library"],
+)

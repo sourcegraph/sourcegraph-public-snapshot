@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "mutex.go",
+        "rcache.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/rcache",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf:go_default_library",
+        "//internal/redispool:go_default_library",
+        "@com_github_go_redsync_redsync//:go_default_library",
+        "@com_github_gomodule_redigo//redis:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "mutex_test.go",
+        "rcache_test.go",
+    ],
+    embed = [":go_default_library"],
+)

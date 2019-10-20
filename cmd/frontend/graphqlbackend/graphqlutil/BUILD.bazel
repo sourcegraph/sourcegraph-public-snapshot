@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "connection.go",
+        "doc.go",
+        "page_info.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "@com_github_graph_gophers_graphql_go//:go_default_library",
+    ],
+)

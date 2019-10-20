@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "env.go",
+        "repo_revs.go",
+        "search.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/internal/pkg/search/query:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/endpoint:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/gitserver:go_default_library",
+        "//internal/search/backend:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["repo_revs_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//internal/api:go_default_library"],
+)

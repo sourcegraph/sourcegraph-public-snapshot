@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "parser.go",
+        "query.go",
+        "scanner.go",
+        "tokentype_string.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax",
+    visibility = ["//cmd/frontend:__subpackages__"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "parser_test.go",
+        "query_test.go",
+        "scanner_test.go",
+    ],
+    embed = [":go_default_library"],
+)

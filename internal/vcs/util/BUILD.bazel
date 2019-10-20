@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "fileinfo.go",
+        "keyfile.go",
+        "keyfile_linux.go",
+        "keyfile_other.go",
+        "path.go",
+        "script.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/vcs/util",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["script_test.go"],
+    embed = [":go_default_library"],
+)

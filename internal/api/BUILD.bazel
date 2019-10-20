@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "api.go",
+        "httpapi_schema.go",
+        "internal_client.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/api",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/conftypes:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/jsonc:go_default_library",
+        "//internal/txemail/txtypes:go_default_library",
+        "//schema:go_default_library",
+        "@org_golang_x_net//context/ctxhttp:go_default_library",
+    ],
+)

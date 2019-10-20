@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "check_redis_cache_eviction_policy.go",
+        "delete_old_cache_data_in_redis.go",
+        "delete_old_event_logs_in_postgres.go",
+        "doc.go",
+        "migrate_saved_queries_to_db.go",
+        "migrate_settings_motd_to_notices.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/db/dbconn:go_default_library",
+        "//internal/jsonc:go_default_library",
+        "//internal/rcache:go_default_library",
+        "//internal/redispool:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_gomodule_redigo//redis:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_sourcegraph_jsonx//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "db_test.go",
+        "migrate_saved_queries_to_db_test.go",
+        "migrate_settings_motd_to_notices_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/db/dbtesting:go_default_library",
+    ],
+)

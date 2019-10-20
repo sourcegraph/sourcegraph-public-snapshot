@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "forbid_all.go",
+        "override.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth:go_default_library",
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/internal/session:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "config_test.go",
+        "forbid_all_test.go",
+        "override_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/auth:go_default_library",
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/internal/session:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/conf:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)

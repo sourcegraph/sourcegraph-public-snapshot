@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/gitserver/server:go_default_library",
+        "//internal/debugserver:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/tracer:go_default_library",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "gitserver",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["main_test.go"],
+    embed = [":go_default_library"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["migrate-vanity.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_fatih_astrewrite//:go_default_library",
+        "@org_golang_x_tools//imports:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "dev",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

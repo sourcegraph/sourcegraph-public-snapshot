@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/management-console",
+    visibility = ["//visibility:private"],
+    deps = ["//cmd/management-console/shared:go_default_library"],
+)
+
+go_binary(
+    name = "management-console",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

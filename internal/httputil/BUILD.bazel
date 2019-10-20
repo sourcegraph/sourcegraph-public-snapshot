@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cache.go",
+        "cache_control_transport.go",
+        "clone_request.go",
+        "logged_transport.go",
+        "respbuf.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/httputil",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env:go_default_library",
+        "//internal/rcache:go_default_library",
+        "@com_github_gregjones_httpcache//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["cache_control_transport_test.go"],
+    embed = [":go_default_library"],
+)

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "aws_codecommit_stringdata.go",
+        "bitbucket_cloud_stringdata.go",
+        "bitbucket_server_stringdata.go",
+        "critical_stringdata.go",
+        "extension_schema.go",
+        "gen.go",
+        "github_stringdata.go",
+        "gitlab_stringdata.go",
+        "gitolite_stringdata.go",
+        "other_external_service_stringdata.go",
+        "phabricator_stringdata.go",
+        "schema.go",
+        "settings_stringdata.go",
+        "site_stringdata.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/schema",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema:go_default_library"],
+)

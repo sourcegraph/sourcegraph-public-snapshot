@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cookie.go",
+        "middleware.go",
+        "provider.go",
+        "session.go",
+        "testutil.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/auth:go_default_library",
+        "//cmd/frontend/auth/providers:go_default_library",
+        "//cmd/frontend/external/session:go_default_library",
+        "//internal/actor:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_dghubble_gologin//:go_default_library",
+        "@com_github_dghubble_gologin//oauth2:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+        "@org_golang_x_oauth2//:go_default_library",
+    ],
+)

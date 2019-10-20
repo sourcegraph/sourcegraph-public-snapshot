@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "error.go",
+        "error_reporting.go",
+        "handler.go",
+        "middleware.go",
+        "repo.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/backend:go_default_library",
+        "//cmd/frontend/types:go_default_library",
+        "//internal/actor:go_default_library",
+        "//internal/api:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/errcode:go_default_library",
+        "//internal/routevar:go_default_library",
+        "//internal/trace:go_default_library",
+        "//internal/version:go_default_library",
+        "@com_github_getsentry_raven_go//:go_default_library",
+        "@com_github_gorilla_csrf//:go_default_library",
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_gorilla_schema//:go_default_library",
+        "@com_github_neelance_parallel//:go_default_library",
+        "@com_github_opentracing_opentracing_go//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)

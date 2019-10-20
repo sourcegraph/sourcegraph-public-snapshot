@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "customers.go",
+        "customers_graphql.go",
+        "db.go",
+        "doc.go",
+        "events_graphql.go",
+        "graphql.go",
+        "plans.go",
+        "plans_graphql.go",
+        "stripe.go",
+        "subscriptions.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/backend:go_default_library",
+        "//cmd/frontend/db:go_default_library",
+        "//cmd/frontend/external/app:go_default_library",
+        "//cmd/frontend/graphqlbackend:go_default_library",
+        "//enterprise/cmd/frontend/internal/licensing:go_default_library",
+        "//enterprise/pkg/license:go_default_library",
+        "//internal/db/dbconn:go_default_library",
+        "//internal/env:go_default_library",
+        "@com_github_hashicorp_go_multierror//:go_default_library",
+        "@com_github_keegancsmith_sqlf//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_stripe_stripe_go//:go_default_library",
+        "@com_github_stripe_stripe_go//customer:go_default_library",
+        "@com_github_stripe_stripe_go//plan:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "customers_test.go",
+        "db_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//cmd/frontend/db:go_default_library",
+        "//internal/db/dbtesting:go_default_library",
+        "//internal/errcode:go_default_library",
+    ],
+)

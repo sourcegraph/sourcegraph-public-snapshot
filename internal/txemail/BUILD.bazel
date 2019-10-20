@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "template.go",
+        "txemail.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/txemail",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf:go_default_library",
+        "//internal/txemail/txtypes:go_default_library",
+        "@com_github_microcosm_cc_bluemonday//:go_default_library",
+        "@com_github_shurcool_github_flavored_markdown//:go_default_library",
+        "@in_gopkg_jpoehls_gophermail_v0//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["template_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/txemail/txtypes:go_default_library",
+        "@in_gopkg_jpoehls_gophermail_v0//:go_default_library",
+    ],
+)

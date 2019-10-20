@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "assets.go",
+        "gen.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/management-console/assets",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_shurcool_httpfs//filter:go_default_library"],
+)

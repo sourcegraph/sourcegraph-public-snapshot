@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "header.go",
+        "iface.go",
+        "mock.go",
+        "perms.go",
+        "register.go",
+        "scopes.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/authz",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/frontend/types:go_default_library",
+        "//internal/extsvc:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "header_test.go",
+        "perms_test.go",
+    ],
+    embed = [":go_default_library"],
+)

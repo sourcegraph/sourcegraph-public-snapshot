@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["symbols.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/protocol",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/api:go_default_library"],
+)

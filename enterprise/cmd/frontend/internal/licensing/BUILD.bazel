@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "enforcement.go",
+        "features.go",
+        "licenseusercount.go",
+        "licensing.go",
+        "tags.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//enterprise/pkg/license:go_default_library",
+        "//internal/conf:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/errcode:go_default_library",
+        "//internal/redispool:go_default_library",
+        "@com_github_gomodule_redigo//redis:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+        "@org_golang_x_crypto//ssh:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "enforcement_test.go",
+        "features_test.go",
+        "tags_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["//enterprise/pkg/license:go_default_library"],
+)

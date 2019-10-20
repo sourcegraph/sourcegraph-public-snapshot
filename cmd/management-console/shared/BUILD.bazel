@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "main.go",
+        "validate.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/management-console/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/management-console/assets:go_default_library",
+        "//cmd/management-console/shared/internal/tlscertgen:go_default_library",
+        "//internal/db/confdb:go_default_library",
+        "//internal/db/dbconn:go_default_library",
+        "//internal/db/globalstatedb:go_default_library",
+        "//internal/debugserver:go_default_library",
+        "//internal/env:go_default_library",
+        "//internal/jsonc:go_default_library",
+        "//schema:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@in_gopkg_inconshreveable_log15_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "auth_test.go",
+        "validate_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["//internal/db/globalstatedb:go_default_library"],
+)
