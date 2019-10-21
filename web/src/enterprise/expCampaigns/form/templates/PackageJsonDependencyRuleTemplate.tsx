@@ -336,4 +336,18 @@ export const PackageJsonDependencyRuleTemplate: RuleTemplate = {
             },
         },
     },
+    suggestTitle: (workflow): string | undefined => {
+        if (!workflow || !workflow.variables) {
+            return undefined
+        }
+        const { packageName, matchVersion, action } = workflow.variables
+        const packageNameAndVersion = `${packageName || '<package>'}${matchVersion ? `@${matchVersion}` : ''}`
+        const campaignName =
+            action === 'ban'
+                ? `Ban npm dependency ${packageNameAndVersion}`
+                : `Upgrade npm dependency ${packageNameAndVersion} to ${
+                      action && action.requireVersion ? action.requireVersion : '<version>'
+                  }`
+        return campaignName
+    },
 }

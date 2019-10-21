@@ -37,7 +37,11 @@ const LOADING = 'loading' as const
  */
 export const CampaignPreview: React.FunctionComponent<Props> = ({ data, className = '', ...props }) => {
     const [query, onQueryChange, locationWithQuery] = useQueryParameter(props)
-    const [campaignPreview, status, isLoading] = useCampaignPreview(props, data, query)
+    const [campaignPreview, status, isLoading] = useCampaignPreview(
+        props,
+        { ...data, name: data.name || data.nameSuggestion || '' },
+        query
+    )
     const threadFilterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
         connection:
             campaignPreview !== LOADING && !isErrorLike(campaignPreview) ? campaignPreview.threads : campaignPreview,

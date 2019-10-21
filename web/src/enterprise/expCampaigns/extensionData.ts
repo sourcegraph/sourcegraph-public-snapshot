@@ -41,7 +41,7 @@ const executeRun = (
     { variables: runVariables, diagnostics: runDiagnostics, codeActions: runCodeActions }: WorkflowRun
 ): Observable<DiagnosticsAndFileDiffs> => {
     const diagnostics = runDiagnostics
-        ? extensionsController.services.diagnostics.observeDiagnostics({}, runVariables || {}, runDiagnostics.id)
+        ? extensionsController.services.diagnostics.observeDiagnostics({}, runVariables || {}, runDiagnostics)
         : EMPTY
     const codeActions = runCodeActions
         ? diagnostics.pipe(

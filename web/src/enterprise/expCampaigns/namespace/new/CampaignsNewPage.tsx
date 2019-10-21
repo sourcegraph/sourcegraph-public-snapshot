@@ -98,7 +98,14 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                 parseJSON(value.workflowAsJSONCString) as Workflow,
                 value
             )
-            setCreationOrError(await createCampaign({ ...value, namespace: namespace.id, extensionData }))
+            setCreationOrError(
+                await createCampaign({
+                    ...value,
+                    name: value.name || value.nameSuggestion,
+                    namespace: namespace.id,
+                    extensionData,
+                })
+            )
         } catch (err) {
             setCreationOrError(null)
             props.extensionsController.services.notifications.showMessages.next({
@@ -134,6 +141,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                             onSubmit={onSubmit}
                             isLoading={creationOrError === LOADING}
                             workflowJSONSchema={template.workflowJSONSchema}
+                            template={template}
                             className="flex-1"
                         />
                         {USE_CAMPAIGN_RULES && value && isValid && (

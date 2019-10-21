@@ -33,6 +33,7 @@ export interface RuleTemplate {
     isEmpty?: boolean
     defaultWorkflow?: Workflow
     workflowJSONSchema?: JSONSchema7
+    suggestTitle?: (workflow: Workflow) => string | undefined
 }
 
 export const EMPTY_RULE_TEMPLATE_ID = 'empty'
