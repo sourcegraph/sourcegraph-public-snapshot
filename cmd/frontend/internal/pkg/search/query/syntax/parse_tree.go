@@ -7,21 +7,19 @@ import (
 	"strings"
 )
 
-// The parse tree for search input.
-type ParseTree struct {
-	Expr []*Expr // expressions in this tree
-}
+// The parse tree for search input. It is a list of expressions.
+type ParseTree []*Expr
 
-func (p *ParseTree) String() string {
-	return ExprString(p.Expr)
+func (p ParseTree) String() string {
+	return ExprString(p)
 }
 
 // WithErrorsQuoted converts a search input like `f:foo b(ar` to `f:foo "b(ar"`.
-func (p *ParseTree) WithErrorsQuoted() *ParseTree {
-	p2 := &ParseTree{}
-	for _, e := range p.Expr {
+func (p ParseTree) WithErrorsQuoted() ParseTree {
+	p2 := []*Expr{}
+	for _, e := range p {
 		e2 := e.WithErrorsQuoted()
-		p2.Expr = append(p2.Expr, &e2)
+		p2 = append(p2, &e2)
 	}
 	return p2
 }

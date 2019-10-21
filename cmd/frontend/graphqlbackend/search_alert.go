@@ -354,9 +354,9 @@ func omitQueryFields(r *searchResolver, field string) string {
 	return syntax.ExprString(omitQueryExprWithField(r.query, field))
 }
 
-func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
-	expr2 := make([]*syntax.Expr, 0, len(query.ParseTree.Expr))
-	for _, e := range query.ParseTree.Expr {
+func omitQueryExprWithField(query *query.Query, field string) syntax.ParseTree {
+	expr2 := make(syntax.ParseTree, 0, len(query.ParseTree))
+	for _, e := range query.ParseTree {
 		if e.Field == field {
 			continue
 		}
@@ -365,9 +365,9 @@ func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
 	return expr2
 }
 
-func omitQuotes(query *query.Query) []*syntax.Expr {
-	result := make([]*syntax.Expr, 0, len(query.ParseTree.Expr))
-	for _, e := range query.ParseTree.Expr {
+func omitQuotes(query *query.Query) syntax.ParseTree {
+	result := make(syntax.ParseTree, 0, len(query.ParseTree))
+	for _, e := range query.ParseTree {
 		cpy := *e
 		e = &cpy
 		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
@@ -407,10 +407,10 @@ func pathParentsByFrequency(paths []string) []string {
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func addQueryRegexpField(query *query.Query, field, pattern string) []*syntax.Expr {
+func addQueryRegexpField(query *query.Query, field, pattern string) syntax.ParseTree {
 	// Copy query expressions.
-	expr := make([]*syntax.Expr, len(query.ParseTree.Expr))
-	for i, e := range query.ParseTree.Expr {
+	expr := make(syntax.ParseTree, len(query.ParseTree))
+	for i, e := range query.ParseTree {
 		tmp := *e
 		expr[i] = &tmp
 	}
