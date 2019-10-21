@@ -3,8 +3,6 @@
 package query
 
 import (
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
@@ -93,21 +91,46 @@ type Query struct {
 	*types.Query // the underlying query
 }
 
-// ParseAndCheck parses and typechecks a search query using the default
-// query type configuration.
-func ParseAndCheck(input string) (*Query, error) {
-	return parseAndCheck(&conf, input)
-}
-
-func parseAndCheck(conf *types.Config, input string) (*Query, error) {
+func Parse(input string) (syntax.ParseTree, error) {
 	parseTree, err := syntax.Parse(input)
 	if err != nil {
 		return nil, err
 	}
 
 	// We want to make query fields case insensitive
-	for _, expr := range parseTree {
-		expr.Field = strings.ToLower(expr.Field)
+	parseTree = parseTree.WithLowerCaseFields()
+	return parseTree, nil
+}
+
+func Check(parseTree syntax.ParseTree) (*Query, error) {
+	checkedQuery, err := conf.Check(parseTree)
+	if err != nil {
+		return nil, err
+	}
+	return &Query{conf: &conf, Query: checkedQuery}, nil
+}
+
+// ParseAndCheck parses and typechecks a search query using the default
+// query type configuration.
+func ParseAndCheck(input string) (*Query, error) {
+	parseTree, err := Parse(input)
+	if err != nil {
+		return nil, err
+	}
+
+	checkedQuery, err := Check(parseTree)
+	if err != nil {
+		return nil, err
+	}
+
+	return checkedQuery, err
+}
+
+// parseAndCheck is preserved for testing custom Configs only.
+func parseAndCheck(conf *types.Config, input string) (*Query, error) {
+	parseTree, err := Parse(input)
+	if err != nil {
+		return nil, err
 	}
 
 	checkedQuery, err := conf.Check(parseTree)

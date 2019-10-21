@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -71,13 +72,23 @@ func (r *schemaResolver) Search(args *struct {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
-	defaultIsRegexp, err := defaultToRegexp(args.Version, args.PatternType)
+	defaultSearchType, err := detectSearchType(args.Version, args.PatternType)
 	if err != nil {
 		return nil, err
 	}
 
-	qs, isRegexp := query.HandlePatternType(args.Query, defaultIsRegexp)
-	q, err := query.ParseAndCheck(qs)
+	parseTree, err := query.Parse(args.Query)
+	if err != nil {
+		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+	}
+
+	searchType := overrideSearchType(parseTree, defaultSearchType)
+
+	if searchType == "literal" {
+		parseTree = parseTree.WithQuotedSearchPattern()
+	}
+
+	query, err := query.Check(parseTree)
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
@@ -100,47 +111,57 @@ func (r *schemaResolver) Search(args *struct {
 		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
 
-	var finalPatternType string
-	if isRegexp {
-		finalPatternType = "regexp"
-	} else {
-		finalPatternType = "literal"
-	}
-
 	return &searchResolver{
-		query:         q,
+		query:         query,
 		originalQuery: args.Query,
 		pagination:    pagination,
-		patternType:   finalPatternType,
+		patternType:   searchType,
 		zoekt:         search.Indexed(),
 		searcherURLs:  search.SearcherURLs(),
 	}, nil
 }
 
-// defaultToRegexp determines whether to default to using regexp search based on the version and patternType
-// parameters passed to the search endpoint. It does not account for any `patternType:` filters in the query.
-func defaultToRegexp(version string, patternType *string) (bool, error) {
-	var defaultToRegexp bool
-	switch version {
-	case "V1":
-		defaultToRegexp = true
-	case "V2":
-		defaultToRegexp = false
-	default:
-		return false, fmt.Errorf("unrecognized version: %v", version)
-	}
-
+// detectSearchType returns the kind of search to be performed based
+// on the version and patternType parameters passed to the search endpoint
+// (literal search is the default in V2). It does not account for any
+// `patternType:` filters in the query, which may override the searchType.
+func detectSearchType(version string, patternType *string) (string, error) {
+	var searchType string
 	if patternType != nil {
 		switch *patternType {
-		case "regexp":
-			defaultToRegexp = true
-		case "literal":
-			defaultToRegexp = false
+		case "regexp", "literal":
+			searchType = *patternType
 		default:
-			return false, fmt.Errorf("unrecognized patternType: %v", patternType)
+			return "", fmt.Errorf("unrecognized patternType: %v", patternType)
+		}
+	} else {
+		switch version {
+		case "V1":
+			searchType = "regexp"
+		case "V2":
+			searchType = "literal"
+		default:
+			return "", fmt.Errorf("unrecognized version: %v", version)
 		}
 	}
-	return defaultToRegexp, nil
+	return searchType, nil
+}
+
+func overrideSearchType(parseTree syntax.ParseTree, defaultSearchType string) string {
+	patternTypes := parseTree.Values(query.FieldPatternType)
+
+	// If there are multiple patternTypes, use the last one we encounter
+	// when iterating. The validation check on the parse tree wil reject
+	// patterns with duplicate fields.
+	for _, pat := range patternTypes {
+		switch pat {
+		case "regex", "regexp":
+			defaultSearchType = "regexp"
+		case "literal":
+			defaultSearchType = "literal"
+		}
+	}
+	return defaultSearchType
 }
 
 func asString(v *searchquerytypes.Value) string {
