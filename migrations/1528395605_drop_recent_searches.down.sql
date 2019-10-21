@@ -1,3 +1,9 @@
--- The recent searches feature is never been used,
--- no need to roll back to recreate table(s).
-SELECT 1;
+BEGIN;
+
+CREATE TABLE recent_searches (
+    id serial PRIMARY KEY,
+    query text NOT NULL,
+    created_at timestamp NOT NULL DEFAULT NOW()
+);
+
+COMMIT;
