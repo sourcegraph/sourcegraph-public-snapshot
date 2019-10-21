@@ -119,17 +119,17 @@ func TestParseAllowingErrors(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *Query
+		want *ParseTree
 	}{
 		{
 			name: "empty",
 			args: args{input: ""},
-			want: &Query{Expr: nil},
+			want: &ParseTree{Expr: nil},
 		},
 		{
 			name: "a",
 			args: args{input: "a"},
-			want: &Query{
+			want: &ParseTree{
 				Input: "a",
 				Expr: []*Expr{
 					{
@@ -142,7 +142,7 @@ func TestParseAllowingErrors(t *testing.T) {
 		{
 			name: ":=",
 			args: args{input: ":="},
-			want: &Query{
+			want: &ParseTree{
 				Input: ":=",
 				Expr: []*Expr{
 					{
