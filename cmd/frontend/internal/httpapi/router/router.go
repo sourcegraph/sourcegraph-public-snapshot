@@ -7,11 +7,9 @@ import (
 )
 
 const (
-	LSIF          = "lsif"
-	LSIFUpload    = "lsif.upload"
-	LSIFChallenge = "lsif.challenge"
-	LSIFVerify    = "lsif.verify"
-	GraphQL       = "graphql"
+	LSIF       = "lsif"
+	LSIFUpload = "lsif.upload"
+	GraphQL    = "graphql"
 
 	Registry = "registry"
 
@@ -64,8 +62,6 @@ func New(base *mux.Router) *mux.Router {
 	addTelemetryRoute(base)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
-	base.Path("/lsif/challenge").Methods("GET").Name(LSIFChallenge)
-	base.Path("/lsif/verify").Methods("GET").Name(LSIFVerify)
 	base.Path("/lsif/{rest:.*}").Methods("POST").Name(LSIF)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").

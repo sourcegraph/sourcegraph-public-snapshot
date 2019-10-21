@@ -40,7 +40,6 @@ import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
-import { LSIFVerification } from './LSIFVerification'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -350,14 +349,6 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     hideSearch={true}
                                 />
                             </div>
-                            {(window.context.sourcegraphDotComMode || window.context.deployType === 'dev') &&
-                                this.props.repoName.startsWith('github.com') && (
-                                    <div className="tree-page__section">
-                                        <h3 className="tree-page__section-header">LSIF</h3>
-
-                                        <LSIFVerification repoName={this.props.repoName} />
-                                    </div>
-                                )}
                         </>
                     ))}
             </div>
