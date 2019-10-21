@@ -134,6 +134,7 @@ export class QueryInput extends React.Component<Props, State> {
                             .join(' ')
                         return fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
+                            filter(suggestion => suggestion.type !== 'lang'),
                             toArray(),
                             map((suggestions: Suggestion[]) => ({
                                 suggestions,
