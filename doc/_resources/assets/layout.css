@@ -21,7 +21,6 @@
     --loading-spinner-inner-color: #2b3750;
     --secondary: #e1e6ef;
     --border-color: #cad2e2;
-
     --body-bg: #ffffff;
     --text-muted: #{$color-light-text-2};
     --link-color: #566e9f;
@@ -665,7 +664,6 @@ li.content-nav-no-hover:hover {
 .content-nav-section-subsection {
     padding-top: 0;
     border-left: 1px solid #0d97ff;
-    margin-bottom: 1rem;
     background-color: none;
 }
 
@@ -1203,4 +1201,3 @@ li.content-nav-no-hover:hover {
 .version-dropdown .dropdown-item {
     padding: 0.5rem 1rem;
 }
-

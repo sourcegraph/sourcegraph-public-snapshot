@@ -283,7 +283,12 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/api">Sourcegraph APIs</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/api/graphql">Sourcegraph GraphQL API</a></li>
+                            <li><a href="/api/graphql">GraphQL API</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/api/graphql/examples">Examples</a></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -510,9 +515,11 @@
 
 {{/* Define Page (Right Hand) Nav */}}
 {{define "index"}}
-    {{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
-        <h3 class="page-nav-title">On this page:</h3>
-        <ul>{{template "doc_nav" .}}</ul>
+    {{if gt (len .Doc.Tree) 0}}
+        {{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
+            <h3 class="page-nav-title">On this page:</h3>
+            <ul>{{template "doc_nav" .}}</ul>
+        {{end}}
     {{end}}
     <a class="nav-edit-button btn btn-outline-secondary btn-sm" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">Edit this page on GitHub</a>
 {{end}}
