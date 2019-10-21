@@ -9,7 +9,7 @@ COPY src /lsif/src
 RUN yarn --cwd /lsif
 RUN yarn --cwd /lsif run build
 
-FROM alpine:3.9@sha256:72c42ed48c3a2db31b7dafe17d275b634664a708d901ec9fd57b1529280f01fb
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
