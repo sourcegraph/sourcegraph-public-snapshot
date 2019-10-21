@@ -20,7 +20,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
    CONFIG_SUB_DIR="linux"
 fi
 
-docker inspect $CONTAINER > /dev/null 2>&1 && docker rm -f $CONTAINER
+(docker inspect $CONTAINER > /dev/null 2>&1 && docker rm -f $CONTAINER) || :
 docker run --rm \
     --name=grafana \
     --cpus=1 \
