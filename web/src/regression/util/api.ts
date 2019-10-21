@@ -340,3 +340,28 @@ export function getManagementConsoleState(gqlClient: GraphQLClient): Promise<GQL
         )
         .toPromise()
 }
+
+export async function setUserEmailVerified(
+    gqlClient: GraphQLClient,
+    username: string,
+    email: string,
+    verified: boolean
+): Promise<void> {
+    const user = await getUser(gqlClient, username)
+    if (!user) {
+        throw new Error(`User ${username} does not exist`)
+    }
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { user: user.id, email, verified }
+        )
+        .pipe(map(dataOrThrowErrors))
+        .toPromise()
+}

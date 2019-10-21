@@ -5,7 +5,7 @@
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient } from './util/GraphQLClient'
-import { getTestFixtures } from './util/init'
+import { getTestTools } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
@@ -80,7 +80,7 @@ describe('Onboarding', () => {
     let screenshots: ScreenshotVerifier
     beforeAll(
         async () => {
-            ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
+            ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             screenshots = new ScreenshotVerifier(driver)
 
             resourceManager.add(

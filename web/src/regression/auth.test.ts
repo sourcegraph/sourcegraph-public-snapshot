@@ -8,7 +8,7 @@ import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { getTestFixtures } from './util/init'
+import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { setUserSiteAdmin, getUser, getManagementConsoleState } from './util/api'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
@@ -36,7 +36,7 @@ describe('Auth regression test suite', () => {
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
     beforeAll(async () => {
-        ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
+        ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
             'User',
             testUsername,
