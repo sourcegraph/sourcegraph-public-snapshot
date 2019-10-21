@@ -39,7 +39,7 @@ Examples:
 		repoFlag           = flagSet.String("repo", "", `The name of the repository. (required)`)
 		commitFlag         = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
 		fileFlag           = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
-		uploadTokenFlag    = flagSet.String("upload-token", "", `The LSIF upload token for the given repository. (required if lsifEnforceAuth setting is enabled)`)
+		githubTokenFlag    = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
 		rootFlag           = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/)`)
 		skipValidationFlag = flagSet.Bool("skip-validation", false, `Whether or not to perform input validation on the server (much faster)`)
 		apiFlags           = newAPIFlags(flagSet)
@@ -68,8 +68,8 @@ Examples:
 		qs := url.Values{}
 		qs.Add("repository", *repoFlag)
 		qs.Add("commit", *commitFlag)
-		if *uploadTokenFlag != "" {
-			qs.Add("upload_token", *uploadTokenFlag)
+		if *githubTokenFlag != "" {
+			qs.Add("github_token", *githubTokenFlag)
 		}
 		if *rootFlag != "" {
 			qs.Add("root", *rootFlag)
@@ -136,14 +136,19 @@ Examples:
 		// confirm the status code. You can test this easily with e.g. an invalid
 		// endpoint like -endpoint=https://google.com
 		if resp.StatusCode != http.StatusOK {
-			if resp.StatusCode == http.StatusUnauthorized && isatty.IsCygwinTerminal(os.Stdout.Fd()) {
-				fmt.Println("You may need to specify or update your access token to use this endpoint.")
-				fmt.Println("See https://github.com/sourcegraph/src-cli#authentication")
-				fmt.Println("")
-			}
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				return err
+			}
+
+			if resp.StatusCode == http.StatusUnauthorized && string(body) == "Must provide github_token.\n" {
+				return fmt.Errorf("error: you have provide -github-token with 'public_repo' scope")
+			}
+
+			if resp.StatusCode == http.StatusUnauthorized && isatty.IsTerminal(os.Stdout.Fd()) {
+				fmt.Println("You may need to specify or update your GitHub access token to use this endpoint.")
+				fmt.Println("See https://github.com/sourcegraph/src-cli#authentication")
+				fmt.Println("")
 			}
 			return fmt.Errorf("error: %s\n\n%s", resp.Status, body)
 		}
