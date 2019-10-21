@@ -173,7 +173,7 @@ type searchResolver struct {
 
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
-	return r.query.Syntax.Input
+	return r.originalQuery
 }
 
 func (r *searchResolver) countIsSet() bool {

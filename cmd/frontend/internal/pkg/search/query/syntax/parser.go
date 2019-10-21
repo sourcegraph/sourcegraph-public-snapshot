@@ -41,7 +41,7 @@ func Parse(input string) (*ParseTree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ParseTree{Expr: exprs, Input: input}, nil
+	return &ParseTree{Expr: exprs}, nil
 }
 
 // ParseAllowingErrors works like Parse except that any errors are
@@ -54,7 +54,7 @@ func ParseAllowingErrors(input string) *ParseTree {
 	if err != nil {
 		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
 	}
-	return &ParseTree{Expr: exprs, Input: input}
+	return &ParseTree{Expr: exprs}
 }
 
 // peek returns the next token without consuming it. Peeking beyond the end of

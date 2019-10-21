@@ -130,7 +130,6 @@ func TestParseAllowingErrors(t *testing.T) {
 			name: "a",
 			args: args{input: "a"},
 			want: &ParseTree{
-				Input: "a",
 				Expr: []*Expr{
 					{
 						Value:     "a",
@@ -143,7 +142,6 @@ func TestParseAllowingErrors(t *testing.T) {
 			name: ":=",
 			args: args{input: ":="},
 			want: &ParseTree{
-				Input: ":=",
 				Expr: []*Expr{
 					{
 						Value:     ":=",
