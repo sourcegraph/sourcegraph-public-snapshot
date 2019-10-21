@@ -19,6 +19,9 @@ import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { NewCampaignForm } from './NewCampaignForm'
 import { parseJSON } from '../../../../settings/configuration'
 import { Workflow } from '../../../../schema/workflow.schema'
+import { RULE_TEMPLATES } from '../../form/templates'
+import { Markdown } from '../../../../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 
 export const createCampaign = (input: GQL.IExpCreateCampaignInput): Promise<GQL.IExpCampaign> =>
     mutateGraphQL(
@@ -40,7 +43,7 @@ export const createCampaign = (input: GQL.IExpCreateCampaignInput): Promise<GQL.
 
 interface Props
     extends Pick<NamespaceCampaignsAreaContext, 'namespace' | 'setBreadcrumbItem'>,
-        RouteComponentProps<{}>,
+        RouteComponentProps<{ template: string }>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps {
@@ -65,36 +68,15 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         }
     }, [setBreadcrumbItem])
 
+    const template = RULE_TEMPLATES.find(t => t.id === match.params.template)
+
     // Persist the user's create-or-draft choice.
     const [defaultDraft, setDefaultDraft] = useLocalStorage('CampaignsNewPage.draft', true)
 
     const [value, setValue] = useLocalStorage<CampaignFormData>('CampaignsNewPage.value', {
         name: new URLSearchParams(props.location.search).get('name') || '',
         namespace: namespace.id,
-        workflowAsJSONCString: JSON.stringify(
-            // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
-            {
-                // extensions: ['sourcegraph/automation-preview'],
-                variables: {
-                    packageName: 'react-router-dom',
-                    matchVersion: '*',
-                    action: { requireVersion: '^5.0.1' },
-                    createChangesets: true,
-                    headBranch: 'upgrade-react-router-dom',
-                },
-                run: [
-                    {
-                        diagnostics: { id: 'dependencyManagement.packageJsonDependency' },
-                        codeActions: [{ command: 'dependencyManagement.packageJsonDependency.action' }],
-                    },
-                ],
-                behaviors: {
-                    edits: { command: 'changesets.byRepositoryAndBaseBranch' },
-                },
-            } as Workflow,
-            null,
-            2
-        ),
+        workflowAsJSONCString: template ? JSON.stringify(template.defaultWorkflow, null, 2) : '{}',
         draft: USE_CAMPAIGN_RULES ? defaultDraft : false,
     })
     const onChange = useCallback(
@@ -128,25 +110,43 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
 
     const isValid = value.name !== ''
 
+    const TemplateIcon = template ? template.icon : undefined
+
     return (
         <>
             {creationOrError !== null && creationOrError !== LOADING && <Redirect to={creationOrError.url} />}
             <PageTitle title="New campaign" />
             <div>
-                <NewCampaignForm
-                    {...props}
-                    value={value}
-                    isValid={isValid}
-                    onChange={onChange}
-                    onSubmit={onSubmit}
-                    isLoading={creationOrError === LOADING}
-                    className="flex-1"
-                />
-                {USE_CAMPAIGN_RULES && value && isValid && (
+                {template ? (
                     <>
-                        <hr className="my-5" />
-                        <CampaignPreview {...props} data={value} />
+                        <h2 className="d-flex align-items-center">
+                            {TemplateIcon && <TemplateIcon className="icon-inline mr-1" />} New campaign:{' '}
+                            {template.title}
+                        </h2>
+                        {template.detail && (
+                            <Markdown dangerousInnerHTML={renderMarkdown(template.detail)} className="text-muted" />
+                        )}
+                        <NewCampaignForm
+                            {...props}
+                            value={value}
+                            isValid={isValid}
+                            onChange={onChange}
+                            onSubmit={onSubmit}
+                            isLoading={creationOrError === LOADING}
+                            workflowJSONSchema={template.workflowJSONSchema}
+                            className="flex-1"
+                        />
+                        {USE_CAMPAIGN_RULES && value && isValid && (
+                            <>
+                                <hr className="my-5" />
+                                <CampaignPreview {...props} data={value} />
+                            </>
+                        )}
                     </>
+                ) : (
+                    <div className="alert alert-danger">
+                        Template <code>{match.params.template}</code> not found.
+                    </div>
                 )}
             </div>
         </>

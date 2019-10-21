@@ -8,10 +8,10 @@
   "additionalProperties": false,
   "properties": {
     "variables": {
-      "$ref": "#/definitions/WorkflowVariables"
+      "$ref": "workflow.schema.json#/definitions/WorkflowVariables"
     },
     "extensions": {
-      "$ref": "#/definitions/WorkflowRequiredExtensions"
+      "$ref": "workflow.schema.json#/definitions/WorkflowRequiredExtensions"
     },
     "template": {
       "type": "string"
@@ -19,11 +19,11 @@
     "run": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/WorkflowRun"
+        "$ref": "workflow.schema.json#/definitions/WorkflowRun"
       }
     },
     "behaviors": {
-      "$ref": "#/definitions/WorkflowBehaviors"
+      "$ref": "workflow.schema.json#/definitions/WorkflowBehaviors"
     }
   },
   "definitions": {
@@ -39,35 +39,27 @@
       "additionalProperties": false,
       "properties": {
         "variables": {
-          "$ref": "#/definitions/WorkflowVariables"
+          "$ref": "workflow.schema.json#/definitions/WorkflowVariables"
         },
         "extensions": {
-          "$ref": "#/definitions/WorkflowRequiredExtensions"
+          "$ref": "workflow.schema.json#/definitions/WorkflowRequiredExtensions"
         },
         "diagnostics": {
-          "description": "Diagnostics providers to run.",
-          "type": "object",
-          "required": ["id"],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "description": "The ID of a diagnostics provider.",
-              "type": "string"
-            }
-          }
+          "description": "Diagnostics provider to run.",
+          "type": "string"
         },
         "codeActions": {
           "description": "Code actions to run for each diagnostic to produce edits.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Command"
+            "$ref": "workflow.schema.json#/definitions/Command"
           }
         },
         "commands": {
           "description": "Commands to run to produce side effects.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/Command"
+            "$ref": "workflow.schema.json#/definitions/Command"
           }
         }
       }
@@ -100,7 +92,7 @@
       "additionalProperties": false,
       "properties": {
         "edits": {
-          "$ref": "#/definitions/Command"
+          "$ref": "workflow.schema.json#/definitions/Command"
         }
       }
     }

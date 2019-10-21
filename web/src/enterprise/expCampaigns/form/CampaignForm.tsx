@@ -2,6 +2,7 @@ import React, { useCallback } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { CampaignFormCommonFields } from './CampaignFormCommonFields'
+import { JSONSchema7 } from 'json-schema'
 
 export interface CampaignFormData extends Omit<GQL.IExpCreateCampaignInput, 'extensionData' | 'rules'> {
     draft: boolean
@@ -12,6 +13,7 @@ export interface CampaignFormData extends Omit<GQL.IExpCreateCampaignInput, 'ext
 
 export interface CampaignFormControl {
     value: CampaignFormData
+    workflowJSONSchema?: JSONSchema7
     isValid: boolean
     onChange: (value: Partial<CampaignFormData>) => void
     disabled?: boolean

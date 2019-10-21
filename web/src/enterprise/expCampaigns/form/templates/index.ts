@@ -10,6 +10,8 @@ import { PackageJsonDependencyRuleTemplate } from './PackageJsonDependencyRuleTe
 import { RubyGemDependencyRuleTemplate } from './RubyGemDependencyRuleTemplate'
 import { TriageSearchResultsRuleTemplate } from './TriageSearchResultsRuleTemplate'
 import { JavaDependencyRuleTemplate } from './JavaDependencyRuleTemplate'
+import { Workflow } from '../../../../schema/workflow.schema'
+import { JSONSchema7 } from 'json-schema'
 
 export interface RuleTemplateComponentContext {
     value: GQL.INewRuleInput
@@ -29,6 +31,8 @@ export interface RuleTemplate {
     icon?: React.ComponentType<{ className?: string }>
     renderForm: React.FunctionComponent<RuleTemplateComponentContext>
     isEmpty?: boolean
+    defaultWorkflow?: Workflow
+    workflowJSONSchema?: JSONSchema7
 }
 
 export const EMPTY_RULE_TEMPLATE_ID = 'empty'

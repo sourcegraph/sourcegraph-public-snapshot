@@ -1,4 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import workflowSchemaJSON from '../../../shared/src/schema/workflow.schema.json'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
@@ -8,6 +9,7 @@ import settingsSchema from '../../../schema/settings.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
 import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
+import { JSONSchema7 } from 'json-schema'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
@@ -31,7 +33,7 @@ export interface Props extends ThemeProps {
     /**
      * JSON Schema of the document.
      */
-    jsonSchema?: JSONSchema
+    jsonSchema?: JSONSchema7
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     /**
@@ -294,6 +296,10 @@ function setDiagnosticsOptions(m: typeof monaco, jsonSchema: any): void {
             {
                 uri: 'settings.schema.json#',
                 schema: settingsSchema,
+            },
+            {
+                uri: 'workflow.schema.json#',
+                schema: workflowSchemaJSON,
             },
         ],
     })

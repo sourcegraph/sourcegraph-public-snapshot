@@ -5,6 +5,7 @@ import { PackageJsonDependencyCampaignContext } from '../../../../../../extensio
 import { ParsedDiagnosticQuery, parseDiagnosticQuery } from '../../../diagnostics/diagnosticQuery'
 import { RuleDefinition } from '../../../rulesOLD/types'
 import { CampaignFormFiltersFormControl } from '../CampaignFormFiltersFormControl'
+import { JSONSchema7 } from 'json-schema'
 
 const TEMPLATE_ID = 'packageJsonDependency'
 
@@ -301,4 +302,38 @@ export const PackageJsonDependencyRuleTemplate: RuleTemplate = {
         'Upgrade an npm/yarn dependency in package.json files, opening issues/changesets for all affected code owners.',
     icon: NpmIcon,
     renderForm: PackageJsonDependencyCampaignTemplateForm,
+    defaultWorkflow: {
+        // extensions: ['sourcegraph/automation-preview'],
+        variables: {
+            packageName: 'react-router-dom',
+            matchVersion: '*',
+            action: { requireVersion: '^5.0.1' },
+            createChangesets: true,
+            headBranch: 'upgrade-react-router-dom',
+        },
+        run: [
+            {
+                diagnostics: 'dependencyManagement.packageJsonDependency',
+                codeActions: [{ command: 'dependencyManagement.packageJsonDependency.action' }],
+            },
+        ],
+        behaviors: {
+            edits: { command: 'changesets.byRepositoryAndBaseBranch' },
+        },
+    },
+    workflowJSONSchema: {
+        type: 'object',
+        properties: {
+            variables: {
+                type: 'object',
+                required: ['packageName'],
+                properties: {
+                    packageName: {
+                        type: 'string',
+                        description: 'The npm package name to operate on.',
+                    },
+                },
+            },
+        },
+    },
 }

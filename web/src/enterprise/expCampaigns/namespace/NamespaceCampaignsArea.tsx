@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-bind */
 import H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -14,6 +14,7 @@ import { ThemeProps } from '../../../theme'
 import { CampaignArea } from '../detail/CampaignArea'
 import { NamespaceCampaignsListPage } from './list/NamespaceCampaignsListPage'
 import { CampaignsNewPage } from './new/CampaignsNewPage'
+import { RuleTemplateChooser } from '../form/RuleTemplateChooser'
 
 export interface NamespaceCampaignsAreaContext
     extends Pick<NamespaceAreaContext, 'namespace'>,
@@ -69,16 +70,27 @@ export const NamespaceCampaignsArea: React.FunctionComponent<Props> = ({ ...prop
         </style>
     )
 
+    const urlToFormWithTemplate = useCallback((template: string) => `${newCampaignURL}/${template}`, [newCampaignURL])
+
     return (
         <Switch>
             <Route path={context.campaignsURL} exact={true}>
                 {breadcrumbs}
                 <NamespaceCampaignsListPage {...context} newCampaignURL={newCampaignURL} />
             </Route>
+            <Route path={newCampaignURL} exact={true}>
+                <div className="container">
+                    {breadcrumbs}
+                    {removeHeader}
+                    <h2>New campaign</h2>
+                    <p>Select the type of campaign to create.</p>
+                    <RuleTemplateChooser urlToFormWithTemplate={urlToFormWithTemplate} />
+                </div>
+            </Route>
             <Route
-                path={newCampaignURL}
+                path={`${newCampaignURL}/:template`}
                 exact={true}
-                render={(routeComponentProps: RouteComponentProps<{}>) => (
+                render={(routeComponentProps: RouteComponentProps<{ template: string }>) => (
                     <div className="container">
                         {breadcrumbs}
                         {removeHeader}
