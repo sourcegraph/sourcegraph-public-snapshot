@@ -45,94 +45,97 @@ export const CampaignBurndownChart: React.FunctionComponent<Props> = ({ campaign
         <div className={`alert alert-danger ${className}`}>
             Error generating burndown chart: {burndownChart.message}
         </div>
-    ) : burndownChart !== LOADING && burndownChart.dates.length <= 1 ? (
-        <DismissibleAlert
-            partialStorageKey={`CampaignBurndownChart.insufficientData-${campaign.id}`}
-            className={`alert-info ${className}`}
-        >
-            Burndown chart will be shown when there is more than 1 day of data.
-        </DismissibleAlert>
     ) : (
-        <ResponsiveContainer width="100%" height={300} className={className}>
-            <ComposedChart
-                data={
-                    burndownChart !== LOADING && !isErrorLike(burndownChart)
-                        ? burndownChart.dates.map((date, i) => ({
-                              date: Date.parse(date),
-                              openThreads: burndownChart.openThreads[i],
-                              mergedThreads: burndownChart.mergedThreads[i],
-                              closedThreads: burndownChart.closedThreads[i],
-                              openApprovedThreads: burndownChart.openApprovedThreads[i],
-                          }))
-                        : []
-                }
-            >
-                <XAxis
-                    dataKey="date"
-                    domain={
-                        burndownChart !== LOADING && !isErrorLike(burndownChart) && burndownChart.dates.length > 0
-                            ? [burndownChart.dates[0], burndownChart.dates[burndownChart.dates.length - 1]]
-                            : [0, 0]
+        <>
+            {burndownChart !== LOADING && burndownChart.dates.length <= 1 && (
+                <DismissibleAlert
+                    partialStorageKey={`CampaignBurndownChart.insufficientData-${campaign.id}`}
+                    className={`alert-info ${className}`}
+                >
+                    Burndown chart appears sparse when there is only 1 day of data.
+                </DismissibleAlert>
+            )}
+            <ResponsiveContainer width="100%" height={300} className={className}>
+                <ComposedChart
+                    data={
+                        burndownChart !== LOADING && !isErrorLike(burndownChart)
+                            ? burndownChart.dates.map((date, i) => ({
+                                  date: Date.parse(date),
+                                  openThreads: burndownChart.openThreads[i],
+                                  mergedThreads: burndownChart.mergedThreads[i],
+                                  closedThreads: burndownChart.closedThreads[i],
+                                  openApprovedThreads: burndownChart.openApprovedThreads[i],
+                              }))
+                            : []
                     }
-                    // TODO!(sqs): delete? domain={[startDate, startDate + openThreads.length * 24 * 60 * 60 * 1000]}
-                    name="Time"
-                    tickFormatter={dateTickFormatter}
-                    type="number"
-                    stroke="var(--text-muted)"
-                />
-                <YAxis
-                    tickFormatter={numberWithCommas}
-                    stroke="var(--text-muted)"
-                    type="number"
-                    allowDecimals={false}
-                    domain={[0, 'dataMax']}
-                />
-                <Tooltip
-                    // formatter={tooltipFormatter}
-                    labelFormatter={tooltipLabelFormatter}
-                    isAnimationActive={false}
-                    wrapperStyle={STYLE}
-                    itemStyle={STYLE}
-                    labelStyle={STYLE}
-                />
-                <Area
-                    type="step"
-                    dataKey="openApprovedThreads"
-                    name="Open & approved"
-                    fill="var(--info)"
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                />
-                <Area
-                    stackId="threadState"
-                    type="step"
-                    dataKey="openThreads"
-                    name="Open changesets"
-                    stroke="var(--body-color)"
-                    strokeWidth={3}
-                    fill="transparent"
-                    activeDot={{ r: 5 }}
-                    isAnimationActive={false}
-                />
-                <Area
-                    stackId="threadState"
-                    type="step"
-                    dataKey="mergedThreads"
-                    name="Merged"
-                    fill="var(--success)"
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                />
-                <Area
-                    stackId="threadState"
-                    type="step"
-                    dataKey="closedThreads"
-                    name="Closed"
-                    fill="var(--text-muted)"
-                    strokeWidth={0}
-                    isAnimationActive={false}
-                />
-            </ComposedChart>
-        </ResponsiveContainer>
+                >
+                    <XAxis
+                        dataKey="date"
+                        domain={
+                            burndownChart !== LOADING && !isErrorLike(burndownChart) && burndownChart.dates.length > 0
+                                ? [burndownChart.dates[0], burndownChart.dates[burndownChart.dates.length - 1]]
+                                : [0, 0]
+                        }
+                        // TODO!(sqs): delete? domain={[startDate, startDate + openThreads.length * 24 * 60 * 60 * 1000]}
+                        name="Time"
+                        tickFormatter={dateTickFormatter}
+                        type="number"
+                        stroke="var(--text-muted)"
+                    />
+                    <YAxis
+                        tickFormatter={numberWithCommas}
+                        stroke="var(--text-muted)"
+                        type="number"
+                        allowDecimals={false}
+                        domain={[0, 'dataMax']}
+                    />
+                    <Tooltip
+                        // formatter={tooltipFormatter}
+                        labelFormatter={tooltipLabelFormatter}
+                        isAnimationActive={false}
+                        wrapperStyle={STYLE}
+                        itemStyle={STYLE}
+                        labelStyle={STYLE}
+                    />
+                    <Area
+                        type="step"
+                        dataKey="openApprovedThreads"
+                        name="Open & approved"
+                        fill="var(--info)"
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                    />
+                    <Area
+                        stackId="threadState"
+                        type="step"
+                        dataKey="openThreads"
+                        name="Open changesets"
+                        stroke="var(--body-color)"
+                        strokeWidth={3}
+                        fill="transparent"
+                        activeDot={{ r: 5 }}
+                        isAnimationActive={false}
+                    />
+                    <Area
+                        stackId="threadState"
+                        type="step"
+                        dataKey="mergedThreads"
+                        name="Merged"
+                        fill="var(--success)"
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                    />
+                    <Area
+                        stackId="threadState"
+                        type="step"
+                        dataKey="closedThreads"
+                        name="Closed"
+                        fill="var(--text-muted)"
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                    />
+                </ComposedChart>
+            </ResponsiveContainer>
+        </>
     )
 }

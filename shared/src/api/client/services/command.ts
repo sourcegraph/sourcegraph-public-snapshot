@@ -47,13 +47,11 @@ export class CommandRegistry {
         return executeCommand(this.commandsSnapshot, params)
     }
 
-    public async executeActionEditCommand(
+    public executeActionEditCommand(
         diagnostic: Diagnostic | null,
         params: ExecuteCommandParams
     ): Promise<SerializedWorkspaceEdit> {
-        return WorkspaceEdit.fromJSON(
-            await this.executeCommand({ ...params, arguments: [diagnostic, ...(params.arguments || [])] })
-        )
+        return this.executeCommand({ ...params, arguments: [diagnostic, ...(params.arguments || [])] })
     }
 
     /** All commands, emitted whenever the set of registered commands changed. */

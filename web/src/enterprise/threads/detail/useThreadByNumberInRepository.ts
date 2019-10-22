@@ -55,9 +55,6 @@ export const useThreadByNumberInRepository = (
                                     id
                                     url
                                 }
-                                rules {
-                                    totalCount
-                                }
                                 baseRef
                                 headRef
                                 repositoryComparison {

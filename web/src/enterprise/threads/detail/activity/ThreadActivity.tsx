@@ -16,6 +16,6 @@ interface Props extends ExtensionsControllerProps {
  */
 export const ThreadActivity: React.FunctionComponent<Props> = ({ thread, className = '', ...props }) => (
     <div className={`thread-activity ${className}`}>
-        <ThreadTimeline {...props} thread={thread} timelineItemsClassName="pb-6" />
+        <ThreadTimeline {...props} thread={thread} timelineItemsClassName="pb-0" />
     </div>
 )

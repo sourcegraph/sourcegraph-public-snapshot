@@ -11,6 +11,7 @@ import {
     tap,
     catchError,
     last,
+    filter,
 } from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
@@ -113,8 +114,35 @@ const executeDiagnosticCodeAction = memoizeObservable(
 
 const executeRun = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
-    { variables: runVariables, diagnostics: runDiagnostics, codeActions: runCodeActions }: WorkflowRun
+    {
+        variables: runVariables,
+        diagnostics: runDiagnostics,
+        codeActions: runCodeActions,
+        commands: runCommands,
+    }: WorkflowRun
 ): Observable<DiagnosticsAndFileDiffs> => {
+    if (runCommands && runCommands.length > 0) {
+        const command = runCommands[0] // TODO!(sqs)
+        return extensionsController.services.commands.commands.pipe(
+            filter(commands => !!commands.find(c => c.command === command.command)),
+            switchMap(() =>
+                from(
+                    extensionsController.services.commands.executeActionEditCommand(null, {
+                        ...command,
+                        arguments: [runVariables, ...(command.arguments || [])],
+                    })
+                )
+            ),
+            map(result => {
+                const v: DiagnosticsAndFileDiffs = {
+                    diagnostics: [],
+                    edits: [WorkspaceEdit.fromJSON(result)],
+                    status: { isLoading: false },
+                }
+                return v
+            })
+        )
+    }
     const diagnostics = runDiagnostics
         ? extensionsController.services.diagnostics.observeDiagnostics({}, runVariables || {}, runDiagnostics)
         : EMPTY

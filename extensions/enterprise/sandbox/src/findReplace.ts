@@ -16,10 +16,8 @@ export function register(): Unsubscribable {
     return subscriptions
 }
 
-async function rewrite(
-    context: FindReplaceCampaignContext,
-    repositoryNames: string[] = ['github.com/sd9/guava19to21-sample'] // TODO!(sqs)
-): Promise<sourcegraph.WorkspaceEdit> {
+async function rewrite(_diagnostic: any, context: FindReplaceCampaignContext): Promise<sourcegraph.WorkspaceEdit> {
+    console.log({ context })
     const { data, errors } = await queryGraphQL({
         query: `
                 query Comby($repositoryNames: [String!]!, $matchTemplate: String!, $rule: String, $rewriteTemplate: String!) {
@@ -40,7 +38,7 @@ async function rewrite(
                 }
             `,
         vars: {
-            repositoryNames,
+            repositoryNames: context.repositoryNames || ['github.com/sd9/guava19to21-sample'],
             matchTemplate: context.matchTemplate,
             rule: context.rule,
             rewriteTemplate: context.rewriteTemplate,
@@ -62,6 +60,5 @@ async function rewrite(
         edit.set(new URL(doc.uri), [sourcegraph.TextEdit.patch(data.comby.results[i].rawDiff)])
     }
 
-    console.log(edit.toJSON())
     return (edit as any).toJSON()
 }

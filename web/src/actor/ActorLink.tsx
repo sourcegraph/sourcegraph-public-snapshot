@@ -18,5 +18,5 @@ export const ActorLink: React.FunctionComponent<Props> = ({ actor, className = '
             {actorName(actor)}
         </RouterLinkOrAnchor>
     ) : (
-        <span className={`font-style-italic ${className}`}>unknown actor</span>
+        <span className={`font-style-italic ${className}`}>{/* TODO!(sqs) unknown actor */} user</span>
     )
