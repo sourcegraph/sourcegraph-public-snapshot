@@ -29,7 +29,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue, ensureOnlyRepeatableJob, searchJobs, queueTypes } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob, searchJobs, queueTypes, sliceJobs } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -399,15 +399,10 @@ function queueEndpoints(queue: Queue, logger: Logger): express.Router {
                 const offset = parseInt(req.query.offset, 10) || 0
                 const ctx = createTracingContext(req, {})
 
-                const queueName = queueTypes.get(status)
-                if (!queueName) {
-                    throw new Error(`Unknown job status ${status}`)
-                }
-
                 if (search) {
                     // Get jobs with the target status matching query string
                     const jobs = await logAndTraceCall(ctx, 'job search', () =>
-                        searchJobs(queue, queueName, search, offset, offset + limit - 1)
+                        searchJobs(queue, status, search, offset, offset + limit - 1)
                     )
 
                     // We can't paginate easily here as to get an accurate
@@ -415,14 +410,10 @@ function queueEndpoints(queue: Queue, logger: Logger): express.Router {
                     // search query test.
                     res.send({ jobs, totalCount: jobs.length })
                 } else {
-                    // Get all jobs with the target status (no filtering)
-                    const rawJobs = await logAndTraceCall(ctx, 'job slice', () =>
-                        queue.getJobs([queueName], offset, offset + limit - 1)
+                    const { jobs, totalCount } = await logAndTraceCall(ctx, 'job slice', () =>
+                        sliceJobs(queue, status, offset, offset + limit - 1)
                     )
 
-                    // Count the total number of jobs with this status
-                    const jobs = rawJobs.map(job => formatJob(job, status))
-                    const totalCount = await queue.getJobCountByTypes([queueName])
                     res.send({ jobs, totalCount })
                 }
             }

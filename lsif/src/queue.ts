@@ -3,7 +3,7 @@ import { Span, Tracer, FORMAT_TEXT_MAP } from 'opentracing'
 import { Logger } from 'winston'
 import { promisify } from 'util'
 import { chunk } from 'lodash'
-import { ApiJob, formatJobFromMap } from './api-job'
+import { ApiJob, formatJobFromMap, formatJob } from './api-job'
 
 /**
  * The names of queues as defined in Bull.
@@ -157,18 +157,23 @@ const jobSearchScript = `
  * given search term.
  *
  * @param queue The job queue.
- * @param queueName The queue name.
+ * @param status The target job status.
  * @param search The search query.
  * @param start The start index (inclusive).
  * @param end The end index (inclusive).
  */
 export async function searchJobs(
     queue: Queue,
-    queueName: string,
+    status: string,
     search: string,
     start: number,
     end: number
 ): Promise<ApiJob[]> {
+    const queueName = queueTypes.get(status)
+    if (!queueName) {
+        throw new Error(`Unknown job status ${status}`)
+    }
+
     const evalCommand = promisify(queue.client.eval.bind(queue.client)) as (
         lua: string,
         numberOfKeys: number,
@@ -183,4 +188,29 @@ export async function searchJobs(
     }
 
     return jobs
+}
+
+/**
+ * Return a list of JSON-encoded jobs with the given status.
+ *
+ * @param queue The job queue.
+ * @param status The target job status.
+ * @param start The start index (inclusive).
+ * @param end The end index (inclusive).
+ */
+export async function sliceJobs(
+    queue: Queue,
+    status: string,
+    start: number,
+    end: number
+): Promise<{ jobs: ApiJob[]; totalCount: number }> {
+    const queueName = queueTypes.get(status)
+    if (!queueName) {
+        throw new Error(`Unknown job status ${status}`)
+    }
+
+    const rawJobs = await queue.getJobs([queueName], start, end)
+    const jobs = rawJobs.map(job => formatJob(job, status))
+    const totalCount = (await queue.getJobCountByTypes([queueName])) as never
+    return { jobs, totalCount }
 }
