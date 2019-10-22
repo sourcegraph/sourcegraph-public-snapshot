@@ -102,6 +102,7 @@ export class XrepoDatabase {
                 (await connection.getRepository(LsifDump).findOne({ where: { repository } })) !== undefined
         )
     }
+
     /**
      * Determine if we have commit parent data for this commit.
      *
