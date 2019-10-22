@@ -1091,6 +1091,19 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+
+    # TODO - WIP
+    # TODO - WIP
+    # TODO - WIP
+    # TODO - WIP
+    # TODO - WIP
+    lsifJobs(
+        first: Int
+        after: ID,
+        status: String!
+        query: String
+    ): LsifJobConnection!
+    lsifJob(id: ID!): LsifJob
 }
 
 # The version of the search syntax.
@@ -4083,4 +4096,31 @@ union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 # Date#toISOString.
 scalar DateTime
+
+
+# A list of LSIF jobs.
+type LsifJobConnection {
+    # A list of LSIF jobs.
+    nodes: [LsifJob!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# TODO: A collection of threads.
+type LsifJob implements Node {
+    id: ID!
+    name: String!
+    args: JSONValue!
+    status: String!
+    progress: Float!
+    failedReason: String
+    stacktrace: [String!]
+    timestamp: DateTime!
+    finishedOn: DateTime
+    processedOn: DateTime
+}
 `
