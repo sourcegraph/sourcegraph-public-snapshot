@@ -612,11 +612,20 @@ export function fetchLsifJobStatistics(): Observable<GQL.LsifJobStats> {
 /**
  * Fetch LSIF jobs with the given status.
  *
- * @param status The status.
- * @param query A search term to filter by.
- * @param first The maximum number of results to return.
+ * @param param0 Query parameters.
  */
-export function fetchLsifJobs(status: string, query?: string, first: number = 20): Observable<GQL.ILsifJobConnection> {
+export function fetchLsifJobs({
+    first,
+    query,
+    status,
+}: {
+    /* The maximum number of results to return. */
+    first?: number
+    /* A search term to filter by. */
+    query?: string
+    /* The status. */
+    status?: string
+}): Observable<GQL.ILsifJobConnection> {
     return queryGraphQL(
         gql`
             query LsifJobs($status: String!, $first: Int, $query: String) {
@@ -653,7 +662,7 @@ export function fetchLsifJobs(status: string, query?: string, first: number = 20
 export function fetchLsifJob(id: string): Observable<GQL.ILsifJob | null> {
     return queryGraphQL(
         gql`
-            query LsifJob(id: ID!) {
+            query LsifJob($id: ID!) {
                 lsifJob(id: $id) {
                     id
                     name

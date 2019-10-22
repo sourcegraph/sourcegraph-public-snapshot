@@ -11,7 +11,7 @@ import { upperFirst } from 'lodash'
 interface Props extends RouteComponentProps<{ id: string }> {}
 
 interface State {
-    job?: GQL.ILsifJob
+    job?: GQL.ILsifJob | null
     error?: Error
 }
 

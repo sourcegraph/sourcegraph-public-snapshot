@@ -38,6 +38,7 @@ class LsifJobNode extends React.PureComponent<LsifJobNodeProps, LsifJobNodeState
                     </div>
                     <div className="repository-node__actions">
                         {this.props.node.status === 'queued' && <TimerSandIcon className="icon-inline" />}
+                        {this.props.node.status === 'scheduled' && <TimerSandIcon className="icon-inline" />}
                         {this.props.node.status === 'active' && <LoadingSpinner className="icon-inline" />}
                         {this.props.node.status === 'completed' && <CheckIcon className="icon-inline" />}
                         {this.props.node.status === 'failed' && <AlertCircleIcon className="icon-inline" />}
@@ -136,7 +137,6 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
                             filters={SiteAdminLsifJobsPage.FILTERS}
                             history={this.props.history}
                             location={this.props.location}
-                            hideSearch={true}
                         />
                     </>
                 )}
@@ -144,8 +144,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
         )
     }
 
-    private queryJobs = ({ status, ...args }: FilteredConnectionQueryArgs & { status: string }) => {
-        // TODO - enable search
-        return fetchLsifJobs(status, '', args.first)
+    private queryJobs = (args: FilteredConnectionQueryArgs) => {
+        return fetchLsifJobs({ ...args })
     }
 }
