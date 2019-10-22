@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestHandlePatternType_Literal(t *testing.T) {
+func TestConvertToLiteral(t *testing.T) {
 	tests := []struct {
 		input string
 		want  string
@@ -49,7 +49,7 @@ func TestHandlePatternType_Literal(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			out := ConvertToLiteral(test.input)
 			if out != test.want {
-				t.Errorf("handlePatternType (%q) = %q, want %q", test.input, out, test.want)
+				t.Errorf("ConverToLiteral (%q) = %q, want %q", test.input, out, test.want)
 			}
 		})
 	}
