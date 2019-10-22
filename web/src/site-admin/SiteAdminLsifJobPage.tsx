@@ -1,16 +1,17 @@
+import * as GQL from '../../../shared/src/graphql/schema'
+import * as LSIF from '../../../shared/src/lsif/description'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
-import { fetchLsifJob } from './backend'
-import * as LSIF from '../../../shared/src/lsif/schema'
 import { eventLogger } from '../tracking/eventLogger'
-import { Subscription } from 'rxjs'
+import { fetchLsifJob } from './backend'
 import { PageTitle } from '../components/PageTitle'
+import { RouteComponentProps } from 'react-router'
+import { Subscription } from 'rxjs'
 import { upperFirst } from 'lodash'
 
 interface Props extends RouteComponentProps<{ id: string }> {}
 
 interface State {
-    job?: LSIF.ILsifJob
+    job?: GQL.ILsifJob
     error?: Error
 }
 

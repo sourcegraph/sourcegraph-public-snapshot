@@ -1,16 +1,17 @@
+import * as GQL from '../../../shared/src/graphql/schema'
+import * as LSIF from '../../../shared/src/lsif/description'
 import * as React from 'react'
-import { Subscription } from 'rxjs'
-import { RouteComponentProps } from 'react-router'
-import { fetchLsifJobs, fetchLsifJobStatistics } from './backend'
-import * as LSIF from '../../../shared/src/lsif/schema'
-import { eventLogger } from '../tracking/eventLogger'
-import { upperFirst } from 'lodash'
-import { PageTitle } from '../components/PageTitle'
-import { Link } from '../../../shared/src/components/Link'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import { eventLogger } from '../tracking/eventLogger'
+import { fetchLsifJobs, fetchLsifJobStatistics } from './backend'
+import { Link } from '../../../shared/src/components/Link'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { PageTitle } from '../components/PageTitle'
+import { RouteComponentProps } from 'react-router'
+import { Subscription } from 'rxjs'
+import { upperFirst } from 'lodash'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
@@ -18,7 +19,7 @@ import {
 } from '../components/FilteredConnection'
 
 interface LsifJobNodeProps {
-    node: LSIF.ILsifJob
+    node: GQL.ILsifJob
 }
 
 interface LsifJobNodeState {}
@@ -50,7 +51,7 @@ class LsifJobNode extends React.PureComponent<LsifJobNodeProps, LsifJobNodeState
 interface Props extends RouteComponentProps<any> {}
 
 interface State {
-    stats?: LSIF.LsifJobStats
+    stats?: GQL.ILsifJobStats
     error?: Error
 }
 
@@ -144,6 +145,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
     }
 
     private queryJobs = ({ status, ...args }: FilteredConnectionQueryArgs & { status: string }) => {
-        return fetchLsifJobs(status, args.first)
+        // TODO - enable search
+        return fetchLsifJobs(status, '', args.first)
     }
 }
