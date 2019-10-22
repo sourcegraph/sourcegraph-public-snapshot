@@ -420,7 +420,7 @@ function queueEndpoints(queue: Queue, logger: Logger): express.Router {
                         queue.getJobs([queueName], offset, offset + limit - 1)
                     )
 
-                    // Format
+                    // Count the total number of jobs with this status
                     const jobs = rawJobs.map(job => formatJob(job, status))
                     const totalCount = await queue.getJobCountByTypes([queueName])
                     res.send({ jobs, totalCount })
