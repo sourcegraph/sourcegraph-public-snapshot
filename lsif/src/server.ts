@@ -1,4 +1,4 @@
-import Bull, { Queue, Job } from 'bull'
+import { Queue } from 'bull'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import bodyParser from 'body-parser'
@@ -7,7 +7,6 @@ import onFinished from 'on-finished'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
-import { chunk } from 'lodash'
 import pTimeout from 'p-timeout'
 import {
     connectionCacheCapacityGauge,
@@ -30,7 +29,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob, searchJobs, formatJob, queueTypes } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -141,7 +140,7 @@ async function main(logger: Logger): Promise<void> {
     // Register endpoints
     app.use(metaEndpoints())
     app.use(await lsifEndpoints(queue, fetchConfiguration, logger, tracer))
-    app.use(queueEndpoints(queue, logger, tracer))
+    app.use(queueEndpoints(queue, logger))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -238,10 +237,10 @@ async function lsifEndpoints(
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection)
-
-    await ensureFilenamesAreIDs(connection)
-
     const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
+
+    // Run pre-id filename migration
+    await ensureFilenamesAreIDs(connection)
 
     /**
      * Create a tracing context from the request logger and tracing span
@@ -354,59 +353,26 @@ async function lsifEndpoints(
 }
 
 /**
- * Format a job to return from the API.
- *
- * @param payload The JSON payload of a job.
- * @param status The job's status.
- */
-const formatJobRaw = (
-    payload: {
-        id: Bull.JobId
-        name: string
-        data: any
-        progress: number
-        timestamp: number
-        failedReason: any
-        stacktrace: any[] | null
-        finishedOn: number | null
-        processedOn: number | null
-    },
-    status: string
-): object => {
-    return {
-        id: payload.id,
-        name: payload.name,
-        args: payload.data.args,
-        status,
-        progress: payload.progress,
-        failedReason: payload.failedReason,
-        stacktrace: payload.stacktrace,
-        timestamp: new Date(payload.timestamp).toISOString(),
-        finishedOn: payload.finishedOn ? new Date(payload.finishedOn).toISOString() : '',
-        processedOn: payload.processedOn ? new Date(payload.processedOn).toISOString() : '',
-    }
-}
-
-/**
- * Format a job to return from the API.
- *
- * @param job The job to format.
- * @param status The job's status.
- */
-const formatJob = (job: Job, status: string): object => formatJobRaw(job.toJSON(), status)
-
-/**
  * Create a router containing the queue endpoints.
  *
  * @param queue The queue instance.
  * @param logger The logger instance.
- * @param tracer The tracer instance.
  */
-function queueEndpoints(queue: Queue, logger: Logger, tracer: Tracer | undefined): express.Router {
+function queueEndpoints(queue: Queue, logger: Logger): express.Router {
     const router = express.Router()
 
+    /**
+     * Create a tracing context from the request logger and tracing span
+     * tagged with the given values.
+     *
+     * @param req The express request.
+     * @param tags The tags to apply to the logger and span.
+     */
+    const createTracingContext = (req: express.Request & { span?: Span }, tags: { [K: string]: any }): TracingContext =>
+        addTags({ logger, span: req.span }, tags)
+
     router.get(
-        '/job-stats',
+        '/jobs/stats',
         wrap(
             async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
                 const counts = await queue.getJobCounts()
@@ -422,127 +388,42 @@ function queueEndpoints(queue: Queue, logger: Logger, tracer: Tracer | undefined
         )
     )
 
-    // TODO - why is this type not ok?
-    const evalCommand = promisify(queue.client.eval.bind(queue.client)) as (
-        lua: string,
-        numberOfKeys: number,
-        keysAndArgs: any[]
-    ) => Promise<string[][]>
-
-    const script = `
-        -- KEYS[1]: key prefix
-        -- KEYS[2]: queue name
-        -- ARGV[1]: query to search for (substring match)
-        -- ARGV[2]: start index to scan (inclusive)
-        -- ARGV[3]: end index to scan (inclusive)
-
-        local function textMatches(needle, haystack)
-            for term in string.gmatch(needle, '%S+') do
-                if string.find(haystack, term, 1, true) == nil then
-                    return false
-                end
-            end
-
-            return true
-        end
-
-        local function jobMatches(key)
-            for _, field in pairs({'data'}) do
-                -- TODO - better matching?
-                if textMatches(ARGV[1], redis.call('HGET', key, field)) then
-                    return true
-                end
-            end
-
-            return false
-        end
-
-        local command = 'ZRANGE'
-        if KEYS[2] == 'active' then
-            command = 'LRANGE'
-        end
-
-        local matching = {}
-        for _, v in pairs(redis.call(command, KEYS[1] .. KEYS[2], ARGV[2], ARGV[3])) do
-            if jobMatches(KEYS[1] .. v) then
-                -- TODO - max results
-                table.insert(matching, redis.call('HGETALL', KEYS[1] .. v))
-            end
-        end
-
-        return matching
-    `
-
-    /**
-     * Create a tracing context from the request logger and tracing span
-     * tagged with the given values.
-     *
-     * @param req The express request.
-     * @param tags The tags to apply to the logger and span.
-     */
-    const createTracingContext = (req: express.Request & { span?: Span }, tags: { [K: string]: any }): TracingContext =>
-        addTags({ logger, span: req.span }, tags)
-
     router.get(
         `/jobs/:status(${Array.from(queueTypes.keys()).join('|')})`,
         wrap(
             async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
                 const { status } = req.params
                 const { search } = req.query
-                const limit = parseInt(req.query.limit, 10) || 20
+                const limit = parseInt(req.query.limit, 10) || 50
                 const offset = parseInt(req.query.offset, 10) || 0
+                const ctx = createTracingContext(req, {})
 
                 const queueName = queueTypes.get(status)
                 if (!queueName) {
                     throw new Error(`Unknown job status ${status}`)
                 }
 
-                if (!search) {
-                    const jobs = []
-                    for (const job of await queue.getJobs([queueName], offset, offset + limit - 1)) {
-                        jobs.push(formatJob(job, status))
-                    }
+                if (search) {
+                    // Get jobs with the target status matching query string
+                    const jobs = await logAndTraceCall(ctx, 'job search', () =>
+                        searchJobs(queue, queueName, search, offset, offset + limit - 1)
+                    )
 
+                    // We can't paginate easily here as to get an accurate
+                    // count we'd need to run through all jobs and apply the
+                    // search query test.
+                    res.send({ jobs, totalCount: jobs.length })
+                } else {
+                    // Get all jobs with the target status (no filtering)
+                    const rawJobs = await logAndTraceCall(ctx, 'job slice', () =>
+                        queue.getJobs([queueName], offset, offset + limit - 1)
+                    )
+
+                    // Format
+                    const jobs = rawJobs.map(job => formatJob(job, status))
                     const totalCount = await queue.getJobCountByTypes([queueName])
                     res.send({ jobs, totalCount })
-                    return
                 }
-
-                const ctx = createTracingContext(req, {})
-
-                const payloads = await logAndTraceCall(
-                    ctx,
-                    'eval',
-                    // TODO - search up to limit?
-                    () => evalCommand(script, 2, ['bull:lsif:', queueName, search, offset, offset + limit - 1]) // TODO - limits are different here...
-                )
-
-                const jobs: object[] = []
-                await logAndTraceCall(ctx, 'get-jobs', async () => {
-                    for (const payload of payloads) {
-                        const values = new Map<string, string>(chunk(payload, 2) as [string, string][])
-
-                        const rawStacktrace = values.get('stacktrace')
-                        const rawFinishedOn = values.get('finishedOn')
-                        const rawProcessedOn = values.get('processedOn')
-
-                        const parsedValues = {
-                            id: values.get('id') || '',
-                            name: values.get('name') || '',
-                            data: JSON.parse(values.get('data') || ''),
-                            progress: parseInt(values.get('progress') || ''),
-                            timestamp: parseInt(values.get('timestamp') || ''),
-                            failedReason: values.get('failedReason') || null,
-                            stacktrace: (rawStacktrace && (JSON.parse(rawStacktrace) as any[])) || null,
-                            finishedOn: (rawFinishedOn && parseInt(rawFinishedOn)) || null,
-                            processedOn: (rawProcessedOn && parseInt(rawProcessedOn)) || null,
-                        }
-
-                        jobs.push(formatJobRaw(parsedValues, status))
-                    }
-                })
-
-                res.send({ jobs, totalCount: jobs.length })
             }
         )
     )
@@ -565,16 +446,6 @@ function queueEndpoints(queue: Queue, logger: Logger, tracer: Tracer | undefined
 
     return router
 }
-
-type JobStatus = 'active' | 'waiting' | 'delayed' | 'completed' | 'failed'
-
-const queueTypes = new Map<string, JobStatus>([
-    ['active', 'active'],
-    ['queued', 'waiting'],
-    ['scheduled', 'delayed'],
-    ['completed', 'completed'],
-    ['failed', 'failed'],
-])
 
 /**
  * Throws an error with status 400 if the repository string is invalid.
