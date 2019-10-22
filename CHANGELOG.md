@@ -19,6 +19,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.9.1
+
+### Changed
+
+- Reverted [#6094](https://github.com/sourcegraph/sourcegraph/pull/6094) because it introduced a minor security hole involving only Grafana.
+  [#6075](https://github.com/sourcegraph/sourcegraph/issues/6075) will be fixed with a different approach.
+
 ## 3.9.0
 
 ### Added
