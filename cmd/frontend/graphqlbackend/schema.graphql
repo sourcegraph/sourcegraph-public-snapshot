@@ -39,6 +39,8 @@ type Mutation {
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
+    # Move the campaign out of draft mode and start creating changesets according to the campaign's codeModSpec.
+    startCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
     deleteCampaign(campaign: ID!): EmptyResponse
     # Updates the user profile information for the user with the given ID.
@@ -375,6 +377,18 @@ type Mutation {
     deleteSavedSearch(id: ID!): EmptyResponse
 }
 
+input CodeModSpecInput {
+    # A known code mod type.
+    # Currently only "comby" is supported.
+    type: String!
+
+    # JSONC string that configures the automatic code modification that will be executed when the campaign is run.
+    #
+    # Schema for comby:
+    # { matchTemplate: string, rewriteTemplate: string }
+    arguments: String!
+}
+
 # Input arguments for creating a campaign.
 input CreateCampaignInput {
     # The ID of the namespace where this campaign is defined.
@@ -385,6 +399,11 @@ input CreateCampaignInput {
 
     # The description of the campaign as Markdown.
     description: String!
+
+    # The specification of how this campaign should generate changesets.
+    # If null, existing changesets can be added manually.
+    # If set, no changesets can be added manually, they will be created by Sourcegraph after starting the campaign.
+    codeModSpec: CodeModSpecInput
 }
 
 # Input arguments for updating a campaign.
@@ -397,12 +416,20 @@ input UpdateCampaignInput {
 
     # The updated description of the campaign as Markdown (if non-null).
     description: String
+
+    # The specification of how this campaign should generate changesets.
+    # If null, existing changesets can be added manually.
+    # If set, no changesets can be added manually, they will be created by Sourcegraph after starting the campaign.
+    codeModSpec: CodeModSpecInput
 }
 
 # A collection of threads.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
+
+    # Whether this campaign is in draft mode and has not been started yet.
+    isDraft: Boolean!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
@@ -426,7 +453,7 @@ type Campaign implements Node {
     updatedAt: DateTime!
 
     # The combined diff of all changesets across all repositories.
-    comparisons: [RepositoryComparison!]!
+    comparisons: [GitRepositoryComparison!]!
 
     # The changesets in this campaign.
     changesets(first: Int): ChangesetConnection!
@@ -479,6 +506,8 @@ enum ChangesetState {
     OPEN
     CLOSED
     MERGED
+    # This changeset has not been created on the code host yet.
+    PENDING_CREATION
 }
 
 # The state of a Changeset Review
@@ -502,7 +531,7 @@ type Changeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
-    # The repository where this changeset is defined.
+    # The repository changed by this changeset.
     repository: Repository!
 
     # The campaigns that have this changeset in them.
@@ -526,11 +555,14 @@ type Changeset implements Node {
     # The state of the changeset
     state: ChangesetState!
 
-    # The external URL of the changeset on the code host
-    externalURL: ExternalLink!
+    # The external URL of the changeset on the code host, if already created.
+    externalURL: ExternalLink
 
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
+
+    # The diff of this changeset.
+    diff: RepositoryComparison!
 }
 
 # A list of changesets.
@@ -1569,7 +1601,7 @@ type Repository implements Node & GenericSearchResultInterface {
         base: String
         # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
         head: String
-    ): RepositoryComparison!
+    ): GitRepositoryComparison!
     # The repository's contributors.
     contributors(
         # The Git revision range to compute contributors in.
@@ -1720,14 +1752,38 @@ type GitRefConnection {
     pageInfo: PageInfo!
 }
 
+# A non-yet-committed preview of a diff on a repository.
+type PreviewRepositoryComparison implements RepositoryComparison {
+    # The repository that is the base (left-hand side) of this comparison.
+    baseRepository: Repository!
+
+    # The file diffs for each changed file.
+    fileDiffs(
+        # Return the first n file diffs from the list.
+        first: Int
+    ): FileDiffConnection!
+}
+
+# A subset of RepositoryComparison that does not require the diff to refer to concrete git commits.
+interface RepositoryComparison {
+    # The repository that is the base (left-hand side) of this comparison.
+    baseRepository: Repository!
+
+    # The file diffs for each changed file.
+    fileDiffs(
+        # Return the first n file diffs from the list.
+        first: Int
+    ): FileDiffConnection!
+}
+
 # The differences between two Git commits in a repository.
-type RepositoryComparison {
+type GitRepositoryComparison implements RepositoryComparison {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
     # The repository that is the head (right-hand side) of this comparison. Cross-repository
     # comparisons are not yet supported, so this is always equal to
-    # RepositoryComparison.baseRepository.
+    # GitRepositoryComparison.baseRepository.
     headRepository: Repository!
 
     # The range that this comparison represents.
@@ -2307,13 +2363,6 @@ interface File2 {
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Symbols defined in this file.
-    symbols(
-        # Returns the first n symbols from the list.
-        first: Int
-        # Return symbols matching the query.
-        query: String
-    ): SymbolConnection!
 }
 
 # File is temporarily preserved for backcompat with browser extension search API client code.
