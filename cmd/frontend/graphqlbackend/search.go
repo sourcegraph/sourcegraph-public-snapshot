@@ -40,10 +40,6 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-//
-// NOTE: This file and most supporting code will be deleted when search2.go is
-// rolled out. However, right now to understand search and fix bugs in it you
-// should start here.
 
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
@@ -55,19 +51,23 @@ func maxReposToSearch() int {
 	}
 }
 
-// Search provides search results and suggestions.
-func (r *schemaResolver) Search(args *struct {
+type searchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
 	After       *graphql.ID
 	First       *int32
-}) (interface {
+}
+
+type searchIntf interface {
 	Results(context.Context) (*searchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
-}, error) {
+}
+
+// Search provides search results and suggestions.
+func (r *schemaResolver) Search(args *searchArgs) (searchIntf, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
