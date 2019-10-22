@@ -12,13 +12,10 @@ import { mutateGraphQL } from '../../../../backend/graphql'
 import { PageTitle } from '../../../../components/PageTitle'
 import { ThemeProps } from '../../../../theme'
 import { useLocalStorage } from '../../../../util/useLocalStorage'
-import { getCompleteCampaignExtensionData } from '../../extensionData'
 import { CampaignFormData } from '../../form/CampaignForm'
 import { CampaignPreview } from '../../preview/CampaignPreview'
 import { NamespaceCampaignsAreaContext } from '../NamespaceCampaignsArea'
 import { NewCampaignForm } from './NewCampaignForm'
-import { parseJSON } from '../../../../settings/configuration'
-import { Workflow } from '../../../../schema/workflow.schema'
 import { RULE_TEMPLATES } from '../../form/templates'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
@@ -72,11 +69,12 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
     }, [setBreadcrumbItem])
 
     const template = RULE_TEMPLATES.find(t => t.id === match.params.template)
+    const templateNoWorkflow = !template || !!template.noWorkflow
 
     // Persist the user's create-or-draft choice.
     const [defaultDraft, setDefaultDraft] = useLocalStorage('CampaignsNewPage.draft', true)
 
-    const [value, setValue] = useLocalStorage<CampaignFormData>('CampaignsNewPage.value', {
+    const [value, setValue] = useLocalStorage<CampaignFormData>(`CampaignsNewPage[${match.params.template}].value`, {
         name: new URLSearchParams(props.location.search).get('name') || '',
         namespace: namespace.id,
         workflowAsJSONCString: template ? JSON.stringify(template.defaultWorkflow, null, 2) : '{}',
@@ -92,16 +90,20 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         [defaultDraft, setDefaultDraft, setValue]
     )
 
-    const [campaignPreview, extensionData, status, isLoading] = useCampaignPreview(props, {
-        ...value,
-        name: value.name || value.nameSuggestion || '',
-    })
+    const [campaignPreview, extensionData, status, isLoading] = useCampaignPreview(
+        props,
+        {
+            ...value,
+            name: value.name || value.nameSuggestion || '',
+        },
+        templateNoWorkflow
+    )
 
     const [creationOrError, setCreationOrError] = useState<null | typeof LOADING | Pick<GQL.IExpCampaign, 'url'>>(null)
     const onSubmit = useCallback(async () => {
         setCreationOrError(LOADING)
         try {
-            if (campaignPreview === LOADING || isErrorLike(campaignPreview)) {
+            if (template && !template.noWorkflow && (campaignPreview === LOADING || isErrorLike(campaignPreview))) {
                 throw new Error('campaign preview is not ready')
             }
             const effectiveName = value.name || value.nameSuggestion || ''
@@ -125,12 +127,16 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         extensionData,
         namespace.id,
         props.extensionsController.services.notifications.showMessages,
+        template,
         value,
     ])
 
+    const hasWorkflowValue =
+        value.workflowAsJSONCString !== '' &&
+        value.workflowAsJSONCString !== '{}' &&
+        !isErrorLike(parseJSONCOrError(value.workflowAsJSONCString))
     const isValid =
-        value.name !== '' ||
-        (value.nameSuggestion !== undefined && !isErrorLike(parseJSONCOrError(value.workflowAsJSONCString)))
+        (value.name !== '' || value.nameSuggestion !== undefined) && (templateNoWorkflow || hasWorkflowValue)
 
     const TemplateIcon = template ? template.icon : undefined
 
@@ -159,7 +165,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                             template={template}
                             className="flex-1"
                         />
-                        {USE_CAMPAIGN_RULES && value && isValid && (
+                        {USE_CAMPAIGN_RULES && value && isValid && campaignPreview !== null && (
                             <>
                                 <hr className="my-5" />
                                 <CampaignPreview

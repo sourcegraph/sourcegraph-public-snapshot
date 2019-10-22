@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
-import { combineLatest, merge, Observable, of, Subject } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subject, EMPTY } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -26,6 +26,7 @@ import { ThreadConnectionFiltersFragment } from '../../threads/list/useThreads'
 import { ExtensionDataStatus, getCampaignExtensionData } from '../extensionData'
 import { parseJSON } from '../../../settings/configuration'
 import { Workflow } from '../../../schema/workflow.schema'
+import { parseJSONCOrError } from '../../../../../shared/src/util/jsonc'
 
 export const RepositoryComparisonQuery = gql`
 baseRepository {
@@ -165,6 +166,13 @@ const LOADING: 'loading' = 'loading'
 
 export type CampaignPreviewResult = typeof LOADING | GQL.IExpCampaignPreview | ErrorLike
 
+export const EMPTY_EXT_DATA: GQL.IExpCampaignExtensionData = {
+    rawChangesets: [],
+    rawDiagnostics: [],
+    rawLogMessages: [],
+    rawSideEffects: [],
+}
+
 type CreateCampaignInputWithoutExtensionData = Pick<
     GQL.IExpCreateCampaignInput,
     Exclude<keyof GQL.IExpCreateCampaignInput, 'extensionData'>
@@ -176,7 +184,10 @@ const queryCampaignPreview = ({
 }: ExtensionsControllerProps & {
     input: Pick<GQL.IExpCreateCampaignInput, Exclude<keyof GQL.IExpCreateCampaignInput, 'extensionData'>>
 }): Observable<readonly [GQL.IExpCampaignPreview | ErrorLike, GQL.IExpCampaignExtensionData, ExtensionDataStatus]> => {
-    const workflow: Workflow = parseJSON(input.workflowAsJSONCString)
+    const workflow = parseJSONCOrError<Workflow>(input.workflowAsJSONCString)
+    if (isErrorLike(workflow)) {
+        return of([workflow, EMPTY_EXT_DATA, { isLoading: false }])
+    }
     const extensionDataAndStatus = getCampaignExtensionData(extensionsController, workflow, input).pipe(share())
     const campaignPreview = extensionDataAndStatus.pipe(
         map(([extensionData]) => extensionData),
@@ -232,20 +243,14 @@ const queryCampaignPreview = ({
     )
 }
 
-const EMPTY_EXT_DATA: GQL.IExpCampaignExtensionData = {
-    rawChangesets: [],
-    rawDiagnostics: [],
-    rawLogMessages: [],
-    rawSideEffects: [],
-}
-
 /**
  * A React hook that observes a campaign preview queried from the GraphQL API.
  */
 export const useCampaignPreview = (
     { extensionsController }: ExtensionsControllerProps,
-    input: CreateCampaignInputWithoutExtensionData
-): [CampaignPreviewResult, GQL.IExpCampaignExtensionData, ExtensionDataStatus, boolean] => {
+    input: CreateCampaignInputWithoutExtensionData,
+    ignore: boolean
+): [CampaignPreviewResult | null, GQL.IExpCampaignExtensionData, ExtensionDataStatus, boolean] => {
     const inputSubject = useMemo(() => new Subject<CreateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<CampaignPreviewResult>(LOADING)
@@ -296,6 +301,10 @@ export const useCampaignPreview = (
         })
         return () => subscription.unsubscribe()
     }, [extensionsController, inputSubject])
-    useEffect(() => inputSubject.next(input), [input, inputSubject])
-    return [result, data, status, isLoading]
+    useEffect(() => {
+        if (!ignore) {
+            inputSubject.next(input)
+        }
+    }, [input, inputSubject, ignore])
+    return ignore ? [null, EMPTY_EXT_DATA, { isLoading: false }, false] : [result, data, status, isLoading]
 }

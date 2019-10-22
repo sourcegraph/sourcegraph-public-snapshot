@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
+import H from 'history'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { CampaignFormCommonFields } from './CampaignFormCommonFields'
@@ -7,6 +8,8 @@ import { Workflow } from '../../../schema/workflow.schema'
 import { RuleTemplate } from './templates'
 import { parseJSONCOrError } from '../../../../../shared/src/util/jsonc'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
+import { WorkflowEditor } from './WorkflowEditor'
+import { ThemeProps } from '../../../theme'
 
 export interface CampaignFormData extends Omit<GQL.IExpCreateCampaignInput, 'name' | 'extensionData' | 'rules'> {
     name: string | null
@@ -26,20 +29,23 @@ export interface CampaignFormControl {
     isLoading?: boolean
 }
 
-export interface CampaignFormProps extends CampaignFormControl {
+export interface CampaignFormProps extends CampaignFormControl, ThemeProps {
     /** Called when the form is submitted. */
     onSubmit: () => void
 
     template?: RuleTemplate
 
     className?: string
+    history: H.History
 }
 
 /**
  * A form to create or edit a campaign.
  */
 export const CampaignForm: React.FunctionComponent<
-    CampaignFormProps & { children: ({ form }: { form: React.ReactFragment }) => JSX.Element }
+    CampaignFormProps & {
+        children: ({ form, template }: { form: React.ReactFragment; template: RuleTemplate | undefined }) => JSX.Element
+    }
 > = ({
     value,
     isValid,
@@ -50,6 +56,7 @@ export const CampaignForm: React.FunctionComponent<
     template,
     className = '',
     children,
+    ...props
 }) => {
     const onSubmit = useCallback<React.FormEventHandler>(
         e => {
@@ -85,16 +92,29 @@ export const CampaignForm: React.FunctionComponent<
             <style>{'.form-group { max-width: 45rem; }' /* TODO!(sqs): hack */}</style>
             {children({
                 form: (
-                    <CampaignFormCommonFields
-                        value={value}
-                        isValid={isValid}
-                        onChange={onChange}
-                        disabled={disabled}
-                        isLoading={isLoading}
-                        autoFocus={true}
-                        className="mt-4"
-                    />
+                    <>
+                        <CampaignFormCommonFields
+                            value={value}
+                            isValid={isValid}
+                            onChange={onChange}
+                            disabled={disabled}
+                            isLoading={isLoading}
+                            autoFocus={true}
+                            className="mt-4"
+                        />
+                        {template && !template.noWorkflow && (
+                            <WorkflowEditor
+                                {...props}
+                                value={value}
+                                isValid={isValid}
+                                onChange={onChange}
+                                disabled={disabled}
+                                isLoading={isLoading}
+                            />
+                        )}
+                    </>
                 ),
+                template,
             })}
         </Form>
     )

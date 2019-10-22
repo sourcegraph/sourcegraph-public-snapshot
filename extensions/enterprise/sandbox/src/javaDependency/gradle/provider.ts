@@ -6,7 +6,7 @@ import { toArray, switchMap, filter, map, share, catchError, startWith, tap, fir
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
-import { JavaDependencyManagementProvider, JavaDependencyQuery } from '..'
+import { JavaDependencyManagementProvider, JavaDependencyQuery, JavaDependencyCampaignContext } from '..'
 import { DependencySpecification, DependencyDeclaration, DependencyResolution } from '../../dependencyManagement'
 import { editForCommands } from '../../execServer/editsForCommands'
 import { openTextDocument, findMatchRange } from '../../dependencyManagement/util'
@@ -55,56 +55,63 @@ const provideDependencySpecification = (
             }
             if (!dependenciesLock) {
                 const declRange = findMatchRange(buildGradle.text!, query.name)
+                // if (!query.supportMissingDependencyLock) {
+                //     return of(null)
+                // }
 
                 // Use `gradle dependencyInsight` to determine if this dependency exists
                 // transitively.
-                return from(hasDependency(new URL(buildGradle.uri), query)).pipe(
-                    startWith(LOADING),
+                return from(
+                    query.supportMissingDependencyLock ? hasDependency(new URL(buildGradle.uri), query) : of(false)
+                ).pipe(
+                    query.supportMissingDependencyLock ? startWith(LOADING) : tap(),
                     catchError(err => of<ErrorLike>(asError(err))),
-                    map(hasDependency =>
-                        hasDependency
-                            ? {
-                                  query,
-                                  declarations:
-                                      declRange && hasDependency !== LOADING && !isErrorLike(hasDependency)
-                                          ? [
-                                                {
-                                                    name: query.name,
-                                                    requestedVersion: query.versionRange,
-                                                    direct: true,
-                                                    location: { uri: new URL(buildGradle.uri), range: declRange },
-                                                },
-                                            ]
-                                          : [],
-                                  resolutions: [],
-                                  diagnostics: [
+                    map(hasDependency => ({
+                        query,
+                        declarations:
+                            declRange && hasDependency !== LOADING && !isErrorLike(hasDependency)
+                                ? [
                                       {
-                                          resource: new URL(buildGradle.uri),
-                                          range: declRange || new Range(0, 0, 0, 0),
-                                          ...(isErrorLike(hasDependency)
-                                              ? {
-                                                    message:
-                                                        'No dependency.lock found and `gradle dependencyInsight` failed',
-                                                    detail:
-                                                        '```text\n' +
-                                                        (hasDependency.message as string)
-                                                            .replace(/^dependencyInsight\($/m, '')
-                                                            .trim() +
-                                                        '\n```',
-                                                    severity: DiagnosticSeverity.Error,
-                                                }
-                                              : {
-                                                    message: `No dependency.lock found (${
-                                                        hasDependency === LOADING ? 'using' : 'used'
-                                                    } slower gradle dependencyInsight)`,
-                                                    severity: DiagnosticSeverity.Hint,
-                                                }),
+                                          name: query.name,
+                                          requestedVersion: query.versionRange,
+                                          direct: true,
+                                          location: { uri: new URL(buildGradle.uri), range: declRange },
                                       },
-                                  ],
-                                  isLoading: hasDependency === LOADING,
-                              }
-                            : null
-                    )
+                                  ]
+                                : [],
+                        resolutions: [],
+                        diagnostics: [
+                            {
+                                resource: new URL(buildGradle.uri),
+                                range: declRange || new Range(0, 0, 0, 0),
+                                ...(isErrorLike(hasDependency)
+                                    ? {
+                                          message: 'No dependency.lock found and `gradle dependencyInsight` failed',
+                                          detail:
+                                              '```text\n' +
+                                              (hasDependency.message as string)
+                                                  .replace(/^dependencyInsight\($/m, '')
+                                                  .trim() +
+                                              '\n```',
+                                          severity: DiagnosticSeverity.Error,
+                                      }
+                                    : query.supportMissingDependencyLock
+                                    ? {
+                                          message: `No dependency.lock found (${
+                                              hasDependency === LOADING ? 'using' : 'used'
+                                          } slower gradle dependencyInsight)`,
+                                          severity: DiagnosticSeverity.Hint,
+                                      }
+                                    : {
+                                          message: `No dependency.lock found`,
+                                          detail:
+                                              'Set variable `supportMissingDependencyLock` to `true` to run `gradle dependencyInsight` to compute the transitive dependency set on-the-fly.',
+                                          severity: DiagnosticSeverity.Warning,
+                                      }),
+                            },
+                        ],
+                        isLoading: hasDependency === LOADING,
+                    }))
                 )
             }
 
@@ -177,7 +184,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                         includes: ['(^|/)build.gradle$'],
                         type: 'regexp',
                     },
-                    maxResults: 5, // TODO!(sqs): un-hardcode
+                    maxResults: 100, // TODO!(sqs): un-hardcode
                 }
             )
         ).pipe(

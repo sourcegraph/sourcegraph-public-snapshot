@@ -14,7 +14,7 @@ export const RuleTemplateChooser: React.FunctionComponent<Props> = ({ urlToFormW
     <div className={className}>
         <div className="card">
             <ul className="list-group list-group-flush">
-                {RULE_TEMPLATES.filter(template => !template.isEmpty).map(template => (
+                {RULE_TEMPLATES.filter(template => template.title).map(template => (
                     <CampaignTemplateRow
                         key={template.id}
                         template={template}

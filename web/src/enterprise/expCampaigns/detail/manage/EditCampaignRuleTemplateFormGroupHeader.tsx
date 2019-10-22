@@ -36,7 +36,7 @@ export const EditCampaignRuleTemplateFormGroupHeader: React.FunctionComponent<Pr
         <div className="alert alert-danger">Invalid campaign template</div>
     ) : isErrorLike(template) ? (
         <div className="alert alert-danger">{template.message}</div>
-    ) : !template.isEmpty ? (
+    ) : !template.noWorkflow ? (
         <>
             <header className="d-flex align-items-center justify-content-between mb-2">
                 <h3 className="mb-0 d-flex align-items-start">

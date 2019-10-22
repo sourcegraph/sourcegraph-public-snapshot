@@ -31,7 +31,17 @@
       "title": "Workflow variables",
       "description": "Variables that are available to the workflow item. Top-level variables are available to all templates, runs, and triggers in the workflow.",
       "type": "object",
-      "propertyNames": { "type": "string", "pattern": "^\\w+$" }
+      "propertyNames": { "type": "string", "pattern": "^\\w+$" },
+      "properties": {
+        "createChangesets": {
+          "type": "boolean",
+          "description": "Whether to create changesets with a suggested fix (if possible)."
+        },
+        "headBranch": {
+          "type": "string",
+          "description": "The name of the head branch to use when creating branches for the changesets."
+        }
+      }
     },
     "WorkflowRun": {
       "title": "Workflow run",

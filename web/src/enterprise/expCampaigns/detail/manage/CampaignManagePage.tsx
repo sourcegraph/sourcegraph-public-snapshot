@@ -15,6 +15,7 @@ import { CampaignAreaContext } from '../CampaignArea'
 import { EditCampaignForm } from './EditCampaignForm'
 import { Workflow } from '../../../../schema/workflow.schema'
 import { parseJSON } from '../../../../settings/configuration'
+import { useCampaignUpdatePreview } from '../../updatePreview/useCampaignUpdatePreview'
 
 export const updateCampaign = (input: GQL.IExpUpdateCampaignInput): Promise<GQL.IExpCampaign> =>
     mutateGraphQL(
@@ -63,6 +64,11 @@ export const CampaignManagePage: React.FunctionComponent<Props> = ({ campaign, c
     const onChange = useCallback((newValue: Partial<CampaignFormData>) => {
         setValue((prevValue: CampaignFormData) => ({ ...prevValue, ...newValue }))
     }, [])
+
+    const [campaignUpdatePreview, extensionData, status, isLoading2] = useCampaignUpdatePreview(props, {
+        ...value,
+        name: value.name || value.nameSuggestion || '',
+    })
 
     const [isLoading, setIsLoading] = useState(false)
     const onSubmit = useCallback(async () => {

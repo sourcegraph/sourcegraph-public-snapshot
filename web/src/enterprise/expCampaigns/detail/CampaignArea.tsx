@@ -260,7 +260,7 @@ export const CampaignArea: React.FunctionComponent<Props> = ({
                                     <CampaignManagePage {...context} match={match} className={PAGE_CLASS_NAME} />
                                 </>
                             ),
-                            condition: () => USE_CAMPAIGN_RULES,
+                            condition: () => USE_CAMPAIGN_RULES && false,
                         },
                     ]}
                     location={props.location}

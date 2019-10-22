@@ -38,7 +38,7 @@ export const CampaignFormAddRuleTemplateDropdownButton: React.FunctionComponent<
                 <PlusIcon className="icon-inline" /> Add rule
             </DropdownToggle>
             <DropdownMenu style={{ maxWidth: '75vw', width: '30rem' }}>
-                {RULE_TEMPLATES.filter(template => !template.isEmpty).map(template => (
+                {RULE_TEMPLATES.filter(template => !template.noWorkflow).map(template => (
                     <DropdownItem
                         key={template.id}
                         onClick={() => onSelect(template)}

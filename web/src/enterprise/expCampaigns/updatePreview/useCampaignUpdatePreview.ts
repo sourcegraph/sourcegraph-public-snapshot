@@ -1,7 +1,15 @@
-import { isEqual } from 'lodash'
 import { useEffect, useMemo, useState } from 'react'
-import { from, merge, Observable, Subject } from 'rxjs'
-import { catchError, debounceTime, distinctUntilChanged, map, startWith, switchMap, throttleTime } from 'rxjs/operators'
+import { merge, Observable, Subject, of, combineLatest } from 'rxjs'
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    map,
+    startWith,
+    switchMap,
+    throttleTime,
+    share,
+} from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -12,10 +20,11 @@ import {
     diffStatFieldsFragment,
     fileDiffHunkRangeFieldsFragment,
 } from '../../../repo/compare/RepositoryCompareDiffPage'
-import { RuleDefinition } from '../../rulesOLD/types'
 import { ThreadFragment } from '../../threads/util/graphql'
-import { getCompleteCampaignExtensionData } from '../extensionData'
-import { RepositoryComparisonQuery, ThreadPreviewFragment } from '../preview/useCampaignPreview'
+import { getCampaignExtensionData, ExtensionDataStatus } from '../extensionData'
+import { RepositoryComparisonQuery, ThreadPreviewFragment, EMPTY_EXT_DATA } from '../preview/useCampaignPreview'
+import { parseJSONCOrError } from '../../../../../shared/src/util/jsonc'
+import { Workflow } from '../../../schema/workflow.schema'
 
 export const CampaignUpdatePreviewFragment = gql`
     fragment CampaignUpdatePreviewFragment on ExpCampaignUpdatePreview {
@@ -68,13 +77,16 @@ const queryCampaignUpdatePreview = ({
     input,
 }: ExtensionsControllerProps & {
     input: Pick<GQL.IExpUpdateCampaignInput, Exclude<keyof GQL.IExpUpdateCampaignInput, 'extensionData'>>
-}): Observable<GQL.IExpCampaignUpdatePreview> =>
-    from(
-        getCompleteCampaignExtensionData(
-            extensionsController,
-            input.rules ? input.rules.map(rule => JSON.parse(rule.definition) as RuleDefinition) : []
-        )
-    ).pipe(
+}): Observable<
+    readonly [GQL.IExpCampaignUpdatePreview | ErrorLike, GQL.IExpCampaignExtensionData, ExtensionDataStatus]
+> => {
+    const workflow = parseJSONCOrError<Workflow>(input.workflowAsJSONCString)
+    if (isErrorLike(workflow)) {
+        return of([workflow, EMPTY_EXT_DATA, { isLoading: false }])
+    }
+
+    const extensionDataAndStatus = getCampaignExtensionData(extensionsController, workflow, input).pipe(share())
+    const campaignUpdatePreview = extensionDataAndStatus.pipe(
         switchMap(extensionData =>
             queryGraphQL(
                 gql`
@@ -102,6 +114,10 @@ const queryCampaignUpdatePreview = ({
             )
         )
     )
+    return combineLatest([campaignUpdatePreview, extensionDataAndStatus]).pipe(
+        map(([campaignUpdatePreview, [data, status]]) => [campaignUpdatePreview, data, status] as const)
+    )
+}
 
 /**
  * A React hook that observes a campaign update preview queried from the GraphQL API.
@@ -111,16 +127,17 @@ const queryCampaignUpdatePreview = ({
 export const useCampaignUpdatePreview = (
     { extensionsController }: ExtensionsControllerProps,
     input: UpdateCampaignInputWithoutExtensionData
-): [Result, boolean] => {
+): [Result | null, GQL.IExpCampaignExtensionData, boolean] => {
     const inputSubject = useMemo(() => new Subject<UpdateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
     const [result, setResult] = useState<Result>(LOADING)
+    const [data] = useState<GQL.IExpCampaignExtensionData>(EMPTY_EXT_DATA)
     useEffect(() => {
         // Refresh more slowly on changes to the name or description.
         const inputSubjectChanges = merge(
             inputSubject.pipe(
                 debounceTime(250),
-                distinctUntilChanged((a, b) => isEqual(a.rules, b.rules))
+                distinctUntilChanged((a, b) => a.workflowAsJSONCString === b.workflowAsJSONCString)
             ),
             inputSubject.pipe(
                 distinctUntilChanged(
@@ -155,5 +172,5 @@ export const useCampaignUpdatePreview = (
         return () => subscription.unsubscribe()
     }, [extensionsController, inputSubject])
     useEffect(() => inputSubject.next(input), [input, inputSubject])
-    return [result, isLoading]
+    return [result, data, isLoading]
 }

@@ -303,16 +303,16 @@ export const JavaDependencyRuleTemplate: RuleTemplate = {
     defaultWorkflow: {
         // extensions: ['sourcegraph/automation-preview'],
         variables: {
-            packageName: 'react-router-dom',
-            matchVersion: '*',
-            action: { requireVersion: '^5.0.1' },
+            packageName: 'com.google.guava:guava',
+            matchVersion: '19.0',
+            action: { requireVersion: '21.0' },
             createChangesets: true,
-            headBranch: 'upgrade-react-router-dom',
+            headBranch: 'upgrade-guava',
         },
         run: [
             {
-                diagnostics: 'dependencyManagement.packageJsonDependency',
-                codeActions: [{ command: 'dependencyManagement.packageJsonDependency.action' }],
+                diagnostics: 'dependencyManagement.javaDependency',
+                codeActions: [{ command: 'dependencyManagement.javaDependency.action' }],
             },
         ],
         behaviors: {
@@ -324,12 +324,32 @@ export const JavaDependencyRuleTemplate: RuleTemplate = {
         properties: {
             variables: {
                 type: 'object',
-                required: ['packageName'],
+                required: ['packageName', 'matchVersion'],
                 properties: {
                     packageName: {
                         type: 'string',
                         description:
                             'The Java group and artifact name to operate on (example: "com.google.guava:guava").',
+                    },
+                    matchVersion: {
+                        type: 'string',
+                        description: 'The version of the Java dependency to modify (example: "19.0").',
+                    },
+                    action: {
+                        type: 'object',
+                        required: ['requireVersion'],
+                        additionalProperties: false,
+                        properties: {
+                            requireVersion: {
+                                type: 'string',
+                                description: 'The desired version to upgrade to (example: "21.0").',
+                            },
+                        },
+                    },
+                    supportMissingDependencyLock: {
+                        type: 'boolean',
+                        description:
+                            'For Gradle packages without a dependency.lock file, run `gradle dependencyInsight` on-the-fly. WARNING: This is not optimized yet.',
                     },
                 },
             },

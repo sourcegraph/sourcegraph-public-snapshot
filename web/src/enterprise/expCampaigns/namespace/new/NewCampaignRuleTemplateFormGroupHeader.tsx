@@ -17,7 +17,7 @@ export const NewCampaignRuleTemplateFormGroupHeader: React.FunctionComponent<Pro
         <>{isErrorLike(template) && <div className="alert alert-danger">{template.message}</div>}</>
     ) : (
         <>
-            {template.isEmpty ? (
+            {template.noWorkflow ? (
                 <h2>New campaign</h2>
             ) : (
                 <>

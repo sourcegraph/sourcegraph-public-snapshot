@@ -7,8 +7,6 @@ import { ExistingExternalChangesetsAndIssuesRuleTemplate } from './ExistingExter
 import { FindReplaceRuleTemplate } from './FindReplaceRuleTemplate'
 import { NPMCredentialsRuleTemplate } from './NPMCredentialsRuleTemplate'
 import { PackageJsonDependencyRuleTemplate } from './PackageJsonDependencyRuleTemplate'
-import { RubyGemDependencyRuleTemplate } from './RubyGemDependencyRuleTemplate'
-import { TriageSearchResultsRuleTemplate } from './TriageSearchResultsRuleTemplate'
 import { JavaDependencyRuleTemplate } from './JavaDependencyRuleTemplate'
 import { Workflow } from '../../../../schema/workflow.schema'
 import { JSONSchema7 } from 'json-schema'
@@ -29,8 +27,8 @@ export interface RuleTemplate {
     title: string
     detail?: string
     icon?: React.ComponentType<{ className?: string }>
-    renderForm: React.FunctionComponent<RuleTemplateComponentContext>
-    isEmpty?: boolean
+    renderForm?: React.FunctionComponent<RuleTemplateComponentContext>
+    noWorkflow?: boolean
     defaultWorkflow?: Workflow
     workflowJSONSchema?: JSONSchema7
     suggestTitle?: (workflow: Workflow) => string | undefined
@@ -50,5 +48,5 @@ export const RULE_TEMPLATES: RuleTemplate[] = [
           ]
         : []),
     ExistingExternalChangesetsAndIssuesRuleTemplate,
-    { id: EMPTY_RULE_TEMPLATE_ID, title: '', renderForm: () => null, isEmpty: true },
+    { id: EMPTY_RULE_TEMPLATE_ID, title: '', renderForm: () => null, noWorkflow: true },
 ]
