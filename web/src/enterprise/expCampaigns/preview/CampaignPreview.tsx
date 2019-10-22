@@ -19,11 +19,16 @@ import { ShowThreadPreviewModalButton } from '../../threads/preview/ShowThreadPr
 import { CampaignImpactSummaryBar } from '../common/CampaignImpactSummaryBar'
 import { sumDiffStats } from '../common/useCampaignImpactSummary'
 import { CampaignFormData } from '../form/CampaignForm'
-import { useCampaignPreview } from './useCampaignPreview'
+import { CampaignPreviewResult } from './useCampaignPreview'
 import { SideEffectList } from '../../sideEffects/SideEffectList'
+import { ExtensionDataStatus } from '../extensionData'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps, ThemeProps {
     data: CampaignFormData
+
+    campaignPreview: CampaignPreviewResult
+    status: ExtensionDataStatus
+    isLoading: boolean
 
     className?: string
     location: H.Location
@@ -35,20 +40,15 @@ const LOADING = 'loading' as const
 /**
  * A campaign preview.
  */
-export const CampaignPreview: React.FunctionComponent<Props> = ({ data, className = '', ...props }) => {
+export const CampaignPreview: React.FunctionComponent<Props> = ({
+    data,
+    campaignPreview,
+    status,
+    isLoading,
+    className = '',
+    ...props
+}) => {
     const [query, onQueryChange, locationWithQuery] = useQueryParameter(props)
-    const [campaignPreview, status, isLoading] = useCampaignPreview(
-        props,
-        { ...data, name: data.name || data.nameSuggestion || '' },
-        query
-    )
-    const threadFilterProps: ConnectionListFilterContext<GQL.IThreadConnectionFilters> = {
-        connection:
-            campaignPreview !== LOADING && !isErrorLike(campaignPreview) ? campaignPreview.threads : campaignPreview,
-        query,
-        onQueryChange,
-        locationWithQuery,
-    }
 
     const [participantsQuery, onParticipantsQueryChange] = useState('')
 
@@ -121,11 +121,6 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                             showRepository={true}
                                             headerItems={{
                                                 left: <h4 className="mb-0">Changesets &amp; issues</h4>,
-                                                right: (
-                                                    <div className="d-none">
-                                                        <ThreadListHeaderCommonFilters {...threadFilterProps} />
-                                                    </div>
-                                                ),
                                             }}
                                             right={ShowThreadPreviewModalButton}
                                             className="mb-4"

@@ -24,6 +24,7 @@ import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import { parseJSONCOrError } from '../../../../../../shared/src/util/jsonc'
+import { useCampaignPreview } from '../../preview/useCampaignPreview'
 
 export const createCampaign = (input: GQL.IExpCreateCampaignInput): Promise<GQL.IExpCampaign> =>
     mutateGraphQL(
@@ -91,16 +92,19 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         [defaultDraft, setDefaultDraft, setValue]
     )
 
+    const [campaignPreview, extensionData, status, isLoading] = useCampaignPreview(props, {
+        ...value,
+        name: value.name || value.nameSuggestion || '',
+    })
+
     const [creationOrError, setCreationOrError] = useState<null | typeof LOADING | Pick<GQL.IExpCampaign, 'url'>>(null)
     const onSubmit = useCallback(async () => {
         setCreationOrError(LOADING)
         try {
+            if (campaignPreview === LOADING || isErrorLike(campaignPreview)) {
+                throw new Error('campaign preview is not ready')
+            }
             const effectiveName = value.name || value.nameSuggestion || ''
-            const extensionData = await getCompleteCampaignExtensionData(
-                props.extensionsController,
-                parseJSON(value.workflowAsJSONCString) as Workflow,
-                { ...value, name: effectiveName }
-            )
             setCreationOrError(
                 await createCampaign({
                     ...value,
@@ -116,7 +120,13 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                 type: NotificationType.Error,
             })
         }
-    }, [namespace.id, props.extensionsController, value])
+    }, [
+        campaignPreview,
+        extensionData,
+        namespace.id,
+        props.extensionsController.services.notifications.showMessages,
+        value,
+    ])
 
     const isValid =
         value.name !== '' ||
@@ -152,7 +162,13 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
                         {USE_CAMPAIGN_RULES && value && isValid && (
                             <>
                                 <hr className="my-5" />
-                                <CampaignPreview {...props} data={value} />
+                                <CampaignPreview
+                                    {...props}
+                                    data={value}
+                                    campaignPreview={campaignPreview}
+                                    status={status}
+                                    isLoading={isLoading}
+                                />
                             </>
                         )}
                     </>

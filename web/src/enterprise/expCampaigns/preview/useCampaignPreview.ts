@@ -105,7 +105,7 @@ fragment ThreadPreviewFragment on ThreadPreview {
 export const CampaignPreviewFragment = gql`
     fragment CampaignPreviewFragment on ExpCampaignPreview {
         name
-        threads(filters: { query: $query }) {
+        threads {
             nodes {
                 __typename
                 ... on ThreadPreview {
@@ -163,7 +163,7 @@ export const CampaignPreviewFragment = gql`
 
 const LOADING: 'loading' = 'loading'
 
-type Result = typeof LOADING | GQL.IExpCampaignPreview | ErrorLike
+export type CampaignPreviewResult = typeof LOADING | GQL.IExpCampaignPreview | ErrorLike
 
 type CreateCampaignInputWithoutExtensionData = Pick<
     GQL.IExpCreateCampaignInput,
@@ -173,11 +173,9 @@ type CreateCampaignInputWithoutExtensionData = Pick<
 const queryCampaignPreview = ({
     extensionsController,
     input,
-    query,
 }: ExtensionsControllerProps & {
     input: Pick<GQL.IExpCreateCampaignInput, Exclude<keyof GQL.IExpCreateCampaignInput, 'extensionData'>>
-    query: string
-}): Observable<[GQL.IExpCampaignPreview | ErrorLike, ExtensionDataStatus]> => {
+}): Observable<readonly [GQL.IExpCampaignPreview | ErrorLike, GQL.IExpCampaignExtensionData, ExtensionDataStatus]> => {
     const workflow: Workflow = parseJSON(input.workflowAsJSONCString)
     const extensionDataAndStatus = getCampaignExtensionData(extensionsController, workflow, input).pipe(share())
     const campaignPreview = extensionDataAndStatus.pipe(
@@ -185,7 +183,7 @@ const queryCampaignPreview = ({
         switchMap(extensionData =>
             queryGraphQL(
                 gql`
-                    query CampaignPreview($input: ExpCampaignPreviewInput!, $query: String) {
+                    query CampaignPreview($input: ExpCampaignPreviewInput!) {
                         expCampaignPreview(input: $input) {
                             ...CampaignPreviewFragment
                         }
@@ -202,7 +200,6 @@ const queryCampaignPreview = ({
                             extensionData,
                         },
                     },
-                    query,
                 } as GQL.IExpCampaignPreviewOnQueryArguments
             ).pipe(
                 map(dataOrThrowErrors),
@@ -230,7 +227,16 @@ const queryCampaignPreview = ({
             )
         )
     )
-    return combineLatest([campaignPreview, extensionDataAndStatus.pipe(map(([, status]) => status))])
+    return combineLatest([campaignPreview, extensionDataAndStatus]).pipe(
+        map(([campaignPreview, [data, status]]) => [campaignPreview, data, status] as const)
+    )
+}
+
+const EMPTY_EXT_DATA: GQL.IExpCampaignExtensionData = {
+    rawChangesets: [],
+    rawDiagnostics: [],
+    rawLogMessages: [],
+    rawSideEffects: [],
 }
 
 /**
@@ -238,12 +244,12 @@ const queryCampaignPreview = ({
  */
 export const useCampaignPreview = (
     { extensionsController }: ExtensionsControllerProps,
-    input: CreateCampaignInputWithoutExtensionData,
-    query: string // TODO!(sqs): the query param is currently ignored
-): [Result, ExtensionDataStatus, boolean] => {
+    input: CreateCampaignInputWithoutExtensionData
+): [CampaignPreviewResult, GQL.IExpCampaignExtensionData, ExtensionDataStatus, boolean] => {
     const inputSubject = useMemo(() => new Subject<CreateCampaignInputWithoutExtensionData>(), [])
     const [isLoading, setIsLoading] = useState(true)
-    const [result, setResult] = useState<Result>(LOADING)
+    const [result, setResult] = useState<CampaignPreviewResult>(LOADING)
+    const [data, setData] = useState<GQL.IExpCampaignExtensionData>(EMPTY_EXT_DATA)
     const [status, setStatus] = useState<ExtensionDataStatus>({ isLoading: false })
     useEffect(() => {
         // Refresh more slowly on changes to the name or description.
@@ -264,15 +270,20 @@ export const useCampaignPreview = (
         const subscription = merge(
             inputSubjectChanges.pipe(
                 distinctUntilChanged((a, b) => isEqual(a, b)),
-                mapTo([LOADING, { isLoading: true }] as [typeof LOADING, ExtensionDataStatus])
+                mapTo([LOADING, EMPTY_EXT_DATA, { isLoading: true }] as [
+                    typeof LOADING,
+                    GQL.IExpCampaignExtensionData,
+                    ExtensionDataStatus
+                ])
             ),
             inputSubjectChanges.pipe(
                 throttleTime(1000, undefined, { leading: true, trailing: true }),
                 distinctUntilChanged((a, b) => isEqual(a, b)),
-                switchMap(input => queryCampaignPreview({ extensionsController, input, query }))
+                switchMap(input => queryCampaignPreview({ extensionsController, input }))
             )
-        ).subscribe(([result, status]) => {
+        ).subscribe(([result, data, status]) => {
             setStatus(status)
+            setData(data)
             setResult(prevResult => {
                 setIsLoading(result === LOADING || status.isLoading)
                 // Reuse last result while loading, to reduce UI jitter.
@@ -284,7 +295,7 @@ export const useCampaignPreview = (
             })
         })
         return () => subscription.unsubscribe()
-    }, [extensionsController, inputSubject, query])
+    }, [extensionsController, inputSubject])
     useEffect(() => inputSubject.next(input), [input, inputSubject])
-    return [result, status, isLoading]
+    return [result, data, status, isLoading]
 }

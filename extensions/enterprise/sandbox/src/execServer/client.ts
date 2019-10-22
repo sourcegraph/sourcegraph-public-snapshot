@@ -130,6 +130,7 @@ function getPublicRepoArchiveUrl(repo: string, commit: string): string {
         'github.com/sd9/ReactNativeReduxCasts': 'github.com/StephenGrider/ReactNativeReduxCasts',
         'github.com/sd9/astyanax': 'github.com/netflix/astyanax',
         'github.com/sd9/dynomite': 'github.com/netflix/astyanax',
+        'github.com/sd9/functions-samples': 'github.com/firebase/functions-samples',
     }
     if (repo in MAP || sourcegraph.internal.sourcegraphURL.hostname === 'localhost') {
         return `https://sourcegraph.com/${MAP[repo] || repo}@${commit}/-/raw/`

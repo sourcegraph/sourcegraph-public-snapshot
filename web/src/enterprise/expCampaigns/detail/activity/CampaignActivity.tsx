@@ -28,7 +28,7 @@ export const CampaignActivity: React.FunctionComponent<Props> = ({ campaign, cla
                 className="mb-4"
             />
             <CampaignBurndownChart {...props} campaign={campaign} className="mb-4" />
-            <CampaignTimeline {...props} campaign={campaign} className="" timelineItemsClassName="pb-6" />
+            <CampaignTimeline {...props} campaign={campaign} className="" timelineItemsClassName="pb-0" />
         </div>
     )
 }

@@ -94,7 +94,9 @@ const provideDependencySpecification = (
                                                     severity: DiagnosticSeverity.Error,
                                                 }
                                               : {
-                                                    message: `No dependency.lock found (using slower gradle dependencyInsight)`,
+                                                    message: `No dependency.lock found (${
+                                                        hasDependency === LOADING ? 'using' : 'used'
+                                                    } slower gradle dependencyInsight)`,
                                                     severity: DiagnosticSeverity.Hint,
                                                 }),
                                       },
@@ -175,7 +177,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                         includes: ['(^|/)build.gradle$'],
                         type: 'regexp',
                     },
-                    maxResults: 99999999, // TODO!(sqs): un-hardcode
+                    maxResults: 5, // TODO!(sqs): un-hardcode
                 }
             )
         ).pipe(

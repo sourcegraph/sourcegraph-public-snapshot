@@ -25,7 +25,11 @@ export const DiagnosticListItem: React.FunctionComponent<Props> = ({ diagnostic,
     const ToggleIcon: React.ComponentType<{ className?: string }> = isExcerptVisible ? MenuDownIcon : MenuRightIcon
     return (
         <div className={className}>
-            <div onClick={toggleIsExcerptVisible} className="d-flex align-items-start user-select-none">
+            <div
+                onClick={toggleIsExcerptVisible}
+                className="d-flex align-items-start user-select-none"
+                style={{ overflow: 'auto' }}
+            >
                 {/* eslint-disable-next-line react/forbid-dom-props */}
                 <div style={{ marginTop: '-5px' }}>
                     <ToggleIcon className="icon-inline h4 mb-0" />

@@ -10,6 +10,7 @@ import {
     defaultIfEmpty,
     tap,
     catchError,
+    last,
 } from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
@@ -24,12 +25,13 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
 import { propertyIsDefined, isDefined } from '../../../../shared/src/util/types'
-import { getCodeActions } from '../diagnostics/backend'
+import { getCodeActions, diagnosticID } from '../diagnostics/backend'
 import { WorkflowRun, Workflow, Command } from '../../schema/workflow.schema'
 import { Changeset } from '../../../../extensions/enterprise/sandbox/src/workflow/behaviors/edits'
 import { computeDiffFromEdits } from './backend/computeDiff'
 import { Diagnostic } from 'sourcegraph'
 import { ErrorLike, asError, isErrorLike } from '../../../../shared/src/util/errors'
+import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 
 interface DiagnosticsAndFileDiffs {
     diagnostics: Diagnostic[]
@@ -62,45 +64,52 @@ interface DiagnosticWithAction {
     action: ActionWithResult | typeof LOADING | undefined
 }
 
-const executeDiagnosticCodeAction = (
-    extensionsController: ExtensionsControllerProps['extensionsController'],
-    diagnostic: DiagnosticWithType,
-    codeActions: Command[]
-): Observable<DiagnosticWithAction> =>
-    getCodeActions({ diagnostic, extensionsController }).pipe(
-        switchMap(actions => {
-            const v: DiagnosticWithAction = {
+const executeDiagnosticCodeAction = memoizeObservable(
+    ({
+        extensionsController,
+        diagnostic,
+        codeActions,
+    }: ExtensionsControllerProps & {
+        diagnostic: DiagnosticWithType
+        codeActions: Command[]
+    }): Observable<DiagnosticWithAction> =>
+        getCodeActions({ diagnostic, extensionsController }).pipe(
+            switchMap(actions => {
+                const v: DiagnosticWithAction = {
+                    diagnostic,
+                    errors: actions.filter(isCodeActionError),
+                    action: undefined,
+                }
+
+                const action = actions
+                    .filter((a): a is Action => !isCodeActionError(a))
+                    .filter(propertyIsDefined('computeEdit'))
+                    .find(({ computeEdit }) => codeActions.some(a => a.command === computeEdit.command))
+
+                return action
+                    ? from(
+                          extensionsController.services.commands.executeActionEditCommand(
+                              fromDiagnostic(diagnostic),
+                              action.computeEdit
+                          )
+                      ).pipe(
+                          catchError(err => of<ErrorLike>(asError(err))),
+                          map(
+                              result => ({ ...v, action: { action, result } }),
+                              startWith({ ...v, action: { action, result: LOADING } })
+                          )
+                      )
+                    : of(v)
+            }),
+            startWith<DiagnosticWithAction>({
                 diagnostic,
-                errors: actions.filter(isCodeActionError),
-                action: undefined,
-            }
-
-            const action = actions
-                .filter((a): a is Action => !isCodeActionError(a))
-                .filter(propertyIsDefined('computeEdit'))
-                .find(({ computeEdit }) => codeActions.some(a => a.command === computeEdit.command))
-
-            return action
-                ? from(
-                      extensionsController.services.commands.executeActionEditCommand(
-                          fromDiagnostic(diagnostic),
-                          action.computeEdit
-                      )
-                  ).pipe(
-                      catchError(err => of<ErrorLike>(asError(err))),
-                      map(
-                          result => ({ ...v, action: { action, result } }),
-                          startWith({ ...v, action: { action, result: LOADING } })
-                      )
-                  )
-                : of(v)
-        }),
-        startWith<DiagnosticWithAction>({
-            diagnostic,
-            errors: [],
-            action: LOADING,
-        })
-    )
+                errors: [],
+                action: LOADING,
+            })
+        ),
+    ({ diagnostic, codeActions }) => `${diagnosticID(diagnostic)}:${JSON.stringify(codeActions)}`,
+    result => result.pipe(last())
+)
 
 const executeRun = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
@@ -116,7 +125,11 @@ const executeRun = (
                   diagnostics.length > 0
                       ? combineLatest(
                             diagnostics.map(diagnostic =>
-                                executeDiagnosticCodeAction(extensionsController, diagnostic, runCodeActions)
+                                executeDiagnosticCodeAction({
+                                    extensionsController,
+                                    diagnostic,
+                                    codeActions: runCodeActions,
+                                })
                             )
                         )
                       : EMPTY
