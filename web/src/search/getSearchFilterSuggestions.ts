@@ -1,20 +1,21 @@
-import { searchFilterSuggestions } from './backend'
+import { fetchSearchFilterSuggestions } from './backend'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Suggestion, SuggestionTypes } from './input/Suggestion'
 import { mapValues } from 'lodash'
 
-export type SearchFilterSuggestions = {
-    [x in SuggestionTypes]: {
+export type SearchFilterSuggestions = Record<
+    SuggestionTypes,
+    {
         default?: string
         values: Suggestion[]
     }
-}
+>
 
 type PartialSearchFilterSuggestions = {
     [x in SuggestionTypes]: {
         default?: string
-        values: Partial<Suggestion>[]
+        values: Omit<Suggestion, 'type'>[]
     }
 }
 
@@ -162,7 +163,7 @@ const baseSuggestions: PartialSearchFilterSuggestions = {
 }
 
 export const getSearchFilterSuggestions = (): Observable<SearchFilterSuggestions> =>
-    searchFilterSuggestions().pipe(
+    fetchSearchFilterSuggestions().pipe(
         map(loadedSuggestions => {
             const { repo, repogroup } = loadedSuggestions
             const formattedValues = mapValues({ repo, repogroup }, values => ({

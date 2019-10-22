@@ -1,16 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
-import {
-    debounceTime,
-    distinctUntilChanged,
-    filter,
-    repeat,
-    startWith,
-    switchMap,
-    takeUntil,
-    tap,
-} from 'rxjs/operators'
+import { debounceTime, distinctUntilChanged, filter, repeat, startWith, takeUntil, tap } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, SuggestionTypes } from './Suggestion'
@@ -20,6 +11,7 @@ import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
 import { getSearchFilterSuggestions, SearchFilterSuggestions } from '../getSearchFilterSuggestions'
 import { Key } from 'ts-key-enum'
+import { filterSearchSuggestions, insertSuggestionInQuery } from '../helpers'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -75,19 +67,23 @@ interface State {
     cursorPosition: number
 }
 
+/**
+ * The search query and cursor position of when the last character was inserted.
+ * Cursor position is used to correctly insert the suggestion when it's selected.
+ */
+export type QueryCursorPair = [string, number]
+
 // TODO: format suggestion with createSuggestion
 // TODO: check outside click listener to hide suggestions
 // TODO: check something that was removed, compare code
 export class QueryInput extends React.Component<Props, State> {
-    private static FILTER_SEPARATOR = ':'
-
     private componentUpdates = new Subject<Props>()
 
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
 
     /** Emits new input values */
-    private inputValues = new Subject<[string, number]>()
+    private inputValues = new Subject<QueryCursorPair>()
 
     /** Emits when the suggestions are hidden */
     private suggestionsHidden = new Subject<void>()
@@ -120,14 +116,16 @@ export class QueryInput extends React.Component<Props, State> {
                     tap(([query]) => this.props.onChange(query)),
                     distinctUntilChanged(),
                     debounceTime(200),
-                    switchMap(values => [{ suggestions: this.getSuggestions(values) }]),
                     // Abort suggestion display on route change or suggestion hiding
                     takeUntil(this.suggestionsHidden),
                     // But resubscribe afterwards
                     repeat()
                 )
-                .subscribe((partial: Partial<State>) => {
-                    this.setState(state => ({ ...state, ...partial }))
+                .subscribe(queryCursorPair => {
+                    this.setState(state => ({
+                        ...state,
+                        suggestions: this.getSuggestions(queryCursorPair),
+                    }))
                 }, console.error.bind(console))
         )
 
@@ -295,34 +293,11 @@ export class QueryInput extends React.Component<Props, State> {
 
     private getSuggestions = ([query, cursorPosition]: [string, number] = ['', 0]): ComponentSuggestions => {
         const { searchFilterSuggestions } = this.state
-
-        if (!searchFilterSuggestions) {
-            return { values: [], cursorPosition }
-        }
-
-        const textTillCursor = query.substring(0, cursorPosition)
-        const [lastWord] = textTillCursor.match(/([^\s]+)$/) || ['']
-        const [_filter, valueSearch] = lastWord.split(':')
-        const filter = _filter.replace('-', '') as SuggestionTypes
-
-        if (filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
-            const suggestionsToShow = searchFilterSuggestions[filter] || []
-            return {
-                values: suggestionsToShow.values.filter(
-                    suggestion => suggestion.title.slice(0, valueSearch.length) === valueSearch
-                ),
-                cursorPosition,
-            }
-        }
-
         return {
-            values: searchFilterSuggestions.filters.values
-                .filter(({ title }) => title.slice(0, filter.length) === filter)
-                .map(suggestion => ({
-                    ...suggestion,
-                    type: SuggestionTypes.filters,
-                })),
             cursorPosition,
+            values: !searchFilterSuggestions
+                ? []
+                : filterSearchSuggestions(query, cursorPosition, searchFilterSuggestions),
         }
     }
 
@@ -347,22 +322,10 @@ export class QueryInput extends React.Component<Props, State> {
         }) */
 
         const { cursorPosition } = this.state.suggestions
-        // divides input text, adds suggestion, joins new text and sets new cursor position
-        const firstPart = this.props.value.substring(0, cursorPosition)
-        const lastPart = this.props.value.substring(firstPart.length)
         const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
-        const separatorIndex = firstPart.lastIndexOf(isValueSuggestion ? QueryInput.FILTER_SEPARATOR : ' ')
+        const [newQuery, newCursorPosition] = insertSuggestionInQuery(this.props.value, suggestion, cursorPosition)
 
-        const newFirstPart =
-            firstPart.substring(0, separatorIndex + 1) +
-            suggestion.title +
-            (!isValueSuggestion ? QueryInput.FILTER_SEPARATOR : '')
-
-        const newValue = newFirstPart + lastPart
-        const newCursorPosition = newFirstPart.length
-
-        this.props.onChange(newValue)
-
+        this.props.onChange(newQuery)
         this.setState({ cursorPosition: newCursorPosition })
 
         if (isValueSuggestion) {
@@ -370,7 +333,7 @@ export class QueryInput extends React.Component<Props, State> {
         } else {
             this.setState({
                 cursorPosition: newCursorPosition,
-                suggestions: this.getSuggestions([newValue, newCursorPosition]),
+                suggestions: this.getSuggestions([newQuery, newCursorPosition]),
             })
         }
     }

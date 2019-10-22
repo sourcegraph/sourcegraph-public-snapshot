@@ -4,6 +4,9 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
+import { Suggestion, SuggestionTypes } from './input/Suggestion'
+import { SearchFilterSuggestions } from './getSearchFilterSuggestions'
+import { QueryCursorPair } from './input/QueryInput'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -145,4 +148,68 @@ export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searc
         return newQuery.replace(replaceSampleRepogroupRegexp, '')
     }
     return newQuery
+}
+
+/**
+ * Returns suggestions for a given search query but only at the last typed word.
+ * If the word does not contain ":" then it returns filter types as suggestions
+ * If the word contains ":" then it returns suggestions for the typed filter.
+ * For query "case:| archived:" where "|" is the cursor position, it returns suggestions for the "case" filter.
+ *
+ * @param query the current search query
+ * @param cursorPosition cursor position of last typed character
+ * @param filterSuggestions where the suggestions should be searched
+ */
+export const filterSearchSuggestions = (
+    query: string,
+    cursorPosition: number,
+    filterSuggestions: SearchFilterSuggestions
+): Suggestion[] => {
+    const textUntilCursor = query.substring(0, cursorPosition)
+    const [lastWord] = textUntilCursor.match(/([^\s]+)$/) || ['']
+    const [_filter, valueSearch] = lastWord.split(':')
+    const filter = _filter.replace('-', '') as SuggestionTypes
+
+    if (filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
+        const suggestionsToShow = filterSuggestions[filter] || []
+        return suggestionsToShow.values.filter(
+            suggestion => suggestion.title.slice(0, valueSearch.length) === valueSearch
+        )
+    }
+
+    return filterSuggestions.filters.values
+        .filter(({ title }) => title.slice(0, filter.length) === filter)
+        .map(suggestion => ({
+            ...suggestion,
+            type: SuggestionTypes.filters,
+        }))
+}
+
+const SUGGESTION_FILTER_SEPARATOR = ':'
+
+/**
+ * Adds suggestions value to search query where cursor was positioned.
+ *
+ * @param query current search query
+ * @param suggestion the select suggestion
+ * @param cursorPosition cursor position when suggestions were given
+ */
+export const insertSuggestionInQuery = (
+    query: string,
+    suggestion: Suggestion,
+    cursorPosition: number
+): QueryCursorPair => {
+    const firstPart = query.substring(0, cursorPosition)
+    const lastPart = query.substring(firstPart.length)
+    const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
+    const separatorIndex = firstPart.lastIndexOf(isValueSuggestion ? SUGGESTION_FILTER_SEPARATOR : ' ')
+
+    const newFirstPart =
+        firstPart.substring(0, separatorIndex + 1) +
+        suggestion.title +
+        (!isValueSuggestion ? SUGGESTION_FILTER_SEPARATOR : '')
+
+    const newValue = newFirstPart + lastPart
+    const newCursorPosition = newFirstPart.length
+    return [newValue, newCursorPosition]
 }

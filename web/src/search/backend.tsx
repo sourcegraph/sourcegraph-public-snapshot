@@ -209,7 +209,7 @@ export function fetchSuggestions(query: string): Observable<GQL.SearchSuggestion
     )
 }
 
-export function searchFilterSuggestions(): Observable<GQL.ISearchFilterSuggestions> {
+export function fetchSearchFilterSuggestions(): Observable<GQL.ISearchFilterSuggestions> {
     return queryGraphQL(
         gql`
             query searchFilterSuggestions() {
@@ -221,7 +221,14 @@ export function searchFilterSuggestions(): Observable<GQL.ISearchFilterSuggestio
         `
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.searchFilterSuggestions as GQL.ISearchFilterSuggestions)
+        map(
+            ({ searchFilterSuggestions }) =>
+                searchFilterSuggestions || {
+                    __typename: 'SearchFilterSuggestions',
+                    repo: [],
+                    repogroup: [],
+                }
+        )
     )
 }
 

@@ -3,11 +3,6 @@ import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 
-interface BaseSuggestion {
-    title: string
-    description?: string
-}
-
 export enum SuggestionTypes {
     filters = 'filters',
     repo = 'repo',
@@ -24,60 +19,11 @@ export enum SuggestionTypes {
     timeout = 'timeout',
 }
 
-interface Filters extends BaseSuggestion {
-    type: SuggestionTypes.filters
+export interface Suggestion {
+    title: string
+    description?: string
+    type: SuggestionTypes
 }
-interface Repo extends BaseSuggestion {
-    type: SuggestionTypes.repo
-}
-interface Repogroup extends BaseSuggestion {
-    type: SuggestionTypes.repogroup
-}
-interface Repohasfile extends BaseSuggestion {
-    type: SuggestionTypes.repohasfile
-}
-interface Repohascommitafter extends BaseSuggestion {
-    type: SuggestionTypes.repohascommitafter
-}
-interface File extends BaseSuggestion {
-    type: SuggestionTypes.file
-}
-interface Type extends BaseSuggestion {
-    type: SuggestionTypes.type
-}
-interface Case extends BaseSuggestion {
-    type: SuggestionTypes.case
-}
-interface Lang extends BaseSuggestion {
-    type: SuggestionTypes.lang
-}
-interface Fork extends BaseSuggestion {
-    type: SuggestionTypes.fork
-}
-interface Archived extends BaseSuggestion {
-    type: SuggestionTypes.archived
-}
-interface Count extends BaseSuggestion {
-    type: SuggestionTypes.count
-}
-interface Timeout extends BaseSuggestion {
-    type: SuggestionTypes.timeout
-}
-
-export type Suggestion =
-    | Filters
-    | Repo
-    | Repogroup
-    | Repohasfile
-    | Repohascommitafter
-    | File
-    | Type
-    | Case
-    | Lang
-    | Fork
-    | Archived
-    | Count
-    | Timeout
 
 interface SuggestionIconProps {
     suggestion: Suggestion
