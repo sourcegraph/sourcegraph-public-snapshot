@@ -6,15 +6,19 @@ This document describes how we operationalize written planning through our RFC p
 
 _All RFCs are in a [public Google Drive folder](https://drive.google.com/drive/folders/1bip_pMeWePyNNdCEETRzoyMdLtntcNKR)._
 
-## Lifecycle
+## Status
 
-The general lifecycle of an RFC is:
+Each RFC has a status that is in the title of the RFC (e.g. "RFC 1: WIP Title").
 
-   1. Write a draft.
-   2. Solicit feedback from relevant teammates.
-   3. Update draft and go to step 2.
-   4. Make a decision.
-   5. If appropriate, file tracking issues on GitHub and add them to appropriate milestones.
+| Status | Description |
+|-------|-------------|
+| WIP | The author is still drafting the RFC and it is not ready for review. |
+| REVIEW | The RFC is ready to be reviewed. The RFC explicitly lists who the expected reviewers are and a desired timeline for review comments. |
+| APPROVED | All comment threads are resolved and the content of the RFC has been approved by the necessary reviewers (i.e. they added their names to the approvers list).|
+| ABANDONED | There are no plans to move forward with this RFC. The RFC may have failed to get the the necessary approvals, or we may not have resources to work on this RFC in the forseeable future. |
+| IMPLEMENTED | This RFC has been implemented. |
+
+A prose description of the status appears in the [metadata](#RFC-structure) of an RFC.
 
 ## RFCs are sequentially numbered
 
@@ -74,7 +78,8 @@ Effective RFCs contain the following information:
     - "We aren't going to pursue this RFC for the following reasons..."
     - "The web team is going to implement this RFC in 3.8."
     - "This RFC has been implemented."
-  - LGTM: RFC readers add their name to this list if they understand what the RFC is proposing and agree with the proposal. "Looks Good To Me".
+  - Reviewers: The list of people that the RFC author is requesting a review from and a requested deadline for those reviews (e.g. "Reviewers: Alice and Bob can you please review by 10am PT 10/21"). The author is responsible for ensuring that the reviewers aware of the review request (e.g. by sending them a Slack message).
+  - Approvers: RFC readers add their name to this list if they understand what the RFC is proposing and agree with the proposal. Anyone can express approval for an RFC, even if they are not in the "Reviewers" list; however a RFC is not APPROVED until the RFC author receives approval from the people on the "Approvers" list.
   - (optional) Links to any GitHub issues that capture work being done to implement this RFC.
 - Background/Situation: A sufficient, but minimal, amount of context necessary to frame the rest of the RFC. The content should be indisputable facts, not opinions or arguments. The facts should support the chosen definition of the problem and the constraints in the next section.
 - Problem/Goals/Complication/Constraints: A description of the problem that this RFC is trying to address, the constraints that this RFC trying to satisfy, and why this problem is worth solving now.
