@@ -294,21 +294,19 @@ Indexes:
 Indexes:
     "lsif_commits_pkey" PRIMARY KEY, btree (id)
     "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)
-    "lsif_commits_commit" btree (repository, commit)
     "lsif_commits_parent_commit" btree (repository, parent_commit)
-    "lsif_commits_repo_commit" btree (repository, commit)
-    "lsif_commits_repo_parent_commit" btree (repository, parent_commit)
 
 ```
 
 # Table "public.lsif_dumps"
 ```
-   Column   |  Type   |                        Modifiers                        
-------------+---------+---------------------------------------------------------
- id         | integer | not null default nextval('lsif_dumps_id_seq'::regclass)
- repository | text    | not null
- commit     | text    | not null
- root       | text    | not null default ''::text
+     Column     |  Type   |                        Modifiers                        
+----------------+---------+---------------------------------------------------------
+ id             | integer | not null default nextval('lsif_dumps_id_seq'::regclass)
+ repository     | text    | not null
+ commit         | text    | not null
+ root           | text    | not null default ''::text
+ visible_at_tip | boolean | not null default false
 Indexes:
     "lsif_dumps_pkey" PRIMARY KEY, btree (id)
     "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)

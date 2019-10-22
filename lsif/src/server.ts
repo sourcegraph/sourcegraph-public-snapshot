@@ -28,7 +28,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -56,6 +56,11 @@ const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_END
  * Where on the file system to store LSIF files.
  */
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
+
+/**
+ * The interval (in seconds) to schedule the heads job.
+ */
+const HEADS_JOB_SCHEDULE_INTERVAL = readEnvInt('HEADS_JOB_SCHEDULE_INTERVAL', 30)
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
@@ -108,8 +113,11 @@ async function main(logger: Logger): Promise<void> {
     // Create queue to publish convert
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
+    // Schedule update-tips to run on a timer
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, HEADS_JOB_SCHEDULE_INTERVAL)
+
     // Update queue size metric on a timer
-    setInterval(async () => queueSizeGauge.set(await queue.count()), 1000)
+    setInterval(() => queue.count().then(count => queueSizeGauge.set(count)), 1000)
 
     const app = express()
 
