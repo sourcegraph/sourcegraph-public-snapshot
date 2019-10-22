@@ -36,7 +36,7 @@ export const yarnDependencyManagementProvider: PackageJsonDependencyManagementPr
         from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `\\b${query.name}\\b ${filters}`,
+                    pattern: `\\b${query.name}\\b ${filters} index:only`,
                     type: 'regexp',
                 },
                 {

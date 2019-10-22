@@ -38,7 +38,7 @@ const provideDependencySpecification = (
 
             // TODO!(sqs): handle multiple/differing dep versions per configuration
             const seenDeps = new Set<string>()
-            const lockedDeps = parseDependenciesLock(dependenciesLock.text!)
+            const lockedDeps = parseDependenciesLock(dependenciesLock.text!, dependenciesLock.uri)
             for (const [, deps] of Object.entries(lockedDeps)) {
                 for (const [id, { locked, requested }] of Object.entries(deps)) {
                     // TODO!(sqs): handle semver satisfies for both requested and locked?
@@ -91,7 +91,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
         from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `${JSON.stringify(query.name)} ${filters}`,
+                    pattern: `${JSON.stringify(query.name)} ${filters} index:only`,
                     type: 'regexp',
                 },
                 {
@@ -171,9 +171,9 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                 ).pipe(
                     catchError(err => {
                         // eslint-disable-next-line no-constant-condition
-                        if (false) {
-                            console.error(`Error diffing dependencies.lock: ${err}`)
-                        }
+                        // if (false) {
+                        console.error(`Error diffing dependencies.lock: ${err}`)
+                        // }
                         return [new WorkspaceEdit()] // TODO!(sqs): ignore
                     })
                 )

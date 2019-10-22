@@ -120,14 +120,7 @@ export const ThreadListItem: React.FunctionComponent<Props> = ({
             ),
             ItemSubtitle && <ItemSubtitle thread={thread} />,
         ].filter(isDefined)}
-        right={[
-            Right && <Right key={0} {...props} thread={thread} />,
-            thread.__typename === 'Thread' && thread.comments.totalCount >= 1 && (
-                <small className="text-muted">
-                    <MessageOutlineIcon className="icon-inline" /> {thread.comments.totalCount - 1}
-                </small>
-            ),
-        ].filter(isDefined)}
+        right={[Right && <Right key={0} {...props} thread={thread} />].filter(isDefined)}
         className={className}
     />
 )

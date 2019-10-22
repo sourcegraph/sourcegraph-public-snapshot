@@ -19,7 +19,7 @@ export const npmDependencyManagementProvider: PackageJsonDependencyManagementPro
         from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `'"${query.name}"' ${filters}`,
+                    pattern: `'"${query.name}"' ${filters} index:only`,
                     type: 'regexp',
                 },
                 {
