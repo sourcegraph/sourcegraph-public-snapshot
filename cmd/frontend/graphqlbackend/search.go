@@ -71,13 +71,19 @@ func (r *schemaResolver) Search(args *struct {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
-	defaultIsRegexp, err := defaultToRegexp(args.Version, args.PatternType)
+	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
 	if err != nil {
-		return nil, err
+		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
 
-	qs, isRegexp := query.HandlePatternType(args.Query, defaultIsRegexp)
-	q, err := query.ParseAndCheck(qs)
+	var queryString string
+	if searchType == "literal" {
+		queryString = query.ConvertToLiteral(args.Query)
+	} else {
+		queryString = args.Query
+	}
+
+	q, err := query.ParseAndCheck(queryString)
 	if err != nil {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
@@ -100,47 +106,62 @@ func (r *schemaResolver) Search(args *struct {
 		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
 
-	var finalPatternType string
-	if isRegexp {
-		finalPatternType = "regexp"
-	} else {
-		finalPatternType = "literal"
-	}
-
 	return &searchResolver{
 		query:         q,
 		originalQuery: args.Query,
 		pagination:    pagination,
-		patternType:   finalPatternType,
+		patternType:   searchType,
 		zoekt:         search.Indexed(),
 		searcherURLs:  search.SearcherURLs(),
 	}, nil
 }
 
-// defaultToRegexp determines whether to default to using regexp search based on the version and patternType
-// parameters passed to the search endpoint. It does not account for any `patternType:` filters in the query.
-func defaultToRegexp(version string, patternType *string) (bool, error) {
-	var defaultToRegexp bool
-	switch version {
-	case "V1":
-		defaultToRegexp = true
-	case "V2":
-		defaultToRegexp = false
-	default:
-		return false, fmt.Errorf("unrecognized version: %v", version)
-	}
-
+// detectSearchType returns the search type to perfrom ("regexp", or
+// "literal"). The search type derives from three sources: the version and
+// patternType parameters passed to the search endpoint (literal search is the
+// default in V2), and the `patternType:` filter in the input query string which
+// overrides the searchType, if present.
+func detectSearchType(version string, patternType *string, input string) (string, error) {
+	var searchType string
 	if patternType != nil {
 		switch *patternType {
-		case "regexp":
-			defaultToRegexp = true
-		case "literal":
-			defaultToRegexp = false
+		case "regexp", "literal":
+			searchType = *patternType
 		default:
-			return false, fmt.Errorf("unrecognized patternType: %v", patternType)
+			return "", fmt.Errorf("unrecognized patternType: %v", patternType)
+		}
+	} else {
+		switch version {
+		case "V1":
+			searchType = "regexp"
+		case "V2":
+			searchType = "literal"
+		default:
+			return "", fmt.Errorf("unrecognized version: %v", version)
 		}
 	}
-	return defaultToRegexp, nil
+
+	parseTree, err := query.Parse(input)
+	if err != nil {
+		return "", err
+	}
+
+	patternTypes := parseTree.Values(query.FieldPatternType)
+
+	// Override the searchType if the query explicitly specifies one. If
+	// there are multiple patternTypes, use the last one we encounter.
+	// Since this field is Singular, the validation check on the
+	// parse tree wil reject patterns with duplicate fields.
+	for _, pat := range patternTypes {
+		switch pat {
+		case "regex", "regexp":
+			searchType = "regexp"
+		case "literal":
+			searchType = "literal"
+		}
+	}
+
+	return searchType, nil
 }
 
 func asString(v *searchquerytypes.Value) string {
