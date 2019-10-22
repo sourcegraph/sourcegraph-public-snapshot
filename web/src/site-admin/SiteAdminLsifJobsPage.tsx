@@ -144,7 +144,5 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
         )
     }
 
-    private queryJobs = (args: FilteredConnectionQueryArgs) => {
-        return fetchLsifJobs({ ...args })
-    }
+    private queryJobs = (args: FilteredConnectionQueryArgs) => fetchLsifJobs({ ...args })
 }

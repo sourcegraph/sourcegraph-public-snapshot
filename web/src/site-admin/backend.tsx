@@ -589,7 +589,7 @@ export function fetchSiteUpdateCheck(): Observable<{
 /**
  * Fetch counts of LSIF jobs by status.
  */
-export function fetchLsifJobStatistics(): Observable<GQL.LsifJobStats> {
+export function fetchLsifJobStatistics(): Observable<GQL.ILsifJobStats> {
     return queryGraphQL(
         gql`
             query LsifJobStats {

@@ -139,7 +139,8 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         const hasNextPage =
             this.props.connection &&
             ((this.props.connection.pageInfo && this.props.connection.pageInfo.hasNextPage) ||
-                (typeof this.props.connection.totalCount === 'number' &&
+                (!this.props.connection.pageInfo &&
+                    typeof this.props.connection.totalCount === 'number' &&
                     this.props.connection.nodes.length < this.props.connection.totalCount))
 
         let totalCount: number | null = null
@@ -308,7 +309,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
  */
 export interface FilteredConnectionQueryArgs {
     first?: number
-    after?: string
+    after?: string | null
     query?: string
 }
 
