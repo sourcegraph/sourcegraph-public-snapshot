@@ -7,6 +7,7 @@ import { PageTitle } from '../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 import { upperFirst } from 'lodash'
+import { Timestamp } from '../components/time/Timestamp'
 
 interface Props extends RouteComponentProps<{ id: string }> {}
 
@@ -60,9 +61,33 @@ export class SiteAdminLsifJobPage extends React.Component<Props, State> {
                         <p>progress: {this.state.job.progress}</p>
                         <p>failedReason: {this.state.job.failedReason}</p>
                         <p>stacktrace: {this.state.job.stacktrace}</p>
-                        <p>timestamp: {this.state.job.timestamp}</p>
-                        <p>processedOn: {this.state.job.processedOn}</p>
-                        <p>finishedOn: {this.state.job.finishedOn}</p>
+                        <p>
+                            timestamp:{' '}
+                            {this.state.job.timestamp && (
+                                <>
+                                    {' '}
+                                    <Timestamp date={this.state.job.timestamp} />{' '}
+                                </>
+                            )}
+                        </p>
+                        <p>
+                            processedOn:{' '}
+                            {this.state.job.processedOn && (
+                                <>
+                                    {' '}
+                                    <Timestamp date={this.state.job.processedOn} />{' '}
+                                </>
+                            )}
+                        </p>
+                        <p>
+                            finishedOn:{' '}
+                            {this.state.job.finishedOn && (
+                                <>
+                                    {' '}
+                                    <Timestamp date={this.state.job.finishedOn} />{' '}
+                                </>
+                            )}
+                        </p>
                     </>
                 )}
             </div>
