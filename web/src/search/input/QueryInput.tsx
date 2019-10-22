@@ -18,7 +18,7 @@ import { Key } from 'ts-key-enum'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
-import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+import { createSuggestion, Suggestion, SuggestionItem, LangSuggestion } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
@@ -134,9 +134,9 @@ export class QueryInput extends React.Component<Props, State> {
                             .join(' ')
                         return fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
-                            filter(suggestion => suggestion.type !== 'lang'),
+                            filter((suggestion): suggestion is Exclude<Suggestion, LangSuggestion> => !!suggestion),
                             toArray(),
-                            map((suggestions: Suggestion[]) => ({
+                            map((suggestions: Exclude<Suggestion, LangSuggestion>[]) => ({
                                 suggestions,
                                 selectedSuggestion: -1,
                                 hideSuggestions: false,

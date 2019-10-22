@@ -39,13 +39,13 @@ interface DirSuggestion extends BaseSuggestion {
     type: 'dir'
 }
 
-interface LangSuggestion extends BaseSuggestion {
+export interface LangSuggestion extends BaseSuggestion {
     type: 'lang'
 }
 
 export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion | LangSuggestion
 
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
+export function createSuggestion(item: GQL.SearchSuggestion): Exclude<Suggestion, LangSuggestion> | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
@@ -91,19 +91,13 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                 urlLabel: 'go to definition',
             }
         }
-        case 'Language': {
-            return {
-                type: 'lang',
-                title: item.name,
-                url: '', // TODO:
-                urlLabel: '', // TODO:
-            }
-        }
+        default:
+            return undefined
     }
 }
 
 interface SuggestionIconProps {
-    suggestion: Suggestion
+    suggestion: Exclude<Suggestion, LangSuggestion>
     className?: string
 }
 
@@ -117,8 +111,6 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
             return <SymbolIcon kind={GQL.SymbolKind.FILE} {...passThru} />
         case 'symbol':
             return <SymbolIcon kind={suggestion.kind} {...passThru} />
-        case 'lang':
-            return null // TODO: handle lang suggestions in RFC 14 frontend PR.
     }
 }
 
