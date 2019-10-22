@@ -120,8 +120,8 @@ const executeRun = (
                             )
                         )
                       : EMPTY
-              )
-              // throttleTime(2500, undefined, { leading: true, trailing: true })
+              ),
+              throttleTime(1500, undefined, { leading: true, trailing: true })
           )
         : EMPTY
     return codeActions.pipe(
@@ -143,8 +143,6 @@ const executeRun = (
             ]
             const errorsFoundStr =
                 allErrors.length > 0 ? `${allErrors.length} ${pluralize('error', allErrors.length)} occurred` : ''
-
-            console.log({ loadingCount, totalCount, allErrors: allErrors.length })
 
             return {
                 diagnostics: diagnosticsAndActions.map(({ diagnostic, action, errors }) =>

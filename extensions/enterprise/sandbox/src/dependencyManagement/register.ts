@@ -38,24 +38,20 @@ export function registerDependencyManagementProviders<
     subscriptions.add(
         sourcegraph.languages.registerCodeActionProvider(['*'], {
             provideCodeActions: (_doc, _rangeOrSelection, context): Observable<sourcegraph.Action[]> =>
-                combineLatest(
+                of(
                     context.diagnostics
                         .map(diagnostic => parseDependencyManagementDiagnostic(diagnostic, DEPENDENCY_ID))
                         .filter(isDefined)
-                        .map(diagnostic =>
-                            editForDependencyAction(provider, diagnostic).pipe(
-                                map(edit => {
-                                    const action: sourcegraph.Action = {
-                                        title: 'Upgrade dependency',
-                                        // edit,
-                                        computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
-                                        diagnostics: [diagnostic],
-                                    }
-                                    return [action]
-                                })
-                            )
-                        )
-                ).pipe(map(allActions => flatten(allActions))),
+                        .map(diagnostic => {
+                            const action: sourcegraph.Action = {
+                                title: 'Upgrade dependency',
+                                // edit,
+                                computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
+                                diagnostics: [diagnostic],
+                            }
+                            return action
+                        })
+                ),
         })
     )
     subscriptions.add(
