@@ -47,6 +47,8 @@ export interface DependencySpecification<Q extends DependencyQuery> {
 
     /** Diagnostics with information, warnings, or errors related to resolving this dependency. */
     readonly diagnostics?: Diagnostic[]
+
+    isLoading?: boolean
 }
 
 export interface DependencyManagementProvider<

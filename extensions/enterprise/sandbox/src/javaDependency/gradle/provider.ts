@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import semver from 'semver'
+import { flatten } from 'lodash'
 import { from, merge, Observable, combineLatest, of, throwError } from 'rxjs'
-import { toArray, switchMap, filter, map, share, catchError } from 'rxjs/operators'
+import { toArray, switchMap, filter, map, share, catchError, startWith, tap, first } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
@@ -13,10 +14,34 @@ import { parseDependenciesLock } from './dependenciesLock'
 import { Location, Range, Position, WorkspaceEdit, DiagnosticSeverity } from 'sourcegraph'
 import { parseDependencyNotation } from './util'
 import { replaceVersion } from './replaceDependencyVersion'
+import { parseRepoURI } from '../../../../../../shared/src/util/url'
+import { dirname } from 'path'
+import { LOADING } from '../../dependencyManagement/common'
+import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 
 const gradleExecClient = createExecServerClient('a8n-java-gradle-exec')
 
 const GRADLE_OPTS = ['--no-daemon']
+
+const hasDependency = async (buildGradle: URL, query: JavaDependencyQuery): Promise<boolean> => {
+    const p = parseRepoURI(buildGradle.toString())
+    const result = await gradleExecClient({
+        commands: [
+            ['gradle', ...GRADLE_OPTS, 'dependencyInsight', '--dependency', `${query.name}:${query.versionRange}`],
+        ],
+        context: {
+            repository: p.repoName,
+            commit: p.commitID!,
+        },
+        dir: dirname(p.filePath!),
+        label: `dependencyInsight(${buildGradle.toString()})`,
+    })
+    const commandResult = result.commands[0]
+    if (!commandResult.ok) {
+        throw new Error(`gradle dependencyInsight on ${buildGradle.toString()} failed: ${commandResult.error}`)
+    }
+    return !commandResult.combinedOutput.includes('No dependencies matching given input were found')
+}
 
 const provideDependencySpecification = (
     buildGradle: URL,
@@ -30,28 +55,55 @@ const provideDependencySpecification = (
             }
             if (!dependenciesLock) {
                 const declRange = findMatchRange(buildGradle.text!, query.name)
-                return of<DependencySpecification<JavaDependencyQuery>>({
-                    query,
-                    declarations: declRange
-                        ? [
-                              {
-                                  name: query.name,
-                                  requestedVersion: query.versionRange,
-                                  direct: true,
-                                  location: { uri: new URL(buildGradle.uri), range: declRange },
-                              },
-                          ]
-                        : [],
-                    resolutions: [],
-                    diagnostics: [
-                        {
-                            resource: new URL(buildGradle.uri),
-                            range: declRange || new Range(0, 0, 0, 0),
-                            message: `No dependency.lock found`,
-                            severity: DiagnosticSeverity.Hint,
-                        },
-                    ],
-                })
+
+                // Use `gradle dependencyInsight` to determine if this dependency exists
+                // transitively.
+                return from(hasDependency(new URL(buildGradle.uri), query)).pipe(
+                    startWith(LOADING),
+                    catchError(err => of<ErrorLike>(asError(err))),
+                    map(hasDependency =>
+                        hasDependency
+                            ? {
+                                  query,
+                                  declarations:
+                                      declRange && hasDependency !== LOADING && !isErrorLike(hasDependency)
+                                          ? [
+                                                {
+                                                    name: query.name,
+                                                    requestedVersion: query.versionRange,
+                                                    direct: true,
+                                                    location: { uri: new URL(buildGradle.uri), range: declRange },
+                                                },
+                                            ]
+                                          : [],
+                                  resolutions: [],
+                                  diagnostics: [
+                                      {
+                                          resource: new URL(buildGradle.uri),
+                                          range: declRange || new Range(0, 0, 0, 0),
+                                          ...(isErrorLike(hasDependency)
+                                              ? {
+                                                    message:
+                                                        'No dependency.lock found and `gradle dependencyInsight` failed',
+                                                    detail:
+                                                        '```text\n' +
+                                                        (hasDependency.message as string)
+                                                            .replace(/^dependencyInsight\($/m, '')
+                                                            .trim() +
+                                                        '\n```',
+                                                    severity: DiagnosticSeverity.Error,
+                                                }
+                                              : {
+                                                    message: `No dependency.lock found (using slower gradle dependencyInsight)`,
+                                                    severity: DiagnosticSeverity.Hint,
+                                                }),
+                                      },
+                                  ],
+                                  isLoading: hasDependency === LOADING,
+                              }
+                            : null
+                    )
+                )
             }
 
             const declarations: DependencyDeclaration[] = []
@@ -112,7 +164,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
         from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `${JSON.stringify(query.name)} patternType:regexp ${filters} index:only`,
+                    pattern: `${filters} index:only`,
                     type: 'regexp',
                 },
                 {
@@ -121,15 +173,16 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                     },
                     files: {
                         includes: ['(^|/)build.gradle$'],
-                        excludes: ['node_modules'],
                         type: 'regexp',
                     },
                     maxResults: 99999999, // TODO!(sqs): un-hardcode
                 }
             )
         ).pipe(
+            toArray(),
+            map(textSearchResults => flatten(textSearchResults)),
             switchMap(textSearchResults =>
-                merge(
+                combineLatest(
                     ...textSearchResults.map(textSearchResult =>
                         provideDependencySpecification(
                             new URL(textSearchResult.uri),
@@ -138,8 +191,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                         )
                     )
                 ).pipe(filter(isDefined))
-            ),
-            toArray()
+            )
         ),
     resolveDependencyUpgradeAction: (dep, version) => {
         // TODO!(sqs): this is not correct w.r.t. indirect deps

@@ -128,7 +128,9 @@ const executeRun = (
         defaultIfEmpty<DiagnosticWithAction[]>([]),
         map(diagnosticsAndActions => {
             const loadingCount = diagnosticsAndActions.filter(
-                d => d.action !== undefined && (d.action === LOADING || d.action.result === LOADING)
+                d =>
+                    (d.action !== undefined && (d.action === LOADING || d.action.result === LOADING)) ||
+                    (d.diagnostic.tags && d.diagnostic.tags.includes(LOADING))
             ).length
             const totalCount = diagnosticsAndActions.length
             const allErrors = [

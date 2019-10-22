@@ -3,9 +3,10 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { Form } from '../../../components/Form'
 import { CampaignFormCommonFields } from './CampaignFormCommonFields'
 import { JSONSchema7 } from 'json-schema'
-import { parseJSON } from '../../../settings/configuration'
 import { Workflow } from '../../../schema/workflow.schema'
 import { RuleTemplate } from './templates'
+import { parseJSONCOrError } from '../../../../../shared/src/util/jsonc'
+import { isErrorLike } from '../../../../../shared/src/util/errors'
 
 export interface CampaignFormData extends Omit<GQL.IExpCreateCampaignInput, 'name' | 'extensionData' | 'rules'> {
     name: string | null
@@ -60,18 +61,20 @@ export const CampaignForm: React.FunctionComponent<
 
     useEffect(() => {
         if (template && template.suggestTitle) {
-            const workflow: Workflow = parseJSON(value.workflowAsJSONCString)
-            const suggestedTitle = template.suggestTitle(workflow)
-            if (suggestedTitle !== undefined) {
-                const update: Partial<CampaignFormData> = {}
-                if (suggestedTitle !== value.nameSuggestion) {
-                    update.nameSuggestion = suggestedTitle
-                }
-                if (suggestedTitle === value.name) {
-                    update.name = null
-                }
-                if (Object.keys(update).length > 0) {
-                    onChange(update)
+            const workflow = parseJSONCOrError<Workflow>(value.workflowAsJSONCString)
+            if (!isErrorLike(workflow)) {
+                const suggestedTitle = template.suggestTitle(workflow)
+                if (suggestedTitle !== undefined) {
+                    const update: Partial<CampaignFormData> = {}
+                    if (suggestedTitle !== value.nameSuggestion) {
+                        update.nameSuggestion = suggestedTitle
+                    }
+                    if (suggestedTitle === value.name) {
+                        update.name = null
+                    }
+                    if (Object.keys(update).length > 0) {
+                        onChange(update)
+                    }
                 }
             }
         }

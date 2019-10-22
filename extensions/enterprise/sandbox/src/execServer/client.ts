@@ -126,6 +126,10 @@ function getPublicRepoArchiveUrl(repo: string, commit: string): string {
         'github.com/sd9/graphql-dotnet': 'github.com/graphql-dotnet/graphql-dotnet',
         'github.com/sd9/taskbotjs': 'github.com/eropple/taskbotjs',
         'github.com/sd9/ReactStateMuseum': 'github.com/GantMan/ReactStateMuseum',
+        'github.com/sd9/sonarqube': 'github.com/SonarSource/sonarqube',
+        'github.com/sd9/ReactNativeReduxCasts': 'github.com/StephenGrider/ReactNativeReduxCasts',
+        'github.com/sd9/astyanax': 'github.com/netflix/astyanax',
+        'github.com/sd9/dynomite': 'github.com/netflix/astyanax',
     }
     if (repo in MAP || sourcegraph.internal.sourcegraphURL.hostname === 'localhost') {
         return `https://sourcegraph.com/${MAP[repo] || repo}@${commit}/-/raw/`

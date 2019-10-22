@@ -73,6 +73,20 @@ func (x *rulesExecutor) planThreads(ctx context.Context) ([]graphqlbackend.Threa
 				return nil, err
 			}
 
+			// Ignore hint diagnostics (don't file issues from them).
+			keep := diagnostics[:0]
+			for _, d := range diagnostics {
+				if d.Severity == 3 {
+					continue
+				}
+				keep = append(keep, d)
+			}
+			diagnostics = keep
+
+			if len(diagnostics) == 0 {
+				continue
+			}
+
 			// Use the diagnostic message if all are the same; otherwise, use the first and mention
 			// the others.
 			var title string

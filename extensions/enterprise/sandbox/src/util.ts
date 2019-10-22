@@ -3,7 +3,7 @@ import { from, Observable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-const USE_PERSISTENT_MEMOIZATION_CACHE = false
+const USE_PERSISTENT_MEMOIZATION_CACHE = true
 
 if (!USE_PERSISTENT_MEMOIZATION_CACHE) {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises

@@ -22,6 +22,8 @@ import { Workflow } from '../../../../schema/workflow.schema'
 import { RULE_TEMPLATES } from '../../form/templates'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
+import { isErrorLike } from '../../../../../../shared/src/util/errors'
+import { parseJSONCOrError } from '../../../../../../shared/src/util/jsonc'
 
 export const createCampaign = (input: GQL.IExpCreateCampaignInput): Promise<GQL.IExpCampaign> =>
     mutateGraphQL(
@@ -116,7 +118,9 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         }
     }, [namespace.id, props.extensionsController, value])
 
-    const isValid = value.name !== '' || value.nameSuggestion !== undefined
+    const isValid =
+        value.name !== '' ||
+        (value.nameSuggestion !== undefined && !isErrorLike(parseJSONCOrError(value.workflowAsJSONCString)))
 
     const TemplateIcon = template ? template.icon : undefined
 

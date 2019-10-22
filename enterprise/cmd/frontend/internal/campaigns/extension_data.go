@@ -28,6 +28,7 @@ type diagnosticInfo struct {
 	Message       string
 	Detail        string
 	Tags          []string
+	Severity      int
 	RawDiagnostic diagnostics.GQLDiagnostic
 }
 
