@@ -40,7 +40,6 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-//
 
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
