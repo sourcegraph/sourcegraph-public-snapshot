@@ -67,6 +67,23 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addCodeCov,
 			addBrowserExtensionReleaseSteps,
 		}
+
+	case c.isQuick:
+		// Run fast steps only
+		pipelineOperations = []func(*bk.Pipeline){
+			addCheck,
+			addLint,
+			addBrowserExt,
+			addWebApp,
+			addLSIFServer,
+			addSharedTests,
+			addGoTests,
+			addGoBuild,
+			addDockerfileLint,
+			wait,
+			addCodeCov,
+		}
+
 	default:
 		// Otherwise, run the CI steps for the Sourcegraph web app. Specific steps may be modified
 		// or skipped for certain branches; these variations are defined in the functions
