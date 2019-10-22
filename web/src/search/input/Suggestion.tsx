@@ -39,13 +39,9 @@ interface DirSuggestion extends BaseSuggestion {
     type: 'dir'
 }
 
-export interface LangSuggestion extends BaseSuggestion {
-    type: 'lang'
-}
+export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion
 
-export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion | LangSuggestion
-
-export function createSuggestion(item: GQL.SearchSuggestion): Exclude<Suggestion, LangSuggestion> | undefined {
+export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
@@ -97,7 +93,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Exclude<Suggestion
 }
 
 interface SuggestionIconProps {
-    suggestion: Exclude<Suggestion, LangSuggestion>
+    suggestion: Suggestion
     className?: string
 }
 
@@ -131,19 +127,13 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     isSelected,
     onClick,
     liRef,
-}) => {
-    if (suggestion.type === 'lang') {
-        // TODO: handle lang suggestions in RFC 14 frontend PR.
-        return null
-    }
-    return (
-        <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
-            <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
-            <div className="suggestion__title">{suggestion.title}</div>
-            <div className="suggestion__description">{suggestion.description}</div>
-            <div className="suggestion__action" hidden={!isSelected}>
-                <kbd>enter</kbd> {suggestion.urlLabel}
-            </div>
-        </li>
-    )
-}
+}) => (
+    <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
+        <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
+        <div className="suggestion__title">{suggestion.title}</div>
+        <div className="suggestion__description">{suggestion.description}</div>
+        <div className="suggestion__action" hidden={!isSelected}>
+            <kbd>enter</kbd> {suggestion.urlLabel}
+        </div>
+    </li>
+)
