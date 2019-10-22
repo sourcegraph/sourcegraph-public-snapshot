@@ -28,7 +28,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -39,6 +39,11 @@ const pipeline = promisify(_pipeline)
  * Which port to run the LSIF server on. Defaults to 3186.
  */
 const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
+
+/**
+ * The interval (in seconds) to schedule the clean-old-jobs job.
+ */
+const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
 
 /**
  * The host and port running the redis instance containing work queues.
@@ -107,6 +112,9 @@ async function main(logger: Logger): Promise<void> {
 
     // Create queue to publish convert
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
+
+    // Schedule clean-old-jobs to run on a timer
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
 
     // Update queue size metric on a timer
     setInterval(async () => queueSizeGauge.set(await queue.count()), 1000)
