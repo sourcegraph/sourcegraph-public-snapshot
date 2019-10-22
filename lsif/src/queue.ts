@@ -3,6 +3,7 @@ import { Span, Tracer, FORMAT_TEXT_MAP } from 'opentracing'
 import { Logger } from 'winston'
 import { promisify } from 'util'
 import { chunk } from 'lodash'
+import { ApiJob, formatJobFromMap } from './api-job'
 
 /**
  * The names of queues as defined in Bull.
@@ -105,78 +106,6 @@ export const ensureOnlyRepeatableJob = async (
 }
 
 /**
- * The representation of a job as returned by the API.
- */
-export interface JsonJob {
-    id: string
-    name: string
-    args: object
-    status: string
-    progress: number
-    timestamp: string
-    finishedOn: string | null
-    processedOn: string | null
-    failedReason: string | null
-    stacktrace: string[] | null
-}
-
-/**
- * Format a job to return from the API.
- *
- * @param job The job to format.
- * @param status The job's status.
- */
-export const formatJob = (job: Job, status: string): JsonJob => {
-    const payload = job.toJSON()
-
-    return {
-        id: `${payload.id}`,
-        name: payload.name,
-        args: payload.data.args,
-        status,
-        progress: payload.progress,
-        timestamp: new Date(payload.timestamp).toISOString(),
-        finishedOn: payload.finishedOn ? new Date(payload.finishedOn).toISOString() : '',
-        processedOn: payload.processedOn ? new Date(payload.processedOn).toISOString() : '',
-        failedReason: payload.failedReason,
-        stacktrace: payload.stacktrace,
-    }
-}
-
-/**
- * Format a job to return from the API.
- *
- * @param values A map of values composing the job.
- * @param status The job's status.
- */
-const formatJobFromMap = (values: Map<string, string>, status: string): JsonJob => {
-    const rawStacktrace = values.get('stacktrace')
-    const rawFinishedOn = values.get('finishedOn')
-    const rawProcessedOn = values.get('processedOn')
-
-    return {
-        id: values.get('id') || '',
-        name: values.get('name') || '',
-        args: JSON.parse(values.get('data') || '{}').args || {},
-        status,
-        progress: parseInt(values.get('progress') || '', 10),
-        timestamp: new Date(parseInt(values.get('timestamp') || '', 10)).toISOString(),
-        finishedOn: (rawFinishedOn && new Date(parseInt(rawFinishedOn, 10)).toISOString()) || null,
-        processedOn: (rawProcessedOn && new Date(parseInt(rawProcessedOn, 10)).toISOString()) || null,
-        failedReason: values.get('failedReason') || null,
-        stacktrace: (rawStacktrace && (JSON.parse(rawStacktrace) as any[])) || null,
-    }
-}
-
-/**
- * Convert an hgetall response `[k1, v1, k2, v2, ...]` into a map `{k1 -> v1, k2 -> v2, ...}`.
- *
- * @param payload Response from hgetall.
- */
-const hgetAllToMap = (payload: string[]): Map<string, string> =>
-    new Map<string, string>(chunk(payload, 2) as [string, string][])
-
-/**
  * A Lua script evaluated in Redis to return the jobs in the given queue
  * matching the given query string. This script has the following input:
  *
@@ -239,19 +168,18 @@ export async function searchJobs(
     search: string,
     start: number,
     end: number
-): Promise<JsonJob[]> {
+): Promise<ApiJob[]> {
     const evalCommand = promisify(queue.client.eval.bind(queue.client)) as (
         lua: string,
         numberOfKeys: number,
         keysAndArgs: any[]
     ) => Promise<string[][]>
 
-    const keys = ['bull:lsif:', queueName]
-    const args = [search, start, end]
-
     const jobs = []
-    for (const payload of await evalCommand(jobSearchScript, keys.length, [...keys, ...args])) {
-        jobs.push(formatJobFromMap(hgetAllToMap(payload), status))
+    for (const payload of await evalCommand(jobSearchScript, 2, ['bull:lsif:', queueName, search, start, end])) {
+        // Translate redis hgetall response `[k1, v2, k2, v1, ...]` into a map `{k1 -> v1, k2 -> v2, ...}`,
+        // then translate the map into an ApiJob instance so we can return it from the API.
+        jobs.push(formatJobFromMap(new Map<string, string>(chunk(payload, 2) as [string, string][]), status))
     }
 
     return jobs

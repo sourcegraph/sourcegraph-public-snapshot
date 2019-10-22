@@ -29,10 +29,11 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue, ensureOnlyRepeatableJob, searchJobs, formatJob, queueTypes } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob, searchJobs, queueTypes } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
+import { formatJob } from './api-job'
 
 const pipeline = promisify(_pipeline)
 
