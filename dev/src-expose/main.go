@@ -140,7 +140,13 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 			var repoDir string
 			switch len(args) {
 			case 0:
-				repoDir = *globalReposDir
+				s := Snapshotter{
+					Destination: *globalReposDir,
+				}
+				if err := s.SetDefaults(); err != nil {
+					return err
+				}
+				repoDir = s.Destination
 
 			case 1:
 				repoDir = args[0]
@@ -201,10 +207,10 @@ Paste the following configuration as an Other External Service in Sourcegraph:
     "repos": ["src-expose"] // This may change in versions later than 3.9
   }
 
-`, *globalReposDir, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
+`, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
 
 			go func() {
-				if err := serveRepos(*globalAddr, *globalReposDir); err != nil {
+				if err := serveRepos(*globalAddr, s.Destination); err != nil {
 					log.Fatal(err)
 				}
 			}()
