@@ -142,7 +142,7 @@ Examples:
 			}
 
 			if resp.StatusCode == http.StatusUnauthorized && string(body) == "Must provide github_token.\n" {
-				return fmt.Errorf("error: you have provide -github-token with 'public_repo' scope")
+				return fmt.Errorf("error: you have to provide -github-token with 'public_repo' scope")
 			}
 
 			if resp.StatusCode == http.StatusUnauthorized && isatty.IsTerminal(os.Stdout.Fd()) {
