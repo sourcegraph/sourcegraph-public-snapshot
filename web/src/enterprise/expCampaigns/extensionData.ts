@@ -132,7 +132,7 @@ const executeRun = (
             ).length
             const totalCount = diagnosticsAndActions.length
             const allErrors = [
-                ...diagnosticsAndActions.flatMap(da => da.errors),
+                ...diagnosticsAndActions.flatMap(d => d.errors),
                 ...diagnosticsAndActions
                     .map(d =>
                         d.action !== undefined && d.action !== LOADING && isErrorLike(d.action.result)

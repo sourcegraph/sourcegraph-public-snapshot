@@ -112,7 +112,7 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
         from(
             memoizedFindTextInFiles(
                 {
-                    pattern: `${JSON.stringify(query.name)} ${filters} index:only`,
+                    pattern: `${JSON.stringify(query.name)} patternType:regexp ${filters} index:only`,
                     type: 'regexp',
                 },
                 {
@@ -212,12 +212,14 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                 : of<WorkspaceEdit>(new WorkspaceEdit())
         return combineLatest([existingBuildGradle, newBuildGradle, lockfileDiff]).pipe(
             map(([existingBuildGradle, newBuildGradle, edit]) => {
-                // Also add build.gradle edit.
-                edit.replace(
-                    new URL(existingBuildGradle.uri),
-                    new Range(new Position(0, 0), existingBuildGradle.positionAt(existingBuildGradle.text!.length)),
-                    newBuildGradle
-                )
+                if (existingBuildGradle.text !== newBuildGradle) {
+                    // Also add build.gradle edit.
+                    edit.replace(
+                        new URL(existingBuildGradle.uri),
+                        new Range(new Position(0, 0), existingBuildGradle.positionAt(existingBuildGradle.text!.length)),
+                        newBuildGradle
+                    )
+                }
                 return edit
             })
         )
