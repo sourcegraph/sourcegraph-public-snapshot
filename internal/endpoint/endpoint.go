@@ -130,8 +130,11 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	return urls.get(key, exclude), nil
 }
 
-// GetMany is the same as calling Get on each item of keys. However, it is
-// optimized to be faster.
+// GetMany is the same as calling Get on each item of keys. It will only
+// acquire the underlying endpoint map once, so is preferred to calling Get
+// for each key which will acquire the endpoint map for each call. The benefit
+// is it is faster (O(1) mutex acquires vs O(n)) and consistent (endpoint map
+// is immutable vs may change between Get calls).
 func (m *Map) GetMany(keys ...string) ([]string, error) {
 	urls, err := m.getUrls()
 	if err != nil {
