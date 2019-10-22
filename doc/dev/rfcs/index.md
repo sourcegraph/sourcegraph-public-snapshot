@@ -8,7 +8,7 @@ _All RFCs are in a [public Google Drive folder](https://drive.google.com/drive/f
 
 ## Status
 
-Each RFC has a status that is in the title of the RFC (e.g. "RFC 1: WIP Title"). The author is responsible for keeping the status updated.
+Each RFC has a status that is in the title of the RFC (e.g. "RFC 1 WIP: Title"). The author is responsible for keeping the status updated.
 
 | Status | Description |
 |-------|-------------|
