@@ -136,7 +136,7 @@ export class QueryInput extends React.Component<Props, State> {
                             map(createSuggestion),
                             filter((suggestion): suggestion is Suggestion => !!suggestion),
                             toArray(),
-                            map((suggestions: Suggestion[]) => ({
+                            map(suggestions => ({
                                 suggestions,
                                 selectedSuggestion: -1,
                                 hideSuggestions: false,
