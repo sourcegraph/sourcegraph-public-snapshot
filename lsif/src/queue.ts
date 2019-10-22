@@ -145,7 +145,10 @@ const jobSearchScript = `
     local matching = {}
     for _, v in pairs(redis.call(command, KEYS[1] .. KEYS[2], ARGV[2], ARGV[3])) do
         if jobMatches(KEYS[1] .. v) then
-            table.insert(matching, redis.call('HGETALL', KEYS[1] .. v))
+            local data = redis.call('HGETALL', KEYS[1] .. v)
+            table.insert(data, 'id')
+            table.insert(data, v)
+            table.insert(matching, data)
         end
     end
 
