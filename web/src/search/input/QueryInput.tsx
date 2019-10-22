@@ -134,7 +134,7 @@ export class QueryInput extends React.Component<Props, State> {
                             .join(' ')
                         return fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
-                            filter((suggestion): suggestion is Suggestion => !!suggestion),
+                            filter(isDefined),
                             toArray(),
                             map(suggestions => ({
                                 suggestions,
