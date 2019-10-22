@@ -9,8 +9,9 @@ export type LsifJobStatus = 'active' | 'queued' | 'completed' | 'failed'
  * Counts of LSIF jobs in each state.
  */
 export interface LsifJobStats {
-    queued: number
     active: number
+    queued: number
+    scheduled: number
     completed: number
     failed: number
 }
@@ -19,7 +20,7 @@ export interface LsifJobStats {
  * Metadata about an LSIF job.
  */
 export interface ILsifJob {
-    jobId: string
+    id: string
     name: string
     args: object
     status: LsifJobStatus

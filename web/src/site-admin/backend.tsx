@@ -601,17 +601,12 @@ export function fetchLsifJobStatistics(): Observable<LSIF.LsifJobStats> {
  * @param status The status.
  * @param limit The maximum number of results to return.
  */
-export function fetchLsifJobs(status: string, limit?: number): Observable<LSIF.ILsifJobConnection> {
-    const defaultStatus = 'active,queued,completed,failed'
-    const defaultLimit = 2
-
+export function fetchLsifJobs(status: string, limit: number = 20): Observable<LSIF.ILsifJobConnection> {
     return backendRequest<{
         jobs: LSIF.ILsifJob[]
         count: number
         hasMore: boolean
-    }>(
-        lsifUrl('jobs', new Map<string, any>([['status', status || defaultStatus], ['limit', limit || defaultLimit]]))
-    ).pipe(
+    }>(lsifUrl(`jobs/${status}`, new Map<string, any>([['limit', limit]]))).pipe(
         map(
             ({ jobs, count, hasMore }) =>
                 ({

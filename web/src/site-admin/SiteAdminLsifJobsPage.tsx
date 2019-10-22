@@ -31,7 +31,7 @@ class LsifJobNode extends React.PureComponent<LsifJobNodeProps, LsifJobNodeState
             <li className="repository-node list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={`/site-admin/lsif-jobs/${this.props.node.jobId}`}>
+                        <Link to={`/site-admin/lsif-jobs/${this.props.node.id}`}>
                             <strong>{LSIF.lsifJobDescription(this.props.node)}</strong>
                         </Link>
                     </div>
@@ -62,12 +62,6 @@ class FilteredLsifJobsConnection extends FilteredConnection<{}, LsifJobNodeProps
 export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
     private static FILTERS: FilteredConnectionFilter[] = [
         {
-            label: 'All',
-            id: 'all',
-            tooltip: 'Show all jobs',
-            args: { status: 'active,queued,completed,failed' },
-        },
-        {
             label: 'Active',
             id: 'active',
             tooltip: 'Show active jobs only',
@@ -78,6 +72,12 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
             id: 'queued',
             tooltip: 'Show queued jobs only',
             args: { status: 'queued' },
+        },
+        {
+            label: 'Scheduled',
+            id: 'scheduled',
+            tooltip: 'Show scheduled jobs only',
+            args: { status: 'scheduled' },
         },
         {
             label: 'Completed',
@@ -122,7 +122,8 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
                     <>
                         <div>
                             {this.state.stats.active} active, {this.state.stats.queued} queued,{' '}
-                            {this.state.stats.completed} completed, and {this.state.stats.failed} failed
+                            {this.state.stats.scheduled} scheduled, {this.state.stats.completed} completed, and{' '}
+                            {this.state.stats.failed} failed
                         </div>
 
                         <FilteredLsifJobsConnection
