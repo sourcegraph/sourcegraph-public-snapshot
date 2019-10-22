@@ -15,7 +15,7 @@ Each RFC has a status that is in the title of the RFC (e.g. "RFC 1: WIP Title").
 | WIP | The author is still drafting the RFC and it is not ready for review. |
 | REVIEW | The RFC is ready to be reviewed. The RFC explicitly lists who the expected reviewers are and a desired timeline for review comments. |
 | APPROVED | All comment threads are resolved and the content of the RFC has been approved by the necessary reviewers (i.e. they added their names to the approvers list).|
-| ABANDONED | There are no plans to move forward with this RFC. The RFC may have failed to get the the necessary approvals, or we may not have resources to work on this RFC in the forseeable future. |
+| ABANDONED | There are no plans to move forward with this RFC. For example, the RFC may have failed to get the the necessary approvals, it may have been superseded by another RFC, or we may not have resources to work on this RFC in the forseeable future. |
 | IMPLEMENTED | This RFC has been implemented. |
 
 A prose description of the status appears in the [metadata](#RFC-structure) of an RFC.
