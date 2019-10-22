@@ -616,11 +616,14 @@ export function fetchLsifJobStatistics(): Observable<GQL.LsifJobStats> {
  */
 export function fetchLsifJobs({
     first,
+    after,
     query,
     status,
 }: {
     /* The maximum number of results to return. */
     first?: number
+    /* The endCursor from the previous page of results. */
+    after?: string | null
     /* A search term to filter by. */
     query?: string
     /* The status. */
@@ -628,8 +631,8 @@ export function fetchLsifJobs({
 }): Observable<GQL.ILsifJobConnection> {
     return queryGraphQL(
         gql`
-            query LsifJobs($status: String!, $first: Int, $query: String) {
-                lsifJobs(status: $status, first: $first, query: $query) {
+            query LsifJobs($status: String!, $query: String, $first: Int, $after: ID) {
+                lsifJobs(status: $status, query: $query, first: $first, after: $after) {
                     nodes {
                         id
                         name
@@ -644,10 +647,14 @@ export function fetchLsifJobs({
                     }
 
                     totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
                 }
             }
         `,
-        { status, query, first }
+        { status, query, first, after }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.lsifJobs)

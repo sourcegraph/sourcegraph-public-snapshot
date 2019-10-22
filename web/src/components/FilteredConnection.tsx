@@ -107,6 +107,7 @@ interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
 interface ConnectionStateCommon {
     query: string
     first: number
+    after?: string | null
 
     connectionQuery?: string
 
@@ -307,6 +308,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
  */
 export interface FilteredConnectionQueryArgs {
     first?: number
+    after?: string
     query?: string
 }
 
@@ -363,7 +365,7 @@ export interface Connection<N> {
      * If set, indicates whether there is a next page. Not all GraphQL XyzConnection types return
      * pageInfo (if not, then they generally all do return totalCount).
      */
-    pageInfo?: { hasNextPage: boolean }
+    pageInfo?: { endCursor?: string | null; hasNextPage: boolean }
 
     /**
      * If set, this error is displayed. Even when there is an error, the results are still displayed.
@@ -409,6 +411,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
+            after: q.get('after') || undefined,
         }
     }
 
@@ -467,6 +470,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         const result = this.props
                             .queryConnection({
                                 first: this.state.first,
+                                after: this.state.after,
                                 query,
                                 ...(filter ? filter.args : {}),
                             })
@@ -500,6 +504,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         if (this.props.onUpdate) {
                             this.props.onUpdate(connectionOrError)
                         }
+
+                        if (connectionOrError && !isErrorLike(connectionOrError) && connectionOrError.pageInfo) {
+                            this.setState({ after: connectionOrError.pageInfo.endCursor })
+                        } else {
+                            this.setState({ after: undefined })
+                        }
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
@@ -507,8 +517,14 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         this.subscriptions.add(
             this.showMoreClicks
-                .pipe(map(() => this.state.first * 2))
-                .subscribe(first => this.setState({ first, loading: true }, () => refreshRequests.next()))
+                .pipe(
+                    map(() =>
+                        this.state.after
+                            ? { after: this.state.after, first: this.state.first }
+                            : { after: this.state.after, first: this.state.first * 2 }
+                    )
+                )
+                .subscribe(args => this.setState({ ...args, loading: true }, () => refreshRequests.next()))
         )
 
         if (this.props.updates) {
@@ -546,9 +562,17 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.componentUpdates.next(this.props)
     }
 
-    private urlQuery(arg: { first?: number; query?: string; filter?: FilteredConnectionFilter }): string {
+    private urlQuery(arg: {
+        first?: number
+        after?: string | null
+        query?: string
+        filter?: FilteredConnectionFilter
+    }): string {
         if (!arg.first) {
             arg.first = this.state.first
+        }
+        if (!arg.after) {
+            arg.after = this.state.after
         }
         if (!arg.query) {
             arg.query = this.state.query
@@ -562,6 +586,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         }
         if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
+        }
+        if (arg.after) {
+            q.set('after', arg.after)
         }
         if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
             q.set('filter', arg.filter.id)
