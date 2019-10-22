@@ -3,18 +3,28 @@ package endpoint
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 )
 
-func TestStatic(t *testing.T) {
+func TestNew(t *testing.T) {
 	m := New("http://test")
 	expectEndpoints(t, m, nil, "http://test")
+
+	m = New("http://test-1 http://test-2")
+	expectEndpoints(t, m, nil, "http://test-1", "http://test-2")
+}
+
+func TestStatic(t *testing.T) {
+	m := Static("http://test")
+	expectEndpoints(t, m, nil, "http://test")
+
+	m = Static("http://test-1", "http://test-2")
+	expectEndpoints(t, m, nil, "http://test-1", "http://test-2")
 }
 
 func TestExclude(t *testing.T) {
 	endpoints := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
-	m := New(strings.Join(endpoints, " "))
+	m := Static(endpoints...)
 
 	exclude := map[string]bool{}
 	for len(endpoints) > 0 {
@@ -50,6 +60,22 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 			t.Fatalf("map never returned %v", e)
 		}
 	}
+
+	// Ensure GetMany matches Get
+	var keys, vals []string
+	for i := 0; i < len(endpoints)*10; i++ {
+		keys = append(keys, fmt.Sprintf("test-%d", i))
+		v, err := m.Get(keys[i], nil)
+		if err != nil {
+			t.Fatalf("Get for GetMany failed: %v", err)
+		}
+		vals = append(vals, v)
+	}
+	if got, err := m.GetMany(keys...); err != nil {
+		t.Fatalf("GetMany failed: %v", err)
+	} else if !reflect.DeepEqual(got, vals) {
+		t.Fatalf("GetMany(%v) unexpected response:\ngot  %v\nwant %v", keys, got, vals)
+	}
 }
 
 func TestEndpoints(t *testing.T) {
@@ -59,24 +85,7 @@ func TestEndpoints(t *testing.T) {
 		want[addr] = struct{}{}
 	}
 
-	m := New(strings.Join(eps, " "))
-	got, err := m.Endpoints()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
-	}
-}
-
-func TestEndpointsList(t *testing.T) {
-	eps := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
-	want := map[string]struct{}{}
-	for _, addr := range eps {
-		want[addr] = struct{}{}
-	}
-
-	m := New(" http://test-1  http://test-2 http://test-3 http://test-4 ")
+	m := Static(eps...)
 	got, err := m.Endpoints()
 	if err != nil {
 		t.Fatal(err)

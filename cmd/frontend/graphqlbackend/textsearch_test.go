@@ -271,7 +271,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Repos:        makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
 		Query:        q,
 		Zoekt:        zoekt,
-		SearcherURLs: endpoint.New("test"),
+		SearcherURLs: endpoint.Static("test"),
 	}
 	results, common, err := searchFilesInRepos(context.Background(), args)
 	if err != nil {
@@ -301,7 +301,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Repos:        makeRepositoryRevisions("foo/no-rev@dev"),
 		Query:        q,
 		Zoekt:        zoekt,
-		SearcherURLs: endpoint.New("test"),
+		SearcherURLs: endpoint.Static("test"),
 	}
 	_, _, err = searchFilesInRepos(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
