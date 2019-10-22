@@ -86,7 +86,7 @@ const provideDependencySpecification = (
                                 range: declRange || new Range(0, 0, 0, 0),
                                 ...(isErrorLike(hasDependency)
                                     ? {
-                                          message: 'No dependency.lock found and `gradle dependencyInsight` failed',
+                                          message: 'No dependencies.lock found and `gradle dependencyInsight` failed',
                                           detail:
                                               '```text\n' +
                                               (hasDependency.message as string)
@@ -97,13 +97,13 @@ const provideDependencySpecification = (
                                       }
                                     : query.supportMissingDependencyLock
                                     ? {
-                                          message: `No dependency.lock found (${
+                                          message: `No dependencies.lock found (${
                                               hasDependency === LOADING ? 'using' : 'used'
                                           } slower gradle dependencyInsight)`,
                                           severity: DiagnosticSeverity.Hint,
                                       }
                                     : {
-                                          message: `No dependency.lock found`,
+                                          message: `No dependencies.lock found`,
                                           detail:
                                               'Set variable `supportMissingDependencyLock` to `true` to run `gradle dependencyInsight` to compute the transitive dependency set on-the-fly.',
                                           severity: DiagnosticSeverity.Warning,
