@@ -46,6 +46,16 @@ func generate(log *log.Logger) (string, error) {
 		defer runIgnoreError("dropdb", dbname)
 	} else {
 		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
+		if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
+			log.Println("docker pull postgres9.6")
+			pull := exec.Command("docker", "pull", "postgres:9.6")
+			pull.Stdout = log.Writer()
+			pull.Stderr = log.Writer()
+			if err := pull.Run(); err != nil {
+				return "", fmt.Errorf("docker pull postgres9.6 failed: %w", err)
+			}
+			log.Println("docker pull complete")
+		}
 		runIgnoreError("docker", "rm", "--force", dbname)
 		server := exec.Command("docker", "run", "--rm", "--name", dbname, "-p", "5433:5432", "postgres:9.6")
 		if err := server.Start(); err != nil {
