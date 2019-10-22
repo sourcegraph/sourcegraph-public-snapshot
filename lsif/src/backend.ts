@@ -8,7 +8,7 @@ import { Database, sortMonikers, createRemoteUri } from './database'
 import { ConfigurationFetcher } from './config'
 import { DocumentData, MonikerData, DefinitionModel, ReferenceModel } from './database.models'
 import { uniqWith, isEqual } from 'lodash'
-import { LsifDump, DumpID } from './xrepo.models'
+import { LsifDump, DumpId } from './xrepo.models'
 
 /**
  * A wrapper around code intelligence operations.
@@ -23,9 +23,7 @@ export class Backend {
      *
      * @param storageRoot The path where SQLite databases are stored.
      * @param xrepoDatabase The cross-repo database.
-     * @param connectionCache The cache of SQLite connections.
-     * @param documentCache The cache of loaded documents.
-     * @param resultChunkCache The cache of loaded result chunks.
+     * @param fetchConfiguration A function that returns the current configuration.
      */
     constructor(
         private storageRoot: string,
@@ -36,7 +34,10 @@ export class Backend {
     /**
      * Determine if data exists for a particular document in this database.
      *
-     * @param path The path of the document.
+     * @param repository The repository name.
+     * @param commit The commit.
+     * @param path The path o fthe document.
+     * @param ctx The tracing context.
      */
     public async exists(repository: string, commit: string, path: string, ctx: TracingContext = {}): Promise<boolean> {
         try {
@@ -53,6 +54,8 @@ export class Backend {
     /**
      * Return the location for the definition of the reference at the given position.
      *
+     * @param repository The repository name.
+     * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      * @param ctx The tracing context.
@@ -194,12 +197,13 @@ export class Backend {
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
+     * @param dumpId The ID of the dump for which this database answers queries.
      * @param ctx The tracing context.
      */
     private async remoteReferences(
         document: DocumentData,
         moniker: MonikerData,
-        dumpID: DumpID,
+        dumpId: DumpId,
         ctx: TracingContext
     ): Promise<lsp.Location[]> {
         if (!moniker.packageInformationId) {
@@ -233,7 +237,7 @@ export class Backend {
         for (const reference of references) {
             // Skip the remote reference that show up for ourselves - we've already gathered
             // these in the previous step of the references query.
-            if (reference.dump.id === dumpID) {
+            if (reference.dump.id === dumpId) {
                 continue
             }
 
@@ -257,6 +261,8 @@ export class Backend {
     /**
      * Return a list of locations which reference the definition at the given position.
      *
+     * @param repository The repository name.
+     * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      * @param ctx The tracing context.
@@ -330,6 +336,8 @@ export class Backend {
     /**
      * Return the hover content for the definition or reference at the given position.
      *
+     * @param repository The repository name.
+     * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      * @param ctx The tracing context.
@@ -357,7 +365,6 @@ export class Backend {
      * @param commit The target commit.
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
-     * @param gitserverUrls The set of ordered gitserver urls.
      */
     private async loadClosestDatabase(
         repository: string,
@@ -393,14 +400,20 @@ export class Backend {
     /**
      * Converts a file in the repository to the corresponding file in the
      * database.
+     *
+     * @param root The root of the dump.
+     * @param path The path within the dump.
      */
     private pathToDatabase(root: string, path: string): string {
-        return stripPrefix(root, path)
+        return path.startsWith(root) ? path.slice(root.length) : path
     }
 
     /**
      * Converts a file in the database to the corresponding file in the
      * repository.
+     *
+     * @param root The root of the dump.
+     * @param path The path within the dump.
      */
     private pathFromDatabase(root: string, path: string): string {
         return `${root}${path}`
@@ -413,10 +426,6 @@ export class Backend {
     private locationFromDatabase(root: string, { uri, range }: lsp.Location): lsp.Location {
         return lsp.Location.create(this.pathFromDatabase(root, uri), range)
     }
-}
-
-function stripPrefix(prefix: string, s: string): string {
-    return s.startsWith(prefix) ? s.slice(prefix.length) : s
 }
 
 function mapLocation(map: (uri: string) => string, { uri, range }: lsp.Location): lsp.Location {

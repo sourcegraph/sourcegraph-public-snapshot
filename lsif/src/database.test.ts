@@ -124,6 +124,7 @@ describe('createRemoteUri', () => {
                 repository: 'github.com/sourcegraph/codeintellify',
                 commit: 'deadbeef',
                 root: '',
+                visible_at_tip: false,
             },
             dump_id: 0,
         }

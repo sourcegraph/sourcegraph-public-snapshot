@@ -13,7 +13,7 @@ import pRetry from 'p-retry'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395604
+const MINIMUM_MIGRATION_VERSION = 1528395606
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -21,7 +21,7 @@ const MINIMUM_MIGRATION_VERSION = 1528395604
 const MAX_SCHEMA_POLL_RETRIES = readEnvInt('MAX_SCHEMA_POLL_RETRIES', 60)
 
 /**
- * How long to wait between queries to check the current database migration version on startup.
+ * How long to wait (in seconds) between queries to check the current database migration version on startup.
  */
 const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
 
@@ -31,7 +31,7 @@ const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
 const MAX_CONNECTION_RETRIES = readEnvInt('MAX_CONNECTION_RETRIES', 60)
 
 /**
- * How long to wait between cross-repository connection attempts (in seconds).
+ * How long to wait (in seconds) between cross-repository connection attempts.
  */
 const CONNECTION_RETRY_INTERVAL = readEnvInt('CONNECTION_RETRY_INTERVAL', 5)
 

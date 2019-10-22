@@ -43,7 +43,7 @@ export class Commit {
 /**
  * The primary key of the `lsif_dumps` table.
  */
-export type DumpID = number
+export type DumpId = number
 
 /**
  * An entity within the cross-repo database. A row with a repository and commit
@@ -55,7 +55,7 @@ export class LsifDump {
      * A unique ID required by typeorm entities.
      */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
-    public id!: DumpID
+    public id!: DumpId
 
     /**
      * The name of the source repository.
@@ -79,9 +79,15 @@ export class LsifDump {
     public root!: string
 
     /**
+     * Whether or not this commit is visible at the tip of the default branch.
+     */
+    @Column('boolean')
+    public visible_at_tip!: boolean
+
+    /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(2)
+    public static BatchSize = getBatchSize(5)
 }
 
 /**
@@ -114,7 +120,7 @@ class Package {
     public version!: string | null
 
     /**
-     * The corresponding dump, `LsifDump` when querying and `DumpID` when
+     * The corresponding dump, `LsifDump` when querying and `DumpId` when
      * inserting.
      */
     @OneToOne(type => LsifDump, { eager: true })
@@ -125,7 +131,7 @@ class Package {
      * The foreign key to the dump.
      */
     @Column('integer')
-    public dump_id!: DumpID
+    public dump_id!: DumpId
 }
 
 /**
