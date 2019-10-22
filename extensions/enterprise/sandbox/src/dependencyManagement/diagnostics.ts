@@ -1,6 +1,6 @@
 import * as sourcegraph from 'sourcegraph'
 import { DependencySpecificationWithType } from './combinedProvider'
-import { DependencyManagementCampaignContextCommon, LOADING } from './common'
+import { DependencyManagementCampaignContextCommon } from './common'
 import { DependencyQuery, DependencyManagementProvider } from '.'
 import { Observable, from, of } from 'rxjs'
 import { startWith, map, switchMap } from 'rxjs/operators'
@@ -50,7 +50,7 @@ export const provideDependencyManagementDiagnostics = <
         createChangesets,
         filters,
     }: Pick<DependencyManagementCampaignContextCommon, 'action' | 'createChangesets' | 'filters'>
-): Observable<sourcegraph.Diagnostic[] | typeof LOADING> =>
+): Observable<sourcegraph.Diagnostic[]> =>
     from(sourcegraph.workspace.rootChanges).pipe(
         startWith(undefined),
         map(() => sourcegraph.workspace.roots),
@@ -93,6 +93,5 @@ export const provideDependencyManagementDiagnostics = <
                         .filter(isDefined)
                 )
             )
-        }),
-        startWith(LOADING)
+        })
     )

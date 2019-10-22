@@ -9,12 +9,17 @@ import {
     throttleTime,
     defaultIfEmpty,
     tap,
+    catchError,
 } from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../shared/src/api/types/action'
 import { fromDiagnostic } from '../../../../shared/src/api/types/diagnostic'
-import { WorkspaceEdit, combineWorkspaceEdits } from '../../../../shared/src/api/types/workspaceEdit'
+import {
+    WorkspaceEdit,
+    combineWorkspaceEdits,
+    SerializedWorkspaceEdit,
+} from '../../../../shared/src/api/types/workspaceEdit'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
@@ -24,6 +29,7 @@ import { WorkflowRun, Workflow, Command } from '../../schema/workflow.schema'
 import { Changeset } from '../../../../extensions/enterprise/sandbox/src/workflow/behaviors/edits'
 import { computeDiffFromEdits } from './backend/computeDiff'
 import { Diagnostic } from 'sourcegraph'
+import { ErrorLike, asError, isErrorLike } from '../../../../shared/src/util/errors'
 
 interface DiagnosticsAndFileDiffs {
     diagnostics: Diagnostic[]
@@ -40,11 +46,61 @@ export interface ExtensionDataStatus {
 
 const LOADING = 'loading' as const
 
+const withExtraDetail = (diagnostic: DiagnosticWithType, detail: string): DiagnosticWithType => ({
+    ...diagnostic,
+    detail: `${diagnostic.detail ? `${diagnostic.detail} - ` : ''}${detail}`,
+})
+
+interface ActionWithResult {
+    action: Action
+    result: SerializedWorkspaceEdit | ErrorLike | typeof LOADING
+}
+
 interface DiagnosticWithAction {
     diagnostic: DiagnosticWithType
     errors: CodeActionError[]
-    action: Action | typeof LOADING | undefined
+    action: ActionWithResult | typeof LOADING | undefined
 }
+
+const executeDiagnosticCodeAction = (
+    extensionsController: ExtensionsControllerProps['extensionsController'],
+    diagnostic: DiagnosticWithType,
+    codeActions: Command[]
+): Observable<DiagnosticWithAction> =>
+    getCodeActions({ diagnostic, extensionsController }).pipe(
+        switchMap(actions => {
+            const v: DiagnosticWithAction = {
+                diagnostic,
+                errors: actions.filter(isCodeActionError),
+                action: undefined,
+            }
+
+            const action = actions
+                .filter((a): a is Action => !isCodeActionError(a))
+                .filter(propertyIsDefined('computeEdit'))
+                .find(({ computeEdit }) => codeActions.some(a => a.command === computeEdit.command))
+
+            return action
+                ? from(
+                      extensionsController.services.commands.executeActionEditCommand(
+                          fromDiagnostic(diagnostic),
+                          action.computeEdit
+                      )
+                  ).pipe(
+                      catchError(err => of<ErrorLike>(asError(err))),
+                      map(
+                          result => ({ ...v, action: { action, result } }),
+                          startWith({ ...v, action: { action, result: LOADING } })
+                      )
+                  )
+                : of(v)
+        }),
+        startWith<DiagnosticWithAction>({
+            diagnostic,
+            errors: [],
+            action: LOADING,
+        })
+    )
 
 const executeRun = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
@@ -59,75 +115,56 @@ const executeRun = (
               switchMap(diagnostics =>
                   diagnostics.length > 0
                       ? combineLatest(
-                            diagnostics.map(d =>
-                                getCodeActions({ diagnostic: d, extensionsController }).pipe(
-                                    map(actions => ({
-                                        diagnostic: d,
-                                        errors: actions.filter(isCodeActionError),
-                                        action: actions
-                                            .filter((a): a is Action => !isCodeActionError(a))
-                                            .filter(propertyIsDefined('computeEdit'))
-                                            .find(({ computeEdit }) =>
-                                                runCodeActions.some(a => a.command === computeEdit.command)
-                                            ),
-                                    })),
-                                    startWith<DiagnosticWithAction>({
-                                        diagnostic: d,
-                                        errors: [],
-                                        action: LOADING,
-                                    })
-                                )
+                            diagnostics.map(diagnostic =>
+                                executeDiagnosticCodeAction(extensionsController, diagnostic, runCodeActions)
                             )
                         )
                       : EMPTY
               )
+              // throttleTime(2500, undefined, { leading: true, trailing: true })
           )
         : EMPTY
     return codeActions.pipe(
-        throttleTime(2500, undefined, { leading: true, trailing: true }),
-        distinctUntilChanged((a, b) => isEqual(a, b)),
         defaultIfEmpty<DiagnosticWithAction[]>([]),
-        switchMap(async diagnosticsAndActions => {
-            const actionInvocations = diagnosticsAndActions
-                .filter(propertyIsDefined('action'))
-                .map(d => ({
-                    actionEditCommand: d.action !== LOADING ? d.action.computeEdit : undefined,
-                    diagnostic: fromDiagnostic(d.diagnostic),
-                }))
-                .filter(propertyIsDefined('actionEditCommand'))
-
-            const withExtraDetail = (diagnostic: DiagnosticWithType, detail: string): DiagnosticWithType => ({
-                ...diagnostic,
-                detail: `${diagnostic.detail ? `${diagnostic.detail} - ` : ''}${detail}`,
-            })
-
-            const loadingCount = diagnosticsAndActions.filter(d => d.action === LOADING).length
-            const totalCount = diagnosticsAndActions.filter(d => d.action !== undefined).length
-            const allErrors = diagnosticsAndActions.flatMap(da => da.errors)
+        map(diagnosticsAndActions => {
+            const loadingCount = diagnosticsAndActions.filter(
+                d => d.action !== undefined && (d.action === LOADING || d.action.result === LOADING)
+            ).length
+            const totalCount = diagnosticsAndActions.length
+            const allErrors = [
+                ...diagnosticsAndActions.flatMap(da => da.errors),
+                ...diagnosticsAndActions
+                    .map(d =>
+                        d.action !== undefined && d.action !== LOADING && isErrorLike(d.action.result)
+                            ? d.action.result
+                            : undefined
+                    )
+                    .filter(isDefined),
+            ]
             const errorsFoundStr =
                 allErrors.length > 0 ? `${allErrors.length} ${pluralize('error', allErrors.length)} occurred` : ''
 
             console.log({ loadingCount, totalCount, allErrors: allErrors.length })
 
             return {
-                diagnostics: diagnosticsAndActions
-                    // .filter(({ action }) => action)
-                    .map(({ diagnostic, action, errors }) =>
-                        errors.length === 0
-                            ? action === LOADING
-                                ? withExtraDetail(diagnostic, 'Loading fix...')
-                                : diagnostic
-                            : withExtraDetail(diagnostic, errors.map(e => e.message).join(', '))
-                    ),
-                edits: await Promise.all(
-                    actionInvocations.map(async ({ actionEditCommand, diagnostic }) => {
-                        const edit = await extensionsController.services.commands.executeActionEditCommand(
-                            diagnostic,
-                            actionEditCommand
-                        )
-                        return edit && WorkspaceEdit.fromJSON(edit)
-                    })
+                diagnostics: diagnosticsAndActions.map(({ diagnostic, action, errors }) =>
+                    errors.length === 0
+                        ? action !== undefined && (action === LOADING || action.result === LOADING)
+                            ? withExtraDetail(diagnostic, 'Loading fix...')
+                            : diagnostic
+                        : withExtraDetail(diagnostic, errors.map(e => e.message).join(', '))
                 ),
+                edits: diagnosticsAndActions
+                    .map(({ action }) =>
+                        action !== undefined &&
+                        action !== LOADING &&
+                        action.result !== LOADING &&
+                        !isErrorLike(action.result)
+                            ? action.result
+                            : undefined
+                    )
+                    .filter(isDefined)
+                    .map(edit => WorkspaceEdit.fromJSON(edit)),
                 status: {
                     isLoading: loadingCount > 0,
                     progress: [totalCount - loadingCount, totalCount] as const,

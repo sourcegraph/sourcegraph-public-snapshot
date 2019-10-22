@@ -27,13 +27,12 @@ export function registerDependencyManagementProviders<
     subscriptions.add(
         sourcegraph.workspace.registerDiagnosticProvider(DEPENDENCY_ID, {
             provideDiagnostics: (_scope, context) =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 provideDependencyManagementDiagnostics(
                     provider,
                     DEPENDENCY_ID,
                     parseQuery(context),
                     (context as unknown) as DependencyManagementCampaignContextCommon
-                ).pipe(filter((diagnostics): diagnostics is sourcegraph.Diagnostic[] => diagnostics !== LOADING)),
+                ),
         })
     )
     subscriptions.add(
@@ -48,7 +47,7 @@ export function registerDependencyManagementProviders<
                                 map(edit => {
                                     const action: sourcegraph.Action = {
                                         title: 'Upgrade dependency',
-                                        edit,
+                                        // edit,
                                         computeEdit: { title: 'Upgrade dependency', command: COMMAND_ID },
                                         diagnostics: [diagnostic],
                                     }
