@@ -13,10 +13,56 @@ See [descriptions of the Grafana dashboards provisioned by Sourcegraph](monitori
 
 > NOTE: We are running Grafana behind a reverse proxy. Grafana is not fully integrated with our CSRF protection so there is a known issue: when the Grafana
 > web app in the browser makes POST or PUT requests Sourcegraph's CSRF protection gets triggered and responds with a "invalid CSRF token" 403 response.
-> We are working to solve [this issue](https://github.com/sourcegraph/sourcegraph/issues/6075). As a workaround, site admins can connect to Grafana directly to make changes to the dashboards. 
->If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), 
->see "[Kubernetes cluster administrator guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/admin-guide.md)" and
-> "[Grafana README](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/grafana/README.md)" for more information.
+> We are working to solve [this issue](https://github.com/sourcegraph/sourcegraph/issues/6075). 
+> As a workaround, site admins can connect to Grafana directly (as described below) to make changes to the dashboards. 
+
+### Exposing Grafana directly
+
+If you are running Sourcegraph as single server you can add an additional publish flag for the Grafana port 3370:
+
+```shell script
+docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
+  --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
+  --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.1
+```
+
+If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
+you can run Grafana directly using kubectl port-forwarding
+
+```shell script
+kubectl port-forward svc/grafana 3370:30070
+``` 
+
+Then visit `http://localhost:3370/-/debug/grafana` to get to the "Home Dashboard". From there you can add, modify and delete dashboards and panels.
+
+### Docker images
+
+#### Prometheus
+
+We are running our own image of Prometheus which contains a standard Prometheus installation packaged together 
+with rules files and target files for our monitoring.
+
+A directory can be mounted at `/sg_prometheus_add_ons`. It can contains additional config files of two types:
+  - rule files which must have the suffix `_rules.yml` in their filename (ie `gitserver_rules.yml`)
+  - target files which must have the suffix `_targets.yml` in their filename (ie `local_targets.yml`)
+
+[Rule files](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) 
+and [target files](https://prometheus.io/docs/guides/file-sd/) need to use Prometheus 2.x syntax.  
+
+The environment variable `PROMETHEUS_ADDITIONAL_FLAGS` can be used to pass on additional flags to the prometheus executable running in the container.
+
+#### Grafana
+
+We are running our own image of Grafana which contains a standard Grafana installation packaged together with provisioned dashboards.
+
+> Note: Our Grafana instance runs in anonymous mode with all authentication turned off. Please be careful when exposing it directly.
+
+A directory containing dashboard json specifications can be mounted in the docker container at
+`/sg_grafana_additional_dashboards` and they will be picked up automatically. Changes to files in that directory
+will be detected automatically while Grafana is running.
+
+More behavior can be controlled with
+[environmental variables](https://grafana.com/docs/installation/configuration/).
 
 ## Additional monitoring and tracing systems
 
