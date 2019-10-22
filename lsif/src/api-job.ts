@@ -9,11 +9,11 @@ export interface ApiJob {
     args: object
     status: string
     progress: number
-    timestamp: string
-    finishedOn: string | null
-    processedOn: string | null
     failedReason: string | null
     stacktrace: string[] | null
+    timestamp: string
+    processedOn: string | null
+    finishedOn: string | null
 }
 
 const toDate = (v: number): string => new Date(v).toISOString()
@@ -35,11 +35,11 @@ export const formatJob = (job: Job, status: string): ApiJob => {
         args: payload.data.args,
         status,
         progress: payload.progress,
-        timestamp: toDate(payload.timestamp),
-        finishedOn: toMaybeDate(payload.finishedOn),
-        processedOn: toMaybeDate(payload.processedOn),
         failedReason: payload.failedReason,
         stacktrace: payload.stacktrace,
+        timestamp: toDate(payload.timestamp),
+        processedOn: toMaybeDate(payload.processedOn),
+        finishedOn: toMaybeDate(payload.finishedOn),
     }
 }
 
@@ -59,10 +59,10 @@ export const formatJobFromMap = (values: Map<string, string>, status: string): A
         args: rawData ? JSON.parse(rawData).args : {},
         status,
         progress: toMaybeInt(values.get('progress')) || 0,
-        timestamp: toMaybeDate(toMaybeInt(values.get('timestamp'))) || '',
-        finishedOn: toMaybeDate(toMaybeInt(values.get('finishedOn'))),
-        processedOn: toMaybeDate(toMaybeInt(values.get('processedOn'))),
         failedReason: values.get('failedReason') || null,
         stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,
+        timestamp: toMaybeDate(toMaybeInt(values.get('timestamp'))) || '',
+        processedOn: toMaybeDate(toMaybeInt(values.get('processedOn'))),
+        finishedOn: toMaybeDate(toMaybeInt(values.get('finishedOn'))),
     }
 }
