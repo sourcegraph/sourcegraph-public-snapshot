@@ -3,6 +3,7 @@ import { last, take } from 'lodash'
 import { FileSpec, RawRepoSpec, RevSpec } from '../../../../shared/src/util/url'
 import { commitIDFromPermalink } from '../../shared/util/dom'
 import { FileInfo } from '../code_intelligence'
+import { isExtension } from '../../context'
 
 export enum GitLabPageKind {
     File,
@@ -50,10 +51,12 @@ export function getPageInfo(): GitLabInfo {
         pageKind = GitLabPageKind.File
     }
 
+    const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
+
     return {
         owner,
         projectName,
-        rawRepoName: [new URL(gon.gitlab_url).hostname, owner, projectName].join('/'),
+        rawRepoName: [hostname, owner, projectName].join('/'),
         pageKind,
     }
 }
