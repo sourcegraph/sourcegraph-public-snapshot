@@ -392,13 +392,6 @@
   dependencies:
     "@types/node" "*"
 
-"@types/delay@^3.1.0":
-  version "3.1.0"
-  resolved "https://registry.npmjs.org/@types/delay/-/delay-3.1.0.tgz#c7ff788bf0d9b85f923b12182e6fbfaa65edcbdb"
-  integrity sha512-Mt16D+JxuzA2iu5VTnGS1ziGoaSAD2SZJF4Os3rxUnMk7sBSOkdH43yxoZVxSEud6t1V1JScFBaZA8r6ByjYMw==
-  dependencies:
-    delay "*"
-
 "@types/events@*":
   version "3.0.0"
   resolved "https://registry.npmjs.org/@types/events/-/events-3.0.0.tgz#2862f3f58a9a7f7c3e78d79f130dd4d71c25c2a7"
@@ -559,6 +552,13 @@
   integrity sha512-mzVYaYcFs5Jd2n/O6uYIRUsFRR1cHyZLRvkLCU0E7+G5WhY0qBDAR5fUCeZbvecYOSh9ikhlesyi2UfI8B9ckQ==
   dependencies:
     "@types/node" "*"
+
+"@types/p-timeout@^1.2.2":
+  version "1.2.2"
+  resolved "https://registry.npmjs.org/@types/p-timeout/-/p-timeout-1.2.2.tgz#98a1dcc6c1a11d8293dc3db36c7ed9aa01b8653c"
+  integrity sha512-F4aG8Vq5ZchL1ZCeJY2kop8j+evKNPE08ZYK1xNP79tpnydTpNuZ2gOpDEcyWGaq76XT33y4387UKyFcU7EWag==
+  dependencies:
+    p-timeout "*"
 
 "@types/range-parser@*":
   version "1.2.3"
@@ -1480,11 +1480,6 @@ define-property@^2.0.2:
   dependencies:
     is-descriptor "^1.0.2"
     isobject "^3.0.1"
-
-delay@*, delay@^4.3.0:
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/delay/-/delay-4.3.0.tgz#efeebfb8f545579cb396b3a722443ec96d14c50e"
-  integrity sha512-Lwaf3zVFDMBop1yDuFZ19F9WyGcZcGacsbdlZtWjQmM50tOcMntm1njF/Nb/Vjij3KaSvCF+sEYGKrrjObu2NA==
 
 delayed-stream@~1.0.0:
   version "1.0.0"
@@ -3754,7 +3749,7 @@ p-retry@^4.1.0:
     "@types/retry" "^0.12.0"
     retry "^0.12.0"
 
-p-timeout@^3.1.0:
+p-timeout@*, p-timeout@^3.1.0, p-timeout@^3.2.0:
   version "3.2.0"
   resolved "https://registry.npmjs.org/p-timeout/-/p-timeout-3.2.0.tgz#c7e17abc971d2a7962ef83626b35d635acf23dfe"
   integrity sha512-rhIwUycgwwKcP9yTOOFK/AKsAopjjCakVqLHePO3CC6Mir1Z99xT+R63jZxAT5lFZLa2inS5h+ZS2GvR99/FBg==

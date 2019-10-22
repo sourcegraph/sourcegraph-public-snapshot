@@ -8,6 +8,7 @@ import promClient from 'prom-client'
 import uuid from 'uuid'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
 import { chunk } from 'lodash'
+import pTimeout from 'p-timeout'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
@@ -33,7 +34,6 @@ import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
-import delay from 'delay'
 
 const pipeline = promisify(_pipeline)
 
@@ -261,7 +261,7 @@ async function lsifEndpoints(
                 res: express.Response,
                 next: express.NextFunction
             ): Promise<void> => {
-                const { repository, commit, root, validate, blocking, maxWait } = req.query
+                const { repository, commit, root, skipValidation, blocking, maxWait } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
 
@@ -279,7 +279,7 @@ async function lsifEndpoints(
                 try {
                     await logAndTraceCall(ctx, 'uploading dump', async () => {
                         await pipeline(
-                            !validate
+                            skipValidation
                                 ? req
                                 : Readable.from(
                                       stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
@@ -299,21 +299,15 @@ async function lsifEndpoints(
                 if (blocking) {
                     logger.debug('blocking on conversion')
 
-                    // If a valid timeout is supplied, create a promise that will resolve
-                    // after that time. Otherwise, create a promise that never resolves.
-                    const timeoutPromise = timeout > 0 ? delay(timeout * 1000) : new Promise(() => {})
+                    let promise = job.finished()
+                    if (timeout > 0) {
+                        promise = pTimeout(promise, timeout * 1000)
+                    }
 
-                    // Wait for the job to finish, or wait for the timeout period to elapse.
-                    // This promise will resolve to true if the job finishes before the timeout
-                    // promise resolves, and will resolve to false otherwise.
-                    const finished = await Promise.race([
-                        job.finished().then(() => true),
-                        timeoutPromise.then(() => false),
-                    ])
-
-                    if (finished) {
+                    try {
+                        await promise
                         res.send('Processed.\n')
-                    } else {
+                    } catch {
                         res.send('Conversion did not complete within timeout.\n')
                     }
                 }
