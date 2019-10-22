@@ -5,6 +5,22 @@ import { promisify } from 'util'
 import { chunk } from 'lodash'
 
 /**
+ * The names of queues as defined in Bull.
+ */
+export type QueueTypes = 'active' | 'waiting' | 'delayed' | 'completed' | 'failed'
+
+/**
+ * A mapping from job statuses to queue names.
+ */
+export const queueTypes = new Map<string, QueueTypes>([
+    ['active', 'active'],
+    ['queued', 'waiting'],
+    ['scheduled', 'delayed'],
+    ['completed', 'completed'],
+    ['failed', 'failed'],
+])
+
+/**
  * Creates a queue instance.
  *
  * @param name The name of the queue.
@@ -104,16 +120,6 @@ export interface JsonJob {
     stacktrace: string[] | null
 }
 
-export type JobStatus = 'active' | 'waiting' | 'delayed' | 'completed' | 'failed'
-
-export const queueTypes = new Map<string, JobStatus>([
-    ['active', 'active'],
-    ['queued', 'waiting'],
-    ['scheduled', 'delayed'],
-    ['completed', 'completed'],
-    ['failed', 'failed'],
-])
-
 /**
  * Format a job to return from the API.
  *
@@ -154,7 +160,7 @@ const formatJobFromMap = (values: Map<string, string>, status: string): JsonJob 
         args: JSON.parse(values.get('data') || '{}').args || {},
         status,
         progress: parseInt(values.get('progress') || '', 10),
-        timestamp: new Date(parseInt(values.get('timestamp') || '')).toISOString(),
+        timestamp: new Date(parseInt(values.get('timestamp') || '', 10)).toISOString(),
         finishedOn: (rawFinishedOn && new Date(parseInt(rawFinishedOn, 10)).toISOString()) || null,
         processedOn: (rawProcessedOn && new Date(parseInt(rawProcessedOn, 10)).toISOString()) || null,
         failedReason: values.get('failedReason') || null,
