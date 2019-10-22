@@ -24,4 +24,5 @@ type CampaignPreview interface {
 	BurndownChart(context.Context) (CampaignBurndownChart, error)
 	hasParticipants
 	hasSideEffects
+	hasLogMessages
 }

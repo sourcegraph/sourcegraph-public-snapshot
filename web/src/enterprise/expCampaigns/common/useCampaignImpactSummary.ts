@@ -12,6 +12,7 @@ export interface CampaignImpactSummary {
     issues: number
     changesets: number
     sideEffects: number
+    logMessages: number
     participants: number
     diagnostics: number
     repositories: number
@@ -38,6 +39,9 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.IExpCampaign, 'id'>)
                                 }
                             }
                             sideEffects {
+                                totalCount
+                            }
+                            logMessages {
                                 totalCount
                             }
                             participants {
@@ -77,6 +81,8 @@ export function useCampaignImpactSummary(campaign: Pick<GQL.IExpCampaign, 'id'>)
                         changesets: data.node.threads.nodes.filter(thread => thread.kind === GQL.ThreadKind.CHANGESET)
                             .length,
                         participants: data.node.participants.totalCount,
+                        sideEffects: data.node.sideEffects.totalCount,
+                        logMessages: data.node.logMessages.totalCount,
                         diagnostics: data.node.diagnostics.totalCount,
                         repositories: uniq(data.node.repositoryComparisons.map(c => c.baseRepository.id)).length,
                         files: data.node.repositoryComparisons.reduce((n, c) => n + (c.fileDiffs.totalCount || 0), 0),

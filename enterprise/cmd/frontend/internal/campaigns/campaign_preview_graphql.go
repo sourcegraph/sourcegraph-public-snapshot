@@ -117,3 +117,7 @@ func (v *gqlCampaignPreview) Participants(ctx context.Context, arg *graphqlbacke
 func (v *gqlCampaignPreview) SideEffects(ctx context.Context, arg *graphqlbackend.SideEffectConnectionArgs) (graphqlbackend.SideEffectConnection, error) {
 	return graphqlbackend.SideEffectConnection(graphqlbackend.FromSideEffectInput(v.input.Campaign.ExtensionData.RawSideEffects...)), nil
 }
+
+func (v *gqlCampaignPreview) LogMessages(ctx context.Context, arg *graphqlbackend.LogMessageConnectionArgs) (graphqlbackend.LogMessageConnection, error) {
+	return graphqlbackend.LogMessageConnection(graphqlbackend.FromLogMessageInput(v.input.Campaign.ExtensionData.RawLogMessages...)), nil
+}

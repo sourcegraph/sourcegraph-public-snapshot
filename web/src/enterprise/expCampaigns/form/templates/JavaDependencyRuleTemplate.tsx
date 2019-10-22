@@ -300,4 +300,53 @@ export const JavaDependencyRuleTemplate: RuleTemplate = {
         'Upgrade a Java dependency in build.gradle files and refactor API usage in Java source files, opening issues/changesets for all affected code owners.',
     icon: LanguageJavaIcon,
     renderForm: JavaDependencyCampaignTemplateForm,
+    defaultWorkflow: {
+        // extensions: ['sourcegraph/automation-preview'],
+        variables: {
+            packageName: 'react-router-dom',
+            matchVersion: '*',
+            action: { requireVersion: '^5.0.1' },
+            createChangesets: true,
+            headBranch: 'upgrade-react-router-dom',
+        },
+        run: [
+            {
+                diagnostics: 'dependencyManagement.packageJsonDependency',
+                codeActions: [{ command: 'dependencyManagement.packageJsonDependency.action' }],
+            },
+        ],
+        behaviors: {
+            edits: { command: 'changesets.byRepositoryAndBaseBranch' },
+        },
+    },
+    workflowJSONSchema: {
+        type: 'object',
+        properties: {
+            variables: {
+                type: 'object',
+                required: ['packageName'],
+                properties: {
+                    packageName: {
+                        type: 'string',
+                        description:
+                            'The Java group and artifact name to operate on (example: "com.google.guava:guava").',
+                    },
+                },
+            },
+        },
+    },
+    suggestTitle: (workflow): string | undefined => {
+        if (!workflow || !workflow.variables) {
+            return undefined
+        }
+        const { packageName, matchVersion, action } = workflow.variables
+        const packageNameAndVersion = `${packageName || '<package>'}${matchVersion ? `:${matchVersion}` : ''}`
+        const campaignName =
+            action === 'ban'
+                ? `Ban Java dependency ${packageNameAndVersion}`
+                : `Upgrade Java dependency ${packageNameAndVersion} to ${
+                      action && action.requireVersion ? action.requireVersion : '<version>'
+                  }`
+        return campaignName
+    },
 }

@@ -10,7 +10,7 @@ import { DependencySpecification, DependencyDeclaration, DependencyResolution } 
 import { editForCommands } from '../../execServer/editsForCommands'
 import { openTextDocument, findMatchRange } from '../../dependencyManagement/util'
 import { parseDependenciesLock } from './dependenciesLock'
-import { Location, Range, Position, WorkspaceEdit } from 'sourcegraph'
+import { Location, Range, Position, WorkspaceEdit, DiagnosticSeverity } from 'sourcegraph'
 import { parseDependencyNotation } from './util'
 import { replaceVersion } from './replaceDependencyVersion'
 
@@ -29,8 +29,22 @@ const provideDependencySpecification = (
                 throw new Error('Unable to fetch build.gradle.')
             }
             if (!dependenciesLock) {
-                console.warn(`Ignoring build.gradle file with no corresponding dependency.lock: ${buildGradle.uri}`)
-                return of(null)
+                const declRange = findMatchRange(buildGradle.text!, query.name)
+                return of<DependencySpecification<JavaDependencyQuery>>({
+                    query,
+                    declarations: declRange
+                        ? [
+                              {
+                                  name: query.name,
+                                  requestedVersion: query.versionRange,
+                                  direct: true,
+                                  location: { uri: new URL(buildGradle.uri), range: declRange },
+                              },
+                          ]
+                        : [],
+                    resolutions: [],
+                    messages: [`Ignoring build.gradle file with no corresponding dependency.lock: ${buildGradle.uri}`],
+                })
             }
 
             const declarations: DependencyDeclaration[] = []
@@ -127,10 +141,10 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
             throw new Error('invalid declarations')
         }
         const decl = dep.declarations[0]
-        const res = dep.resolutions[0]
-        if (!res.location) {
-            throw new Error('invalid lockfile with no match location')
-        }
+        // const res = dep.resolutions[0]
+        // if (!res || !res.location) {
+        //     throw new Error('invalid lockfile with no match location')
+        // }
         const existingBuildGradle = openTextDocument(decl.location.uri).pipe(
             switchMap(doc => {
                 if (!doc) {
@@ -151,34 +165,44 @@ export const gradleDependencyManagementProvider: JavaDependencyManagementProvide
                 })
             })
         )
-        const lockfileDiff = newBuildGradle.pipe(
-            switchMap(newBuildGradle =>
-                editForCommands(
-                    [
-                        { uri: decl.location.uri.toString(), text: newBuildGradle },
-                        ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
-                    ],
-                    [
-                        [
-                            'gradle',
-                            ...GRADLE_OPTS,
-                            'generateLock',
-                            'saveLock',
-                            '-PdependencyLock.includeTransitives=true',
-                        ],
-                    ],
-                    gradleExecClient
-                ).pipe(
-                    catchError(err => {
-                        // eslint-disable-next-line no-constant-condition
-                        // if (false) {
-                        console.error(`Error diffing dependencies.lock: ${err}`)
-                        // }
-                        return [new WorkspaceEdit()] // TODO!(sqs): ignore
-                    })
-                )
-            )
-        )
+        const lockfileDiff =
+            dep.resolutions.length > 0
+                ? newBuildGradle.pipe(
+                      switchMap(newBuildGradle =>
+                          editForCommands(
+                              [
+                                  { uri: decl.location.uri.toString(), text: newBuildGradle },
+                                  ...dep.resolutions.filter(propertyIsDefined('location')).map(d => d.location.uri),
+                              ],
+                              [
+                                  [
+                                      'gradle',
+                                      ...GRADLE_OPTS,
+                                      'generateLock',
+                                      'saveLock',
+                                      '-PdependencyLock.includeTransitives=true',
+                                  ],
+                              ],
+                              gradleExecClient
+                          ).pipe(
+                              catchError(err => {
+                                  const edit = new WorkspaceEdit()
+                                  edit.addDiagnostic({
+                                      resource: decl.location.uri,
+                                      range: new Range(0, 0, 0, 0),
+                                      severity: DiagnosticSeverity.Warning,
+                                      message: 'Error regenerating dependencies.lock (`gradle generateLock saveLock`)',
+                                      detail:
+                                          '```text\n' +
+                                          (err.message as string).replace(/^editForCommands.*$/m, '').trim() +
+                                          '\n```',
+                                  })
+                                  return [edit]
+                              })
+                          )
+                      )
+                  )
+                : of<WorkspaceEdit>(new WorkspaceEdit())
         return combineLatest([existingBuildGradle, newBuildGradle, lockfileDiff]).pipe(
             map(([existingBuildGradle, newBuildGradle, edit]) => {
                 // Also add build.gradle edit.

@@ -529,6 +529,8 @@ declare module 'sourcegraph' {
          * overwrite and ignoreIfExists are both set overwrite wins.
          */
         renameFile(oldUrl: URL, newUrl: URL, options?: { overwrite?: boolean; ignoreIfExists?: boolean }): void
+
+        addDiagnostic(diagnostic: Diagnostic): void
     }
 
     /**

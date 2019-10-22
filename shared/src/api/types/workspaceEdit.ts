@@ -2,6 +2,8 @@ import { Position, Range } from '@sourcegraph/extension-api-classes'
 import * as clientTypes from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
 import { TextEdit } from './textEdit'
+import { Diagnostic } from '@sourcegraph/extension-api-types'
+import { fromDiagnostic, toDiagnostic } from './diagnostic'
 
 export interface FileOperationOptions {
     readonly overwrite?: boolean
@@ -41,6 +43,7 @@ type JSONFileTextEdit = Pick<FileTextEdit, Exclude<keyof FileTextEdit, 'uri' | '
 
 export interface SerializedWorkspaceEdit {
     operations: (JSONFileTextEdit | JSONFileOperation)[]
+    diagnostics?: Diagnostic[]
 }
 
 export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
@@ -128,6 +131,14 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
         this.replace(resource, range, '')
     }
 
+    public diagnostics: sourcegraph.Diagnostic[] | undefined
+    public addDiagnostic(diagnostic: sourcegraph.Diagnostic): void {
+        if (!this.diagnostics) {
+            this.diagnostics = []
+        }
+        this.diagnostics.push(diagnostic)
+    }
+
     public toJSON(): SerializedWorkspaceEdit {
         return {
             operations: this.operations.map(op => {
@@ -144,6 +155,7 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
                     edit: (op.edit as TextEdit).toJSON(),
                 }
             }),
+            diagnostics: this.diagnostics && this.diagnostics.map(fromDiagnostic),
         }
     }
 
@@ -163,6 +175,7 @@ export class WorkspaceEdit implements sourcegraph.WorkspaceEdit {
                 edit: TextEdit.fromJSON(op.edit),
             }
         })
+        workspaceEdit.diagnostics = arg.diagnostics && arg.diagnostics.map(toDiagnostic)
         return workspaceEdit
     }
 }
@@ -177,8 +190,15 @@ export const combineWorkspaceEdits = (edits: sourcegraph.WorkspaceEdit[]): sourc
 
     // TODO!(sqs): if WorkspaceEdit#set changes to replace not append, then this needs to change too
     const combined: SerializedWorkspaceEdit = { operations: [] }
-    for (const edit of edits) {
-        combined.operations.push(...(edit as WorkspaceEdit).toJSON().operations)
+    for (const edit_ of edits) {
+        const edit = edit_ as WorkspaceEdit
+        combined.operations.push(...edit.toJSON().operations)
+        if (edit.diagnostics) {
+            if (!combined.diagnostics) {
+                combined.diagnostics = []
+            }
+            combined.diagnostics.push(...edit.diagnostics.map(fromDiagnostic))
+        }
     }
     return WorkspaceEdit.fromJSON(combined)
 }

@@ -93,15 +93,16 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
     const onSubmit = useCallback(async () => {
         setCreationOrError(LOADING)
         try {
+            const effectiveName = value.name || value.nameSuggestion || ''
             const extensionData = await getCompleteCampaignExtensionData(
                 props.extensionsController,
                 parseJSON(value.workflowAsJSONCString) as Workflow,
-                value
+                { ...value, name: effectiveName }
             )
             setCreationOrError(
                 await createCampaign({
                     ...value,
-                    name: value.name || value.nameSuggestion,
+                    name: effectiveName,
                     namespace: namespace.id,
                     extensionData,
                 })
@@ -115,7 +116,7 @@ export const CampaignsNewPage: React.FunctionComponent<Props> = ({ namespace, se
         }
     }, [namespace.id, props.extensionsController, value])
 
-    const isValid = value.name !== ''
+    const isValid = value.name !== '' || value.nameSuggestion !== undefined
 
     const TemplateIcon = template ? template.icon : undefined
 

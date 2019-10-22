@@ -149,6 +149,12 @@ export const CampaignPreviewFragment = gql`
             }
             totalCount
         }
+        logMessages {
+            nodes {
+                body
+            }
+            totalCount
+        }
     }
     ${ThreadPreviewFragment}
     ${fileDiffHunkRangeFieldsFragment}

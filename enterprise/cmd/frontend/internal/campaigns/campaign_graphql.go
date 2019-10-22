@@ -218,3 +218,7 @@ func (v *gqlCampaign) Participants(ctx context.Context, arg *graphqlbackend.Part
 func (v *gqlCampaign) SideEffects(ctx context.Context, arg *graphqlbackend.SideEffectConnectionArgs) (graphqlbackend.SideEffectConnection, error) {
 	return graphqlbackend.SideEffectConnection(nil), nil // TODO!(sqs)
 }
+
+func (v *gqlCampaign) LogMessages(ctx context.Context, arg *graphqlbackend.LogMessageConnectionArgs) (graphqlbackend.LogMessageConnection, error) {
+	return graphqlbackend.LogMessageConnection(nil), nil // TODO!(sqs)
+}

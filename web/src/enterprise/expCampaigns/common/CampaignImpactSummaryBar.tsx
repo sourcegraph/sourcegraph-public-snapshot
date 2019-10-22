@@ -9,6 +9,7 @@ import { DiffIcon, GitPullRequestIcon } from '../../../util/octicons'
 import { CampaignImpactSummary } from './useCampaignImpactSummary'
 import { DiagnosticsIcon } from '../../../diagnostics/icons'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import AlertIcon from 'mdi-react/AlertIcon'
 
 const LOADING = 'loading' as const
 
@@ -52,6 +53,13 @@ const ITEMS: SummaryCountItemDescriptor<Context>[] = [
         count: c => c.sideEffects,
         condition: c => c.sideEffects > 0,
         url: c => `${c.baseURL}${c.urlFragmentOrPath}side-effects`,
+    },
+    {
+        noun: 'logs',
+        icon: AlertIcon,
+        count: c => c.logMessages,
+        condition: c => c.logMessages > 0,
+        url: c => `${c.baseURL}${c.urlFragmentOrPath}logs`,
     },
     {
         noun: 'participant',

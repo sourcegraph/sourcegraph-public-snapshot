@@ -93,6 +93,7 @@ export const CampaignPreview: React.FunctionComponent<Props> = ({ data, classNam
                                             ({ kind }) => kind === GQL.ThreadKind.CHANGESET
                                         ).length,
                                         sideEffects: campaignPreview.sideEffects.totalCount,
+                                        logMessages: campaignPreview.logMessages.totalCount,
                                         participants: campaignPreview.participants.totalCount,
                                         diagnostics: campaignPreview.diagnostics.totalCount,
                                         repositories: campaignPreview.repositories.length,

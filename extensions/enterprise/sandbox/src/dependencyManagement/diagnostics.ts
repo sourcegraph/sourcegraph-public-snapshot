@@ -65,6 +65,16 @@ export const provideDependencyManagementDiagnostics = <
                     specs
                         .map(spec => {
                             if (spec.error) {
+                                if (spec.declarations[0]) {
+                                    const specMain = spec.declarations[0]
+                                    const diagnostic: sourcegraph.Diagnostic = {
+                                        resource: specMain.location.uri,
+                                        message: spec.error.message,
+                                        range: specMain.location.range || new sourcegraph.Range(0, 0, 0, 0),
+                                        severity: sourcegraph.DiagnosticSeverity.Error,
+                                    }
+                                    return diagnostic
+                                }
                                 console.error(spec.error)
                                 return null
                             }

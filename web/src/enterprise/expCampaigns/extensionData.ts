@@ -9,14 +9,15 @@ import { WorkspaceEdit, combineWorkspaceEdits } from '../../../../shared/src/api
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { pluralize } from '../../../../shared/src/util/strings'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { propertyIsDefined, isDefined } from '../../../../shared/src/util/types'
 import { getCodeActions } from '../diagnostics/backend'
 import { WorkflowRun, Workflow, Command } from '../../schema/workflow.schema'
 import { Changeset } from '../../../../extensions/enterprise/sandbox/src/workflow/behaviors/edits'
 import { computeDiffFromEdits } from './backend/computeDiff'
+import { Diagnostic } from 'sourcegraph'
 
 interface DiagnosticsAndFileDiffs {
-    diagnostics: DiagnosticWithType[]
+    diagnostics: Diagnostic[]
     edits: WorkspaceEdit[]
     status: ExtensionDataStatus
 }
@@ -131,7 +132,10 @@ const executeRun = (
     )
 }
 
-type EditsBehaviorResult = Pick<GQL.IExpCreateCampaignInput['extensionData'], 'rawChangesets' | 'rawSideEffects'>
+type EditsBehaviorResult = Pick<
+    GQL.IExpCreateCampaignInput['extensionData'],
+    'rawChangesets' | 'rawSideEffects' | 'rawLogMessages'
+>
 
 const executeEditsBehavior = (
     extensionsController: ExtensionsControllerProps['extensionsController'],
@@ -165,7 +169,11 @@ const executeEditsBehavior = (
                                       patch: diff.map(d => d.patchWithFullURIs).join('\n'),
                                   }
                                   delete (input as any).edit
-                                  return { changesets: [input], sideEffects: changeset.sideEffects || [] }
+                                  return {
+                                      changesets: [input],
+                                      sideEffects: changeset.sideEffects || [],
+                                      logMessages: [],
+                                  }
                               })
                           )
                       )
@@ -176,12 +184,13 @@ const executeEditsBehavior = (
                                   ...all,
                                   rawChangesets: [...all.rawChangesets, ...r.changesets],
                                   rawSideEffects: [...all.rawSideEffects, ...r.sideEffects],
+                                  rawLogMessages: [...all.rawLogMessages, ...r.logMessages],
                               }),
-                              { rawChangesets: [], rawSideEffects: [] }
+                              { rawChangesets: [], rawSideEffects: [], rawLogMessages: [] }
                           )
                       )
                   )
-                : of<EditsBehaviorResult>({ rawChangesets: [], rawSideEffects: [] })
+                : of<EditsBehaviorResult>({ rawChangesets: [], rawSideEffects: [], rawLogMessages: [] })
         )
     )
 }
@@ -204,8 +213,9 @@ export const getCampaignExtensionData = (
               )
           ).pipe(
               map(results => {
+                  const editDiagnostics = results.flatMap(r => r.edits.flatMap(e => e.diagnostics)).filter(isDefined)
                   const combined: DiagnosticsAndFileDiffs = {
-                      diagnostics: results.flatMap(r => r.diagnostics),
+                      diagnostics: [...results.flatMap(r => r.diagnostics), ...editDiagnostics],
                       edits: results.flatMap(r => r.edits),
                       status: {
                           isLoading: results.some(r => r.status.isLoading),
@@ -222,19 +232,20 @@ export const getCampaignExtensionData = (
               switchMap(({ diagnostics, edits, status }) =>
                   executeEditsBehavior(extensionsController, edits, workflow).pipe(
                       map(
-                          ({ rawChangesets, rawSideEffects }) =>
+                          ({ rawChangesets, rawSideEffects, rawLogMessages }) =>
                               [
                                   {
                                       rawDiagnostics: diagnostics.map(d =>
                                           // tslint:disable-next-line: no-object-literal-type-assertion
                                           JSON.stringify({
                                               __typename: 'Diagnostic',
-                                              type: d.type,
+                                              type: isDiagnosticWithType(d) ? d.type : null,
                                               data: d,
                                           } as GQL.IDiagnostic)
                                       ),
                                       rawChangesets,
                                       rawSideEffects,
+                                      rawLogMessages,
                                   },
                                   status,
                               ] as readonly [GQL.IExpCreateCampaignInput['extensionData'], ExtensionDataStatus]
@@ -242,7 +253,11 @@ export const getCampaignExtensionData = (
                   )
               )
           )
-        : of([{ rawDiagnostics: [], rawChangesets: [], rawSideEffects: [] }, { isLoading: false }])
+        : of([{ rawDiagnostics: [], rawChangesets: [], rawSideEffects: [], rawLogMessages: [] }, { isLoading: false }])
+}
+
+function isDiagnosticWithType(d: Diagnostic): d is DiagnosticWithType {
+    return typeof (d as any).type === 'string'
 }
 
 /** Waits for `getCampaignExtensionData` to finish loading and returns the result. */

@@ -4865,7 +4865,11 @@ type ExpCampaign implements Node & Updatable {
         first: Int
     ): ParticipantConnection!
 
+    # Side effects produced by this campaign.
     sideEffects(other: Boolean = true): SideEffectConnection!
+
+    # Log messages produced by this campaign.
+    logMessages(first: Int): LogMessageConnection!
 }
 
 # A list of campaigns.
@@ -4896,6 +4900,7 @@ input ExpCampaignExtensionData {
     rawDiagnostics: [String!]!
     rawChangesets: [ChangesetInput!]!
     rawSideEffects: [SideEffectInput!]!
+    rawLogMessages: [LogMessageInput!]!
 }
 
 # Input arguments for previewing a campaign.
@@ -4987,6 +4992,9 @@ type ExpCampaignPreview {
 
     # Side effects caused by this campaign.
     sideEffects(other: Boolean = true): SideEffectConnection!
+
+    # Log messages produced by this campaign.
+    logMessages(first: Int): LogMessageConnection!
 }
 
 type SideEffect {
@@ -5001,6 +5009,20 @@ input SideEffectInput {
 
 type SideEffectConnection {
     nodes: [SideEffect!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+type LogMessage {
+    body: String!
+}
+
+input LogMessageInput {
+    body: String!
+}
+
+type LogMessageConnection {
+    nodes: [LogMessage!]!
     totalCount: Int!
     pageInfo: PageInfo!
 }

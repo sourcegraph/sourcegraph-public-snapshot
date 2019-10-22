@@ -193,6 +193,7 @@ type CampaignExtensionData struct {
 	RawDiagnostics []string          `json:"rawDiagnostics,omitempty"`
 	RawChangesets  []ChangesetInput  `json:"rawChangesets,omitempty"`
 	RawSideEffects []SideEffectInput `json:"rawSideEffects,omitempty"`
+	RawLogMessages []LogMessageInput `json:"rawLogMessages,omitempty"`
 }
 
 type CampaignPreviewInput struct {
@@ -273,6 +274,7 @@ type Campaign interface {
 	TimelineItems(context.Context, *EventConnectionCommonArgs) (EventConnection, error)
 	hasParticipants
 	hasSideEffects
+	hasLogMessages
 
 	// TODO!(sqs0)
 	PartialComment
