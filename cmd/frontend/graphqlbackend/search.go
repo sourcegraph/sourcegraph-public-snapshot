@@ -77,9 +77,12 @@ func (r *schemaResolver) Search(args *searchArgs) (searchIntf, error) {
 	}
 
 	var queryString string
-	if searchType == "literal" {
+	switch searchType {
+	case "literal":
 		queryString = query.ConvertToLiteral(args.Query)
-	} else {
+	case "structural":
+		fmt.Println("Structural search")
+	default:
 		queryString = args.Query
 	}
 
@@ -125,7 +128,7 @@ func detectSearchType(version string, patternType *string, input string) (string
 	var searchType string
 	if patternType != nil {
 		switch *patternType {
-		case "regexp", "literal":
+		case "regexp", "literal", "structural":
 			searchType = *patternType
 		default:
 			return "", fmt.Errorf("unrecognized patternType: %v", patternType)
@@ -158,6 +161,8 @@ func detectSearchType(version string, patternType *string, input string) (string
 			searchType = "regexp"
 		case "literal":
 			searchType = "literal"
+		case "structural":
+			searchType = "structural"
 		}
 	}
 
