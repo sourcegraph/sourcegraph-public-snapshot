@@ -1,6 +1,15 @@
 import { isEqual } from 'lodash'
 import { combineLatest, Observable, of, EMPTY, from } from 'rxjs'
-import { distinctUntilChanged, first, map, startWith, switchMap, throttleTime, defaultIfEmpty } from 'rxjs/operators'
+import {
+    distinctUntilChanged,
+    first,
+    map,
+    startWith,
+    switchMap,
+    throttleTime,
+    defaultIfEmpty,
+    tap,
+} from 'rxjs/operators'
 import { CodeActionError, isCodeActionError } from '../../../../shared/src/api/client/services/codeActions'
 import { DiagnosticWithType } from '../../../../shared/src/api/client/services/diagnosticService'
 import { Action } from '../../../../shared/src/api/types/action'
@@ -98,6 +107,8 @@ const executeRun = (
             const errorsFoundStr =
                 allErrors.length > 0 ? `${allErrors.length} ${pluralize('error', allErrors.length)} occurred` : ''
 
+            console.log({ loadingCount, totalCount, allErrors: allErrors.length })
+
             return {
                 diagnostics: diagnosticsAndActions
                     // .filter(({ action }) => action)
@@ -122,7 +133,9 @@ const executeRun = (
                     progress: [totalCount - loadingCount, totalCount] as const,
                     messages: [
                         loadingCount > 0
-                            ? `Generating fixes... ${errorsFoundStr ? `(${errorsFoundStr})` : ''}`
+                            ? `Generating fixes ${totalCount - loadingCount}/${totalCount}... ${
+                                  errorsFoundStr ? `(${errorsFoundStr})` : ''
+                              }`
                             : errorsFoundStr,
                     ],
                     errors: allErrors.map(e => e.message),

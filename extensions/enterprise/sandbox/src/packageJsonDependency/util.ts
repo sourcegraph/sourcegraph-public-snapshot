@@ -127,14 +127,16 @@ export const provideDependencySpecification = (
                     ...partialSpec,
                     declarations: [],
                     resolutions: [],
-                    error: Object.assign(
-                        new Error(
-                            `Unable to get dependency specification from package.json and lockfile (package ${JSON.stringify(
+                    diagnostics: [
+                        {
+                            resource: new URL(packageJson.uri),
+                            range: findMatchRange(packageJson.text!, query.name) || new sourcegraph.Range(0, 0, 0, 0),
+                            message: `Unable to get dependency specification from package.json and lockfile (package ${JSON.stringify(
                                 query.name
-                            )} in ${packageJson.uri}): ${err.message}`
-                        ),
-                        { data: { packageJson: packageJson.uri, query }, wrapped: err }
-                    ),
+                            )}`,
+                            severity: sourcegraph.DiagnosticSeverity.Error,
+                        },
+                    ],
                 }
                 return spec
             }

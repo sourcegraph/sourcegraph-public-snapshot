@@ -41,7 +41,7 @@ export const DiagnosticListByResource: React.FunctionComponent<Props> = ({
         return sortBy(Array.from(map.entries()), 0)
     }, [diagnostics])
 
-    const DEFAULT_MAX = 5
+    const DEFAULT_MAX = 10
     const [max, setMax] = useState<number | undefined>(DEFAULT_MAX)
     const onShowAllClick = useCallback(() => setMax(undefined), [])
 

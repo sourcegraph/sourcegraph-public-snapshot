@@ -63,40 +63,32 @@ export const provideDependencyManagementDiagnostics = <
             return specs.pipe(
                 map(specs =>
                     specs
-                        .map(spec => {
-                            if (spec.error) {
-                                if (spec.declarations[0]) {
-                                    const specMain = spec.declarations[0]
-                                    const diagnostic: sourcegraph.Diagnostic = {
-                                        resource: specMain.location.uri,
-                                        message: spec.error.message,
-                                        range: specMain.location.range || new sourcegraph.Range(0, 0, 0, 0),
-                                        severity: sourcegraph.DiagnosticSeverity.Error,
-                                    }
-                                    return diagnostic
-                                }
-                                console.error(spec.error)
-                                return null
-                            }
+                        .flatMap(spec => {
+                            const diags: sourcegraph.Diagnostic[] = [...(spec.diagnostics || [])]
                             const specMain = spec.declarations[0]
                                 ? spec.declarations[0]
                                 : { ...spec.resolutions[0], direct: false }
-                            if (!specMain.location) {
-                                return null
+                            if (specMain.location) {
+                                const data: DependencyManagementDiagnosticData<Q> = {
+                                    ...spec,
+                                    action,
+                                    createChangesets,
+                                }
+                                diags.push({
+                                    resource: specMain.location.uri,
+                                    message: `${specMain.direct ? 'Dependency' : 'Indirect dependency'} ${
+                                        specMain.name
+                                    }${query.versionRange === '*' ? '' : `@${query.versionRange}`} ${
+                                        action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`
+                                    }`,
+                                    range: specMain.location.range || new sourcegraph.Range(0, 0, 0, 0),
+                                    severity: sourcegraph.DiagnosticSeverity.Warning,
+                                    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                    data: JSON.stringify(data),
+                                    tags: [dependencyTag],
+                                })
                             }
-                            const data: DependencyManagementDiagnosticData<Q> = { ...spec, action, createChangesets }
-                            const diagnostic: sourcegraph.Diagnostic = {
-                                resource: specMain.location.uri,
-                                message: `${specMain.direct ? 'Dependency' : 'Indirect dependency'} ${specMain.name}${
-                                    query.versionRange === '*' ? '' : `@${query.versionRange}`
-                                } ${action === 'ban' ? 'is banned' : `must be upgraded to ${action.requireVersion}`}`,
-                                range: specMain.location.range || new sourcegraph.Range(0, 0, 0, 0),
-                                severity: sourcegraph.DiagnosticSeverity.Warning,
-                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
-                                data: JSON.stringify(data),
-                                tags: [dependencyTag],
-                            }
-                            return diagnostic
+                            return diags
                         })
                         .filter(isDefined)
                 )

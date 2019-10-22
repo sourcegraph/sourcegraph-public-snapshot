@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import semver from 'semver'
 import { from, merge, Observable, combineLatest, of, throwError } from 'rxjs'
-import { toArray, switchMap, filter, map, tap, share, catchError, first } from 'rxjs/operators'
+import { toArray, switchMap, filter, map, share, catchError } from 'rxjs/operators'
 import { isDefined, propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { createExecServerClient } from '../../execServer/client'
 import { memoizedFindTextInFiles } from '../../util'
@@ -43,7 +43,14 @@ const provideDependencySpecification = (
                           ]
                         : [],
                     resolutions: [],
-                    messages: [`Ignoring build.gradle file with no corresponding dependency.lock: ${buildGradle.uri}`],
+                    diagnostics: [
+                        {
+                            resource: new URL(buildGradle.uri),
+                            range: declRange || new Range(0, 0, 0, 0),
+                            message: `No dependency.lock found`,
+                            severity: DiagnosticSeverity.Hint,
+                        },
+                    ],
                 })
             }
 
