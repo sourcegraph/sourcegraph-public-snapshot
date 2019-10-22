@@ -43,8 +43,8 @@ func (r *lsifJobResolver) Progress() float64      { return r.lsifJob.Progress }
 func (r *lsifJobResolver) FailedReason() *string  { return r.lsifJob.FailedReason }
 func (r *lsifJobResolver) Stacktrace() *[]string  { return r.lsifJob.Stacktrace }
 func (r *lsifJobResolver) Timestamp() DateTime    { return DateTime{Time: r.lsifJob.Timestamp} }
-func (r *lsifJobResolver) FinishedOn() *DateTime  { return DateTimeOrNil(r.lsifJob.FinishedOn) }
 func (r *lsifJobResolver) ProcessedOn() *DateTime { return DateTimeOrNil(r.lsifJob.ProcessedOn) }
+func (r *lsifJobResolver) FinishedOn() *DateTime  { return DateTimeOrNil(r.lsifJob.FinishedOn) }
 
 func marshalLsifJobGQLID(lsifJobID string) graphql.ID {
 	return relay.MarshalID("LsifJob", lsifJobID)

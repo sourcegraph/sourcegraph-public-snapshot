@@ -52,7 +52,7 @@ export class SiteAdminLsifJobPage extends React.Component<Props, State> {
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.job && (
                     <>
-                        <p>id: {this.state.job.jobId}</p>
+                        <p>id: {this.state.job.id}</p>
                         <p>name: {this.state.job.name}</p>
                         <p>args: {JSON.stringify(this.state.job.args)}</p>
                         <p>status: {this.state.job.status}</p>
@@ -60,8 +60,8 @@ export class SiteAdminLsifJobPage extends React.Component<Props, State> {
                         <p>failedReason: {this.state.job.failedReason}</p>
                         <p>stacktrace: {this.state.job.stacktrace}</p>
                         <p>timestamp: {this.state.job.timestamp}</p>
-                        <p>finishedOn: {this.state.job.finishedOn}</p>
                         <p>processedOn: {this.state.job.processedOn}</p>
+                        <p>finishedOn: {this.state.job.finishedOn}</p>
                     </>
                 )}
             </div>

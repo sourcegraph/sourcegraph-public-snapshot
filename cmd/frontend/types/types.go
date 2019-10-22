@@ -2,7 +2,6 @@
 package types
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -151,23 +150,4 @@ type SurveyResponse struct {
 	Reason    *string
 	Better    *string
 	CreatedAt time.Time
-}
-
-// TODO - WIP
-// TODO - WIP
-// TODO - WIP
-// TODO - WIP
-// TODO - WIP
-
-type LsifJob struct {
-	ID           string           `json:"id"`
-	Name         string           `json:"name"`
-	Args         *json.RawMessage `json:"args"`
-	Status       string           `json:"status"`
-	Progress     float64          `json:"progress"`
-	FailedReason *string          `json:"failedReason"`
-	Stacktrace   *[]string        `json:"stacktrace"`
-	Timestamp    time.Time        `json:"timestamp"`
-	FinishedOn   *time.Time       `json:"finishedOn"`
-	ProcessedOn  *time.Time       `json:"processedOn"`
 }

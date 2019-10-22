@@ -28,8 +28,8 @@ export interface ILsifJob {
     failedReason: string
     stacktrace: string[] | null
     timestamp: string
-    finishedOn: string | null
     processedOn: string | null
+    finishedOn: string | null
 }
 
 /**

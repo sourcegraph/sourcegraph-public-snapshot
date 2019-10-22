@@ -1099,18 +1099,14 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
-    # TODO - WIP
-    # TODO - WIP
-    # TODO - WIP
-    # TODO - WIP
-    # TODO - WIP
-    lsifJobs(
-        first: Int
-        after: ID,
-        status: String!
-        query: String
-    ): LsifJobConnection!
+    # Retrieve counts of jobs in the LSIF work queue.
+    lsifJobStats: LsifJobStats!
+
+    # Look up an LSIF job by ID.
     lsifJob(id: ID!): LsifJob
+
+    # Search for LSIF jobs by status ad query term.
+    lsifJobs(first: Int, after: ID, status: String!, query: String): LsifJobConnection!
 }
 
 # The version of the search syntax.
@@ -3714,6 +3710,72 @@ type RegistryExtensionConnection {
     error: String
 }
 
+# Counts of LISF jobs by status.
+type LsifJobStats implements Node {
+    # An opaque GraphQL ID.
+    id: ID!
+
+    # The number of active jobs.
+    active: Int!
+
+    # The number of queued jobs.
+    queued: Int!
+
+    # The number of scheduled jobs.
+    scheduled: Int!
+
+    # The number of completed jobs.
+    completed: Int!
+
+    # The number of failed jobs.
+    failed: Int!
+}
+
+# A queued, active, or completed LSIF job.
+type LsifJob implements Node {
+    # The ID.
+    id: ID!
+
+    # The job type (convert, or clean-old-jobs).
+    name: String!
+
+    # The job's arguments.
+    args: JSONValue!
+
+    # The job's current status (active, pending, scheduled, completed, or failed).
+    status: String!
+
+    # The current job progress (0 to 100).
+    progress: Float!
+
+    # If the job failed, its failure message.
+    failedReason: String
+
+    # If the job failed, the its stacktrace.
+    stacktrace: [String!]
+
+    # The time the job was queued.
+    timestamp: DateTime!
+
+    # The time the job was processed.
+    processedOn: DateTime
+
+    # The time the job was finished.
+    finishedOn: DateTime
+}
+
+# A list of LSIF jobs.
+type LsifJobConnection {
+    # A list of LSIF jobs.
+    nodes: [LsifJob!]!
+
+    # The total number of jobs with this status.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # Mutations that are only used on Sourcegraph.com.
 #
 # FOR INTERNAL USE ONLY.
@@ -4103,35 +4165,3 @@ union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 # Date#toISOString.
 scalar DateTime
-
-#! TEMPORARY - WIP
-#! TEMPORARY - WIP
-#! TEMPORARY - WIP
-#! TEMPORARY - WIP
-#! TEMPORARY - WIP
-
-# A list of LSIF jobs.
-type LsifJobConnection {
-    # A list of LSIF jobs.
-    nodes: [LsifJob!]!
-
-    # The total number of campaigns in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# TODO: A collection of threads.
-type LsifJob implements Node {
-    id: ID!
-    name: String!
-    args: JSONValue!
-    status: String!
-    progress: Float!
-    failedReason: String
-    stacktrace: [String!]
-    timestamp: DateTime!
-    finishedOn: DateTime
-    processedOn: DateTime
-}
