@@ -72,3 +72,16 @@ func (v *Value) Value() interface{} {
 		panic("no value")
 	}
 }
+
+func (v *Value) ToString() string {
+	switch {
+	case v.String != nil:
+		return *v.String
+	case v.Regexp != nil:
+		return "~" + v.Regexp.String()
+	case v.Bool != nil:
+		return (fmt.Sprintf("%t", *v.Bool))
+	default:
+		panic("no value")
+	}
+}

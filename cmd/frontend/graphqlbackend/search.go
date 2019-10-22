@@ -85,6 +85,7 @@ func (r *schemaResolver) Search(args *struct {
 	searchType := overrideSearchType(parseTree, defaultSearchType)
 
 	if searchType == "literal" {
+		parseTree, _ = query.ParseKeepWhitespace(args.Query)
 		parseTree = parseTree.WithQuotedSearchPattern()
 	}
 

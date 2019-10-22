@@ -34,6 +34,7 @@ func (p ParseTree) WithLowerCaseFields() ParseTree {
 
 // WithQuotedSearchPattern quotes the search pattern in the parse tree and
 // returns the modified parse tree.
+// XXX expects whitespace to be preserved.
 func (p ParseTree) WithQuotedSearchPattern() ParseTree {
 	newParseTree := make(ParseTree, 0, len(p))
 	var searchPatterns []string
@@ -49,7 +50,8 @@ func (p ParseTree) WithQuotedSearchPattern() ParseTree {
 	}
 
 	if len(searchPatterns) > 0 {
-		searchPattern := strings.Join(searchPatterns, " ")
+		// XXX FIXME
+		searchPattern := strings.Join(searchPatterns, "")
 		searchPattern = strconv.Quote(searchPattern)
 		// Change the syntax ValueType to quoted: that's the only way to
 		// synchronize it with the current Check.checkExpr logic.

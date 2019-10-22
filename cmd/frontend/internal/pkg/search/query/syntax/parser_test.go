@@ -112,6 +112,72 @@ func TestParser(t *testing.T) {
 	}
 }
 
+func TestParserPreservingWhitespace(t *testing.T) {
+	tests := map[string]struct {
+		wantExpr ParseTree
+		wantErr  *ParseError
+	}{
+		"a ": {
+			wantExpr: []*Expr{{Value: "a", ValueType: TokenLiteral}},
+		},
+		/* Invalid currently in the parser. FIXME. */
+		/*":=": {
+			wantExpr: []*Expr{},
+		},*/
+		"a b": {
+			wantExpr: []*Expr{
+				{Value: "a ", ValueType: TokenLiteral},
+				{Value: "b", ValueType: TokenLiteral},
+			},
+		},
+		"a     b": {
+			wantExpr: []*Expr{
+				{Value: "a     ", ValueType: TokenLiteral},
+				{Value: "b", ValueType: TokenLiteral},
+			},
+		},
+		"x  a:b    c:d y   z ": {
+			wantExpr: []*Expr{
+				{Value: "x  ", ValueType: TokenLiteral},
+				{Field: "a", Value: "b", ValueType: TokenLiteral},
+				{Field: "c", Value: "d", ValueType: TokenLiteral},
+				{Value: "y   ", ValueType: TokenLiteral},
+				{Value: "z", ValueType: TokenLiteral},
+			},
+		},
+		`foo\d   "bar*"`: {
+			wantExpr: []*Expr{
+				{Value: `foo\d   `, ValueType: TokenLiteral},
+				{Value: `"bar*"`, ValueType: TokenQuoted},
+			},
+		},
+	}
+	for input, test := range tests {
+		t.Run(input, func(t *testing.T) {
+			query, err := ParseKeepWhitespace(input)
+			if err != nil && test.wantErr == nil {
+				t.Fatal(err)
+			} else if err == nil && test.wantErr != nil {
+				t.Fatalf("got err == nil, want %q", test.wantErr)
+			} else if test.wantErr != nil && !reflect.DeepEqual(err, test.wantErr) {
+				t.Fatalf("got err == %q, want %q", err, test.wantErr)
+			}
+			if err != nil {
+				return
+			}
+			if len(query) == 0 {
+				query = []*Expr{}
+			}
+			for _, expr := range query {
+				expr.Pos = 0
+			}
+			if !reflect.DeepEqual(query, test.wantExpr) {
+				t.Errorf("expr: %s\ngot  %v\nwant %v", input, query, test.wantExpr)
+			}
+		})
+	}
+}
+
 func TestParseAllowingErrors(t *testing.T) {
 	type args struct {
 		input string

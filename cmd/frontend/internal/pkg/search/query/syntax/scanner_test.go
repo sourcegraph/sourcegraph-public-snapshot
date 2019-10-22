@@ -14,6 +14,7 @@ func TestScanner(t *testing.T) {
 		" ":        {wantTypes: []TokenType{}},
 		"\n":       {wantTypes: []TokenType{}},
 		"a":        {wantTypes: []TokenType{TokenLiteral}, wantValues: []string{"a"}},
+		"a   b":    {wantTypes: []TokenType{TokenLiteral, TokenSep, TokenLiteral}, wantValues: []string{"a", "   ", "b"}},
 		":":        {wantTypes: []TokenType{TokenColon}, wantValues: []string{":"}},
 		"-":        {wantTypes: []TokenType{TokenMinus}, wantValues: []string{"-"}},
 		"a:b":      {wantTypes: []TokenType{TokenLiteral, TokenColon, TokenLiteral}, wantValues: []string{"a", ":", "b"}},

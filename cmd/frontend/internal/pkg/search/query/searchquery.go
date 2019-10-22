@@ -91,6 +91,17 @@ type Query struct {
 	*types.Query // the underlying query
 }
 
+func ParseKeepWhitespace(input string) (syntax.ParseTree, error) {
+	parseTree, err := syntax.ParseKeepWhitespace(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// We want to make query fields case insensitive
+	parseTree = parseTree.WithLowerCaseFields()
+	return parseTree, nil
+}
+
 func Parse(input string) (syntax.ParseTree, error) {
 	parseTree, err := syntax.Parse(input)
 	if err != nil {

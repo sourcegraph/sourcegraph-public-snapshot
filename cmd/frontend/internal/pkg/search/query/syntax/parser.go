@@ -20,7 +20,8 @@ type parser struct {
 
 // context holds settings active within a given scope during parsing.
 type context struct {
-	field string // name of the field currently in scope (or "")
+	field          string // name of the field currently in scope (or "")
+	keepWhitespace bool   // whether to preserve whitespace for search patterns (field "")
 }
 
 // Parse parses the input string and returns its parse tree. Returned errors are of
@@ -36,7 +37,7 @@ type context struct {
 func Parse(input string) (ParseTree, error) {
 	tokens := Scan(input)
 	p := parser{tokens: tokens}
-	ctx := context{field: ""}
+	ctx := context{field: "", keepWhitespace: false}
 	exprs, err := p.parseExprList(ctx)
 	if err != nil {
 		return nil, err
@@ -44,12 +45,23 @@ func Parse(input string) (ParseTree, error) {
 	return exprs, nil
 }
 
-// ParseAllowingErrors works like Parse except that any errors are
-// returned as TokenError within the Expr slice of the returned parse tree.
+func ParseKeepWhitespace(input string) (ParseTree, error) {
+	tokens := Scan(input)
+	p := parser{tokens: tokens}
+	ctx := context{field: "", keepWhitespace: true}
+	exprs, err := p.parseExprList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return exprs, nil
+}
+
+// ParseAllowingErrors works like Parse except that any errors are returned as
+// TokenError within the Expr slice of the returned parse tree.
 func ParseAllowingErrors(input string) ParseTree {
 	tokens := Scan(input)
 	p := parser{tokens: tokens, allowErrors: true}
-	ctx := context{field: ""}
+	ctx := context{field: "", keepWhitespace: false}
 	exprs, err := p.parseExprList(ctx)
 	if err != nil {
 		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
@@ -150,6 +162,7 @@ func (p *parser) parseExpr(ctx context) (*Expr, error) {
 					return nil, &ParseError{Pos: tok3.Pos, Msg: fmt.Sprintf("got %s, want separator or EOF", tok3.Type)}
 				}
 				return &Expr{Pos: tok.Pos, Field: tok.Value, Value: valueTok.Value, ValueType: valueTok.Type}, nil
+				// there's just whitespace after the "field:" part.
 			case TokenSep, TokenEOF:
 				return &Expr{Pos: tok.Pos, Field: tok.Value, Value: "", ValueType: TokenLiteral}, nil
 			default:
@@ -159,7 +172,14 @@ func (p *parser) parseExpr(ctx context) (*Expr, error) {
 				return nil, &ParseError{Pos: valueTok.Pos, Msg: fmt.Sprintf("got %s, want value", valueTok.Type)}
 			}
 		case TokenSep, TokenEOF:
-			return &Expr{Pos: tok.Pos, Value: tok.Value, ValueType: tok.Type}, nil
+			// the value is part of the search pattern and assigned to the default field
+			fieldValue := tok.Value
+
+			if ctx.keepWhitespace {
+				// fieldValue = tok.Value + ("<" + tok2.Value + ">")
+				fieldValue = tok.Value + tok2.Value
+			}
+			return &Expr{Pos: tok.Pos, Value: fieldValue, ValueType: TokenLiteral}, nil
 		default:
 			panic("unreachable")
 		}

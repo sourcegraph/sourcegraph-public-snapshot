@@ -21,8 +21,7 @@ const (
 	TokenPattern
 	TokenColon
 	TokenMinus
-	TokenSep        // separator (like a semicolon)
-	TokenWhitespace // whitespace tokens are emitted for literal search queries
+	TokenSep // separator (like a semicolon)
 )
 
 var singleCharTokens = map[rune]TokenType{
