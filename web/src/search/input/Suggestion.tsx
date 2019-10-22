@@ -88,6 +88,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             }
         }
         default:
+            // TODO: Handle language suggestions
             return undefined
     }
 }
