@@ -61,9 +61,15 @@ After uploading LSIF files, your Sourcegraph instance will use these files to po
 
 When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to out-of-the-box code intelligence.
 
+## Recommended setup
+
+Start with a periodic job (e.g. daily) in CI that generates and uploads LSIF data on the default branch for your repository.
+
+If you're noticing a lot of stale code intel between LSIF uploads or your CI doesn't support periodic jobs, you can set up a CI job that runs on every commit (including branches). The downsides to this are: more load on CI, more load on your Sourcegraph instance, and more rapid decrease in free disk space on your Sourcegraph instance.
+
 ## Stale code intelligence
 
-LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded. You can mitigate this by setting up a periodic job that generates and uploads LSIF for the tip of your default branch (e.g. master) daily.
+LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded.
 
 ## Warning about uploading too much data
 
