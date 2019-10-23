@@ -196,9 +196,22 @@ type reposListServer struct {
 		ListDefault(context.Context) ([]*types.Repo, error)
 		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
 	}
+
+	Indices interface {
+		Assign(string, []string) ([]string, error)
+		Enabled() bool
+	}
 }
 
 func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		Hostname string
+		db.ReposListOptions
+	}
+	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		return err
+	}
+
 	var names []string
 	if h.SourcegraphDotComMode {
 		res, err := h.Repos.ListDefault(r.Context())
@@ -210,17 +223,21 @@ func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
 			names[i] = string(r.Name)
 		}
 	} else {
-		var opt db.ReposListOptions
-		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
-			return err
-		}
-		res, err := h.Repos.List(r.Context(), opt)
+		res, err := h.Repos.List(r.Context(), opt.ReposListOptions)
 		if err != nil {
 			return errors.Wrap(err, "listing repos")
 		}
 		names = make([]string, len(res))
 		for i, r := range res {
 			names[i] = string(r.Name)
+		}
+	}
+
+	if h.Indices.Enabled() {
+		var err error
+		names, err = h.Indices.Assign(opt.Hostname, names)
+		if err != nil {
+			return err
 		}
 	}
 
