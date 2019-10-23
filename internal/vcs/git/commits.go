@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 type Commit struct {
@@ -53,7 +53,7 @@ type CommitsOptions struct {
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
 // -sne` command.
-var logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+(.*)$`)
+var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
 // getCommit returns the commit with the given id.
 func getCommit(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), id api.CommitID) (*Commit, error) {

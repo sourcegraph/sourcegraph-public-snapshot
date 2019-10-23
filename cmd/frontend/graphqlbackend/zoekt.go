@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"net/url"
-	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -388,7 +388,7 @@ func splitOnHolesPattern() string {
 	}, "|")
 }
 
-var matchHoleRegexp = regexp.MustCompile(splitOnHolesPattern())
+var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
 
 // Parses comby a structural syntax by stripping holes and returns a Zoekt
 // query. The Zoekt query is (only) a a conjunction of constant substrings.

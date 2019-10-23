@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -15,6 +14,7 @@ import (
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func init() {
@@ -22,7 +22,7 @@ func init() {
 }
 
 // sourceMappingURLLineRegex is a regular expression that matches all lines with a `//# sourceMappingURL` comment
-var sourceMappingURLLineRegex = regexp.MustCompile(`(?m)\r?\n?^//# sourceMappingURL=.+$`)
+var sourceMappingURLLineRegex = lazyregexp.New(`(?m)\r?\n?^//# sourceMappingURL=.+$`)
 
 // handleRegistryExtensionBundle serves the bundled JavaScript source file or the source map for an
 // extension in the registry as a raw JavaScript or JSON file.

@@ -4,10 +4,10 @@ package auth
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // AuthURLPrefix is the URL path prefix under which to attach authentication handlers
@@ -90,6 +90,6 @@ func NormalizeUsername(name string) (string, error) {
 }
 
 var (
-	disallowedSymbols   = regexp.MustCompile(`(^[\-\.])|(\.$)|([\-\.]{2,})`)
-	disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-\.]`)
+	disallowedSymbols   = lazyregexp.New(`(^[\-\.])|(\.$)|([\-\.]{2,})`)
+	disallowedCharacter = lazyregexp.New(`[^a-zA-Z0-9\-\.]`)
 )

@@ -27,7 +27,7 @@ func (r *Regexp) re() *regexp.Regexp {
 }
 
 func (r *Regexp) build() {
-	r.rx = regexp.MustCompile(r.str)
+	r.rx = lazyregexp.New(r.str)
 	r.str = ""
 }
 

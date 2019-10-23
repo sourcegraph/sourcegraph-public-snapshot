@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
@@ -125,7 +125,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	if len(includeFileFilter) > 0 {
 		includeFileFilterText = includeFileFilter[0]
 		// only file names or files with extensions in the following characterset are allowed
-		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z0-9_.]+$`).MatchString
+		IsAlphanumericWithPeriod := lazyregexp.New(`^[a-zA-Z0-9_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the 'file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
@@ -134,7 +134,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	var excludeFileFilterText string
 	if len(excludeFileFilter) > 0 {
 		excludeFileFilterText = excludeFileFilter[0]
-		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+		IsAlphanumericWithPeriod := lazyregexp.New(`^[a-zA-Z_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the '-file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}

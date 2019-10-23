@@ -3,12 +3,12 @@ package redispool
 
 import (
 	"errors"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 var (
@@ -52,7 +52,7 @@ func init() {
 	}
 }
 
-var schemeMatcher = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9\+\-\.]*://`)
+var schemeMatcher = lazyregexp.New(`^[A-Za-z][A-Za-z0-9\+\-\.]*://`)
 
 // dialRedis dials Redis given the raw endpoint string. The string can have two formats:
 // 1) If there is a HTTP scheme, it should be either be "redis://" or "rediss://" and the URL
