@@ -78,7 +78,7 @@ Effective RFCs contain the following information:
     - "We aren't going to pursue this RFC for the following reasons..."
     - "The web team is going to implement this RFC in 3.8."
     - "This RFC has been implemented."
-  - Required approvers: The list of people that the RFC author is requesting a review from and a requested deadline for those reviews (e.g. "Required approvers: Alice and Bob can you please review by 10am PT 10/21"). The author is responsible for ensuring that the reviewers aware of the review request (e.g. by sending them a Slack message).
+  - Required approvers: The list of people that the RFC author is requesting a review from and a requested deadline for those reviews (e.g. "Required approvers: Alice and Bob can you please review by 10am PT 10/21"). The author is responsible for ensuring that the reviewers aware of the review request (e.g. by sending them a Slack message or tagging them in a comment on the Google Doc).
   - Approvals: A list of people who approve of this RFC. Anyone can express approval for an RFC, even if they are not in the "Required approvers" list; however, a RFC is not APPROVED until the RFC author receives approval from the people on the "Required approvers" list.
   - (optional) Links to any GitHub issues that capture work being done to implement this RFC.
 - Background/Situation: A sufficient, but minimal, amount of context necessary to frame the rest of the RFC. The content should be indisputable facts, not opinions or arguments. The facts should support the chosen definition of the problem and the constraints in the next section.
