@@ -66,8 +66,15 @@ func startProc(proc string) error {
 		wg.Done()
 		p.mu.Unlock()
 		if !stopped {
-			log.Printf("%s died. Shutting down...", proc)
-			signals <- syscall.SIGINT
+			switch procDiedAction {
+			case Shutdown:
+				log.Printf("%s died. Shutting down...", proc)
+				signals <- syscall.SIGINT
+			case Ignore:
+				log.Printf("%s died.", proc)
+			default:
+				log.Fatalf("%s died. Unknown ProcDiedAction %v", proc, procDiedAction)
+			}
 		}
 	}()
 	return nil
