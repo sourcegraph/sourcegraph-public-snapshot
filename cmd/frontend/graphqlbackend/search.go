@@ -80,8 +80,6 @@ func (r *schemaResolver) Search(args *searchArgs) (searchIntf, error) {
 	switch searchType {
 	case "literal":
 		queryString = query.ConvertToLiteral(args.Query)
-	case "structural":
-		fmt.Println("Structural search")
 	default:
 		queryString = args.Query
 	}
