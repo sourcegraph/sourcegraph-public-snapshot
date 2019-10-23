@@ -3,7 +3,8 @@ window.sgdocs = (() => {
     CONTENT_NAV,
     BREADCRUMBS,
     BREADCRUMBS_DATA = [],
-    MOBILE_NAV_BUTTON
+    MOBILE_NAV_BUTTON,
+    START_SOURCEGRAPH_COMMAND_SNIPPETS
 
   return {
     init: breadcrumbs => {
@@ -19,10 +20,13 @@ window.sgdocs = (() => {
 
       MOBILE_NAV_BUTTON = BREADCRUMBS_MOBILE.querySelector('input[type="button"]')
 
+      START_SOURCEGRAPH_COMMAND_SNIPPETS = document.querySelectorAll('.start-sourcegraph-command')
+
       versionSelectorInit()
       mobileNavInit()
       navInit()
       breadcrumbsInit()
+      startSourcegraphCommandsInit()
       setTimeout(schemaLinkCheck, 0) // Browser scrolls straight to element without this
     },
   }
@@ -154,4 +158,19 @@ window.sgdocs = (() => {
       scrollToElement(targetKey, offsetTop)
     }
   }
+
+  function gaConversionOnStartSourcegraphCommands() {
+    if (window && window.gtag) {
+      window.gtag('event', 'conversion', {
+        'send_to': 'AW-868484203/vOYoCOCUj7EBEOuIkJ4D',
+      });
+    }
+  }
+
+  function startSourcegraphCommandsInit() {
+    START_SOURCEGRAPH_COMMAND_SNIPPETS.forEach(el => {
+      el.onclick = gaConversionOnStartSourcegraphCommands
+    })
+  }
+
 })()
