@@ -29,6 +29,7 @@ type Config struct {
 	isBextReleaseBranch bool
 	patch               bool
 	patchNoTest         bool
+	isQuick             bool
 }
 
 func ComputeConfig() Config {
@@ -57,6 +58,8 @@ func ComputeConfig() Config {
 		version = version + "_patch"
 	}
 
+	isQuick := strings.HasPrefix(branch, "quick/")
+
 	var mustIncludeCommits []string
 	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
 		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
@@ -76,6 +79,7 @@ func ComputeConfig() Config {
 		isBextReleaseBranch: branch == "bext/release",
 		patch:               patch,
 		patchNoTest:         patchNoTest,
+		isQuick:             isQuick,
 	}
 }
 

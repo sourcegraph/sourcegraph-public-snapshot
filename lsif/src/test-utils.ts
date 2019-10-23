@@ -118,6 +118,7 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  * @param storageRoot The temporary storage root.
  * @param repository The repository name.
  * @param commit The commit.
+ * @param root The root of the dump.
  * @param filename The filename of the (gzipped) LSIF dump.
  */
 export async function convertTestData(
@@ -134,9 +135,10 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, 'tmp')
     const { packages, references } = await convertLsif(input, tmp)
-    const dumpID = await xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
-    await fs.rename(tmp, dbFilename(storageRoot, dumpID, repository, commit))
-    await xrepoDatabase.updateCommits(repository, [[commit, '0'.repeat(40)]])
+    const dump = await xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
+    await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
+    await xrepoDatabase.updateCommits(repository, [[commit, '']])
+    await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
 }
 
 /**

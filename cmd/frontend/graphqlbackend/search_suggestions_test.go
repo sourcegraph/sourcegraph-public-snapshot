@@ -6,7 +6,6 @@ import (
 	"sync"
 	"testing"
 
-	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
@@ -21,13 +20,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{}).Search(&struct {
-			Version     string
-			PatternType *string
-			Query       string
-			After       *graphql.ID
-			First       *int32
-		}{Query: query, Version: version})
+		r, err := (&schemaResolver{}).Search(&searchArgs{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -122,13 +115,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 	// This test is only valid for Regexp searches. Literal searches won't return suggestions for an invalid regexp.
 	t.Run("single term invalid regex", func(t *testing.T) {
-		sr, err := (&schemaResolver{}).Search(&struct {
-			Version     string
-			PatternType *string
-			Query       string
-			After       *graphql.ID
-			First       *int32
-		}{Query: "[foo", PatternType: nil, Version: "V1"})
+		sr, err := (&schemaResolver{}).Search(&searchArgs{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {
 			t.Fatal(err)
 		}

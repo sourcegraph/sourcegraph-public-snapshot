@@ -5,6 +5,7 @@ import { createCleanPostgresDatabase, createCommit, truncatePostgresTables } fro
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
 import { omit } from 'lodash'
+import { LsifDump } from './xrepo.models'
 
 describe('XrepoDatabase', () => {
     let connection!: Connection
@@ -52,6 +53,7 @@ describe('XrepoDatabase', () => {
         const cg = createCommit('g')
         const ch = createCommit('h')
 
+        // Add relations
         await xrepoDatabase.updateCommits('foo', [
             [ca, ''],
             [cb, ca],
@@ -64,7 +66,7 @@ describe('XrepoDatabase', () => {
             [ch, cf],
         ])
 
-        // Add relations
+        // Add dumps
         await xrepoDatabase.insertDump('foo', ca, '')
         await xrepoDatabase.insertDump('foo', cc, '')
         await xrepoDatabase.insertDump('foo', cg, '')
@@ -104,6 +106,7 @@ describe('XrepoDatabase', () => {
         const cg = createCommit('g')
         const ch = createCommit('h')
 
+        // Add relations
         await xrepoDatabase.updateCommits('foo', [
             [ca, ''],
             [cb, ca],
@@ -115,7 +118,7 @@ describe('XrepoDatabase', () => {
             [ch, cg],
         ])
 
-        // Add markers
+        // Add dumps
         await xrepoDatabase.insertDump('foo', cb, '')
 
         // Test closest commit
@@ -143,25 +146,26 @@ describe('XrepoDatabase', () => {
         const ca = createCommit('a')
         const cb = createCommit('b')
 
+        // Add relations
         await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca]])
 
-        // Add markers
+        // Add dumps
         await xrepoDatabase.insertDump('foo', cb, 'root1/')
         await xrepoDatabase.insertDump('foo', cb, 'root2/')
 
         // Test closest commit
         expect(await xrepoDatabase.findClosestDump('foo', ca, 'blah')).toBeUndefined()
-        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root1/file.ts'), 'id')).toEqual({
+        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root1/file.ts'), 'id', 'visible_at_tip')).toEqual({
             repository: 'foo',
             commit: cb,
             root: 'root1/',
         })
-        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root2/file.ts'), 'id')).toEqual({
+        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root2/file.ts'), 'id', 'visible_at_tip')).toEqual({
             repository: 'foo',
             commit: cb,
             root: 'root2/',
         })
-        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id')).toEqual({
+        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id', 'visible_at_tip')).toEqual({
             repository: 'foo',
             commit: cb,
             root: 'root2/',
@@ -170,12 +174,12 @@ describe('XrepoDatabase', () => {
         expect(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts')).toBeUndefined()
 
         await xrepoDatabase.insertDump('foo', cb, '')
-        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id')).toEqual({
+        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id', 'visible_at_tip')).toEqual({
             repository: 'foo',
             commit: cb,
             root: '',
         })
-        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts'), 'id')).toEqual({
+        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts'), 'id', 'visible_at_tip')).toEqual({
             repository: 'foo',
             commit: cb,
             root: '',
@@ -187,9 +191,9 @@ describe('XrepoDatabase', () => {
             fail('failed beforeAll')
         }
 
-        // This repository has the following commit graph (ancestors to the right):
+        // This repository has the following commit graph (ancestors to the left):
         //
-        // 0 -- 1 -- 2 -- ... -- MAX_TRAVERSAL_LIMIT
+        // MAX_TRAVERSAL_LIMIT -- ... -- 2 -- 1 -- 0
         //
         // Note: we use '.' as a suffix for commit numbers on construction so that
         // we can distinguish `1` and `11` (`1.1.1...` and `11.11.11...`).
@@ -204,9 +208,10 @@ describe('XrepoDatabase', () => {
             createCommit(`${i + 1}.`),
         ])
 
+        // Add relations
         await xrepoDatabase.updateCommits('foo', commits)
 
-        // Add markers
+        // Add dumps
         await xrepoDatabase.insertDump('foo', c0, '')
 
         // Test closest commit
@@ -232,10 +237,241 @@ describe('XrepoDatabase', () => {
 
         expect(await xrepoDatabase.findClosestDump('foo', cmax, 'file')).toBeUndefined()
 
-        // Mark commit 1
+        // Add closer dump
         await xrepoDatabase.insertDump('foo', c1, '')
 
         // Now commit 1 should be found
         expect((await xrepoDatabase.findClosestDump('foo', cmax, 'file'))!.commit).toEqual(c1)
+    })
+
+    it('should prune overlapping roots during visibility check', async () => {
+        // This database has the following commit graph:
+        //
+        // a -- b -- c -- d -- e -- f -- g
+
+        const ca = createCommit('a')
+        const cb = createCommit('b')
+        const cc = createCommit('c')
+        const cd = createCommit('d')
+        const ce = createCommit('e')
+        const cf = createCommit('f')
+        const cg = createCommit('g')
+
+        // Add relations
+        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce], [cg, cf]])
+
+        // Add dumps
+        await xrepoDatabase.insertDump('foo', ca, 'r1')
+        await xrepoDatabase.insertDump('foo', cb, 'r2')
+        await xrepoDatabase.insertDump('foo', cc, '') // overwrites r1, r2
+        const d1 = await xrepoDatabase.insertDump('foo', cd, 'r3') // overwrites ''
+        const d2 = await xrepoDatabase.insertDump('foo', cf, 'r4')
+        await xrepoDatabase.insertDump('foo', cg, 'r5') // not traversed
+
+        await xrepoDatabase.updateDumpsVisibleFromTip('foo', cf)
+        const visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
+        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([d1.id, d2.id])
+    })
+
+    it('should traverse branching paths during visibility check', async () => {
+        // This database has the following commit graph:
+        //
+        // a --+-- [b] --- c ---+
+        //     |                |
+        //     +--- d --- [e] --+ -- [h] --+-- [i]
+        //     |                           |
+        //     +-- [f] --- g --------------+
+
+        const ca = createCommit('a')
+        const cb = createCommit('b')
+        const cc = createCommit('c')
+        const cd = createCommit('d')
+        const ce = createCommit('e')
+        const ch = createCommit('fx')
+        const ci = createCommit('i')
+        const cf = createCommit('f')
+        const cg = createCommit('g')
+
+        // Add relations
+        await xrepoDatabase.updateCommits('foo', [
+            [ca, ''],
+            [cb, ca],
+            [cc, cb],
+            [cd, ca],
+            [ce, cd],
+            [ch, cc],
+            [ch, ce],
+            [ci, ch],
+            [ci, cg],
+            [cf, ca],
+            [cg, cf],
+        ])
+
+        // Add dumps
+        await xrepoDatabase.insertDump('foo', cb, 'r2')
+        const dump1 = await xrepoDatabase.insertDump('foo', ce, 'r2/a') // overwrites r2 in commit b
+        const dump2 = await xrepoDatabase.insertDump('foo', ce, 'r2/b')
+        await xrepoDatabase.insertDump('foo', cf, 'r1/a')
+        await xrepoDatabase.insertDump('foo', cf, 'r1/b')
+        const dump3 = await xrepoDatabase.insertDump('foo', ch, 'r1') // overwrites r1/{a,b} in commit f
+        const dump4 = await xrepoDatabase.insertDump('foo', ci, 'r3')
+
+        await xrepoDatabase.updateDumpsVisibleFromTip('foo', ci)
+        const visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
+        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump1.id, dump2.id, dump3.id, dump4.id])
+    })
+
+    it.only('should not set dumps visible farther than MAX_TRAVERSAL_LIMIT', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
+        // This repository has the following commit graph (ancestors to the left):
+        //
+        // (MAX_TRAVERSAL_LIMIT + 1) -- ... -- 2 -- 1 -- 0
+        //
+        // Note: we use '.' as a suffix for commit numbers on construction so that
+        // we can distinguish `1` and `11` (`1.1.1...` and `11.11.11...`).
+
+        const c0 = createCommit('0.')
+        const c1 = createCommit('1.')
+        const cpen = createCommit(`${MAX_TRAVERSAL_LIMIT - 1}.`)
+        const cmax = createCommit(`${MAX_TRAVERSAL_LIMIT}.`)
+
+        const commits: [string, string][] = Array.from({ length: MAX_TRAVERSAL_LIMIT + 1 }, (_, i) => [
+            createCommit(`${i}.`),
+            createCommit(`${i + 1}.`),
+        ])
+
+        // Add relations
+        await xrepoDatabase.updateCommits('foo', commits)
+
+        // Add dumps
+        const dump1 = await xrepoDatabase.insertDump('foo', cmax, '')
+
+        await xrepoDatabase.updateDumpsVisibleFromTip('foo', cmax)
+        let visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
+        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump1.id])
+
+        await xrepoDatabase.updateDumpsVisibleFromTip('foo', c1)
+        visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
+        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump1.id])
+
+        await xrepoDatabase.updateDumpsVisibleFromTip('foo', c0)
+        visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
+        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([])
+
+        // Add closer dump
+        const dump2 = await xrepoDatabase.insertDump('foo', cpen, '')
+
+        // Now commit cpen should be found
+        await xrepoDatabase.updateDumpsVisibleFromTip('foo', c0)
+        visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
+        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump2.id])
+    })
+
+    it('should respect bloom filter', async () => {
+        const ca = createCommit('a')
+        const cb = createCommit('b')
+        const cc = createCommit('c')
+        const cd = createCommit('d')
+        const ce = createCommit('e')
+        const cf = createCommit('f')
+
+        const updatePackages = async (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
+            await xrepoDatabase.addPackagesAndReferences(
+                'foo',
+                commit,
+                root,
+                [],
+                [
+                    {
+                        package: {
+                            scheme: 'npm',
+                            name: 'p1',
+                            version: '0.1.0',
+                        },
+                        identifiers,
+                    },
+                ]
+            )
+
+        // Note: roots must be unique so dumps are visible
+        const dumpa = await updatePackages(ca, 'r1', ['x', 'y', 'z'])
+        const dumpb = await updatePackages(cb, 'r2', ['y', 'z'])
+        const dumpf = await updatePackages(cf, 'r3', ['y', 'z'])
+        await updatePackages(cc, 'r4', ['x', 'z'])
+        await updatePackages(cd, 'r5', ['x'])
+        await updatePackages(ce, 'r6', ['x', 'z'])
+
+        const getReferencedDumpIds = async () => {
+            const refs = await xrepoDatabase.getReferences({
+                scheme: 'npm',
+                name: 'p1',
+                version: '0.1.0',
+                value: 'y',
+            })
+
+            return refs.map(ref => ref.dump_id).sort()
+        }
+
+        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce]])
+        await xrepoDatabase.updateDumpsVisibleFromTip('foo', cf)
+
+        // only references containing identifier y
+        expect(await getReferencedDumpIds()).toEqual([dumpa.id, dumpb.id, dumpf.id])
+    })
+
+    it('references only returned if dumps visible at tip', async () => {
+        const ca = createCommit('a')
+        const cb = createCommit('b')
+        const cc = createCommit('c')
+
+        const references = [
+            {
+                package: {
+                    scheme: 'npm',
+                    name: 'p1',
+                    version: '0.1.0',
+                },
+                identifiers: ['x', 'y', 'z'],
+            },
+        ]
+
+        const dumpa = await xrepoDatabase.addPackagesAndReferences('foo', ca, '', [], references)
+        const dumpb = await xrepoDatabase.addPackagesAndReferences('foo', cb, '', [], references)
+        const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', [], references)
+
+        const getReferencedDumpIds = async () => {
+            const refs = await xrepoDatabase.getReferences({
+                scheme: 'npm',
+                name: 'p1',
+                version: '0.1.0',
+                value: 'y',
+            })
+
+            return refs.map(ref => ref.dump_id).sort()
+        }
+
+        const updateVisibility = async (visibleA: boolean, visibleB: boolean, visibleC: boolean) => {
+            dumpa.visible_at_tip = visibleA
+            dumpb.visible_at_tip = visibleB
+            dumpc.visible_at_tip = visibleC
+            await connection.getRepository(LsifDump).save(dumpa)
+            await connection.getRepository(LsifDump).save(dumpb)
+            await connection.getRepository(LsifDump).save(dumpc)
+        }
+
+        // Set a, b visible from tip
+        await updateVisibility(true, true, false)
+        expect(await getReferencedDumpIds()).toEqual([dumpa.id, dumpb.id])
+
+        // Clear a, b visible from tip, set c visible fro
+        await updateVisibility(false, false, true)
+        expect(await getReferencedDumpIds()).toEqual([dumpc.id])
+
+        // Clear all visible from tip
+        await updateVisibility(false, false, false)
+        expect(await getReferencedDumpIds()).toEqual([])
     })
 })

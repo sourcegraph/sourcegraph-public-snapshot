@@ -7,7 +7,7 @@ import {
 import { instrument } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, DumpID, LsifDump } from './xrepo.models'
+import { PackageModel, ReferenceModel, Commit, LsifDump } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
 import { TracingContext } from './tracing'
@@ -77,6 +77,21 @@ export class XrepoDatabase {
     constructor(private connection: Connection) {}
 
     /**
+     * Return the list of all repositories that have LSIF data.
+     */
+    public async getTrackedRepositories(): Promise<string[]> {
+        const payload = await this.withConnection(connection =>
+            connection
+                .getRepository(LsifDump)
+                .createQueryBuilder()
+                .select('DISTINCT repository')
+                .getRawMany()
+        )
+
+        return (payload as { repository: string }[]).map(e => e.repository)
+    }
+
+    /**
      * Determine if we have any LSIf data for this repository.
      *
      * @param repository The repository name.
@@ -89,7 +104,6 @@ export class XrepoDatabase {
     }
 
     /**
-     *
      * Determine if we have commit parent data for this commit.
      *
      * @param repository The repository name.
@@ -100,6 +114,61 @@ export class XrepoDatabase {
             async connection =>
                 (await connection.getRepository(Commit).findOne({ where: { repository, commit } })) !== undefined
         )
+    }
+
+    /**
+     * Determine the set of dumps which are 'visible' from the given commit and set the
+     * `visible_at_tip` flags. Unset the flag for each invisible dump for this repository.
+     * This will traverse all ancestor commits but not descendants, as the given commit
+     * is assumed to be the tip of the default branch. For each dump that is filtered out
+     * of the result set, there must be a dump with a smaller depth from the given commit
+     * that has a root that overlaps with the filtered dump. The other such dump is
+     * necessarily a dump associated with a closer commit for the same root.
+     *
+     * @param repository The repository name.
+     * @param commit The head of the default branch.
+     */
+    public async updateDumpsVisibleFromTip(repository: string, commit: string): Promise<void> {
+        const query = `
+            -- Get all ancestors of the tip
+            WITH RECURSIVE ancestors(id, repository, "commit", parent) AS (
+                SELECT c.* FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
+                UNION
+                SELECT c.* FROM ancestors a JOIN lsif_commits c ON a.repository = c.repository AND a.parent = c."commit"
+            ),
+            -- Limit the visibility to the maximum traversal depth and approximate
+            -- each commit's depth by its row number.
+            limited_ancestors AS (
+                SELECT a.*, row_number() OVER() as n from ancestors a LIMIT $3
+            ),
+            -- Correlate commits to dumps and filter out commits without LSIF data
+            ancestors_with_dumps AS (
+                SELECT a.*, d.root, d.id as dump_id FROM limited_ancestors a
+                JOIN lsif_dumps d ON d.repository = a.repository AND d."commit" = a."commit"
+            ),
+            visible_ids AS (
+                -- Remove dumps where there exists another visible dump of smaller depth with an overlapping root.
+                -- Such dumps would not be returned with a closest commit query so we don't want to return results
+                -- for them in global find-reference queries either.
+                SELECT DISTINCT t1.dump_id as id FROM ancestors_with_dumps t1 WHERE NOT EXISTS (
+                    SELECT 1 FROM ancestors_with_dumps t2
+                    WHERE t2.n < t1.n AND (
+                        t2.root LIKE (t1.root || '%') OR
+                        t1.root LIKE (t2.root || '%')
+                    )
+                )
+            )
+
+            -- Update dump records by:
+            --   (1) unsetting the visibility flag of all previously visible dumps, and
+            --   (2) setting the visibility flag of all currently visible dumps
+
+            UPDATE lsif_dumps d
+            SET visible_at_tip = id IN (SELECT * from visible_ids)
+            WHERE d.repository = $1 AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
+        `
+
+        await this.withConnection(connection => connection.query(query, [repository, commit, MAX_TRAVERSAL_LIMIT]))
     }
 
     /**
@@ -206,9 +275,9 @@ export class XrepoDatabase {
         root: string,
         packages: Package[],
         references: SymbolReferences[]
-    ): Promise<DumpID> {
+    ): Promise<LsifDump> {
         return this.withTransactionalEntityManager(async entityManager => {
-            const dumpID = await this.insertDump(repository, commit, root, entityManager)
+            const dump = await this.insertDump(repository, commit, root, entityManager)
 
             const packageInserter = new TableInserter<PackageModel, new () => PackageModel>(
                 entityManager,
@@ -226,12 +295,12 @@ export class XrepoDatabase {
             )
 
             for (const pkg of packages) {
-                await packageInserter.insert({ dump_id: dumpID, ...pkg })
+                await packageInserter.insert({ dump_id: dump.id, ...pkg })
             }
 
             for (const reference of references) {
                 await referenceInserter.insert({
-                    dump_id: dumpID,
+                    dump_id: dump.id,
                     filter: await createFilter(reference.identifiers),
                     ...reference.package,
                 })
@@ -240,7 +309,7 @@ export class XrepoDatabase {
             await packageInserter.flush()
             await referenceInserter.flush()
 
-            return dumpID
+            return dump
         })
     }
 
@@ -257,37 +326,23 @@ export class XrepoDatabase {
         commit: string,
         root: string,
         entityManager: EntityManager = this.connection.createEntityManager()
-    ): Promise<DumpID> {
+    ): Promise<LsifDump> {
+        const query = `
+            DELETE FROM lsif_dumps
+            WHERE repository = $1 AND commit = $2 AND ($3 LIKE (root || '%') OR root LIKE ($3 || '%'))
+        `
+
         // Delete existing dumps from the same repo@commit that overlap with the
         // current root (where the existing root is a prefix of the current
         // root, or vice versa). This cascades to packages and references.
-        await entityManager.query(
-            `
-            DELETE FROM lsif_dumps
-            WHERE
-                repository = $1 AND
-                commit = $2 AND
-                (
-                    $3   LIKE (root || '%') OR
-                    root LIKE ($3   || '%')
-                )
-        `,
-            [repository, commit, root]
-        )
+        await entityManager.query(query, [repository, commit, root])
 
-        // Mark that we have data available for this commit
-        const result = await entityManager
-            .createQueryBuilder()
-            .insert()
-            .into(LsifDump)
-            .values({ repository, commit, root })
-            .execute()
-
-        if (result.identifiers.length === 0) {
-            throw new Error(`Unable to insert row into lsif_dumps table for repository ${repository} commit ${commit}.`)
-        }
-
-        return result.identifiers[0].id
+        const dump = new LsifDump()
+        dump.repository = repository
+        dump.commit = commit
+        dump.root = root
+        await entityManager.save(dump)
+        return dump
     }
 
     /**
@@ -295,17 +350,34 @@ export class XrepoDatabase {
      *
      * @param repository The repository.
      * @param commit The commit.
-     * @param entityManager The EntityManager for the connection to the xrepo database.
+     * @param file A filename that should be included in the dump.
      */
-    public async getDump(repository: string, commit: string, file: string): Promise<LsifDump | undefined> {
-        return await this.withConnection(async connection => {
-            const results: LsifDump[] = await connection.query(
-                "SELECT id, repository, commit FROM lsif_dumps WHERE repository = $1 AND commit = $2 AND $3 LIKE (root || '%')",
-                [repository, commit, file]
-            )
+    public getDump(repository: string, commit: string, file: string): Promise<LsifDump | undefined> {
+        return this.withConnection(connection =>
+            connection
+                .getRepository(LsifDump)
+                .createQueryBuilder()
+                .select()
+                .where({ repository, commit })
+                .andWhere(":file LIKE (root || '%')", { file })
+                .getOne()
+        )
+    }
 
-            return results.length === 0 ? undefined : results[0]
-        })
+    /**
+     * Find the visible dumps. This method is used for testing.
+     *
+     * @param repository The repository.
+     */
+    public getVisibleDumps(repository: string): Promise<LsifDump[]> {
+        return this.withConnection(connection =>
+            connection
+                .getRepository(LsifDump)
+                .createQueryBuilder()
+                .select()
+                .where({ repository, visible_at_tip: true })
+                .getMany()
+        )
     }
 
     /**
@@ -323,17 +395,24 @@ export class XrepoDatabase {
         version,
         value,
     }: {
-        /** The package manager scheme (e.g. npm, pip).  */
+        /** The package manager scheme (e.g. npm, pip). */
         scheme: string
-        /** The package name.  */
+        /** The package name. */
         name: string
-        /** The package version.  */
+        /** The package version. */
         version: string | null
-        /** The value to test.  */
+        /** The value to test. */
         value: string
     }): Promise<ReferenceModel[]> {
+        // Return all active uses of the target package
         const results = await this.withConnection(connection =>
-            connection.getRepository(ReferenceModel).find({ where: { scheme, name, version } })
+            connection
+                .getRepository(ReferenceModel)
+                .createQueryBuilder('reference')
+                .leftJoinAndSelect('reference.dump', 'dump')
+                .where({ scheme, name, version })
+                .andWhere('dump.visible_at_tip = true')
+                .getMany()
         )
 
         // Test the bloom filter of each reference model concurrently

@@ -32,16 +32,18 @@ Generate `data.lsif` in your project root (most LSIF indexers require a proper b
 some-project-dir$ lsif-go --noContents --out=data.lsif
 ```
 
-Configure your [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) with the URL and an access token for your Sourcegraph instance. Then, upload `data.lsif` to your Sourcegraph instance via the CLI:
+Then, upload `data.lsif` to your Sourcegraph instance via the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli):
 
 ```
-some-project-dir$ src-cli lsif upload \
+some-project-dir$ src \
+  -endpoint=https://sourcegraph.example.com \
+  lsif upload \
   -repo=github.com/<user>/<reponame> \
   -commit=$(git rev-parse HEAD | tr -d "\n") \
   -file=data.lsif
 ```
 
-If `lsifEnforceAuth` is enabled on your Sourcegraph instance, you will also need to generate and supply an upload token.
+> If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes). You can create one at https://github.com/settings/tokens
 
 If successful, you'll see the following message:
 
@@ -59,9 +61,15 @@ After uploading LSIF files, your Sourcegraph instance will use these files to po
 
 When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to out-of-the-box code intelligence.
 
+## Recommended setup
+
+Start with a periodic job (e.g. daily) in CI that generates and uploads LSIF data on the default branch for your repository.
+
+If you're noticing a lot of stale code intel between LSIF uploads or your CI doesn't support periodic jobs, you can set up a CI job that runs on every commit (including branches). The downsides to this are: more load on CI, more load on your Sourcegraph instance, and more rapid decrease in free disk space on your Sourcegraph instance.
+
 ## Stale code intelligence
 
-LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded. You can mitigate this by setting up a periodic job that generates and uploads LSIF for the tip of your default branch (e.g. master) daily. Improvements to this are planned for Sourcegraph 3.9.
+LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded.
 
 ## Warning about uploading too much data
 

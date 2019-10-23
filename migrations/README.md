@@ -30,12 +30,6 @@ explicit transaction blocks added to the migration script template.
 # Enter statements here
 ```
 
-If you're not running PostgreSQL 9.6 locally, pull the Docker image first:
-
-```
-docker pull postgres:9.6
-```
-
 After adding SQL statements to those files, embed them into the Go code and update the schema doc:
 
 ```

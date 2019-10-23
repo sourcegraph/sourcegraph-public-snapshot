@@ -81,6 +81,7 @@
 /dev/grafana  @sourcegraph/distribution
 /dev/prometheus.sh  @sourcegraph/distribution
 /dev/prometheus  @sourcegraph/distribution
+/dev/zoekt @sourcegraph/core-services
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
 /dev/squash-migrations.sh @efritz

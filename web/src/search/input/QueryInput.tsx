@@ -22,6 +22,7 @@ import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
+import { isDefined } from '../../../../shared/src/util/types'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -134,8 +135,9 @@ export class QueryInput extends React.Component<Props, State> {
                             .join(' ')
                         return fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
+                            filter(isDefined),
                             toArray(),
-                            map((suggestions: Suggestion[]) => ({
+                            map(suggestions => ({
                                 suggestions,
                                 selectedSuggestion: -1,
                                 hideSuggestions: false,

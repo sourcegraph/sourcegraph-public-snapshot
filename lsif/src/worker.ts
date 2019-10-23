@@ -12,7 +12,7 @@ import { XrepoDatabase } from './xrepo'
 import { Tracer, FORMAT_TEXT_MAP, Span, followsFrom } from 'opentracing'
 import { createTracer, TracingContext, logAndTraceCall, addTags } from './tracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
-import { discoverAndUpdateCommit } from './commits'
+import { discoverAndUpdateCommit, discoverAndUpdateTips } from './commits'
 import { jobDurationHistogram, jobDurationErrorsCounter } from './worker.metrics'
 import { Job, JobStatusClean, Queue } from 'bull'
 import { createQueue } from './queue'
@@ -102,12 +102,12 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
             const { packages, references } = await convertLsif(input, tempFile, ctx)
 
             // Add packages and references to the xrepo db
-            const dumpID = await logAndTraceCall(ctx, 'populating cross-repo database', () =>
+            const dump = await logAndTraceCall(ctx, 'populating cross-repo database', () =>
                 xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
             )
 
             // Move the temp file where it can be found by the server
-            await fs.rename(tempFile, dbFilename(STORAGE_ROOT, dumpID, repository, commit))
+            await fs.rename(tempFile, dbFilename(STORAGE_ROOT, dump.id, repository, commit))
         } catch (e) {
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
@@ -129,6 +129,22 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
 }
 
 const cleanStatuses: JobStatusClean[] = ['completed', 'wait', 'active', 'delayed', 'failed']
+
+/*
+ * Create a job that updates the tip of the default branch for every repository that has LSIF data.
+ *
+ * @param xrepoDatabase The cross-repo database.
+ * @param fetchConfiguration A function that returns the current configuration.
+ */
+const createUpdateTipsJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfiguration: ConfigurationFetcher) => (
+    args: { [K: string]: any },
+    ctx: TracingContext
+): Promise<void> =>
+    discoverAndUpdateTips({
+        xrepoDatabase,
+        gitserverUrls: fetchConfiguration().gitServers,
+        ctx,
+    })
 
 /**
  * Create a job that removes all job data older than `JOB_MAX_AGE`.
@@ -190,6 +206,13 @@ async function main(logger: Logger): Promise<void> {
         tracer
     )
 
+    const updateTipsJobProcessor = wrapJobProcessor(
+        'update-tips',
+        createUpdateTipsJobProcessor(xrepoDatabase, fetchConfiguration),
+        logger,
+        tracer
+    )
+
     const cleanOldJobsProcessor = wrapJobProcessor(
         'clean-old-jobs',
         createCleanOldJobsProcessor(queue, logger),
@@ -199,6 +222,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Start processing work
     queue.process('convert', convertJobProcessor).catch(() => {})
+    queue.process('update-tips', updateTipsJobProcessor).catch(() => {})
     queue.process('clean-old-jobs', cleanOldJobsProcessor).catch(() => {})
 }
 
