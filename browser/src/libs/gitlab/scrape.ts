@@ -152,18 +152,14 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
  * Gets the head commit ID from the "View file @ ..." link on the code view.
  */
 export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['commitID'] {
-    const commitSHA = codeView.querySelector<HTMLElement>('.file-actions .commit-sha')
-    if (!commitSHA) {
-        throw buildFileError('no-commit-sha')
+    const fileActionsLinks = codeView.querySelectorAll<HTMLLinkElement>('.file-actions a')
+    for (const linkElement of fileActionsLinks) {
+        const revMatch = new URL(linkElement.href).pathname.match(/blob\/(.*?)\//)
+        if (revMatch) {
+            return revMatch[1]
+        }
     }
-
-    const commitAnchor = commitSHA.closest('a')!
-    const revMatch = new URL(commitAnchor.href).pathname.match(/blob\/(.*?)\//)
-    if (!revMatch) {
-        throw new Error('Unable to determine head revision from code view')
-    }
-
-    return revMatch[1]
+    throw new Error('Unable to determine head revision from code view')
 }
 
 interface GitLabCommitPageInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 'projectName'> {
