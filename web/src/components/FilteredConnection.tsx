@@ -80,6 +80,9 @@ interface ConnectionDisplayProps {
 
     /** The component displayed when the list of nodes is empty. */
     emptyElement?: JSX.Element
+
+    /** If response has endCursor, append new results onto existing list. */
+    appendResults?: boolean
 }
 
 /**
@@ -116,6 +119,12 @@ interface ConnectionStateCommon {
      * old data for ~250msec while loading to reduce jitter.
      */
     loading: boolean
+
+    /**
+     * Whether or not to skip appending results onto the previous page (when `appendResults` is tre). This is set
+     * to true immediately following a change in the query or filters.
+     */
+    stalePreviousPage: boolean
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
@@ -409,10 +418,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const q = new URLSearchParams(this.props.location.search)
         this.state = {
             loading: true,
+            stalePreviousPage: false,
             query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
-            after: q.get('after') || undefined,
         }
     }
 
@@ -447,12 +456,19 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             this.activeFilterChanges.subscribe(filter => this.setState({ activeFilter: filter }))
         )
 
+        // Function called on query/active filter change to unset pagination state
+        const resetCursor = () => this.setState({ stalePreviousPage: true, after: undefined })
+
         // Track the last query and filter we used. We only want to show the loader if these change,
         // not when a refresh is requested for the same query/filter (or else there would be jitter).
         let lastQuery: string | undefined
         let lastFilter: FilteredConnectionFilter | undefined
         this.subscriptions.add(
-            combineLatest([queryChanges, activeFilterChanges, refreshRequests.pipe(startWith<void>(undefined))])
+            combineLatest([
+                queryChanges.pipe(tap(resetCursor)),
+                activeFilterChanges.pipe(tap(resetCursor)),
+                refreshRequests.pipe(startWith<void>(undefined)),
+            ])
                 .pipe(
                     tap(([query, filter]) => {
                         if (this.props.shouldUpdateURLQuery) {
@@ -468,6 +484,21 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             'connectionOrError' | 'loading' | 'connectionQuery'
                         >
 
+                        const combineResults = (c: C | ErrorLike | undefined) => {
+                            if (
+                                c &&
+                                !isErrorLike(c) &&
+                                this.state.connectionOrError &&
+                                !isErrorLike(this.state.connectionOrError) &&
+                                this.props.appendResults &&
+                                !this.state.stalePreviousPage
+                            ) {
+                                c.nodes = this.state.connectionOrError.nodes.concat(c.nodes)
+                            }
+
+                            return c
+                        }
+
                         const result = this.props
                             .queryConnection({
                                 first: this.state.first,
@@ -479,11 +510,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 catchError(error => [asError(error)]),
                                 map(
                                     (c): PartialStateUpdate => ({
-                                        connectionOrError: c,
+                                        connectionOrError: combineResults(c),
                                         connectionQuery: query,
                                         loading: false,
                                     })
                                 ),
+                                tap(() => this.setState({ stalePreviousPage: false })),
                                 publishReplay<PartialStateUpdate>(),
                                 refCount()
                             )
@@ -509,7 +541,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         if (connectionOrError && !isErrorLike(connectionOrError) && connectionOrError.pageInfo) {
                             this.setState({ after: connectionOrError.pageInfo.endCursor })
                         } else {
-                            this.setState({ after: undefined })
+                            resetCursor()
                         }
                     })
                 )
@@ -563,17 +595,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.componentUpdates.next(this.props)
     }
 
-    private urlQuery(arg: {
-        first?: number
-        after?: string | null
-        query?: string
-        filter?: FilteredConnectionFilter
-    }): string {
+    private urlQuery(arg: { first?: number; query?: string; filter?: FilteredConnectionFilter }): string {
         if (!arg.first) {
             arg.first = this.state.first
-        }
-        if (!arg.after) {
-            arg.after = this.state.after
         }
         if (!arg.query) {
             arg.query = this.state.query
@@ -587,9 +611,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         }
         if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
-        }
-        if (arg.after) {
-            q.set('after', arg.after)
         }
         if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
             q.set('filter', arg.filter.id)

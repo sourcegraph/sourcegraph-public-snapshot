@@ -137,6 +137,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
                             filters={SiteAdminLsifJobsPage.FILTERS}
                             history={this.props.history}
                             location={this.props.location}
+                            appendResults={true}
                         />
                     </>
                 )}
