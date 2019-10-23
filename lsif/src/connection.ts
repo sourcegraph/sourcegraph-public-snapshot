@@ -74,10 +74,9 @@ export async function createPostgresConnection(configuration: Configuration, log
     // the typeorm postgres adapter.
     const url = new URL(configuration.postgresDSN)
 
-    // TODO(efritz) - handle allow, prefer, 'verify-ca', and 'verify-full'
+    // TODO(efritz) - handle allow, prefer, require, 'verify-ca', and 'verify-full'
     const sslModes: { [K: string]: boolean | TlsOptions } = {
         disable: false,
-        require: true,
     }
 
     const sslMode = url.searchParams.get('sslmode')
