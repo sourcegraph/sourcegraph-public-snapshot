@@ -5,6 +5,7 @@ import { readEnvInt } from './util'
 import { Logger } from 'winston'
 import { Configuration } from './config'
 import pRetry from 'p-retry'
+import { TlsOptions } from 'tls'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -72,13 +73,22 @@ export async function createPostgresConnection(configuration: Configuration, log
     // Parse current PostgresDSN into connection options usable by
     // the typeorm postgres adapter.
     const url = new URL(configuration.postgresDSN)
+
+    // TODO(efritz) - handle allow, prefer, 'verify-ca', and 'verify-full'
+    const sslThings: { [K: string]: boolean | TlsOptions | undefined } = {
+        disable: false,
+        require: true,
+    }
+
+    const sslMode = url.searchParams.get('sslmode')
+
     const connectionOptions = {
         host: url.hostname,
         port: parseInt(url.port, 10) || 5432,
         username: url.username,
         password: url.password,
         database: url.pathname.substring(1),
-        ssl: url.searchParams.get('sslmode') === 'disable' ? false : undefined,
+        ssl: sslMode ? sslThings[sslMode] : undefined,
     }
 
     // Get a working connection
