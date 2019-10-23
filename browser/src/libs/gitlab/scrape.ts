@@ -9,6 +9,7 @@ export enum GitLabPageKind {
     File,
     Commit,
     MergeRequest,
+    Other,
 }
 
 /**
@@ -47,8 +48,10 @@ export function getPageInfo(): GitLabInfo {
         pageKind = GitLabPageKind.Commit
     } else if (window.location.pathname.includes(`${owner}/${projectName}/merge_requests`)) {
         pageKind = GitLabPageKind.MergeRequest
-    } else {
+    } else if (window.location.pathname.includes(`${owner}/${projectName}/blob`)) {
         pageKind = GitLabPageKind.File
+    } else {
+        pageKind = GitLabPageKind.Other
     }
 
     const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
