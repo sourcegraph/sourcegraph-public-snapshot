@@ -1,6 +1,6 @@
 # LSIF worker jobs
 
-The following job types are enqueued into [bull](https://github.com/OptimalBits/bull) and handled by the an instance of the worker process. Each job is enqueued with its job type, `name`, and its `args`.
+The following job types are enqueued into [bull](https://github.com/OptimalBits/bull) and handled by the an instance of the worker process. Each job is enqueued with a `name`, which determines how the job is performed, and an `args` object.
 
 ### `convert({repository, commit, root, filepath})`
 
