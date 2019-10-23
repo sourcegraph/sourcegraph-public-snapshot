@@ -4,6 +4,7 @@ import { Logger } from 'winston'
 import { promisify } from 'util'
 import { chunk } from 'lodash'
 import { ApiJob, formatJobFromMap, formatJob } from './api-job'
+import * as fs from 'mz/fs'
 
 /**
  * The names of queues as defined in Bull.
@@ -106,76 +107,6 @@ export const ensureOnlyRepeatableJob = async (
 }
 
 /**
- * A Lua script evaluated in Redis to return the jobs in the given queue
- * matching the given query string. This script has the following input:
- *
- *  - KEYS[1]: redis key prefix (e.g. bull:lsif:)
- *  - KEYS[2]: the name of the queues
- *
- *  - ARGV[1]: the search query
- *  - ARGV[2]: start index to scan (inclusive)
- *  - ARGV[3]: end index to scan (inclusive)
- */
-const jobSearchScript = `
-    local function extractValues(id, key)
-        local values = {
-            id,
-            redis.call('HGET', key, 'name'),
-            redis.call('HGET', key, 'failedReason'),
-            redis.call('HGET', key, 'stacktrace'),
-        }
-
-        local data = cjson.decode(redis.call('HGET', key, 'data'))
-        for _, value in pairs({'repository', 'commit', 'root'}) do
-            table.insert(values, data['args'][value])
-        end
-
-        return values
-    end
-
-    local function jobMatches(id, key)
-        local values = extractValues(id, key)
-
-        for term in string.gmatch(ARGV[1], '%S+') do
-            local found = false
-            for _, value in pairs(values) do
-                if type(value) == 'string' and string.find(value, term, 1, true) then
-                    found = true
-                    break
-                end
-            end
-
-            if not found then
-                return false
-            end
-        end
-
-        return true
-    end
-
-    local command = 'ZRANGE'
-    if KEYS[2] == 'active' then -- And waiting?
-        command = 'LRANGE'
-    end
-
-    if KEYS[2] == 'completed' or KEYS[2] == 'failed' then
-        command = 'ZREVRANGE'
-    end
-
-    local matching = {}
-    for _, v in pairs(redis.call(command, KEYS[1] .. KEYS[2], ARGV[2], ARGV[3])) do
-        if jobMatches(v, KEYS[1] .. v) then
-            local data = redis.call('HGETALL', KEYS[1] .. v)
-            table.insert(data, 'id')
-            table.insert(data, v)
-            table.insert(matching, data)
-        end
-    end
-
-    return matching
-`
-
-/**
  * Return a list of JSON-encoded jobs with the given status and that contain the
  * given search term.
  *
@@ -197,13 +128,14 @@ export async function searchJobs(
         throw new Error(`Unknown job status ${status}`)
     }
 
+    // TODO - also cache this thing
     const evalCommand = promisify(queue.client.eval.bind(queue.client)) as (
         lua: string,
         numberOfKeys: number,
         keysAndArgs: any[]
     ) => Promise<string[][]>
 
-    const payloads = await evalCommand(jobSearchScript, 2, ['bull:lsif:', queueName, search, start, end])
+    const payloads = await evalCommand(await loadScript(), 2, ['bull:lsif:', queueName, search, start, end])
 
     const jobs = []
     for (const payload of payloads) {
@@ -238,4 +170,11 @@ export async function sliceJobs(
     const jobs = rawJobs.map(job => formatJob(job, status))
     const totalCount = (await queue.getJobCountByTypes([queueName])) as never
     return { jobs, totalCount }
+}
+
+// TODO - cache results here
+async function loadScript(): Promise<string> {
+    const contents = await fs.readFile(`${__dirname}/search-jobs.lua`)
+    // TODO - use sha instead
+    return contents.toString()
 }

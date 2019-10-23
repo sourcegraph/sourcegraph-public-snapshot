@@ -62,6 +62,7 @@
     "@types/uuid": "3.4.5",
     "@types/yallist": "3.0.1",
     "babel-jest": "^24.8.0",
+    "copyfiles": "^2.1.1",
     "jest": "^24.8.0",
     "sinon": "^7.5.0",
     "source-map-support": "^0.5.13",
@@ -72,10 +73,12 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "jest --testPathIgnorePatterns e2e",
+    "postbuild": "yarn run copy-files",
+    "copy-files": "copyfiles -u 1 src/**/*.lua out",
     "typecheck": "tsc --noEmit",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
+    "test": "jest --testPathIgnorePatterns e2e",
     "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server.js\" --noClear",
     "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear",
     "schema": "typescript-json-schema ./node_modules/lsif-protocol/lib/protocol.d.ts '*' -o src/lsif.schema.json --titles --ignoreErrors --noExtraProps --required --strictNullChecks"
