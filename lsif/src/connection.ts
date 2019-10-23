@@ -88,7 +88,7 @@ export async function createPostgresConnection(configuration: Configuration, log
         username: url.username,
         password: url.password,
         database: url.pathname.substring(1),
-        ssl: sslMode ? sslThings[sslMode] : undefined,
+        ssl: sslMode ? sslModes[sslMode] : undefined,
     }
 
     // Get a working connection
