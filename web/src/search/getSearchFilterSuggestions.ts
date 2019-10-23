@@ -19,7 +19,7 @@ type PartialSearchFilterSuggestions = {
     }
 }
 
-const addTypeToSuggestions = (suggestions: PartialSearchFilterSuggestions): SearchFilterSuggestions =>
+export const addTypeToSuggestions = (suggestions: PartialSearchFilterSuggestions): SearchFilterSuggestions =>
     Object.keys(suggestions).reduce<SearchFilterSuggestions>(
         (suggestionsWithTypes, type) => {
             const typeSuggestions = suggestions[type as SuggestionTypes]
@@ -34,7 +34,7 @@ const addTypeToSuggestions = (suggestions: PartialSearchFilterSuggestions): Sear
         suggestions as SearchFilterSuggestions
     )
 
-const baseSuggestions: PartialSearchFilterSuggestions = {
+export const baseSuggestions: PartialSearchFilterSuggestions = {
     filters: {
         values: [
             {

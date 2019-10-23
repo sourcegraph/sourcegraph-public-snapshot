@@ -1,5 +1,6 @@
-import { getSearchTypeFromQuery, toggleSearchType } from './helpers'
+import { getSearchTypeFromQuery, toggleSearchType, filterSearchSuggestions, insertSuggestionInQuery } from './helpers'
 import { SearchType } from './results/SearchResults'
+import { addTypeToSuggestions, baseSuggestions } from './getSearchFilterSuggestions'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -84,6 +85,45 @@ describe('search/helpers', () => {
             expect(toggleSearchType('test type:symbol type:commit repo:^sourcegraph/test', 'diff')).toEqual(
                 'test type:diff type:commit repo:^sourcegraph/test'
             )
+        })
+    })
+
+    describe('suggestions', () => {
+        const filterSuggestions = addTypeToSuggestions(baseSuggestions)
+        const filterQuery = 'test re test'
+
+        const getArchivedSuggestions = () => filterSearchSuggestions('archived:', 9, filterSuggestions)
+
+        const getRepoFilterSuggestion = () =>
+            filterSearchSuggestions(filterQuery, 7, filterSuggestions).filter(({ title }) => title === 'repo')[0]
+
+        describe('filterSearchSuggestions', () => {
+            test('filters suggestions for filters starting with "re"', () => {
+                expect(getRepoFilterSuggestion().title).toBe('repo')
+            })
+
+            test('filters suggestions for word "test"', () => {
+                const suggestions = filterSearchSuggestions(filterQuery, 4, filterSuggestions)
+                expect(suggestions.length).toBe(0)
+            })
+
+            test('filters suggestions for the "archived:" filter', () => {
+                const archivedSuggestions = getArchivedSuggestions()
+                expect(archivedSuggestions).toEqual(expect.arrayContaining(filterSuggestions.archived.values))
+            })
+        })
+
+        describe('insertSuggestionInQuery', () => {
+            describe('inserts suggestions for a filter name', () => {
+                const suggestion = getRepoFilterSuggestion()
+                const [newQuery] = insertSuggestionInQuery('test re test', suggestion, 7)
+                expect(newQuery).toBe(`test ${suggestion.title}: test`)
+            })
+            test('insets suggestion for a filter value', () => {
+                const [suggestion] = getArchivedSuggestions()
+                const [newQuery] = insertSuggestionInQuery('test archived: test', suggestion, 14)
+                expect(newQuery).toBe(`test archived:${suggestion.title} test`)
+            })
         })
     })
 })
