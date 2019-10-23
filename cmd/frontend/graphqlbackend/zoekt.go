@@ -375,9 +375,9 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 // query. The Zoekt query is (only) a a conjunction of constant substrings.
 // Examples:
 //
-// "foo(:[args])"   -> "foo(" AND ")"
+// "foo(:[args])"          -> "foo(" AND ")"
 // ":[fn](:[[1]], :[[2]])" -> "(" AND ", " AND ")"
-// ":[1\n] :[ whitespace]"     -> " "
+// ":[1\n] :[ whitespace]" -> " "
 func StructuralPatToQuery(pattern string) zoektquery.Q {
 	var children []zoektquery.Q
 	substrings := splitOnHoles(pattern)
