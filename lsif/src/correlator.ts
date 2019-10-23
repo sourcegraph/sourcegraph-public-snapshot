@@ -306,7 +306,7 @@ export class Correlator {
             return
         }
 
-        throw new Error(`Unknown definition or reference result ${edge.outV}.`)
+        console.warn(`Unknown definition or reference result ${edge.outV}.`)
     }
 
     /**
