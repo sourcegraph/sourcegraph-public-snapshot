@@ -58,9 +58,14 @@ const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_END
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
- * The interval (in seconds) to schedule the heads job.
+ * The interval (in seconds) to schedule the update-tips job.
  */
-const HEADS_JOB_SCHEDULE_INTERVAL = readEnvInt('HEADS_JOB_SCHEDULE_INTERVAL', 30)
+const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 30)
+
+/**
+ * The interval (in seconds) to schedule the clean-old-jobs job.
+ */
+const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
@@ -113,8 +118,9 @@ async function main(logger: Logger): Promise<void> {
     // Create queue to publish convert
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
-    // Schedule update-tips to run on a timer
-    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, HEADS_JOB_SCHEDULE_INTERVAL)
+    // Schedule jobs on timers
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
 
     // Update queue size metric on a timer
     setInterval(() => queue.count().then(count => queueSizeGauge.set(count)), 1000)
