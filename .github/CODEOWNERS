@@ -57,6 +57,7 @@
 /graphql-schema-linter.config.js @felixfbecker
 /.prettierignore @felixfbecker
 /.github @beyang
+/.github/workflows/lsif.yml @efritz
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
