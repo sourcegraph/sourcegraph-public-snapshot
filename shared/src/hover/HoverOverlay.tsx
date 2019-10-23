@@ -1,10 +1,8 @@
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
-import { castArray, isEqual } from 'lodash'
-import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
+import { castArray, isEqual, upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import * as React from 'react'
 import { MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
@@ -155,10 +153,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 this.props.errorAlertClassName
                             )}
                         >
-                            <h4>
-                                <AlertCircleOutlineIcon className="icon-inline" /> Error:
-                            </h4>{' '}
-                            {hoverOrError.message}
+                            {upperFirst(hoverOrError.message)}
                         </div>
                     ) : (
                         hoverOrError &&
@@ -184,10 +179,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                     )}
                                                     key={i}
                                                 >
-                                                    <strong>
-                                                        <AlertCircleOutlineIcon className="icon-inline" /> Error:
-                                                    </strong>{' '}
-                                                    {err.message}
+                                                    {upperFirst(err.message)}
                                                 </div>
                                             )
                                         }
@@ -222,8 +214,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 key={type}
                             >
                                 <div className="hover-overlay__alert-content">
-                                    <HelpCircleIcon className="icon-inline" />
-                                    &nbsp;
                                     <small>{content}</small>
                                     <a
                                         className="hover-overlay__alert-close"
