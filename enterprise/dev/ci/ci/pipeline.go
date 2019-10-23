@@ -101,7 +101,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addGoBuild,
 			addDockerfileLint,
 			wait,
-			addE2E(c),
 			wait,
 			addCodeCov,
 			wait,

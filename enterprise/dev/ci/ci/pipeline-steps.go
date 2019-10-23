@@ -121,23 +121,6 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 }
 
-// End-to-end tests.
-func addE2E(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":chromium:",
-			// Avoid crashing the sourcegraph/server containers. See
-			// https://github.com/sourcegraph/sourcegraph/issues/2657
-			bk.ConcurrencyGroup("e2e"),
-			bk.Concurrency(1),
-
-			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
-			bk.Env("VERSION", c.version),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
-	}
-}
-
 // Code coverage.
 func addCodeCov(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":codecov:",
