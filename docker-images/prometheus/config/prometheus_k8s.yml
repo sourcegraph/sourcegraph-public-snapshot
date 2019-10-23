@@ -2,6 +2,11 @@ global:
   scrape_interval:     30s
   evaluation_interval: 30s
 
+alerting:
+  alertmanagers:
+    - kubernetes_sd_configs:
+      - role: endpoints
+
 rule_files:
   - '*_rules.yml'
   - "/sg_prometheus_add_ons/*_rules.yml"
