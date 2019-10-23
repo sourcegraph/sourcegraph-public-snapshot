@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/url"
+	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
@@ -370,6 +371,44 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, queryIsCaseSensitive)
 }
 
+func splitOnHoles(pattern string) []string {
+	word := `\w`
+	whitespaceAndOptionalWord := `[ ]+(\w+)?`
+	holeAnything := `:\[` + word + `\]`
+	holeAlphanum := `:\[\[` + word + `\]\]`
+	holeWithPunctuation := `:\[` + word + `\.\]`
+	holeWithNewline := `:\[` + word + `\\n\]`
+	holeWhitespace := `:\[` + whitespaceAndOptionalWord + `\]`
+	hole := strings.Join([]string{
+		holeAnything,
+		holeAlphanum,
+		holeWithPunctuation,
+		holeWithNewline,
+		holeWhitespace,
+	}, "|")
+	return regexp.MustCompile(hole).Split(pattern, -1)
+}
+
+// Parses comby a structural syntax by stripping holes and returns a Zoekt
+// query. The Zoekt query is (only) a a conjunction of constant substrings.
+// Examples:
+//
+// "foo(:[args])"   -> "foo(" AND ")"
+// ":[fn](:[[1]], :[[2]])" -> "(" AND ", " AND ")"
+// ":[1\n] :[ whitespace]"     -> " "
+func structuralPatToQuery(pattern string) (zoektquery.Q, error) {
+	var children []zoektquery.Q
+	substrings := splitOnHoles(pattern)
+	for _, s := range substrings {
+		children = append(children, &zoektquery.Substring{
+			Pattern:       s,
+			CaseSensitive: true,
+			FileName:      true,
+		})
+	}
+	return &zoektquery.And{Children: children}, nil
+}
+
 func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
@@ -377,6 +416,12 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 	if query.IsRegExp {
 		var err error
 		q, err = parseRe(query.Pattern, false, query.IsCaseSensitive)
+		if err != nil {
+			return nil, err
+		}
+	} else if query.IsStructuralPat {
+		var err error
+		q, err = structuralPatToQuery(query.Pattern)
 		if err != nil {
 			return nil, err
 		}
