@@ -59,7 +59,7 @@ const wrapJobProcessor = <T>(
     logger: Logger,
     tracer: Tracer | undefined
 ): ((job: Job) => Promise<void>) => async (job: Job) => {
-    logger.debug('convert job accepted', { jobId: job.id })
+    logger.debug(`${name} job accepted`, { jobId: job.id })
 
     // Destructure arguments and injected tracing context
     const { args, tracing } = job.data as { args: T; tracing: object }
