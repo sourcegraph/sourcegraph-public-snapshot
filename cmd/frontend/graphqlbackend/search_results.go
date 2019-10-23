@@ -181,7 +181,7 @@ func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
 // commonFileFilters are common filters used. It is used by DynamicFilters to
 // propose them if they match shown results.
 var commonFileFilters = []struct {
-	Regexp *regexp.Regexp
+	Regexp *lazyregexp.Regexp
 	Filter string
 }{
 	// Exclude go tests

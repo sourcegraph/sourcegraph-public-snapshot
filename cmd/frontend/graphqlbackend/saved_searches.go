@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"regexp"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -282,7 +281,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-var patternTypeRegexp *regexp.Regexp = lazyregexp.New(`(?i)\bpatternType:(literal|regexp)\b`)
+var patternTypeRegexp = lazyregexp.New(`(?i)\bpatternType:(literal|regexp)\b`)
 
 func queryHasPatternType(query string) bool {
 	return patternTypeRegexp.Match([]byte(query))
