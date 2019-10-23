@@ -815,7 +815,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	options := &getPatternInfoOptions{}
-	if r.patternType == "structural" {
+	if r.patternType == SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
@@ -1071,7 +1071,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == "literal" {
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == SearchTypeLiteral {
 		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
 	}
 
