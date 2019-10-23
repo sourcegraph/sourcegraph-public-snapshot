@@ -493,7 +493,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         // connection, if appendResults is set, the previous page is not
                         // stale, and neither the connection nor the current page are an
                         // error-like value.
-                        const combineResults = (newC: C | ErrorLike | undefined): C | ErrorLike | undefined => {
+                        const appendResultsToPage = (newC: C | ErrorLike | undefined): typeof newC => {
                             if (this.props.appendResults && !this.state.stalePreviousPage) {
                                 const oldC = this.state.connectionOrError
                                 if (newC && !isErrorLike(newC) && oldC && !isErrorLike(oldC)) {
@@ -515,7 +515,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 catchError(error => [asError(error)]),
                                 map(
                                     (c): PartialStateUpdate => ({
-                                        connectionOrError: combineResults(c),
+                                        connectionOrError: appendResultsToPage(c),
                                         connectionQuery: query,
                                         loading: false,
                                     })
