@@ -33,7 +33,8 @@ export interface HoverOverlayClassProps {
     actionItemClassName?: string
     actionItemPressedClassName?: string
 
-    alertClassName?: string
+    infoAlertClassName?: string
+    errorAlertClassName?: string
 }
 
 /**
@@ -148,7 +149,12 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                             <LoadingSpinner className="icon-inline" />
                         </div>
                     ) : isErrorLike(hoverOrError) ? (
-                        <div className="hover-overlay__row hover-overlay__hover-error alert alert-danger">
+                        <div
+                            className={classNames(
+                                'hover-overlay__row hover-overlay__hover-error',
+                                this.props.errorAlertClassName
+                            )}
+                        >
                             <h4>
                                 <AlertCircleOutlineIcon className="icon-inline" /> Error:
                             </h4>{' '}
@@ -171,7 +177,13 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                             )
                                         } catch (err) {
                                             return (
-                                                <div className="hover-overlay__row alert alert-danger" key={i}>
+                                                <div
+                                                    className={classNames(
+                                                        'hover-overlay__row',
+                                                        this.props.errorAlertClassName
+                                                    )}
+                                                    key={i}
+                                                >
                                                     <strong>
                                                         <AlertCircleOutlineIcon className="icon-inline" /> Error:
                                                     </strong>{' '}
@@ -205,7 +217,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 className={classNames(
                                     'hover-overlay__row',
                                     'hover-overlay__alert',
-                                    this.props.alertClassName
+                                    this.props.infoAlertClassName
                                 )}
                                 key={type}
                             >

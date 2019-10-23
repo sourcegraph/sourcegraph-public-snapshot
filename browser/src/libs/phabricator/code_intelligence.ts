@@ -188,6 +188,8 @@ export const phabricatorCodeHost: CodeHost = {
         className: 'aphront-dialog-view hover-overlay--phabricator',
         actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
         closeButtonClassName: 'button grey hover-overlay__close-button--phabricator',
+        infoAlertClassName: 'phui-info-view phui-info-severity-notice',
+        errorAlertClassName: 'phui-info-view phui-info-severity-error',
     },
     codeViewsRequireTokenization: true,
 }
