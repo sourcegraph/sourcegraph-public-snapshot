@@ -110,7 +110,7 @@ func TestFindEndpoint(t *testing.T) {
 		name:      "exact multiple",
 		hostname:  "foo",
 		endpoints: []string{"foo", "foo.internal"},
-		want:      "foo",
+		errS:      "hostname \"foo\" matches multiple",
 	}, {
 		name:      "exact",
 		hostname:  "foo",

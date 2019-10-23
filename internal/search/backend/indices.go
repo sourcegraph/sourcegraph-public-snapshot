@@ -62,10 +62,6 @@ func (c *Indices) Enabled() bool {
 
 // findEndpoint returns the endpoint in eps which matches hostname.
 func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
-	if _, ok := eps[hostname]; ok {
-		return hostname, nil
-	}
-
 	// The hostname can be a less qualified hostname. For example in k8s
 	// $HOSTNAME will be "indexed-search-0", but to access the pod you will
 	// need to specify the endpoint address
@@ -81,12 +77,10 @@ func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
 		if !strings.HasPrefix(ep, hostname) {
 			continue
 		}
-		if len(ep) <= len(hostname) {
-			// In the next conditional we want to check ep[len(hostname)]
-			continue
-		}
-		if c := ep[len(hostname)]; c != '.' && c != ':' {
-			continue
+		if len(hostname) < len(ep) {
+			if c := ep[len(hostname)]; c != '.' && c != ':' {
+				continue
+			}
 		}
 
 		if endpoint != "" {
