@@ -18,7 +18,7 @@ export interface ApiJob {
 
 const toDate = (v: number): string => new Date(v).toISOString()
 const toMaybeDate = (v: number | null): string | null => (v ? toDate(v) : null)
-const toMaybeInt = (v: string | undefined) => (v ? parseInt(v, 10) : null)
+const toMaybeInt = (v: string | undefined): number | null => (v ? parseInt(v, 10) : null)
 
 /**
  * Format a job to return from the API.

@@ -6,8 +6,8 @@
         KEYS[1] key prefix
         KEYS[2] name of the queue
         ARGV[1] search query
-        ARGV[2] (inclusive) start index
-        ARGV[3] (inclusive) end index
+        ARGV[2] number of results to return
+        ARGV[3] maximum number of jobs to search
 ]]
 
 --[[
@@ -82,12 +82,14 @@ local function jobMatches(id, key)
     return true
 end
 
--- Get ids of all jobs int he queue in the range [start, end]. The queue is either
+-- TODO - do this in chunks instead
+-- Get ids of all jobs in the queue in the range `[0, max-search)`. The queue is either
 -- backed by a list or a set and can be in ascending or descending order. We determine
 -- the redis command via the queue name.
-local ids = redis.call(commandsByQueue[KEYS[2]], KEYS[1] .. KEYS[2], ARGV[2], ARGV[3])
+local ids = redis.call(commandsByQueue[KEYS[2]], KEYS[1] .. KEYS[2], 0, ARGV[3] - 1)
 
 local matching = {}
+local numMatching = 0
 for _, v in pairs(ids) do
     if jobMatches(v, KEYS[1] .. v) then
         -- Get job data and add the job id to the payload
@@ -95,8 +97,14 @@ for _, v in pairs(ids) do
         table.insert(data, 'id')
         table.insert(data, v)
 
-        -- Collect all matching jobs
+        -- Collect all matching data
         table.insert(matching, data)
+        numMatching = numMatching + 1
+
+        -- Stop when we hit our limit
+        if numMatching >= tonumber(ARGV[2]) then
+            break
+        end
     end
 end
 

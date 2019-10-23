@@ -413,9 +413,10 @@ function queueEndpoints(queue: Queue, logger: Logger): express.Router {
                     )
                 } else {
                     const jobs = await logAndTraceCall(ctx, 'job search', () =>
-                        searchJobs(queue, status, search, offset, offset + limit - 1)
+                        searchJobs(queue, status, search, limit)
                     )
 
+                    // TODO - try to get a better count
                     // We can't paginate easily here as to get an accurate
                     // count we'd need to run through all jobs and apply the
                     // search query test.
