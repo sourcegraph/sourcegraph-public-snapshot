@@ -399,8 +399,19 @@ function queueEndpoints(queue: Queue, logger: Logger): express.Router {
                 const offset = parseInt(req.query.offset, 10) || 0
                 const ctx = createTracingContext(req, {})
 
-                if (search) {
-                    // Get jobs with the target status matching query string
+                if (search && offset > 0) {
+                    throw Object.assign(new Error('Must not specify both search and offset'), {
+                        status: 400,
+                    })
+                }
+
+                if (!search) {
+                    res.send(
+                        await logAndTraceCall(ctx, 'job slice', () =>
+                            sliceJobs(queue, status, offset, offset + limit - 1)
+                        )
+                    )
+                } else {
                     const jobs = await logAndTraceCall(ctx, 'job search', () =>
                         searchJobs(queue, status, search, offset, offset + limit - 1)
                     )
@@ -409,12 +420,6 @@ function queueEndpoints(queue: Queue, logger: Logger): express.Router {
                     // count we'd need to run through all jobs and apply the
                     // search query test.
                     res.send({ jobs, totalCount: jobs.length })
-                } else {
-                    const { jobs, totalCount } = await logAndTraceCall(ctx, 'job slice', () =>
-                        sliceJobs(queue, status, offset, offset + limit - 1)
-                    )
-
-                    res.send({ jobs, totalCount })
                 }
             }
         )

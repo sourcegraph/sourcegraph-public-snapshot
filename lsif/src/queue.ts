@@ -117,9 +117,35 @@ export const ensureOnlyRepeatableJob = async (
  *  - ARGV[3]: end index to scan (inclusive)
  */
 const jobSearchScript = `
-    local function textMatches(needle, haystack)
-        for term in string.gmatch(needle, '%S+') do
-            if string.find(haystack, term, 1, true) == nil then
+    local function extractValues(id, key)
+        local values = {
+            id,
+            redis.call('HGET', key, 'name'),
+            redis.call('HGET', key, 'failedReason'),
+            redis.call('HGET', key, 'stacktrace'),
+        }
+
+        local data = cjson.decode(redis.call('HGET', key, 'data'))
+        for _, value in pairs({'repository', 'commit', 'root'}) do
+            table.insert(values, data['args'][value])
+        end
+
+        return values
+    end
+
+    local function jobMatches(id, key)
+        local values = extractValues(id, key)
+
+        for term in string.gmatch(ARGV[1], '%S+') do
+            local found = false
+            for _, value in pairs(values) do
+                if type(value) == 'string' and string.find(value, term, 1, true) then
+                    found = true
+                    break
+                end
+            end
+
+            if not found then
                 return false
             end
         end
@@ -127,24 +153,18 @@ const jobSearchScript = `
         return true
     end
 
-    local function jobMatches(key)
-        for _, field in pairs({'data'}) do
-            if textMatches(ARGV[1], redis.call('HGET', key, field)) then
-                return true
-            end
-        end
-
-        return false
+    local command = 'ZRANGE'
+    if KEYS[2] == 'active' then -- And waiting?
+        command = 'LRANGE'
     end
 
-    local command = 'ZRANGE'
-    if KEYS[2] == 'active' then
-        command = 'LRANGE'
+    if KEYS[2] == 'completed' or KEYS[2] == 'failed' then
+        command = 'ZREVRANGE'
     end
 
     local matching = {}
     for _, v in pairs(redis.call(command, KEYS[1] .. KEYS[2], ARGV[2], ARGV[3])) do
-        if jobMatches(KEYS[1] .. v) then
+        if jobMatches(v, KEYS[1] .. v) then
             local data = redis.call('HGETALL', KEYS[1] .. v)
             table.insert(data, 'id')
             table.insert(data, v)
@@ -183,8 +203,10 @@ export async function searchJobs(
         keysAndArgs: any[]
     ) => Promise<string[][]>
 
+    const payloads = await evalCommand(jobSearchScript, 2, ['bull:lsif:', queueName, search, start, end])
+
     const jobs = []
-    for (const payload of await evalCommand(jobSearchScript, 2, ['bull:lsif:', queueName, search, start, end])) {
+    for (const payload of payloads) {
         // Translate redis hgetall response `[k1, v2, k2, v1, ...]` into a map `{k1 -> v1, k2 -> v2, ...}`,
         // then translate the map into an ApiJob instance so we can return it from the API.
         jobs.push(formatJobFromMap(new Map<string, string>(chunk(payload, 2) as [string, string][]), status))
