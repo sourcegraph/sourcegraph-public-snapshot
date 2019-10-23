@@ -4,99 +4,104 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
-func Test_serveReposList(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+func TestReposList(t *testing.T) {
+	defaultRepos := []string{"github.com/vim/vim", "github.com/torvalds/linux"}
+	allRepos := append(defaultRepos, "github.com/alice/rabbitmq", "github.com/bob/jabberd")
 
-	getRepoURIsViaHTTP := func(t *testing.T) []string {
-		t.Helper()
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := serveReposList(w, r); err != nil {
-				t.Errorf("calling serveReposList: %v", err)
-			}
-		}))
-		defer ts.Close()
-		resp, err := http.Post(ts.URL, "application/json; charset=utf8", bytes.NewReader([]byte(`{"Enabled": true, "Index": true}`)))
-		if err != nil {
-			t.Fatalf("calling http.Get: %v", err)
-		}
-		// Parse the response as in zoekt-sourcegraph-indexserver/main.go.
-		type repo struct {
-			URI string
-		}
-		var repos []repo
-		err = json.NewDecoder(resp.Body).Decode(&repos)
-		if err != nil {
-			t.Fatalf("json decoding response: %v", err)
-		}
-		resp.Body.Close()
-		if err != nil {
-			t.Fatalf("closing response body: %v", err)
-		}
-		var URIs []string
-		for _, r := range repos {
-			URIs = append(URIs, r.URI)
-		}
-		return URIs
-	}
+	cases := []struct {
+		name string
+		srv  *reposListServer
+		body string
+		want []string
+	}{{
+		name: "enabled",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+		},
+		body: `{"Enabled": true, "Index": true}`,
+		want: allRepos,
+	}, {
+		name: "sourcegraph.com",
+		srv: &reposListServer{
+			SourcegraphDotComMode: true,
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+		},
+		body: `{"Enabled": true, "Index": true}`,
+		want: defaultRepos,
+	}}
 
-	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
-		dbtesting.SetupGlobalTestDB(t)
-		ctx := context.Background()
-		qs := []string{
-			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/alice/rabbitmq', 'github.com/alice/rabbitmq', '2015-01-01', '2016-01-01', '', '')`,
-			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/bob/jabberd', 'github.com/bob/jabberd', '2001-01-01', '2019-01-01', '', '')`,
-		}
-		for _, q := range qs {
-			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
+			w := httptest.NewRecorder()
+			if err := tc.srv.serve(w, req); err != nil {
 				t.Fatal(err)
 			}
-		}
-		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-			return repos, nil
-		}
-		defer func() { db.MockAuthzFilter = nil }()
-		URIs := getRepoURIsViaHTTP(t)
-		wantURIs := []string{"github.com/alice/rabbitmq", "github.com/bob/jabberd"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
-	})
 
-	t.Run("only default repos are returned for sourcegraph.com", func(t *testing.T) {
-		dbtesting.SetupGlobalTestDB(t)
-		ctx := context.Background()
-		qs := []string{
-			`INSERT INTO repo(id, name) VALUES (1, 'github.com/vim/vim')`,
-			`INSERT INTO repo(id, name) VALUES (2, 'github.com/torvalds/linux')`,
-			`INSERT INTO default_repos(repo_id) VALUES (2)`,
-		}
-		for _, q := range qs {
-			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("got status %v", resp.StatusCode)
+			}
+
+			// Parse the response as in zoekt-sourcegraph-indexserver/main.go.
+			var repos []struct{ URI string }
+			if err := json.Unmarshal(body, &repos); err != nil {
 				t.Fatal(err)
 			}
-		}
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
-		URIs := getRepoURIsViaHTTP(t)
-		wantURIs := []string{"github.com/torvalds/linux"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
-	})
+
+			var got []string
+			for _, r := range repos {
+				got = append(got, r.URI)
+			}
+
+			if !cmp.Equal(tc.want, got) {
+				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+type mockRepos struct {
+	defaultRepos []string
+	repos        []string
+}
+
+func (r *mockRepos) ListDefault(context.Context) ([]*types.Repo, error) {
+	var repos []*types.Repo
+	for _, name := range r.defaultRepos {
+		repos = append(repos, &types.Repo{
+			Name: api.RepoName(name),
+		})
+	}
+	return repos, nil
+}
+
+func (r *mockRepos) List(context.Context, db.ReposListOptions) ([]*types.Repo, error) {
+	var repos []*types.Repo
+	for _, name := range r.repos {
+		repos = append(repos, &types.Repo{
+			Name: api.RepoName(name),
+		})
+	}
+	return repos, nil
 }
