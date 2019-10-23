@@ -122,12 +122,12 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 		{
 			Name:    "Just a hole",
 			Pattern: ":[1]",
-			Want:    `case_file_substr:""`,
+			Want:    `TRUE`,
 		},
 		{
 			Name:    "Adjacent holes",
 			Pattern: ":[1]:[2]:[3]",
-			Want:    `case_file_substr:""`,
+			Want:    `TRUE`,
 		},
 		{
 			Name:    "Substring between holes",
@@ -143,6 +143,14 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 			Name:    "Substrings covering all hole kinds.",
 			Pattern: `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
 			Want:    `(and case_file_substr:"1. " case_file_substr:" 2. " case_file_substr:" 3. " case_file_substr:" 4. " case_file_substr:" 5. " case_file_substr:" 6. " case_file_substr:" done.")`,
+		},
+		{
+			Name: "Substrings across multiple lines.",
+			Pattern: `:[1] spans
+multiple
+lines
+ :[2]`,
+			Want: `(and case_file_substr:" spans\nmultiple\nlines\n ")`,
 		},
 	}
 	for _, tt := range cases {

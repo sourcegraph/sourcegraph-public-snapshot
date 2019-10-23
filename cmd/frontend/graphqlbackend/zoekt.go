@@ -371,6 +371,25 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, queryIsCaseSensitive)
 }
 
+func splitOnHolesPattern() string {
+	word := `\w`
+	whitespaceAndOptionalWord := `[ ]+(\w+)?`
+	holeAnything := `:\[` + word + `\]`
+	holeAlphanum := `:\[\[` + word + `\]\]`
+	holeWithPunctuation := `:\[` + word + `\.\]`
+	holeWithNewline := `:\[` + word + `\\n\]`
+	holeWhitespace := `:\[` + whitespaceAndOptionalWord + `\]`
+	return strings.Join([]string{
+		holeAnything,
+		holeAlphanum,
+		holeWithPunctuation,
+		holeWithNewline,
+		holeWhitespace,
+	}, "|")
+}
+
+var matchHoleRegexp = regexp.MustCompile(splitOnHolesPattern())
+
 // Parses comby a structural syntax by stripping holes and returns a Zoekt
 // query. The Zoekt query is (only) a a conjunction of constant substrings.
 // Examples:
@@ -380,42 +399,21 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 // ":[1\n] :[ whitespace]" -> " "
 func StructuralPatToQuery(pattern string) zoektquery.Q {
 	var children []zoektquery.Q
-	substrings := splitOnHoles(pattern)
+	substrings := matchHoleRegexp.Split(pattern, -1)
 	for _, s := range substrings {
 		if s != "" {
 			children = append(children, &zoektquery.Substring{
 				Pattern:       s,
 				CaseSensitive: true,
 				FileName:      true,
+				Content:       true,
 			})
 		}
 	}
 	if len(children) == 0 {
-		return &zoektquery.Substring{
-			Pattern:       "",
-			CaseSensitive: true,
-			FileName:      true,
-		}
+		return &zoektquery.Const{Value: true}
 	}
 	return &zoektquery.And{Children: children}
-}
-
-func splitOnHoles(pattern string) []string {
-	word := `\w`
-	whitespaceAndOptionalWord := `[ ]+(\w+)?`
-	holeAnything := `:\[` + word + `\]`
-	holeAlphanum := `:\[\[` + word + `\]\]`
-	holeWithPunctuation := `:\[` + word + `\.\]`
-	holeWithNewline := `:\[` + word + `\\n\]`
-	holeWhitespace := `:\[` + whitespaceAndOptionalWord + `\]`
-	hole := strings.Join([]string{
-		holeAnything,
-		holeAlphanum,
-		holeWithPunctuation,
-		holeWithNewline,
-		holeWhitespace,
-	}, "|")
-	return regexp.MustCompile(hole).Split(pattern, -1)
 }
 
 func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
