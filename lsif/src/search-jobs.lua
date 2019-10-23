@@ -82,30 +82,39 @@ local function jobMatches(id, key)
     return true
 end
 
--- TODO - do this in chunks instead
--- Get ids of all jobs in the queue in the range `[0, max-search)`. The queue is either
--- backed by a list or a set and can be in ascending or descending order. We determine
--- the redis command via the queue name.
-local ids = redis.call(commandsByQueue[KEYS[2]], KEYS[1] .. KEYS[2], 0, ARGV[3] - 1)
 
+local offset = 0
+local limit = ARGV[3] / ARGV[2] -- TODO - this is ok?
 local matching = {}
 local numMatching = 0
-for _, v in pairs(ids) do
-    if jobMatches(v, KEYS[1] .. v) then
-        -- Get job data and add the job id to the payload
-        local data = redis.call('HGETALL', KEYS[1] .. v)
-        table.insert(data, 'id')
-        table.insert(data, v)
 
-        -- Collect all matching data
-        table.insert(matching, data)
-        numMatching = numMatching + 1
+-- Continue search until we have enough results or we've seen to omany jobs
+while numMatching < tonumber(ARGV[2]) and offset + limit < tonumber(ARGV[3]) then
+    -- TODO - do this in chunks instead
+    -- Get ids of all jobs in the queue in the range `[0, max-search)`. The queue is either
+    -- backed by a list or a set and can be in ascending or descending order. We determine
+    -- the redis command via the queue name.
+    local ids = redis.call(commandsByQueue[KEYS[2]], KEYS[1] .. KEYS[2], offset, offset + limit - 1)
 
-        -- Stop when we hit our limit
-        if numMatching >= tonumber(ARGV[2]) then
-            break
+    for _, v in pairs(ids) do
+        if jobMatches(v, KEYS[1] .. v) then
+            -- Get job data and add the job id to the payload
+            local data = redis.call('HGETALL', KEYS[1] .. v)
+            table.insert(data, 'id')
+            table.insert(data, v)
+
+            -- Collect all matching data
+            table.insert(matching, data)
+            numMatching = numMatching + 1
+
+            -- Stop when we hit our limit
+            if numMatching >= tonumber(ARGV[2]) then
+                break
+            end
         end
     end
+
+    offset = offset + limit
 end
 
 return matching
