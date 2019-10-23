@@ -85,9 +85,9 @@ export async function createPostgresConnection(configuration: Configuration, log
     const connectionOptions = {
         host: url.hostname,
         port: parseInt(url.port, 10) || 5432,
-        username: url.username,
-        password: url.password,
-        database: url.pathname.substring(1),
+        username: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: decodeURIComponent(url.pathname).substring(1),
         ssl: sslMode ? sslModes[sslMode] : undefined,
     }
 
