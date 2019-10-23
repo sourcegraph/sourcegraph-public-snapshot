@@ -66,6 +66,14 @@ type searchImplementer interface {
 	Stats(context.Context) (*searchResultsStats, error)
 }
 
+type SearchType int
+
+const (
+	SearchTypeRegex SearchType = iota
+	SearchTypeLiteral
+	SearchTypeStructural
+)
+
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
@@ -77,7 +85,7 @@ func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 	}
 
 	var queryString string
-	if searchType == "literal" {
+	if searchType == SearchTypeLiteral {
 		queryString = query.ConvertToLiteral(args.Query)
 	} else {
 		queryString = args.Query
@@ -121,29 +129,33 @@ func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
 // overrides the searchType, if present.
-func detectSearchType(version string, patternType *string, input string) (string, error) {
-	var searchType string
+func detectSearchType(version string, patternType *string, input string) (SearchType, error) {
+	var searchType SearchType
 	if patternType != nil {
 		switch *patternType {
-		case "regexp", "literal", "structural":
-			searchType = *patternType
+		case "literal":
+			searchType = SearchTypeLiteral
+		case "regexp":
+			searchType = SearchTypeRegex
+		case "structural":
+			searchType = SearchTypeStructural
 		default:
-			return "", fmt.Errorf("unrecognized patternType: %v", patternType)
+			return -1, fmt.Errorf("unrecognized patternType: %v", patternType)
 		}
 	} else {
 		switch version {
 		case "V1":
-			searchType = "regexp"
+			searchType = SearchTypeRegex
 		case "V2":
-			searchType = "literal"
+			searchType = SearchTypeLiteral
 		default:
-			return "", fmt.Errorf("unrecognized version: %v", version)
+			return -1, fmt.Errorf("unrecognized version: %v", version)
 		}
 	}
 
 	parseTree, err := query.Parse(input)
 	if err != nil {
-		return "", err
+		return -1, err
 	}
 
 	patternTypes := parseTree.Values(query.FieldPatternType)
@@ -155,11 +167,11 @@ func detectSearchType(version string, patternType *string, input string) (string
 	for _, pat := range patternTypes {
 		switch pat {
 		case "regex", "regexp":
-			searchType = "regexp"
+			searchType = SearchTypeRegex
 		case "literal":
-			searchType = "literal"
+			searchType = SearchTypeLiteral
 		case "structural":
-			searchType = "structural"
+			searchType = SearchTypeStructural
 		}
 	}
 
@@ -182,7 +194,7 @@ type searchResolver struct {
 	query         *query.Query          // the parsed search query
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType   string
+	patternType   SearchType
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
