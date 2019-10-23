@@ -319,8 +319,8 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     buttonElement: ButtonElement = 'span',
     buttonOpenClassName = '',
     showCaret = true,
-    popoverClassName = '',
-    popoverInnerClassName = '',
+    popoverClassName,
+    popoverInnerClassName,
     keyboardShortcutForShow,
     ...props
 }) => {
@@ -343,8 +343,8 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             <TooltipPopoverWrapper
                 isOpen={isOpen}
                 toggle={toggleIsOpen}
-                popperClassName={`popover show ${popoverClassName}`}
-                innerClassName={`popover-inner ${popoverInnerClassName}`}
+                popperClassName={classNames('show', popoverClassName)}
+                innerClassName={classNames('popover-inner', popoverInnerClassName)}
                 placement="bottom-end"
                 target={id}
                 trigger="legacy"
