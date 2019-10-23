@@ -63,6 +63,34 @@ func (r *Regexp) SubexpNames() []string {
 	return r.re().SubexpNames()
 }
 
+func (r *Regexp) FindAllStringSubmatch(s string, n int) [][]string {
+	return r.re().FindAllStringSubmatch(s, n)
+}
+
+func (r *Regexp) Split(s string, n int) []string {
+	return r.re().Split(s, n)
+}
+
+func (r *Regexp) ReplaceAllLiteralString(src, repl string) string {
+	return r.re().ReplaceAllLiteralString(src, repl)
+}
+
+func (r *Regexp) FindAllIndex(b []byte, n int) [][]int {
+	return r.re().FindAllIndex(b, n)
+}
+
+func (r *Regexp) Match(b []byte) bool {
+	return r.re().Match(b)
+}
+
+func (r *Regexp) ReplaceAllStringFunc(src string, repl func(string) string) string {
+	return r.re().ReplaceAllStringFunc(src, repl)
+}
+
+func (r *Regexp) ReplaceAll(src, repl []byte) []byte {
+	return r.re().ReplaceAll(src, repl)
+}
+
 var inTest = len(os.Args) > 0 && strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test")
 
 // New creates a new lazy regexp, delaying the compiling work until it is first

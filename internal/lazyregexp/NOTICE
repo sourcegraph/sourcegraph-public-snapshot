@@ -1,4 +1,4 @@
-Code copied from https://raw.githubusercontent.com/golang/go/go1.13.3/src/internal/lazyregexp/lazyre.go
+Code extended from https://raw.githubusercontent.com/golang/go/go1.13.3/src/internal/lazyregexp/lazyre.go
 
 Copyright (c) 2019 The Go Authors. All rights reserved.
 
