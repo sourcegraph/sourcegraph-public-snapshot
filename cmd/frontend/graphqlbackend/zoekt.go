@@ -371,6 +371,35 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	return parseRe(pattern, true, queryIsCaseSensitive)
 }
 
+// Parses comby a structural syntax by stripping holes and returns a Zoekt
+// query. The Zoekt query is (only) a a conjunction of constant substrings.
+// Examples:
+//
+// "foo(:[args])"   -> "foo(" AND ")"
+// ":[fn](:[[1]], :[[2]])" -> "(" AND ", " AND ")"
+// ":[1\n] :[ whitespace]"     -> " "
+func StructuralPatToQuery(pattern string) zoektquery.Q {
+	var children []zoektquery.Q
+	substrings := splitOnHoles(pattern)
+	for _, s := range substrings {
+		if s != "" {
+			children = append(children, &zoektquery.Substring{
+				Pattern:       s,
+				CaseSensitive: true,
+				FileName:      true,
+			})
+		}
+	}
+	if len(children) == 0 {
+		return &zoektquery.Substring{
+			Pattern:       "",
+			CaseSensitive: true,
+			FileName:      true,
+		}
+	}
+	return &zoektquery.And{Children: children}
+}
+
 func splitOnHoles(pattern string) []string {
 	word := `\w`
 	whitespaceAndOptionalWord := `[ ]+(\w+)?`
@@ -389,26 +418,6 @@ func splitOnHoles(pattern string) []string {
 	return regexp.MustCompile(hole).Split(pattern, -1)
 }
 
-// Parses comby a structural syntax by stripping holes and returns a Zoekt
-// query. The Zoekt query is (only) a a conjunction of constant substrings.
-// Examples:
-//
-// "foo(:[args])"   -> "foo(" AND ")"
-// ":[fn](:[[1]], :[[2]])" -> "(" AND ", " AND ")"
-// ":[1\n] :[ whitespace]"     -> " "
-func structuralPatToQuery(pattern string) (zoektquery.Q, error) {
-	var children []zoektquery.Q
-	substrings := splitOnHoles(pattern)
-	for _, s := range substrings {
-		children = append(children, &zoektquery.Substring{
-			Pattern:       s,
-			CaseSensitive: true,
-			FileName:      true,
-		})
-	}
-	return &zoektquery.And{Children: children}, nil
-}
-
 func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
@@ -420,11 +429,7 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 			return nil, err
 		}
 	} else if query.IsStructuralPat {
-		var err error
-		q, err = structuralPatToQuery(query.Pattern)
-		if err != nil {
-			return nil, err
-		}
+		q = StructuralPatToQuery(query.Pattern)
 	} else {
 		q = &zoektquery.Substring{
 			Pattern:       query.Pattern,
