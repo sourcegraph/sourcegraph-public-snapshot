@@ -3,6 +3,7 @@ package goreman
 
 import (
 	"errors"
+	"os"
 	"os/exec"
 	"regexp"
 	"runtime"
@@ -66,6 +67,9 @@ func Start(contents []byte, opts Options) error {
 		return err
 	}
 	if opts.RPCAddr != "" {
+		if err := os.Setenv("GOREMAN_RPC_ADDR", opts.RPCAddr); err != nil {
+			return err
+		}
 		if err := startServer(opts.RPCAddr); err != nil {
 			return err
 		}

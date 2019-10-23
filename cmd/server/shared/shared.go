@@ -166,13 +166,8 @@ func Main() {
 
 	procfile = append(procfile, maybeZoektProcFile()...)
 
-	const goremanAddr = "127.0.0.1:5005"
-	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
-		log.Fatal(err)
-	}
-
 	err = goreman.Start([]byte(strings.Join(procfile, "\n")), goreman.Options{
-		RPCAddr: goremanAddr,
+		RPCAddr: "127.0.0.1:5005",
 	})
 	if err != nil {
 		log.Fatal(err)

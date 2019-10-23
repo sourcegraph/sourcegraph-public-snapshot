@@ -21,13 +21,8 @@ func do() error {
 		return err
 	}
 
-	const goremanAddr = "127.0.0.1:5005"
-	if err := os.Setenv("GOREMAN_RPC_ADDR", goremanAddr); err != nil {
-		return err
-	}
-
 	return goreman.Start(procfile, goreman.Options{
-		RPCAddr: goremanAddr,
+		RPCAddr: "127.0.0.1:5005",
 	})
 }
 
