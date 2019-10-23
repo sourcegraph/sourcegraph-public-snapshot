@@ -156,7 +156,7 @@ const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => async (
     _: {},
     ctx: TracingContext
 ): Promise<void> => {
-    const removedJobs = await logAndTraceCall(ctx, 'cleaning old jobs', async (ctx: TracingContext) =>
+    const removedJobs = await logAndTraceCall(ctx, 'cleaning old jobs', (ctx: TracingContext) =>
         Promise.all(cleanStatuses.map(status => queue.clean(JOB_MAX_AGE * 1000, status)))
     )
 
