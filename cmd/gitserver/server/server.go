@@ -333,11 +333,15 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	req.Repo = protocol.NormalizeRepo(req.Repo)
 
 	if req.URL == "" {
+		if req.Repo == "" {
+			http.Error(w, "no URL and Repo", http.StatusBadRequest)
+			return
+		}
+
 		// BACKCOMPAT: Determine URL from the existing repo on disk if the client didn't send it.
-		dir := path.Join(s.ReposDir, string(req.Repo))
+		dir := s.dir(req.Repo)
 		var err error
 		req.URL, err = repoRemoteURL(r.Context(), dir)
 		if err != nil {
@@ -368,9 +372,7 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	req.Repo = protocol.NormalizeRepo(req.Repo)
-	dir := path.Join(s.ReposDir, string(req.Repo))
-	if repoCloned(dir) {
+	if repoCloned(s.dir(req.Repo)) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
@@ -389,7 +391,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
-	dir := path.Join(s.ReposDir, string(req.Repo))
+	dir := s.dir(req.Repo)
 
 	// despite the existence of a context on the request, we don't want to
 	// cancel the git commands partway through if the request terminates.
@@ -600,7 +602,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		}()
 	}
 
-	dir := path.Join(s.ReposDir, string(req.Repo))
+	dir := s.dir(req.Repo)
 	cloneProgress, cloneInProgress := s.locker.Status(dir)
 	if cloneInProgress {
 		status = "clone-in-progress"
@@ -666,7 +668,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	cmdStart = time.Now()
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
-	cmd.Dir = dir
+	cmd.Dir = string(dir)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
@@ -690,8 +692,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
-func setGitAttributes(gitDir string) error {
-	infoDir := filepath.Join(gitDir, "info")
+func setGitAttributes(dir GitDir) error {
+	infoDir := dir.Path("info")
 	if err := os.Mkdir(infoDir, os.ModePerm); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to set git attributes")
 	}
@@ -728,7 +730,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		return "This will never finish cloning", nil
 	}
 
-	dir := filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))
+	dir := s.dir(repo)
 
 	// PERF: Before doing the network request to check if isCloneable, lets
 	// ensure we are not already cloning.
@@ -779,7 +781,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel2()
 
-		dstPath := filepath.Join(dir, ".git")
+		dstPath := string(dir)
 		overwrite := opts != nil && opts.Overwrite
 		if !overwrite {
 			// We clone to a temporary directory first, so avoid wasting resources
@@ -799,27 +801,28 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		}
 		defer os.RemoveAll(tmpPath)
 		tmpPath = filepath.Join(tmpPath, ".git")
+		tmp := GitDir(tmpPath)
 
 		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
-		go readCloneProgress(repo, url, lock, pr)
+		go readCloneProgress(url, lock, pr)
 
 		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
-		removeBadRefs(ctx, tmpPath)
+		removeBadRefs(ctx, tmp)
 
 		// Update the last-changed stamp.
-		if err := setLastChanged(tmpPath); err != nil {
+		if err := setLastChanged(tmp); err != nil {
 			return errors.Wrapf(err, "failed to update last changed time")
 		}
 
 		// Set gitattributes
-		if err := setGitAttributes(tmpPath); err != nil {
+		if err := setGitAttributes(tmp); err != nil {
 			return err
 		}
 
@@ -866,7 +869,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(repo api.RepoName, url string, lock *RepositoryLock, pr io.Reader) {
+func readCloneProgress(url string, lock *RepositoryLock, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
 	redactor := newURLRedactor(url)
@@ -1083,7 +1086,7 @@ var (
 //  warning: refname 'HEAD' is ambiguous.
 //
 // Instead we just remove this ref.
-func removeBadRefs(ctx context.Context, dir string) {
+func removeBadRefs(ctx context.Context, dir GitDir) {
 	// older versions of git do not remove tags case insensitively, so we
 	// generate every possible case of HEAD (2^4 = 16)
 	badRefsOnce.Do(func() {
@@ -1101,12 +1104,12 @@ func removeBadRefs(ctx context.Context, dir string) {
 
 	args := append([]string{"branch", "-D"}, badRefs...)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Dir = dir
+	cmd.Dir = string(dir)
 	_ = cmd.Run()
 
 	args = append([]string{"tag", "-d"}, badRefs...)
 	cmd = exec.CommandContext(ctx, "git", args...)
-	cmd.Dir = dir
+	cmd.Dir = string(dir)
 	_ = cmd.Run()
 }
 
@@ -1133,17 +1136,8 @@ func removeBadRefs(ctx context.Context, dir string) {
 // an empty repository (not an error) or some kind of actual error
 // that is possibly causing our data to be incorrect, which should
 // be reported.
-func setLastChanged(dir string) error {
-	// Handle two different locations for GIT_DIR :'(
-	_, err := os.Stat(filepath.Join(dir, "HEAD"))
-	if os.IsNotExist(err) {
-		dir = filepath.Join(dir, ".git")
-		_, err = os.Stat(filepath.Join(dir, "HEAD"))
-	}
-	if err != nil {
-		return err
-	}
-	hashFile := filepath.Join(dir, "sg_refhash")
+func setLastChanged(dir GitDir) error {
+	hashFile := dir.Path("sg_refhash")
 
 	hash, err := computeRefHash(dir)
 	if err != nil {
@@ -1179,10 +1173,10 @@ func setLastChanged(dir string) error {
 // computeLatestCommitTimestamp returns the timestamp of the most recent
 // commit if any. If there are no commits or the latest commit is in the
 // future, time.Now is returned.
-func computeLatestCommitTimestamp(dir string) (time.Time, error) {
+func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
 	now := time.Now() // return current time if we don't find a more accurate time
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
-	cmd.Dir = dir
+	cmd.Dir = string(dir)
 	output, err := cmd.Output()
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
@@ -1211,11 +1205,11 @@ func computeLatestCommitTimestamp(dir string) (time.Time, error) {
 
 // computeRefHash returns a hash of the refs for dir. The hash should only
 // change if the set of refs and the commits they point to change.
-func computeRefHash(dir string) ([]byte, error) {
+func computeRefHash(dir GitDir) ([]byte, error) {
 	// Do not use CommandContext since this is a fast operation we do not want
 	// to interrupt.
 	cmd := exec.Command("git", "show-ref")
-	cmd.Dir = dir
+	cmd.Dir = string(dir)
 	output, err := cmd.Output()
 	if err != nil {
 		// Ignore the failure for an empty repository: show-ref fails with
@@ -1251,7 +1245,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	defer cancel2()
 
 	repo = protocol.NormalizeRepo(repo)
-	dir := path.Join(s.ReposDir, string(repo))
+	dir := s.dir(repo)
 
 	// If URL is not set, we can also use the last known working URL (set as the remote origin).
 	var urlIsGitRemote bool
@@ -1280,7 +1274,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 			cmd = exec.Command("git", "remote", "set-url", "origin", "--", url)
 		}
 		if cmd != nil {
-			cmd.Dir = dir
+			cmd.Dir = string(dir)
 			if _, err := runCommand(ctx, cmd); err != nil {
 				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "error", err)
 			}
@@ -1288,7 +1282,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*")
-	cmd.Dir = dir
+	cmd.Dir = string(dir)
 
 	// drop temporary pack files after a fetch. this function won't
 	// return until this fetch has completed or definitely-failed,
@@ -1355,7 +1349,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 	return nil
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev, repoDir string) (didUpdate bool) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev string, repoDir GitDir) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
@@ -1365,7 +1359,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
-	cmd.Dir = repoDir
+	cmd.Dir = string(repoDir)
 	if err := cmd.Run(); err == nil {
 		return false
 	}
@@ -1376,19 +1370,15 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, url, rev
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
 // It just reads the relevant files from the bare git repository directory.
-func quickRevParseHead(dir string) (string, error) {
+func quickRevParseHead(dir GitDir) (string, error) {
 	// See if HEAD contains a commit hash and return it if so.
-	head, err := ioutil.ReadFile(filepath.Join(dir, "HEAD"))
-	if os.IsNotExist(err) {
-		dir = filepath.Join(dir, ".git")
-		head, err = ioutil.ReadFile(filepath.Join(dir, "HEAD"))
-	}
+	head, err := ioutil.ReadFile(dir.Path("HEAD"))
 	if err != nil {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if git.IsAbsoluteRevision(string(head)) {
-		return string(head), nil
+	if h := string(head); git.IsAbsoluteRevision(h) {
+		return h, nil
 	}
 
 	// HEAD doesn't contain a commit hash. It contains something like "ref: refs/heads/master".
@@ -1401,13 +1391,13 @@ func quickRevParseHead(dir string) (string, error) {
 		// 🚨 SECURITY: prevent leakage of file contents outside repo dir
 		return "", fmt.Errorf("invalid ref format: %s", headRef)
 	}
-	headRefFile := filepath.Join(dir, filepath.FromSlash(string(headRef)))
+	headRefFile := dir.Path(filepath.FromSlash(string(headRef)))
 	if refs, err := ioutil.ReadFile(headRefFile); err == nil {
 		return string(bytes.TrimSpace(refs)), nil
 	}
 
 	// File didn't exist in refs/heads. Look for it in packed-refs.
-	f, err := os.Open(filepath.Join(dir, "packed-refs"))
+	f, err := os.Open(dir.Path("packed-refs"))
 	if err != nil {
 		return "", err
 	}

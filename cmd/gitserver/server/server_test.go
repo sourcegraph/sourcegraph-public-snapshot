@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -104,8 +105,8 @@ func TestRequest(t *testing.T) {
 	s := &Server{ReposDir: "/testroot", skipCloneForTests: true}
 	h := s.Handler()
 
-	repoCloned = func(dir string) bool {
-		return dir == "/testroot/github.com/gorilla/mux" || dir == "/testroot/my-mux"
+	repoCloned = func(dir GitDir) bool {
+		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
 
 	testRepoExists = func(ctx context.Context, url string) error {
@@ -159,11 +160,17 @@ func TestRequest(t *testing.T) {
 }
 
 func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
-	dir, err := ioutil.TempDir("", "gitserver_test")
+	tmp, err := ioutil.TempDir("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
+	defer os.RemoveAll(tmp)
+
+	dir := filepath.Join(tmp, ".git")
+	gitDir := GitDir(dir)
+	if err := os.Mkdir(string(dir), 0700); err != nil {
+		b.Fatal(err)
+	}
 
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
@@ -209,7 +216,7 @@ func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		rev, err := quickRevParseHead(dir)
+		rev, err := quickRevParseHead(gitDir)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -223,11 +230,17 @@ func BenchmarkQuickRevParseHead_packed_refs(b *testing.B) {
 }
 
 func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
-	dir, err := ioutil.TempDir("", "gitserver_test")
+	tmp, err := ioutil.TempDir("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
+	defer os.RemoveAll(tmp)
+
+	dir := filepath.Join(tmp, ".git")
+	gitDir := GitDir(dir)
+	if err := os.Mkdir(string(dir), 0700); err != nil {
+		b.Fatal(err)
+	}
 
 	// This simulates the usual case for a repo that HEAD is often
 	// updated. The master ref will be unpacked.
@@ -252,7 +265,7 @@ func BenchmarkQuickRevParseHead_unpacked_refs(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		rev, err := quickRevParseHead(dir)
+		rev, err := quickRevParseHead(gitDir)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -353,7 +366,7 @@ func TestCloneRepo(t *testing.T) {
 	// Wait until the clone is done. Please do not use this code snippet
 	// outside of a test. We only know this works since our test only starts
 	// one clone and will have nothing else attempt to lock.
-	dst := filepath.Join(s.ReposDir, "example.com/foo/bar")
+	dst := s.dir(api.RepoName("example.com/foo/bar"))
 	for i := 0; i < 1000; i++ {
 		_, cloning := s.locker.Status(dst)
 		if !cloning {
@@ -362,7 +375,7 @@ func TestCloneRepo(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	repo = dst
+	repo = filepath.Dir(string(dst))
 	gotCommit := cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
@@ -376,17 +389,17 @@ func TestCloneRepo(t *testing.T) {
 
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
-	mkFiles(t, dst, ".git/HELLO")
+	mkFiles(t, string(dst), "HELLO")
 	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", remote, &cloneOptions{Block: true, Overwrite: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := os.Stat(filepath.Join(dst, ".git/HELLO")); !os.IsNotExist(err) {
+	if _, err := os.Stat(dst.Path("HELLO")); !os.IsNotExist(err) {
 		t.Fatalf("expected clone to be overwritten: %s", err)
 	}
 
-	repo = dst
+	repo = filepath.Dir(string(dst))
 	gotCommit = cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
@@ -396,6 +409,7 @@ func TestCloneRepo(t *testing.T) {
 func TestRemoveBadRefs(t *testing.T) {
 	dir, cleanup := tmpDir(t)
 	defer cleanup()
+	gitDir := GitDir(filepath.Join(dir, ".git"))
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
@@ -429,7 +443,7 @@ func TestRemoveBadRefs(t *testing.T) {
 			t.Logf("WARNING: git tag %s failed to produce ambiguous output: %s", name, dontWant)
 		}
 
-		removeBadRefs(context.Background(), dir)
+		removeBadRefs(context.Background(), gitDir)
 
 		if got := cmd("git", "rev-parse", "HEAD"); got != want {
 			t.Fatalf("git tag %s failed to be removed: %s", name, got)
@@ -444,7 +458,7 @@ func TestRemoveBadRefs(t *testing.T) {
 			t.Logf("WARNING: git ref %s failed to produce ambiguous output: %s", name, dontWant)
 		}
 
-		removeBadRefs(context.Background(), dir)
+		removeBadRefs(context.Background(), gitDir)
 
 		if got := cmd("git", "rev-parse", "HEAD"); got != want {
 			t.Fatalf("git ref %s failed to be removed: %s", name, got)

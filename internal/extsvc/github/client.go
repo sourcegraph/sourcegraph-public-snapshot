@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -23,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -218,8 +219,10 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
-		if decErr := json.NewDecoder(resp.Body).Decode(&err); decErr != nil {
-			log15.Warn("Failed to decode error response from github API", "error", decErr)
+		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
+			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
+		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
+			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
 		}
 		err.URL = req.URL.String()
 		err.Code = resp.StatusCode

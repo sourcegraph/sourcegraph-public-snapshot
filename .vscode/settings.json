@@ -29,6 +29,7 @@
   "jest.pathToJest": "yarn -s test",
   "jest.showCoverageOnLoad": false,
   "jest.autoEnable": false, // until we confirm people like it
+  "typescript.format.semicolons": "remove",
   "eslint.autoFixOnSave": true,
   "eslint.validate": [
     "javascript",

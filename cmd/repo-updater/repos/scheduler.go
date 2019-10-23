@@ -109,10 +109,9 @@ type updateScheduler struct {
 // a configuration source, such as information retrieved from GitHub for a
 // given GitHubConnection.
 type configuredRepo2 struct {
-	URL     string
-	ID      uint32
-	Name    api.RepoName
-	Enabled bool
+	URL  string
+	ID   uint32
+	Name api.RepoName
 }
 
 // sourceRepoMap is the set of repositories associated with a specific configuration source.
@@ -291,9 +290,8 @@ func (s *updateScheduler) remove(r *Repo) {
 
 func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
 	repo := configuredRepo2{
-		ID:      r.ID,
-		Name:    api.RepoName(r.Name),
-		Enabled: r.Enabled,
+		ID:   r.ID,
+		Name: api.RepoName(r.Name),
 	}
 
 	if urls := r.CloneURLs(); len(urls) > 0 {
@@ -316,7 +314,7 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 	// Remove repos that don't exist in the new list or are disabled in the new list.
 	oldList := s.sourceRepos[source]
 	for key, repo := range oldList {
-		if updatedRepo, ok := newList[key]; !ok || !updatedRepo.Enabled {
+		if _, ok := newList[key]; !ok {
 			s.schedule.remove(repo)
 			updating := false // don't immediately remove repos that are already updating; they will automatically get removed when the update finishes
 			s.updateQueue.remove(repo, updating)
@@ -325,10 +323,8 @@ func (s *updateScheduler) updateSource(source string, newList sourceRepoMap) {
 
 	// Schedule enabled repos.
 	for _, updatedRepo := range newList {
-		if updatedRepo.Enabled {
-			s.schedule.upsert(updatedRepo)
-			s.updateQueue.enqueue(updatedRepo, priorityLow)
-		}
+		s.schedule.upsert(updatedRepo)
+		s.updateQueue.enqueue(updatedRepo, priorityLow)
 	}
 
 	s.sourceRepos[source] = newList

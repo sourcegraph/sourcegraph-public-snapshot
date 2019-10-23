@@ -331,6 +331,60 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
+				ids := make([]int64, len(changesets))
+				for i, c := range changesets {
+					ids[i] = c.ID
+				}
+
+				clones := make([]*a8n.Changeset, len(changesets))
+
+				for i, c := range changesets {
+					// Set only the fields on which we have a unique constraint
+					clones[i] = &a8n.Changeset{
+						RepoID:              c.RepoID,
+						ExternalID:          c.ExternalID,
+						ExternalServiceType: c.ExternalServiceType,
+					}
+				}
+
+				// Advance clock so store can determine whether Changeset was
+				// inserted or not
+				now = now.Add(time.Second)
+
+				err := s.CreateChangesets(ctx, clones...)
+				ae, ok := err.(AlreadyExistError)
+				if !ok {
+					t.Fatal(err)
+				}
+
+				{
+					sort.Slice(ae.ChangesetIDs, func(i, j int) bool { return ae.ChangesetIDs[i] < ae.ChangesetIDs[j] })
+					sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+					have, want := ae.ChangesetIDs, ids
+					if len(have) != len(want) {
+						t.Fatalf("%d changesets already exist, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+
+				{
+					// Verify that we got the original changesets back
+					have, want := clones, changesets
+					if len(have) != len(want) {
+						t.Fatalf("created %d changesets, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			})
+
 			t.Run("Count", func(t *testing.T) {
 				count, err := s.CountChangesets(ctx, CountChangesetsOpts{})
 				if err != nil {

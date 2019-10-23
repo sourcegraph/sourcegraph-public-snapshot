@@ -18,7 +18,6 @@ compiler.run((err, stats) => {
     if (stats.hasErrors()) {
         signale.error('Webpack compilation error')
         process.exit(1)
-        return
     }
     signale.success('Webpack compilation done')
 

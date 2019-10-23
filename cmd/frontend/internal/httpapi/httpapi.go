@@ -60,8 +60,6 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 	} else {
 		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)
 		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifUploadProxyHandler(proxy))))
-		m.Get(apirouter.LSIFChallenge).Handler(trace.TraceRoute(http.HandlerFunc(lsifChallengeHandler)))
-		m.Get(apirouter.LSIFVerify).Handler(trace.TraceRoute(http.HandlerFunc(lsifVerifyHandler)))
 		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifProxyHandler(proxy))))
 	}
 

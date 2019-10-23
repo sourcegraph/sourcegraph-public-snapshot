@@ -10,3 +10,4 @@ fork=github.com/sourcegraph/zoekt
 module="$(go get ${fork}@master 2>&1 | grep -E -o ${fork}'@v0.0.0-[0-9a-z-]+')"
 
 go mod edit "-replace=${upstream}=${module}"
+go mod download ${upstream}

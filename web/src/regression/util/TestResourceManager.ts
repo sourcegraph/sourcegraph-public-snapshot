@@ -1,3 +1,5 @@
+export type ResourceDestructor = () => Promise<void>
+
 interface Resource {
     /**
      * Resource type, printed on creation and destruction.
@@ -23,11 +25,7 @@ interface Resource {
 export class TestResourceManager {
     private resources: Resource[] = []
 
-    public add(
-        type: 'User' | 'External service' | 'Authentication provider',
-        name: string,
-        destroy: () => Promise<void>
-    ): void {
+    public add(type: Resource['type'], name: string, destroy: () => Promise<void>): void {
         this.resources.push({ type, name, destroy })
     }
 

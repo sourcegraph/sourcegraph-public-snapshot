@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
@@ -465,12 +464,6 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 		return nil, err
 	}
 
-	// Log the query if not too many have piled up to be logged.
-	select {
-	case bg.QueryLogChan <- bg.QueryLogItem{Query: r.rawQuery(), Err: err}:
-	default:
-	}
-
 	return rr, nil
 }
 
@@ -646,13 +639,19 @@ type getPatternInfoOptions struct {
 	// forceFileSearch, when true, specifies that the search query should be
 	// treated as if every default term had `file:` before it. This can be used
 	// to allow users to jump to files by just typing their name.
-	forceFileSearch bool
+	forceFileSearch         bool
+	performStructuralSearch bool
 }
 
 // getPatternInfo gets the search pattern info for the query in the resolver.
 func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
 	var patternsToCombine []string
-	if opts == nil || !opts.forceFileSearch {
+	isRegExp := false
+	isStructuralPat := false
+	if opts != nil && opts.performStructuralSearch {
+		isStructuralPat = true
+	} else if opts == nil || !opts.forceFileSearch {
+		isRegExp = true
 		for _, v := range r.query.Values(query.FieldDefault) {
 			// Treat quoted strings as literal strings to match, not regexps.
 			var pattern string
@@ -673,6 +672,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		// when not using indexed search. I am unsure what the right solution
 		// is here. Would this code path go away when we switch fully to
 		// indexed search @keegan? This workaround is OK for now though.
+		isRegExp = true
 		patternsToCombine = append(patternsToCombine, ".")
 	}
 
@@ -695,7 +695,8 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 	excludePatterns = append(excludePatterns, langExcludePatterns...)
 
 	patternInfo := &search.PatternInfo{
-		IsRegExp:                     true,
+		IsRegExp:                     isRegExp,
+		IsStructuralPat:              isStructuralPat,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
 		FileMatchLimit:               r.maxResults(),
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
@@ -813,7 +814,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return alertResult, nil
 	}
 
-	p, err := r.getPatternInfo(nil)
+	options := &getPatternInfoOptions{}
+	if r.patternType == "structural" {
+		options = &getPatternInfoOptions{performStructuralSearch: true}
+	}
+	p, err := r.getPatternInfo(options)
+
 	if err != nil {
 		return nil, err
 	}
@@ -1063,6 +1069,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	if len(missingRepoRevs) > 0 {
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+	}
+
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == "literal" {
+		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
 	}
 
 	// If we have some results, only log the error instead of returning it,

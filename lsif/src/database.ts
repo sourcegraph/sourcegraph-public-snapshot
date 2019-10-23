@@ -7,7 +7,7 @@ import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './da
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
-import { PackageModel, DumpID } from './xrepo.models'
+import { PackageModel, DumpId } from './xrepo.models'
 import {
     DefinitionModel,
     DocumentData,
@@ -42,14 +42,14 @@ export class Database {
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded documents.
      * @param resultChunkCache The cache of loaded result chunks.
-     * @param dumpID The ID of the dump for which this database answers queries.
+     * @param dumpId The ID of the dump for which this database answers queries.
      * @param databasePath The path to the database file.
      */
     constructor(
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
         private resultChunkCache: ResultChunkCache,
-        private dumpID: DumpID,
+        private dumpId: DumpId,
         private databasePath: string
     ) {}
 
@@ -208,7 +208,6 @@ export class Database {
      *
      * @param model The constructor for the model type.
      * @param moniker The target moniker.
-     * @param pathTransformer The function used to alter location paths.
      * @param ctx The tracing context.
      */
     public async monikerResults(
@@ -361,7 +360,7 @@ export class Database {
      * @param pairs The values to log.
      */
     private logSpan(ctx: TracingContext, event: string, pairs: { [K: string]: any }): void {
-        logSpan(ctx, event, { ...pairs, dbID: this.dumpID })
+        logSpan(ctx, event, { ...pairs, dbID: this.dumpId })
     }
 }
 

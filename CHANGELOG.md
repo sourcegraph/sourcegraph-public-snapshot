@@ -13,11 +13,20 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- `sourcegraph/server` Docker deployments now support the environment variable `IGNORE_PROCESS_DEATH`. If set to true the container will keep running, even if a subprocess has died. This is useful when manually fixing problems in the container which the container refuses to start. For example a bad databse migration.
+
 ### Changed
 
 ### Fixed
 
 ### Removed
+
+## 3.9.1
+
+### Changed
+
+- Reverted [#6094](https://github.com/sourcegraph/sourcegraph/pull/6094) because it introduced a minor security hole involving only Grafana.
+  [#6075](https://github.com/sourcegraph/sourcegraph/issues/6075) will be fixed with a different approach.
 
 ## 3.9.0
 
@@ -47,6 +56,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Web app: Fix paths with special characters (#6050)
 - Fixed an issue that rendered the search filter `repohascommitafter` unusable in the presence of an empty repository. [#5149](https://github.com/sourcegraph/sourcegraph/issues/5149)
 - An issue where `externalURL` not being configured in the management console could go unnoticed. [#3899](https://github.com/sourcegraph/sourcegraph/issues/3899)
 - Listing branches and refs now falls back to a fast path if there are a large number of branches. Previously we would time out. [#4581](https://github.com/sourcegraph/sourcegraph/issues/4581)

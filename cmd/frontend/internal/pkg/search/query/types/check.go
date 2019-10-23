@@ -39,12 +39,12 @@ type FieldType struct {
 }
 
 // Check typechecks the input query for field and type validity.
-func (c *Config) Check(query *syntax.Query) (*Query, error) {
+func (c *Config) Check(parseTree syntax.ParseTree) (*Query, error) {
 	checkedQuery := Query{
-		Syntax: query,
-		Fields: map[string][]*Value{},
+		ParseTree: parseTree,
+		Fields:    map[string][]*Value{},
 	}
-	for _, expr := range query.Expr {
+	for _, expr := range parseTree {
 		field, fieldType, value, err := c.checkExpr(expr)
 		if err != nil {
 			return nil, err

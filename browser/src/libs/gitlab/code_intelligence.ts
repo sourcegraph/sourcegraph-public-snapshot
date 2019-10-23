@@ -69,8 +69,12 @@ const commitCodeView: Omit<CodeView, 'element'> = {
     toolbarButtonProps,
 }
 
-const resolveView = (element: HTMLElement): CodeView => {
+const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement): CodeView | null => {
     const { pageKind } = getPageInfo()
+
+    if (pageKind === GitLabPageKind.Other) {
+        return null
+    }
 
     if (pageKind === GitLabPageKind.File) {
         return { element, ...singleFileCodeView }

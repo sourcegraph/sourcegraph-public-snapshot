@@ -14,6 +14,7 @@ import (
 type PatternInfo struct {
 	Pattern         string
 	IsRegExp        bool
+	IsStructuralPat bool
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32

@@ -27,7 +27,9 @@ scalar JSONValue
 
 # A mutation.
 type Mutation {
-    # Creates a list of Changesets of a given repository in a code host (e.g. pull request on GitHub)
+    # Creates a list of Changesets of a given repository in a code host (e.g.
+    # pull request on GitHub). If a changeset with the given input already
+    # exists, it's returned instead of a new entry being added to the database.
     createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
     # Adds a list of Changesets to a Campaign.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
@@ -1073,11 +1075,6 @@ type Query {
         # Returns the first n survey responses from the list.
         first: Int
     ): SurveyResponseConnection!
-    # The most frequently occurring recent queries.
-    topQueries(
-        # Maximum number of unique queries to return.
-        limit: Int!
-    ): [QueryCount!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
     # Queries that are only used on Sourcegraph.com.
@@ -1103,15 +1100,6 @@ enum SearchVersion {
 enum SearchPatternType {
     literal
     regexp
-}
-
-# A query and an associated number of times it occurred.
-type QueryCount {
-    # The search query.
-    query: String!
-
-    # The number of times the search query was made.
-    count: Int!
 }
 
 # Configuration details for the browser extension, editor extensions, etc.

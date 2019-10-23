@@ -24,6 +24,7 @@ export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPop
     <CommandListPopoverButton
         {...props}
         buttonClassName="btn btn-link"
+        popoverClassName="popover"
         popoverInnerClassName="border rounded overflow-hidden"
         formClassName="form"
         inputClassName="form-control px-2 py-1 rounded-0"

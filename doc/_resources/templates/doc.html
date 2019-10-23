@@ -26,7 +26,7 @@
                             </button>
                         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.7.2"}} {{$previousReleaseVersion := "3.7"}} {{$currentReleaseRevspec := "v3.8.2"}} {{$currentReleaseVersion := "3.8"}} {{$nextReleaseVersion := "master"}}
+                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.8.2"}} {{$previousReleaseVersion := "3.8"}} {{$currentReleaseRevspec := "v3.9.1"}} {{$currentReleaseVersion := "3.9"}} {{$nextReleaseVersion := "master"}}
                             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
                             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -283,7 +283,12 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/api">Sourcegraph APIs</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/api/graphql">Sourcegraph GraphQL API</a></li>
+                            <li><a href="/api/graphql">GraphQL API</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/api/graphql/examples">Examples</a></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -510,9 +515,11 @@
 
 {{/* Define Page (Right Hand) Nav */}}
 {{define "index"}}
-    {{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
-        <h3 class="page-nav-title">On this page:</h3>
-        <ul>{{template "doc_nav" .}}</ul>
+    {{if gt (len .Doc.Tree) 0}}
+        {{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
+            <h3 class="page-nav-title">On this page:</h3>
+            <ul>{{template "doc_nav" .}}</ul>
+        {{end}}
     {{end}}
     <a class="nav-edit-button btn btn-outline-secondary btn-sm" target="blank" href="https://github.com/sourcegraph/sourcegraph/edit/master/doc/{{.FilePath}}">Edit this page on GitHub</a>
 {{end}}

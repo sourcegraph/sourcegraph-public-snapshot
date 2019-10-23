@@ -9,6 +9,7 @@ import { map, tap, retryWhen, delayWhen, take } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
 import { isErrorLike } from '../../../../shared/src/util/errors'
+import { ResourceDestructor } from './TestResourceManager'
 
 /**
  * Wait until all repositories in the list exist.
@@ -147,7 +148,7 @@ export async function ensureTestExternalService(
         config: Record<string, any>
         waitForRepos?: string[]
     }
-): Promise<() => Promise<void>> {
+): Promise<ResourceDestructor> {
     if (!options.uniqueDisplayName.startsWith('[TEST]')) {
         throw new Error(
             `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
@@ -167,20 +168,22 @@ export async function ensureTestExternalService(
         displayName: options.uniqueDisplayName,
         config: JSON.stringify(options.config),
     }
-    await gqlClient
-        .mutateGraphQL(
-            gql`
-                mutation addExternalService($input: AddExternalServiceInput!) {
-                    addExternalService(input: $input) {
-                        kind
-                        displayName
-                        config
+    dataOrThrowErrors(
+        await gqlClient
+            .mutateGraphQL(
+                gql`
+                    mutation addExternalService($input: AddExternalServiceInput!) {
+                        addExternalService(input: $input) {
+                            kind
+                            displayName
+                            config
+                        }
                     }
-                }
-            `,
-            { input }
-        )
-        .toPromise()
+                `,
+                { input }
+            )
+            .toPromise()
+    )
 
     if (options.waitForRepos && options.waitForRepos.length > 0) {
         await waitForRepos(gqlClient, options.waitForRepos)
@@ -214,6 +217,14 @@ export async function getUser(gqlClient: GraphQLClient, username: string): Promi
                                 id
                                 displayName
                                 name
+                            }
+                        }
+                        settingsCascade {
+                            subjects {
+                                latestSettings {
+                                    id
+                                    contents
+                                }
                             }
                         }
                     }

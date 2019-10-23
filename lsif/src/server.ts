@@ -16,8 +16,6 @@ import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
 import { Backend } from './backend'
-import { Edge, Vertex } from 'lsif-protocol'
-import { identity } from 'lodash'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { pipeline as _pipeline, Readable } from 'stream'
@@ -30,7 +28,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -60,17 +58,14 @@ const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.REDIS_END
 const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
- * Whether or not to disable input validation. Validation is enabled by default.
+ * The interval (in seconds) to schedule the update-tips job.
  */
-const DISABLE_VALIDATION = process.env.DISABLE_VALIDATION === 'true'
+const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 30)
 
 /**
- * The JSON schema validation function to use. If validation is disabled, then
- * this method has no observable behavior.
+ * The interval (in seconds) to schedule the clean-old-jobs job.
  */
-const validateIfEnabled: (data: AsyncIterable<unknown>) => AsyncIterable<Vertex | Edge> = DISABLE_VALIDATION
-    ? identity
-    : validateLsifElements
+const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
@@ -121,10 +116,14 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create queue to publish convert
-    const queue = createQueue('convert', REDIS_ENDPOINT, logger)
+    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
+
+    // Schedule jobs on timers
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
 
     // Update queue size metric on a timer
-    setInterval(async () => queueSizeGauge.set(await queue.count()), 1000)
+    setInterval(() => queue.count().then(count => queueSizeGauge.set(count)), 1000)
 
     const app = express()
 
@@ -265,7 +264,8 @@ async function lsifEndpoints(
                 res: express.Response,
                 next: express.NextFunction
             ): Promise<void> => {
-                const { repository, commit, root } = req.query
+                const { repository, commit, root, skipValidation: skipValidationRaw } = req.query
+                const skipValidation = skipValidationRaw === 'true'
                 checkRepository(repository)
                 checkCommit(commit)
 
@@ -275,10 +275,14 @@ async function lsifEndpoints(
 
                 try {
                     await logAndTraceCall(ctx, 'uploading dump', async () => {
-                        const elements = readGzippedJsonElements(req)
-                        const lsifElements = validateIfEnabled(elements)
-                        const stringifiedLines = stringifyJsonLines(lsifElements)
-                        await pipeline(Readable.from(stringifiedLines), createGzip(), output)
+                        await pipeline(
+                            skipValidation
+                                ? req
+                                : Readable.from(
+                                      stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
+                                  ).pipe(createGzip()),
+                            output
+                        )
                     })
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
@@ -286,7 +290,8 @@ async function lsifEndpoints(
 
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
-                await enqueue(queue, { repository, commit, root: root || '', filename }, tracer, ctx.span)
+                const args = { repository, commit, root: root || '', filename }
+                await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
                 res.send('Upload successful, queued for processing.\n')
             }
         )

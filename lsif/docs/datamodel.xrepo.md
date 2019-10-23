@@ -1,6 +1,6 @@
 # Cross-repo data model
 
-This document outlines the data model used to correlate multiple LSIF dumps. The definition of the cross-repo database tables can be found in [../src/models.xrepo.ts](../src/models.xrepo.ts).
+This document outlines the data model used to correlate multiple LSIF dumps. The definition of the cross-repo database tables can be found in [../src/xrepo.models.ts](../src/xrepo.models.ts).
 
 > Commits have been abbreviated to 7 characters to fit on a GitHub page.
 

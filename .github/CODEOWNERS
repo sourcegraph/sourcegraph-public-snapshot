@@ -57,6 +57,7 @@
 /graphql-schema-linter.config.js @felixfbecker
 /.prettierignore @felixfbecker
 /.github @beyang
+/.github/workflows/lsif.yml @efritz
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
@@ -81,6 +82,7 @@
 /dev/grafana  @sourcegraph/distribution
 /dev/prometheus.sh  @sourcegraph/distribution
 /dev/prometheus  @sourcegraph/distribution
+/dev/zoekt @sourcegraph/core-services
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
 /dev/squash-migrations.sh @efritz

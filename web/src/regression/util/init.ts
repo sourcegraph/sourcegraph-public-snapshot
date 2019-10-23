@@ -3,7 +3,7 @@ import { saveScreenshotsUponFailuresAndClosePage } from '../../../../shared/src/
 import * as path from 'path'
 import { Config } from '../../../../shared/src/e2e/config'
 import { currentProductVersion } from './api'
-import { GraphQLClient } from './GraphQLClient'
+import { GraphQLClient, createGraphQLClient } from './GraphQLClient'
 import * as semver from 'semver'
 import { TestResourceManager } from './TestResourceManager'
 
@@ -77,11 +77,7 @@ export async function getTestFixtures(
     resourceManager: TestResourceManager
 }> {
     const driver = await createAndInitializeDriver(config)
-    const gqlClient = GraphQLClient.newForPuppeteerTest({
-        baseURL: config.sourcegraphBaseUrl,
-        sudoToken: config.sudoToken,
-        username: config.sudoUsername,
-    })
+    const gqlClient = createGraphQLClient(config)
     await setTestDefaults(driver, gqlClient)
     const resourceManager = new TestResourceManager()
 

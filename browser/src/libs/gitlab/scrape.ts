@@ -3,11 +3,13 @@ import { last, take } from 'lodash'
 import { FileSpec, RawRepoSpec, RevSpec } from '../../../../shared/src/util/url'
 import { commitIDFromPermalink } from '../../shared/util/dom'
 import { FileInfo } from '../code_intelligence'
+import { isExtension } from '../../context'
 
 export enum GitLabPageKind {
     File,
     Commit,
     MergeRequest,
+    Other,
 }
 
 /**
@@ -29,8 +31,6 @@ interface GitLabFileInfo extends RawRepoSpec, FileSpec, RevSpec {}
  * Gets information about the page.
  */
 export function getPageInfo(): GitLabInfo {
-    const host = window.location.hostname
-
     const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
     if (!projectLink) {
         throw new Error('Unable to determine project name')
@@ -48,14 +48,18 @@ export function getPageInfo(): GitLabInfo {
         pageKind = GitLabPageKind.Commit
     } else if (window.location.pathname.includes(`${owner}/${projectName}/merge_requests`)) {
         pageKind = GitLabPageKind.MergeRequest
-    } else {
+    } else if (window.location.pathname.includes(`${owner}/${projectName}/blob`)) {
         pageKind = GitLabPageKind.File
+    } else {
+        pageKind = GitLabPageKind.Other
     }
+
+    const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
 
     return {
         owner,
         projectName,
-        rawRepoName: [host, owner, projectName].join('/'),
+        rawRepoName: [hostname, owner, projectName].join('/'),
         pageKind,
     }
 }
@@ -148,18 +152,14 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
  * Gets the head commit ID from the "View file @ ..." link on the code view.
  */
 export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['commitID'] {
-    const commitSHA = codeView.querySelector<HTMLElement>('.file-actions .commit-sha')
-    if (!commitSHA) {
-        throw buildFileError('no-commit-sha')
+    const fileActionsLinks = codeView.querySelectorAll<HTMLLinkElement>('.file-actions a')
+    for (const linkElement of fileActionsLinks) {
+        const revMatch = new URL(linkElement.href).pathname.match(/blob\/(.*?)\//)
+        if (revMatch) {
+            return revMatch[1]
+        }
     }
-
-    const commitAnchor = commitSHA.closest('a')!
-    const revMatch = new URL(commitAnchor.href).pathname.match(/blob\/(.*?)\//)
-    if (!revMatch) {
-        throw new Error('Unable to determine head revision from code view')
-    }
-
-    return revMatch[1]
+    throw new Error('Unable to determine head revision from code view')
 }
 
 interface GitLabCommitPageInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 'projectName'> {

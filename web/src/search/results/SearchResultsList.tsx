@@ -345,6 +345,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     {/* Info Bar */}
                                     <SearchResultsInfoBar
                                         {...this.props}
+                                        query={parsedQuery}
                                         results={results}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
                                         displayPerformanceWarning={this.state.displayPerformanceWarning}
