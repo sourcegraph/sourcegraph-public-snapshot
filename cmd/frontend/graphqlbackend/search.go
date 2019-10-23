@@ -77,10 +77,9 @@ func (r *schemaResolver) Search(args *searchArgs) (searchIntf, error) {
 	}
 
 	var queryString string
-	switch searchType {
-	case "literal":
+	if searchType == "literal" {
 		queryString = query.ConvertToLiteral(args.Query)
-	default:
+	} else {
 		queryString = args.Query
 	}
 
