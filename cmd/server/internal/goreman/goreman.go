@@ -3,6 +3,7 @@ package goreman
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
@@ -57,7 +58,7 @@ func readProcfile(content []byte) error {
 
 // ProcDiedAction specifies the behaviour Goreman takes if a process exits
 // with a non-zero exit code.
-type ProcDiedAction int
+type ProcDiedAction uint
 
 const (
 	// Shutdown will shutdown Goreman if any process shuts down with a
@@ -86,6 +87,9 @@ func Start(contents []byte, opts Options) error {
 	err := readProcfile(contents)
 	if err != nil {
 		return err
+	}
+	if opts.ProcDiedAction > Ignore {
+		return fmt.Errorf("invalid ProcDiedAction %v", opts.ProcDiedAction)
 	}
 	procDiedAction = opts.ProcDiedAction
 	if opts.RPCAddr != "" {
