@@ -814,11 +814,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return alertResult, nil
 	}
 
-	patternInfo := &getPatternInfoOptions{}
+	options := &getPatternInfoOptions{}
 	if r.patternType == "structural" {
-		patternInfo = &getPatternInfoOptions{performStructuralSearch: true}
+		options = &getPatternInfoOptions{performStructuralSearch: true}
 	}
-	p, err := r.getPatternInfo(patternInfo)
+	p, err := r.getPatternInfo(options)
 
 	if err != nil {
 		return nil, err
