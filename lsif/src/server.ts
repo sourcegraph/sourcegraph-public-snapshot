@@ -119,8 +119,8 @@ async function main(logger: Logger): Promise<void> {
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL)
-    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL * 1000)
 
     // Update queue size metric on a timer
     setInterval(() => queue.count().then(count => queueSizeGauge.set(count)), 1000)
