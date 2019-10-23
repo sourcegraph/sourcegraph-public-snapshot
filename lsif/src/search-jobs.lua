@@ -10,20 +10,12 @@
         ARGV[3] maximum number of jobs to search
 ]]
 
---[[
-    Searchable argument keys. This list must be updated if a new
-    job type is added to the worker.
-]]
 local searchableArguments = {
     'repository',
     'commit',
     'root',
 }
 
---[[
-    A map from queue names to the command used to retrieve the
-    set of ids within an index range.
-]]
 local commandsByQueue = {
     ['active'] = 'LRANGE',
     ['waiting'] = 'LRANGE',
@@ -32,12 +24,14 @@ local commandsByQueue = {
     ['failed'] = 'ZREVRANGE',
 }
 
---[[
-    Extract a the text from a job payload that can be searched.
-    This includes the job name, the failed reason and stacktrace,
-    and a whitelist of argument (defined above). The table returned
-    may contain nil values.
-]]
+local matching = {}
+local numMatching = 0
+local offset = 0
+local chunkSize = min(tonumber(ARGV[2]), tonumber(ARGV[3]))
+local command = commandsByQueue[KEYS[2]] -- determine command for this queue
+local terms = string.gmatch(ARGV[1], '%S+') -- split search query into words
+
+-- Extract values that we'll search over from a job.
 local function extractValues(id, key)
     local values = {
         id,
@@ -54,25 +48,21 @@ local function extractValues(id, key)
     return values
 end
 
---[[
-    Determine if the job with the given identifier matches the search
-    query. A job matches if every word in the search query is contained
-    in _some_ field of the job.
-]]
+-- Determine if a job contains every word in the search query.
 local function jobMatches(id, key)
     local values = extractValues(id, key)
 
-    -- Split search term by whitespace
-    for term in string.gmatch(ARGV[1], '%S+') do
+    for term in terms do
         local found = false
         for _, value in pairs(values) do
-            -- See if value contains term (do a literal search from first index)
+            -- string.find is weird  the last bool argument enables literal mode
             if type(value) == 'string' and string.find(value, term, 1, true) then
                 found = true
                 break
             end
         end
 
+        -- Didn't contain this term
         if not found then
             return false
         end
@@ -82,19 +72,11 @@ local function jobMatches(id, key)
     return true
 end
 
-
-local offset = 0
-local limit = ARGV[3] / ARGV[2] -- TODO - this is ok?
-local matching = {}
-local numMatching = 0
-
--- Continue search until we have enough results or we've seen to omany jobs
-while numMatching < tonumber(ARGV[2]) and offset + limit < tonumber(ARGV[3]) then
-    -- TODO - do this in chunks instead
-    -- Get ids of all jobs in the queue in the range `[0, max-search)`. The queue is either
-    -- backed by a list or a set and can be in ascending or descending order. We determine
-    -- the redis command via the queue name.
-    local ids = redis.call(commandsByQueue[KEYS[2]], KEYS[1] .. KEYS[2], offset, offset + limit - 1)
+-- Search while we don't have enough results and haven't seen too many jobs
+while numMatching < tonumber(ARGV[2]) and offset < ARGV[3] do
+    local endIndex = min(offset + limit - 1, tonumber(ARGV[3]))
+    local ids = redis.call(command, KEYS[1] .. KEYS[2], offset, endIndex)
+    offset = endIndex + 1
 
     for _, v in pairs(ids) do
         if jobMatches(v, KEYS[1] .. v) then
@@ -103,18 +85,15 @@ while numMatching < tonumber(ARGV[2]) and offset + limit < tonumber(ARGV[3]) the
             table.insert(data, 'id')
             table.insert(data, v)
 
-            -- Collect all matching data
+            -- Accumulate matching data
             table.insert(matching, data)
             numMatching = numMatching + 1
 
-            -- Stop when we hit our limit
             if numMatching >= tonumber(ARGV[2]) then
                 break
             end
         end
     end
-
-    offset = offset + limit
 end
 
 return matching
