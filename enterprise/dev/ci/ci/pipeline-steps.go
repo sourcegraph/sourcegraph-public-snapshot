@@ -123,6 +123,9 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 
 // End-to-end tests.
 func addE2E(c Config) func(*bk.Pipeline) {
+	if !(c.taggedRelease || c.isBextReleaseBranch || c.patchNoTest || c.patch) {
+		return noop
+	}
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":chromium:",
 			// Avoid crashing the sourcegraph/server containers. See
@@ -188,6 +191,8 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("popd"))
 }
 
+func noop(*bk.Pipeline) {}
+
 // Adds a Buildkite pipeline "Wait".
 func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
@@ -195,6 +200,9 @@ func wait(pipeline *bk.Pipeline) {
 
 // Build Sourcegraph Server Docker image candidate
 func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
+	if !(c.taggedRelease || c.isBextReleaseBranch || c.patchNoTest || c.patch) {
+		return noop
+	}
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":docker:",
 			bk.Cmd("pushd enterprise"),
@@ -208,6 +216,9 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 
 // Clean up Sourcegraph Server Docker image candidate
 func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
+	if !(c.taggedRelease || c.isBextReleaseBranch || c.patchNoTest || c.patch) {
+		return noop
+	}
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":sparkles:",
 			bk.Cmd("docker image rm -f sourcegraph/server:"+c.version+"_candidate"))
