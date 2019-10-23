@@ -59,7 +59,7 @@ type searchArgs struct {
 	First       *int32
 }
 
-type searchIntf interface {
+type searchImplementer interface {
 	Results(context.Context) (*searchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
@@ -67,7 +67,7 @@ type searchIntf interface {
 }
 
 // Search provides search results and suggestions.
-func (r *schemaResolver) Search(args *searchArgs) (searchIntf, error) {
+func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
