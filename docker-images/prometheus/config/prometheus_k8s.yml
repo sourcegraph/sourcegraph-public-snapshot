@@ -6,6 +6,10 @@ alerting:
   alertmanagers:
     - kubernetes_sd_configs:
       - role: endpoints
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_service_name]
+          regex: alertmanager
+          action: keep
 
 rule_files:
   - '*_rules.yml'
