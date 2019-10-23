@@ -54,14 +54,21 @@ func readProcfile(content []byte) error {
 	return nil
 }
 
+type Options struct {
+	// RPCAddr is the address to listen for Goreman RPCs.
+	RPCAddr string
+}
+
 // Start starts up the Procfile.
-func Start(rpcAddr string, contents []byte) error {
+func Start(contents []byte, opts Options) error {
 	err := readProcfile(contents)
 	if err != nil {
 		return err
 	}
-	if err := startServer(rpcAddr); err != nil {
-		return err
+	if opts.RPCAddr != "" {
+		if err := startServer(opts.RPCAddr); err != nil {
+			return err
+		}
 	}
 	startProcs()
 	return waitProcs()

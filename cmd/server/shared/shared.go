@@ -171,7 +171,9 @@ func Main() {
 		log.Fatal(err)
 	}
 
-	err = goreman.Start(goremanAddr, []byte(strings.Join(procfile, "\n")))
+	err = goreman.Start([]byte(strings.Join(procfile, "\n")), goreman.Options{
+		RPCAddr: goremanAddr,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

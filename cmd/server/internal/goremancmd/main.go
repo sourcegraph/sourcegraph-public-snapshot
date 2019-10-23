@@ -26,7 +26,9 @@ func do() error {
 		return err
 	}
 
-	return goreman.Start(goremanAddr, procfile)
+	return goreman.Start(procfile, goreman.Options{
+		RPCAddr: goremanAddr,
+	})
 }
 
 func main() {
