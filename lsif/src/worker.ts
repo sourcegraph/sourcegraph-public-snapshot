@@ -43,7 +43,7 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 /**
  * The maximum age (in seconds) that a job (completed or queued) will remain in redis.
  */
-const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 7 * 24 * 60 * 60)
+const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 60 * 60 * 24 * 7)
 
 /**
  * Wrap a job processor with instrumentation.
