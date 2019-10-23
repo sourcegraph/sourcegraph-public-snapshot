@@ -34,6 +34,9 @@ import {
     RangeId,
 } from 'lsif-protocol'
 import { DisjointSet } from './disjoint-set'
+import { TracingContext } from './tracing'
+import { createSilentLogger } from './logging'
+import { Logger } from 'winston'
 
 /**
  * Identifiers of result set vertices.
@@ -119,6 +122,12 @@ export class Correlator {
      * The set of exported moniker identifiers that have package information attached.
      */
     public exportedMonikers = new Set<MonikerId>()
+
+    private logger: Logger
+
+    constructor({ logger = createSilentLogger() }: TracingContext = { logger: createSilentLogger() }) {
+        this.logger = logger
+    }
 
     /**
      * Process a single vertex or edge.
@@ -306,7 +315,7 @@ export class Correlator {
             return
         }
 
-        console.warn(`Unknown definition or reference result ${edge.outV}.`)
+        this.logger.debug(`Unknown definition or reference result ${edge.outV}.`)
     }
 
     /**
