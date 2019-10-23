@@ -27,7 +27,7 @@ local commandsByQueue = {
 local matching = {}
 local numMatching = 0
 local offset = 0
-local chunkSize = min(tonumber(ARGV[2]), tonumber(ARGV[3]))
+local chunkSize = math.min(tonumber(ARGV[2]), tonumber(ARGV[3]))
 local command = commandsByQueue[KEYS[2]] -- determine command for this queue
 local terms = string.gmatch(ARGV[1], '%S+') -- split search query into words
 
@@ -74,7 +74,7 @@ end
 
 -- Search while we don't have enough results and haven't seen too many jobs
 while numMatching < tonumber(ARGV[2]) and offset < ARGV[3] do
-    local endIndex = min(offset + limit - 1, tonumber(ARGV[3]))
+    local endIndex = math.min(offset + limit - 1, tonumber(ARGV[3]))
     local ids = redis.call(command, KEYS[1] .. KEYS[2], offset, endIndex)
     offset = endIndex + 1
 
