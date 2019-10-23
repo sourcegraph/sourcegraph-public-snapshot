@@ -1,22 +1,31 @@
 package markdown
 
 import (
+	"regexp"
+	"sync"
+
 	"github.com/microcosm-cc/bluemonday"
 	gfm "github.com/shurcooL/github_flavored_markdown"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+)
+
+var (
+	once   sync.Once
+	policy *bluemonday.Policy
 )
 
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
 func Render(content string) string {
-	unsafeHTML := gfm.Markdown([]byte(content))
+	once.Do(func() {
+		policy = bluemonday.UGCPolicy()
+		policy.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
+		policy.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
+		policy.AllowAttrs("class").Matching(regexp.MustCompile(`^anchor$`)).OnElements("a")
+		policy.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
+		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
+		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
+		policy.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
+	})
 
-	p := bluemonday.UGCPolicy()
-	p.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
-	p.AllowAttrs("rel").Matching(lazyregexp.New(`^nofollow$`)).OnElements("a")
-	p.AllowAttrs("class").Matching(lazyregexp.New(`^anchor$`)).OnElements("a")
-	p.AllowAttrs("aria-hidden").Matching(lazyregexp.New(`^true$`)).OnElements("a")
-	p.AllowAttrs("type").Matching(lazyregexp.New(`^checkbox$`)).OnElements("input")
-	p.AllowAttrs("checked", "disabled").Matching(lazyregexp.New(`^$`)).OnElements("input")
-	p.AllowAttrs("class").Matching(lazyregexp.New("^language-[a-zA-Z0-9]+$")).OnElements("code")
-	return string(p.SanitizeBytes(unsafeHTML))
+	unsafeHTML := gfm.Markdown([]byte(content))
+	return string(policy.SanitizeBytes(unsafeHTML))
 }
