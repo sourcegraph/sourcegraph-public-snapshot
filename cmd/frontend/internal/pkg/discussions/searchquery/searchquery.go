@@ -2,9 +2,10 @@
 package searchquery
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 	reUnquotedValue          = `([^ ]+(\s|$))`
 	reValue                  = `(?P<Value>` + reQuotedValue + `|` + reUnquotedValue + `)`
 	reOperationAndValue      = `(?P<OperationAndValue>` + reOperationPrefix + `:` + reValue + `)`
-	re                       = regexp.MustCompile(`\s?` + reOperationAndValue + `\s?`)
+	re                       = lazyregexp.New(`\s?` + reOperationAndValue + `\s?`)
 )
 
 // Parse parses a search query. See the tests for examples of what this looks like.

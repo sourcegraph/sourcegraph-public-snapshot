@@ -2,11 +2,12 @@ package query
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var fieldRx = regexp.MustCompile(`^-?[a-zA-Z]+:`)
+var fieldRx = lazyregexp.New(`^-?[a-zA-Z]+:`)
 
 // ConvertToLiteral quotes the input query for literal search.
 func ConvertToLiteral(input string) string {
@@ -41,7 +42,7 @@ func ConvertToLiteral(input string) string {
 	return input
 }
 
-var tokenRx = regexp.MustCompile(`("([^"\\]|[\\].)*"|\s+|\S+)`)
+var tokenRx = lazyregexp.New(`("([^"\\]|[\\].)*"|\s+|\S+)`)
 
 // tokenize returns a slice of the double-quoted strings, contiguous chunks
 // of non-whitespace, and contiguous chunks of whitespace in the input.

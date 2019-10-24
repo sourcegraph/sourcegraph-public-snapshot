@@ -5,12 +5,12 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func formatTargetRepoLinesText(tr *types.DiscussionThreadTargetRepo) string {
@@ -35,7 +35,7 @@ func formatTargetRepoLinesText(tr *types.DiscussionThreadTargetRepo) string {
 	return b.String()
 }
 
-var dataLineMatch = regexp.MustCompile(`\<tr\>\<td class\=\"line\" data\-line\=\"(\d+)\"\>`)
+var dataLineMatch = lazyregexp.New(`\<tr\>\<td class\=\"line\" data\-line\=\"(\d+)\"\>`)
 
 func formatTargetRepoLinesHTML(ctx context.Context, tr *types.DiscussionThreadTargetRepo) (template.HTML, error) {
 	if !tr.HasSelection() || tr.Path == nil {

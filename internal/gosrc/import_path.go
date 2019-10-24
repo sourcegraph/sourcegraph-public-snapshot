@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // Adapted from github.com/golang/gddo/gosrc.
@@ -77,7 +78,7 @@ func resolveStaticImportPath(importPath string) (*Directory, error) {
 
 // gopkgSrcTemplate matches the go-source dir templates specified by the
 // popular gopkg.in
-var gopkgSrcTemplate = regexp.MustCompile(`https://(github.com/[^/]*/[^/]*)/tree/([^/]*)\{/dir\}`)
+var gopkgSrcTemplate = lazyregexp.New(`https://(github.com/[^/]*/[^/]*)/tree/([^/]*)\{/dir\}`)
 
 func resolveDynamicImportPath(client *http.Client, importPath string) (*Directory, error) {
 	metaProto, im, sm, err := fetchMeta(client, importPath)
