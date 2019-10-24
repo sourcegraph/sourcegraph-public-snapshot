@@ -53,8 +53,9 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given name. If the name refers to a repository on a known external
-// service (such as a code host) that is not yet present in the database, it will automatically look up the
+// GetByName retrieves the repository with the given name. On sourcegraph.com,
+// if the name refers to a repository on a github.com or gitlab.com that is not
+// yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
 func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
@@ -65,22 +66,26 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	defer done()
 
 	repo, err := db.Repos.GetByName(ctx, name)
-	if err != nil && envvar.SourcegraphDotComMode() {
+	if err == nil {
+		return repo, nil
+	}
+
+	_, notFound := err.(interface{ NotFound() bool })
+	if notFound && envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
 		if err := s.AddGitHubDotComRepository(ctx, name); err != nil {
 			return nil, err
 		}
 		return db.Repos.GetByName(ctx, name)
-	} else if err != nil {
-		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
-			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
-				Scheme:   "https",
-				Host:     "sourcegraph.com",
-				Path:     string(name),
-				RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
-			}).String()}
-		}
-		return nil, err
+	}
+
+	if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
+		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
+			Scheme:   "https",
+			Host:     "sourcegraph.com",
+			Path:     string(name),
+			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
+		}).String()}
 	}
 
 	return repo, nil
