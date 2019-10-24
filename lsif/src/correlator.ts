@@ -126,7 +126,7 @@ export class Correlator {
 
     private logger: Logger
 
-    constructor({ logger = createSilentLogger() }: TracingContext = { logger: createSilentLogger() }) {
+    constructor({ logger = createSilentLogger() }: TracingContext = {}) {
         this.logger = logger
     }
 
