@@ -27,12 +27,12 @@ func (e *usageError) Error() string {
 	return e.Msg
 }
 
-func dockerAddr(addr string) string {
+func dockerAddr(addr string, sourcegraphHost string) string {
 	_, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		port = "3434"
 	}
-	return "host.docker.internal:" + port
+	return sourcegraphHost + ":" + port
 }
 
 func usageErrorOutput(cmd *ffcli.Command, cmdPath string, err error) string {
@@ -86,6 +86,7 @@ func main() {
 		globalReposDir = globalFlags.String("repos-dir", "", "src-expose's git directories. src-expose creates a git repo per directory synced. The git repo is then served to Sourcegraph. The repositories are stored and served relative to this directory. Default: ~/.sourcegraph/src-expose-repos")
 		globalConfig   = globalFlags.String("config", "", "If set will be used instead of command line arguments to specify configuration.")
 		globalAddr     = globalFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
+		sourcegraphHost = globalFlags.String("sourcegraph-host", "host.docker.internal", "the sourcegraph instance hostname")
 
 		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
 
@@ -207,7 +208,7 @@ Paste the following configuration as an Other External Service in Sourcegraph:
     "repos": ["src-expose"] // This may change in versions later than 3.9
   }
 
-`, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
+`, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr, *sourcegraphHost))
 
 			go func() {
 				if err := serveRepos(*globalAddr, s.Destination); err != nil {
