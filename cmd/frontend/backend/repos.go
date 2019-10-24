@@ -122,7 +122,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	}
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
-	// database in sourcegraph.com if that repo is from github.com or gitlab.com
+	// database on sourcegraph.com if that repo is from github.com or gitlab.com
 	_, err = repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
 	return err
 }
