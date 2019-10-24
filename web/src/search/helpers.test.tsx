@@ -1,6 +1,6 @@
 import { getSearchTypeFromQuery, toggleSearchType, filterSearchSuggestions, insertSuggestionInQuery } from './helpers'
 import { SearchType } from './results/SearchResults'
-import { addTypeToSuggestions, baseSuggestions } from './getSearchFilterSuggestions'
+import { addTypeToSuggestions, baseSuggestions, filterAliases } from './getSearchFilterSuggestions'
 import startsWith from 'lodash/fp/startsWith'
 import map from 'lodash/map'
 import forEach from 'lodash/forEach'
@@ -106,18 +106,11 @@ describe('search/helpers', () => {
                 )
             })
 
-            test('filters suggestions for filter alias "r:"', () => {
-                forEach(
-                    {
-                        r: 'repo',
-                        g: 'repogroup',
-                        language: 'lang',
-                    },
-                    (filter: string, alias: string) => {
-                        const [{ title }] = filterSearchSuggestions(alias, alias.length, filterSuggestions)
-                        expect(title).toBe(filter)
-                    }
-                )
+            test('filters suggestions for filter aliases', () => {
+                forEach(filterAliases, (filter: string, alias: string) => {
+                    const [{ title }] = filterSearchSuggestions(alias, alias.length, filterSuggestions)
+                    expect(title).toBe(filter)
+                })
             })
 
             test('does not throw for query ":"', () => {
