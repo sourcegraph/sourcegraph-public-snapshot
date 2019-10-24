@@ -170,14 +170,8 @@ export const filterSearchSuggestions = (
 ): Suggestion[] => {
     const textUntilCursor = query.substring(0, cursorPosition)
     const [lastWord] = textUntilCursor.match(/([^\s]+)$/) || ['']
-    const [_filter, valueSearch] = lastWord.split(':')
-    let filter = _filter.replace('-', '')
-
-    if (!filter) {
-        return []
-    }
-
-    filter = isValidFilterAlias(filter) ? filterAliases[filter] : filter
+    const [_filter, valueSearch] = lastWord.replace(/^-/, '').split(':')
+    const filter = isValidFilterAlias(_filter) ? filterAliases[_filter] : _filter
 
     if (isValidFilter(filter) && filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
         const suggestionsToShow = filterSuggestions[filter] || []
