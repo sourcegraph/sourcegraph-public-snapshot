@@ -145,5 +145,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
         )
     }
 
+    // TODO - do on-refresh of stats
+
     private queryJobs = (args: FilteredConnectionQueryArgs) => fetchLsifJobs({ ...args })
 }

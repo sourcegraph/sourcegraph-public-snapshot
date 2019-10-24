@@ -53,42 +53,85 @@ export class SiteAdminLsifJobPage extends React.Component<Props, State> {
 
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.job && (
-                    <>
-                        <p>id: {this.state.job.id}</p>
-                        <p>name: {this.state.job.name}</p>
-                        <p>args: {JSON.stringify(this.state.job.args)}</p>
-                        <p>status: {this.state.job.status}</p>
-                        <p>progress: {this.state.job.progress}</p>
-                        <p>failedReason: {this.state.job.failedReason}</p>
-                        <p>stacktrace: {this.state.job.stacktrace}</p>
-                        <p>
-                            timestamp:{' '}
+                    <table className="table repo-settings-index-page__stats">
+                        <tbody>
+                            <tr>
+                                <th>ID</th>
+                                <td>{this.state.job.id}</td>
+                            </tr>
+                            <tr>
+                                <th>Name</th>
+                                <td>{this.state.job.name}</td>
+                            </tr>
+
+                            <tr>
+                                <th>Args</th>
+                                <td>
+                                    {this.state.job.args && (
+                                        <table>
+                                            {Object.entries(this.state.job.args)
+                                                .sort(([a], [b]) => a.localeCompare(b))
+                                                .map(([key, value]) => (
+                                                    <>
+                                                        <tr>
+                                                            <th>{key}</th>
+                                                            <td>{value}</td>
+                                                        </tr>
+                                                    </>
+                                                ))}
+                                        </table>
+                                    )}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td>{this.state.job.status}</td>
+                            </tr>
+                            <tr>
+                                <th>Progress</th>
+                                <td>{this.state.job.progress}</td>
+                            </tr>
+                            {this.state.job.failedReason && (
+                                <>
+                                    <tr>
+                                        <th>Failed Reason</th>
+                                        <td>{this.state.job.failedReason}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Stacktrace</th>
+                                        <td>
+                                            <pre>{this.state.job.stacktrace}</pre>
+                                        </td>
+                                    </tr>
+                                </>
+                            )}
                             {this.state.job.timestamp && (
-                                <>
-                                    {' '}
-                                    <Timestamp date={this.state.job.timestamp} />{' '}
-                                </>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <td>
+                                        <Timestamp date={this.state.job.timestamp} />
+                                    </td>
+                                </tr>
                             )}
-                        </p>
-                        <p>
-                            processedOn:{' '}
                             {this.state.job.processedOn && (
-                                <>
-                                    {' '}
-                                    <Timestamp date={this.state.job.processedOn} />{' '}
-                                </>
+                                <tr>
+                                    <th>Processed On</th>
+                                    <td>
+                                        <Timestamp date={this.state.job.processedOn} />
+                                    </td>
+                                </tr>
                             )}
-                        </p>
-                        <p>
-                            finishedOn:{' '}
                             {this.state.job.finishedOn && (
-                                <>
-                                    {' '}
-                                    <Timestamp date={this.state.job.finishedOn} />{' '}
-                                </>
+                                <tr>
+                                    <th>Finished On</th>
+                                    <td>
+                                        <Timestamp date={this.state.job.finishedOn} />
+                                    </td>
+                                </tr>
                             )}
-                        </p>
-                    </>
+                        </tbody>
+                    </table>
                 )}
             </div>
         )

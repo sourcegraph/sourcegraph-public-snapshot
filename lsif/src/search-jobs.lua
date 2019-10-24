@@ -24,17 +24,24 @@ local commandsByQueue = {
     ['failed'] = 'ZREVRANGE',
 }
 
-local matching = {}
-local numMatching = 0
-local offset = 0
-local chunkSize = math.min(tonumber(ARGV[2]), tonumber(ARGV[3]))
-local command = commandsByQueue[KEYS[2]] -- determine command for this queue
-local terms = string.gmatch(ARGV[1], '%S+') -- split search query into words
+local prefix = KEYS[1]
+local queueName = KEYS[2]
+local command = commandsByQueue[queueName]
+local query = ARGV[1]
+local limit = tonumber(ARGV[2])
+local maxJobsToSearch = tonumber(ARGV[3])
+local chunkSize = math.min(limit, maxJobsToSearch)
+
+local terms = {}
+
+-- split search query into words
+for term in string.gmatch(query, '%S+') do
+    table.insert(terms, term)
+end
 
 -- Extract values that we'll search over from a job.
 local function extractValues(id, key)
     local values = {
-        id,
         redis.call('HGET', key, 'name'),
         redis.call('HGET', key, 'failedReason'),
         redis.call('HGET', key, 'stacktrace'),
@@ -52,7 +59,7 @@ end
 local function jobMatches(id, key)
     local values = extractValues(id, key)
 
-    for term in terms do
+    for _, term in pairs(terms) do
         local found = false
         for _, value in pairs(values) do
             -- string.find is weird  the last bool argument enables literal mode
@@ -72,24 +79,30 @@ local function jobMatches(id, key)
     return true
 end
 
+local matching = {}
+local numMatching = 0
+local offset = 0
+
 -- Search while we don't have enough results and haven't seen too many jobs
-while numMatching < tonumber(ARGV[2]) and offset < ARGV[3] do
-    local endIndex = math.min(offset + limit - 1, tonumber(ARGV[3]))
-    local ids = redis.call(command, KEYS[1] .. KEYS[2], offset, endIndex)
+while numMatching < limit and offset < maxJobsToSearch do
+    local endIndex = math.min(offset + chunkSize - 1, maxJobsToSearch)
+    local ids = redis.call(command, prefix .. queueName, offset, endIndex)
     offset = endIndex + 1
 
-    for _, v in pairs(ids) do
-        if jobMatches(v, KEYS[1] .. v) then
+    for _, id in pairs(ids) do
+        local key = prefix .. id
+
+        if jobMatches(id, key) then
             -- Get job data and add the job id to the payload
-            local data = redis.call('HGETALL', KEYS[1] .. v)
+            local data = redis.call('HGETALL', key)
             table.insert(data, 'id')
-            table.insert(data, v)
+            table.insert(data, id)
 
             -- Accumulate matching data
             table.insert(matching, data)
             numMatching = numMatching + 1
 
-            if numMatching >= tonumber(ARGV[2]) then
+            if numMatching >= limit then
                 break
             end
         end
