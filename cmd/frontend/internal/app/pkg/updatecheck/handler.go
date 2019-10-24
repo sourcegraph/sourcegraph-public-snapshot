@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -121,7 +121,7 @@ func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (boo
 	return clientVersion.LessThan(latestReleaseBuild.Version), nil
 }
 
-var dateRegex = regexp.MustCompile("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
+var dateRegex = lazyregexp.New("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
 var timeNow = time.Now
 
 // canUpdateDate returns true if clientVersionString contains a date

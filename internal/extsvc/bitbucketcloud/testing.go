@@ -3,11 +3,11 @@ package bitbucketcloud
 import (
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func GetenvTestBitbucketCloudUsername() string {
@@ -45,7 +45,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	}
 }
 
-var normalizer = regexp.MustCompile("[^A-Za-z0-9-]+")
+var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
 
 func normalize(path string) string {
 	return normalizer.ReplaceAllLiteralString(path, "-")

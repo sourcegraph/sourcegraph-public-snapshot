@@ -4,10 +4,11 @@ package goreman
 import (
 	"errors"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // -- process information structure.
@@ -29,7 +30,7 @@ var maxProcNameLength int
 // read Procfile and parse it.
 func readProcfile(content []byte) error {
 	procs = map[string]*procInfo{}
-	re := regexp.MustCompile(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
+	re := lazyregexp.New(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
 	for _, line := range strings.Split(string(content), "\n") {
 		tokens := strings.SplitN(line, ":", 2)
 		if len(tokens) != 2 || tokens[0][0] == '#' {

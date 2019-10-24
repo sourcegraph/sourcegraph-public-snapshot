@@ -1,10 +1,10 @@
 package routevar
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // A RepoRev specifies a repo at a revision. The revision need not be an absolute
@@ -37,7 +37,7 @@ const (
 	RevPattern = `(?P<rev>(?:` + pathComponentNotDelim + `/)*` + pathComponentNotDelim + `)`
 )
 
-var repoPattern = regexp.MustCompile("^" + RepoPattern + "$")
+var repoPattern = lazyregexp.New("^" + RepoPattern + "$")
 
 // ParseRepo parses a repo path string. If spec is invalid, an
 // InvalidError is returned.

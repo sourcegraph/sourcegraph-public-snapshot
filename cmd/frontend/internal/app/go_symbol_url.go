@@ -15,12 +15,12 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 	"golang.org/x/tools/go/buildutil"
 
@@ -374,7 +374,7 @@ func UriToPath(uri lsp.DocumentURI) string {
 	return u.Path
 }
 
-var regDriveLetter = regexp.MustCompile("^/[a-zA-Z]:")
+var regDriveLetter = lazyregexp.New("^/[a-zA-Z]:")
 
 // UriToRealPath converts the given file URI to the platform specific path
 func UriToRealPath(uri lsp.DocumentURI) string {
