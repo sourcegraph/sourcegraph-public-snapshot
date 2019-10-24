@@ -149,7 +149,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                     ) : isErrorLike(hoverOrError) ? (
                         <div
                             className={classNames(
-                                'hover-overlay__row hover-overlay__hover-error',
+                                'hover-overlay__row',
+                                'hover-overlay__hover-error',
                                 this.props.errorAlertClassName
                             )}
                         >
