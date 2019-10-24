@@ -110,33 +110,17 @@ func (s *repos) AddGitHubDotComRepository(ctx context.Context, name api.RepoName
 	if err != nil {
 		return err
 	}
+
 	if gitserverRepo != nil {
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
 			return err
 		}
 	}
 
-	// Try to look up and add the repo.
-	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
-	if err != nil {
-		return err
-	}
-	if result.Repo != nil {
-		// Allow anonymous users on Sourcegraph.com to enable repositories just by visiting them, but
-		// everywhere else, require server admins to explicitly enable repositories.
-		enableAutoAddedRepos := envvar.SourcegraphDotComMode()
-		if err := s.Upsert(ctx, api.InsertRepoOp{
-			Name:         result.Repo.Name,
-			Description:  result.Repo.Description,
-			Fork:         result.Repo.Fork,
-			Archived:     result.Repo.Archived,
-			Enabled:      enableAutoAddedRepos,
-			ExternalRepo: result.Repo.ExternalRepo,
-		}); err != nil {
-			return err
-		}
-	}
-	return nil
+	// Looking up the repo in repo-updater makes it sync that repo to the
+	// database in sourcegraph.com if that repo is from github.com or gitlab.com
+	_, err = repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
+	return err
 }
 
 func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
