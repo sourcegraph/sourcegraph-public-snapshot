@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Support hyphens in Bitbucket Cloud team names. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
+
 ### Removed
 
 ## 3.9.2
