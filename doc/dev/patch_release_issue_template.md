@@ -34,7 +34,7 @@ In [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph):
   ```
   find . -type f -name '*.md' -exec sed -i '' -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEW_VERSION/g' {} +
   ```
-  If you have GNU sed, run the following instead:
+  If you have GNU sed (default on Linux), run the following instead:
   ```
   find . -type f -name '*.md' -exec sed -i -E 's/sourcegraph\/server:[0-9\.]+/sourcegraph\/server:$NEW_VERSION/g' {} +
   ```
