@@ -41,6 +41,14 @@ type Mutation {
     # The campaign plan is computed asynchronously.
     # Check its status property and query it by its id to see its latest state.
     previewCampaignPlan(specification: CampaignPlanSpecification!): CampaignPlan!
+    # Cancel a campaign plan that is being generated.
+    # Cancellation expresses a desinterest in the campaign plan and is best-effort.
+    # It may not be relied upon.
+    # The return of this mutation does not mean the plan was fully cancelled yet,
+    # only that the desinterest in the campaign plan was acknowledged.
+    # This mutation is idempotent and a noop if called for a completed campaign plan.
+    # There is no requirement to call this mutation, it is a performance optimization.
+    cancelCampaignPlan(plan: ID!): EmptyResponse
 
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
