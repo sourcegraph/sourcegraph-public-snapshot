@@ -452,7 +452,31 @@ type CampaignPlan implements Node {
     changesets(first: Int): ChangesetConnection!
 
     # The combined diff of all changesets that will be created by the campaign.
-    repositoryDiffs: [PreviewRepositoryComparison!]!
+    repositoryDiff(first: Int): PreviewRepositoryComparisonConnection!
+}
+
+# A paginated list of repository diffs.
+type PreviewRepositoryComparisonConnection {
+    # A list of repository diffs.
+    nodes: [PreviewRepositoryComparison!]!
+
+    # The total number of repository diffs in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A paginated list of repository diffs committed to git.
+type GitRepositoryComparisonConnection {
+    # A list of repository diffs committed to git.
+    nodes: [GitRepositoryComparison!]!
+
+    # The total number of repository diffs in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A collection of changesets.
@@ -482,7 +506,7 @@ type Campaign implements Node {
     updatedAt: DateTime!
 
     # The combined diff of all changesets across all repositories, already created on the code host.
-    repositoryDiffs: [GitRepositoryComparison!]!
+    repositoryDiffs(first: Int): GitRepositoryComparisonConnection!
 
     # The changesets in this campaign, already created on the code host.
     changesets(first: Int): ChangesetConnection!
