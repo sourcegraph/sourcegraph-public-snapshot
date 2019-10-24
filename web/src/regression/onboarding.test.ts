@@ -59,6 +59,7 @@ describe('Onboarding', () => {
         'headless',
         'slowMo',
         'logBrowserConsole',
+        'logStatusMessages',
         'keepBrowser'
     )
     const testExternalServiceConfig = {
@@ -165,9 +166,9 @@ describe('Onboarding', () => {
     test(
         'Non-admin user onboarding',
         async () => {
-            await ensureTestExternalService(gqlClient, testExternalServiceConfig)
+            await ensureTestExternalService(gqlClient, testExternalServiceConfig, config)
             const repoSlugs = testExternalServiceConfig.config.repos
-            await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]])
+            await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]], config)
 
             const testUser = await getUser(gqlClient, testUsername)
             if (!testUser) {
