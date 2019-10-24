@@ -33,7 +33,6 @@ Why do we put up with this pain? As of October 2019, Syntect continues to be the
 - [Syntect vs. VS Code syntax highlighting
 ](https://docs.google.com/document/d/1MqqEgihKzRehdDS_k9kb8t_p8vROCymC2FWn1Yvj6Ng/edit)
 
-
 ### lsif-server
 
 This was written in TypeScript so we could directly depend on the official [LSIF type definitions that are published by Microsoft as a TypeScript interface](https://github.com/microsoft/lsif-node/blob/master/protocol/src/protocol.ts).
@@ -44,4 +43,3 @@ LSIF generators and language servers should usually be written in the language t
 
 1. This aligns the incentive to maintain the LSIF generator or language server with the community that benefits from it.
 2. Existing language analysis libraries that would be useful to leverage are usually written in the target language being analyzed.
-
