@@ -309,7 +309,7 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 // concurrentFind searches files in zr looking for matches using rg.
 func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
-	ext.Component.Set(span, "matcher")
+	ext.Component.Set(span, "regex_search")
 	if rg.re != nil {
 		span.SetTag("re", rg.re.String())
 	}
