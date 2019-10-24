@@ -8,10 +8,13 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
-import { setUserEmailVerified } from './util/api'
+import { setUserEmailVerified, getViewerSettings, overwriteSettings } from './util/api'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import { map } from 'rxjs/operators'
+import { first } from 'lodash'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { applyEdits, parse } from '@sqs/jsonc-parser'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -45,7 +48,6 @@ describe('Core functionality regression test suite', () => {
         )
         screenshots = new ScreenshotVerifier(driver)
     })
-
     afterAll(async () => {
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
@@ -56,6 +58,14 @@ describe('Core functionality regression test suite', () => {
         if (screenshots.screenshots.length > 0) {
             console.log(screenshots.verificationInstructions())
         }
+    })
+
+    let alwaysCleanupManager: TestResourceManager
+    beforeEach(() => {
+        alwaysCleanupManager = new TestResourceManager()
+    })
+    afterEach(async () => {
+        await alwaysCleanupManager.destroyAll()
     })
 
     test('User settings are saved and applied', async () => {
@@ -247,7 +257,50 @@ describe('Core functionality regression test suite', () => {
     })
 
     test('Quicklinks', async () => {
-        // TODO(@sourcegraph/web)
+        const getGlobalSettings = async () => {
+            const settings = await getViewerSettings(gqlClient)
+            const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
+            if (!globalSettingsSubject || !globalSettingsSubject.latestSettings) {
+                throw new Error('Could not get global settings')
+            }
+            return {
+                subjectID: globalSettingsSubject.id,
+                settingsID: globalSettingsSubject.latestSettings.id,
+                contents: globalSettingsSubject.latestSettings.contents,
+            }
+        }
+
+        const quicklinkInfo = {
+            name: 'Quicklink',
+            url: config.sourcegraphBaseUrl + '/api/console',
+            description: 'This is a quicklink',
+        }
+
+        const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings()
+        if (parse(oldContents).quicklinks) {
+            throw new Error('Global setting quicklinks already exists, aborting test')
+        }
+        const newContents = applyEdits(
+            oldContents,
+            setProperty(oldContents, ['quicklinks'], [quicklinkInfo], {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            })
+        )
+        await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
+        alwaysCleanupManager.add('Global setting', 'quicklinks', async () => {
+            const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings()
+            await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
+        })
+
+        await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+        await driver.waitForElementWithText(quicklinkInfo.name)
+        await driver.clickElementWithText(quicklinkInfo.name, { hover: true })
+        await driver.waitForElementWithText(quicklinkInfo.description)
+        await driver.clickElementWithText(quicklinkInfo.name)
+        await driver.page.waitForNavigation()
+        expect(driver.page.url()).toEqual(quicklinkInfo.url)
     })
 
     test('Organizations (admin user)', async () => {

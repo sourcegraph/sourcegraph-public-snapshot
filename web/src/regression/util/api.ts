@@ -365,3 +365,73 @@ export async function setUserEmailVerified(
         .pipe(map(dataOrThrowErrors))
         .toPromise()
 }
+
+export function getViewerSettings(gqlClient: GraphQLClient): Promise<GQL.ISettingsCascade> {
+    return gqlClient
+        .queryGraphQL(
+            gql`
+                query ViewerSettings {
+                    viewerSettings {
+                        ...SettingsCascadeFields
+                    }
+                }
+
+                fragment SettingsCascadeFields on SettingsCascade {
+                    subjects {
+                        __typename
+                        ... on Org {
+                            id
+                            name
+                            displayName
+                        }
+                        ... on User {
+                            id
+                            username
+                            displayName
+                        }
+                        ... on Site {
+                            id
+                            siteID
+                        }
+                        latestSettings {
+                            id
+                            contents
+                        }
+                        settingsURL
+                        viewerCanAdminister
+                    }
+                    final
+                }
+            `
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.viewerSettings)
+        )
+        .toPromise()
+}
+
+export function overwriteSettings(
+    gqlClient: GraphQLClient,
+    subject: GQL.ID,
+    lastID: number | null,
+    contents: string
+): Promise<GQL.IMutation> {
+    return gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                    settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                        overwriteSettings(contents: $contents) {
+                            empty {
+                                alwaysNil
+                            }
+                        }
+                    }
+                }
+            `,
+            { subject, contents, lastID }
+        )
+        .pipe(map(dataOrThrowErrors))
+        .toPromise()
+}

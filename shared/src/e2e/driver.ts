@@ -515,9 +515,16 @@ export class Driver {
      * Click the element containing the text. The element is discovered using the
      * `findElementWithText` method.
      */
-    public async clickElementWithText(text: string, options: FindElementOptions = {}): Promise<void> {
+    public async clickElementWithText(
+        text: string,
+        options: FindElementOptions & { hover?: boolean } = {}
+    ): Promise<void> {
         const handles = await this.findElementWithText(text, options)
-        await handles[0].click()
+        if (options.hover) {
+            await handles[0].hover()
+        } else {
+            await handles[0].click()
+        }
         await Promise.all(handles.map(handle => handle.dispose()))
     }
 
